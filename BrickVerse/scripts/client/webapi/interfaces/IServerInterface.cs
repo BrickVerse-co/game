@@ -12,7 +12,7 @@ public interface IServerInterface
 {
 	void SetToken(string token);
 	Task<byte[]> DownloadWorld(int worldID);
-	Task<APIHeartbeatResponse> Heartbeat(int[] playerIDs);
+	Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs);
 	Task<APIValidateResponse> ValidatePlayer(string token);
 	Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null);
 }

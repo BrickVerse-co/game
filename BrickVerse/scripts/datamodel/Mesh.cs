@@ -241,7 +241,7 @@ public sealed partial class Mesh : Entity
 		Asset = New<PTMeshAsset>();
 		if (Asset is PTMeshAsset mesh)
 		{
-			mesh.AssetID = (uint)_assetID;
+			mesh.AssetID = _assetID.ToString();
 		}
 	}
 

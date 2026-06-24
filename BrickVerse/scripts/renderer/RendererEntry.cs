@@ -23,7 +23,7 @@ public partial class RendererEntry : AppEntry
 
 		sw.Restart();
 		PT.Print("Loading avatar...");
-		await viewport.AddAvatar(64499, RendererViewport.AvatarPhotoTypeEnum.FullAvatar);
+		await viewport.AddAvatar("1", RendererViewport.AvatarPhotoTypeEnum.FullAvatar);
 		//await viewport.AddAccessory(48150);
 		PT.Print("Load avatar: ", sw.ElapsedMilliseconds, "ms");
 

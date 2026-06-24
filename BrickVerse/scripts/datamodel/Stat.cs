@@ -19,8 +19,8 @@ public partial class Stat : Instance
 	internal Dictionary<Player, object?> PlayerToStat = [];
 	public PTSignal<Player, object?> PlayerStatChanged = new();
 
-	private readonly Dictionary<int, double> _pendingDoubles = [];
-	private readonly Dictionary<int, string> _pendingStrings = [];
+	private readonly Dictionary<string, double> _pendingDoubles = [];
+	private readonly Dictionary<string, string> _pendingStrings = [];
 
 	[Editable, ScriptProperty, DefaultValue("")]
 	public string DisplayName
@@ -87,32 +87,32 @@ public partial class Stat : Instance
 			else
 			{
 				if (stat.StringValue != null)
-					_pendingStrings[stat.UserID] = stat.StringValue;
+					_pendingStrings[stat.UserID.ToString()] = stat.StringValue;
 				else if (stat.NumberValue != null)
-					_pendingDoubles[stat.UserID] = stat.NumberValue.Value;
+					_pendingDoubles[stat.UserID.ToString()] = stat.NumberValue.Value;
 			}
 		}
 	}
 
 	private void OnPlayerAdded(Player plr)
 	{
-		if (_pendingDoubles.TryGetValue(plr.UserID, out double dval))
+		if (_pendingDoubles.TryGetValue(plr.UserID.ToString(), out double dval))
 		{
 			InternalSet(plr, dval);
-			_pendingDoubles.Remove(plr.UserID);
+			_pendingDoubles.Remove(plr.UserID.ToString());
 		}
-		if (_pendingStrings.TryGetValue(plr.UserID, out string sval))
+		if (_pendingStrings.TryGetValue(plr.UserID.ToString(), out string sval))
 		{
 			InternalSet(plr, sval);
-			_pendingStrings.Remove(plr.UserID);
+			_pendingStrings.Remove(plr.UserID.ToString());
 		}
 	}
 
 	private void OnPlayerRemoved(Player plr)
 	{
 		PlayerToStat.Remove(plr);
-		_pendingDoubles.Remove(plr.UserID);
-		_pendingStrings.Remove(plr.UserID);
+		_pendingDoubles.Remove(plr.UserID.ToString());
+		_pendingStrings.Remove(plr.UserID.ToString());
 	}
 
 	[ScriptMethod]
@@ -146,23 +146,23 @@ public partial class Stat : Instance
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
-	private void NetSetDouble(int playerID, double val)
+	private void NetSetDouble(string playerID, double val)
 	{
 		Player? plr = Root.Players.GetPlayerByID(playerID);
 		if (plr != null)
 			InternalSet(plr, val);
 		else
-			_pendingDoubles[playerID] = val;
+			_pendingDoubles[playerID.ToString()] = val;
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
-	private void NetSetString(int playerID, string val)
+	private void NetSetString(string playerID, string val)
 	{
 		Player? plr = Root.Players.GetPlayerByID(playerID);
 		if (plr != null)
 			InternalSet(plr, val);
 		else
-			_pendingStrings[playerID] = val;
+			_pendingStrings[playerID.ToString()] = val;
 	}
 
 	[ScriptMethod]
@@ -217,7 +217,7 @@ public partial class Stat : Instance
 	[MemoryPackable]
 	public partial struct PlayerStatData
 	{
-		public int UserID;
+		public string UserID;
 		public string? StringValue;
 		public double? NumberValue;
 	}

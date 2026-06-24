@@ -25,7 +25,7 @@ namespace BrickVerse.Datamodel.Services;
 public sealed partial class InsertService : Instance
 {
 	private readonly PTHttpClient _httpClient = new();
-	private static readonly Dictionary<int, APIStoreItem> _storeItemCache = [];
+	private static readonly Dictionary<string, APIStoreItem> _storeItemCache = [];
 
 	[ScriptMethod, Attributes.Obsolete("Use ModelAsync instead")]
 	public void Model(int id, PTCallback? callback = null)
@@ -129,12 +129,12 @@ public sealed partial class InsertService : Instance
 #endif
 
 	[ScriptMethod]
-	public async Task<Accessory?> AccessoryAsync(int id)
+	public async Task<Accessory?> AccessoryAsync(string id)
 	{
 		APIStoreItem storeItem = await GetStoreItemCachedAsync(id);
 
 		PTMeshAsset meshAsset = New<PTMeshAsset>();
-		meshAsset.AssetID = (uint)id;
+		meshAsset.AssetID = id;
 
 		Accessory accessory = New<Accessory>(this);
 		Mesh mesh = New<Mesh>();
@@ -175,15 +175,15 @@ public sealed partial class InsertService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task<Tool?> ToolAsync(int id)
+	public async Task<Tool?> ToolAsync(string id)
 	{
 		APIStoreItem storeItem = await GetStoreItemCachedAsync(id);
 
 		PTMeshAsset meshAsset = New<PTMeshAsset>();
-		meshAsset.AssetID = (uint)id;
+		meshAsset.AssetID = id;
 
 		PTImageAsset icon = New<PTImageAsset>();
-		icon.ImageID = (uint)id;
+		icon.ImageID = id.ToString();
 		icon.ImageType = ImageTypeEnum.AssetThumbnail;
 
 		Tool tool = New<Tool>(this);
@@ -210,7 +210,7 @@ public sealed partial class InsertService : Instance
 		return tool;
 	}
 
-	private static async Task<APIStoreItem> GetStoreItemCachedAsync(int id)
+	private static async Task<APIStoreItem> GetStoreItemCachedAsync(string id)
 	{
 		if (_storeItemCache.TryGetValue(id, out var cached))
 			return cached;

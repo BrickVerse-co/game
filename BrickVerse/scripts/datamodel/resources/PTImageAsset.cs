@@ -11,11 +11,11 @@ namespace BrickVerse.Datamodel.Resources;
 [Instantiable]
 public partial class PTImageAsset : ImageAsset
 {
-	private uint _imageID;
+	private string _imageID;
 	private ImageTypeEnum _imageType;
 
 	[Editable, ScriptProperty]
-	public uint ImageID
+	public string ImageID
 	{
 		get => _imageID;
 		set
@@ -47,7 +47,7 @@ public partial class PTImageAsset : ImageAsset
 
 	public override void LoadResource()
 	{
-		if (ImageID == 0) { return; }
+		if (string.IsNullOrEmpty(ImageID)) { return; }
 		ResourceType resourceType = ImageType switch
 		{
 			ImageTypeEnum.Asset => ResourceType.Decal,

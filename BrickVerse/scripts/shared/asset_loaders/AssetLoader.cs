@@ -14,7 +14,7 @@ namespace BrickVerse.Shared.AssetLoaders;
 public partial class AssetLoader : Node
 {
 
-	private readonly record struct AssetCacheKey(ResourceType Type, uint ID, Vector2I? Resize);
+	private readonly record struct AssetCacheKey(ResourceType Type, string ID, Vector2I? Resize);
 	private const int DefaultMaxConcurrentRequests = 5;
 
 	public AssetLoader()
@@ -46,7 +46,7 @@ public partial class AssetLoader : Node
 
 	private async Task<CacheItem> LoadResource(CacheItem item)
 	{
-		if (item.ID == 0)
+		if (string.IsNullOrEmpty(item.ID))
 		{
 			return item;
 		}
@@ -139,7 +139,7 @@ public enum ResourceType
 public struct CacheItem
 {
 	public ResourceType Type { get; set; }
-	public uint ID { get; set; }
+	public string ID { get; set; }
 	public string DirectURL { get; set; }
 	public Vector2I? Resize { get; set; }
 	public Resource Resource { get; set; }

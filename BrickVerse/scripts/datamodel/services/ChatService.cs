@@ -161,7 +161,7 @@ public sealed partial class ChatService : Instance
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable, CallLocal = true, TransferChannel = 2)]
-	private void NetRecvChatMessage(int userID, string msgContent)
+	private void NetRecvChatMessage(string userID, string msgContent)
 	{
 		Player? player = Root.Players.GetPlayerByID(userID);
 
@@ -239,7 +239,7 @@ public sealed partial class ChatService : Instance
 	}
 
 	// Logging for moderation
-	private async Task LogChatMessageAsync(int userId, string message)
+	private async Task LogChatMessageAsync(string userID, string message)
 	{
 		if (Root.IsLocalTest) return;
 
@@ -251,7 +251,7 @@ public sealed partial class ChatService : Instance
 				Globals.ApiEndpoint.PathJoin("/v3/world/server/chat/filter"),
 				new
 				{
-					userId = userId.ToString(),
+					userId = userID,
 					message,
 				},
 				APIGenerationContext.Default.Object

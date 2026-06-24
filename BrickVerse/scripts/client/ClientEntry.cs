@@ -44,7 +44,7 @@ public sealed partial class ClientEntry : Node3D
 	private readonly List<int> _clientProcesses = [];
 	public bool IsSoloTest = false;
 
-	public int TestUserID = 1144;
+	public string TestUserID = "1";
 	public int TestClientCount = 0;
 	public bool TestModeReady = false;
 
@@ -108,7 +108,7 @@ public sealed partial class ClientEntry : Node3D
 
 		if (testUserID != null)
 		{
-			TestUserID = int.Parse(testUserID);
+			TestUserID = testUserID;
 		}
 #endif
 		networkMode ??= "client";
@@ -128,7 +128,7 @@ public sealed partial class ClientEntry : Node3D
 			isServer = data.Value.TestIsServer ?? false;
 #if ALLOW_SELFHOST
 			worldPath = data.Value.TestWorldPath;
-			TestUserID = data.Value.TestUserID ?? 1144;
+			TestUserID = data.Value.TestUserID ?? "1";
 			debugID = data.Value.TestDebugID ?? debugID;
 			port = data.Value.ConnectPort ?? port;
 
@@ -629,7 +629,7 @@ public sealed partial class ClientEntry : Node3D
 		public string? ConnectAddress;
 		public int? ConnectPort;
 		public string? Token;
-		public int? TestUserID;
+		public string? TestUserID;
 		public bool? TestIsServer;
 		public string? TestWorldPath;
 		public string? TestDebugID;

@@ -13,7 +13,7 @@ public struct CreatorAuthResponse
 	public string Token { get; set; }
 
 	[JsonPropertyName("userID")]
-	public int UserID { get; set; }
+	public string userID { get; set; }
 
 	[JsonPropertyName("placeID")]
 	public int? PlaceID { get; set; }

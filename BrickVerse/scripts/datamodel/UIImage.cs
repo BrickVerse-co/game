@@ -198,7 +198,7 @@ public partial class UIImage : UIField
 
 	private void CreatePTImageAsset()
 	{
-		if (!uint.TryParse(_imageID, out uint result))
+		if (string.IsNullOrEmpty(_imageID))
 		{
 			SetToDefaultImage();
 			return;
@@ -206,7 +206,7 @@ public partial class UIImage : UIField
 		PTImageAsset polyImg = New<PTImageAsset>();
 		Image = polyImg;
 		polyImg.ImageType = _imageType;
-		polyImg.ImageID = result;
+		polyImg.ImageID = _imageID;
 	}
 
 	public override Node CreateGDNode()

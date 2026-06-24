@@ -26,12 +26,12 @@ public partial class UIAchievementNotification : UINotificationBase
 			try
 			{
 				Visible = false;
-				APIStoreItem item = await PolyAPI.GetStoreItem(payload.Id);
+				APIStoreItem item = await PolyAPI.GetStoreItem(payload.Id.ToString());
 
 				_badgeImg = new();
 				_badgeImg.ResourceLoaded += OnBadgeImgLoaded;
 				_badgeImg.ImageType = ImageTypeEnum.AssetThumbnail;
-				_badgeImg.ImageID = (uint)payload.Id;
+				_badgeImg.ImageID = payload.Id.ToString();
 				_badgeImg.LoadResource();
 				AchievementTitle.Text = item.Name;
 				AnimPlay.Play("appear");

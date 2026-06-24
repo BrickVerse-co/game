@@ -121,7 +121,7 @@ public partial class UILoadingScreen : Control
 	private void OnWorldInfoReady(APIPlaceInfo info)
 	{
 		_gameIconImage.ImageType = ImageTypeEnum.PlaceIcon;
-		_gameIconImage.ImageID = (uint)info.Id;
+		_gameIconImage.ImageID = info.Id.ToString();
 
 		// This has to be call manually to force resource load, usual load is queued in frame
 		_gameIconImage.LoadResource();
@@ -142,7 +142,7 @@ public partial class UILoadingScreen : Control
 	private void OnWorldMediaReady(APIPlaceMedia[] _)
 	{
 		_gameThumbnailImage.ImageType = ImageTypeEnum.WorldThumbnail;
-		_gameThumbnailImage.ImageID = (uint)_entry.Root.FirstWorldMedia;
+		_gameThumbnailImage.ImageID = _entry.Root.FirstWorldMedia.ToString();
 		_gameThumbnailImage.LoadResource();
 	}
 

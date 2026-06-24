@@ -238,7 +238,7 @@ public sealed partial class World : Instance
 
 	internal APIPlaceInfo? WorldInfo { get; private set; }
 	internal APIPlaceMedia[]? WorldMedia { get; private set; }
-	internal int FirstWorldMedia = 0;
+	internal string FirstWorldMedia = "0";
 
 	public override void Init()
 	{

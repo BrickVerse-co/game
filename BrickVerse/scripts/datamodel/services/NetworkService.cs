@@ -419,7 +419,7 @@ public sealed partial class NetworkService : Instance
 		APIHeartbeatResponse res = await PolyServerAPI.SendHeartbeat(World.Current!.Players.GetPlayerIDArray());
 		if (res.Remove.Count > 0)
 		{
-			foreach (int r in res.Remove)
+			foreach (string r in res.Remove)
 			{
 				Player? player = Root.Players.GetPlayerByID(r);
 				if (player != null)
@@ -605,7 +605,7 @@ public sealed partial class NetworkService : Instance
 		APIUserInfo userData;
 		try
 		{
-			validateRes = new() { CanChat = true, UserID = testUserID, IsCreator = false, IsAgeRestricted = false };
+			validateRes = new() { CanChat = true, UserID = testUserID.ToString(), IsCreator = false, IsAgeRestricted = false };
 			if (OS.HasFeature("offline") || (Root.Entry != null && Root.Entry.IsSoloTest))
 			{
 				// Offline data
@@ -615,11 +615,11 @@ public sealed partial class NetworkService : Instance
 			else if (IsProd)
 			{
 				validateRes = await AuthenticatePlayer(userToken);
-				userData = await PolyAPI.GetUserFromID(validateRes.UserID.ToString());
+				userData = await PolyAPI.GetUserFromID(validateRes.UserID);
 			}
 			else
 			{
-				userData = await PolyAPI.GetUserFromID(validateRes.UserID.ToString());
+				userData = await PolyAPI.GetUserFromID(validateRes.UserID);
 			}
 
 			if (Root.WorldInfo.HasValue)

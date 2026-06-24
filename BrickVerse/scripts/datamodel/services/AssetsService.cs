@@ -34,7 +34,7 @@ public sealed partial class AssetsService : Instance
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTImageAsset? NewPTImage(uint imgID)
+	public PTImageAsset? NewPTImage(string imgID)
 	{
 		PTImageAsset ptImg = New<PTImageAsset>();
 		ptImg.ImageID = imgID;
@@ -42,7 +42,7 @@ public sealed partial class AssetsService : Instance
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTAudioAsset? NewPTAudio(uint audioID)
+	public PTAudioAsset? NewPTAudio(string audioID)
 	{
 		PTAudioAsset ptAudio = New<PTAudioAsset>();
 		ptAudio.AudioID = audioID;
@@ -50,7 +50,7 @@ public sealed partial class AssetsService : Instance
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTMeshAsset? NewPTMesh(uint assetID)
+	public PTMeshAsset? NewPTMesh(string assetID)
 	{
 		PTMeshAsset ptMesh = New<PTMeshAsset>();
 		ptMesh.AssetID = assetID;

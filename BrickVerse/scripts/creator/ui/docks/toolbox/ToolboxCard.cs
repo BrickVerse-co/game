@@ -77,7 +77,7 @@ public partial class ToolboxCard : Button
 
 				AddChild(_previewSound);
 			}
-			AssetLoader.Singleton.GetResource(new() { ID = ItemData.ID, Type = ResourceType.Sound }, r =>
+			AssetLoader.Singleton.GetResource(new() { ID = ItemData.ID.ToString(), Type = ResourceType.Sound }, r =>
 			{
 				_previewSound.Stream = (AudioStream)r;
 
@@ -133,7 +133,7 @@ public partial class ToolboxCard : Button
 					mesh.Name = nameToUse;
 					mesh.Parent = root.Environment;
 					PTMeshAsset asset = root.New<PTMeshAsset>();
-					asset.AssetID = ItemData.ID;
+					asset.AssetID = ItemData.ID.ToString();
 					mesh.Asset = asset;
 					mesh.Position = root.CreatorContext.Freelook.GetPlacementPosition();
 					root.CreatorContext.Selections.SelectOnly(mesh);
@@ -145,7 +145,7 @@ public partial class ToolboxCard : Button
 					sound.Name = nameToUse;
 					sound.Parent = root.Environment;
 					PTAudioAsset asset = root.New<PTAudioAsset>();
-					asset.AudioID = ItemData.ID;
+					asset.AudioID = ItemData.ID.ToString();
 					sound.Audio = asset;
 					sound.Position = root.CreatorContext.Freelook.GetPlacementPosition();
 					root.CreatorContext.Selections.SelectOnly(sound);
@@ -157,7 +157,7 @@ public partial class ToolboxCard : Button
 					img.Name = nameToUse;
 					img.Parent = root.Environment;
 					PTImageAsset asset = root.New<PTImageAsset>();
-					asset.ImageID = ItemData.ID;
+					asset.ImageID = ItemData.ID.ToString();
 					img.Image = asset;
 					img.Position = root.CreatorContext.Freelook.GetPlacementPosition();
 					root.CreatorContext.Selections.SelectOnly(img);

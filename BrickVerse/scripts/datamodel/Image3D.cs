@@ -220,7 +220,7 @@ public sealed partial class Image3D : Dynamic
 
 	private void CreatePTImageAsset()
 	{
-		if (!uint.TryParse(_imageID, out uint result))
+		if (string.IsNullOrEmpty(_imageID))
 		{
 			return;
 		}
@@ -228,7 +228,7 @@ public sealed partial class Image3D : Dynamic
 		PTImageAsset polyImg = New<PTImageAsset>();
 		Image = polyImg;
 		polyImg.ImageType = _imageType;
-		polyImg.ImageID = result;
+		polyImg.ImageID = _imageID;
 	}
 
 	private void OnResourceLoaded(Resource r)

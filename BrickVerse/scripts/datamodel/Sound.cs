@@ -351,7 +351,7 @@ public sealed partial class Sound : Dynamic
 			Name = "AudioAsset"
 		};
 		Audio = audioAsset;
-		audioAsset.AudioID = (uint)_soundID;
+		audioAsset.AudioID = _soundID.ToString();
 	}
 
 	private void OnPlayerFinished()

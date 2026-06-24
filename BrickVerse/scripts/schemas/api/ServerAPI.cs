@@ -12,13 +12,13 @@ public struct APIHeartbeatResponse
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
 	[JsonPropertyName("remove")]
-	public List<int> Remove { get; set; }
+	public List<string> Remove { get; set; }
 }
 
 public struct APIValidateResponse
 {
 	[JsonPropertyName("id")]
-	public int UserID { get; set; }
+	public string UserID { get; set; }
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
 	[JsonPropertyName("canChat")]

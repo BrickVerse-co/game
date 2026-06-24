@@ -145,15 +145,15 @@ public sealed partial class BrickversianModal : CharacterModel
 	}
 
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Use FaceImage instead"), CloneIgnore]
-	public int FaceID
+	public string FaceID
 	{
-		get => (int)((_faceImage is PTImageAsset polyImg) ? polyImg.ImageID : 0);
+		get => (_faceImage is PTImageAsset polyImg) ? polyImg.ImageID : "0";
 		set
 		{
-			if (value == 0) { FaceImage = null; return; }
+			if (value == "0") { FaceImage = null; return; }
 			PTImageAsset imgAsset = new();
 			FaceImage = imgAsset;
-			imgAsset.ImageID = (uint)value;
+			imgAsset.ImageID = value.ToString();
 		}
 	}
 
@@ -757,7 +757,7 @@ public sealed partial class BrickversianModal : CharacterModel
 			if (asset.Type == "clothing")
 			{
 				PTImageAsset txt = New<PTImageAsset>();
-				txt.ImageID = (uint)asset.ID;
+				txt.ImageID = asset.ID.ToString();
 				Clothing c = New<Clothing>();
 				c.Name = asset.Name;
 				c.Image = txt;
@@ -767,14 +767,14 @@ public sealed partial class BrickversianModal : CharacterModel
 			{
 				if (_faceOverrided) continue;
 				PTImageAsset face = New<PTImageAsset>();
-				face.ImageID = (uint)asset.ID;
+				face.ImageID = asset.ID.ToString();
 				FaceImage = face;
 			}
 			else if (asset.Type == "body")
 			{
 				if (_bodyOverrided) continue;
 				var body = New<PTMeshAsset>();
-				body.AssetID = (uint)asset.ID;
+				body.AssetID = asset.ID.ToString();
 				BodyMesh = body;
 			}
 			else if (asset.Type == "hat")

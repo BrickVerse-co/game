@@ -36,7 +36,7 @@ public partial class PlaceCard : Button
 		}
 
 		_iconAsset.ImageType = ImageTypeEnum.PlaceIcon;
-		_iconAsset.ImageID = (uint)PlaceData.Id;
+		_iconAsset.ImageID = PlaceData.Id.ToString();
 		_iconAsset.LoadResource();
 
 		Pressed += OnPressed;

@@ -67,7 +67,7 @@ public partial class RendererViewport : SubViewport
 		Root.World3D.Environment = n.GetNode<WorldEnvironment>("WorldEnvironment").Environment;
 	}
 
-	public async Task AddAvatar(int id, AvatarPhotoTypeEnum photoType = AvatarPhotoTypeEnum.FullAvatar)
+	public async Task AddAvatar(string id, AvatarPhotoTypeEnum photoType = AvatarPhotoTypeEnum.FullAvatar)
 	{
 		Camera cam = Root.Environment.CurrentCamera!;
 		Camera3D c3d = cam.Camera3D;
@@ -106,7 +106,7 @@ public partial class RendererViewport : SubViewport
 		}
 	}
 
-	public async Task AddAccessory(int id)
+	public async Task AddAccessory(string id)
 	{
 		Camera cam = Root.Environment.CurrentCamera!;
 		Camera3D c3d = cam.Camera3D;

@@ -137,7 +137,7 @@ public static class PolyAPI
 		{
 			assets.Add(new APIAvatarAsset
 			{
-				ID = int.TryParse(item.Id, out int id) ? id : 0,
+				ID = item.Id ?? "0",
 				Type = (item.Type ?? string.Empty).ToLowerInvariant(),
 				AccessoryType = item.Type ?? "",
 				Name = item.Name ?? "",
@@ -226,9 +226,9 @@ public static class PolyAPI
 		{
 			media.Add(new APIPlaceMedia
 			{
-				Id = int.TryParse(thumb.ThumbnailId, out int id) ? id : 0,
+				Id = thumb.ThumbnailId ?? "0",
 				Type = "image",
-				Url = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + thumb.ThumbnailId),
+				Url = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + (thumb.ThumbnailId ?? "0")),
 			});
 		}
 
@@ -259,10 +259,10 @@ public static class PolyAPI
 		);
 	}
 
-	public static Task<APIStoreItem> GetStoreItem(int id)
+	public static Task<APIStoreItem> GetStoreItem(string id)
 		=> GetAssetStoreItem(id);
 
-	private static async Task<APIStoreItem> GetAssetStoreItem(int id)
+	private static async Task<APIStoreItem> GetAssetStoreItem(string id)
 	{
 		APIV3AssetDetailsRoot response = await _client.GetFromJsonAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/asset/" + id + "/details"),
@@ -272,7 +272,7 @@ public static class PolyAPI
 		APIV3AssetDetails asset = response.AssetInfo;
 		return new APIStoreItem
 		{
-			Id = int.TryParse(asset.Id, out int assetId) ? assetId : id,
+			Id = asset.Id ?? id,
 			Type = asset.AssetType?.ToLowerInvariant() ?? "",
 			AccessoryType = null,
 			Name = asset.Name ?? "",

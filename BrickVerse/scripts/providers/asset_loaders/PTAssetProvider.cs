@@ -94,7 +94,7 @@ public class PTAssetProvider : IAssetProvider
 		}
 	}
 
-	public string GetAssetServeURL(uint id, ResourceType itemType)
+	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
 		if (itemType is ResourceType.AssetThumbnail or ResourceType.PlaceThumbnail or ResourceType.PlaceIcon or ResourceType.GuildThumbnail or ResourceType.GuildBanner)
 		{

@@ -13,7 +13,7 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class UserHeadshotCard : Node
 {
-	[Export] public uint UserID;
+	[Export] public string UserID;
 
 	[Export] private TextureRect _imageRect = null!;
 	[Export] private Label _usernameLabel = null!;
@@ -36,12 +36,12 @@ public partial class UserHeadshotCard : Node
 	public async void LoadUserCard()
 	{
 		_iconAsset.ImageType = ImageTypeEnum.UserAvatarHeadshot;
-		_iconAsset.ImageID = UserID;
+		_iconAsset.ImageID = UserID.ToString();
 		_iconAsset.LoadResource();
 
 		try
 		{
-			APIUserInfo userData = await PolyAPI.GetUserFromID((int)UserID);
+			APIUserInfo userData = await PolyAPI.GetUserFromID(UserID.ToString());
 
 			_usernameLabel.Text = userData.Username;
 		}

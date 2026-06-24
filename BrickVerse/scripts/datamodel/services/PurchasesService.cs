@@ -143,7 +143,7 @@ public sealed partial class PurchasesService : Instance
 
 		try
 		{
-			APIStoreItem storeItem = await PolyAPI.GetStoreItem(assetID);
+			APIStoreItem storeItem = await PolyAPI.GetStoreItem(assetID.ToString());
 			if (!storeItem.Price.HasValue) throw new Exception("This item does not have a price");
 			_currentExpectedPrice = storeItem.Price.Value;
 			_purchasePrompt?.Prompt(storeItem);

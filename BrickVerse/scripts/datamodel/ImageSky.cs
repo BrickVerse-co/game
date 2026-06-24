@@ -18,12 +18,12 @@ public sealed partial class ImageSky : Sky
 	private static readonly Shader _linearShader = GD.Load<Shader>("res://resources/shaders/imagesky_linear.gdshader");
 	private static readonly Shader _nearestShader = GD.Load<Shader>("res://resources/shaders/imagesky_nearest.gdshader");
 
-	private int _topId = 14168;
-	private int _bottomId = 14166;
-	private int _leftId = 14154;
-	private int _rightId = 14155;
-	private int _frontId = 14153;
-	private int _backId = 14151;
+	private string _topId = "14168";
+	private string _bottomId = "14166";
+	private string _leftId = "14154";
+	private string _rightId = "14155";
+	private string _frontId = "14153";
+	private string _backId = "14151";
 	private ImageAsset? _topImage;
 	private ImageAsset? _bottomImage;
 	private ImageAsset? _leftImage;
@@ -226,73 +226,73 @@ public sealed partial class ImageSky : Sky
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(TopId))]
-	public int TopId
+	public string TopId
 	{
 		get => _topId;
 		set
 		{
 			_topId = value;
-			TopImage = Root.Assets.NewPTImage((uint)value);
+			TopImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(BottomId))]
-	public int BottomId
+	public string BottomId
 	{
 		get => _bottomId;
 		set
 		{
 			_bottomId = value;
-			BottomImage = Root.Assets.NewPTImage((uint)value);
+			BottomImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(LeftId))]
-	public int LeftId
+	public string LeftId
 	{
 		get => _leftId;
 		set
 		{
 			_leftId = value;
-			LeftImage = Root.Assets.NewPTImage((uint)value);
+			LeftImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(RightId))]
-	public int RightId
+	public string RightId
 	{
 		get => _rightId;
 		set
 		{
 			_rightId = value;
-			RightImage = Root.Assets.NewPTImage((uint)value);
+			RightImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(FrontId))]
-	public int FrontId
+	public string FrontId
 	{
 		get => _frontId;
 		set
 		{
 			_frontId = value;
-			FrontImage = Root.Assets.NewPTImage((uint)value);
+			FrontImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}
 
 	[Editable, Obsolete("Use Image instead"), NoSync, ScriptLegacyProperty(nameof(BackId))]
-	public int BackId
+	public string BackId
 	{
 		get => _backId;
 		set
 		{
 			_backId = value;
-			BackImage = Root.Assets.NewPTImage((uint)value);
+			BackImage = Root.Assets.NewPTImage(value);
 			OnPropertyChanged();
 		}
 	}

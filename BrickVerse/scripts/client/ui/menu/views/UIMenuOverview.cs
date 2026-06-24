@@ -85,7 +85,7 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 			_placeThumbnailImage = new();
 			_placeThumbnailImage.ResourceLoaded += OnWorldThumbnailLoaded;
 			_placeThumbnailImage.ImageType = ImageTypeEnum.WorldThumbnail;
-			_placeThumbnailImage.ImageID = (uint)root.FirstWorldMedia;
+			_placeThumbnailImage.ImageID = root.FirstWorldMedia;
 			_placeThumbnailImage.LoadResource();
 		}
 		else
@@ -109,7 +109,7 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 			_userAvatarImage = new();
 			_userAvatarImage.ResourceLoaded += OnAvatarImageLoaded;
 			_userAvatarImage.ImageType = ImageTypeEnum.UserAvatar;
-			_userAvatarImage.ImageID = (uint)root.Players.LocalPlayer.UserID;
+			_userAvatarImage.ImageID = root.Players.LocalPlayer.UserID;
 			_userAvatarImage.LoadResource();
 		}
 

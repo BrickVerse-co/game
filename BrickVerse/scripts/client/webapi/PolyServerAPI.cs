@@ -43,7 +43,7 @@ public static class PolyServerAPI
 		return ServerInterface.DownloadWorld(worldID);
 	}
 
-	public static Task<APIHeartbeatResponse> SendHeartbeat(int[] playerIDs)
+	public static Task<APIHeartbeatResponse> SendHeartbeat(string[] playerIDs)
 	{
 		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
 		return ServerInterface.Heartbeat(playerIDs);

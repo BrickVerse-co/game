@@ -9,7 +9,7 @@ namespace BrickVerse.Schemas.API;
 public struct APIFriendRequest
 {
 	[JsonPropertyName("userID")]
-	public int UserID { get; set; }
+	public string userID { get; set; }
 	[JsonPropertyName("friendID")]
 	public int FriendID { get; set; }
 }

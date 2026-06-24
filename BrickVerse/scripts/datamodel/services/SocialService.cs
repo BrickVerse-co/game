@@ -32,7 +32,7 @@ public sealed partial class SocialService : Instance
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
-	private async void NetRecvFriendshipRequest(int recipientID, int req)
+	private async void NetRecvFriendshipRequest(string recipientID, int req)
 	{
 		FriendshipRequestType reqType = (FriendshipRequestType)req;
 		Player? from = Root.Players.GetPlayerFromPeerID(RemoteSenderId);
@@ -58,7 +58,7 @@ public sealed partial class SocialService : Instance
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
-	private async void RecvFriendRequestSuccess(int toUserID)
+	private async void RecvFriendRequestSuccess(string toUserID)
 	{
 		Player? to = Root.Players.GetPlayerByID(toUserID);
 		if (to != null)
@@ -74,7 +74,7 @@ public sealed partial class SocialService : Instance
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
-	private async void RecvFriendRequestNotify(int fromUserID)
+	private async void RecvFriendRequestNotify(string fromUserID)
 	{
 		Player? from = Root.Players.GetPlayerByID(fromUserID);
 		if (from != null)
@@ -83,7 +83,7 @@ public sealed partial class SocialService : Instance
 		}
 	}
 
-	public async Task WebSendFriendshipRequest(int senderID, int recipientID, FriendshipRequestType req)
+	public async Task WebSendFriendshipRequest(string senderID, string recipientID, FriendshipRequestType req)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
 
@@ -91,7 +91,7 @@ public sealed partial class SocialService : Instance
 		{
 			string body = JsonSerializer.Serialize(new
 			{
-				friendId = recipientID.ToString(),
+				friendId = recipientID,
 				turnstileToken = "world-server",
 			});
 
@@ -112,7 +112,7 @@ public sealed partial class SocialService : Instance
 		throw new NotSupportedException("Unsupported relationship type");
 	}
 
-	public async Task<bool> WebCheckAreFriends(int fromID, int toID)
+	public async Task<bool> WebCheckAreFriends(string fromID, string toID)
 	{
 		string data = await _client.GetStringAsync(Globals.ApiEndpoint.PathJoin($"/v3/social/friends/user/{fromID}"));
 		using JsonDocument doc = JsonDocument.Parse(data);
@@ -123,7 +123,7 @@ public sealed partial class SocialService : Instance
 
 		foreach (JsonElement friend in friends.EnumerateArray())
 		{
-			if (friend.TryGetProperty("id", out JsonElement idNode) && int.TryParse(idNode.GetString(), out int friendId) && friendId == toID)
+			if (friend.TryGetProperty("id", out JsonElement idNode) && idNode.GetString() == toID.ToString())
 			{
 				return true;
 			}

@@ -11,5 +11,5 @@ namespace BrickVerse.Providers.AssetLoaders;
 public interface IAssetProvider : IDisposable
 {
 	Task<CacheItem> LoadResource(CacheItem item);
-	string GetAssetServeURL(uint id, ResourceType itemType);
+	string GetAssetServeURL(string id, ResourceType itemType);
 }

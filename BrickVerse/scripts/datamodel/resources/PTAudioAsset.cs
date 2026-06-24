@@ -10,10 +10,10 @@ namespace BrickVerse.Datamodel.Resources;
 [Instantiable]
 public partial class PTAudioAsset : AudioAsset
 {
-	private uint _audioID = 0;
+	private string _audioID = "0";
 
 	[Editable, ScriptProperty]
-	public uint AudioID
+	public string AudioID
 	{
 		get => _audioID;
 		set
@@ -31,7 +31,7 @@ public partial class PTAudioAsset : AudioAsset
 
 	public override void LoadResource()
 	{
-		if (AudioID == 0) return;
+		if (AudioID == "0") return;
 		AssetLoader.Singleton.GetResource(
 			new() { Type = ResourceType.Sound, ID = AudioID },
 			InvokeResourceLoaded

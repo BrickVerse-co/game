@@ -57,7 +57,7 @@ public partial class NPC : Physical
 	private Color? _pendingRightArmColor;
 	private Color? _pendingLeftLegColor;
 	private Color? _pendingRightLegColor;
-	private int? _pendingFaceID;
+	private string? _pendingFaceID;
 
 	protected override float PositionSyncThreshold => 0.1f;
 	protected override float RotationSyncThreshold => 1f;
@@ -200,9 +200,9 @@ public partial class NPC : Physical
 	}
 
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
-	public int FaceID
+	public string FaceID
 	{
-		get => (Character is BrickversianModal rig) ? rig.FaceID : _pendingFaceID ?? 0;
+		get => (Character is BrickversianModal rig) ? rig.FaceID : _pendingFaceID ?? "0";
 		set
 		{
 			if (Character is BrickversianModal rig)
@@ -529,9 +529,9 @@ public partial class NPC : Physical
 					rig.RightLegColor = _pendingRightLegColor.Value;
 					_pendingRightLegColor = null;
 				}
-				if (_pendingFaceID.HasValue)
+				if (!string.IsNullOrEmpty(_pendingFaceID))
 				{
-					rig.FaceID = _pendingFaceID.Value;
+					rig.FaceID = _pendingFaceID;
 					_pendingFaceID = null;
 				}
 			}

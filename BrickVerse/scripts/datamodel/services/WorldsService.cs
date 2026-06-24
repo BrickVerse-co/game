@@ -140,7 +140,7 @@ public sealed partial class WorldsService : Instance
 	private void NetRecvJoinTestPlace(string address, int port, string debugID)
 	{
 		PT.Print("Teleporting to Test: ", address, ":", port);
-		int userID = Root.Players.LocalPlayer.UserID;
+		string userID = Root.Players.LocalPlayer.UserID;
 		Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 		if (app is ClientEntry ce)
 		{

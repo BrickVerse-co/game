@@ -71,7 +71,7 @@ public partial class UIPurchasePrompt : Control
 		_iconImg = new();
 		_iconImg.ResourceLoaded += OnIconImgLoaded;
 		_iconImg.ImageType = ImageTypeEnum.AssetThumbnail;
-		_iconImg.ImageID = (uint)item.Id;
+		_iconImg.ImageID = item.Id.ToString();
 		_iconImg.LoadResource();
 
 		_animPlay.Play("RESET");

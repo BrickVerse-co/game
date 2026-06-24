@@ -59,7 +59,7 @@ public sealed partial class Players : Instance
 	public int AbsolutePlayersCount => GetChildren().Count(c => c is Player plr);
 
 	internal readonly Dictionary<int, Player> PeerIDToPlayer = [];
-	public readonly Dictionary<int, Player> _idToPlayer = [];
+	public readonly Dictionary<string, Player> _idToPlayer = [];
 
 	/// <summary>
 	/// Get Player from Peer ID. This should only be called on server, as peer is not guaranteed to be available on clients. 
@@ -72,9 +72,9 @@ public sealed partial class Players : Instance
 		return null;
 	}
 
-	internal int[] GetPlayerIDArray()
+	internal string[] GetPlayerIDArray()
 	{
-		List<int> ids = [];
+		List<string> ids = [];
 
 		foreach (Instance n in GetChildren())
 		{
@@ -110,7 +110,7 @@ public sealed partial class Players : Instance
 	}
 
 	[ScriptMethod]
-	public Player? GetPlayerByID(int userID)
+	public Player? GetPlayerByID(string userID)
 	{
 		if (_idToPlayer.TryGetValue(userID, out Player? player)) return player;
 

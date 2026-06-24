@@ -80,7 +80,7 @@ public struct APIAvatarResponse
 public struct APIAvatarAsset
 {
 	[JsonPropertyName("id")]
-	public int ID { get; set; }
+	public string ID { get; set; }
 	[JsonPropertyName("type")]
 	public string Type { get; set; }
 	[JsonPropertyName("accessoryType")]
@@ -1050,7 +1050,7 @@ public struct APIStoreItemCreator
 public struct APIStoreItem
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public string Id { get; set; }
 
 	[JsonPropertyName("type")]
 	public string Type { get; set; }
@@ -1104,7 +1104,7 @@ public struct APIOwnsItem
 public struct APIPlaceMedia
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public string Id { get; set; }
 
 	[JsonPropertyName("type")]
 	public string Type { get; set; }

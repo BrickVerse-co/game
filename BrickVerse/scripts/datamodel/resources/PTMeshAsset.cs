@@ -10,10 +10,10 @@ namespace BrickVerse.Datamodel.Resources;
 [Instantiable]
 public partial class PTMeshAsset : MeshAsset
 {
-	private uint _assetID;
+	private string _assetID;
 
 	[Editable, ScriptProperty]
-	public uint AssetID
+	public string AssetID
 	{
 		get => _assetID;
 		set

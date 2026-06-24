@@ -74,7 +74,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptLegacyMethod("Award")]
-	public void Award(int userID, int achievementID, PTCallback? callback)
+	public void Award(string userID, int achievementID, PTCallback? callback)
 	{
 		_ = AwardAsync(userID, achievementID).ContinueWith(tsk =>
 		{
@@ -90,7 +90,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task AwardAsync(int userID, int achievementID)
+	public async Task AwardAsync(string userID, int achievementID)
 	{
 		ServerGuard();
 
@@ -125,7 +125,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptLegacyMethod("HasAchievement")]
-	public void HasAchievement(int userID, int achievementID, PTCallback callback)
+	public void HasAchievement(string userID, int achievementID, PTCallback callback)
 	{
 		_ = HasAchievementAsync(userID, achievementID).ContinueWith(tsk =>
 		{
@@ -142,7 +142,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task<bool> HasAchievementAsync(int userID, int achievementID)
+	public async Task<bool> HasAchievementAsync(string userID, int achievementID)
 	{
 		ServerGuard();
 
@@ -159,7 +159,7 @@ public sealed partial class AchievementsService : Instance
 		return false;
 	}
 
-	internal async Task RequestGiveAchievement(int userID, int achievementID)
+	internal async Task RequestGiveAchievement(string userID, int achievementID)
 	{
 		SetHttpClientAuthToken();
 
@@ -176,7 +176,7 @@ public sealed partial class AchievementsService : Instance
 		);
 	}
 
-	internal async Task<bool> RequestHasAchievement(int userID, int achievementID)
+	internal async Task<bool> RequestHasAchievement(string userID, int achievementID)
 	{
 		SetHttpClientAuthToken();
 		APIHasAchievementResponse res = await _client.GetFromJsonAsync(
