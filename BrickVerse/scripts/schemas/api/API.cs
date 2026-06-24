@@ -153,6 +153,351 @@ public struct APILibraryItem
 	public string CreatorUrl { get; set; }
 }
 
+public struct APIV3AuthMeRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("user")]
+	public APIV3AuthMeUser User { get; set; }
+}
+
+public struct APIV3AuthMeUser
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("username")]
+	public string Username { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("membershipLevel")]
+	public string MembershipLevel { get; set; }
+}
+
+public struct APIV3UserProfileRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("user")]
+	public APIV3UserProfileUser User { get; set; }
+}
+
+public struct APIV3UserProfileUser
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("username")]
+	public string Username { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("status")]
+	public string Status { get; set; }
+
+	[JsonPropertyName("createdAt")]
+	public DateTime CreatedAt { get; set; }
+
+	[JsonPropertyName("lastSeenAt")]
+	public DateTime LastSeenAt { get; set; }
+
+	[JsonPropertyName("statistics")]
+	public APIV3UserProfileStatistics Statistics { get; set; }
+}
+
+public struct APIV3UserProfileStatistics
+{
+	[JsonPropertyName("visits")]
+	public int Visits { get; set; }
+
+	[JsonPropertyName("profileViews")]
+	public int ProfileViews { get; set; }
+
+	[JsonPropertyName("forumPosts")]
+	public int ForumPosts { get; set; }
+}
+
+public struct APIV3CharacterAppearanceRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("appearance")]
+	public APIV3CharacterAppearance Appearance { get; set; }
+}
+
+public struct APIV3CharacterAppearance
+{
+	[JsonPropertyName("headColor")]
+	public string HeadColor { get; set; }
+
+	[JsonPropertyName("torsoColor")]
+	public string TorsoColor { get; set; }
+
+	[JsonPropertyName("leftArmColor")]
+	public string LeftArmColor { get; set; }
+
+	[JsonPropertyName("rightArmColor")]
+	public string RightArmColor { get; set; }
+
+	[JsonPropertyName("leftLegColor")]
+	public string LeftLegColor { get; set; }
+
+	[JsonPropertyName("rightLegColor")]
+	public string RightLegColor { get; set; }
+
+	[JsonPropertyName("accessories")]
+	public APIV3CharacterAccessory[] Accessories { get; set; }
+}
+
+public struct APIV3CharacterAccessory
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("type")]
+	public string Type { get; set; }
+
+	[JsonPropertyName("thumbnailUrl")]
+	public string ThumbnailUrl { get; set; }
+}
+
+public struct APIV3SocialGuildRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("guild")]
+	public APIV3SocialGuild Guild { get; set; }
+}
+
+public struct APIV3SocialGuild
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("joinType")]
+	public string JoinType { get; set; }
+
+	[JsonPropertyName("memberCount")]
+	public int MemberCount { get; set; }
+
+	[JsonPropertyName("isVerified")]
+	public bool IsVerified { get; set; }
+
+	[JsonPropertyName("createdAt")]
+	public DateTime CreatedAt { get; set; }
+
+	[JsonPropertyName("creator")]
+	public APIV3SocialGuildCreator Creator { get; set; }
+}
+
+public struct APIV3SocialGuildCreator
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("username")]
+	public string Username { get; set; }
+}
+
+public struct APIV3AssetDetailsRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("assetInfo")]
+	public APIV3AssetDetails AssetInfo { get; set; }
+}
+
+public struct APIV3AssetDetails
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("assetType")]
+	public string AssetType { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("creatorId")]
+	public string CreatorId { get; set; }
+
+	[JsonPropertyName("creatorType")]
+	public string CreatorType { get; set; }
+
+	[JsonPropertyName("price")]
+	public int Price { get; set; }
+
+	[JsonPropertyName("sales")]
+	public int Sales { get; set; }
+
+	[JsonPropertyName("favorites")]
+	public int Favorites { get; set; }
+
+	[JsonPropertyName("createdAt")]
+	public DateTime CreatedAt { get; set; }
+
+	[JsonPropertyName("updatedAt")]
+	public DateTime? UpdatedAt { get; set; }
+}
+
+public struct APIV3AssetDiscoverRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("assets")]
+	public APIV3AssetDiscoverItem[] Assets { get; set; }
+
+	[JsonPropertyName("nextCursor")]
+	public string? NextCursor { get; set; }
+}
+
+public struct APIV3AssetDiscoverItem
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("thumbnailId")]
+	public string? ThumbnailId { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("creatorId")]
+	public string CreatorId { get; set; }
+}
+
+public struct APIV3WorldRoot
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("world")]
+	public APIV3WorldInfo World { get; set; }
+
+	[JsonPropertyName("universe")]
+	public APIV3UniverseInfo Universe { get; set; }
+}
+
+public struct APIV3WorldInfo
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("totalVisits")]
+	public int TotalVisits { get; set; }
+
+	[JsonPropertyName("totalPlayers")]
+	public int TotalPlayers { get; set; }
+
+	[JsonPropertyName("maxPlayers")]
+	public int MaxPlayers { get; set; }
+}
+
+public struct APIV3UniverseInfo
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("genre")]
+	public string Genre { get; set; }
+
+	[JsonPropertyName("creatorId")]
+	public string CreatorId { get; set; }
+
+	[JsonPropertyName("creatorType")]
+	public string CreatorType { get; set; }
+
+	[JsonPropertyName("creatorUser")]
+	public APIV3UniverseCreatorUser? CreatorUser { get; set; }
+
+	[JsonPropertyName("creatorGuild")]
+	public APIV3UniverseCreatorGuild? CreatorGuild { get; set; }
+
+	[JsonPropertyName("universeThumbnails")]
+	public APIV3UniverseThumbnail[] UniverseThumbnails { get; set; }
+}
+
+public struct APIV3UniverseCreatorUser
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("username")]
+	public string Username { get; set; }
+}
+
+public struct APIV3UniverseCreatorGuild
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+}
+
+public struct APIV3UniverseThumbnail
+{
+	[JsonPropertyName("thumbnailId")]
+	public string ThumbnailId { get; set; }
+}
+
+public struct APIV3JoinWorldRequest
+{
+	[JsonPropertyName("platform")]
+	public string Platform { get; set; }
+
+	[JsonPropertyName("universeId")]
+	public string UniverseId { get; set; }
+
+	[JsonPropertyName("worldId")]
+	public string WorldId { get; set; }
+}
+
+public struct APIV3JoinWorldResponse
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("joinToken")]
+	public string JoinToken { get; set; }
+
+	[JsonPropertyName("ip")]
+	public string IP { get; set; }
+
+	[JsonPropertyName("port")]
+	public int Port { get; set; }
+}
+
 public struct APIFontMeta
 {
 	[JsonPropertyName("fonts")]
@@ -640,6 +985,29 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(APIAvatarAsset))]
 [JsonSerializable(typeof(APIAvatarBodyColors))]
 [JsonSerializable(typeof(APILibraryResponse))]
+[JsonSerializable(typeof(APIV3AuthMeRoot))]
+[JsonSerializable(typeof(APIV3AuthMeUser))]
+[JsonSerializable(typeof(APIV3UserProfileRoot))]
+[JsonSerializable(typeof(APIV3UserProfileUser))]
+[JsonSerializable(typeof(APIV3UserProfileStatistics))]
+[JsonSerializable(typeof(APIV3CharacterAppearanceRoot))]
+[JsonSerializable(typeof(APIV3CharacterAppearance))]
+[JsonSerializable(typeof(APIV3CharacterAccessory))]
+[JsonSerializable(typeof(APIV3SocialGuildRoot))]
+[JsonSerializable(typeof(APIV3SocialGuild))]
+[JsonSerializable(typeof(APIV3SocialGuildCreator))]
+[JsonSerializable(typeof(APIV3AssetDetailsRoot))]
+[JsonSerializable(typeof(APIV3AssetDetails))]
+[JsonSerializable(typeof(APIV3AssetDiscoverRoot))]
+[JsonSerializable(typeof(APIV3AssetDiscoverItem))]
+[JsonSerializable(typeof(APIV3WorldRoot))]
+[JsonSerializable(typeof(APIV3WorldInfo))]
+[JsonSerializable(typeof(APIV3UniverseInfo))]
+[JsonSerializable(typeof(APIV3UniverseCreatorUser))]
+[JsonSerializable(typeof(APIV3UniverseCreatorGuild))]
+[JsonSerializable(typeof(APIV3UniverseThumbnail))]
+[JsonSerializable(typeof(APIV3JoinWorldRequest))]
+[JsonSerializable(typeof(APIV3JoinWorldResponse))]
 [JsonSerializable(typeof(APITokenDataResponse))]
 [JsonSerializable(typeof(APILibraryItem))]
 [JsonSerializable(typeof(APIFontMeta))]
@@ -674,6 +1042,8 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(APIFontData[]))]
 [JsonSerializable(typeof(APIWorldsData[]))]
 [JsonSerializable(typeof(APIPlaceMedia[]))]
+[JsonSerializable(typeof(APIV3AssetDiscoverItem[]))]
+[JsonSerializable(typeof(APIV3CharacterAccessory[]))]
 
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(string))]

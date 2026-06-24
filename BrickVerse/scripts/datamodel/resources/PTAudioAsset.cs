@@ -33,7 +33,7 @@ public partial class PTAudioAsset : AudioAsset
 	{
 		if (AudioID == 0) return;
 		AssetLoader.Singleton.GetResource(
-			new() { Type = ResourceType.Audio, ID = AudioID },
+			new() { Type = ResourceType.Sound, ID = AudioID },
 			InvokeResourceLoaded
 		);
 	}

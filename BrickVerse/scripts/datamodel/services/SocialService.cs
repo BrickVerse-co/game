@@ -85,28 +85,51 @@ public sealed partial class SocialService : Instance
 
 	public async Task WebSendFriendshipRequest(int senderID, int recipientID, FriendshipRequestType req)
 	{
-		string data = JsonSerializer.Serialize(new()
-		{
-			UserID = senderID,
-			FriendID = recipientID
-		}, SocialAPIGenerationContext.Default.APIFriendRequest);
+		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
 
-		string url = req switch
+		if (req == FriendshipRequestType.Friend)
 		{
-			FriendshipRequestType.Friend => Globals.ApiEndpoint.PathJoin("/v1/game/server/friends/request"),
-			FriendshipRequestType.Unfriend => Globals.ApiEndpoint.PathJoin("/v1/game/server/friends/remove"),
-			_ => throw new NotSupportedException("Unsupported relationship type"),
-		};
+			string body = JsonSerializer.Serialize(new
+			{
+				friendId = recipientID.ToString(),
+				turnstileToken = "world-server",
+			});
 
-		HttpRequestMessage msg = new(HttpMethod.Post, url);
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.AuthToken;
-		msg.Content = new StringContent(data, new MediaTypeHeaderValue("application/json"));
-		await _client.SendAsync(msg);
+			HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/social/friends/request"));
+			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
+			await _client.SendAsync(msg);
+			return;
+		}
+
+		if (req == FriendshipRequestType.Unfriend)
+		{
+			HttpRequestMessage msg = new(HttpMethod.Delete, Globals.ApiEndpoint.PathJoin("/v3/social/friends/" + recipientID));
+			msg.Content = new StringContent("{\"turnstileToken\":\"world-server\"}", new MediaTypeHeaderValue("application/json"));
+			await _client.SendAsync(msg);
+			return;
+		}
+
+		throw new NotSupportedException("Unsupported relationship type");
 	}
 
 	public async Task<bool> WebCheckAreFriends(int fromID, int toID)
 	{
-		return (await _client.GetFromJsonAsync(Globals.ApiEndpoint.PathJoin($"/v1/users/{fromID}/friends/{toID}"), SocialAPIGenerationContext.Default.APIAreFriendsResponse)).AreFriends;
+		string data = await _client.GetStringAsync(Globals.ApiEndpoint.PathJoin($"/v3/social/friends/user/{fromID}"));
+		using JsonDocument doc = JsonDocument.Parse(data);
+		if (!doc.RootElement.TryGetProperty("friends", out JsonElement friends) || friends.ValueKind != JsonValueKind.Array)
+		{
+			return false;
+		}
+
+		foreach (JsonElement friend in friends.EnumerateArray())
+		{
+			if (friend.TryGetProperty("id", out JsonElement idNode) && int.TryParse(idNode.GetString(), out int friendId) && friendId == toID)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public enum FriendshipRequestType

@@ -5,6 +5,7 @@
 using BrickVerse.Client.WebAPI.Interfaces;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -19,6 +20,21 @@ public static class PolyServerAPI
 	{
 		AuthToken = userToken;
 		ServerInterface?.SetToken(userToken);
+	}
+
+	public static string GetAuthorizationHeaderValue()
+	{
+		if (string.IsNullOrWhiteSpace(AuthToken))
+		{
+			return "";
+		}
+
+		if (AuthToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+		{
+			return AuthToken;
+		}
+
+		return "Bearer " + AuthToken;
 	}
 
 	public static Task<byte[]> DownloadWorld(int worldID)

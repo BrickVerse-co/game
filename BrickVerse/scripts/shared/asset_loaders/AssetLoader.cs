@@ -123,7 +123,7 @@ public enum ResourceType
 {
 	Mesh,
 	Decal,
-	Audio,
+	Sound,
 	AssetThumbnail,
 	PlaceThumbnail,
 	PlaceIcon,

@@ -548,9 +548,6 @@ public sealed partial class Sound : Dynamic
 	{
 		switch (stream)
 		{
-			case AudioStreamMP3 aStream:
-				aStream.Loop = val;
-				break;
 			case AudioStreamOggVorbis aStream:
 				aStream.Loop = val;
 				break;
@@ -563,9 +560,6 @@ public sealed partial class Sound : Dynamic
 	{
 		switch (stream)
 		{
-			case AudioStreamMP3 aStream:
-				aStream.LoopOffset = val;
-				break;
 			case AudioStreamOggVorbis aStream:
 				aStream.LoopOffset = val;
 				break;

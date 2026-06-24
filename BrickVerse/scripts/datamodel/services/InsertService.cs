@@ -4,15 +4,18 @@
 
 using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Client.WebAPI;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 #if CREATOR
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 #endif
 
@@ -96,7 +99,8 @@ public sealed partial class InsertService : Instance
 	[ScriptMethod]
 	public async Task<Instance?> ModelAsync(int id)
 	{
-		using HttpResponseMessage msg = await _httpClient.GetAsync(Globals.ApiEndpoint.PathJoin("/v1/models/get-model?id=" + id));
+		ApplyAssetAuthHeaders();
+		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
 		byte[] modelBytes = await msg.Content.ReadAsByteArrayAsync();
 		Instance? model = await DatamodelLoader.LoadModelBytes(Root, modelBytes, Root.TemporaryContainer);
 		return model;
@@ -105,7 +109,8 @@ public sealed partial class InsertService : Instance
 #if CREATOR
 	public async Task<Instance?> CreatorImportWebModel(int id, string? optionalName = null)
 	{
-		using HttpResponseMessage msg = await _httpClient.GetAsync(Globals.ApiEndpoint.PathJoin("/v1/models/get-model?id=" + id));
+		ApplyAssetAuthHeaders();
+		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
 		byte[] modelBytes = await msg.Content.ReadAsByteArrayAsync();
 
 		if (optionalName != null)
@@ -213,5 +218,56 @@ public sealed partial class InsertService : Instance
 		APIStoreItem storeItem = await PolyAPI.GetStoreItem(id);
 		_storeItemCache[id] = storeItem;
 		return storeItem;
+	}
+
+	private string GetModelDownloadUrl(int id)
+	{
+		if (Globals.IsServerBuild)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
+		}
+
+#if CREATOR
+		return Globals.ApiEndpoint.PathJoin("/v3/asset/" + id + "/download");
+#else
+		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
+#endif
+	}
+
+	private void ApplyAssetAuthHeaders()
+	{
+		_httpClient.DefaultRequestHeaders.Remove("Authorization");
+		_httpClient.DefaultRequestHeaders.Remove("Cookie");
+
+		if (Globals.IsServerBuild)
+		{
+			if (!string.IsNullOrWhiteSpace(PolyServerAPI.AuthToken))
+			{
+				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyServerAPI.AuthToken);
+			}
+			return;
+		}
+
+#if CREATOR
+		if (!string.IsNullOrWhiteSpace(PolyCreatorAPI.Token))
+		{
+			_httpClient.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(PolyCreatorAPI.Token);
+		}
+#else
+		if (!string.IsNullOrWhiteSpace(PolyAuthAPI.Token))
+		{
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyAuthAPI.Token);
+		}
+#endif
+	}
+
+	private static string BuildBearerToken(string token)
+	{
+		if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+		{
+			return token;
+		}
+
+		return "Bearer " + token;
 	}
 }

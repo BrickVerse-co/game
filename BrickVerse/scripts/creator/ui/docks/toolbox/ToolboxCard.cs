@@ -77,7 +77,7 @@ public partial class ToolboxCard : Button
 
 				AddChild(_previewSound);
 			}
-			AssetLoader.Singleton.GetResource(new() { ID = ItemData.ID, Type = ResourceType.Audio }, r =>
+			AssetLoader.Singleton.GetResource(new() { ID = ItemData.ID, Type = ResourceType.Sound }, r =>
 			{
 				_previewSound.Stream = (AudioStream)r;
 

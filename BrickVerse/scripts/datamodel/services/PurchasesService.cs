@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Datamodel.Services;
@@ -118,11 +119,14 @@ public sealed partial class PurchasesService : Instance
 	public async Task<bool> OwnsItemAsync(Player player, int assetID)
 	{
 		ServerGuard();
-		using HttpResponseMessage res = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v1/store/{assetID}/owner?userID={player.UserID}"));
+		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		using HttpResponseMessage res = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/ownership?entitlementId={assetID}&userId={player.UserID}")
+		);
 		res.EnsureSuccessStatusCode();
 
-		APIOwnsItem item = await res.Content.ReadFromJsonAsync(APIGenerationContext.Default.APIOwnsItem);
-		return item.Owned;
+		using JsonDocument doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+		return doc.RootElement.TryGetProperty("userOwns", out JsonElement owns) && owns.GetBoolean();
 	}
 
 	private void SendPurchaseRes(bool status)
@@ -200,15 +204,21 @@ public sealed partial class PurchasesService : Instance
 			];
 			FormUrlEncodedContent formContent = new(formVariables);
 
-			_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.AuthToken;
+			_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
 			using var pa = await _client.PostAsync(
-				Globals.ApiEndpoint.PathJoin("/v1/game/server/purchase"),
+				Globals.ApiEndpoint.PathJoin($"/v3/asset/{req.AssetID}/buy"),
 				formContent
 			);
 
-			pa.EnsureSuccessStatusCode();
-			APIPurchaseResponse purchaseRes = await pa.Content.ReadFromJsonAsync(ServerAPIGenerationContext.Default.APIPurchaseResponse);
-			SendProcessSuccessful(req, purchaseRes.Success);
+			if (!pa.IsSuccessStatusCode)
+			{
+				SendProcessSuccessful(req, false);
+				return;
+			}
+
+			using JsonDocument doc = JsonDocument.Parse(await pa.Content.ReadAsStringAsync());
+			bool success = doc.RootElement.TryGetProperty("success", out JsonElement successNode) && successNode.GetBoolean();
+			SendProcessSuccessful(req, success);
 		}
 		catch (Exception ex)
 		{

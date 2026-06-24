@@ -8,6 +8,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ public class PTDatastoreProvider : IDatastoreProvider
 	{
 		_dsKey = key;
 		_ds = ds;
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.AuthToken;
+		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
 	}
 
 	public bool UseReadRequest()
@@ -76,15 +77,28 @@ public class PTDatastoreProvider : IDatastoreProvider
 	public async Task<object?> ReadData(string key)
 	{
 		if (!UseReadRequest()) throw new PTDatastoreQuotaException("Read quota exceeded");
-		await LoadDatastore();
-		if (_data.TryGetValue(key, out DatastoreEntry entry))
-		{
-			return entry.Value;
-		}
-		else
+
+		string storeName = Uri.EscapeDataString(_dsKey);
+		string escapedKey = Uri.EscapeDataString(key);
+		using var req = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/storage?storeName={storeName}&key={escapedKey}"));
+		if (!req.IsSuccessStatusCode)
 		{
 			return null;
 		}
+
+		using JsonDocument document = JsonDocument.Parse(await req.Content.ReadAsStringAsync());
+		if (!document.RootElement.TryGetProperty("value", out JsonElement valueRoot))
+		{
+			return null;
+		}
+
+		JsonElement value = valueRoot;
+		if (valueRoot.ValueKind == JsonValueKind.Object && valueRoot.TryGetProperty("value", out JsonElement wrappedValue))
+		{
+			value = wrappedValue;
+		}
+
+		return ParsePrimitiveJsonValue(value);
 	}
 
 	public async Task WriteData(string key, object? value)
@@ -95,69 +109,43 @@ public class PTDatastoreProvider : IDatastoreProvider
 		}
 		if (!UseWriteRequest()) throw new PTDatastoreQuotaException("Write quota exceeded");
 
-		JsonObject json = [];
-		JsonNode? valueNode = null;
+		JsonNode? valueNode = value switch
+		{
+			null => null,
+			string stringValue => JsonValue.Create(stringValue),
+			bool boolValue => JsonValue.Create(boolValue),
+			int intValue => JsonValue.Create(intValue),
+			float floatValue => JsonValue.Create(floatValue),
+			double doubleValue => JsonValue.Create(doubleValue),
+			_ => null,
+		};
 
-		if (value == null)
-		{
-			valueNode = null;
-		}
-		else if (value is string stringValue)
-		{
-			valueNode = JsonValue.Create(stringValue);
-		}
-		else if (value is bool boolValue)
-		{
-			valueNode = JsonValue.Create(boolValue);
-		}
-		else if (value is double doubleValue)
-		{
-			valueNode = JsonValue.Create(doubleValue);
-		}
-
-		json.Add(key, valueNode);
-
-		List<KeyValuePair<string, string>> formVariables =
+		JsonObject requestBody =
 		[
-			new("key", _dsKey),
-			new("data", json.ToJsonString()),
+			new("storeName", _dsKey),
+			new("key", key),
+			new("value", new JsonObject { ["value"] = valueNode }),
 		];
-		FormUrlEncodedContent formContent = new(formVariables);
 
-		using var req = await _client.PostAsync(Globals.ApiEndpoint.PathJoin("/v1/game/server/datastore/set-data"), formContent);
+		using var req = await _client.PutAsJsonAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/world/server/storage"),
+			requestBody
+		);
 	}
 
-	private async Task LoadDatastore()
+	private static object? ParsePrimitiveJsonValue(JsonElement value)
 	{
-		using var req = await _client.GetAsync(Globals.ApiEndpoint.PathJoin("/v1/game/server/datastore/get-data?key=" + Uri.EscapeDataString(_dsKey)));
-		LoadDatastoreJSON(await req.Content.ReadAsStringAsync());
-	}
-
-	private void LoadDatastoreJSON(string jsonData)
-	{
-		using JsonDocument document = JsonDocument.Parse(jsonData);
-		JsonElement root = document.RootElement;
-
-		foreach (JsonProperty property in root.EnumerateObject())
+		switch (value.ValueKind)
 		{
-			DatastoreEntry dsEntry = new() { Timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() };
-			JsonElement val = property.Value;
-
-			switch (val.ValueKind)
-			{
-				case JsonValueKind.True:
-				case JsonValueKind.False:
-					dsEntry.Value = val.GetBoolean();
-					break;
-				case JsonValueKind.String:
-					dsEntry.Value = val.GetString() ?? "";
-					break;
-				case JsonValueKind.Number:
-					dsEntry.Value = val.GetDouble();
-					break;
-			}
-
-			_data[property.Name] = dsEntry;
+			case JsonValueKind.True:
+			case JsonValueKind.False:
+				return value.GetBoolean();
+			case JsonValueKind.String:
+				return value.GetString() ?? "";
+			case JsonValueKind.Number:
+				return value.GetDouble();
+			default:
+				return null;
 		}
 	}
 

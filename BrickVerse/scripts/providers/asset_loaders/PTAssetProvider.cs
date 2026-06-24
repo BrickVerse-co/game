@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Client.WebAPI;
 #if CREATOR
 using BrickVerse.Creator.Utils;
 #endif
@@ -16,25 +17,16 @@ namespace BrickVerse.Providers.AssetLoaders;
 
 public class PTAssetProvider : IAssetProvider
 {
-	private const string RootUrl = Globals.ApiEndpoint + "v1/assets/";
-	private const string ServeURL = RootUrl + "serve/";
-	private const string ServeMeshURL = RootUrl + "serve-mesh/";
-	private const string ServeAudioURL = RootUrl + "serve-audio/";
 	private readonly PTHttpClient _client = new();
 
 	public async Task<CacheItem> LoadResource(CacheItem item)
 	{
-#if CREATOR
-		_client.DefaultRequestHeaders["Authorization"] = PolyCreatorAPI.Token;
-#endif
+		ApplyAssetAuthHeaders();
 
 		string url = GetAssetServeURL(item.ID, item.Type);
-
-		ServeResponse response = await _client.GetFromJsonAsync(url, ServeResponseGenerationContext.Default.ServeResponse);
-		byte[] buffer = await _client.GetByteArrayAsync(response.Url);
+		byte[] buffer = await GetResourceBuffer(url, item.Type);
 		item.SizeBytes = buffer.LongLength;
-
-		item.DirectURL = response.Url;
+		item.DirectURL = url;
 
 		switch (item.Type)
 		{
@@ -68,9 +60,9 @@ public class PTAssetProvider : IAssetProvider
 
 					return item;
 				}
-			case ResourceType.Audio:
+			case ResourceType.Sound:
 				{
-					item.Resource = new AudioStreamMP3() { Data = buffer };
+					item.Resource = AudioStreamOggVorbis.LoadFromBuffer(buffer);
 
 					return item;
 				}
@@ -104,23 +96,93 @@ public class PTAssetProvider : IAssetProvider
 
 	public string GetAssetServeURL(uint id, ResourceType itemType)
 	{
-		string url = itemType switch
+		if (itemType is ResourceType.AssetThumbnail or ResourceType.PlaceThumbnail or ResourceType.PlaceIcon or ResourceType.GuildThumbnail or ResourceType.GuildBanner)
 		{
-			ResourceType.Mesh => ServeMeshURL + id,
-			ResourceType.Asset => ServeURL + id + "/asset",
-			ResourceType.Decal => ServeURL + id + "/decal",
-			ResourceType.Audio => ServeAudioURL + id,
-			ResourceType.AssetThumbnail => ServeURL + id + "/assetThumbnail",
-			ResourceType.PlaceThumbnail => ServeURL + id + "/placeThumbnail",
-			ResourceType.PlaceIcon => ServeURL + id + "/placeIcon",
-			ResourceType.UserThumbnail => ServeURL + id + "/userAvatar",
-			ResourceType.UserHeadshot => ServeURL + id + "/userAvatarHeadshot",
-			ResourceType.GuildThumbnail => ServeURL + id + "/guildIcon",
-			ResourceType.GuildBanner => ServeURL + id + "/guildBanner",
-			_ => throw new NotImplementedException()
-		};
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id);
+		}
 
-		return url;
+		if (itemType == ResourceType.UserThumbnail)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/bodyshot/" + id);
+		}
+
+		if (itemType == ResourceType.UserHeadshot)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/headshot/" + id);
+		}
+
+		// Runtime-specific DRM endpoints:
+		// Client build uses world client token, server build uses host token,
+		// creator/workshop uses user cookie with regular asset download.
+		if (Globals.IsServerBuild)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
+		}
+
+#if CREATOR
+		return Globals.ApiEndpoint.PathJoin("/v3/asset/" + id + "/download");
+#else
+		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
+#endif
+	}
+
+	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
+	{
+		if (itemType is ResourceType.Mesh or ResourceType.Sound or ResourceType.Asset or ResourceType.Decal)
+		{
+			return await _client.GetByteArrayAsync(url);
+		}
+
+		ThumbnailUrlResponse thumb = await _client.GetFromJsonAsync(url, PTAssetProviderGenerationContext.Default.ThumbnailUrlResponse)
+			?? throw new InvalidOperationException("Failed to resolve thumbnail URL");
+
+		if (string.IsNullOrWhiteSpace(thumb.Url))
+		{
+			throw new InvalidOperationException("Thumbnail URL is missing");
+		}
+
+		return await _client.GetByteArrayAsync(thumb.Url);
+	}
+
+	private void ApplyAssetAuthHeaders()
+	{
+		_client.DefaultRequestHeaders.Remove("Authorization");
+		_client.DefaultRequestHeaders.Remove("Cookie");
+
+		if (Globals.IsServerBuild)
+		{
+			string serverToken = PolyServerAPI.GetAuthorizationHeaderValue();
+			if (!string.IsNullOrWhiteSpace(serverToken))
+			{
+				_client.DefaultRequestHeaders["Authorization"] = serverToken;
+			}
+			return;
+		}
+
+#if CREATOR
+		if (!string.IsNullOrWhiteSpace(PolyCreatorAPI.Token))
+		{
+			string cookieToken = PolyCreatorAPI.Token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+				? PolyCreatorAPI.Token[7..]
+				: PolyCreatorAPI.Token;
+			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(cookieToken);
+		}
+#else
+		if (!string.IsNullOrWhiteSpace(PolyAuthAPI.Token))
+		{
+			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyAuthAPI.Token);
+		}
+#endif
+	}
+
+	private static string BuildBearerToken(string token)
+	{
+		if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+		{
+			return token;
+		}
+
+		return "Bearer " + token;
 	}
 
 	public void Dispose()
@@ -174,12 +236,11 @@ public class PTAssetProvider : IAssetProvider
 	}
 }
 
-internal struct ServeResponse
+internal struct ThumbnailUrlResponse
 {
 	[JsonPropertyName("url")]
 	public string Url { get; set; }
 }
 
-[JsonSerializable(typeof(ServeResponse))]
-[JsonSerializable(typeof(string))]
-internal partial class ServeResponseGenerationContext : JsonSerializerContext { }
+[JsonSerializable(typeof(ThumbnailUrlResponse))]
+internal partial class PTAssetProviderGenerationContext : JsonSerializerContext { }

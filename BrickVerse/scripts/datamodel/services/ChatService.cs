@@ -12,6 +12,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -241,19 +242,18 @@ public sealed partial class ChatService : Instance
 	{
 		if (Root.IsLocalTest) return;
 
-		Dictionary<string, string> form = new()
-		{
-			{ "userID", userId.ToString() },
-			{ "message", message }
-		};
-
-		FormUrlEncodedContent content = new(form);
-
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.AuthToken;
+		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
 
 		try
 		{
-			await _client.PostAsync(Globals.ApiEndpoint.PathJoin("/v1/game/server/log"), content);
+			await _client.PostAsJsonAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/world/server/chat/filter"),
+				new
+				{
+					userId = userId.ToString(),
+					message,
+				}
+			);
 		}
 		catch (Exception ex)
 		{

@@ -72,24 +72,33 @@ public static class PolyMobileAuthAPI
 
 	public static async Task LoginWithCodeAndState(string code, string state)
 	{
-		using HttpResponseMessage response = await _client.PostAsJsonAsync(Globals.ApiEndpoint.PathJoin("/v1/mobile/token"), new APIMobileTokenRequest()
+		if (string.IsNullOrWhiteSpace(code))
 		{
-			Code = code,
-			State = state
-		}, APIGenerationContext.Default.APIMobileTokenRequest);
-		if (response.IsSuccessStatusCode)
+			throw new AuthenticationException("Authentication code is required");
+		}
+
+		string escapedCode = Uri.EscapeDataString(code);
+		using HttpResponseMessage quickSignInResponse = await _client.PostAsJsonAsync(
+			Globals.ApiEndpoint.PathJoin($"/v3/auth/quick-signin/{escapedCode}/login"),
+			new { state }
+		);
+
+		if (quickSignInResponse.IsSuccessStatusCode)
 		{
-			APIMobileTokenResponse tokenRes = await response.Content.ReadFromJsonAsync(APIGenerationContext.Default.APIMobileTokenResponse);
-			if (tokenRes.Success)
+			using JsonDocument doc = JsonDocument.Parse(await quickSignInResponse.Content.ReadAsStringAsync());
+			if (doc.RootElement.TryGetProperty("token", out JsonElement tokenNode))
 			{
-				await LoginWithAuthToken(tokenRes.Token);
+				string? token = tokenNode.GetString();
+				if (!string.IsNullOrWhiteSpace(token))
+				{
+					await LoginWithAuthToken(token);
+					return;
+				}
 			}
 		}
-		else
-		{
-			PT.PrintErr(response);
-			throw new AuthenticationException("Something went wrong");
-		}
+
+		// Fallback: treat `code` as an already-issued auth token.
+		await LoginWithAuthToken(code);
 	}
 
 	public static async Task LoginWithAuthToken(string userToken)
