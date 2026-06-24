@@ -11,7 +11,6 @@ grow_vertical = 2
 size_flags_horizontal = 3
 step = 10.0
 value = 80.0
-SettingName = "SoundVolume"
 
 [node name="HBoxContainer" parent="." unique_id=653550658 instance=ExtResource("2_g03d3")]
 layout_mode = 1

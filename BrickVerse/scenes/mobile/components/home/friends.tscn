@@ -40,8 +40,6 @@ theme_override_constants/separation = 8
 
 [node name="PanelContainer" parent="ScrollContainer/HBoxContainer2" unique_id=2143015175 instance=ExtResource("1_vbbsq")]
 layout_mode = 2
-UserID = 7348
 
 [node name="PanelContainer2" parent="ScrollContainer/HBoxContainer2" unique_id=808249535 instance=ExtResource("1_vbbsq")]
 layout_mode = 2
-UserID = 31707

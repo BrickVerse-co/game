@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using BrickVerse.Shared.AssetLoaders;
-using DeepLinkAddon;
 
 namespace BrickVerse.Client;
 
@@ -59,7 +58,6 @@ public sealed partial class ClientEntry : Node3D
 
 	internal DebugAgent? DebugAgent { get; private set; }
 
-	private Deeplink? _deepLink;
 	private bool _authPromptShown = false;
 
 	public ClientEntry()
@@ -174,12 +172,6 @@ public sealed partial class ClientEntry : Node3D
 			PolyAuthAPI.AskForAuthentication += OnDesktopAskAuth;
 			PolyAuthAPI.UserAuthenticated += OnDesktopAuthenticated;
 			PolyAuthAPI.ShowQuickSignInCode += OnDesktopShowQuickCode;
-
-			_deepLink = new Deeplink();
-			AddChild(_deepLink, true);
-			_deepLink.DeeplinkReceived += OnDesktopDeeplinkReceived;
-			_deepLink.Initialize();
-
 			PolyAuthAPI.Setup();
 		}
 
@@ -603,25 +595,6 @@ public sealed partial class ClientEntry : Node3D
 	private void OnDesktopShowQuickCode(string code)
 	{
 		OS.Alert($"Quick Sign-In Code: {code}\n\nGo to brickverse.gg on another device, sign in, and enter this code.", "Quick Sign-In");
-	}
-
-	private async void OnDesktopDeeplinkReceived(DeeplinkURL url)
-	{
-		if (url.Host != "auth") return;
-
-		string token = url.Path.TrimStart('/');
-		if (string.IsNullOrWhiteSpace(token))
-		{
-			// fallback: try query param token=...
-			var q = System.Web.HttpUtility.ParseQueryString(url.Query ?? "");
-			token = q.Get("token") ?? "";
-		}
-
-		if (!string.IsNullOrWhiteSpace(token))
-		{
-			PT.Print("Received desktop auth token via deep link");
-			await PolyAuthAPI.LoginWithAuthToken(token);
-		}
 	}
 
 	public struct ClientEntryData

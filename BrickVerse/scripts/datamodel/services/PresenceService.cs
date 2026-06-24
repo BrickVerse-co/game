@@ -14,7 +14,7 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Presence"), ExplorerExclude, SaveIgnore]
 public sealed partial class PresenceService : Instance
 {
-	private const long DiscordAppID = 715468601540476959;
+	private const long DiscordAppID = 1500644112179789894;
 	private string? _state;
 	private PTImageAsset? _coverImage;
 	private ActivityManager? _activityManager;
@@ -185,13 +185,13 @@ public sealed partial class PresenceService : Instance
 		}
 
 		string defaultImg = "multiplayer";
-		string defaultSmallImg = "poly-sm";
+		string defaultSmallImg = "app";
 		string defaultSmallText = "BrickVerse";
 
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
 			defaultImg = "creating";
-			defaultSmallImg = "creator-sm";
+			defaultSmallImg = "workshop";
 			defaultSmallText = "BrickVerse Workshop";
 			largeText = "Tinkering";
 			details = "Creating world";

@@ -63,7 +63,7 @@ public partial class MobileUI : Control
 			StartSplash!.Visible = true;
 		}
 
-		PolyMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
+		//PolyMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		PolyMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
 
 		PolyMobileAuthAPI.SetupClient();
@@ -92,7 +92,7 @@ public partial class MobileUI : Control
 		SwitchTo(MobileViewEnum.Home);
 	}
 
-	private void OnUserAuthenticated(APIV3AuthMeUser me)
+	private void OnUserAuthenticated(APIMeResponse me)
 	{
 		HideStartupSplash();
 		if (NewUserSplash != null && IsInstanceValid(NewUserSplash))
@@ -118,7 +118,7 @@ public partial class MobileUI : Control
 
 	private async void OnDeeplinkReceived(DeeplinkURL url)
 	{
-		// Handle brickverse://auth link
+		// Handle polytoria://auth link
 		if (url.Host == "auth")
 		{
 			NameValueCollection authQuery = HttpUtility.ParseQueryString(url.Query);
