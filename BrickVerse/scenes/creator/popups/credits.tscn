@@ -6,7 +6,7 @@
 
 [node name="Credits" type="Window" unique_id=439088174 node_paths=PackedStringArray("_versionLabel")]
 oversampling_override = 1.0
-title = "About Polytoria"
+title = "About BrickVerse"
 initial_position = 2
 size = Vector2i(750, 450)
 transient = true
@@ -58,7 +58,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="MarginContainer/Control2/HBoxContainer/VBoxContainer2/VBoxContainer/HBoxContainer" unique_id=400227264]
 layout_mode = 2
-text = "Polytoria Creator"
+text = "BrickVerse Creator"
 
 [node name="Label2" type="Label" parent="MarginContainer/Control2/HBoxContainer/VBoxContainer2/VBoxContainer/HBoxContainer" unique_id=246040387]
 layout_mode = 2

@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Creator.UI.TextEditor;
+namespace BrickVerse.Creator.UI.TextEditor;
 
 public sealed partial class TextEditorField : CodeEdit
 {

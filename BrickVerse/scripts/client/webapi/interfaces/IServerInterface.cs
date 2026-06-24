@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Schemas.API;
+using BrickVerse.Schemas.API;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Client.WebAPI.Interfaces;
+namespace BrickVerse.Client.WebAPI.Interfaces;
 
 public interface IServerInterface
 {

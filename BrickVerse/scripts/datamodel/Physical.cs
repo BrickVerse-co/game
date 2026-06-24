@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Data;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Abstract]
 public partial class Physical : Dynamic

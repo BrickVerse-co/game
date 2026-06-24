@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI.Wizards;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 
-namespace Polytoria.Creator.UI.Splashes;
+namespace BrickVerse.Creator.UI.Splashes;
 
 public partial class StartupSplash : Control
 {

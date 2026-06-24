@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,9 +16,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 public class LuaMetatable : LuaObject
 {

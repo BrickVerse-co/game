@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using MemoryPack;
-using static Polytoria.Scripting.LogDispatcher;
+using static BrickVerse.Scripting.LogDispatcher;
 
-namespace Polytoria.Schemas.Debugger;
+namespace BrickVerse.Schemas.Debugger;
 
 [MemoryPackable]
 [MemoryPackUnion(0, typeof(MessageClientData))]

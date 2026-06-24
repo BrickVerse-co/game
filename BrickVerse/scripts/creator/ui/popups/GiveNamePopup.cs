@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel.Creator;
 using System;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class GiveNamePopup : PopupWindowBase
 {

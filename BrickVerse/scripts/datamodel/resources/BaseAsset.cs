@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Datamodel.Resources;
+namespace BrickVerse.Datamodel.Resources;
 
 [Abstract]
 public partial class BaseAsset : NetworkedObject

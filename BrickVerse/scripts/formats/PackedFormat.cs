@@ -4,19 +4,19 @@
 
 #if CREATOR
 using Godot;
-using Polytoria.Schemas.Progress;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Creator.Managers;
+using BrickVerse.Schemas.Progress;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Creator.Managers;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
-using static Polytoria.Creator.Managers.AddonsManager;
+using Script = BrickVerse.Datamodel.Script;
+using static BrickVerse.Creator.Managers.AddonsManager;
 #endif
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Data;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +25,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Formats;
+namespace BrickVerse.Formats;
 
 public static partial class PackedFormat
 {

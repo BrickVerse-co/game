@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 using System;
 using System.Linq;
 
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Client.Settings;
+namespace BrickVerse.Client.Settings;
 
 public static class GraphicsAutoDetector
 {

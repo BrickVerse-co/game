@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class StartupSplash : Control
 {

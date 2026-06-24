@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Client.Settings.Appliers;
+namespace BrickVerse.Client.Settings.Appliers;
 
 public sealed partial class DisplaySettingsApplier : Node
 {

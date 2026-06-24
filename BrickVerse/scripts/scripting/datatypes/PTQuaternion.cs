@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Utils;
 
-namespace Polytoria.Scripting.Datatypes;
+namespace BrickVerse.Scripting.Datatypes;
 
 // NOTE: Quaternion exposed to developers is in degrees
 public class PTQuaternion : IScriptGDObject

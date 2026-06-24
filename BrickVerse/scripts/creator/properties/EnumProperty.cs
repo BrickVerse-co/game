@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 using System;
 using System.Reflection;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class EnumProperty : OptionButton, IProperty<int>
 {

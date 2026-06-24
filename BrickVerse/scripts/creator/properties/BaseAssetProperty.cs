@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
 using System;
 using System.Reflection;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class BaseAssetProperty : Control, IProperty<BaseAsset?>
 {

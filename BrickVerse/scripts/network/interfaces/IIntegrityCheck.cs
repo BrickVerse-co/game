@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Networking.Interfaces;
+namespace BrickVerse.Networking.Interfaces;
 
 public interface IIntegrityCheck : IDisposable
 {

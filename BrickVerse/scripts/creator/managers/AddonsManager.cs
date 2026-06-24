@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Formats;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,11 +14,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using static Polytoria.Creator.Managers.AddonsManager;
-using static Polytoria.Datamodel.Creator.CreatorAddons;
-using Script = Polytoria.Datamodel.Script;
+using static BrickVerse.Creator.Managers.AddonsManager;
+using static BrickVerse.Datamodel.Creator.CreatorAddons;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Creator.Managers;
+namespace BrickVerse.Creator.Managers;
 
 public sealed partial class AddonsManager : Node
 {

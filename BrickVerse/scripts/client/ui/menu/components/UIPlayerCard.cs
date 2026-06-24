@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class UIPlayerCard : Node
 {
@@ -33,12 +33,12 @@ public partial class UIPlayerCard : Node
 
 	private void OnReport()
 	{
-		OS.ShellOpen("https://polytoria.com/report/user/" + TargetPlayer.UserID);
+		OS.ShellOpen("https://brickverse.gg/report?type=user&id=" + TargetPlayer.UserID);
 	}
 
 	private void OnProfile()
 	{
-		OS.ShellOpen("https://polytoria.com/users/" + TargetPlayer.UserID);
+		OS.ShellOpen("https://brickverse.gg/users/" + TargetPlayer.UserID);
 	}
 
 	public override void _ExitTree()

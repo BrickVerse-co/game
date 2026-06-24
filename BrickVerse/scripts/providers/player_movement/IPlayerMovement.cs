@@ -1,7 +1,7 @@
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 
-namespace Polytoria.Providers.PlayerMovement;
+namespace BrickVerse.Providers.PlayerMovement;
 
 public interface IPlayerMovement
 {

@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI.Splashes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Polytoria.Datamodel.Creator.CreatorAddons;
+using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public sealed partial class Menu : PanelContainer
 {
@@ -433,14 +433,14 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem() {
 					Text = "Open Documentation",
 					Pressed = () => {
-						OS.ShellOpen("https://v2docs.polytoria.com/");
+						OS.ShellOpen("https://developers.brickverse.gg/");
 					}
 				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem() {
 					Text = "Report a Bug",
 					Pressed = () => {
-						OS.ShellOpen("https://polytoria.com/forum/category/2");
+						OS.ShellOpen("https://brickverse.gg/forum");
 					}
 				},
 			]
@@ -692,7 +692,7 @@ public sealed partial class Menu : PanelContainer
 	{
 		switch (idx)
 		{
-			case 0: // About Polytoria
+			case 0: // About BrickVerse
 				{
 					CreatorService.Interface.PopupCredits();
 					break;

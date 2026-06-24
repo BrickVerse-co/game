@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using System;
 
-namespace Polytoria.Datamodel.Resources;
+namespace BrickVerse.Datamodel.Resources;
 
 /// <summary>
 /// Base class for asset that is based on Resource

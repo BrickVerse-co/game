@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
-using Polytoria.Shared.Misc;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Misc;
 
-namespace Polytoria.Client.Executor;
+namespace BrickVerse.Client.Executor;
 
 public partial class ExecutorUI : Window
 {

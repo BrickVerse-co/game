@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Utils;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public sealed partial class UIMenuOverview : UIMenuViewBase
 {
@@ -49,7 +49,7 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 	private void OnReport()
 	{
 		if (Menu.CoreUI.Root.IsLocalTest) return;
-		OS.ShellOpen("https://polytoria.com/report/place/" + Menu.CoreUI.Root.WorldID);
+		OS.ShellOpen("https://brickverse.gg/report?type=universe&id=" + Menu.CoreUI.Root.WorldID);
 	}
 
 	private void OnLeave()

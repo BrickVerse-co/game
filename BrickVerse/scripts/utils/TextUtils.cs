@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class TextUtils
 {

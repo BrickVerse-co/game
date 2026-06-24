@@ -5,7 +5,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Creator.Properties.Components;
+namespace BrickVerse.Creator.Properties.Components;
 
 public partial class NumberSeriesPoint : Control
 {

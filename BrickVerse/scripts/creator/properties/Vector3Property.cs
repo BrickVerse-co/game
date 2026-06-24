@@ -5,7 +5,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class Vector3Property : HBoxContainer, IProperty<Vector3>
 {

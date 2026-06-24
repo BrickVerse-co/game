@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Client.UI.Chat;
-using Polytoria.Networking;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Client.UI.Chat;
+using BrickVerse.Networking;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class VoiceBox : Part

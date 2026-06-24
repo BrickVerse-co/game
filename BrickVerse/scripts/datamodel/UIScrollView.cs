@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class UIScrollView : UIContainer

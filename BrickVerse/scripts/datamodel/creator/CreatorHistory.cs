@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel.Creator;
+namespace BrickVerse.Datamodel.Creator;
 
 [Static("History")]
 [ExplorerExclude]

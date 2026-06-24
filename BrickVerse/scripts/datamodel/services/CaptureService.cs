@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI;
-using Polytoria.Client.UI.Notification;
-using Polytoria.Providers.CapturePublish;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI;
+using BrickVerse.Client.UI.Notification;
+using BrickVerse.Providers.CapturePublish;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Capture")]
 public sealed partial class CaptureService : Instance
@@ -124,8 +124,8 @@ public sealed partial class CaptureService : Instance
 		if (CurrentPhoto == null) return;
 		DateTime time = DateTime.Now;
 		string formattedTime = time.ToString("yyyyMMdd-hhmmss");
-		string filename = "PolytoriaScreenshot-" + formattedTime + ".png";
-		string baseFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyPictures).PathJoin("Polytoria");
+		string filename = "BrickVerseScreenshot-" + formattedTime + ".png";
+		string baseFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyPictures).PathJoin("BrickVerse");
 		if (!DirAccess.DirExistsAbsolute(baseFolder))
 		{
 			DirAccess.MakeDirRecursiveAbsolute(baseFolder);

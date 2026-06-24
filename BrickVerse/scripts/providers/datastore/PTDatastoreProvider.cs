@@ -3,8 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.WebAPI;
-using Polytoria.Shared;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-namespace Polytoria.Providers.Datastore;
+namespace BrickVerse.Providers.Datastore;
 
 public class PTDatastoreProvider : IDatastoreProvider
 {

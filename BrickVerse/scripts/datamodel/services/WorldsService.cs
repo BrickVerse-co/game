@@ -3,17 +3,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client;
-using Polytoria.Datamodel.Data;
-using Polytoria.Networking;
-using Polytoria.Schemas.Debugger;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Client;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Networking;
+using BrickVerse.Schemas.Debugger;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Worlds")]
 [ExplorerExclude]

@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 
-namespace Polytoria.Client.UI.Playerlist;
+namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboardUserOptions : Control
 {
@@ -46,9 +46,7 @@ public partial class UILeaderboardUserOptions : Control
 	private void OnViewProfile()
 	{
 		if (Target == null) return;
-
-		// Open profile on Polytoria
-		OS.ShellOpen($"https://polytoria.com/u/{Target.TargetPlayer.Name}");
+		OS.ShellOpen($"https://brickverse.gg/@{Target.TargetPlayer.Name}");
 
 		Disappear();
 	}

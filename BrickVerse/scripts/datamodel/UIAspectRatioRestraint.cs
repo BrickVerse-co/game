@@ -1,6 +1,6 @@
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class UIAspectRatioRestraint : Instance

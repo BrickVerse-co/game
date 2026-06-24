@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 #if CREATOR
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel.Creator;
 #endif
-using Polytoria.Datamodel.Data;
-using Polytoria.Scripting;
-using Polytoria.Scripting.Datatypes;
-using Polytoria.Scripting.Luau;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Scripting;
+using BrickVerse.Scripting.Datatypes;
+using BrickVerse.Scripting.Luau;
+using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("ScriptService")]
 public sealed partial class ScriptService : Instance

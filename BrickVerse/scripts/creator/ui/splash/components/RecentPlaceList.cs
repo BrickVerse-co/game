@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Managers;
-using Polytoria.Shared;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Shared;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.UI.Splashes.Components;
+namespace BrickVerse.Creator.UI.Splashes.Components;
 
 public partial class RecentPlaceList : Control
 {

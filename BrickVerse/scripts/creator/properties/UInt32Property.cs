@@ -5,7 +5,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class UInt32Property : SpinBox, IProperty<uint>
 {

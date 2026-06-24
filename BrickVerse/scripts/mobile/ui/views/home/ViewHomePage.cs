@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Mobile.Utils;
-using Polytoria.Schemas.API;
+using BrickVerse.Mobile.Utils;
+using BrickVerse.Schemas.API;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class ViewHomePage : MobileViewBase
 {
 	//private Label _usernameLabel = null!;
-	//private PolytorianModel _polytorian = null!;
+	//private BrickversianModal _polytorian = null!;
 
 	public override void _EnterTree()
 	{

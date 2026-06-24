@@ -4,9 +4,9 @@
 
 using Godot;
 using System;
-using ColorPicker = Polytoria.Creator.UI.ColorPicker;
+using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
-namespace Polytoria.Creator.Properties.Components;
+namespace BrickVerse.Creator.Properties.Components;
 
 public partial class ColorSeriesPoint : Control
 {

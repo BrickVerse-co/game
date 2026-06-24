@@ -4,9 +4,9 @@
 
 using System;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 public interface IScriptLanguageProvider : IDisposable
 {

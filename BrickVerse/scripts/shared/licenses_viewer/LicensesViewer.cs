@@ -5,7 +5,7 @@
 using Godot;
 using System.Collections.Generic;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public partial class LicensesViewer : Node
 {

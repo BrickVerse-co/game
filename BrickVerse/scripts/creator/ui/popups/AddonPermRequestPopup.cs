@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Formats;
+using BrickVerse.Formats;
 using System;
 using System.Collections.Generic;
-using static Polytoria.Datamodel.Creator.CreatorAddons;
+using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class AddonPermRequestPopup : PopupWindowBase
 {

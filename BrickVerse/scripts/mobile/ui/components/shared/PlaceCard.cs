@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class PlaceCard : Button
 {

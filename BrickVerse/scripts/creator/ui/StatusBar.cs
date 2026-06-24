@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class StatusBar : Control
 {
@@ -16,7 +16,7 @@ public partial class StatusBar : Control
 	public override void _Ready()
 	{
 		CreatorService.Interface.StatusBar = this;
-		_versionLabel.Text = $"Polytoria Creator {Globals.AppVersion}";
+		_versionLabel.Text = $"BrickVerse Creator {Globals.AppVersion}";
 		base._Ready();
 	}
 

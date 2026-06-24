@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using MemoryPack;
-using Polytoria.Datamodel.Data;
+using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Utils.DTOs;
+namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class NumberRangeDto

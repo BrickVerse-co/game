@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.Splashes;
 
-namespace Polytoria.Creator.UI.Wizards;
+namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class IntroductionWizard : Control
 {

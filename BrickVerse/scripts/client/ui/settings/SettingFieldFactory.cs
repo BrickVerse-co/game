@@ -1,7 +1,7 @@
 using Godot;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public static class SettingFieldFactory
 {

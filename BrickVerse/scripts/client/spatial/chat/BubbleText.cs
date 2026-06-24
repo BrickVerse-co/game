@@ -4,11 +4,11 @@
 
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class BubbleText : Node3D
 {

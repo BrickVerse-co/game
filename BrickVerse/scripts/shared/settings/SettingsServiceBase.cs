@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public abstract partial class SettingsServiceBase : Node, ISettingsContext
 {

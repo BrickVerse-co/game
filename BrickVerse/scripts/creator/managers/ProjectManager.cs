@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Services;
-using Polytoria.Formats;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,16 +17,16 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using static Polytoria.Creator.Managers.ProjectManager;
-using Script = Polytoria.Datamodel.Script;
+using static BrickVerse.Creator.Managers.ProjectManager;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Creator.Managers;
+namespace BrickVerse.Creator.Managers;
 
 public static class ProjectManager
 {
 	private const string RecentsPath = "user://creator/recents";
 	private const string ProjectTemplatesPath = "res://modules/creator/world-templates/";
-	private const string GitIgnoreContent = "# Polytoria specific ignores\n.poly/\n";
+	private const string GitIgnoreContent = "# BrickVerse specific ignores\n.poly/\n";
 
 	public static async Task<RecentData[]> GetRecents(bool loadData = true)
 	{

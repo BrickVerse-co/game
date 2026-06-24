@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Enums;
-using Polytoria.Scripting;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Enums;
+using BrickVerse.Scripting;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class Mesh : Entity

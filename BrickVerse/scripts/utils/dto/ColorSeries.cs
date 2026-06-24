@@ -4,12 +4,12 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Datamodel.Data;
+using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Utils.DTOs;
+namespace BrickVerse.Utils.DTOs;
 
 
 [MemoryPackable]

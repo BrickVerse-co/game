@@ -1,7 +1,7 @@
 using Godot;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Client.Settings.Appliers;
+namespace BrickVerse.Client.Settings.Appliers;
 
 public sealed partial class AudioSettingsApplier : Node
 {

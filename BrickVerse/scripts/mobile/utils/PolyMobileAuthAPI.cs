@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -14,7 +14,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Polytoria.Mobile.Utils;
+namespace BrickVerse.Mobile.Utils;
 
 public static class PolyMobileAuthAPI
 {

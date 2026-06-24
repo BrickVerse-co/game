@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
+using BrickVerse.Datamodel.Data;
 using System;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class NumberRangeProperty : Control, IProperty<NumberRange>
 {

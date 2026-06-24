@@ -3,22 +3,22 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI;
-using Polytoria.Client.UI.Purchases;
-using Polytoria.Client.WebAPI;
-using Polytoria.Networking;
-using Polytoria.Schemas.API;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI;
+using BrickVerse.Client.UI.Purchases;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Networking;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Purchases"), ExplorerExclude, SaveIgnore]
 public sealed partial class PurchasesService : Instance

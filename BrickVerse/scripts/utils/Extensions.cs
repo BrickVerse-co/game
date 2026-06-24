@@ -8,7 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.IO;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class Node3DExtension
 {

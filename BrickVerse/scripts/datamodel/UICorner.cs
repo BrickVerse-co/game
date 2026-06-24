@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Data;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
 using System;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class UICorner : Instance

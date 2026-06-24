@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Clothing : Instance
 {
 	private ImageAsset? _asset;
-	private PolytorianModel? _target;
+	private BrickversianModal? _target;
 
 	internal Texture2D? ClothTexture;
 
@@ -63,7 +63,7 @@ public partial class Clothing : Instance
 	public override void EnterTree()
 	{
 		base.EnterTree();
-		if (Parent is PolytorianModel c)
+		if (Parent is BrickversianModal c)
 		{
 			_target = c;
 			NotifyCharacter();

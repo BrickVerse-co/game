@@ -3,19 +3,19 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI;
-using Polytoria.Creator.Utils;
-using Polytoria.Creator.Settings;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Formats;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Creator.UI;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Formats;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.Managers;
+namespace BrickVerse.Creator.Managers;
 
 public static class PublishManager
 {

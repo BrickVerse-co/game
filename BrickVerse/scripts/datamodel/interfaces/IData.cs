@@ -4,7 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Polytoria.Datamodel.Interfaces;
+namespace BrickVerse.Datamodel.Interfaces;
 
 /// <summary>
 /// IData, interface for data class to implement

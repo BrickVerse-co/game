@@ -1,6 +1,6 @@
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 
-namespace Polytoria.Enums;
+namespace BrickVerse.Enums;
 
 [ScriptEnum]
 public enum SoundAttenuationModeEnum

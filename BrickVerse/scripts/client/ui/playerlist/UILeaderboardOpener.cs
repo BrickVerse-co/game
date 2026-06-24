@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Client.UI.Playerlist;
+namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboardOpener : Control
 {

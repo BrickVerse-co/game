@@ -3,17 +3,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Schemas.Debugger;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Schemas.Debugger;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.Debugger;
+namespace BrickVerse.Creator.Debugger;
 
 public class DebugServer
 {

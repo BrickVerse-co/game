@@ -6,7 +6,7 @@ using Godot;
 using System;
 using System.Text.RegularExpressions;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class StringProperty : LineEdit, IProperty<string>
 {

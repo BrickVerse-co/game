@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 
-namespace Polytoria.Client;
+namespace BrickVerse.Client;
 
 public partial class Nametag : Node3D
 {

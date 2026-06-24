@@ -4,12 +4,12 @@
 
 using Godot;
 #if CREATOR
-using Polytoria.Creator.Properties;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Creator.Properties;
+using BrickVerse.Datamodel.Creator;
 using System.IO;
 #endif
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -21,12 +21,12 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Metadata;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public sealed partial class Globals : Node
 {
-	public const string MainEndpoint = "https://polytoria.com/";
-	public const string ApiEndpoint = "https://api.polytoria.com/";
+	public const string MainEndpoint = "https://BrickVerse.com/";
+	public const string ApiEndpoint = "https://api.BrickVerse.com/";
 	public const float AlphaThreshold = 0.025f;
 
 	public const string ToolboxFolderName = "toolbox";
@@ -160,8 +160,8 @@ public sealed partial class Globals : Node
 		AppVersion += "+dev";
 #endif
 
-		PT.Print($"Polytoria v{AppVersion}");
-		PT.Print("https://polytoria.com/");
+		PT.Print($"BrickVerse v{AppVersion}");
+		PT.Print("https://BrickVerse.com/");
 		PT.Print("-- System Info --");
 		PT.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
 		PT.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
@@ -171,10 +171,10 @@ public sealed partial class Globals : Node
 		GetTree().AutoAcceptQuit = false;
 		GetTree().QuitOnGoBack = false;
 
-		// Link with Polytoria's Private API Components
+		// Link with BrickVerse's Private API Components
 		// NOTE: If you wanted to implement your own, search for "MissingComponentException" to see which part requires it.
 #if PT_PRIVATE_API
-		Polytoria.Private.PrivateNode pv = new();
+		BrickVerse.Private.PrivateNode pv = new();
 		AddChild(pv);
 #endif
 
@@ -237,10 +237,10 @@ public sealed partial class Globals : Node
 
 		string[] namespacesToCheck =
 		[
-			"Polytoria.Datamodel.",
-		"Polytoria.Datamodel.Services.",
-		"Polytoria.Datamodel.Creator.",
-		"Polytoria.Datamodel.Resources.",
+			"BrickVerse.Datamodel.",
+		"BrickVerse.Datamodel.Services.",
+		"BrickVerse.Datamodel.Creator.",
+		"BrickVerse.Datamodel.Resources.",
 	];
 
 		foreach (string ns in namespacesToCheck)

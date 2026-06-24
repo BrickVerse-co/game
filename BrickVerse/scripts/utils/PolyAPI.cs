@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class PolyAPI
 {

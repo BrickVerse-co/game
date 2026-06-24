@@ -4,14 +4,14 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Networking;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Networking;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Animator : Instance

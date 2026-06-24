@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel.Resources;
+namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
 public partial class BuiltInAudioAsset : AudioAsset

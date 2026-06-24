@@ -5,7 +5,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 static class DelegateExtensions
 {

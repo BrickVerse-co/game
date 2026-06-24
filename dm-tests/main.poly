@@ -575,7 +575,7 @@
                   "Children": [
                     {
                       "Name": "Character",
-                      "ClassName": "PolytorianModel",
+                      "ClassName": "BrickversianModal",
                       "ID": "c4f96fd9-aba4-4141-80e8-f4bb0086646d",
                       "Properties": {
                         "HeadColor": "ffffffff",

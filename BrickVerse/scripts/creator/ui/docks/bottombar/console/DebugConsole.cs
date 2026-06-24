@@ -7,9 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Polytoria.Scripting.LogDispatcher;
+using static BrickVerse.Scripting.LogDispatcher;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class DebugConsole : Control
 {

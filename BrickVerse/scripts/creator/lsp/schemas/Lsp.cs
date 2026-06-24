@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Creator.LSP.Schemas;
+namespace BrickVerse.Creator.LSP.Schemas;
 
 public class LspRequest
 {

@@ -3,7 +3,7 @@ local tests: Folder = script.Parent.Tests
 local successfulTests = 0
 local failedTests = 0
 
-print("=== Polytoria Datamodel Tests ===")
+print("=== BrickVerse Datamodel Tests ===")
 
 function RunTest(s)
 	local startTime = os.clock()

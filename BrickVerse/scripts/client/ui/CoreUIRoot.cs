@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.UI.Capture;
-using Polytoria.Client.UI.Chat;
-using Polytoria.Client.UI.Playerlist;
-using Polytoria.Client.UI.Purchases;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
+using BrickVerse.Client.UI.Capture;
+using BrickVerse.Client.UI.Chat;
+using BrickVerse.Client.UI.Playerlist;
+using BrickVerse.Client.UI.Purchases;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
 
 #if DEBUG && !EXPORTDEBUG
-using Polytoria.Shared;
+using BrickVerse.Shared;
 #endif
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class CoreUIRoot : CanvasLayer
 {

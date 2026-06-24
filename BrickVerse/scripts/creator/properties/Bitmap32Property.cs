@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
-using Polytoria.Utils;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Utils;
 using System;
 using System.Reflection.Metadata;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class Bitmap32Property : FoldableContainer, IProperty<uint>
 {

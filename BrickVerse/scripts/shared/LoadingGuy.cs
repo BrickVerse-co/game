@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public partial class LoadingGuy : Control
 {
-	private PolytorianModel _pt = null!;
+	private BrickversianModal _pt = null!;
 
 	public override void _Ready()
 	{

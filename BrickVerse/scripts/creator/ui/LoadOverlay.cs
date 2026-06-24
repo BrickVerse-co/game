@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Schemas.Progress;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Schemas.Progress;
 using System;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class LoadOverlay : Control
 {

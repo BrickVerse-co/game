@@ -4,18 +4,18 @@
 
 using DeepLinkAddon;
 using Godot;
-using Polytoria.Client;
-using Polytoria.Mobile.UI;
-using Polytoria.Mobile.Utils;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Client;
+using BrickVerse.Mobile.UI;
+using BrickVerse.Mobile.Utils;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Web;
 
-namespace Polytoria.Mobile;
+namespace BrickVerse.Mobile;
 
 public partial class MobileUI : Control
 {
@@ -118,7 +118,7 @@ public partial class MobileUI : Control
 
 	private async void OnDeeplinkReceived(DeeplinkURL url)
 	{
-		// Handle polytoria://auth link
+		// Handle brickverse://auth link
 		if (url.Host == "auth")
 		{
 			NameValueCollection authQuery = HttpUtility.ParseQueryString(url.Query);

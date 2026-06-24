@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Creator.Properties;
-using Polytoria.Creator.UI.Misc;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Properties;
+using BrickVerse.Creator.UI.Misc;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public sealed partial class Properties : TabContainer
 {
@@ -110,7 +110,7 @@ public sealed partial class Properties : TabContainer
 
 		HashSet<Type> commonTypes = [];
 		Type? type = instances[0].GetType();
-		while (type != null && type.Namespace == "Polytoria.Datamodel")
+		while (type != null && type.Namespace == "BrickVerse.Datamodel")
 		{
 			commonTypes.Add(type);
 			type = type.BaseType;
@@ -120,7 +120,7 @@ public sealed partial class Properties : TabContainer
 		{
 			HashSet<Type> instanceTypes = [];
 			Type? t = instances[i].GetType();
-			while (t != null && t.Namespace == "Polytoria.Datamodel")
+			while (t != null && t.Namespace == "BrickVerse.Datamodel")
 			{
 				instanceTypes.Add(t);
 				t = t.BaseType;
@@ -255,7 +255,7 @@ public sealed partial class Properties : TabContainer
 			};
 		}
 
-		if (multiple == null && type.BaseType?.Namespace == "Polytoria.Datamodel")
+		if (multiple == null && type.BaseType?.Namespace == "BrickVerse.Datamodel")
 		{
 			WalkProperties(list, instance, type.BaseType);
 		}

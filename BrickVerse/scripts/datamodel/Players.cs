@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Services;
-using Polytoria.Networking;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Static("Players")]
 public sealed partial class Players : Instance

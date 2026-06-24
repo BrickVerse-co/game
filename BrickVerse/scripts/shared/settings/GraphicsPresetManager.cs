@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Collections.Generic;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public static class GraphicsPresetManager
 {

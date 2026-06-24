@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public interface IProperty
 {

@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Client.WebAPI.Interfaces;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System.Threading.Tasks;
 
-namespace Polytoria.Client.WebAPI;
+namespace BrickVerse.Client.WebAPI;
 
 public static class PolyAuthAPI
 {

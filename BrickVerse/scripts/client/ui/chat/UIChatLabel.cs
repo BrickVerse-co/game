@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class UIChatLabel : RichTextLabel
 {

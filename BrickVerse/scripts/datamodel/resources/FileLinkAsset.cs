@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
 
-namespace Polytoria.Datamodel.Resources;
+namespace BrickVerse.Datamodel.Resources;
 
 /// <summary>
 /// Base class for asset that link to files

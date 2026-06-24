@@ -3,23 +3,23 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI.Chat;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI.Chat;
 #if CREATOR
 #endif
-using Polytoria.Datamodel.Services;
-using Polytoria.Schemas.API;
-using Polytoria.Scripting;
-using Polytoria.Networking;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Networking;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Polytoria.Providers.PlayerMovement;
+using BrickVerse.Providers.PlayerMovement;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [ExplorerExclude]
 public sealed partial class Player : NPC
@@ -619,7 +619,7 @@ public sealed partial class Player : NPC
 
 		if (Root.SessionType != World.SessionTypeEnum.Client || !IsLocal || !IsReady) { return; }
 
-		if (Character is PolytorianModel pt && pt.Ragdolling)
+		if (Character is BrickversianModal pt && pt.Ragdolling)
 		{
 			// ragdoll camera update
 			UpdateCamera(delta);
@@ -666,7 +666,7 @@ public sealed partial class Player : NPC
 		if (Anchored)
 		{
 			// just in case it's anchored cuz ragdoll
-			if (Character is PolytorianModel pt2 && pt2.Ragdolling == false)
+			if (Character is BrickversianModal pt2 && pt2.Ragdolling == false)
 			{
 				UpdateCamera(delta);
 			}
@@ -835,7 +835,7 @@ public sealed partial class Player : NPC
 		// Disable auto update, this will be updated manually
 		AutoUpdateNetTransform = false;
 
-		if (Character is PolytorianModel ptc)
+		if (Character is BrickversianModal ptc)
 		{
 			ptc.RagdollStarted.Connect(OnRagdollStarted);
 			ptc.RagdollStopped.Connect(OnRagdollStopped);
@@ -1023,7 +1023,7 @@ public sealed partial class Player : NPC
 		AutoLoadAppearance = Root.PlayerDefaults.AutoLoadAppearance;
 		MovementMode = Root.PlayerDefaults.MovementMode;
 
-		if (Character is PolytorianModel ptmodel)
+		if (Character is BrickversianModal ptmodel)
 		{
 			ptmodel.StopRagdoll();
 		}

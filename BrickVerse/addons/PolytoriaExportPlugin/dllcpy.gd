@@ -1,6 +1,6 @@
 @tool
 extends EditorExportPlugin
-class_name PolytoriaDllCpyExportPlugin
+class_name BrickVerseDllCpyExportPlugin
 
 ## DLLCPY, Dll Copy. Used as a workaround for dll imports AOT bug
 

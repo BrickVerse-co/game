@@ -3,28 +3,28 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client;
+using BrickVerse.Attributes;
+using BrickVerse.Client;
 #if CREATOR
-using Polytoria.Creator;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Creator.UI;
+using BrickVerse.Creator;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Creator.UI;
 #endif
-using Polytoria.Datamodel.Services;
-using Polytoria.Schemas.API;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
-using Polytoria.Networking;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Networking;
+using BrickVerse.Shared.AssetLoaders;
 using System.Collections.Concurrent;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Static("world")]
 public sealed partial class World : Instance
@@ -158,7 +158,7 @@ public sealed partial class World : Instance
 			// Set window title
 			if (value != null && value.LinkedSession != null)
 			{
-				DisplayServer.WindowSetTitle($"{value.LinkedSession.Metadata.ProjectName} - Polytoria Creator v{Globals.AppVersion}");
+				DisplayServer.WindowSetTitle($"{value.LinkedSession.Metadata.ProjectName} - BrickVerse Creator v{Globals.AppVersion}");
 				CreatorService.CurrentSession = value.LinkedSession;
 			}
 #endif
@@ -510,7 +510,7 @@ public sealed partial class World : Instance
 		if (WorldInfo.HasValue)
 		{
 			// Set Window title to game name
-			DisplayServer.WindowSetTitle($"{TitleEllipsis(WorldInfo.Value.Name, 50)} - Polytoria v{Globals.AppVersion}");
+			DisplayServer.WindowSetTitle($"{TitleEllipsis(WorldInfo.Value.Name, 50)} - BrickVerse v{Globals.AppVersion}");
 
 			WorldInfoReady?.Invoke(WorldInfo.Value);
 		}

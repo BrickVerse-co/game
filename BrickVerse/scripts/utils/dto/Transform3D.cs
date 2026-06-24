@@ -6,7 +6,7 @@ using Godot;
 using MemoryPack;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Utils.DTOs;
+namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class Transform3DDto

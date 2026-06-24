@@ -5,7 +5,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 [Flags]
 [JsonConverter(typeof(JsonStringEnumConverter<ScriptPermissionFlags>))]

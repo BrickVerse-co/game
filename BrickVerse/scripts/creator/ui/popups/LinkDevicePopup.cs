@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 using QRCoder;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class LinkDevicePopup : PopupWindowBase
 {

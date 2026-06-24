@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 
-namespace Polytoria.Client.UI.Touch;
+namespace BrickVerse.Client.UI.Touch;
 
 public partial class JumpButton : Control
 {

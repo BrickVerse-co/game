@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Scripting.Luau;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting.Luau;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 public class PTCallback(Action<object?[]> target) : IDisposable, IScriptObject
 {

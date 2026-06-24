@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 
-namespace Polytoria.Creator.Spatial;
+namespace BrickVerse.Creator.Spatial;
 
 public partial class SpatialIcon : Sprite3D, ISpatial
 {

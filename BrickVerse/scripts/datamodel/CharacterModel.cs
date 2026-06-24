@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Services;
-using Polytoria.Networking;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class CharacterModel : Dynamic

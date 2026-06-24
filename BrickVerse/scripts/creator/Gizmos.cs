@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Spatial;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Utils;
+using BrickVerse.Creator.Spatial;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public sealed partial class Gizmos : Node
 {

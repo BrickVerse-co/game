@@ -6,7 +6,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 public delegate int LuaContinuation(IntPtr L, int status);

@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using static Polytoria.Datamodel.CharacterModel;
+using BrickVerse.Datamodel;
+using static BrickVerse.Datamodel.CharacterModel;
 
-namespace Polytoria.Shared.Misc;
+namespace BrickVerse.Shared.Misc;
 
 /// <summary>
 /// Class for bridging CharacterModel's state with Godot's

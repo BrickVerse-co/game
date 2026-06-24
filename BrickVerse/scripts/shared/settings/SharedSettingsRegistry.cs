@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public static class SharedSettingsRegistry
 {

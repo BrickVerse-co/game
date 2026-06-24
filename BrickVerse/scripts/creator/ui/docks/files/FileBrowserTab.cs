@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class FileBrowserTab : Control
 {
@@ -164,7 +164,7 @@ public partial class FileBrowserTab : Control
 
 		if (relativePath == Globals.ProjectMetaFileName)
 		{
-			iconPath = "polytoria";
+			iconPath = "brickverse";
 		}
 		if (relativePath == Globals.ProjectInputMapName)
 		{

@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 using System.Diagnostics;
 using System.IO;
 
-namespace Polytoria.Renderer;
+namespace BrickVerse.Renderer;
 
 public partial class RendererEntry : AppEntry
 {

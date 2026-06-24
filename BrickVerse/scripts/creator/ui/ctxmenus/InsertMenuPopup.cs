@@ -3,17 +3,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class InsertMenuPopup : PopupPanel
 {

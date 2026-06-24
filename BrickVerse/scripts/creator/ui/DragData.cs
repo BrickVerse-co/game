@@ -4,11 +4,11 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Datamodel;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 [MemoryPackable]
 [MemoryPackUnion(0, typeof(InstanceDragData))]

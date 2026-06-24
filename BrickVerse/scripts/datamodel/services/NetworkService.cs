@@ -4,20 +4,20 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Client;
-using Polytoria.Client.Networking;
-using Polytoria.Client.WebAPI;
-using Polytoria.Client.WebAPI.Interfaces;
-using Polytoria.Datamodel.Data;
-using Polytoria.Networking;
-using Polytoria.Networking.Interfaces;
-using Polytoria.Networking.RateLimiters;
-using Polytoria.Networking.Synchronizers;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Attributes;
+using BrickVerse.Client;
+using BrickVerse.Client.Networking;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Networking;
+using BrickVerse.Networking.Interfaces;
+using BrickVerse.Networking.RateLimiters;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -30,7 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [ExplorerExclude, SaveIgnore, Internal]
 public sealed partial class NetworkService : Instance
@@ -46,7 +46,7 @@ public sealed partial class NetworkService : Instance
 	// TODO: Narrow this down
 	private const int MaxBroadcastPacketPerSec = 100;
 
-	public const string TerminationMessage = "Your Polytoria account has been terminated, please visit the website for more info.";
+	public const string TerminationMessage = "Your BrickVerse account has been terminated, please visit the website for more info.";
 	public const string AuthFailureMessage = "Authentication failure, Please try again.";
 	public const string IntegrityFailureMessage = "Integrity failure, please update your client.";
 	public const string NetworkModeMismatchMessage = "Network mode mismatch.";
@@ -379,7 +379,7 @@ public sealed partial class NetworkService : Instance
 
 		if (Globals.IsInGDEditor)
 		{
-			DisplayServer.WindowSetTitle("Polytoria - Server");
+			DisplayServer.WindowSetTitle("BrickVerse - Server");
 		}
 
 		if (IsProd)
@@ -762,7 +762,7 @@ public sealed partial class NetworkService : Instance
 
 	private void OnServerStarted()
 	{
-		PT.Print("Polytoria Server Started");
+		PT.Print("BrickVerse Server Started");
 		if (IsProd)
 		{
 			_ = PolyServerAPI.LogServerEvent(ServerEventType.ServerStarted);
@@ -781,7 +781,7 @@ public sealed partial class NetworkService : Instance
 
 	private static void OnSessionStarted()
 	{
-		PT.Print("Polytoria Network session started");
+		PT.Print("BrickVerse Network session started");
 	}
 
 	public static async Task<APIValidateResponse> AuthenticatePlayer(string token)
@@ -875,7 +875,7 @@ public sealed partial class NetworkService : Instance
 	{
 		if (Globals.IsInGDEditor)
 		{
-			DisplayServer.WindowSetTitle($"Polytoria - Client [{LocalPeerID}]");
+			DisplayServer.WindowSetTitle($"BrickVerse - Client [{LocalPeerID}]");
 		}
 
 		Rpc(nameof(NetPlayerReportReady));

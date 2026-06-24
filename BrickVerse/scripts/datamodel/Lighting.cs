@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.Settings;
-using Polytoria.Shared.Settings;
+using BrickVerse.Attributes;
+using BrickVerse.Client.Settings;
+using BrickVerse.Shared.Settings;
 
 #if CREATOR
-using Polytoria.Creator;
-using Polytoria.Creator.Settings;
+using BrickVerse.Creator;
+using BrickVerse.Creator.Settings;
 #endif
-using Polytoria.Shared;
-using ObsoleteAttribute = Polytoria.Attributes.ObsoleteAttribute;
+using BrickVerse.Shared;
+using ObsoleteAttribute = BrickVerse.Attributes.ObsoleteAttribute;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Static("Lighting")]
 public sealed partial class Lighting : Instance

@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Scripting.Libraries;
+namespace BrickVerse.Scripting.Libraries;
 
 public class LuaLibJSON : IScriptObject
 {

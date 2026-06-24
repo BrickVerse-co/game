@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Services;
-using Polytoria.Enums;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Enums;
+using BrickVerse.Scripting;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 public class InputButtonCollection : IEnumerable, IScriptObject
 {

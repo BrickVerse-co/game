@@ -1,4 +1,4 @@
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public class SettingSectionDef
 {

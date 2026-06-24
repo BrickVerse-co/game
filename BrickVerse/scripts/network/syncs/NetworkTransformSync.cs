@@ -4,18 +4,18 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Networking;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.Compression;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.Compression;
+using BrickVerse.Utils.DTOs;
 using System.Collections.Generic;
-using static Polytoria.Datamodel.Services.NetworkService;
+using static BrickVerse.Datamodel.Services.NetworkService;
 
-namespace Polytoria.Client.Networking;
+namespace BrickVerse.Client.Networking;
 
 [Internal]
 public partial class NetworkTransformSync : Instance

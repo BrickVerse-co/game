@@ -3,17 +3,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Enums;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Enums;
 using System;
 
 #if CREATOR
-using Polytoria.Creator.Spatial;
+using BrickVerse.Creator.Spatial;
 #endif
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class Particles : Dynamic

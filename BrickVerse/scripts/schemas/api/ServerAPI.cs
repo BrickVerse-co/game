@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Schemas.API;
+namespace BrickVerse.Schemas.API;
 
 public struct APIHeartbeatResponse
 {

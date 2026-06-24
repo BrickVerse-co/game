@@ -3,17 +3,17 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Datamodel.Services;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Datamodel.Services;
 #if DEBUG
-using Polytoria.DatamodelTest;
+using BrickVerse.DatamodelTest;
 #endif
-using Polytoria.Enums;
-using Polytoria.Scripting.Extensions;
-using Polytoria.Scripting.Libraries;
-using Polytoria.Shared;
+using BrickVerse.Enums;
+using BrickVerse.Scripting.Extensions;
+using BrickVerse.Scripting.Libraries;
+using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -25,9 +25,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 public sealed partial class LuauProvider : IScriptLanguageProvider
 {

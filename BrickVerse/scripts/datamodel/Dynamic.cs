@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 #if CREATOR
-using Polytoria.Creator.UI;
-using Polytoria.Creator.Spatial;
-using Polytoria.Datamodel.Interfaces;
+using BrickVerse.Creator.UI;
+using BrickVerse.Creator.Spatial;
+using BrickVerse.Datamodel.Interfaces;
 #endif
-using Polytoria.Utils;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Dynamic : Instance
@@ -425,7 +425,7 @@ public partial class Dynamic : Instance
 
 		Vector3 lookTarget = pos;
 
-		// Godot's LookAt points at -Z, Polytoria uses +Z as forward
+		// Godot's LookAt points at -Z, BrickVerse uses +Z as forward
 		if (this is not Camera)
 		{
 			Vector3 origin = GDNode3D.GlobalPosition;

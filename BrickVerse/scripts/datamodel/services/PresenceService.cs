@@ -4,12 +4,12 @@
 
 using Discord;
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
 using System;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Presence"), ExplorerExclude, SaveIgnore]
 public sealed partial class PresenceService : Instance
@@ -186,13 +186,13 @@ public sealed partial class PresenceService : Instance
 
 		string defaultImg = "multiplayer";
 		string defaultSmallImg = "poly-sm";
-		string defaultSmallText = "Polytoria";
+		string defaultSmallText = "BrickVerse";
 
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
 			defaultImg = "creating";
 			defaultSmallImg = "creator-sm";
-			defaultSmallText = "Polytoria Creator";
+			defaultSmallText = "BrickVerse Workshop";
 			largeText = "Tinkering";
 			details = "Creating world";
 		}

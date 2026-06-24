@@ -4,13 +4,13 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,9 +18,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static Polytoria.Datamodel.Services.NetworkService;
+using static BrickVerse.Datamodel.Services.NetworkService;
 
-namespace Polytoria.Networking.Synchronizers;
+namespace BrickVerse.Networking.Synchronizers;
 
 [Internal]
 public sealed partial class NetworkPropSync : Instance

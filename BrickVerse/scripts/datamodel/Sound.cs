@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Enums;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Enums;
 
 
 #if CREATOR
-using Polytoria.Creator.Spatial;
+using BrickVerse.Creator.Spatial;
 #endif
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class Sound : Dynamic
@@ -554,7 +554,7 @@ public sealed partial class Sound : Dynamic
 			case AudioStreamOggVorbis aStream:
 				aStream.Loop = val;
 				break;
-				// unused in Polytoria
+				// unused in BrickVerse
 				//case AudioStreamWav aStream:
 		}
 	}
@@ -569,7 +569,7 @@ public sealed partial class Sound : Dynamic
 			case AudioStreamOggVorbis aStream:
 				aStream.LoopOffset = val;
 				break;
-				// unused in Polytoria
+				// unused in BrickVerse
 				//case AudioStreamWav aStream:
 		}
 	}

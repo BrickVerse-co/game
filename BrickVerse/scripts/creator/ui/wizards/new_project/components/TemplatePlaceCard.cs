@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Managers;
+using BrickVerse.Creator.Managers;
 using System.Text.Json;
-using static Polytoria.Creator.Managers.ProjectManager;
+using static BrickVerse.Creator.Managers.ProjectManager;
 
-namespace Polytoria.Creator.UI.Wizards;
+namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class TemplatePlaceCard : Button
 {

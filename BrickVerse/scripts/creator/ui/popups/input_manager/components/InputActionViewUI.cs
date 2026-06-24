@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI.Popups;
-using Polytoria.Datamodel.Data;
-using Polytoria.Shared;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
 using System.Reflection;
 
-namespace Polytoria.Creator.UI.Components;
+namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputActionViewUI : Control
 {

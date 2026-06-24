@@ -6,7 +6,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI.TextEditor;
+namespace BrickVerse.Creator.UI.TextEditor;
 
 public sealed partial class TextEditorFind : Control
 {

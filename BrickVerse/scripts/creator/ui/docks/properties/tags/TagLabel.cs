@@ -5,7 +5,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class TagLabel : Control
 {

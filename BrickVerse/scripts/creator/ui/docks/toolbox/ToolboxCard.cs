@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Shared.AssetLoaders;
-using Polytoria.Utils;
-using Mesh = Polytoria.Datamodel.Mesh;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Utils;
+using Mesh = BrickVerse.Datamodel.Mesh;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class ToolboxCard : Button
 {

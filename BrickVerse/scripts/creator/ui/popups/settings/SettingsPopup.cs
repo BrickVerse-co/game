@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.UI.Components;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Components;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class SettingsPopup : PopupWindowBase
 {

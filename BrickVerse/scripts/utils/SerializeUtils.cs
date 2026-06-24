@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class SerializeUtils
 {

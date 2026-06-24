@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 #if CREATOR
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel.Creator;
 #endif
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class GUI : Instance

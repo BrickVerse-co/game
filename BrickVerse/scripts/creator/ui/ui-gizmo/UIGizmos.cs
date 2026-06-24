@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI.Gizmos;
+namespace BrickVerse.Creator.UI.Gizmos;
 
 public partial class UIGizmos : CanvasLayer
 {

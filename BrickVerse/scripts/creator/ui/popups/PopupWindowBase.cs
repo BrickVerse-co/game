@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public partial class PopupWindowBase : Window
 {

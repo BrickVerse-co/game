@@ -14,7 +14,7 @@ using System;
 using System.Net;
 #endif
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public partial class PTHttpClient
 {
@@ -26,7 +26,7 @@ public partial class PTHttpClient
 
 	public PTHttpClient()
 	{
-		DefaultRequestHeaders["User-Agent"] = $"Polytoria Client {Globals.AppVersion}";
+		DefaultRequestHeaders["User-Agent"] = $"BrickVerse Client {Globals.AppVersion}";
 	}
 
 #if !USE_NATIVE_HTTP

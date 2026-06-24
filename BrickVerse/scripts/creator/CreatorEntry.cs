@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.Settings.Appliers;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.Utils;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
-using Polytoria.Shared.AssetLoaders;
-using Polytoria.Shared.Settings;
+using BrickVerse.Client.Settings.Appliers;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public partial class CreatorEntry : Node
 {

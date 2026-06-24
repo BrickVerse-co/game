@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class Tool : RigidBody

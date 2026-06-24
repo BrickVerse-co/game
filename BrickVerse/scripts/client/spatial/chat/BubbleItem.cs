@@ -6,7 +6,7 @@ using Godot;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class BubbleItem : Control
 {

@@ -4,16 +4,16 @@
 
 using Godot;
 using Humanizer;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Interfaces;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Formats;
-using Polytoria.Networking;
-using Polytoria.Networking.Synchronizers;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Formats;
+using BrickVerse.Networking;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -21,9 +21,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using static Polytoria.Datamodel.Services.NetworkService;
+using static BrickVerse.Datamodel.Services.NetworkService;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Abstract]
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicProperties | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.NonPublicMethods)]

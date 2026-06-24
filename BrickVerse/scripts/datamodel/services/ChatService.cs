@@ -3,19 +3,19 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.WebAPI;
-using Polytoria.Networking;
-using Polytoria.Networking.RateLimiters;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Networking;
+using BrickVerse.Networking.RateLimiters;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Chat"), ExplorerExclude, SaveIgnore]
 public sealed partial class ChatService : Instance

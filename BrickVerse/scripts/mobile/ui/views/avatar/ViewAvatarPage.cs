@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class ViewAvatarPage : MobileViewBase
 {
-	//private PolytorianModel _polytorian = null!;
+	//private BrickversianModal _polytorian = null!;
 
 
 	public override void _Ready()

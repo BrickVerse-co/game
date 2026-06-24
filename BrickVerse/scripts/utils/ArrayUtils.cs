@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class ArrayUtils
 {

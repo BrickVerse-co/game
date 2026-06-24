@@ -3,30 +3,30 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Creator;
-using Polytoria.Creator.Debugger;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.UI;
-using Polytoria.Creator.UI.Splashes;
-using Polytoria.Creator.Utils;
-using Polytoria.Formats;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Creator;
+using BrickVerse.Creator.Debugger;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.UI;
+using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Creator;
+namespace BrickVerse.Datamodel.Creator;
 
 [Static("Creator"), ExplorerExclude]
 public sealed partial class CreatorService : Node, IScriptObject
 {
-	public const string PolytoriaFolderName = "Polytoria/";
+	public const string BrickVerseFolderName = "BrickVerse/";
 
 	private long _localTestIDCounter = 0;
 
@@ -63,7 +63,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		};
 		AddChild(Interface);
 
-		string polyFolder = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), PolytoriaFolderName);
+		string polyFolder = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), BrickVerseFolderName);
 		if (!Directory.Exists(polyFolder))
 		{
 			Directory.CreateDirectory(polyFolder);
@@ -277,7 +277,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			Title = "Save as...",
 			CurrentDirectory = CurrentSession.ProjectFolderPath,
-			Filters = ["*.poly;Polytoria World"],
+			Filters = ["*.poly;BrickVerse World"],
 			DialogMode = DisplayServer.FileDialogMode.SaveFile,
 		}, async paths =>
 		{

@@ -5,7 +5,7 @@
 using Godot;
 using System.Threading.Tasks;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public partial class AppCloseDimmer : Node
 {

@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.Settings;
-using Polytoria.Datamodel;
+using BrickVerse.Client.Settings;
+using BrickVerse.Datamodel;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class UIIndicators : Control
 {

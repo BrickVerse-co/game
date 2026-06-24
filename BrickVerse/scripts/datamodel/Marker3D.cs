@@ -3,8 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-namespace Polytoria.Datamodel;
+using BrickVerse.Attributes;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Marker3D : Dynamic

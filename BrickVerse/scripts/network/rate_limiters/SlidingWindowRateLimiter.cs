@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Polytoria.Networking.RateLimiters;
+namespace BrickVerse.Networking.RateLimiters;
 
 public class SlidingWindowRateLimiter(int maxMessages, TimeSpan timeWindow)
 {

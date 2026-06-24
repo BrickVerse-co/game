@@ -5,7 +5,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class NetworkUtils
 {

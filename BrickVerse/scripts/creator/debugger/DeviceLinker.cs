@@ -5,7 +5,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public static class DeviceLinker
 {
@@ -33,6 +33,6 @@ public static class DeviceLinker
 	{
 		string? ip = GetLocalIP();
 		if (ip == null) return null;
-		return $"polytoria://test/{ip}";
+		return $"brickverse://test/{ip}";
 	}
 }

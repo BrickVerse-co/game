@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Interfaces;
+using BrickVerse.Creator.UI;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Interfaces;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public partial class MultiSelectionBox : Control
 {

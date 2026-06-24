@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public interface ISettingOption
 {

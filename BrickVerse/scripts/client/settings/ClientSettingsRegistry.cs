@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.Settings;
+namespace BrickVerse.Client.Settings;
 
 public static class ClientSettingsRegistry
 {

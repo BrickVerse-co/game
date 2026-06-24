@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Formats;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
 using System.IO;
 using System.Linq;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class FileItemContextMenu : ContextMenu
 {

@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Client.UI.Animated;
+namespace BrickVerse.Client.UI.Animated;
 
 public partial class UIAnimatedSliderPoint : Button
 {

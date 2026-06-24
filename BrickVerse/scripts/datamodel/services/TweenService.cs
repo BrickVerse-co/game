@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Enums;
-using Polytoria.Scripting;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Enums;
+using BrickVerse.Scripting;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Tween"), ExplorerExclude, SaveIgnore]
 public sealed partial class TweenService : Instance

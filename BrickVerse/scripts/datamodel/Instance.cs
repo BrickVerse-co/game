@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 
 #if CREATOR
-using Polytoria.Creator.UI;
+using BrickVerse.Creator.UI;
 #endif
-using Polytoria.Datamodel.Resources;
-using Polytoria.Formats;
-using Polytoria.Scripting;
-using Polytoria.Networking.Synchronizers;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -20,7 +20,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Abstract]
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]

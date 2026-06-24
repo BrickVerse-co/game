@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Data;
-using Polytoria.Networking;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
 using System;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class NetworkEvent : Instance

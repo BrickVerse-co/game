@@ -8,10 +8,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Godot;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Creator.Settings;
+namespace BrickVerse.Creator.Settings;
 
 public sealed partial class CreatorSettingsService : SettingsServiceBase
 {

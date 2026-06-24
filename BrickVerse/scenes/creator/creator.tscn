@@ -473,7 +473,7 @@ icon_alignment = 1
 expand_icon = true
 switch_on_hover = true
 item_count = 2
-popup/item_0/text = "About Polytoria"
+popup/item_0/text = "About BrickVerse"
 popup/item_0/id = 0
 popup/item_1/text = "Show Splash Screen"
 popup/item_1/id = 1
@@ -1253,7 +1253,7 @@ max_lines_visible = 1
 
 [node name="Version" type="Label" parent="GUI/Footer/Labels" unique_id=2133269996]
 layout_mode = 2
-text = "Polytoria Creator v2.0.0"
+text = "BrickVerse Creator v2.0.0"
 horizontal_alignment = 2
 vertical_alignment = 1
 max_lines_visible = 1

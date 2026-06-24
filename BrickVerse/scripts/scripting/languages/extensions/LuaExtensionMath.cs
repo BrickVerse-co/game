@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 
-namespace Polytoria.Scripting.Extensions;
+namespace BrickVerse.Scripting.Extensions;
 
 public class LuaExtensionMath : IScriptObject
 {

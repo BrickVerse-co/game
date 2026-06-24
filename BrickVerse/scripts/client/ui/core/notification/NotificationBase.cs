@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Client.UI.Notification;
+namespace BrickVerse.Client.UI.Notification;
 
 public partial class UINotificationBase : Control
 {

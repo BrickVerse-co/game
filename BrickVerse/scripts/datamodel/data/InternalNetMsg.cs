@@ -3,19 +3,19 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Networking.Synchronizers;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Scripting;
 #if DEBUG
-using Polytoria.Shared;
+using BrickVerse.Shared;
 #endif
-using Polytoria.Utils;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 [Internal]
 public partial class InternalNetMsg : IScriptObject

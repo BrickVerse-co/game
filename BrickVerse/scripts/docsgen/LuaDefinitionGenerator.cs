@@ -8,9 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using static Polytoria.DocsGen.APIReferenceGenerator;
+using static BrickVerse.DocsGen.APIReferenceGenerator;
 
-namespace Polytoria.DocsGen;
+namespace BrickVerse.DocsGen;
 
 public class LuaDefinitionGenerator
 {

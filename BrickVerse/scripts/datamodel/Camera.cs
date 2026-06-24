@@ -4,15 +4,15 @@
 
 using Godot;
 using Godot.Collections;
-using Polytoria.Attributes;
-using Polytoria.Client.Settings;
-using Polytoria.Scripting;
-using Polytoria.Shared.Misc;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Client.Settings;
+using BrickVerse.Scripting;
+using BrickVerse.Shared.Misc;
+using BrickVerse.Utils;
 using System;
-using static Polytoria.Datamodel.Environment;
+using static BrickVerse.Datamodel.Environment;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class Camera : Dynamic

@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Attributes;
+namespace BrickVerse.Attributes;
 
 /// <summary>
 /// Mark this class as static class, can be accessed via script by it's `alias`. This will also make this class not reparentable and it's name cannot be changed.

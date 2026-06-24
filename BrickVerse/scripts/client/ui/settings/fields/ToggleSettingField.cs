@@ -1,8 +1,8 @@
 using Godot;
-using Polytoria.Client.Settings;
-using Polytoria.Shared.Settings;
+using BrickVerse.Client.Settings;
+using BrickVerse.Shared.Settings;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public sealed partial class ToggleSettingField : CheckButton
 {

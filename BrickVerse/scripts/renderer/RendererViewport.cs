@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
+using BrickVerse.Client;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Mesh = Polytoria.Datamodel.Mesh;
+using Mesh = BrickVerse.Datamodel.Mesh;
 
-namespace Polytoria.Renderer;
+namespace BrickVerse.Renderer;
 
 public partial class RendererViewport : SubViewport
 {
@@ -76,11 +76,11 @@ public partial class RendererViewport : SubViewport
 		npc.Parent = Root.Environment;
 		npc.UseNametag = false;
 		npc.GDNode3D.RotationDegrees = new(0, 15, 0);
-		PolytorianModel ptm = (PolytorianModel)npc.Character!;
+		BrickversianModal ptm = (BrickversianModal)npc.Character!;
 
 		ptm.SetAnimationOverrideTo(true);
 		AnimationPlayer ply = ptm.AnimTree.GetNode<AnimationPlayer>(ptm.AnimTree.AnimPlayer);
-		PolytorianModel.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(id, loadToolNpc: true);
+		BrickversianModal.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(id, loadToolNpc: true);
 
 		if (loadRes.HasTool)
 		{

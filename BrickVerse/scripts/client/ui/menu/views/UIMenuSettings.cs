@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.Settings;
+using BrickVerse.Client.Settings;
 using System.Linq;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public sealed partial class UIMenuSettings : UIMenuViewBase
 {

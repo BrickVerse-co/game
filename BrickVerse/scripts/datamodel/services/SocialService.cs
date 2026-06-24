@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.WebAPI;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Networking;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Networking;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -16,7 +16,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Social")]
 [ExplorerExclude]

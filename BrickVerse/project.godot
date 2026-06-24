@@ -28,11 +28,11 @@ warnings/check_invalid_track_paths=false
 
 [application]
 
-config/name="Polytoria"
+config/name="BrickVerse"
 config/version="2.0.16"
 run/main_scene="uid://c2tql65t73ak5"
 config/use_custom_user_dir=true
-config/custom_user_dir_name="PolytoriaClient"
+config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/flush_stdout_on_print=true
@@ -58,12 +58,12 @@ window/vsync/vsync_mode=0
 
 [dotnet]
 
-project/assembly_name="Polytoria"
+project/assembly_name="BrickVerse"
 project/solution_directory="../"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addons/PolytoriaExportPlugin/plugin.cfg")
+enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addons/BrickVerseExportPlugin/plugin.cfg")
 
 [gui]
 

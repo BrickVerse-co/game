@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
+using BrickVerse.Datamodel;
 #if CREATOR
 #endif
 using System;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public sealed partial class FreeLook : Camera3D
 {

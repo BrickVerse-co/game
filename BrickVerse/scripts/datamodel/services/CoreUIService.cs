@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("CoreUI")]
 public sealed partial class CoreUIService : Instance

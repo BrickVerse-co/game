@@ -4,12 +4,12 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Interfaces;
-using Polytoria.Enums;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Enums;
+using BrickVerse.Scripting;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 [MemoryPackable]
 public partial struct ShadowLayer : IScriptObject, IData

@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.UI.Splashes;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.IO;
 
-namespace Polytoria.Creator.UI.Wizards;
+namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class NewProjectWizard : Control
 {
@@ -103,7 +103,7 @@ public partial class NewProjectWizard : Control
 		Visible = true;
 		_oldNameText = DefaultProjectName;
 		_projectNameEdit.Text = DefaultProjectName;
-		_projectPathEdit.Text = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), CreatorService.PolytoriaFolderName, DefaultProjectName).SanitizePath();
+		_projectPathEdit.Text = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), CreatorService.BrickVerseFolderName, DefaultProjectName).SanitizePath();
 	}
 
 	public void Back()

@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Scripting;
+using BrickVerse.Scripting;
 using System;
 
-namespace Polytoria.Attributes;
+namespace BrickVerse.Attributes;
 
 /// <summary>
 /// Mark the property as accessible by scripts

@@ -274,12 +274,12 @@ layout_mode = 2
 [node name="Label" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer/VBoxContainer" unique_id=945333783]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Welcome to Polytoria Creator 2.0!"
+text = "Welcome to BrickVerse Workshop!"
 autowrap_mode = 3
 
 [node name="Label2" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer/VBoxContainer" unique_id=1445484956]
 layout_mode = 2
-text = "Let’s get Polytoria Creator to suit you!"
+text = "Let’s get BrickVerse Workshop to suit you!"
 autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer" unique_id=1660774073]

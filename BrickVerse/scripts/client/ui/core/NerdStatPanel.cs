@@ -5,13 +5,13 @@
 
 using Godot;
 using Humanizer;
-using Polytoria.Client.Settings;
-using Polytoria.Datamodel;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Client.Settings;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared.AssetLoaders;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class NerdStatPanel : Control
 {

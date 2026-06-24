@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class BubbleChat : Node3D
 {

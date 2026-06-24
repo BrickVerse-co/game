@@ -9,7 +9,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Utils.DTOs;
+namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class Vector3Dto

@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Scripting;
+using BrickVerse.Scripting;
 using System.Collections.Generic;
 using System.Text;
-using static Polytoria.Scripting.LogDispatcher;
+using static BrickVerse.Scripting.LogDispatcher;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class DebugConsoleTab : Control
 {

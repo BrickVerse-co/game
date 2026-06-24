@@ -1,9 +1,9 @@
 using Godot;
-using Polytoria.Client.Settings;
-using Polytoria.Shared.Settings;
+using BrickVerse.Client.Settings;
+using BrickVerse.Shared.Settings;
 using System.Globalization;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public sealed partial class SliderSettingField : HBoxContainer
 {

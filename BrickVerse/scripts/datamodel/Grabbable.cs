@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using static Polytoria.Datamodel.Environment;
+using BrickVerse.Attributes;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using static BrickVerse.Datamodel.Environment;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Grabbable : Instance

@@ -3,8 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared;
-namespace Polytoria.Creator.Spatial;
+using BrickVerse.Shared;
+namespace BrickVerse.Creator.Spatial;
 
 public partial class ArrowSpatial : Node3D
 {

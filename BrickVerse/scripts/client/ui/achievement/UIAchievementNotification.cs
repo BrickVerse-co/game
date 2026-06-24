@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Utils;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Utils;
 
-namespace Polytoria.Client.UI.Notification;
+namespace BrickVerse.Client.UI.Notification;
 
 public partial class UIAchievementNotification : UINotificationBase
 {

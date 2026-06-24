@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.UI;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.UI;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Creator;
+namespace BrickVerse.Datamodel.Creator;
 
 [Static("Addons")]
 public sealed partial class CreatorAddons : Instance

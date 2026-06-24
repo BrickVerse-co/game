@@ -3,28 +3,28 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.UI;
-using Polytoria.Creator.UI.Popups;
-using Polytoria.Creator.UI.Splashes;
-using Polytoria.Creator.UI.Wizards;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Enums;
-using Polytoria.Formats;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Enums;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using static Polytoria.Datamodel.Creator.CreatorAddons;
+using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public partial class CreatorInterface : Control, IScriptObject
 {

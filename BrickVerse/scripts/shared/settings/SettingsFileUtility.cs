@@ -10,7 +10,7 @@ using FileAccess = Godot.FileAccess;
 using System.IO;
 using System.Text;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 internal static class SettingsFileUtility
 {

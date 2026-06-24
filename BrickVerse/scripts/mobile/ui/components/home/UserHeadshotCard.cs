@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class UserHeadshotCard : Node
 {

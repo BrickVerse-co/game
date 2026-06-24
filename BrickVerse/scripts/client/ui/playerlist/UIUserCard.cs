@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.UI.Playerlist.Stats;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Client.UI.Playerlist.Stats;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI.Playerlist;
+namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UIUserCard : Control
 {

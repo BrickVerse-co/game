@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Properties;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Creator.Properties;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 using System;
 using System.Linq;
 
-namespace Polytoria.Creator.UI.Components;
+namespace BrickVerse.Creator.UI.Components;
 
 public partial class SettingsPropertyUI : Control
 {

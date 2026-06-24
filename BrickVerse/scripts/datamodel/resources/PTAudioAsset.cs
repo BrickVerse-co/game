@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Attributes;
+using BrickVerse.Shared.AssetLoaders;
 
-namespace Polytoria.Datamodel.Resources;
+namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
 public partial class PTAudioAsset : AudioAsset

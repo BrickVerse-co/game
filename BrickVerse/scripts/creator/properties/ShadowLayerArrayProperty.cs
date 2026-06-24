@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
 using System;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class ShadowLayerArrayProperty : VBoxContainer, IProperty<ShadowLayer[]>
 {

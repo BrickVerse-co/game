@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 using System;
 using System.Collections.Generic;
-using Polytoria.Attributes;
-using Polytoria.Scripting;
-using Polytoria.Shared.Settings;
-using Polytoria.Client.Settings;
-using Polytoria.Enums;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
+using BrickVerse.Shared.Settings;
+using BrickVerse.Client.Settings;
+using BrickVerse.Enums;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Preferences")]
 [ExplorerExclude]

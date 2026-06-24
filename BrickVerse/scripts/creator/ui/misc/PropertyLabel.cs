@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Properties;
+using BrickVerse.Creator.Properties;
 using System;
 using System.Reflection;
 
-namespace Polytoria.Creator.UI.Misc;
+namespace BrickVerse.Creator.UI.Misc;
 
 public partial class PropertyLabel : Label
 {

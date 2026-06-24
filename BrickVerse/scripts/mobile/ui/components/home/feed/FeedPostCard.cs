@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared.AssetLoaders;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class FeedPostCard : Node
 {

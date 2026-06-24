@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Enums;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Enums;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,10 +17,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TurboXml;
-using static Polytoria.Datamodel.Part;
+using static BrickVerse.Datamodel.Part;
 using XmlParser = TurboXml.XmlParser;
 
-namespace Polytoria.Formats;
+namespace BrickVerse.Formats;
 
 public static class XmlFormat
 {
@@ -435,13 +435,13 @@ public static class XmlFormat
 		return _datamodelTypeCache.GetOrAdd(className, static name =>
 		{
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-			Type? datamodelType = _datamodelAssembly.GetType($"Polytoria.Datamodel.{name}", throwOnError: false, ignoreCase: false);
+			Type? datamodelType = _datamodelAssembly.GetType($"BrickVerse.Datamodel.{name}", throwOnError: false, ignoreCase: false);
 			if (datamodelType != null)
 			{
 				return datamodelType;
 			}
 
-			return _datamodelAssembly.GetType($"Polytoria.Datamodel.Services.{name}", throwOnError: false, ignoreCase: false);
+			return _datamodelAssembly.GetType($"BrickVerse.Datamodel.Services.{name}", throwOnError: false, ignoreCase: false);
 #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
 		});
 	}

@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public partial class TouchScrollContainer : ScrollContainer
 {

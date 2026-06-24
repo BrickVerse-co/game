@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using System;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class CreateScriptPopup : PopupWindowBase
 {

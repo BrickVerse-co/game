@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Creator;
-using Polytoria.Creator.UI;
-using Polytoria.Datamodel.Interfaces;
-using Polytoria.Scripting;
-using Polytoria.Shared.Misc;
+using BrickVerse.Attributes;
+using BrickVerse.Creator;
+using BrickVerse.Creator.UI;
+using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Scripting;
+using BrickVerse.Shared.Misc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Polytoria.Datamodel.Creator.CreatorHistory;
+using static BrickVerse.Datamodel.Creator.CreatorHistory;
 
-namespace Polytoria.Datamodel.Creator;
+namespace BrickVerse.Datamodel.Creator;
 
 [Static("Selections")]
 [ExplorerExclude]

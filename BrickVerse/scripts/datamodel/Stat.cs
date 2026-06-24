@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Stat : Instance

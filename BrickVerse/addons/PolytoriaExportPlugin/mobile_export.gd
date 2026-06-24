@@ -1,6 +1,6 @@
 @tool
 extends EditorExportPlugin
-class_name PolytoriaMobileExportPlugin
+class_name BrickVerseMobileExportPlugin
 
 var original_settings := {}
 

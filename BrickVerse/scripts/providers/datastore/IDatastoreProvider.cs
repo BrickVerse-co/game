@@ -5,7 +5,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Polytoria.Providers.Datastore;
+namespace BrickVerse.Providers.Datastore;
 
 public interface IDatastoreProvider : IDisposable
 {

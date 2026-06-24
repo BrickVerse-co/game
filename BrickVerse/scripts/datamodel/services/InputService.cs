@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.UI;
-using Polytoria.Datamodel.Data;
-using Polytoria.Enums;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Client.UI;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Enums;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
-using static Polytoria.Datamodel.Environment;
+using static BrickVerse.Datamodel.Environment;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Input"), ExplorerExclude, SaveIgnore]
 public sealed partial class InputService : Instance

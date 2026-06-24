@@ -3,22 +3,22 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
-using static Polytoria.Formats.PolyFormat;
+using static BrickVerse.Formats.PolyFormat;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public partial class CreatorClipboard : Node
 {
-	private const string OldClipboardPrefix = "POLYTORIA_CLIPBOARD:";
+	private const string OldClipboardPrefix = "BRICKVERSE_CLIPBOARD:";
 	public CreatorService Service = null!;
 	private PolyRootData[]? _clipboard = null;
 	public object? PropertyClipboard { get; set; }

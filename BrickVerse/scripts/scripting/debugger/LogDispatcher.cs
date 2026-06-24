@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using MemoryPack;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 #if CREATOR
-using Polytoria.Creator.UI;
+using BrickVerse.Creator.UI;
 #endif
-using Polytoria.Datamodel;
-using Polytoria.Networking;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Networking;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 [Internal, NoSync]
 public partial class LogDispatcher : NetworkedObject

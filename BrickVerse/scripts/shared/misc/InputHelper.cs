@@ -5,7 +5,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Shared.Misc;
+namespace BrickVerse.Shared.Misc;
 
 /// <summary>
 /// Class for bridging inputs with Godot

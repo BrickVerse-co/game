@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Providers.Datastore;
+namespace BrickVerse.Providers.Datastore;
 
 public class LocalDatastoreProvider : IDatastoreProvider
 {

@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.Settings.Appliers;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.UI.Gizmos;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Client.Settings.Appliers;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Gizmos;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 using System;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public sealed partial class WorldContainer : SubViewportContainer
 {

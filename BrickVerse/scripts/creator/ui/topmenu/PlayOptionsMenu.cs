@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel.Creator;
 
-namespace Polytoria.Creator.UI.Menus;
+namespace BrickVerse.Creator.UI.Menus;
 
 public partial class PlayOptionsMenu : Control
 {

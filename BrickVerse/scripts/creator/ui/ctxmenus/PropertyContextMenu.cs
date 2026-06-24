@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.UI.Misc;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Creator.UI.Misc;
+using BrickVerse.Datamodel.Creator;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class PropertyContextMenu : ContextMenu
 {

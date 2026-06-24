@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Resources;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class PTImageAssetSubview : Control, IPropertySubview
 {

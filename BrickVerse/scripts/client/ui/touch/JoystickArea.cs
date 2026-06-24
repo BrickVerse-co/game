@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Client.UI.Touch;
+namespace BrickVerse.Client.UI.Touch;
 
 public partial class JoystickArea : InputFallbackBase
 {

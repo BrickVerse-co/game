@@ -12,7 +12,7 @@ horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="." unique_id=425601504]
 layout_mode = 2
-text = "If you think this game is violating the Polytoria Terms of Service, you can report it below"
+text = "If you think this game is violating the BrickVerse Terms of Service, you can report it below"
 horizontal_alignment = 1
 autowrap_mode = 3
 

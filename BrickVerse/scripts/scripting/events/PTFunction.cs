@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Scripting.Luau;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting.Luau;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 public class PTFunction(Func<object?[], Task<object?[]>> target) : IScriptObject
 {

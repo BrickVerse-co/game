@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Attributes;
+namespace BrickVerse.Attributes;
 
 /// <summary>
 /// Mark this as obsolete

@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Formats;
+using BrickVerse.Datamodel;
+using BrickVerse.Formats;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public static class DatamodelLoader
 {

@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
+using BrickVerse.Datamodel.Data;
 
-namespace Polytoria.Creator.UI.Components;
+namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputButtonItemUI : Control
 {

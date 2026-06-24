@@ -4,9 +4,9 @@
 
 using Godot;
 using System;
-using ColorPicker = Polytoria.Creator.UI.ColorPicker;
+using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class ColorProperty : Button, IProperty<Color>
 {

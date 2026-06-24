@@ -3,19 +3,19 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class Accessory : Dynamic
 {
 	private CharacterModel? _targetCharacter;
-	private PolytorianModel.CharacterAttachmentEnum _targetAttachment;
+	private BrickversianModal.CharacterAttachmentEnum _targetAttachment;
 	private RemoteTransform3D? remoteTransform;
 
 	[Editable, ScriptProperty]
-	public PolytorianModel.CharacterAttachmentEnum TargetAttachment
+	public BrickversianModal.CharacterAttachmentEnum TargetAttachment
 	{
 		get => _targetAttachment;
 		set

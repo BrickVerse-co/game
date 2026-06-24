@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -13,7 +13,7 @@ using System.Net.Http.Json;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.Utils;
+namespace BrickVerse.Creator.Utils;
 
 public static class PolyCreatorAPI
 {

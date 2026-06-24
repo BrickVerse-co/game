@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.Compression;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.Compression;
+using BrickVerse.Utils.DTOs;
 using Semver;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Polytoria.Formats;
+namespace BrickVerse.Formats;
 
 public static partial class PolyFormat
 {

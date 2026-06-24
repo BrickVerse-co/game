@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Services;
-using Polytoria.Enums;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Enums;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class BindKeyPopup : PopupWindowBase
 {

@@ -5,7 +5,7 @@
 using System;
 using ZstdSharp;
 
-namespace Polytoria.Utils.Compression;
+namespace BrickVerse.Utils.Compression;
 
 public static class ZstdCompressionUtils
 {

@@ -1,8 +1,8 @@
 using Godot;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 using System.Linq;
 
-namespace Polytoria.Client.UI;
+namespace BrickVerse.Client.UI;
 
 public sealed partial class SettingRow : PanelContainer
 {

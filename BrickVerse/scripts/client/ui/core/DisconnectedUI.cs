@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Services;
+using BrickVerse.Datamodel.Services;
 
-namespace Polytoria.Client.UI.Core;
+namespace BrickVerse.Client.UI.Core;
 
 public partial class DisconnectedUI : CanvasLayer
 {

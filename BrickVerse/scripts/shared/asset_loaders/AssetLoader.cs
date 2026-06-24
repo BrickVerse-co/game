@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Providers.AssetLoaders;
+using BrickVerse.Providers.AssetLoaders;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polytoria.Shared.AssetLoaders;
+namespace BrickVerse.Shared.AssetLoaders;
 
 public partial class AssetLoader : Node
 {

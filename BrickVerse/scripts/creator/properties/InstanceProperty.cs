@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
 using System;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class InstanceProperty : Button, IProperty<Instance?>
 {

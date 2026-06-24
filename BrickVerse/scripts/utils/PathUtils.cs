@@ -5,7 +5,7 @@
 using System;
 using System.IO;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class PathUtils
 {

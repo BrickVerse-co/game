@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Interfaces;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Scripting;
 using System;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 public struct NumberRange : IScriptObject, IData
 {

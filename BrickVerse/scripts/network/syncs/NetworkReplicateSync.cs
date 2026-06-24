@@ -3,18 +3,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
-using Polytoria.Utils;
-using Polytoria.Utils.Compression;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.Compression;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Polytoria.Datamodel.Services.NetworkService;
+using static BrickVerse.Datamodel.Services.NetworkService;
 
-namespace Polytoria.Networking.Synchronizers;
+namespace BrickVerse.Networking.Synchronizers;
 
 [Internal]
 public sealed partial class NetworkReplicateSync : Instance

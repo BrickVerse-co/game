@@ -3,14 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Scripting;
+using BrickVerse.Datamodel;
+using BrickVerse.Scripting;
 #if CREATOR
-using Polytoria.Creator.UI;
+using BrickVerse.Creator.UI;
 #endif
 using System;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public static class PT
 {

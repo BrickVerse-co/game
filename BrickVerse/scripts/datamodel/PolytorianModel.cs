@@ -3,22 +3,22 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Networking;
-using Polytoria.Schemas.API;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Shared.Misc;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Networking;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Misc;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
-public sealed partial class PolytorianModel : CharacterModel
+public sealed partial class BrickversianModal : CharacterModel
 {
 	private const double NetLookBlendUpdateInterval = 0.1;
 	private double _lastNetUpdateTime = 0.0;
@@ -299,7 +299,7 @@ public sealed partial class PolytorianModel : CharacterModel
 		{
 			_oldPhyParent = phy;
 
-			// Configure default collision shape for PolytorianModel
+			// Configure default collision shape for BrickversianModal
 			CollisionPivot = new()
 			{
 				Scale = NodeSize

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 public delegate int LuaFunction(IntPtr state);

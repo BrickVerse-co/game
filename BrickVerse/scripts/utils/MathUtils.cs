@@ -4,11 +4,11 @@
 
 using Godot;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 /// <summary>
 /// MathUtils, primarly used for flipping axis
-/// As Polytoria uses left handed coordinates and Godot uses right hand. All Vector2, 3 and Quat must be flipped first before interacting with each other
+/// As BrickVerse uses left handed coordinates and Godot uses right hand. All Vector2, 3 and Quat must be flipped first before interacting with each other
 /// </summary>
 public static class MathUtils
 {

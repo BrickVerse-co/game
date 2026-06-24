@@ -68,7 +68,7 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="Control/VBoxContainer/VBoxContainer/HBoxContainer" unique_id=1424271122]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Make sure your device has Polytoria Installed"
+text = "Make sure your device has BrickVerse Installed"
 autowrap_mode = 3
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Control/VBoxContainer/VBoxContainer" unique_id=1889555459]

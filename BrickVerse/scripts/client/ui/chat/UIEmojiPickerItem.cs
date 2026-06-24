@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class UIEmojiPickerItem : Button
 {

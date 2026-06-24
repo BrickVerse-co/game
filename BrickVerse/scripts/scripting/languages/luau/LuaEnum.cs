@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Scripting.Luau;
+namespace BrickVerse.Scripting.Luau;
 
 public class LuaEnum : LuaMetatable
 {

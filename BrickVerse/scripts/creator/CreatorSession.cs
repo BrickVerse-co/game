@@ -4,29 +4,29 @@
 
 
 using Godot;
-using Polytoria.Client;
-using Polytoria.Creator.LSP;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.UI;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Data;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Datamodel.Services;
-using Polytoria.DocsGen;
-using Polytoria.Formats;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Client;
+using BrickVerse.Creator.LSP;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.DocsGen;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Script = Polytoria.Datamodel.Script;
+using Script = BrickVerse.Datamodel.Script;
 
-namespace Polytoria.Creator;
+namespace BrickVerse.Creator;
 
 public partial class CreatorSession : Node, IDisposable
 {

@@ -4,10 +4,10 @@
 
 using Godot;
 using Humanizer;
-using Polytoria.Creator.Managers;
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Datamodel.Creator;
 
-namespace Polytoria.Creator.UI.Splashes.Components;
+namespace BrickVerse.Creator.UI.Splashes.Components;
 
 public partial class RecentPlaceCard : Button
 {

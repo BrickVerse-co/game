@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.Properties.Components;
-using Polytoria.Datamodel.Data;
-using Polytoria.Shared;
+using BrickVerse.Creator.Properties.Components;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
-using static Polytoria.Datamodel.Data.ColorSeries;
-using static Polytoria.Datamodel.Data.NumberSeries;
+using static BrickVerse.Datamodel.Data.ColorSeries;
+using static BrickVerse.Datamodel.Data.NumberSeries;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class NumberSeriesProperty : Control, IProperty<NumberSeries>
 {

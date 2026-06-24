@@ -4,15 +4,15 @@
 
 using Godot;
 using MemoryPack;
-using Polytoria.Attributes;
-using Polytoria.Scripting;
-using Polytoria.Utils;
-using Polytoria.Utils.DTOs;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 public partial class NetMessage : IScriptObject
 {

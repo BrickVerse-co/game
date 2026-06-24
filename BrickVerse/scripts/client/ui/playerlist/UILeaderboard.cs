@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Polytoria.Client.UI.Playerlist;
+namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboard : TouchScrollContainer
 {

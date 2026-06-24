@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 using System.Collections.Generic;
 
-namespace Polytoria.Scripting;
+namespace BrickVerse.Scripting;
 
 public partial class ScriptSharedTable : IScriptObject
 {

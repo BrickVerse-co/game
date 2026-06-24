@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using static Polytoria.Scripting.LogDispatcher;
+using static BrickVerse.Scripting.LogDispatcher;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class ConsoleFilters : PopupPanel
 {

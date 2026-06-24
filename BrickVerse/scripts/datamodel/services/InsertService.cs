@@ -3,20 +3,20 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Resources;
-using Polytoria.Schemas.API;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 #if CREATOR
-using Polytoria.Datamodel.Creator;
+using BrickVerse.Datamodel.Creator;
 #endif
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("Insert"), ExplorerExclude, SaveIgnore]
 public sealed partial class InsertService : Instance
@@ -81,9 +81,9 @@ public sealed partial class InsertService : Instance
 	}
 
 	[ScriptMethod]
-	public PolytorianModel DefaultCharacter()
+	public BrickversianModal DefaultCharacter()
 	{
-		var ptm = New<PolytorianModel>();
+		var ptm = New<BrickversianModal>();
 		var animator = New<Animator>();
 		animator.AutoInit = false;
 		animator.Name = "Animator";
@@ -154,16 +154,16 @@ public sealed partial class InsertService : Instance
 		if (accessoryType == "backAccessory" || accessoryType == "frontAccessory" || accessoryType == "waistAccessory")
 		{
 			mesh.LocalPosition = new Vector3(0, -6.8f, 0);
-			accessory.TargetAttachment = PolytorianModel.CharacterAttachmentEnum.LowerTorso;
+			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.LowerTorso;
 		}
 		else if (accessoryType == "neckAccessory" || accessoryType == "shoulderAccessory")
 		{
 			mesh.LocalPosition = new Vector3(0, -8.8f, 0);
-			accessory.TargetAttachment = PolytorianModel.CharacterAttachmentEnum.UpperTorso;
+			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.UpperTorso;
 		}
 		else
 		{
-			accessory.TargetAttachment = PolytorianModel.CharacterAttachmentEnum.Head;
+			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.Head;
 		}
 
 		return accessory;

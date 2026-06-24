@@ -5,7 +5,7 @@
 using Godot;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class ViewportAxis : Node
 {
@@ -13,7 +13,7 @@ public partial class ViewportAxis : Node
 	[Export] private Node3D _pivot = null!;
 	[Export] private Node _container = null!;
 
-	private Polytoria.Datamodel.Camera? _worldCamera = null;
+	private BrickVerse.Datamodel.Camera? _worldCamera = null;
 	private SubViewportContainer _rect = null!;
 	private Camera3D _axisCamera = null!;
 	private RayCast3D _raycast = null!;

@@ -4,16 +4,16 @@
 
 using System;
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Client.Settings;
-using Polytoria.Shared.Settings;
+using BrickVerse.Attributes;
+using BrickVerse.Client.Settings;
+using BrickVerse.Shared.Settings;
 
 #if CREATOR
-using Polytoria.Creator.Settings;
-using Polytoria.Creator.Spatial;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Spatial;
 #endif
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Abstract]
 public partial class Light : Dynamic

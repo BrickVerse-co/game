@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
-using Polytoria.Datamodel.Services;
-using Polytoria.Providers.Datastore;
-using Polytoria.Scripting;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Providers.Datastore;
+using BrickVerse.Scripting;
 using System.Threading.Tasks;
 
-namespace Polytoria.Datamodel.Data;
+namespace BrickVerse.Datamodel.Data;
 
 public partial class Datastore : IScriptObject
 {

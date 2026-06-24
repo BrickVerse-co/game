@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-namespace Polytoria.Client.Settings;
+namespace BrickVerse.Client.Settings;
 
 public partial class GraphicsBenchmarker : Node
 {

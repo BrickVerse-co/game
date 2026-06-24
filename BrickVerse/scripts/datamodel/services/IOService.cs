@@ -2,17 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Attributes;
+using BrickVerse.Attributes;
 using System;
 using System.IO;
 using Godot;
 #if CREATOR
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 #endif
 using System.Collections.Generic;
 
-namespace Polytoria.Datamodel.Services;
+namespace BrickVerse.Datamodel.Services;
 
 [Static("IO")]
 [ExplorerExclude]

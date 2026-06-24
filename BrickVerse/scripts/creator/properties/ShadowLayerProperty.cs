@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
-using Polytoria.Enums;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Enums;
 using System;
-using ColorPicker = Polytoria.Creator.UI.ColorPicker;
+using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
-namespace Polytoria.Creator.Properties;
+namespace BrickVerse.Creator.Properties;
 
 public sealed partial class ShadowLayerProperty : MarginContainer, IProperty<ShadowLayer>
 {

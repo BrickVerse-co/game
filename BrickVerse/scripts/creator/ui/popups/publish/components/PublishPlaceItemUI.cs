@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Schemas.API;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared.AssetLoaders;
 
-namespace Polytoria.Creator.UI.Components;
+namespace BrickVerse.Creator.UI.Components;
 
 public partial class PublishPlaceItemUI : Button
 {

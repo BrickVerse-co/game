@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Creator.UI.Wizards;
+namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class CodeEditorSelectPage : IntroPage
 {

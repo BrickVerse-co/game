@@ -3,12 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client;
-using Polytoria.Shared;
+using BrickVerse.Client;
+using BrickVerse.Shared;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Polytoria.Mobile.UI;
+namespace BrickVerse.Mobile.UI;
 
 public partial class ViewTestPage : MobileViewBase
 {

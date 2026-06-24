@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client.Settings;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Shared;
+using BrickVerse.Client.Settings;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Shared;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI.Chat;
+namespace BrickVerse.Client.UI.Chat;
 
 public partial class UIChat : Control
 {

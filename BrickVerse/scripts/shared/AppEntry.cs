@@ -3,16 +3,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Client;
+using BrickVerse.Client;
 #if DEBUG
 using System;
-using Polytoria.DatamodelTest;
+using BrickVerse.DatamodelTest;
 #endif
-using Polytoria.DocsGen;
+using BrickVerse.DocsGen;
 using System.Collections.Generic;
-using static Polytoria.Shared.Globals;
+using static BrickVerse.Shared.Globals;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public partial class AppEntry : Node
 {

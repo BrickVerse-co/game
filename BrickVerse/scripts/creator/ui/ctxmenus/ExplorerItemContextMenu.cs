@@ -3,15 +3,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.Settings;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Datamodel.Interfaces;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Interfaces;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public partial class ExplorerItemContextMenu : ContextMenu
 {

@@ -6,7 +6,7 @@ using Godot;
 using System;
 using static Godot.ColorPicker;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public sealed partial class ColorPicker : PanelContainer
 {

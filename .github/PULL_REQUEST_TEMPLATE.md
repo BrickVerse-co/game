@@ -31,14 +31,14 @@ Related to #
 
 ## Checklist
 
-- [ ] I have read the [contributing guidelines](https://v2docs.polytoria.com/contributing/)
+- [ ] I have read the [contributing guidelines](https://v2docs.BrickVerse.com/contributing/)
 - [ ] Added in-code documentation (where needed)
 - [ ] Ran `dotnet restore`
 - [ ] Ran `dotnet format`
 - [ ] Ran `dotnet build`
-- [ ] Ran `dotnet test --project Polytoria.Tests/Polytoria.Tests.csproj`
+- [ ] Ran `dotnet test --project BrickVerse.Tests/BrickVerse.Tests.csproj`
 - [ ] Tested the changes in a local environment
-- [ ] Ensured all commits are [signed off](https://v2docs.polytoria.com/contributing/software/contributor/dco/)
+- [ ] Ensured all commits are [signed off](https://v2docs.BrickVerse.com/contributing/software/contributor/dco/)
 
 ## Screenshots / video
 

@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public interface ISettingsContext
 {

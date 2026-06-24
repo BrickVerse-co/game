@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Shared.Settings;
+namespace BrickVerse.Shared.Settings;
 
 public partial class UIViewLicensesRow : PanelContainer
 {

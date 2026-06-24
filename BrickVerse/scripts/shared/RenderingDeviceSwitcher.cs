@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Shared.Settings;
+using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Shared;
+namespace BrickVerse.Shared;
 
 public static class RenderingDeviceSwitcher
 {

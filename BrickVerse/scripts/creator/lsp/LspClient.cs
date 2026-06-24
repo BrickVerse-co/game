@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Polytoria.Creator.LSP.Schemas;
-using Polytoria.Shared;
+using BrickVerse.Creator.LSP.Schemas;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.LSP;
+namespace BrickVerse.Creator.LSP;
 
 public class LspClient : IDisposable
 {

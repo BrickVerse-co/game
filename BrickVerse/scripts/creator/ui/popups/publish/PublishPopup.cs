@@ -4,15 +4,15 @@
 
 using Godot;
 using Humanizer;
-using Polytoria.Creator.Managers;
-using Polytoria.Creator.UI.Components;
-using Polytoria.Creator.Utils;
-using Polytoria.Datamodel;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.UI.Components;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
 
-namespace Polytoria.Creator.UI.Popups;
+namespace BrickVerse.Creator.UI.Popups;
 
 public partial class PublishPopup : PopupWindowBase
 {

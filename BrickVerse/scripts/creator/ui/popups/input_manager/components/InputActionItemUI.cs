@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel.Data;
-using Polytoria.Shared;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
 
-namespace Polytoria.Creator.UI.Components;
+namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputActionItemUI : Button
 {

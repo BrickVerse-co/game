@@ -5,13 +5,13 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public sealed partial class InteractionPrompt : Physical

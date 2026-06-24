@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Polytoria.Utils;
+namespace BrickVerse.Utils;
 
 public static class ReflectionCache
 {

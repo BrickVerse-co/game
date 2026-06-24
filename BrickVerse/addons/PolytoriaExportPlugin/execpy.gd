@@ -1,6 +1,6 @@
 @tool
 extends EditorExportPlugin
-class_name PolytoriaExeCpyExportPlugin
+class_name BrickVerseExeCpyExportPlugin
 
 var exepaths = [
 	"res://native/luau-lsp/",

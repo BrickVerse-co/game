@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Utils;
 using System.Collections.Generic;
 
-namespace Polytoria.Client.UI.Playerlist;
+namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboardTeamItem : Control
 {

@@ -7,24 +7,24 @@
 #endif
 
 using Godot;
-using Polytoria.Client.Debugger;
-using Polytoria.Client.Settings;
-using Polytoria.Client.Settings.Appliers;
-using Polytoria.Client.WebAPI;
-using Polytoria.Shared.Settings;
+using BrickVerse.Client.Debugger;
+using BrickVerse.Client.Settings;
+using BrickVerse.Client.Settings.Appliers;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Shared.Settings;
 #if CREATOR
-using Polytoria.Creator.Utils;
+using BrickVerse.Creator.Utils;
 #endif
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Schemas.API;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Shared.AssetLoaders;
 
-namespace Polytoria.Client;
+namespace BrickVerse.Client;
 
 public sealed partial class ClientEntry : Node3D
 {
@@ -336,7 +336,7 @@ public sealed partial class ClientEntry : Node3D
 					PT.Print("Sending listen...");
 					APIServerListenResponse listenRes = await PolyAuthAPI.SendServerListen();
 
-					PT.Print("Polytoria Server Info ----");
+					PT.Print("BrickVerse Server Info ----");
 					PT.Print("Server ID: ", listenRes.ServerID);
 					PT.Print("World ID: ", listenRes.WorldID);
 					PT.Print("Port: ", listenRes.Port);
@@ -398,7 +398,7 @@ public sealed partial class ClientEntry : Node3D
 		{
 			if (token != null)
 			{
-				PT.Print("Connecting to Polytoria...");
+				PT.Print("Connecting to BrickVerse...");
 				// Request auth to server
 				PolyAuthAPI.SetAuthToken(token);
 
@@ -406,7 +406,7 @@ public sealed partial class ClientEntry : Node3D
 				{
 					_clientConnectData = await PolyAuthAPI.SendClientConnect();
 
-					PT.Print("Polytoria Network Info ----");
+					PT.Print("BrickVerse Network Info ----");
 					PT.Print("World ID: ", _clientConnectData.Value.WorldID);
 					PT.Print("Server ID: ", _clientConnectData.Value.ServerID);
 					PT.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));

@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Polytoria.Attributes;
+namespace BrickVerse.Attributes;
 
 [AttributeUsage(AttributeTargets.Enum)]
 public sealed class ScriptEnumAttribute(string? name = null) : Attribute

@@ -4,14 +4,14 @@
 
 using Godot;
 using Godot.Collections;
-using Polytoria.Attributes;
-using Polytoria.Client;
-using Polytoria.Networking;
-using Polytoria.Scripting;
-using Polytoria.Shared;
-using Polytoria.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Client;
+using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 
-namespace Polytoria.Datamodel;
+namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class NPC : Physical
@@ -94,12 +94,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character"), CloneIgnore]
 	public Color HeadColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.HeadColor : _pendingHeadColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.HeadColor : _pendingHeadColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.HeadColor = value;
+				rig.HeadColor = value;
 				_pendingHeadColor = null;
 			}
 			else
@@ -112,12 +112,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color TorsoColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.TorsoColor : _pendingTorsoColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.TorsoColor : _pendingTorsoColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.TorsoColor = value;
+				rig.TorsoColor = value;
 				_pendingTorsoColor = null;
 			}
 			else
@@ -130,12 +130,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color LeftArmColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.LeftArmColor : _pendingLeftArmColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.LeftArmColor : _pendingLeftArmColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.LeftArmColor = value;
+				rig.LeftArmColor = value;
 				_pendingLeftArmColor = null;
 			}
 			else
@@ -148,12 +148,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color RightArmColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.RightArmColor : _pendingRightArmColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.RightArmColor : _pendingRightArmColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.RightArmColor = value;
+				rig.RightArmColor = value;
 				_pendingRightArmColor = null;
 			}
 			else
@@ -166,12 +166,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color LeftLegColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.LeftLegColor : _pendingLeftLegColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.LeftLegColor : _pendingLeftLegColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.LeftLegColor = value;
+				rig.LeftLegColor = value;
 				_pendingLeftLegColor = null;
 			}
 			else
@@ -184,12 +184,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color RightLegColor
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.RightLegColor : _pendingRightLegColor ?? new Color();
+		get => (Character is BrickversianModal rig) ? rig.RightLegColor : _pendingRightLegColor ?? new Color();
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.RightLegColor = value;
+				rig.RightLegColor = value;
 				_pendingRightLegColor = null;
 			}
 			else
@@ -202,12 +202,12 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public int FaceID
 	{
-		get => (Character is PolytorianModel polytorian) ? polytorian.FaceID : _pendingFaceID ?? 0;
+		get => (Character is BrickversianModal rig) ? rig.FaceID : _pendingFaceID ?? 0;
 		set
 		{
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
-				polytorian.FaceID = value;
+				rig.FaceID = value;
 				_pendingFaceID = null;
 			}
 			else
@@ -497,41 +497,41 @@ public partial class NPC : Physical
 			// Create default character on legacy world. If character is not set
 			Root.Insert.InitializeDefaultNPC(this);
 
-			if (Character is PolytorianModel polytorian)
+			if (Character is BrickversianModal rig)
 			{
 				if (_pendingHeadColor.HasValue)
 				{
-					polytorian.HeadColor = _pendingHeadColor.Value;
+					rig.HeadColor = _pendingHeadColor.Value;
 					_pendingHeadColor = null;
 				}
 				if (_pendingTorsoColor.HasValue)
 				{
-					polytorian.TorsoColor = _pendingTorsoColor.Value;
+					rig.TorsoColor = _pendingTorsoColor.Value;
 					_pendingTorsoColor = null;
 				}
 				if (_pendingLeftArmColor.HasValue)
 				{
-					polytorian.LeftArmColor = _pendingLeftArmColor.Value;
+					rig.LeftArmColor = _pendingLeftArmColor.Value;
 					_pendingLeftArmColor = null;
 				}
 				if (_pendingRightArmColor.HasValue)
 				{
-					polytorian.RightArmColor = _pendingRightArmColor.Value;
+					rig.RightArmColor = _pendingRightArmColor.Value;
 					_pendingRightArmColor = null;
 				}
 				if (_pendingLeftLegColor.HasValue)
 				{
-					polytorian.LeftLegColor = _pendingLeftLegColor.Value;
+					rig.LeftLegColor = _pendingLeftLegColor.Value;
 					_pendingLeftLegColor = null;
 				}
 				if (_pendingRightLegColor.HasValue)
 				{
-					polytorian.RightLegColor = _pendingRightLegColor.Value;
+					rig.RightLegColor = _pendingRightLegColor.Value;
 					_pendingRightLegColor = null;
 				}
 				if (_pendingFaceID.HasValue)
 				{
-					polytorian.FaceID = _pendingFaceID.Value;
+					rig.FaceID = _pendingFaceID.Value;
 					_pendingFaceID = null;
 				}
 			}
@@ -752,7 +752,7 @@ public partial class NPC : Physical
 		Character?.Animator?.StopAnimation();
 		Character?.Animator?.StopOneShotAnimation();
 
-		if (Character is PolytorianModel ptmodel)
+		if (Character is BrickversianModal ptmodel)
 		{
 			ptmodel.StartRagdoll(Velocity);
 		}
@@ -1054,7 +1054,7 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public void LoadAppearance(int userID)
 	{
-		if (Character is PolytorianModel ptm)
+		if (Character is BrickversianModal ptm)
 		{
 			ptm.LoadAppearance(userID, Root.PlayerDefaults.LoadAppearanceTools);
 		}
@@ -1063,7 +1063,7 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public void ClearAppearance()
 	{
-		if (Character is PolytorianModel ptm)
+		if (Character is BrickversianModal ptm)
 		{
 			ptm.ClearAppearance();
 		}
@@ -1112,7 +1112,7 @@ public partial class NPC : Physical
 		Anchored = false;
 		IsDead = false;
 
-		if (Character is PolytorianModel ptmodel)
+		if (Character is BrickversianModal ptmodel)
 		{
 			ptmodel.StopRagdoll();
 		}

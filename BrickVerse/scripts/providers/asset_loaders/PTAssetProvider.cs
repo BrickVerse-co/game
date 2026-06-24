@@ -4,15 +4,15 @@
 
 using Godot;
 #if CREATOR
-using Polytoria.Creator.Utils;
+using BrickVerse.Creator.Utils;
 #endif
-using Polytoria.Shared;
-using Polytoria.Shared.AssetLoaders;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
 using System;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Polytoria.Providers.AssetLoaders;
+namespace BrickVerse.Providers.AssetLoaders;
 
 public class PTAssetProvider : IAssetProvider
 {

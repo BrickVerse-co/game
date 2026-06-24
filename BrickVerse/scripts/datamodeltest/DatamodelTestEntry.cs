@@ -1,15 +1,15 @@
 using Godot;
-using Polytoria.Client;
-using Polytoria.Client.Settings;
-using Polytoria.Client.Settings.Appliers;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Formats;
-using Polytoria.Shared;
+using BrickVerse.Client;
+using BrickVerse.Client.Settings;
+using BrickVerse.Client.Settings.Appliers;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
 using System;
 using System.IO;
 
-namespace Polytoria.DatamodelTest;
+namespace BrickVerse.DatamodelTest;
 
 public partial class DatamodelTestEntry : Node3D
 {

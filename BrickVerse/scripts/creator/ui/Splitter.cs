@@ -4,7 +4,7 @@
 
 using Godot;
 
-namespace Polytoria.Creator.UI;
+namespace BrickVerse.Creator.UI;
 
 public sealed partial class Splitter : Control
 {

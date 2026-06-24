@@ -3,19 +3,19 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Creator.LSP;
-using Polytoria.Creator.LSP.Schemas;
-using Polytoria.Creator.Settings;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
-using Polytoria.Shared.Settings;
+using BrickVerse.Creator.LSP;
+using BrickVerse.Creator.LSP.Schemas;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polytoria.Creator.UI.TextEditor;
+namespace BrickVerse.Creator.UI.TextEditor;
 
 public partial class TextEditorRoot : Node
 {

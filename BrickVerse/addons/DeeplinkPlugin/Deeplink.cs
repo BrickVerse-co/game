@@ -1,7 +1,7 @@
 // © 2024-present https://github.com/cengiz-pz
 
 using Godot;
-using Polytoria.Shared;
+using BrickVerse.Shared;
 using System;
 
 namespace DeepLinkAddon;

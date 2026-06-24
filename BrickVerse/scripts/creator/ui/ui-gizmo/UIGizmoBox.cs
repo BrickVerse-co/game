@@ -3,13 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Creator;
-using Polytoria.Shared;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 
-namespace Polytoria.Creator.UI.Gizmos;
+namespace BrickVerse.Creator.UI.Gizmos;
 
 public partial class UIGizmoBox : Control
 {
@@ -781,7 +781,7 @@ public partial class UIGizmoBox : Control
 	{
 		if (_hoveringGizmo == active) return;
 		_hoveringGizmo = active;
-		if (Target?.Root?.CreatorContext?.Gizmos is Polytoria.Creator.Gizmos g)
+		if (Target?.Root?.CreatorContext?.Gizmos is BrickVerse.Creator.Gizmos g)
 			g.HoveringUIGizmo = active;
 	}
 

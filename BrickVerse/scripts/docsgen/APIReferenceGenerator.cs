@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using Polytoria.Attributes;
-using Polytoria.Datamodel;
-using Polytoria.Datamodel.Services;
-using Polytoria.Scripting;
-using Polytoria.Shared;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,9 +16,9 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using static Polytoria.DocsGen.APIReferenceGenerator;
+using static BrickVerse.DocsGen.APIReferenceGenerator;
 
-namespace Polytoria.DocsGen;
+namespace BrickVerse.DocsGen;
 
 public class APIReferenceGenerator
 {
@@ -40,8 +40,8 @@ public class APIReferenceGenerator
 			if (type.IsEnum || type.IsInterface) continue;
 			if (type.IsDefined(typeof(InternalAttribute))) continue;
 			if (type.FullName == null) continue;
-			if (type.FullName.Contains("Polytoria.Scripting.Extensions")) continue;
-			if (type.FullName.Contains("Polytoria.Scripting.Libraries")) continue;
+			if (type.FullName.Contains("BrickVerse.Scripting.Extensions")) continue;
+			if (type.FullName.Contains("BrickVerse.Scripting.Libraries")) continue;
 			if (type.IsGenericType) continue;
 
 			if (type.IsAssignableTo(typeof(Instance)))

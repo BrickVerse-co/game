@@ -4,7 +4,7 @@
 
 using System.Threading.Tasks;
 
-namespace Polytoria.Providers.CapturePublish;
+namespace BrickVerse.Providers.CapturePublish;
 
 public interface ICapturePublisher
 {
