@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: BrickVerse support
+    url: https://BrickVerse.gg/
+    about: Account, moderation, billing, platform support, and support requests should not be filed as GitHub issues.

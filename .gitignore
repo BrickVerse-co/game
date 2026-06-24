@@ -1,0 +1,104 @@
+## -- Godot -- ##
+
+# Auto-generated Godot editor/import cache
+.godot/
+
+# Godot Export Templates (Please copy from the template: export_presets.cfg.template)
+BrickVerse/export_presets.cfg
+
+## -- .NET/C# Build Artifacts -- ##
+
+# Compiled output directories
+bin/
+obj/
+
+# Debug symbol files
+*.pdb
+
+# dotnet-trace files
+*.nettrace
+
+# User-specific MSBuild overrides
+*.csproj.user
+
+# Backup/old project files
+*.csproj.old*
+
+# Test result output
+TestResults/
+
+## -- IDE & Editor -- ##
+
+# JetBrains Rider
+.idea/
+*.DotSettings.user
+
+# Visual Studio
+.vs/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+# C# Dev Kit language server cache files
+*.lscache
+
+## -- Android -- ##
+
+# Generated Android build files (except the manifest)
+/BrickVerse/android/build/*
+
+# Signing keys
+/BrickVerse/android/key/*
+/BrickVerse/keys
+
+## -- Generated/Temporary Files -- ##
+
+# Project-level temp folders
+/temp/
+/BrickVerse/temp/
+
+# Diagnostic and report output
+/BrickVerse/reports/
+/BrickVerse/trap/
+/BrickVerse/client_dump.xml
+/BrickVerse/dump.tscn
+
+# API reference snapshot
+/BrickVerse/apiref.json
+
+# Packed/exported scene test files
+/BrickVerse/test.packed
+/BrickVerse/test.ptpacked
+
+
+## -- Sample projects -- ##
+
+# Local world storage for contributors
+/BrickVerse/samples/worlds/temp
+/samples/projects/temp
+
+# .poly folders
+.poly/
+
+
+## -- Launch configrations -- ##
+
+# Local launch profiles
+/BrickVerse/Properties/launchSettings.json
+
+
+## -- Exceptions -- ##
+
+# Deeplink plugin's prebuilt binary
+!/BrickVerse/addons/DeeplinkPlugin/bin/
+
+# Misc
+ers
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+BrickVerse/builds/

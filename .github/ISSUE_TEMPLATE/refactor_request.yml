@@ -1,0 +1,126 @@
+name: Refactor / code improvement
+description: Propose a refactor, cleanup, or other code improvement to BrickVerse.
+title: "[Refactor]: "
+labels:
+  - kind:refactor
+  - status:needs-triage
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for code-focused changes such as refactors, cleanup, modularization, testability improvements, or reducing technical debt.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Client
+        - Creator
+        - (Local) server / self-hosted testing
+        - Networking / replication
+        - Scripting API or runtimes
+        - Datamodel
+        - Build / export
+        - Publishing
+        - Documentation
+        - Developer tooling
+        - UI / UX
+        - Tests
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_problem
+    attributes:
+      label: Current code problem
+      description: What is hard to maintain, reason about, extend, or test today?
+      placeholder: "Example: Changes to this system require touching several unrelated files."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed refactor or improvement
+      description: Describe the code change you want to see.
+      placeholder: "Split X into smaller components, remove duplicated logic, add tests, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: goals
+    attributes:
+      label: Expected outcome
+      description: What should be better after this work is done?
+      placeholder: "Example: easier unit testing, lower risk when adding new features."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and affected code
+      description: Which files, systems, or subsystems are involved? Include symbols, classes, scenes, scripts, or directories if known.
+      placeholder: "Example: scripts/network/, DatamodelService, LuauProvider"
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks or tradeoffs
+      description: What behavior could break, and what tradeoffs should reviewers keep in mind?
+      placeholder: "Example: serialization compatibility, replication behavior, performance"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking_change
+    attributes:
+      label: Does this require behavior changes?
+      description: Pick the closest option.
+      options:
+        - No, behavior should remain the same.
+        - Minor behavior changes may be acceptable.
+        - Yes, behavior or APIs will likely need to change.
+        - Not sure yet.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: validation
+    attributes:
+      label: How should this be validated?
+      description: Pick all that apply.
+      multiple: true
+      options:
+        - Existing unit tests
+        - New unit tests
+        - Manual testing
+        - Profiling / performance checks
+        - Code review only
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Are you interested in implementing this?
+      options:
+        - Yes, I would like to contribute this refactor.
+        - No, I just want to suggest the idea.
+        - I'm not sure / maybe in the future.
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra_details
+    attributes:
+      label: Additional details
+      description: Any other information, such as implementation details, related issues, or links to examples.
+    validations:
+      required: false
