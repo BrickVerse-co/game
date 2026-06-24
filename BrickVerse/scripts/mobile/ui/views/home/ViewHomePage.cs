@@ -35,7 +35,7 @@ public partial class ViewHomePage : MobileViewBase
 		//_polytorian.SetState(CharacterModel.CharacterState.Idle);
 	}
 
-	private void OnUserAuthenticated(APIMeResponse response)
+	private void OnUserAuthenticated(APIV3AuthMeUser response)
 	{
 		LoadView();
 	}

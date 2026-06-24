@@ -47,7 +47,7 @@ public sealed partial class Player : NPC
 	private float _staminaRegen = 1.2f;
 	private float _staminaBurn = 1.2f;
 	private bool _useHeadTurning = false;
-	private int _userID;
+	private string _userID;
 	private bool _useBubbleChat = true;
 	private bool _autoLoadAppearance = true;
 	private bool _allowAnimationWhileMoving = false;
@@ -100,13 +100,13 @@ public sealed partial class Player : NPC
 	public PTSignal Respawned { get; private set; } = new();
 
 	[SyncVar, ScriptProperty]
-	public int UserID
+	public string UserID
 	{
 		get => _userID;
 		internal set
 		{
 			_userID = value;
-			if (_userID != 0)
+			if (!string.IsNullOrEmpty(_userID))
 			{
 				FetchUserInfo();
 			}
@@ -331,9 +331,10 @@ public sealed partial class Player : NPC
 			Color.FromHtml("#B39DDB"),
 		];
 
-	public static Color ChatColorFromUserID(int userID)
+	public static Color ChatColorFromUserID(string userID)
 	{
-		return ChatColorPalette[userID % ChatColorPalette.Length];
+		int hash = userID.GetHashCode();
+		return ChatColorPalette[Math.Abs(hash) % ChatColorPalette.Length];
 	}
 
 	public static string GetBadgeIconPath(Player player)
@@ -1079,7 +1080,7 @@ public sealed partial class Player : NPC
 		{
 			if (Root.Entry != null && Root.Entry.IsSoloTest)
 			{
-				LoadAppearance(1144);
+				LoadAppearance("1");
 			}
 			else
 			{

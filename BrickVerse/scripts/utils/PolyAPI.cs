@@ -17,27 +17,42 @@ public static class PolyAPI
 {
 	private static readonly PTHttpClient _client = new();
 
-	public static void SetAuthToken(string userToken)
+	/// <summary>
+	/// BrickVerse supports auth through either Authorization: Bearer {token}
+	/// or Cookie: auth_token={token}. We send both so the client works with
+	/// endpoints implemented with either auth guard.
+	/// </summary>
+	public static void SetAuthToken(string token)
 	{
 		_client.DefaultRequestHeaders.Remove("Authorization");
-		if (string.IsNullOrWhiteSpace(userToken))
-		{
-			return;
-		}
+		_client.DefaultRequestHeaders.Remove("Cookie");
 
-		string bearerToken = userToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-			? userToken
-			: "Bearer " + userToken;
-		_client.DefaultRequestHeaders["Authorization"] = bearerToken;
+		if (string.IsNullOrWhiteSpace(token))
+			return;
+
+		_client.DefaultRequestHeaders["Authorization"] =
+			$"Bearer {token}";
+
+		_client.DefaultRequestHeaders["Cookie"] =
+			$"auth_token={token}";
 	}
 
-	public static Task<APIUserInfo> GetUserFromID(int userID)
+	private static string NormalizeToken(string token)
+	{
+		if (string.IsNullOrWhiteSpace(token)) return "";
+		string normalized = token.Trim();
+		return normalized.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+			? normalized["Bearer ".Length..].Trim()
+			: normalized;
+	}
+
+	public static Task<APIUserInfo> GetUserFromID(string userID)
 		=> GetUserProfileFromID(userID);
 
-	private static async Task<APIUserInfo> GetUserProfileFromID(int userID)
+	private static async Task<APIUserInfo> GetUserProfileFromID(string userID)
 	{
 		APIV3UserProfileRoot response = await _client.GetFromJsonAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/profile/" + userID.ToString() + "/id"),
+			Globals.ApiEndpoint.PathJoin("/v3/profile/" + userID + "/id"),
 			APIGenerationContext.Default.APIV3UserProfileRoot
 		);
 
@@ -46,7 +61,7 @@ public static class PolyAPI
 
 		return new APIUserInfo
 		{
-			Id = int.TryParse(user.Id, out int id) ? id : userID,
+			Id = user.Id ?? userID,
 			Username = user.Username ?? "",
 			Description = user.Description ?? "",
 			MembershipType = user.Status ?? "",
@@ -57,7 +72,6 @@ public static class PolyAPI
 			LastSeenAt = user.LastSeenAt,
 			Signature = "",
 			Thumbnail = new APIUserThumbnail(),
-			Playing = null,
 			NetWorth = 0,
 			AssetSales = 0,
 			IsStaff = false,
@@ -65,23 +79,19 @@ public static class PolyAPI
 		};
 	}
 
-	public static async Task<APIMeResponse> GetCurrentUser()
+	public static async Task<APIV3AuthMeUser> GetCurrentUser()
 	{
 		APIV3AuthMeRoot response = await _client.GetFromJsonAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/auth/me"),
 			APIGenerationContext.Default.APIV3AuthMeRoot
 		);
 
-		APIV3AuthMeUser user = response.User;
-		APIMeResponse me = new()
+		if (!response.Success || string.IsNullOrWhiteSpace(response.User.Id))
 		{
-			Id = int.TryParse(user.Id, out int id) ? id : 0,
-			Username = user.Username ?? "",
-			Description = user.Description ?? "",
-			MembershipType = user.MembershipLevel ?? "",
-		};
+			throw new Exception("Authentication failed: invalid /v3/auth/me response.");
+		}
 
-		return me;
+		return response.User;
 	}
 
 	public static async Task<APIJoinPlaceResponse> RequestJoinGame(APIJoinPlaceRequest req)
@@ -114,10 +124,10 @@ public static class PolyAPI
 		};
 	}
 
-	public static async Task<APIAvatarResponse> GetUserAvatarFromID(int userID)
+	public static async Task<APIAvatarResponse> GetUserAvatarFromID(string userID)
 	{
 		APIV3CharacterAppearanceRoot response = await _client.GetFromJsonAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/character/" + userID.ToString() + "/appearance"),
+			Globals.ApiEndpoint.PathJoin("/v3/character/" + userID + "/appearance"),
 			APIGenerationContext.Default.APIV3CharacterAppearanceRoot
 		);
 
@@ -179,10 +189,11 @@ public static class PolyAPI
 			Playing = info.World.TotalPlayers,
 		};
 	}
-	public static Task<APIGuildInfo> GetGuildFromID(int guildID)
+
+	public static Task<APIV3SocialGuild> GetGuildFromID(int guildID)
 		=> GetGuildInfoV3(guildID);
 
-	private static async Task<APIGuildInfo> GetGuildInfoV3(int guildID)
+	private static async Task<APIV3SocialGuild> GetGuildInfoV3(int guildID)
 	{
 		APIV3SocialGuildRoot response = await _client.GetFromJsonAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/social/guilds/" + guildID.ToString()),
@@ -190,23 +201,13 @@ public static class PolyAPI
 		);
 
 		APIV3SocialGuild guild = response.Guild;
-		return new APIGuildInfo
+		return new APIV3SocialGuild
 		{
-			Id = int.TryParse(guild.Id, out int id) ? id : guildID,
+			Id = guild.Id ?? guildID.ToString(),
 			Name = guild.Name,
 			Description = guild.Description,
-			Creator = new APIGuildCreator
-			{
-				Id = int.TryParse(guild.Creator.Id, out int creatorId) ? creatorId : 0,
-				Name = guild.Creator.Username ?? "",
-				Thumbnail = "",
-			},
-			Thumbnail = "",
-			Banner = "",
-			Color = "",
-			Jointype = guild.JoinType,
+			Creator =  guild.Creator,
 			MemberCount = guild.MemberCount,
-			VaultBalance = 0,
 			IsVerified = guild.IsVerified,
 			CreatedAt = guild.CreatedAt,
 		};

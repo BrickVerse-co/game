@@ -610,23 +610,23 @@ public sealed partial class NetworkService : Instance
 			{
 				// Offline data
 				validateRes.IsCreator = true;
-				userData = new() { Username = "Player" + testUserID.ToString(), Id = testUserID, IsStaff = false };
+				userData = new() { Username = "Player" + testUserID.ToString(), Id = testUserID.ToString(), IsStaff = false };
 			}
 			else if (IsProd)
 			{
 				validateRes = await AuthenticatePlayer(userToken);
-				userData = await PolyAPI.GetUserFromID(validateRes.UserID);
+				userData = await PolyAPI.GetUserFromID(validateRes.UserID.ToString());
 			}
 			else
 			{
-				userData = await PolyAPI.GetUserFromID(validateRes.UserID);
+				userData = await PolyAPI.GetUserFromID(validateRes.UserID.ToString());
 			}
 
 			if (Root.WorldInfo.HasValue)
 			{
 				if (Root.WorldInfo.Value.Creator.Type == "guild")
 				{
-					APIGuildInfo guildInfo = await PolyAPI.GetGuildFromID(Root.WorldInfo.Value.Creator.Id);
+					APIV3SocialGuild guildInfo = await PolyAPI.GetGuildFromID(Root.WorldInfo.Value.Creator.Id);
 					validateRes.IsCreator = guildInfo.Creator.Id == userData.Id ? true : false;
 				}
 			}

@@ -92,7 +92,7 @@ public partial class MobileUI : Control
 		SwitchTo(MobileViewEnum.Home);
 	}
 
-	private void OnUserAuthenticated(APIMeResponse me)
+	private void OnUserAuthenticated(APIV3AuthMeUser me)
 	{
 		HideStartupSplash();
 		if (NewUserSplash != null && IsInstanceValid(NewUserSplash))

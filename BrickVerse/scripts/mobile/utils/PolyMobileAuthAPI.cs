@@ -21,10 +21,10 @@ public static class PolyMobileAuthAPI
 	private static readonly PTHttpClient _client = new();
 	private static string _authState = "";
 
-	public static event Action<APIMeResponse>? UserAuthenticated;
+	public static event Action<APIV3AuthMeUser>? UserAuthenticated;
 	public static event Action? AskForAuthentication;
 
-	public static APIMeResponse CurrentUserInfo { get; private set; }
+	public static APIV3AuthMeUser CurrentUserInfo { get; private set; }
 
 	private static MobileAuthData _authData;
 	private const string AuthDataPath = "user://auth2";
@@ -107,7 +107,7 @@ public static class PolyMobileAuthAPI
 		PolyAPI.SetAuthToken(userToken);
 		try
 		{
-			APIMeResponse me = await PolyAPI.GetCurrentUser();
+			APIV3AuthMeUser me = await PolyAPI.GetCurrentUser();
 
 			_authData.Username = me.Username;
 			_authData.Token = userToken;
@@ -143,7 +143,7 @@ public struct MobileAuthData
 	public string Token { get; set; }
 
 	[JsonInclude]
-	public int UserID { get; set; }
+	public string UserID { get; set; }
 
 	[JsonInclude]
 	public string Username { get; set; }

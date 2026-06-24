@@ -166,19 +166,21 @@ public sealed partial class ClientEntry : Node3D
 		}
 #endif
 
-		// Desktop auth: only for production clients (not solo/local playtests)
-		if (isClient && token == null && !Globals.IsMobileBuild && soloPath == null)
+		// Require account authentication for production clients (not solo/local playtests)
+		PT.Print($"ClientEntry: isClient={isClient}, token={(token != null ? "[REDACTED]" : "null")}, soloPath={soloPath}");
+		
+		if (isClient && token == null && soloPath == null)
 		{
-			PolyDesktopAuthAPI.AskForAuthentication += OnDesktopAskAuth;
-			PolyDesktopAuthAPI.UserAuthenticated += OnDesktopAuthenticated;
-			PolyDesktopAuthAPI.ShowQuickSignInCode += OnDesktopShowQuickCode;
+			PolyAuthAPI.AskForAuthentication += OnDesktopAskAuth;
+			PolyAuthAPI.UserAuthenticated += OnDesktopAuthenticated;
+			PolyAuthAPI.ShowQuickSignInCode += OnDesktopShowQuickCode;
 
 			_deepLink = new Deeplink();
 			AddChild(_deepLink, true);
 			_deepLink.DeeplinkReceived += OnDesktopDeeplinkReceived;
 			_deepLink.Initialize();
 
-			PolyDesktopAuthAPI.Setup();
+			PolyAuthAPI.Setup();
 		}
 
 		if (debugAddress != null)
@@ -588,10 +590,10 @@ public sealed partial class ClientEntry : Node3D
 		// Simple prompt: open browser for /auth/client consent flow.
 		// In a real UI you would show a modal with "Browser Login" and "Quick Code" buttons.
 		OS.Alert("You need to sign in to BrickVerse.\n\nClick OK to open the browser login page.", "Sign In Required");
-		PolyDesktopAuthAPI.StartBrowserLogin();
+		PolyAuthAPI.StartBrowserLogin();
 	}
 
-	private void OnDesktopAuthenticated(APIMeResponse me)
+	private void OnDesktopAuthenticated(APIV3AuthMeUser me)
 	{
 		PT.Print("Desktop authenticated as ", me.Username);
 		// After auth, if we were waiting on token for prod connect flow, the caller already set token via LoginWithAuthToken.
@@ -618,7 +620,7 @@ public sealed partial class ClientEntry : Node3D
 		if (!string.IsNullOrWhiteSpace(token))
 		{
 			PT.Print("Received desktop auth token via deep link");
-			await PolyDesktopAuthAPI.LoginWithAuthToken(token);
+			await PolyAuthAPI.LoginWithAuthToken(token);
 		}
 	}
 

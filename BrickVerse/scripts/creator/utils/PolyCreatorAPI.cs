@@ -20,7 +20,7 @@ public static class PolyCreatorAPI
 {
 	private static readonly PTHttpClient _client = new();
 
-	public static int UserID { get; private set; } = 0;
+	public static string UserID { get; private set; } = "0";
 	public static APIUserInfo UserInfo { get; private set; }
 	public static string Token { get; private set; } = "";
 
@@ -47,7 +47,7 @@ public static class PolyCreatorAPI
 	{
 		SetToken(token);
 		PolyAPI.SetAuthToken(token);
-		APIMeResponse me = await PolyAPI.GetCurrentUser();
+		APIV3AuthMeUser me = await PolyAPI.GetCurrentUser();
 
 		UserID = me.Id;
 		UserInfo = new APIUserInfo
@@ -55,7 +55,6 @@ public static class PolyCreatorAPI
 			Id = me.Id,
 			Username = me.Username,
 			Description = me.Description,
-			MembershipType = me.MembershipType,
 		};
 
 		IsUserAuthenticated = true;

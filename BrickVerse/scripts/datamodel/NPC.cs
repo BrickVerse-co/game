@@ -1052,7 +1052,7 @@ public partial class NPC : Physical
 	}
 
 	[ScriptMethod]
-	public void LoadAppearance(int userID)
+	public void LoadAppearance(string userID)
 	{
 		if (Character is BrickversianModal ptm)
 		{

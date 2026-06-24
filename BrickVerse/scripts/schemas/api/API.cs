@@ -10,7 +10,7 @@ namespace BrickVerse.Schemas.API;
 public struct APIUserInfo
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public string Id { get; set; }
 
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
@@ -164,17 +164,134 @@ public struct APIV3AuthMeRoot
 
 public struct APIV3AuthMeUser
 {
-	[JsonPropertyName("id")]
-	public string Id { get; set; }
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
 
-	[JsonPropertyName("username")]
-	public string Username { get; set; }
+    [JsonPropertyName("username")]
+    public string Username { get; set; }
 
-	[JsonPropertyName("description")]
-	public string Description { get; set; }
+    [JsonPropertyName("email")]
+    public string Email { get; set; }
 
-	[JsonPropertyName("membershipLevel")]
-	public string MembershipLevel { get; set; }
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
+
+    [JsonPropertyName("gender")]
+    public string Gender { get; set; }
+
+    [JsonPropertyName("role")]
+    public string Role { get; set; }
+
+    [JsonPropertyName("membershipLevel")]
+    public string MembershipLevel { get; set; }
+
+    [JsonPropertyName("headshotId")]
+    public string? HeadshotId { get; set; }
+
+    [JsonPropertyName("bodyshotId")]
+    public string? BodyshotId { get; set; }
+
+    [JsonPropertyName("headshotUrl")]
+    public string? HeadshotUrl { get; set; }
+
+    [JsonPropertyName("bodyshotUrl")]
+    public string? BodyshotUrl { get; set; }
+
+    [JsonPropertyName("isVerified")]
+    public bool IsVerified { get; set; }
+
+    [JsonPropertyName("isPartner")]
+    public bool IsPartner { get; set; }
+
+    [JsonPropertyName("isStarCreator")]
+    public bool IsStarCreator { get; set; }
+
+    [JsonPropertyName("isBetaTester")]
+    public bool IsBetaTester { get; set; }
+
+    [JsonPropertyName("trustedReporter")]
+    public bool TrustedReporter { get; set; }
+
+    [JsonPropertyName("inStudio")]
+    public bool InStudio { get; set; }
+
+    [JsonPropertyName("isModerator")]
+    public bool IsModerator { get; set; }
+
+    [JsonPropertyName("verifiedEmail")]
+    public bool VerifiedEmail { get; set; }
+
+    [JsonPropertyName("twoFactorEnabled")]
+    public bool TwoFactorEnabled { get; set; }
+
+    [JsonPropertyName("twoFactorMethod")]
+    public string? TwoFactorMethod { get; set; }
+
+    [JsonPropertyName("canUseSupportDesk")]
+    public bool CanUseSupportDesk { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; }
+
+    [JsonPropertyName("ageBand")]
+    public string AgeBand { get; set; }
+
+    [JsonPropertyName("isUnder13")]
+    public bool IsUnder13 { get; set; }
+
+    [JsonPropertyName("cubes")]
+    public int Cubes { get; set; }
+
+    [JsonPropertyName("ugcCredit")]
+    public int UgcCredit { get; set; }
+
+    [JsonPropertyName("xp")]
+    public int Xp { get; set; }
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+
+    [JsonPropertyName("profileViews")]
+    public int ProfileViews { get; set; }
+
+    [JsonPropertyName("serverRegion")]
+    public string? ServerRegion { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime UpdatedAt { get; set; }
+
+    [JsonPropertyName("lastLoginAt")]
+    public DateTime? LastLoginAt { get; set; }
+
+    [JsonPropertyName("lastSeenAt")]
+    public DateTime? LastSeenAt { get; set; }
+
+    [JsonPropertyName("hasPurchased")]
+    public bool HasPurchased { get; set; }
+
+    [JsonPropertyName("hasParentalPin")]
+    public bool HasParentalPin { get; set; }
+
+    [JsonPropertyName("hasPassword")]
+    public bool HasPassword { get; set; }
+
+    [JsonPropertyName("levelProgressPercent")]
+    public int LevelProgressPercent { get; set; }
+
+    [JsonPropertyName("currentLevelXp")]
+    public int CurrentLevelXp { get; set; }
+
+    [JsonPropertyName("nextLevelXp")]
+    public int NextLevelXp { get; set; }
+
+    [JsonPropertyName("xpIntoLevel")]
+    public int XpIntoLevel { get; set; }
+
+    [JsonPropertyName("xpForNextLevel")]
+    public int XpForNextLevel { get; set; }
 }
 
 public struct APIV3UserProfileRoot
@@ -671,26 +788,53 @@ public struct APIGuildInfo
 
 public struct APIMeResponse
 {
-	[JsonPropertyName("id")]
-	public int Id { get; set; }
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
 
-	[JsonPropertyName("username")]
-	public string Username { get; set; }
+    [JsonPropertyName("username")]
+    public string Username { get; set; }
 
-	[JsonPropertyName("bricksBalance")]
-	public int BricksBalance { get; set; }
+    [JsonPropertyName("email")]
+    public string Email { get; set; }
 
-	[JsonPropertyName("avatarID")]
-	public string AvatarID { get; set; }
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
 
-	[JsonPropertyName("membershipType")]
-	public string MembershipType { get; set; }
+    [JsonPropertyName("membershipLevel")]
+    public string MembershipLevel { get; set; }
 
-	[JsonPropertyName("description")]
-	public string Description { get; set; }
+    [JsonPropertyName("role")]
+    public string Role { get; set; }
 
-	[JsonPropertyName("signature")]
-	public string Signature { get; set; }
+    [JsonPropertyName("headshotUrl")]
+    public string HeadshotUrl { get; set; }
+
+    [JsonPropertyName("bodyshotUrl")]
+    public string BodyshotUrl { get; set; }
+
+    [JsonPropertyName("isVerified")]
+    public bool IsVerified { get; set; }
+
+    [JsonPropertyName("isPartner")]
+    public bool IsPartner { get; set; }
+
+    [JsonPropertyName("isModerator")]
+    public bool IsModerator { get; set; }
+
+    [JsonPropertyName("membershipLevel")]
+    public string MembershipType { get; set; }
+
+    [JsonPropertyName("cubes")]
+    public int Cubes { get; set; }
+
+    [JsonPropertyName("ugcCredit")]
+    public int UgcCredit { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("lastSeenAt")]
+    public DateTime? LastSeenAt { get; set; }
 }
 
 public struct APIWorldsData

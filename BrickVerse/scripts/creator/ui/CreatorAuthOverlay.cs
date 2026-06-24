@@ -29,9 +29,9 @@ public partial class CreatorAuthOverlay : Control
         _browserLoginBtn.Pressed += OnBrowserLogin;
         _quickCodeBtn.Pressed += OnQuickCode;
 
-        PolyDesktopAuthAPI.UserAuthenticated += OnAuthenticated;
-        PolyDesktopAuthAPI.ShowQuickSignInCode += OnShowQuickCode;
-        PolyDesktopAuthAPI.AskForAuthentication += ShowOverlay;
+        PolyAuthAPI.UserAuthenticated += OnAuthenticated;
+        PolyAuthAPI.ShowQuickSignInCode += OnShowQuickCode;
+        PolyAuthAPI.AskForAuthentication += ShowOverlay;
     }
 
     private void ShowOverlay()
@@ -46,14 +46,14 @@ public partial class CreatorAuthOverlay : Control
     {
         _statusLabel.Text = "Opening browser...";
         _browserLoginBtn.Disabled = true;
-        PolyDesktopAuthAPI.StartBrowserLogin();
+        PolyAuthAPI.StartBrowserLogin();
     }
 
     private async void OnQuickCode()
     {
         _statusLabel.Text = "Generating code...";
         _quickCodeBtn.Disabled = true;
-        await PolyDesktopAuthAPI.StartQuickSignInCodeFlow();
+        await PolyAuthAPI.StartQuickSignInCodeFlow();
     }
 
     private void OnShowQuickCode(string code)
@@ -63,9 +63,10 @@ public partial class CreatorAuthOverlay : Control
         _quickCodeBtn.Disabled = false;
     }
 
-    private void OnAuthenticated(APIMeResponse me)
+    private void OnAuthenticated(APIV3AuthMeUser me)
     {
         Visible = false;
         GD.Print($"Workshop authenticated as {me.Username}");
     }
+    // auth overlay ready
 }

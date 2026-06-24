@@ -691,7 +691,7 @@ public sealed partial class BrickversianModal : CharacterModel
 	}
 
 	[ScriptMethod]
-	public void LoadAppearance(int userID, bool loadTool = true)
+	public void LoadAppearance(string userID, bool loadTool = true)
 	{
 		ClearAppearance();
 		_ = InternalLoadAppearance(userID, loadTool);
@@ -727,7 +727,7 @@ public sealed partial class BrickversianModal : CharacterModel
 
 	private static Color MeshGetAlbedo(GeometryInstance3D mesh) => (Color)mesh.GetInstanceShaderParameter(_albedoParam);
 
-	internal async Task<AvatarLoadResponse> InternalLoadAppearance(int userID, bool loadTool = false, bool loadToolNpc = false)
+	internal async Task<AvatarLoadResponse> InternalLoadAppearance(string userID, bool loadTool = false, bool loadToolNpc = false)
 	{
 		_loadAppearanceCount++;
 

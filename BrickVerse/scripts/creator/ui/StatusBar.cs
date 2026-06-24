@@ -23,11 +23,11 @@ public partial class StatusBar : Control
 		CreatorService.Interface.StatusBar = this;
 		_versionLabel.Text = $"BrickVerse Creator {Globals.AppVersion}";
 
-		PolyDesktopAuthAPI.UserAuthenticated += UpdateUserDisplay;
+		PolyAuthAPI.UserAuthenticated += UpdateUserDisplay;
 #if CREATOR
 		if (PolyCreatorAPI.IsUserAuthenticated)
 		{
-			UpdateUserDisplay(new Schemas.API.APIMeResponse
+			UpdateUserDisplay(new Schemas.API.APIV3AuthMeUser
 			{
 				Id = PolyCreatorAPI.UserID,
 				Username = PolyCreatorAPI.UserInfo.Username,
@@ -37,7 +37,7 @@ public partial class StatusBar : Control
 		base._Ready();
 	}
 
-	private async void UpdateUserDisplay(Schemas.API.APIMeResponse me)
+	private async void UpdateUserDisplay(Schemas.API.APIV3AuthMeUser me)
 	{
 		if (_userInfoLabel != null)
 			_userInfoLabel.Text = $"{me.Username} ({me.Id})";
