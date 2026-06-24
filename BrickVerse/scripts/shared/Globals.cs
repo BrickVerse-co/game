@@ -25,8 +25,8 @@ namespace BrickVerse.Shared;
 
 public sealed partial class Globals : Node
 {
-	public const string MainEndpoint = "https://BrickVerse.com/";
-	public const string ApiEndpoint = "https://api.BrickVerse.com/";
+	public const string MainEndpoint = "https://brickverse.gg/";
+	public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	public const float AlphaThreshold = 0.025f;
 
 	public const string ToolboxFolderName = "toolbox";
@@ -161,7 +161,7 @@ public sealed partial class Globals : Node
 #endif
 
 		PT.Print($"BrickVerse v{AppVersion}");
-		PT.Print("https://BrickVerse.com/");
+		PT.Print("https://brickverse.gg/");
 		PT.Print("-- System Info --");
 		PT.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
 		PT.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
