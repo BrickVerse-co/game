@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Networking;
 using BrickVerse.Networking.RateLimiters;
+using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using System;
@@ -252,7 +253,8 @@ public sealed partial class ChatService : Instance
 				{
 					userId = userId.ToString(),
 					message,
-				}
+				},
+				APIGenerationContext.Default.Object
 			);
 		}
 		catch (Exception ex)

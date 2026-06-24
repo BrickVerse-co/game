@@ -116,7 +116,8 @@ public static class PolyCreatorAPI
 				{
 					ownerId = UserID.ToString(),
 					ownerType = "USER",
-				}
+				},
+				APIGenerationContext.Default.Object
 			);
 			createWorld.EnsureSuccessStatusCode();
 

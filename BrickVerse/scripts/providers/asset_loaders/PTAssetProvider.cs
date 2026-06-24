@@ -133,15 +133,11 @@ public class PTAssetProvider : IAssetProvider
 			return await _client.GetByteArrayAsync(url);
 		}
 
-		ThumbnailUrlResponse thumb = await _client.GetFromJsonAsync(url, PTAssetProviderGenerationContext.Default.ThumbnailUrlResponse)
-			?? throw new InvalidOperationException("Failed to resolve thumbnail URL");
+		ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, PTAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
+		if (thumb is null || string.IsNullOrWhiteSpace(thumb.Value.Url))
+			throw new InvalidOperationException("Failed to resolve thumbnail URL");
 
-		if (string.IsNullOrWhiteSpace(thumb.Url))
-		{
-			throw new InvalidOperationException("Thumbnail URL is missing");
-		}
-
-		return await _client.GetByteArrayAsync(thumb.Url);
+		return await _client.GetByteArrayAsync(thumb.Value.Url);
 	}
 
 	private void ApplyAssetAuthHeaders()

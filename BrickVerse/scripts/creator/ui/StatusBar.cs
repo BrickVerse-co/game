@@ -3,8 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
+using SystemNetHttp = System.Net.Http;
 
 namespace BrickVerse.Creator.UI;
 
@@ -12,12 +15,50 @@ public partial class StatusBar : Control
 {
 	[Export] private Label _titleLabel = null!;
 	[Export] private Label _versionLabel = null!;
+	[Export] private TextureRect _userAvatar = null!;
+	[Export] private Label _userInfoLabel = null!;
 
 	public override void _Ready()
 	{
 		CreatorService.Interface.StatusBar = this;
 		_versionLabel.Text = $"BrickVerse Creator {Globals.AppVersion}";
+
+		PolyDesktopAuthAPI.UserAuthenticated += UpdateUserDisplay;
+#if CREATOR
+		if (PolyCreatorAPI.IsUserAuthenticated)
+		{
+			UpdateUserDisplay(new Schemas.API.APIMeResponse
+			{
+				Id = PolyCreatorAPI.UserID,
+				Username = PolyCreatorAPI.UserInfo.Username,
+			});
+		}
+#endif
 		base._Ready();
+	}
+
+	private async void UpdateUserDisplay(Schemas.API.APIMeResponse me)
+	{
+		if (_userInfoLabel != null)
+			_userInfoLabel.Text = $"{me.Username} ({me.Id})";
+
+		if (_userAvatar != null)
+		{
+			try
+			{
+				string thumbUrl = Globals.ApiEndpoint.PathJoin($"/v3/user/{me.Id}/thumbnail?size=48");
+				using var resp = await new SystemNetHttp.HttpClient().GetAsync(thumbUrl);
+				if (resp.IsSuccessStatusCode)
+				{
+					byte[] data = await resp.Content.ReadAsByteArrayAsync();
+					var img = new Image();
+					img.LoadPngFromBuffer(data);
+					var tex = ImageTexture.CreateFromImage(img);
+					_userAvatar.Texture = tex;
+				}
+			}
+			catch { }
+		}
 	}
 
 	public void SetStatus(string text)

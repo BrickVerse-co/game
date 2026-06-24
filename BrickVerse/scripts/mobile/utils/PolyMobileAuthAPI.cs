@@ -80,7 +80,8 @@ public static class PolyMobileAuthAPI
 		string escapedCode = Uri.EscapeDataString(code);
 		using HttpResponseMessage quickSignInResponse = await _client.PostAsJsonAsync(
 			Globals.ApiEndpoint.PathJoin($"/v3/auth/quick-signin/{escapedCode}/login"),
-			new { state }
+			new { state },
+			APIGenerationContext.Default.Object
 		);
 
 		if (quickSignInResponse.IsSuccessStatusCode)

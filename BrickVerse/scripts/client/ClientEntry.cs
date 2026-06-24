@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using BrickVerse.Shared.AssetLoaders;
+using DeepLinkAddon;
 
 namespace BrickVerse.Client;
 
@@ -57,6 +58,9 @@ public sealed partial class ClientEntry : Node3D
 	private int? _debugPort;
 
 	internal DebugAgent? DebugAgent { get; private set; }
+
+	private Deeplink? _deepLink;
+	private bool _authPromptShown = false;
 
 	public ClientEntry()
 	{
@@ -161,6 +165,21 @@ public sealed partial class ClientEntry : Node3D
 			worldPath = soloPath;
 		}
 #endif
+
+		// Desktop auth: only for production clients (not solo/local playtests)
+		if (isClient && token == null && !Globals.IsMobileBuild && soloPath == null)
+		{
+			PolyDesktopAuthAPI.AskForAuthentication += OnDesktopAskAuth;
+			PolyDesktopAuthAPI.UserAuthenticated += OnDesktopAuthenticated;
+			PolyDesktopAuthAPI.ShowQuickSignInCode += OnDesktopShowQuickCode;
+
+			_deepLink = new Deeplink();
+			AddChild(_deepLink, true);
+			_deepLink.DeeplinkReceived += OnDesktopDeeplinkReceived;
+			_deepLink.Initialize();
+
+			PolyDesktopAuthAPI.Setup();
+		}
 
 		if (debugAddress != null)
 		{
@@ -558,7 +577,49 @@ public sealed partial class ClientEntry : Node3D
 			Root.ForceDelete();
 			DatamodelBridge.Free();
 		}
-		base._ExitTree();
+	}
+
+	// ===== Desktop Auth Handlers =====
+	private void OnDesktopAskAuth()
+	{
+		if (_authPromptShown) return;
+		_authPromptShown = true;
+
+		// Simple prompt: open browser for /auth/client consent flow.
+		// In a real UI you would show a modal with "Browser Login" and "Quick Code" buttons.
+		OS.Alert("You need to sign in to BrickVerse.\n\nClick OK to open the browser login page.", "Sign In Required");
+		PolyDesktopAuthAPI.StartBrowserLogin();
+	}
+
+	private void OnDesktopAuthenticated(APIMeResponse me)
+	{
+		PT.Print("Desktop authenticated as ", me.Username);
+		// After auth, if we were waiting on token for prod connect flow, the caller already set token via LoginWithAuthToken.
+		// If you need to auto-continue a pending join, trigger it here.
+	}
+
+	private void OnDesktopShowQuickCode(string code)
+	{
+		OS.Alert($"Quick Sign-In Code: {code}\n\nGo to brickverse.gg on another device, sign in, and enter this code.", "Quick Sign-In");
+	}
+
+	private async void OnDesktopDeeplinkReceived(DeeplinkURL url)
+	{
+		if (url.Host != "auth") return;
+
+		string token = url.Path.TrimStart('/');
+		if (string.IsNullOrWhiteSpace(token))
+		{
+			// fallback: try query param token=...
+			var q = System.Web.HttpUtility.ParseQueryString(url.Query ?? "");
+			token = q.Get("token") ?? "";
+		}
+
+		if (!string.IsNullOrWhiteSpace(token))
+		{
+			PT.Print("Received desktop auth token via deep link");
+			await PolyDesktopAuthAPI.LoginWithAuthToken(token);
+		}
 	}
 
 	public struct ClientEntryData

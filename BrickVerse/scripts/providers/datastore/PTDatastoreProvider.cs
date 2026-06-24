@@ -127,9 +127,10 @@ public class PTDatastoreProvider : IDatastoreProvider
 			new("value", new JsonObject { ["value"] = valueNode }),
 		];
 
-		using var req = await _client.PutAsJsonAsync(
+		string jsonBody = requestBody.ToJsonString();
+		using var req = await _client.PutAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/world/server/storage"),
-			requestBody
+			new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json")
 		);
 	}
 

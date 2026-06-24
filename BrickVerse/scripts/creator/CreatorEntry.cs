@@ -4,8 +4,10 @@
 
 using Godot;
 using BrickVerse.Client.Settings.Appliers;
+using BrickVerse.Client.WebAPI;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -41,6 +43,13 @@ public partial class CreatorEntry : Node
 
 		GetViewport().GuiEmbedSubwindows = true;
 
+		// Create and show blocking auth overlay (must be early so nothing else works until login)
+		var authOverlayScene = GD.Load<PackedScene>("res://scenes/creator/auth/auth_overlay.tscn");
+		var authOverlay = authOverlayScene.Instantiate<Creator.UI.CreatorAuthOverlay>();
+		AddChild(authOverlay);
+		authOverlay.Name = "AuthOverlay";
+		authOverlay.Visible = false; // will be shown by PolyDesktopAuthAPI.AskForAuthentication
+
 		// Open project
 		cmdargs.TryGetValue("proj", out string? creatorFilePath);
 		if (creatorFilePath != null)
@@ -61,6 +70,17 @@ public partial class CreatorEntry : Node
 		if (launchToken != null)
 		{
 			await PolyCreatorAPI.LoginWithToken(launchToken);
+		}
+		else
+		{
+			// Start local dev server that receives brickverse:// tokens during editor testing
+			DesktopAuthDevServer.StartIfEditor();
+
+			// No CLI token: ensure desktop auth (browser / quick code) for Workshop
+			PolyDesktopAuthAPI.UserAuthenticated += me => PT.Print("Creator authenticated via PolyDesktopAuthAPI as ", me.Username);
+			PolyDesktopAuthAPI.AskForAuthentication += () => authOverlay.Visible = true;
+			PolyDesktopAuthAPI.ShowQuickSignInCode += code => OS.Alert($"Quick Sign-In Code: {code}\n\nEnter it at brickverse.gg while signed in.", "Quick Sign-In");
+			PolyDesktopAuthAPI.Setup();
 		}
 	}
 }

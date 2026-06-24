@@ -174,4 +174,23 @@ public partial class PTHttpClient
 
 		return await response.Content.ReadAsStringAsync();
 	}
+
+	public async Task<HttpResponseMessage> PutAsync(string url, HttpContent content)
+	{
+		using HttpRequestMessage msg = new(HttpMethod.Put, url)
+		{
+			Content = content
+		};
+		return await SendAsync(msg);
+	}
+
+	public async Task<HttpResponseMessage> PutAsJsonAsync<T>(string url, T value, JsonTypeInfo<T> jsonTypeInfo)
+	{
+		string json = JsonSerializer.Serialize(value, jsonTypeInfo);
+		using HttpRequestMessage msg = new(HttpMethod.Put, url)
+		{
+			Content = new StringContent(json, Encoding.UTF8, "application/json")
+		};
+		return await SendAsync(msg);
+	}
 }
