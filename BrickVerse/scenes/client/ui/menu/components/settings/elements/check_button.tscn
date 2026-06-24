@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://brxt84nnr2cl7"]
 
-[ext_resource type="Script" uid="uid://na8wcbutwbfp" path="res://scripts/client/ui/menu/components/settings/fields/CheckField.cs" id="1_6f4ij"]
 [ext_resource type="Texture2D" uid="uid://53nvn3sb7yor" path="res://assets/textures/empty.png" id="1_yu6cr"]
 [ext_resource type="PackedScene" uid="uid://bsx34viu6vynx" path="res://scenes/client/ui/misc/animated/animated_toggle.tscn" id="3_qlwgc"]
 
@@ -22,7 +21,6 @@ theme_override_icons/unchecked_mirrored = ExtResource("1_yu6cr")
 theme_override_icons/checked_disabled_mirrored = ExtResource("1_yu6cr")
 theme_override_icons/unchecked_disabled_mirrored = ExtResource("1_yu6cr")
 flat = true
-script = ExtResource("1_6f4ij")
 
 [node name="CheckButton" parent="." unique_id=1605993135 instance=ExtResource("3_qlwgc")]
 layout_mode = 1
