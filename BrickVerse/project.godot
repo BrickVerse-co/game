@@ -63,7 +63,7 @@ project/solution_directory="../"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg", "res://addons/BrickVerseExportPlugin/plugin.cfg")
+enabled=PackedStringArray("res://addons/DeeplinkPlugin/plugin.cfg")
 
 [gui]
 
