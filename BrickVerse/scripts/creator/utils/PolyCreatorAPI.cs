@@ -45,6 +45,8 @@ public static class PolyCreatorAPI
 
 	public static async Task LoginWithToken(string token)
 	{
+		if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Token cannot be null or whitespace.", nameof(token));
+		
 		SetToken(token);
 		PolyAPI.SetAuthToken(token);
 		APIV3AuthMeUser me = await PolyAPI.GetCurrentUser();

@@ -27,6 +27,28 @@ public partial class CreatorEntry : Node
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
 		cmdargs.TryGetValue("token", out string? launchToken);
 
+		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
+
+		// Login creator with token
+		if (launchToken != null)
+		{
+			PT.Print("CreatorEntry: Launch token provided. Logging in via PolyCreatorAPI...");
+			await PolyCreatorAPI.LoginWithToken(launchToken);
+		}
+		else
+		{
+			PT.Print("CreatorEntry: No launch token provided. Preparing to authenticate via PolyAuthAPI...");
+
+			// Start local dev server that receives brickverse:// tokens during editor testing
+			DesktopAuthDevServer.StartIfEditor();
+
+			// No CLI token: ensure desktop auth (browser / quick code) for Workshop
+			PolyAuthAPI.UserAuthenticated += me => PT.Print("Creator authenticated via PolyAuthAPI as ", me.Username);
+			PolyAuthAPI.AskForAuthentication += () => PolyAuthAPI.StartBrowserLogin();
+			PolyAuthAPI.ShowQuickSignInCode += code => OS.Alert($"Quick Sign-In Code: {code}\n\nEnter it at brickverse.gg while signed in.", "Quick Sign-In");
+			PolyAuthAPI.Setup();
+		}
+
 		CreatorService creatorService = new();
 		AddChild(creatorService);
 
@@ -43,13 +65,6 @@ public partial class CreatorEntry : Node
 
 		GetViewport().GuiEmbedSubwindows = true;
 
-		// Create and show blocking auth overlay (must be early so nothing else works until login)
-		var authOverlayScene = GD.Load<PackedScene>("res://scenes/creator/auth/auth_overlay.tscn");
-		var authOverlay = authOverlayScene.Instantiate<Creator.UI.CreatorAuthOverlay>();
-		AddChild(authOverlay);
-		authOverlay.Name = "AuthOverlay";
-		authOverlay.Visible = false; // will be shown by PolyDesktopAuthAPI.AskForAuthentication
-
 		// Open project
 		cmdargs.TryGetValue("proj", out string? creatorFilePath);
 		if (creatorFilePath != null)
@@ -64,23 +79,6 @@ public partial class CreatorEntry : Node
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
 			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.poly", ProjectName = new DirectoryInfo(legacyImportOut).Name });
-		}
-
-		// Login creator with token
-		if (launchToken != null)
-		{
-			await PolyCreatorAPI.LoginWithToken(launchToken);
-		}
-		else
-		{
-			// Start local dev server that receives brickverse:// tokens during editor testing
-			DesktopAuthDevServer.StartIfEditor();
-
-			// No CLI token: ensure desktop auth (browser / quick code) for Workshop
-			PolyDesktopAuthAPI.UserAuthenticated += me => PT.Print("Creator authenticated via PolyDesktopAuthAPI as ", me.Username);
-			PolyDesktopAuthAPI.AskForAuthentication += () => authOverlay.Visible = true;
-			PolyDesktopAuthAPI.ShowQuickSignInCode += code => OS.Alert($"Quick Sign-In Code: {code}\n\nEnter it at brickverse.gg while signed in.", "Quick Sign-In");
-			PolyDesktopAuthAPI.Setup();
 		}
 	}
 }

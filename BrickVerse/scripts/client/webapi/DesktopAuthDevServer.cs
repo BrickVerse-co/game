@@ -48,7 +48,7 @@ public static class DesktopAuthDevServer
                 {
                     Callable.From(async () =>
                     {
-                        await PolyDesktopAuthAPI.LoginWithAuthToken(token);
+                        await PolyAuthAPI.LoginWithAuthToken(token);
                     }).CallDeferred();
 
                     ctx.Response.StatusCode = 200;

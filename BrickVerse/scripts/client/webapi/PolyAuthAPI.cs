@@ -68,6 +68,7 @@ public static class PolyAuthAPI
 		string? storedToken = LoadStoredToken();
 		if (!string.IsNullOrWhiteSpace(storedToken) && await LoginWithAuthToken(storedToken))
 		{
+			PT.Print("PolyAuthAPI: Loaded stored auth token and logged in as ", CurrentUserInfo?.Username ?? "(unknown)");
 			return;
 		}
 
