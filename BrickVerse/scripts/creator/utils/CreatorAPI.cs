@@ -22,7 +22,7 @@ public static class CreatorAPI
 {
 	private const string OpenIDClientId = "328382387274645504";
 
-	private const string AuthorizePath = "/v3/openid/login";
+	private const string AuthorizePath = "/oauth/authorize";
 	private const string TokenPath = "/v3/openid/token";
 	private const string UserInfoPath = "/v3/openid/userinfo";
 
@@ -85,7 +85,7 @@ public static class CreatorAPI
 		CreatorAuthServer.BeginAuthAttempt(state, codeVerifier);
 
 		string authorizeUrl =
-			Globals.ApiEndpoint.PathJoin(AuthorizePath) +
+			Globals.MainEndpoint.PathJoin(AuthorizePath) +
 			$"?client_id={Uri.EscapeDataString(OpenIDClientId)}" +
 			$"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}" +
 			"&response_type=code" +
@@ -106,6 +106,9 @@ public static class CreatorAPI
 	)
 	{
 		string token = await ExchangeOpenIdCodeForToken(code, redirectUri, codeVerifier);
+
+		PT.Print($"Authenticated with OpenID. Received token: {token.Substring(0, Math.Min(token.Length, 10))}...");
+
 		await LoginWithToken(token, saveToken: true);
 	}
 
@@ -167,14 +170,21 @@ public static class CreatorAPI
 		{
 			OpenIdUserInfoResponse userInfo = await GetUserInfo();
 
+			PT.Print("userInfo dump:", JsonSerializer.Serialize(userInfo, APIGenerationContextV3.Default.OpenIdUserInfoResponse));
+
 			if (!IsValidUserInfo(userInfo))
+			{
+				PT.PrintErr("CreatorAPI: Invalid user info received from OpenID userinfo endpoint.");
 				throw new InvalidOperationException("OpenID userinfo response was invalid.");
+			}
 
 			CurrentUserInfo = userInfo;
 			UserID = userInfo.Sub;
 			Username = userInfo.PreferredUsername;
 
 			IsUserAuthenticated = true;
+
+			PT.Print("CreatorAPI: User authenticated as ", Username, " (", UserID, ")");
 
 			if (saveToken)
 				SaveToken(token);
@@ -183,6 +193,7 @@ public static class CreatorAPI
 		}
 		catch
 		{
+			PT.Print("CreatorAPI: Authentication failed. Clearing auth state.");
 			ClearAuth();
 			throw;
 		}

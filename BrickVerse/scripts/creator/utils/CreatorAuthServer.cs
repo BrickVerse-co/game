@@ -158,6 +158,8 @@ public static class CreatorAuthServer
 				);
 			}).CallDeferred();
 
+			PT.Print("OpenID callback handled successfully - user should be authenticated now.");
+
 			await WriteHtmlAsync(
 				ctx,
 				200,
