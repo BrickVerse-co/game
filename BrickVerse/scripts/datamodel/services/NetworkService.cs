@@ -271,29 +271,44 @@ public sealed partial class NetworkService : Instance
 	private async void OnMessageRecv(int fromPeer, byte[] data, TransferMode tfm)
 	{
 		if (NetInstance == null) return;
+
 #if DEBUG
 		string netDebugTrace = "";
 #endif
+
 		try
 		{
 			InternalNetMsg netMsg = InternalNetMsg.Deserialize(data);
+
 #if DEBUG
 			netDebugTrace = netMsg.StackTrace;
 #endif
-			int originFromPeer = (fromPeer == 1 && netMsg.OriginSender != 0) ? netMsg.OriginSender : fromPeer;
 
-			NetworkedObject? netObj = null;
+			int originFromPeer = (fromPeer == 1 && netMsg.OriginSender != 0)
+				? netMsg.OriginSender
+				: fromPeer;
+
+			NetworkedObject? netObj;
+
 			if (netMsg.Target.StartsWith("i:"))
 			{
-				// Newly created object may not be available, wait for them for a bit.
-				netObj = await Root.WaitForNetObjectAsync(netMsg.Target.TrimPrefix("i:"), timeoutMs: 10000);
+				string netId = netMsg.Target.TrimPrefix("i:");
+				netObj = await Root.WaitForNetObjectAsync(netId, timeoutMs: 10000);
 			}
 			else
 			{
 				netObj = Root.GetNetObj(netMsg.Target);
 			}
 
-			if (netObj == null) return;
+			if (netObj == null)
+			{
+				PT.PrintErr(
+					$"Dropped packet: target not found. " +
+					$"Target={netMsg.Target}, MethodId={netMsg.TargetMethod}, " +
+					$"FromPeer={fromPeer}, OriginPeer={originFromPeer}, TransferMode={tfm}"
+				);
+				return;
+			}
 
 			RpcDispatchInfo dispatch = GetDispatchInfo(netObj, netMsg.TargetMethod);
 			ValidateAuthority(dispatch.Attribute, dispatch.Method, netObj, originFromPeer, tfm, netMsg);
@@ -306,7 +321,8 @@ public sealed partial class NetworkService : Instance
 			{
 				PT.PrintErr(
 					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
-					$"FromPeer={fromPeer}, OriginPeer={originFromPeer}, Expected={expectedArgCount}, Actual={actualArgCount}"
+					$"TargetType={netObj.GetType().FullName}, FromPeer={fromPeer}, OriginPeer={originFromPeer}, " +
+					$"Expected={expectedArgCount}, Actual={actualArgCount}"
 				);
 
 				for (int i = 0; i < actualArgCount; i++)
@@ -325,20 +341,19 @@ public sealed partial class NetworkService : Instance
 				{
 					lock (_rateLimiterLock)
 					{
-						var rateLimiter = _peerRateLimiters[originFromPeer];
-						if (tfm == TransferMode.Reliable)
+						if (!_peerRateLimiters.TryGetValue(originFromPeer, out RateLimiters? rateLimiter))
 						{
-							canSend = rateLimiter.Reliable.TryAccept();
+							PT.PrintErr($"Dropped broadcast RPC from unknown peer {originFromPeer}");
+							return;
 						}
-						else
-						{
-							canSend = rateLimiter.Unreliable.TryAccept();
-						}
+
+						canSend = tfm == TransferMode.Reliable
+							? rateLimiter.Reliable.TryAccept()
+							: rateLimiter.Unreliable.TryAccept();
 					}
 				}
 				else
 				{
-					// Don't apply rate limit if server
 					canSend = true;
 				}
 
@@ -346,18 +361,31 @@ public sealed partial class NetworkService : Instance
 
 				if (canSend)
 				{
-					if (Globals.UseLogRPC) PT.Print($"Broadcast {dispatch.Method.Name} from {originFromPeer} to all");
-					NetInstance.BroadcastMessage(netMsg.Serialize(), dispatch.Attribute.TransferMode, dispatch.Attribute.TransferChannel, [originFromPeer]);
+					if (Globals.UseLogRPC)
+					{
+						PT.Print($"Broadcast {dispatch.Method.Name} from {originFromPeer} to all");
+					}
+
+					NetInstance.BroadcastMessage(
+						netMsg.Serialize(),
+						dispatch.Attribute.TransferMode,
+						dispatch.Attribute.TransferChannel,
+						[originFromPeer]
+					);
 				}
 				else
 				{
-					if (Globals.UseLogRPC) PT.Print($"Blocked {dispatch.Method.Name} from {originFromPeer}");
+					if (Globals.UseLogRPC)
+					{
+						PT.Print($"Blocked {dispatch.Method.Name} from {originFromPeer}");
+					}
+
 					return;
 				}
 			}
 
-			if (originFromPeer == LocalPeerID) return;
-			netObj.RemoteSenderId = originFromPeer;
+			if (originFromPeer == LocalPeerID)
+				return;
 
 			object?[] args = ArrayPool<object?>.Shared.Rent(expectedArgCount);
 
@@ -373,10 +401,11 @@ public sealed partial class NetworkService : Instance
 					{
 						PT.PrintErr(
 							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
-							$"ArgIndex={i}, TargetType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, " +
+							$"TargetType={netObj.GetType().FullName}, ArgIndex={i}, " +
+							$"TargetArgType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, " +
 							$"FromPeer={fromPeer}, OriginPeer={originFromPeer}"
 						);
-						PT.PrintErr(ex);
+						PT.PrintErr(ex.ToString());
 						return;
 					}
 				}
@@ -388,7 +417,7 @@ public sealed partial class NetworkService : Instance
 			{
 				if (OS.IsDebugBuild())
 				{
-					PT.PrintErr(dispatch.Method.Name, " invoke failure: ", ex);
+					PT.PrintErr($"{dispatch.Method.Name} invoke failure: {ex}");
 				}
 			}
 			finally
@@ -642,9 +671,21 @@ public sealed partial class NetworkService : Instance
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private async void NetAuthResponse(string testUserID, string userToken, int networkMode, int platform, string platformStr, byte[] pk)
 	{
-		if (NetInstance == null) return;
+		if (NetInstance == null)
+			return;
+
 		int peerID = RemoteSenderId;
-		PT.Print($"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}");
+
+		PT.Print(
+			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, " +
+			$"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
+		);
+
+		if (peerID <= 1)
+		{
+			PT.PrintErr($"Auth rejected: invalid peer id {peerID}");
+			return;
+		}
 
 		if (IntegrityCheckLayer != null)
 		{
@@ -652,7 +693,7 @@ public sealed partial class NetworkService : Instance
 			{
 				if (!IntegrityCheckLayer.Validate(pk, platformStr))
 				{
-					throw new Exception();
+					throw new Exception("Integrity validation failed.");
 				}
 			}
 			catch
@@ -664,130 +705,161 @@ public sealed partial class NetworkService : Instance
 
 		if (networkMode != (int)NetworkMode)
 		{
-			// Network type mismatch, kick
 			DisconnectPeer(peerID, NetworkModeMismatchMessage, DisconnectionCodeEnum.NetworkModeMismatch);
 			return;
 		}
 
 		APIValidateResponse validateRes;
 		APIUserInfo userData;
+
 		try
 		{
-			validateRes = new() { CanChat = true, UserID = testUserID, IsCreator = false, IsAgeRestricted = false };
-			if (OS.HasFeature("offline") || (Root.Entry != null && Root.Entry.IsSoloTest))
+			PT.Print("Auth: starting user validation...");
+
+			if (!IsProd)
 			{
-				// Offline data
-				validateRes.IsCreator = true;
-				userData = new() { Username = "Player" + testUserID, Id = testUserID, IsStaff = false };
+				validateRes = new()
+				{
+					CanChat = true,
+					UserID = testUserID,
+					IsCreator = true,
+					IsAgeRestricted = false
+				};
+
+				userData = new()
+				{
+					Username = "Player" + testUserID,
+					Id = testUserID,
+					IsStaff = false
+				};
 			}
-			else if (IsProd)
+			else
 			{
 				validateRes = await AuthenticatePlayer(userToken);
 				userData = await BVAPI.GetUserFromID(validateRes.UserID);
 			}
-			else
-			{
-				userData = await BVAPI.GetUserFromID(validateRes.UserID);
-			}
 
-			if (Root.WorldInfo.HasValue)
+			if (IsProd && Root.WorldInfo.HasValue && Root.WorldInfo.Value.Creator.Type == "guild")
 			{
-				if (Root.WorldInfo.Value.Creator.Type == "guild")
-				{
-					APIV3SocialGuild guildInfo = await BVAPI.GetGuildFromID(Root.WorldInfo.Value.Creator.Id);
-					validateRes.IsCreator = guildInfo.Creator.Id == userData.Id ? true : false;
-				}
+				APIV3SocialGuild guildInfo = await BVAPI.GetGuildFromID(Root.WorldInfo.Value.Creator.Id);
+				validateRes.IsCreator = guildInfo.Creator.Id == userData.Id;
 			}
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			PT.PrintErr("Auth failure: ", e);
+			PT.PrintErr("Auth failure:");
+			PT.PrintErr(ex.ToString());
 			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
-			return; // Exit early if authentication failed
+			return;
 		}
 
-		// If no longer in the game after authentication, stop here
-		if (!NetInstance.IsPeerConnected(peerID)) return;
+		if (!NetInstance.IsPeerConnected(peerID))
+		{
+			PT.PrintErr($"Auth stopped: peer {peerID} disconnected before player creation.");
+			return;
+		}
 
 		string username = userData.Username;
 
-		// Check for existing player
 		if (_players.GetPlayer(username) != null || _players.GetPlayerFromPeerID(peerID) != null)
 		{
 			DisconnectPeer(peerID, MultipleDeviceMessage, DisconnectionCodeEnum.MultipleDeviceNotAllowed);
 			return;
 		}
 
-		// Create player based on auth data
+		Player plr;
 
-		Player plr = Globals.LoadInstance<Player>(Root)!;
-
-		// Add to peer id lookup
-		_players.PeerIDToPlayer.TryAdd(peerID, plr);
-
-		plr.PeerID = peerID;
-		plr.UserID = userData.Id;
-		plr.Name = username;
-		plr.IsAdmin = userData.IsStaff;
-		plr.UserRoleClass = userData.UserRoleClass ?? "";
-		// Apply validation data
-		plr.IsCreator = validateRes.IsCreator;
-		plr.IsAgeRestricted = validateRes.IsAgeRestricted;
-		plr.CanChat = validateRes.CanChat;
-
-		plr.UserPlatform = (ClientPlatformEnum)platform;
-
-		if (plr.IsAdmin)
+		try
 		{
-			// Admin chat color
-			plr.ChatColor = Color.FromHtml("#DD5555");
-		}
-		else if (Root.PlayerDefaults.ChatColorsEnabled)
-		{
-			plr.ChatColor = Player.ChatColorFromUserID(userData.Id);
-		}
-		else
-		{
-			// Default chat color
-			plr.ChatColor = Root.PlayerDefaults.ChatColor;
-		}
+			PT.Print("Auth: creating player...");
 
-		// Assign network authorties
-		plr.SetNetworkAuthority(peerID, true);
-		plr.NetTransformAuthority = peerID;
-		if (!_players.UseServerAuthority)
-		{
-			// Assign property ownership if server authority mode is off
-			plr.NetPropAuthority = peerID;
-		}
+			plr = Globals.LoadInstance<Player>(Root)!;
 
-		// Insert default character on client
-		if (NetworkMode == NetworkModeEnum.Client)
-		{
-			Root.Insert.InitializeDefaultNPC(plr);
-		}
+			_players.PeerIDToPlayer.TryAdd(peerID, plr);
 
-		plr.Parent = _players;
+			plr.PeerID = peerID;
+			plr.UserID = userData.Id;
+			plr.Name = username;
+			plr.IsAdmin = userData.IsStaff;
+			plr.UserRoleClass = userData.UserRoleClass ?? "";
 
-		plr.Anchored = true;
-		plr.IsReady = false;
+			plr.IsCreator = validateRes.IsCreator;
+			plr.IsAgeRestricted = validateRes.IsAgeRestricted;
+			plr.CanChat = validateRes.CanChat;
+			plr.UserPlatform = (ClientPlatformEnum)platform;
 
-		// Copy instances from player default
-		foreach (Instance item in Root.PlayerDefaults.GetChildren())
-		{
-			if (item is Inventory) continue;
-			NetworkedObject a = item.Clone();
-			if (a is Instance i)
+			if (plr.IsAdmin)
 			{
-				i.Parent = plr;
+				plr.ChatColor = Color.FromHtml("#DD5555");
 			}
+			else if (Root.PlayerDefaults.ChatColorsEnabled)
+			{
+				plr.ChatColor = Player.ChatColorFromUserID(userData.Id);
+			}
+			else
+			{
+				plr.ChatColor = Root.PlayerDefaults.ChatColor;
+			}
+
+			plr.SetNetworkAuthority(peerID, true);
+			plr.NetTransformAuthority = peerID;
+
+			if (!_players.UseServerAuthority)
+			{
+				plr.NetPropAuthority = peerID;
+			}
+
+			if (NetworkMode == NetworkModeEnum.Client)
+			{
+				Root.Insert.InitializeDefaultNPC(plr);
+			}
+
+			plr.Parent = _players;
+			plr.Anchored = true;
+			plr.IsReady = false;
+
+			foreach (Instance item in Root.PlayerDefaults.GetChildren())
+			{
+				if (item is Inventory)
+					continue;
+
+				NetworkedObject clone = item.Clone();
+
+				if (clone is Instance instance)
+				{
+					instance.Parent = plr;
+				}
+			}
+
+			PT.Print($"Auth: player created. Peer={peerID}, UserID={plr.UserID}, Username={plr.Name}");
+		}
+		catch (Exception ex)
+		{
+			PT.PrintErr("Auth: player creation failed.");
+			PT.PrintErr(ex.ToString());
+			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
+			return;
 		}
 
-		PeerPreInit?.Invoke(peerID);
-		ReplicateSync.SyncPlaceToPlayer(plr);
+		try
+		{
+			PT.Print("Auth: invoking PeerPreInit...");
+			PeerPreInit?.Invoke(peerID);
 
-		// Connection timeout
+			PT.Print("Auth: starting SyncPlaceToPlayer...");
+			ReplicateSync.SyncPlaceToPlayer(plr);
+			PT.Print("Auth: SyncPlaceToPlayer returned.");
+		}
+		catch (Exception ex)
+		{
+			PT.PrintErr("Auth: SyncPlaceToPlayer failed.");
+			PT.PrintErr(ex.ToString());
+			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
+			return;
+		}
+
 		await Globals.Singleton.WaitAsync(ConnectTimeoutSec);
+
 		if (!plr.IsDeleted && !plr.IsReady)
 		{
 			DisconnectPeer(peerID, ConnectTimeoutMessage, DisconnectionCodeEnum.ConnectTimeout);

@@ -1767,19 +1767,39 @@ public partial class NetworkedObject : IScriptObject
 
 	private string ProcessRpcTarget()
 	{
-		// Root/internal service objects must be targeted by path because their numeric
-		// network IDs can overlap with replicated instances during startup.
-		if (this is World)
+		if (ShouldUseNetworkPathForRpc())
 			return NetworkPath;
+
+		return string.IsNullOrEmpty(NetworkedObjectID)
+			? NetworkPath
+			: "i:" + NetworkedObjectID;
+	}
+
+	private bool ShouldUseNetworkPathForRpc()
+	{
+		if (this is World)
+			return true;
 
 		if (this is Services.NetworkService)
-			return NetworkPath;
+			return true;
 
-		// If this is marked as no sync, use network path instead because an ID may not exist.
-		if (GetType().IsDefined(typeof(NoSyncAttribute)))
-			return NetworkPath;
+		if (GetType().IsDefined(typeof(NoSyncAttribute), inherit: true))
+			return true;
 
-		return string.IsNullOrEmpty(NetworkedObjectID) ? NetworkPath : "i:" + NetworkedObjectID;
+		if (GetType().IsDefined(typeof(InternalAttribute), inherit: true))
+			return true;
+
+		NetworkedObject? parent = NetworkParent;
+
+		while (parent != null)
+		{
+			if (parent is Services.NetworkService)
+				return true;
+
+			parent = parent.NetworkParent;
+		}
+
+		return false;
 	}
 
 	private bool CanSendNetworkRpc()
