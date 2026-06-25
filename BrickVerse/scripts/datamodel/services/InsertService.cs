@@ -241,9 +241,9 @@ public sealed partial class InsertService : Instance
 
 		if (Globals.IsServerBuild)
 		{
-			if (!string.IsNullOrWhiteSpace(ServerAPI.AuthToken))
+			if (!string.IsNullOrWhiteSpace(ServerAPI.HostToken))
 			{
-				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ServerAPI.AuthToken);
+				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ServerAPI.HostToken);
 			}
 			return;
 		}
