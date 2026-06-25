@@ -349,7 +349,7 @@ public static class PolyAPI
 					? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.ThumbnailId)
 					: "",
 				CreatorID = int.TryParse(item.CreatorId, out int creatorId) ? creatorId : 0,
-				CreatorName = item.CreatorId,
+				CreatorName = item.CreatorName ?? item.CreatorId,
 				CreatorUrl = "",
 			});
 		}
