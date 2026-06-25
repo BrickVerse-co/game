@@ -37,7 +37,7 @@ public static class CreatorAPI
 	public static OpenIdUserInfoResponse? CurrentUserInfo { get; private set; }
 
 	public static event Action<int>? LaunchPlaceRequest;
-	public static event Action? UserAuthenticated;
+	public static event Action<OpenIdUserInfoResponse>? UserAuthenticated;
 	public static event Action<string>? AuthenticationFailed;
 
 	public static bool IsUserAuthenticated { get; private set; }
@@ -179,7 +179,7 @@ public static class CreatorAPI
 			if (saveToken)
 				SaveToken(token);
 
-			UserAuthenticated?.Invoke();
+			UserAuthenticated?.Invoke(userInfo);
 		}
 		catch
 		{
