@@ -89,7 +89,7 @@ public static class CreatorAPI
 			$"?client_id={Uri.EscapeDataString(OpenIDClientId)}" +
 			$"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}" +
 			"&response_type=code" +
-			"&scope=openid%20profile%20email%20guilds" +
+			"&scope=openid%20profile%20email%20guilds%20assets%20worlds" +
 			$"&state={Uri.EscapeDataString(state)}" +
 			$"&code_challenge={Uri.EscapeDataString(codeChallenge)}" +
 			"&code_challenge_method=S256";
