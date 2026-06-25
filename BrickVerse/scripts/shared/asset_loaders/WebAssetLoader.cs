@@ -22,7 +22,7 @@ public partial class WebAssetLoader : Node
 
 	private const int MAX_CONCURRENT_REQUESTS = 10;
 
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 
 	private readonly BlockingCollection<(WebCacheItem Item, Action<Resource> Callback)> _queue = [];
 

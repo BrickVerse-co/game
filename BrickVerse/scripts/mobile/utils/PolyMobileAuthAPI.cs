@@ -18,7 +18,7 @@ namespace BrickVerse.Mobile.Utils;
 
 public static class PolyMobileAuthAPI
 {
-	private static readonly PTHttpClient _client = new();
+	private static readonly BVHttpClient _client = new();
 	private static string _authState = "";
 
 	public static event Action<APIV3AuthMeUser>? UserAuthenticated;

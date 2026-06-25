@@ -50,7 +50,7 @@ public sealed partial class ChatService : Instance
 	[ScriptProperty]
 	public PTFunction? ChatPredicate { get; set; }
 
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 
 	private static readonly Dictionary<string, string> _builtInEmojis = [];
 	public static IReadOnlyDictionary<string, string> BuiltInEmojis => _builtInEmojis;

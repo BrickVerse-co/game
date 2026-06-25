@@ -28,7 +28,7 @@ public static class CreatorAPI
 
 	private const string StoredTokenPath = "user://creator_auth";
 
-	private static readonly PTHttpClient _client = new();
+	private static readonly BVHttpClient _client = new();
 
 	public static string UserID { get; private set; } = "0";
 	public static string Username { get; private set; } = "";

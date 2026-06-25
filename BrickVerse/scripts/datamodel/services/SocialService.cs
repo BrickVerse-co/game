@@ -23,7 +23,7 @@ namespace BrickVerse.Datamodel.Services;
 [SaveIgnore]
 public sealed partial class SocialService : Instance
 {
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 	public readonly Dictionary<string, FileLinkAsset> FileLinks = [];
 
 	public void LocalSendFriendshipRequest(Player recipient, FriendshipRequestType req)

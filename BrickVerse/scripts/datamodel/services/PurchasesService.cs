@@ -24,7 +24,7 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Purchases"), ExplorerExclude, SaveIgnore]
 public sealed partial class PurchasesService : Instance
 {
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 	private readonly Dictionary<string, PurchaseRequest> _pendingPurchases = [];
 	private readonly HashSet<Player> _pendingPlayers = [];
 	private string _currentPurchaseRef = "";

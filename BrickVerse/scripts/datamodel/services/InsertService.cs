@@ -24,7 +24,7 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Insert"), ExplorerExclude, SaveIgnore]
 public sealed partial class InsertService : Instance
 {
-	private readonly PTHttpClient _httpClient = new();
+	private readonly BVHttpClient _httpClient = new();
 	private static readonly Dictionary<string, APIStoreItem> _storeItemCache = [];
 
 	[ScriptMethod, Attributes.Obsolete("Use ModelAsync instead")]

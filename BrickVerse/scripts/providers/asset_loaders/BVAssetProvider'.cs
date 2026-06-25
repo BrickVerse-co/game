@@ -17,7 +17,7 @@ namespace BrickVerse.Providers.AssetLoaders;
 
 public class BVAssetProvider : IAssetProvider
 {
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 
 	public async Task<CacheItem> LoadResource(CacheItem item)
 	{

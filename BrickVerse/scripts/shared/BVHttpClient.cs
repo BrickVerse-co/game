@@ -16,7 +16,7 @@ using System.Net;
 
 namespace BrickVerse.Shared;
 
-public partial class PTHttpClient
+public partial class BVHttpClient
 {
 	private const int DefaultDownloadChunkSize = 10000;
 #if USE_NATIVE_HTTP
@@ -24,7 +24,7 @@ public partial class PTHttpClient
 #endif
 	public Dictionary<string, string> DefaultRequestHeaders { get; set; } = [];
 
-	public PTHttpClient()
+	public BVHttpClient()
 	{
 		DefaultRequestHeaders["User-Agent"] = $"BrickVerse Client {Globals.AppVersion}";
 	}

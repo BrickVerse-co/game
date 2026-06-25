@@ -22,7 +22,7 @@ public sealed partial class AchievementsService : Instance
 	private const int MaxRequestsPerMinute = 30;
 	private const int RequestsPerPlayerModifier = 10;
 
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 
 	private bool _useAchievementSound = true;
 	private bool _notifyAchievements = true;

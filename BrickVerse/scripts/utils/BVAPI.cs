@@ -15,7 +15,7 @@ namespace BrickVerse.Utils;
 
 public static class BVAPI
 {
-	private static readonly PTHttpClient _client = new();
+	private static readonly BVHttpClient _client = new();
 
 	/// <summary>
 	/// BrickVerse supports auth through either Authorization: Bearer {token}
@@ -206,7 +206,7 @@ public static class BVAPI
 			Id = guild.Id ?? guildID.ToString(),
 			Name = guild.Name,
 			Description = guild.Description,
-			Creator =  guild.Creator,
+			Creator = guild.Creator,
 			MemberCount = guild.MemberCount,
 			IsVerified = guild.IsVerified,
 			CreatedAt = guild.CreatedAt,

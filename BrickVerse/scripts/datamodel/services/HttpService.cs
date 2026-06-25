@@ -22,11 +22,11 @@ public sealed partial class HttpService : Instance
 	private const int MaxRequestsPerMinute = 90;
 	private int _requestsThisMinute = 0;
 	private int _currentMinute;
-	private PTHttpClient _client = new();
+	private BVHttpClient _client = new();
 
 	public override void Init()
 	{
-		_client = new PTHttpClient();
+		_client = new BVHttpClient();
 		base.Init();
 	}
 

@@ -23,7 +23,7 @@ public class PTDatastoreProvider : IDatastoreProvider
 	private const int WriteRequestsPerPlayerModifier = 10;
 
 	private string _dsKey = "";
-	private readonly PTHttpClient _client = new();
+	private readonly BVHttpClient _client = new();
 	private readonly Dictionary<string, DatastoreEntry> _data = [];
 	private static int _readRequestsThisMinute = 0, _writeRequestThisMinute = 0, _currentMinute = 0;
 	private Datamodel.Data.Datastore _ds = null!;
