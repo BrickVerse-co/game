@@ -104,10 +104,10 @@ public static class PolyMobileAuthAPI
 
 	public static async Task LoginWithAuthToken(string userToken)
 	{
-		PolyAPI.SetAuthToken(userToken);
+		BVAPI.SetAuthToken(userToken);
 		try
 		{
-			APIV3AuthMeUser me = await PolyAPI.GetCurrentUser();
+			APIV3AuthMeUser me = await BVAPI.GetCurrentUser();
 
 			_authData.Username = me.Username;
 			_authData.Token = userToken;

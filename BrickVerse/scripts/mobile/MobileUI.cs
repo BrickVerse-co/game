@@ -142,7 +142,7 @@ public partial class MobileUI : Control
 
 		try
 		{
-			APIJoinPlaceResponse res = await PolyAPI.RequestJoinGame(new() { PlaceID = placeID, IsBeta = true });
+			APIJoinPlaceResponse res = await BVAPI.RequestJoinGame(new() { PlaceID = placeID, IsBeta = true });
 
 			Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 			if (app is ClientEntry ce)

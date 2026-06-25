@@ -25,7 +25,7 @@ public partial class FeedRoot : Node
 	{
 		try
 		{
-			APIFeedPostRoot feed = await PolyAPI.GetFeedPosts();
+			APIFeedPostRoot feed = await BVAPI.GetFeedPosts();
 			foreach (APIFeedPostData item in feed.Data)
 			{
 				FeedPostCard card = Globals.CreateInstanceFromScene<FeedPostCard>(FeedCardPath);

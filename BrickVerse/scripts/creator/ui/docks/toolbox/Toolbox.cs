@@ -115,7 +115,7 @@ public sealed partial class Toolbox : Control
 		_pagNavNext.Disabled = true;
 		_pagNavPrev.Disabled = true;
 
-		APILibraryResponse res = await PolyAPI.GetLibrary(QueryType, CurrentPage, SearchQuery);
+		APILibraryResponse res = await BVAPI.GetLibrary(QueryType, CurrentPage, SearchQuery);
 		MaxPage = res.Meta.LastPage;
 
 		_pagNavPrev.Disabled = CurrentPage == 1;

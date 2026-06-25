@@ -215,7 +215,7 @@ public sealed partial class InsertService : Instance
 		if (_storeItemCache.TryGetValue(id, out var cached))
 			return cached;
 
-		APIStoreItem storeItem = await PolyAPI.GetStoreItem(id);
+		APIStoreItem storeItem = await BVAPI.GetStoreItem(id);
 		_storeItemCache[id] = storeItem;
 		return storeItem;
 	}

@@ -734,7 +734,7 @@ public sealed partial class BrickversianModal : CharacterModel
 		// Prevent reloading
 		int myCount = _loadAppearanceCount;
 
-		APIAvatarResponse avatarData = await PolyAPI.GetUserAvatarFromID(userID);
+		APIAvatarResponse avatarData = await BVAPI.GetUserAvatarFromID(userID);
 		if (myCount != _loadAppearanceCount) throw new OperationCanceledException("The avatar is cancelled");
 
 		if (IsDeleted)

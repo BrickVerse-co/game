@@ -513,7 +513,7 @@ public sealed partial class Player : NPC
 
 	private async void FetchUserInfo()
 	{
-		UserInfo = await PolyAPI.GetUserFromID(UserID);
+		UserInfo = await BVAPI.GetUserFromID(UserID);
 		if (UserInfo.HasValue)
 		{
 			UserInfoReady?.Invoke(UserInfo.Value);

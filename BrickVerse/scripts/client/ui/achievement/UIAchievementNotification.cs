@@ -26,7 +26,7 @@ public partial class UIAchievementNotification : UINotificationBase
 			try
 			{
 				Visible = false;
-				APIStoreItem item = await PolyAPI.GetStoreItem(payload.Id.ToString());
+				APIStoreItem item = await BVAPI.GetStoreItem(payload.Id.ToString());
 
 				_badgeImg = new();
 				_badgeImg.ResourceLoaded += OnBadgeImgLoaded;

@@ -506,7 +506,7 @@ public sealed partial class World : Instance
 
 	private async void FetchWorldInfo()
 	{
-		WorldInfo = await PolyAPI.GetWorldFromID(WorldID);
+		WorldInfo = await BVAPI.GetWorldFromID(WorldID);
 		if (WorldInfo.HasValue)
 		{
 			// Set Window title to game name
@@ -514,7 +514,7 @@ public sealed partial class World : Instance
 
 			WorldInfoReady?.Invoke(WorldInfo.Value);
 		}
-		WorldMedia = await PolyAPI.GetWorldMedia(WorldID);
+		WorldMedia = await BVAPI.GetWorldMedia(WorldID);
 		if (WorldMedia != null && WorldMedia.Length != 0)
 		{
 			FirstWorldMedia = WorldMedia[0].Id;

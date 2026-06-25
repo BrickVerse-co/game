@@ -41,7 +41,7 @@ public partial class UserHeadshotCard : Node
 
 		try
 		{
-			APIUserInfo userData = await PolyAPI.GetUserFromID(UserID.ToString());
+			APIUserInfo userData = await BVAPI.GetUserFromID(UserID.ToString());
 
 			_usernameLabel.Text = userData.Username;
 		}

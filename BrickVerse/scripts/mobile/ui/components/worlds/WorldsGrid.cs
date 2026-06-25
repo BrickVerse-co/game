@@ -26,7 +26,7 @@ public partial class WorldsGrid : Control
 		MobileUI.Singleton.LoadingScreen.ShowScreen();
 		try
 		{
-			APIWorldsRoot root = await PolyAPI.GetWorlds();
+			APIWorldsRoot root = await BVAPI.GetWorlds();
 
 			foreach (APIWorldsData item in root.Data)
 			{

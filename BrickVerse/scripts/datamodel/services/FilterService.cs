@@ -33,7 +33,7 @@ public sealed partial class FilterService : Instance
 				_profanityList = ["swear"];
 				return;
 			}
-			string rawdata = await PolyAPI.GetProfanityList();
+			string rawdata = await BVAPI.GetProfanityList();
 			_profanityList = [.. rawdata.Split(["\n"], StringSplitOptions.RemoveEmptyEntries)];
 		}
 		catch (Exception err)

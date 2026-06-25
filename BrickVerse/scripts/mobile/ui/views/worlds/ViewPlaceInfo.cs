@@ -40,7 +40,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 
 		MobileUI.Singleton.LoadingScreen.ShowScreen();
 
-		_placeInfo = await PolyAPI.GetWorldFromID(_worldID);
+		_placeInfo = await BVAPI.GetWorldFromID(_worldID);
 		_genreLabel.Text = _placeInfo.Genre;
 		_placeNameLabel.Text = _placeInfo.Name;
 		_creatorNameLabel.Text = "By " + _placeInfo.Creator.Name;

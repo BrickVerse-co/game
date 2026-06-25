@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BrickVerse.Utils;
 
-public static class PolyAPI
+public static class BVAPI
 {
 	private static readonly PTHttpClient _client = new();
 
