@@ -1,5 +1,5 @@
 {
   "ProjectName": "lua-tests",
-  "MainWorld": "main.poly",
+  "MainWorld": "main.bvxw",
   "IconID": null
 }

@@ -37,7 +37,7 @@ public class LuaCompletionService(CreatorSession session)
 		ProcessStartInfo processStartInfo = new()
 		{
 			FileName = NativeBinHelper.ResolveLuauLspBinPath(),
-			Arguments = "lsp --stdio --definitions=@poly=.poly/luau/def.d.luau",
+			Arguments = "lsp --stdio --definitions=@bvproject=.bvproject/luau/def.d.luau",
 			RedirectStandardInput = true,
 			RedirectStandardOutput = true,
 			RedirectStandardError = true,

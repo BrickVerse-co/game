@@ -21,7 +21,7 @@ public partial class FileBrowserTab : Control
 	private readonly HashSet<string> _uncollapsedItems = [];
 
 	private readonly string[] HiddenPaths = [
-		".poly/",
+		".bvproject/",
 		"lua_clue/",
 		Globals.ProjectIndexName
 	];

@@ -112,9 +112,9 @@ public static partial class PackedFormat
 		string[] allFiles = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories);
 		foreach (string file in allFiles)
 		{
-			// Skip files inside the .poly folder
+			// Skip files inside the .bvproject folder
 			string relativeP = Path.GetRelativePath(projectPath, file).SanitizePath();
-			if (relativeP.StartsWith(".poly/")) continue;
+			if (relativeP.StartsWith(".bvproject/")) continue;
 
 			if (file.EndsWith(MetaExtension))
 			{
@@ -128,7 +128,7 @@ public static partial class PackedFormat
 
 				indexToFile[id] = targetRelative;
 			}
-			else if (file.EndsWith(".poly"))
+			else if (file.EndsWith(".bvxw") || file.EndsWith(".bvworld"))
 			{
 				// Store all world file
 				indexToFile["world_" + relativeP] = relativeP;
@@ -600,7 +600,7 @@ public static partial class PackedFormat
 public struct CreatorProjectMetadata()
 {
 	[JsonInclude] public string ProjectName = "Project Name";
-	[JsonInclude] public string MainWorld = "main.poly";
+	[JsonInclude] public string MainWorld = "main.bvxw";
 	[JsonInclude] public int? IconID;
 }
 

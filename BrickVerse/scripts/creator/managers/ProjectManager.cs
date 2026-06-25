@@ -26,7 +26,7 @@ public static class ProjectManager
 {
 	private const string RecentsPath = "user://creator/recents";
 	private const string ProjectTemplatesPath = "res://modules/creator/world-templates/";
-	private const string GitIgnoreContent = "# BrickVerse specific ignores\n.poly/\n";
+	private const string GitIgnoreContent = "# BrickVerse specific ignores\n.bvproject/\n";
 
 	public static async Task<RecentData[]> GetRecents(bool loadData = true)
 	{
@@ -165,7 +165,7 @@ public static class ProjectManager
 		using DirAccess dir = DirAccess.Open(templateFolderPath) ?? throw new DirectoryNotFoundException($"Template folder not found: {templateFolderPath}");
 
 		CopyResourceDirRecursive(templateFolderPath, destFolder);
-		await NewProject(destFolder, new() { MainWorld = "main.poly", ProjectName = metadata.ProjectName }, true);
+		await NewProject(destFolder, new() { MainWorld = "main.bvxw", ProjectName = metadata.ProjectName }, true);
 	}
 
 	private static void CopyResourceDirRecursive(string sourceDir, string destDir)

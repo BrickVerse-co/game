@@ -199,7 +199,7 @@ public partial class Search : Panel
 				bool? isHidden = Path.GetFileName(dir)?.StartsWith(".");
 				if (isHidden == true)
 				{
-					continue; // mainly to avoid .git and .poly dirs
+					continue; // mainly to avoid .git and .bvproject dirs
 				}
 				NavigateDirectory(rootPath, dir, maxSize);
 			}

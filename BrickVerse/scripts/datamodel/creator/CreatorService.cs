@@ -277,7 +277,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			Title = "Save as...",
 			CurrentDirectory = CurrentSession.ProjectFolderPath,
-			Filters = ["*.poly;BrickVerse World"],
+			Filters = ["*.bvxw;BrickVerse World", "*.bvworld;BrickVerse World"],
 			DialogMode = DisplayServer.FileDialogMode.SaveFile,
 		}, async paths =>
 		{
@@ -285,9 +285,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 			{
 				string path = paths[0];
 
-				if (!path.EndsWith(".poly"))
+				if (!path.EndsWith(".bvxw") && !path.EndsWith(".bvworld"))
 				{
-					path += ".poly";
+					path += ".bvxw";
 				}
 
 				if (!PathUtils.IsPathInsideDirectory(path, CurrentSession.ProjectFolderPath))

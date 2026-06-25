@@ -36,7 +36,7 @@ public partial class CreatorSession : Node, IDisposable
 	private const string VSCodeSetupContent = @"{
 	""luau-lsp.platform.type"": ""standard"",
 	""luau-lsp.types.definitionFiles"": {
-		""@poly"": ""./.poly/luau/def.d.luau"",
+		""@bvproject"": ""./.bvproject/luau/def.d.luau"",
     },
 	""files.exclude"": {
 		""**/*.meta"": true
@@ -55,7 +55,7 @@ public partial class CreatorSession : Node, IDisposable
 	public string ProjectFilePath = "";
 	public string OldIndexFilePath = "";
 	public string InputMapFilePath = "";
-	public string PolyFolderPath = "";
+	public string BVProjectFolderPath = "";
 
 	public CreatorProjectMetadata Metadata;
 	public InputMapData InputMap = new();
@@ -84,7 +84,7 @@ public partial class CreatorSession : Node, IDisposable
 		FileBrowserTab = FileBrowser.Singleton.Insert(this);
 		OldIndexFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectIndexName));
 		InputMapFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectInputMapName));
-		PolyFolderPath = Path.GetFullPath(ProjectFolderPath.PathJoin(".poly"));
+		BVProjectFolderPath = Path.GetFullPath(ProjectFolderPath.PathJoin(".bvproject"));
 
 		await SetupFolders();
 
@@ -174,12 +174,12 @@ public partial class CreatorSession : Node, IDisposable
 	private async Task SetupFolders()
 	{
 		// Clear addon temp folder
-		string addonTemp = Path.GetFullPath(PolyFolderPath.PathJoin("addon-temp"));
+		string addonTemp = Path.GetFullPath(BVProjectFolderPath.PathJoin("addon-temp"));
 		if (Directory.Exists(addonTemp))
 			Directory.Delete(addonTemp, true);
 
-		if (!Directory.Exists(PolyFolderPath))
-			Directory.CreateDirectory(PolyFolderPath);
+		if (!Directory.Exists(BVProjectFolderPath))
+			Directory.CreateDirectory(BVProjectFolderPath);
 
 		MigrateIndexFile();
 
@@ -190,13 +190,13 @@ public partial class CreatorSession : Node, IDisposable
 	private void SetupLuaDocs()
 	{
 		string luauRcPath = ProjectFolderPath.PathJoin(".luaurc");
-		string luauPath = PolyFolderPath.PathJoin("luau");
+		string luauPath = BVProjectFolderPath.PathJoin("luau");
 		if (!Directory.Exists(luauPath))
 		{
 			Directory.CreateDirectory(luauPath);
 		}
 
-		string versionPath = PolyFolderPath.PathJoin("version");
+		string versionPath = BVProjectFolderPath.PathJoin("version");
 
 		if (!File.Exists(versionPath))
 		{
@@ -369,8 +369,8 @@ public partial class CreatorSession : Node, IDisposable
 		// Rebuild IndexToFile index
 		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
 		{
-			// Skip .poly temp folder
-			if (metaPath.StartsWith(PolyFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
+			// Skip .bvproject temp folder
+			if (metaPath.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
 
 			string targetAbsolute = metaPath[..^PackedFormat.MetaExtension.Length];
 			if (!File.Exists(targetAbsolute)) continue; // stale meta, ignore
@@ -493,9 +493,9 @@ return module";
 		atPath = atPath.SanitizePath();
 		string globalized = GlobalizePath(atPath);
 
-		if (!atPath.EndsWith(".poly"))
+		if (!atPath.EndsWith(".bvxw") && !atPath.EndsWith(".bvworld"))
 		{
-			throw new InvalidOperationException("World file must end with .poly extension");
+			throw new InvalidOperationException("World file must end with .bvxw or .bvworld extension");
 		}
 
 		if (File.Exists(globalized))
@@ -857,8 +857,8 @@ return module";
 		// Clear orphan .meta files
 		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
 		{
-			// Ignore .poly folder
-			if (metaPath.StartsWith(PolyFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
+			// Ignore .bvproject folder
+			if (metaPath.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
 
 			string targetPath = metaPath[..^PackedFormat.MetaExtension.Length];
 			if (!File.Exists(targetPath))
@@ -949,7 +949,7 @@ return module";
 	{
 		CreatorService.Interface.StatusBar?.SetStatus("Backing up world...");
 
-		string backupFolderPath = PolyFolderPath.PathJoin("backups");
+		string backupFolderPath = BVProjectFolderPath.PathJoin("backups");
 		if (!Directory.Exists(backupFolderPath))
 		{
 			Directory.CreateDirectory(backupFolderPath);

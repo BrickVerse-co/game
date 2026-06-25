@@ -130,8 +130,8 @@ public class DebugServer
 				string worldPath = req.WorldPath;
 				string originPlacePath = worldPath;
 
-				// Fix .poly extension
-				if (!worldPath.EndsWith(".poly")) worldPath += ".poly";
+				// Fix .bvxw or .bvworld extension
+				if (!worldPath.EndsWith(".bvxw") && !worldPath.EndsWith(".bvworld")) worldPath += ".bvxw";
 
 				// call on main thread
 				PT.CallOnMainThread(async () =>

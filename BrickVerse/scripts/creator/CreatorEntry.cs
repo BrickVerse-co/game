@@ -70,7 +70,7 @@ public partial class CreatorEntry : Node
 
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
-			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.poly", ProjectName = new DirectoryInfo(legacyImportOut).Name });
+			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.bvxw", ProjectName = new DirectoryInfo(legacyImportOut).Name });
 		}
 	}
 

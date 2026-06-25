@@ -79,9 +79,9 @@ TestResults/
 /BrickVerse/samples/worlds/temp
 /samples/projects/temp
 
-# .poly folders
-.poly/
-
+# .bvproject folders
+.bvproject/
+.bvxl/
 
 ## -- Launch configrations -- ##
 

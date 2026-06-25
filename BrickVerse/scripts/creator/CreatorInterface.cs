@@ -260,7 +260,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			new()
 			{
 				ProjectName = fName.Capitalize(),
-				MainWorld = "main.poly"
+				MainWorld = "main.bvxw"
 			});
 		}
 		catch (Exception ex)
@@ -364,7 +364,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		{
 			Title = "Open World",
 			DialogMode = DisplayServer.FileDialogMode.OpenFile,
-			Filters = ["*.ptproj,*.poly;Polytoria World", "*.ptm,*.spm;Legacy World"]
+			Filters = ["*.bvxl;BrickVerse Project", "*.bvxw,*.bvworld;BrickVerse World"]
 		}, OnWorldOpen);
 	}
 
@@ -437,9 +437,9 @@ public partial class CreatorInterface : Control, IScriptObject
 			{
 				string createAt = Path.Join(atPath, name).SanitizePath();
 
-				if (!createAt.EndsWith(".poly"))
+				if (!createAt.EndsWith(".bvxw"))
 				{
-					createAt += ".poly";
+					createAt += ".bvxw";
 				}
 
 				await session.CreateWorld(createAt);
