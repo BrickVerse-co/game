@@ -11,195 +11,258 @@ using BrickVerse.Client.Debugger;
 using BrickVerse.Client.Settings;
 using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Client.WebAPI;
-using BrickVerse.Shared.Settings;
-#if CREATOR
-using BrickVerse.Creator.Utils;
-#endif
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Shared.Settings;
+#if CREATOR
+using BrickVerse.Creator.Utils;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using BrickVerse.Shared.AssetLoaders;
 
 namespace BrickVerse.Client;
 
 public sealed partial class ClientEntry : Node3D
 {
-	private const int StatusPollIntervalSec = 2;
+	private const int ServerStatusPollIntervalSeconds = 2;
 	private const string LocalTestLogPath = "user://logs/localtest";
+	private const string DefaultLocalAddress = "127.0.0.1";
+	private const int DefaultLocalPort = 24221;
+
 	public event Action? NetworkEssentialsReady;
 	public event Action? LeaveGameRequested;
 	public event Action? TargetServerReady;
+
 	public NetworkService NetworkService { get; private set; } = null!;
 	public DatamodelBridge DatamodelBridge { get; private set; } = null!;
+	public World Root { get; private set; } = null!;
 
-	public World Root = null!;
-	public bool IsFocused = false;
-	public bool IsContained = false;
-	public bool IsNetEssentialsReady { get; private set; } = false;
-	private readonly List<int> _clientProcesses = [];
-	public bool IsSoloTest = false;
+	public bool IsFocused { get; private set; }
+	public bool IsContained { get; set; }
+	public bool IsNetEssentialsReady { get; private set; }
+	public bool IsSoloTest { get; private set; }
+	public bool TestModeReady { get; private set; }
 
-	public string TestUserID = "1";
-	public int TestClientCount = 0;
-	public bool TestModeReady = false;
+	public string TestUserID { get; private set; } = "1";
+	public int TestClientCount { get; private set; }
 
-	private Timer? _connectTimer;
-	private APIClientAuthResponseMessage? _clientConnectData;
 #if ALLOW_SELFHOST
 	public Vector3? DebugSpawnPos { get; private set; }
 #endif
 
-	private string? _debugAddress;
-	private int? _debugPort;
-
 	internal DebugAgent? DebugAgent { get; private set; }
 
-	private bool _authPromptShown = false;
+	private readonly List<int> _localTestClientProcessIds = [];
+
+	private Timer? _serverStatusPollTimer;
+	private APIClientAuthResponseMessage? _clientConnectionInfo;
+	private string? _debugServerAddress;
+	private int? _debugServerPort;
 
 	public ClientEntry()
 	{
 		Root = Globals.LoadInstance<World>();
 	}
 
-	public async void Entry(ClientEntryData? data = null)
+	public async void Entry(ClientEntryData? entryData = null)
 	{
-		// Wait process frame for scene to be ready
+		PT.Print("ClientEntry starting...");
 		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-		Stopwatch sw = new();
-		sw.Start();
-		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
+		Stopwatch stopwatch = Stopwatch.StartNew();
+		ClientLaunchOptions launchOptions = BuildLaunchOptions(entryData);
 
-		bool isClient = false;
-		bool isServer = false;
-		bool isSubWorld = cmdargs.ContainsKey("subworld");
+		IsFocused = !IsContained;
 
-		cmdargs.TryGetValue("network", out string? networkMode);
-		cmdargs.TryGetValue("entry", out string? pathEntry);
-		cmdargs.TryGetValue("token", out string? token);
-		cmdargs.TryGetValue("debug", out string? debugAddress);
-		cmdargs.TryGetValue("debug-id", out string? debugID);
 #if ALLOW_SELFHOST
-		cmdargs.TryGetValue("address", out string? connectAddress);
-		cmdargs.TryGetValue("world", out string? worldPath);
-		cmdargs.TryGetValue("port", out string? portStr);
-		cmdargs.TryGetValue("id", out string? testUserID);
-		cmdargs.TryGetValue("solo", out string? soloPath);
-		cmdargs.TryGetValue("nplr", out string? nPlrStr);
-		cmdargs.TryGetValue("spawnpos", out string? spawnPosStr);
-		cmdargs.TryGetValue("ctoken", out string? ctoken); // Creator test token
+		ApplySelfHostedLaunchOptions(launchOptions);
+#endif
 
-		connectAddress ??= "127.0.0.1";
-		portStr ??= "24221";
-		nPlrStr ??= "1";
+		await ConnectDebugAgentAsync(launchOptions.DebugAddress, launchOptions.DebugId, stopwatch);
+		ApplyMobileWindowSettings();
+		CreateCoreServices(launchOptions.IsServer);
+		InitializeWorld(stopwatch);
+
+#if CREATOR
+		ApplyCreatorTestToken(launchOptions.CreatorToken);
+#endif
+
+#if ALLOW_SELFHOST
+		await LoadSelfHostedWorldIfNeededAsync(launchOptions, stopwatch);
+		StartSoloTestClientsIfNeeded(launchOptions);
+#endif
+
+		ApplyFpsFlags();
+
+		if (launchOptions.IsServer)
+		{
+			PT.Print("Starting server...");
+			await StartServerAsync(launchOptions);
+		}
+
+		if (launchOptions.IsClient)
+		{
+			PT.Print("Starting client...");
+			await StartClientAsync(launchOptions);
+		}
+	}
+
+	private static ClientLaunchOptions BuildLaunchOptions(ClientEntryData? entryData)
+	{
+		Dictionary<string, string> args = Globals.ReadCmdArgs();
+		args.TryGetValue("network", out string? networkMode);
+		args.TryGetValue("entry", out string? worldEntryPath);
+		args.TryGetValue("token", out string? authToken);
+		args.TryGetValue("debug", out string? debugAddress);
+		args.TryGetValue("debug-id", out string? debugId);
+
+		bool runAsServer = networkMode == "server";
+
+		ClientLaunchOptions options = new()
+		{
+			IsClient = !runAsServer,
+			IsServer = runAsServer,
+			IsSubWorld = args.ContainsKey("subworld"),
+			WorldEntryPath = string.IsNullOrWhiteSpace(worldEntryPath) ? null : worldEntryPath,
+			AuthToken = authToken,
+			DebugAddress = debugAddress,
+			DebugId = debugId,
+		};
+
+#if ALLOW_SELFHOST
+		args.TryGetValue("address", out string? localAddress);
+		args.TryGetValue("world", out string? localWorldPath);
+		args.TryGetValue("port", out string? localPortText);
+		args.TryGetValue("id", out string? testUserId);
+		args.TryGetValue("solo", out string? soloWorldPath);
+		args.TryGetValue("nplr", out string? soloClientCountText);
+		args.TryGetValue("spawnpos", out string? debugSpawnPositionText);
+		args.TryGetValue("ctoken", out string? creatorToken);
+
+		options.LocalAddress = localAddress ?? DefaultLocalAddress;
+		options.LocalPort = (localPortText ?? DefaultLocalPort.ToString()).ToInt();
+		options.LocalWorldPath = localWorldPath;
+		options.TestUserId = string.IsNullOrWhiteSpace(testUserId) ? "1" : testUserId;
+		options.SoloWorldPath = soloWorldPath;
+		options.SoloClientCount = (soloClientCountText ?? "1").ToInt();
+		options.DebugSpawnPositionText = debugSpawnPositionText;
+		options.CreatorToken = creatorToken;
 
 #if PT_DOCKER
-		portStr = "7777";
+		options.LocalPort = 7777;
+#endif
 #endif
 
-		int port = portStr.ToInt();
-		int nPlr = nPlrStr.ToInt();
-
-		if (testUserID != null)
+		if (entryData.HasValue)
 		{
-			TestUserID = testUserID;
-		}
-#endif
-		networkMode ??= "client";
-
-		if (networkMode == "server")
-		{
-			isServer = true;
-		}
-		else
-		{
-			isClient = true;
+			ApplyEntryDataOverrides(options, entryData.Value);
 		}
 
-		if (data != null)
-		{
-			isClient = !data.Value.TestIsServer ?? true;
-			isServer = data.Value.TestIsServer ?? false;
-#if ALLOW_SELFHOST
-			worldPath = data.Value.TestWorldPath;
-			TestUserID = data.Value.TestUserID ?? "1";
-			debugID = data.Value.TestDebugID ?? debugID;
-			port = data.Value.ConnectPort ?? port;
+		return options;
+	}
 
-			if (data.Value.ConnectAddress != null)
-			{
-				connectAddress = data.Value.ConnectAddress;
-			}
-#endif
-			if (data.Value.Token != null)
-			{
-				token = data.Value.Token;
-			}
+	private static void ApplyEntryDataOverrides(ClientLaunchOptions options, ClientEntryData entryData)
+	{
+		if (entryData.TestIsServer.HasValue)
+		{
+			options.IsServer = entryData.TestIsServer.Value;
+			options.IsClient = !entryData.TestIsServer.Value;
 		}
 
-		if (!IsContained)
-		{
-			IsFocused = true;
-		}
+		options.AuthToken = entryData.Token ?? options.AuthToken;
+		options.DebugId = entryData.TestDebugID ?? options.DebugId;
 
 #if ALLOW_SELFHOST
-		// Debug spawn position
-		if (spawnPosStr != null)
+		options.LocalWorldPath = entryData.TestWorldPath ?? options.LocalWorldPath;
+		options.LocalAddress = entryData.ConnectAddress ?? options.LocalAddress;
+		options.LocalPort = entryData.ConnectPort ?? options.LocalPort;
+		options.TestUserId = entryData.TestUserID ?? options.TestUserId;
+#endif
+	}
+
+#if ALLOW_SELFHOST
+	private void ApplySelfHostedLaunchOptions(ClientLaunchOptions options)
+	{
+		TestUserID = string.IsNullOrWhiteSpace(options.TestUserId) ? "1" : options.TestUserId;
+
+		if (!string.IsNullOrWhiteSpace(options.DebugSpawnPositionText))
 		{
-			string[] splited = spawnPosStr.TrimStart('v').Split(',');
-			DebugSpawnPos = new(int.Parse(splited[0]), int.Parse(splited[1]), int.Parse(splited[2]));
+			DebugSpawnPos = ParseDebugSpawnPosition(options.DebugSpawnPositionText);
 		}
 
-		// If localtest, spawn instance
-		if (soloPath != null)
+		if (string.IsNullOrWhiteSpace(options.SoloWorldPath))
 		{
-			isClient = false;
-			isServer = true;
-			IsSoloTest = true;
-			worldPath = soloPath;
+			return;
 		}
+
+		options.IsClient = false;
+		options.IsServer = true;
+		options.LocalWorldPath = options.SoloWorldPath;
+		IsSoloTest = true;
+	}
+
+	private static Vector3 ParseDebugSpawnPosition(string spawnPositionText)
+	{
+		string[] components = spawnPositionText.TrimStart('v').Split(',');
+		return new Vector3(
+			int.Parse(components[0]),
+			int.Parse(components[1]),
+			int.Parse(components[2])
+		);
+	}
 #endif
 
-		if (debugAddress != null)
+	private async System.Threading.Tasks.Task ConnectDebugAgentAsync(string? debugAddress, string? debugId, Stopwatch stopwatch)
+	{
+		if (string.IsNullOrWhiteSpace(debugAddress))
 		{
-			DebugAgent = new();
-			sw.Restart();
-			PT.Print($"Connecting to debug server {debugAddress}");
-			string[] segments = debugAddress.Split(':');
-			try
-			{
-				_debugAddress = segments[0];
-				_debugPort = int.Parse(segments[1]);
-				await DebugAgent.Start(_debugAddress, _debugPort.Value, debugID);
-			}
-			catch (Exception ex)
-			{
-				GD.PushError(ex);
-				Globals.Singleton.Quit(true);
-			}
-			PT.Print($"Debug server connected in {sw.ElapsedMilliseconds}ms");
+			return;
 		}
 
-		// Set landscape for mobile
-		if (Globals.IsMobileBuild)
+		DebugAgent = new DebugAgent();
+		stopwatch.Restart();
+		PT.Print($"Connecting to debug server {debugAddress}");
+
+		try
 		{
-			DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Landscape);
-			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+			string[] addressParts = debugAddress.Split(':');
+			_debugServerAddress = addressParts[0];
+			_debugServerPort = int.Parse(addressParts[1]);
+
+			await DebugAgent.Start(_debugServerAddress, _debugServerPort.Value, debugId);
+			PT.Print($"Debug server connected in {stopwatch.ElapsedMilliseconds}ms");
+		}
+		catch (Exception ex)
+		{
+			GD.PushError(ex);
+			Globals.Singleton.Quit(true);
+		}
+	}
+
+	private static void ApplyMobileWindowSettings()
+	{
+		if (!Globals.IsMobileBuild)
+		{
+			return;
 		}
 
-		// Setup essentials 
+		DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Landscape);
+		DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+	}
+
+	private void CreateCoreServices(bool isServer)
+	{
 		ClientSettingsService settings = new()
 		{
 			Name = "ClientSettings",
-			Entry = this
+			Entry = this,
 		};
-		AddChild(settings, true, InternalMode.Front);
 
-		// Use init flow in case it can be stopped by Rendering device switcher
+		AddChild(settings, true, InternalMode.Front);
 		settings.Init();
 
 		AssetLoader.Singleton.MaxConcurrentRequests = ClientSettingsService.Instance.Get<int>(SharedSettingKeys.Advanced.AssetQueue);
@@ -208,24 +271,24 @@ public sealed partial class ClientEntry : Node3D
 		settings.AddChild(new AudioSettingsApplier { Name = "AudioSettingsApplier" }, true, InternalMode.Front);
 		settings.AddChild(new GraphicsSettingsApplier { Name = GraphicsSettingsApplier.NodeName, Settings = settings }, true, InternalMode.Front);
 
-		DatamodelBridge = new()
-		{
-			Name = "DatamodelBridge"
-		};
+		DatamodelBridge = new DatamodelBridge { Name = "DatamodelBridge" };
 		AddChild(DatamodelBridge, true);
 
-		NetworkService networkService = new()
+		NetworkService = new NetworkService
 		{
 			Name = "NetworkService",
-			Entry = this
+			Entry = this,
+			IsServer = isServer,
+			NetworkParent = Root,
 		};
-		NetworkService = networkService;
 
-		networkService.Attach(Root);
-		networkService.IsServer = isServer;
-		networkService.NetworkParent = Root;
+		NetworkService.Attach(Root);
+	}
 
+	private void InitializeWorld(Stopwatch stopwatch)
+	{
 		AddChild(Root.GDNode, true);
+
 		Root.Root = Root;
 		Root.Entry = this;
 		Root.World3D = GetWorld3D();
@@ -234,226 +297,283 @@ public sealed partial class ClientEntry : Node3D
 		DatamodelBridge.Attach(Root);
 		World.Current = Root;
 
-		PT.Print("World current setup!");
 		IsNetEssentialsReady = true;
 		NetworkEssentialsReady?.Invoke();
 
-		sw.Restart();
+		stopwatch.Restart();
 		Root.Setup();
-		PT.Print($"World setup in {sw.ElapsedMilliseconds}ms");
+		PT.Print($"World setup in {stopwatch.ElapsedMilliseconds}ms");
+	}
 
 #if CREATOR
-		// Set creator token for testing (used for loading unapproved assets made by the user)
-		if (ctoken != null)
+	private static void ApplyCreatorTestToken(string? creatorToken)
+	{
+		if (!string.IsNullOrWhiteSpace(creatorToken))
 		{
-			CreatorAPI.SetToken(ctoken);
+			CreatorAPI.SetToken(creatorToken);
 		}
+	}
 #endif
 
 #if ALLOW_SELFHOST
-		// Load the test world for server
-		if (isServer)
+	private async System.Threading.Tasks.Task LoadSelfHostedWorldIfNeededAsync(ClientLaunchOptions options, Stopwatch stopwatch)
+	{
+		if (!options.IsServer)
 		{
-			if (string.IsNullOrWhiteSpace(pathEntry))
-			{
-				// null out path entry if null
-				pathEntry = null;
-			}
-			FreeLook freeLook = new() { Name = "FreeLook" };
-			Root.GDNode.AddChild(freeLook, false, @internal: Node.InternalMode.Back);
-
-			freeLook.GlobalPosition = new(0, 2, -4);
-			freeLook.RotationDegrees = new(-25, 180, 0);
-
-			sw.Restart();
-
-			if (worldPath != null)
-			{
-				worldPath = ProjectSettings.GlobalizePath(worldPath);
-				PT.Print("Loading world with entry: ", pathEntry);
-				try
-				{
-					await DatamodelLoader.LoadWorldFile(Root, worldPath, pathEntry);
-				}
-				catch (Exception ex)
-				{
-					PT.PrintErr(ex);
-					OS.Alert("World load failed");
-					Globals.Singleton.Quit();
-					return;
-				}
-				PT.Print("World Loaded!");
-			}
-			Root.Environment.CameraOverride = freeLook;
-
-			PT.Print($"World loaded in {sw.ElapsedMilliseconds}ms");
+			return;
 		}
 
-		if (IsSoloTest && !isSubWorld)
-		{
-			for (int i = 1; i <= nPlr; i++)
-			{
-				LocalTestStartClient(port);
-			}
-			TestModeReady = true;
+		FreeLook freeLook = CreateLocalServerCamera();
+		stopwatch.Restart();
 
-			Globals.BeforeQuit += () =>
-			{
-				foreach (int pid in _clientProcesses)
-				{
-					if (OS.IsProcessRunning(pid))
-					{
-						OS.Kill(pid);
-					}
-				}
-			};
+		if (!string.IsNullOrWhiteSpace(options.LocalWorldPath))
+		{
+			await LoadLocalWorldFileAsync(options.LocalWorldPath, options.WorldEntryPath);
 		}
+
+		Root.Environment.CameraOverride = freeLook;
+		PT.Print($"World loaded in {stopwatch.ElapsedMilliseconds}ms");
+	}
+
+	private FreeLook CreateLocalServerCamera()
+	{
+		FreeLook freeLook = new() { Name = "FreeLook" };
+		Root.GDNode.AddChild(freeLook, false, @internal: Node.InternalMode.Back);
+
+		freeLook.GlobalPosition = new Vector3(0, 2, -4);
+		freeLook.RotationDegrees = new Vector3(-25, 180, 0);
+
+		return freeLook;
+	}
+
+	private async System.Threading.Tasks.Task LoadLocalWorldFileAsync(string worldPath, string? worldEntryPath)
+	{
+		string absoluteWorldPath = ProjectSettings.GlobalizePath(worldPath);
+		PT.Print("Loading world with entry: ", worldEntryPath);
+
+		try
+		{
+			await DatamodelLoader.LoadWorldFile(Root, absoluteWorldPath, worldEntryPath);
+			PT.Print("World loaded!");
+		}
+		catch (Exception ex)
+		{
+			PT.PrintErr(ex);
+			OS.Alert("World load failed");
+			Globals.Singleton.Quit();
+		}
+	}
+
+	private void StartSoloTestClientsIfNeeded(ClientLaunchOptions options)
+	{
+		if (!IsSoloTest || options.IsSubWorld)
+		{
+			return;
+		}
+
+		for (int i = 1; i <= options.SoloClientCount; i++)
+		{
+			LocalTestStartClient(options.LocalPort);
+		}
+
+		TestModeReady = true;
+		Globals.BeforeQuit += KillLocalTestClients;
+	}
+
+	private void KillLocalTestClients()
+	{
+		foreach (int processId in _localTestClientProcessIds)
+		{
+			if (OS.IsProcessRunning(processId))
+			{
+				OS.Kill(processId);
+			}
+		}
+	}
 #endif
 
-		PT.Print("World setup!");
-
+	private static void ApplyFpsFlags()
+	{
 		if (OS.HasFeature("lowfps"))
 		{
 			Engine.MaxFps = 15;
+			return;
 		}
-		else if (OS.HasFeature("potatofps"))
+
+		if (OS.HasFeature("potatofps"))
 		{
-			// Activate Potato Mode
 			Engine.MaxFps = 2;
 		}
+	}
 
-		if (isServer)
+	private async System.Threading.Tasks.Task StartServerAsync(ClientLaunchOptions options)
+	{
+		if (!string.IsNullOrWhiteSpace(options.AuthToken))
 		{
-			if (token != null)
-			{
-				networkService.IsProd = true;
-				PT.Print("Server Authenticating...");
-				ClientAuthAPI.SetAuthToken(token);
-				ServerAPI.SetAuthToken(token);
-				Engine.MaxFps = 30;
-				try
-				{
-					Stopwatch sw2 = new();
-					sw2.Start();
-					PT.Print("Sending listen...");
-					APIServerListenResponse listenRes = await ClientAuthAPI.SendServerListen();
+			await StartProductionServerAsync(options.AuthToken);
+			return;
+		}
 
-					PT.Print("BrickVerse Server Info ----");
-					PT.Print("Server ID: ", listenRes.ServerID);
-					PT.Print("World ID: ", listenRes.WorldID);
-					PT.Print("Port: ", listenRes.Port);
-					PT.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
-					PT.Print("--------------------------");
-					Root.WorldID = listenRes.WorldID;
-					Root.ServerID = listenRes.ServerID;
+#if ALLOW_SELFHOST
+		await StartLocalServerAsync(options.LocalPort);
+#endif
+	}
 
-					PT.Print("Listen sent ", sw2.ElapsedMilliseconds, "ms");
+	private async System.Threading.Tasks.Task StartProductionServerAsync(string authToken)
+	{
+		NetworkService.IsProd = true;
+		Engine.MaxFps = 30;
 
-					PT.Print("Downloading world...");
+		ClientAuthAPI.SetAuthToken(authToken);
+		ServerAPI.SetAuthToken(authToken);
 
-					sw2.Restart();
-					byte[] worldContent = await ServerAPI.DownloadWorld(listenRes.WorldID);
-					PT.Print("World downloaded in ", sw2.ElapsedMilliseconds, "ms");
-					sw2.Restart();
-					PT.Print("Constructing...");
-					await DatamodelLoader.LoadWorldBytes(Root, worldContent, listenRes.PlacePath);
-					PT.Print("Construction finishes in ", sw2.ElapsedMilliseconds, "ms");
+		try
+		{
+			PT.Print("Server authenticating...");
+			Stopwatch stopwatch = Stopwatch.StartNew();
 
-					int fport = listenRes.Port;
+			APIServerListenResponse listenResponse = await ClientAuthAPI.SendServerListen();
+			LogServerListenResponse(listenResponse);
 
+			Root.WorldID = listenResponse.WorldID;
+			Root.ServerID = listenResponse.ServerID;
+
+			PT.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
+			PT.Print("Downloading world...");
+
+			stopwatch.Restart();
+			byte[] worldContent = await ServerAPI.DownloadWorld(listenResponse.WorldID);
+			PT.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
+
+			stopwatch.Restart();
+			PT.Print("Constructing...");
+			await DatamodelLoader.LoadWorldBytes(Root, worldContent, listenResponse.PlacePath);
+			PT.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
+
+			int serverPort = listenResponse.Port;
 #if PT_DOCKER
-					// Override port on docker
-					fport = 7777;
+			serverPort = 7777;
 #endif
-
-					networkService.CreateServer(fport);
-				}
-				catch (Exception ex)
-				{
-					// Error bruh
-					PT.PrintErr(ex.ToString());
-					Globals.Singleton.Quit();
-				}
-			}
-			else
-			{
-#if ALLOW_SELFHOST
-				try
-				{
-					// Start local server
-					PT.Print("Starting local server on " + port);
-					networkService.CreateServer(port);
-					if (DebugAgent != null)
-						await DebugAgent.SendServerReady();
-				}
-				catch (Exception ex)
-				{
-					GD.PushError(ex);
-					OS.Alert("Local host start failure");
-					Globals.Singleton.Quit(true);
-				}
-#endif
-			}
+			NetworkService.CreateServer(serverPort);
 		}
-
-		if (isClient)
+		catch (Exception ex)
 		{
-			if (token != null)
-			{
-				PT.Print("Connecting to BrickVerse...");
-				// Request auth to server
-				ClientAuthAPI.SetAuthToken(token);
-
-				try
-				{
-					_clientConnectData = await ClientAuthAPI.SendClientConnect();
-
-					PT.Print("BrickVerse Network Info ----");
-					PT.Print("World ID: ", _clientConnectData.Value.WorldID);
-					PT.Print("Server ID: ", _clientConnectData.Value.ServerID);
-					PT.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
-					PT.Print("--------------------------");
-
-					Root.WorldID = _clientConnectData.Value.WorldID;
-					Root.ServerID = _clientConnectData.Value.ServerID;
-					networkService.IsProd = true;
-
-					_connectTimer = new();
-					AddChild(_connectTimer);
-					_connectTimer.Timeout += PollServerStatus;
-					_connectTimer.Start(StatusPollIntervalSec);
-				}
-				catch (Exception ex)
-				{
-					PT.PrintErr(ex);
-					networkService.DisconnectSelf(ex.Message, NetworkService.DisconnectionCodeEnum.ConnectionFailure);
-				}
-			}
-#if ALLOW_SELFHOST
-			else
-			{
-				// Local testing
-				networkService.CreateClient(connectAddress, port);
-			}
-#endif
+			PT.PrintErr(ex.ToString());
+			Globals.Singleton.Quit();
 		}
+	}
+
+	private static void LogServerListenResponse(APIServerListenResponse listenResponse)
+	{
+		PT.Print("BrickVerse Server Info ----");
+		PT.Print("Server ID: ", listenResponse.ServerID);
+		PT.Print("World ID: ", listenResponse.WorldID);
+		PT.Print("Port: ", listenResponse.Port);
+		PT.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
+		PT.Print("--------------------------");
+	}
+
+#if ALLOW_SELFHOST
+	private async System.Threading.Tasks.Task StartLocalServerAsync(int port)
+	{
+		try
+		{
+			PT.Print("Starting local server on " + port);
+			NetworkService.CreateServer(port);
+
+			if (DebugAgent != null)
+			{
+				await DebugAgent.SendServerReady();
+			}
+		}
+		catch (Exception ex)
+		{
+			GD.PushError(ex);
+			OS.Alert("Local host start failure");
+			Globals.Singleton.Quit(true);
+		}
+	}
+#endif
+
+	private async System.Threading.Tasks.Task StartClientAsync(ClientLaunchOptions options)
+	{
+		if (!string.IsNullOrWhiteSpace(options.AuthToken))
+		{
+			await StartProductionClientAsync(options.AuthToken);
+			return;
+		} else
+		{
+			PT.PrintErr("No auth token provided, cannot start production client.");
+		}
+
+#if ALLOW_SELFHOST
+		NetworkService.CreateClient(options.LocalAddress, options.LocalPort);
+#endif
+	}
+
+	private async System.Threading.Tasks.Task StartProductionClientAsync(string authToken)
+	{
+		PT.Print("Connecting to BrickVerse...");
+		ClientAuthAPI.SetAuthToken(authToken);
+
+		try
+		{
+			PT.Print("========== CLIENT CONNECT ==========");
+			PT.Print($"Auth Token Present: {!string.IsNullOrWhiteSpace(authToken)}");
+			PT.Print("Calling ClientAuthAPI.SendClientConnect()...");
+
+			_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
+			LogClientConnectionInfo(_clientConnectionInfo.Value);
+
+			Root.WorldID = _clientConnectionInfo.Value.WorldID;
+			Root.ServerID = _clientConnectionInfo.Value.ServerID;
+			NetworkService.IsProd = true;
+
+			StartServerStatusPolling();
+		}
+		catch (Exception ex)
+		{
+			PT.PrintErr(ex);
+			NetworkService.DisconnectSelf(ex.Message, NetworkService.DisconnectionCodeEnum.ConnectionFailure);
+		}
+	}
+
+	private static void LogClientConnectionInfo(APIClientAuthResponseMessage connectionInfo)
+	{
+		PT.Print("BrickVerse Network Info ----");
+		PT.Print("World ID: ", connectionInfo.WorldID);
+		PT.Print("Server ID: ", connectionInfo.ServerID);
+		PT.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
+		PT.Print("--------------------------");
+	}
+
+	private void StartServerStatusPolling()
+	{
+		_serverStatusPollTimer = new Timer();
+		AddChild(_serverStatusPollTimer);
+
+		_serverStatusPollTimer.Timeout += PollServerStatus;
+		_serverStatusPollTimer.Start(ServerStatusPollIntervalSeconds);
 	}
 
 	private async void PollServerStatus()
 	{
-		if (_connectTimer == null) return;
-		if (!_clientConnectData.HasValue) return;
+		if (_serverStatusPollTimer == null || !_clientConnectionInfo.HasValue)
+		{
+			return;
+		}
 
 		try
 		{
 			APIServerStatus status = await ClientAuthAPI.CheckServerStatus();
-
 			PT.Print(status.Status);
+
 			if (status.Status == "started")
 			{
 				TargetServerReady?.Invoke();
-				NetworkService.CreateClient(_clientConnectData.Value.IP, _clientConnectData.Value.Port);
-				_connectTimer.QueueFree();
+				NetworkService.CreateClient(_clientConnectionInfo.Value.IP, _clientConnectionInfo.Value.Port);
+				_serverStatusPollTimer.QueueFree();
+				_serverStatusPollTimer = null;
 				return;
 			}
 		}
@@ -462,15 +582,17 @@ public sealed partial class ClientEntry : Node3D
 			GD.PushError(ex);
 		}
 
-		_connectTimer.Start(StatusPollIntervalSec);
+		_serverStatusPollTimer!.Start(ServerStatusPollIntervalSeconds);
 	}
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
 		if (@event.IsActionPressed("toggle_fullscreen"))
 		{
-			ClientSettingsService.Instance.Set(SharedSettingKeys.Display.Fullscreen, !ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen));
+			bool fullscreen = ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen);
+			ClientSettingsService.Instance.Set(SharedSettingKeys.Display.Fullscreen, !fullscreen);
 		}
+
 		base._UnhandledKeyInput(@event);
 	}
 
@@ -478,21 +600,26 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (IsSoloTest && TestModeReady)
 		{
-			foreach (int pid in _clientProcesses.ToArray())
-			{
-				if (!OS.IsProcessRunning(pid))
-				{
-					_clientProcesses.Remove(pid);
-				}
-			}
+			RemoveClosedLocalTestClients();
 
-			if (_clientProcesses.Count == 0)
+			if (_localTestClientProcessIds.Count == 0)
 			{
-				// Quit the process when all client close
 				Globals.Singleton.Quit();
 			}
 		}
+
 		base._Process(delta);
+	}
+
+	private void RemoveClosedLocalTestClients()
+	{
+		foreach (int processId in _localTestClientProcessIds.ToArray())
+		{
+			if (!OS.IsProcessRunning(processId))
+			{
+				_localTestClientProcessIds.Remove(processId);
+			}
+		}
 	}
 
 	public void LeaveGame()
@@ -500,57 +627,60 @@ public sealed partial class ClientEntry : Node3D
 		if (OS.HasFeature("mobile-ui"))
 		{
 			Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.MobileUI);
+			return;
 		}
-		else
+
+		if (!IsContained)
 		{
-			if (!IsContained)
-			{
-				Globals.Singleton.Quit();
-			}
-			else
-			{
-				LeaveGameRequested?.Invoke();
-			}
+			Globals.Singleton.Quit();
+			return;
 		}
+
+		LeaveGameRequested?.Invoke();
 	}
 
-	public void LocalTestStartClient(int port = 24221)
+	public void LocalTestStartClient(int port = DefaultLocalPort)
 	{
 		TestClientCount++;
-		int plrID = TestClientCount;
-		string exePath = OS.GetExecutablePath();
 
-		string abs = ProjectSettings.GlobalizePath(LocalTestLogPath);
+		int testClientId = TestClientCount;
+		string executablePath = OS.GetExecutablePath();
+		string logDirectory = ProjectSettings.GlobalizePath(LocalTestLogPath);
 
-		if (!DirAccess.DirExistsAbsolute(abs))
+		if (!DirAccess.DirExistsAbsolute(logDirectory))
 		{
-			DirAccess.MakeDirRecursiveAbsolute(abs);
+			DirAccess.MakeDirRecursiveAbsolute(logDirectory);
 		}
 
-		string logFilePath = abs.PathJoin(plrID + ".txt");
+		string logFilePath = logDirectory.PathJoin($"{testClientId}.txt");
 
-		List<string> args = ["--windowed", "--log-file", logFilePath, "-network", "client", "-id", plrID.ToString(), "-ltchild", "-port", port.ToString()];
+		List<string> args =
+		[
+			"--windowed",
+			"--log-file", logFilePath,
+			"-network", "client",
+			"-id", testClientId.ToString(),
+			"-ltchild",
+			"-port", port.ToString(),
+		];
 
 		if (Globals.IsInGDEditor)
 		{
 			args.AddRange(["--remote-debug", "tcp://127.0.0.1:6007"]);
 		}
 
-		if (_debugAddress != null && _debugPort != null)
+		if (_debugServerAddress != null && _debugServerPort.HasValue)
 		{
-			args.AddRange(["-debug", $"{_debugAddress}:{_debugPort.Value}"]);
+			args.AddRange(["-debug", $"{_debugServerAddress}:{_debugServerPort.Value}"]);
 		}
 
-		args.AddRange("--rendering-method", RenderingDeviceSwitcher.GetCurrentDriverName());
-
-		// Ignore rendering method switcher flag, use the same one as creator's
+		args.AddRange(["--rendering-method", RenderingDeviceSwitcher.GetCurrentDriverName()]);
 		args.Add("-rmswignore");
 
-		int procID = OS.CreateProcess(exePath, [.. args]);
+		int processId = OS.CreateProcess(executablePath, [.. args]);
+		_localTestClientProcessIds.Add(processId);
 
-		_clientProcesses.Add(procID);
-
-		PT.Print($"Started new client process with ID {procID}");
+		PT.Print($"Started new client process with ID {processId}");
 	}
 
 	public override void _ExitTree()
@@ -560,6 +690,31 @@ public sealed partial class ClientEntry : Node3D
 			Root.ForceDelete();
 			DatamodelBridge.Free();
 		}
+
+		base._ExitTree();
+	}
+
+	private sealed class ClientLaunchOptions
+	{
+		public bool IsClient { get; set; } = true;
+		public bool IsServer { get; set; }
+		public bool IsSubWorld { get; set; }
+
+		public string? AuthToken { get; set; }
+		public string? WorldEntryPath { get; set; }
+		public string? DebugAddress { get; set; }
+		public string? DebugId { get; set; }
+
+#if ALLOW_SELFHOST
+		public string LocalAddress { get; set; } = DefaultLocalAddress;
+		public int LocalPort { get; set; } = DefaultLocalPort;
+		public string TestUserId { get; set; } = "1";
+		public string? LocalWorldPath { get; set; }
+		public string? SoloWorldPath { get; set; }
+		public int SoloClientCount { get; set; } = 1;
+		public string? DebugSpawnPositionText { get; set; }
+		public string? CreatorToken { get; set; }
+#endif
 	}
 
 	public struct ClientEntryData

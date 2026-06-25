@@ -2,24 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Resources;
 using Godot;
+using Mesh = Godot.Mesh;
 #if CREATOR
 using BrickVerse.Creator.Properties;
 using BrickVerse.Datamodel.Creator;
 using System.IO;
 #endif
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Resources;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Mesh = Godot.Mesh;
-using System.Runtime.CompilerServices;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Metadata;
 
 namespace BrickVerse.Shared;
 
@@ -54,7 +53,7 @@ public sealed partial class Globals : Node
 		Singleton = this;
 	}
 
-	public readonly static Dictionary<string, PackedScene> CachedScenes = [];
+	public static readonly Dictionary<string, PackedScene> CachedScenes = [];
 	private static readonly Dictionary<string, PackedScene> _scenesCache = [];
 #if CREATOR
 	private static readonly Dictionary<string, PackedScene> _propertiesCache = [];
@@ -83,36 +82,44 @@ public sealed partial class Globals : Node
 	/// Determine RPC logging. "rpclog" can be set in feature flags to turn this on
 	/// </summary>
 	public static bool UseLogRPC { get; private set; } = false;
+
 	/// <summary>
 	/// Determine network stack trace logging in network errors, useful if you want to see where RPC was called from in the origin.
 	/// "nettrace" can be set in feature flags to turn this on (only on the error issuer is needed). This do consume a portion of bandwidth
 	/// </summary>
 	public static bool UseNetTrace { get; private set; } = false;
+
 	/// <summary>
 	/// Determine no http mode, Can be used to disable http entirely
 	/// "nohttp" can be set in feature flags to turn this on
 	/// </summary>
 	public static bool UseNoHttp { get; private set; } = false;
+
 	/// <summary>
 	/// Determine if node will be enabled, this can be disabled in non Godot environment (eg. unit tests)
 	/// </summary>
 	public static bool UseNodes { get; set; } = true;
+
 	/// <summary>
 	/// Check if is currently running inside Godot Editor
 	/// </summary>
 	public static bool IsInGDEditor { get; private set; } = false;
+
 	/// <summary>
 	/// Check if this build is a beta build
 	/// </summary>
 	public static bool IsBetaBuild { get; private set; } = false;
+
 	/// <summary>
 	/// Check if this build is a server build
 	/// </summary>
 	public static bool IsServerBuild { get; private set; } = false;
+
 	/// <summary>
 	/// Check if this build is a mobile build
 	/// </summary>
 	public static bool IsMobileBuild { get; private set; } = false;
+
 	/// <summary>
 	/// Check if Godot is available, this can be false in unit testing environments
 	/// </summary>
@@ -124,7 +131,7 @@ public sealed partial class Globals : Node
 	public static event Action<double>? GodotPhysicsProcess;
 	public static event Action<int>? GodotNotification;
 
-	private readonly static ConditionalWeakTable<string, Type> _typesCache = [];
+	private static readonly ConditionalWeakTable<string, Type> _typesCache = [];
 
 	static Globals()
 	{
@@ -199,14 +206,16 @@ public sealed partial class Globals : Node
 
 	public override void _Process(double delta)
 	{
-		if (_isExiting) return;
+		if (_isExiting)
+			return;
 		GodotProcess?.Invoke(delta);
 		base._Process(delta);
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_isExiting) return;
+		if (_isExiting)
+			return;
 		GodotPhysicsProcess?.Invoke(delta);
 		base._PhysicsProcess(delta);
 	}
@@ -217,19 +226,27 @@ public sealed partial class Globals : Node
 		base._Input(@event);
 	}
 
-	public static T LoadInstance<T>(World? root = null, Action<T>? preInit = null) where T : Instance
+	public static T LoadInstance<T>(World? root = null, Action<T>? preInit = null)
+		where T : Instance
 	{
 		Action<NetworkedObject>? wrapped = preInit == null ? null : netObj => preInit((T)netObj);
 		return (T)LoadNetworkedObject(typeof(T).Name, root, wrapped)!;
 	}
 
-	public static T? LoadInstance<T>(string className, World? root = null, Action<T>? preInit = null) where T : Instance
+	public static T? LoadInstance<T>(
+		string className,
+		World? root = null,
+		Action<T>? preInit = null
+	)
+		where T : Instance
 	{
 		Action<NetworkedObject>? wrapped = preInit == null ? null : netObj => preInit((T)netObj);
 		return (T?)LoadNetworkedObject(className, root, wrapped);
 	}
 
-	[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+	[return: DynamicallyAccessedMembers(
+		DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+	)]
 	private static Type? GetTypeByName(string className)
 	{
 		if (_typesCache.TryGetValue(className, out Type? t))
@@ -238,10 +255,10 @@ public sealed partial class Globals : Node
 		string[] namespacesToCheck =
 		[
 			"BrickVerse.Datamodel.",
-		"BrickVerse.Datamodel.Services.",
-		"BrickVerse.Datamodel.Creator.",
-		"BrickVerse.Datamodel.Resources.",
-	];
+			"BrickVerse.Datamodel.Services.",
+			"BrickVerse.Datamodel.Creator.",
+			"BrickVerse.Datamodel.Resources.",
+		];
 
 		foreach (string ns in namespacesToCheck)
 		{
@@ -255,7 +272,11 @@ public sealed partial class Globals : Node
 		return null;
 	}
 
-	public static NetworkedObject? LoadNetworkedObject(string className, World? root = null, Action<NetworkedObject>? preInit = null)
+	public static NetworkedObject? LoadNetworkedObject(
+		string className,
+		World? root = null,
+		Action<NetworkedObject>? preInit = null
+	)
 	{
 		Type? type = GetTypeByName(className);
 		if (type != null)
@@ -275,7 +296,11 @@ public sealed partial class Globals : Node
 
 	public static Node? LoadNetworkedObjectScene(string className)
 	{
-		PackedScene? packedScene = LoadCachedResource(_scenesCache, className, $"{DatamodelScenesPath}{className}.tscn");
+		PackedScene? packedScene = LoadCachedResource(
+			_scenesCache,
+			className,
+			$"{DatamodelScenesPath}{className}.tscn"
+		);
 		Node? scene = packedScene?.Instantiate<Node>();
 		scene?.SceneFilePath = "";
 		return scene;
@@ -299,14 +324,22 @@ public sealed partial class Globals : Node
 		else
 			cacheToLoad = type.Name;
 
-		PackedScene packedScene = ForceLoadResource(_propertiesCache, cacheToLoad, $"{PropertiesPath}{cacheToLoad}Property.tscn");
+		PackedScene packedScene = ForceLoadResource(
+			_propertiesCache,
+			cacheToLoad,
+			$"{PropertiesPath}{cacheToLoad}Property.tscn"
+		);
 		return packedScene.Instantiate<IProperty>();
 	}
 
 	public static IPropertySubview? LoadSubviewProperty(Type type)
 	{
 		string cacheToLoad = type.Name;
-		PackedScene? packedScene = LoadCachedResource(_subViewPropertiesCache, cacheToLoad, $"{SubViewPropertiesPath}{cacheToLoad}Subview.tscn");
+		PackedScene? packedScene = LoadCachedResource(
+			_subViewPropertiesCache,
+			cacheToLoad,
+			$"{SubViewPropertiesPath}{cacheToLoad}Subview.tscn"
+		);
 		return packedScene?.Instantiate<IPropertySubview>();
 	}
 #endif
@@ -331,7 +364,9 @@ public sealed partial class Globals : Node
 		}
 
 		string path = $"{ShapesMeshesPath}{shapeName}.tres";
-		Mesh mesh = ResourceLoader.Load<Mesh>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep) ?? throw new KeyNotFoundException($"Shape '{shapeName}' was not found at '{path}'.");
+		Mesh mesh =
+			ResourceLoader.Load<Mesh>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			?? throw new KeyNotFoundException($"Shape '{shapeName}' was not found at '{path}'.");
 		Shape3D shape = CreateShape(mesh, shapeName);
 		(Mesh, Shape3D) loadedShape = (mesh, shape);
 		_shapesCache[shapeName] = loadedShape;
@@ -347,10 +382,20 @@ public sealed partial class Globals : Node
 			return mat;
 		}
 
-		mat = ResourceLoader.Load<Material>($"res://resources/materials/parts/{material}.tres", cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
-		if (!isOpaque && mat is ShaderMaterial shadMat && shadMat.Shader.ResourcePath.EndsWith("part.gdshader"))
+		mat = ResourceLoader.Load<Material>(
+			$"res://resources/materials/parts/{material}.tres",
+			cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+		);
+		if (
+			!isOpaque
+			&& mat is ShaderMaterial shadMat
+			&& shadMat.Shader.ResourcePath.EndsWith("part.gdshader")
+		)
 		{
-			Shader shader = ResourceLoader.Load<Shader>("res://resources/shaders/part/part_transparent.gdshader", cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
+			Shader shader = ResourceLoader.Load<Shader>(
+				"res://resources/shaders/part/part_transparent.gdshader",
+				cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+			);
 			shadMat.Shader = shader;
 		}
 		_materialCache[(material, isOpaque)] = mat;
@@ -370,10 +415,19 @@ public sealed partial class Globals : Node
 
 	public static Material LoadSkybox(string materialName)
 	{
-		return ForceLoadResource(_skyboxesCache, materialName, $"{SkyboxesPath}{materialName}.tres");
+		return ForceLoadResource(
+			_skyboxesCache,
+			materialName,
+			$"{SkyboxesPath}{materialName}.tres"
+		);
 	}
 
-	private static TResource? LoadCachedResource<TResource>(Dictionary<string, TResource> cache, string key, string path) where TResource : Resource
+	private static TResource? LoadCachedResource<TResource>(
+		Dictionary<string, TResource> cache,
+		string key,
+		string path
+	)
+		where TResource : Resource
 	{
 		if (cache.TryGetValue(key, out TResource? cachedResource))
 		{
@@ -385,17 +439,30 @@ public sealed partial class Globals : Node
 			return null;
 		}
 
-		TResource resource = ResourceLoader.Load<TResource>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep) ?? throw new InvalidOperationException($"Failed to load resource at '{path}'.");
+		TResource resource =
+			ResourceLoader.Load<TResource>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			?? throw new InvalidOperationException($"Failed to load resource at '{path}'.");
 		cache[key] = resource;
 		return resource;
 	}
 
-	private static TResource ForceLoadResource<TResource>(Dictionary<string, TResource> cache, string key, string path) where TResource : Resource
+	private static TResource ForceLoadResource<TResource>(
+		Dictionary<string, TResource> cache,
+		string key,
+		string path
+	)
+		where TResource : Resource
 	{
-		return LoadCachedResource(cache, key, path) ?? throw new KeyNotFoundException($"Resource '{key}' was not found at '{path}'.");
+		return LoadCachedResource(cache, key, path)
+			?? throw new KeyNotFoundException($"Resource '{key}' was not found at '{path}'.");
 	}
 
-	private static Texture2D LoadCachedTexture(Dictionary<string, Texture2D> cache, string key, string directoryPath, string fallbackKey)
+	private static Texture2D LoadCachedTexture(
+		Dictionary<string, Texture2D> cache,
+		string key,
+		string directoryPath,
+		string fallbackKey
+	)
 	{
 		if (cache.TryGetValue(key, out Texture2D? cachedTexture))
 		{
@@ -407,15 +474,24 @@ public sealed partial class Globals : Node
 		{
 			if (key == fallbackKey)
 			{
-				throw new KeyNotFoundException($"Texture '{fallbackKey}' was not found in '{directoryPath}'.");
+				throw new KeyNotFoundException(
+					$"Texture '{fallbackKey}' was not found in '{directoryPath}'."
+				);
 			}
 
-			Texture2D fallbackTexture = LoadCachedTexture(cache, fallbackKey, directoryPath, fallbackKey);
+			Texture2D fallbackTexture = LoadCachedTexture(
+				cache,
+				fallbackKey,
+				directoryPath,
+				fallbackKey
+			);
 			cache[key] = fallbackTexture;
 			return fallbackTexture;
 		}
 
-		Texture2D texture = ResourceLoader.Load<Texture2D>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep) ?? throw new InvalidOperationException($"Failed to load texture at '{path}'.");
+		Texture2D texture =
+			ResourceLoader.Load<Texture2D>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			?? throw new InvalidOperationException($"Failed to load texture at '{path}'.");
 		cache[key] = texture;
 		return texture;
 	}
@@ -517,7 +593,8 @@ public sealed partial class Globals : Node
 		// Request confirmation from interface
 		if (CreatorService.Interface != null && !force)
 		{
-			if (!await CreatorService.Interface.OnQuitRequested()) return;
+			if (!await CreatorService.Interface.OnQuitRequested())
+				return;
 		}
 #endif
 
@@ -533,14 +610,18 @@ public sealed partial class Globals : Node
 		{
 			PT.PrintWarn("Error present when quitting: ", ex);
 		}
-		Callable.From(() =>
-		{
-			CurrentAppEntryNode?.QueueFree();
-			Callable.From(() =>
+		Callable
+			.From(() =>
 			{
-				GetTree().Quit(code);
-			}).CallDeferred();
-		}).CallDeferred();
+				CurrentAppEntryNode?.QueueFree();
+				Callable
+					.From(() =>
+					{
+						GetTree().Quit(code);
+					})
+					.CallDeferred();
+			})
+			.CallDeferred();
 	}
 
 	public enum AppEntryEnum
@@ -548,17 +629,27 @@ public sealed partial class Globals : Node
 		Client,
 		Creator,
 		MobileUI,
-		Renderer
+		Renderer,
 	}
 
-	public Node SwitchEntry(AppEntryEnum appEntry)
+	public Node SwitchEntry(
+		AppEntryEnum appEntry,
+		[CallerMemberName] string caller = "",
+		[CallerFilePath] string file = "",
+		[CallerLineNumber] int line = 0
+	)
 	{
-		PT.Print("Switching entry to: ", appEntry);
+		PT.Print(
+			$"SwitchEntry({appEntry}) called from {System.IO.Path.GetFileName(file)}:{line} ({caller})"
+		);
+
 		CurrentAppEntryNode?.QueueFree();
 		CurrentAppEntry = appEntry;
+
 		Node node = LoadEntry(appEntry);
 		CurrentAppEntryNode = node;
-		GetNode("/root/").AddChild(node);
+		GetNode("/root").AddChild(node);
+
 		return node;
 	}
 
@@ -576,7 +667,7 @@ public sealed partial class Globals : Node
 		{
 			AppEntryEnum.Client => "client",
 			AppEntryEnum.Creator => "creator",
-			_ => null
+			_ => null,
 		};
 
 		// Set app icon
@@ -585,17 +676,24 @@ public sealed partial class Globals : Node
 			string platform = "windows";
 
 			if (OS.HasFeature("macos"))
-			{
 				platform = "mac";
-			}
-
-			if (OS.HasFeature("linux"))
-			{
+			else if (OS.HasFeature("linux"))
 				platform = "linux";
-			}
 
 			string iconPath = $"res://assets/textures/logo/{iconToLoad}/{platform}.png";
-			DisplayServer.SetIcon(GD.Load<Image>(iconPath));
+
+			PT.Print($"LoadEntry: loading icon {iconPath}");
+
+			Image icon = Image.LoadFromFile(iconPath);
+
+			if (icon != null)
+			{
+				DisplayServer.SetIcon(icon);
+			}
+			else
+			{
+				PT.PrintWarn($"LoadEntry: failed to load icon {iconPath}");
+			}
 		}
 
 		PT.Print(appEntry, ": Loading Entry scene");
@@ -603,7 +701,11 @@ public sealed partial class Globals : Node
 		return node;
 	}
 
-	private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+	private static IntPtr DllImportResolver(
+		string libraryName,
+		Assembly assembly,
+		DllImportSearchPath? searchPath
+	)
 	{
 		if (!IsInGDEditor)
 		{
@@ -672,7 +774,7 @@ public sealed partial class Globals : Node
 		{
 			["windows"] = "dll",
 			["macos"] = "dylib",
-			["linux"] = "so"
+			["linux"] = "so",
 		};
 
 		Dictionary<string, string> libraryPaths = new()
@@ -703,11 +805,16 @@ public sealed partial class Globals : Node
 	}
 
 	// Workaround for instance create
-	public static T CreateInstanceFromScene<T>(string path) where T : Node
+	public static T CreateInstanceFromScene<T>(string path)
+		where T : Node
 	{
 		if (CachedScenes.ContainsKey(path) == false)
 		{
-			CachedScenes[path] = ResourceLoader.Load<PackedScene>(path, null, ResourceLoader.CacheMode.IgnoreDeep);
+			CachedScenes[path] = ResourceLoader.Load<PackedScene>(
+				path,
+				null,
+				ResourceLoader.CacheMode.IgnoreDeep
+			);
 		}
 		return CachedScenes[path].Instantiate<T>();
 	}

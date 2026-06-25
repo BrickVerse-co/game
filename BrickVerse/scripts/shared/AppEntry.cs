@@ -2,21 +2,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Client;
+using BrickVerse.DocsGen;
+using Godot;
+using static BrickVerse.Shared.Globals;
 #if DEBUG
 using System;
 using BrickVerse.DatamodelTest;
 #endif
-using BrickVerse.DocsGen;
-using System.Collections.Generic;
-using static BrickVerse.Shared.Globals;
+
 
 namespace BrickVerse.Shared;
 
 public partial class AppEntry : Node
 {
-	public async override void _Ready()
+	public override async void _Ready()
 	{
 		Dictionary<string, string> cmdargs = ReadCmdArgs();
 		bool isApiRefGen = cmdargs.ContainsKey("genapi");
@@ -86,14 +87,32 @@ public partial class AppEntry : Node
 			entry = AppEntryEnum.Client;
 		}
 
-		Callable.From(() =>
-		{
-			Node app = Globals.Singleton.SwitchEntry(entry);
-			if (app is ClientEntry ce)
+		Callable
+			.From(() =>
 			{
-				ce.Entry();
-			}
-			QueueFree();
-		}).CallDeferred();
+				try
+				{
+					Node app = Globals.Singleton.SwitchEntry(entry);
+
+					if (app is ClientEntry ce)
+					{
+						ce.Entry();
+					}
+					else
+					{
+						PT.PrintErr($"AppEntry: Unknown entry type {entry}");
+					}
+				}
+				catch (Exception ex)
+				{
+					PT.PrintErr("AppEntry: SwitchEntry/startup failed.");
+					PT.PrintErr(ex.ToString());
+				}
+				finally
+				{
+					QueueFree();
+				}
+			})
+			.CallDeferred();
 	}
 }
