@@ -20,7 +20,7 @@ public partial class AssetLoader : Node
 	public AssetLoader()
 	{
 		Singleton = this;
-		AssetProvider = new PTAssetProvider();
+		AssetProvider = new BVAssetProvider();
 	}
 
 	public static AssetLoader Singleton { get; private set; } = null!;
@@ -121,17 +121,23 @@ public partial class AssetLoader : Node
 
 public enum ResourceType
 {
-	Mesh,
-	Decal,
+	// Developer Asset Types
+	Texture,
 	Sound,
-	AssetThumbnail,
-	PlaceThumbnail,
-	PlaceIcon,
-	UserThumbnail,
-	UserHeadshot,
-	GuildThumbnail,
+	Mesh,
+	Prefab,
+	Animation,
+	Plugin,
+
+	UniverseThumbnail,
+	GuildIcon,
 	GuildBanner,
-	Asset,
+
+	UserBodyshot,
+	UserHeadshot,
+
+	// Old PT Types
+	AssetThumbnail,
 	Font
 }
 

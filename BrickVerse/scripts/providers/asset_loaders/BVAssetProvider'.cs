@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace BrickVerse.Providers.AssetLoaders;
 
-public class PTAssetProvider : IAssetProvider
+public class BVAssetProvider : IAssetProvider
 {
 	private readonly PTHttpClient _client = new();
 
@@ -66,14 +66,12 @@ public class PTAssetProvider : IAssetProvider
 
 					return item;
 				}
-			case ResourceType.Asset:
-			case ResourceType.Decal:
+			case ResourceType.Texture:
 			case ResourceType.AssetThumbnail:
-			case ResourceType.PlaceThumbnail:
-			case ResourceType.PlaceIcon:
-			case ResourceType.UserThumbnail:
+			case ResourceType.UniverseThumbnail:
+			case ResourceType.UserBodyshot:
 			case ResourceType.UserHeadshot:
-			case ResourceType.GuildThumbnail:
+			case ResourceType.GuildIcon:
 			case ResourceType.GuildBanner:
 				{
 					Image image = new();
@@ -96,31 +94,24 @@ public class PTAssetProvider : IAssetProvider
 
 	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
-		if (itemType is ResourceType.AssetThumbnail or ResourceType.PlaceThumbnail or ResourceType.PlaceIcon or ResourceType.GuildThumbnail or ResourceType.GuildBanner)
+		if (itemType is ResourceType.UserBodyshot)
 		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id);
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/bodyshot/" + id + "?stream=true");
 		}
 
-		if (itemType == ResourceType.UserThumbnail)
+		if (itemType is ResourceType.UserHeadshot)
 		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/bodyshot/" + id);
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/headshot/" + id + "?stream=true");
 		}
 
-		if (itemType == ResourceType.UserHeadshot)
-		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/headshot/" + id);
-		}
-
-		// Runtime-specific DRM endpoints:
-		// Client build uses world client token, server build uses host token,
-		// creator/workshop uses user cookie with regular asset download.
+		// Runtime-specific DRM endpoints
 		if (Globals.IsServerBuild)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
 #if CREATOR
-		return Globals.ApiEndpoint.PathJoin("/v3/asset/" + id + "/download");
+		return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
 #else
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
 #endif
@@ -128,12 +119,12 @@ public class PTAssetProvider : IAssetProvider
 
 	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
 	{
-		if (itemType is ResourceType.Mesh or ResourceType.Sound or ResourceType.Asset or ResourceType.Decal)
+		if (itemType is ResourceType.Mesh or ResourceType.Sound or ResourceType.Texture)
 		{
 			return await _client.GetByteArrayAsync(url);
 		}
 
-		ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, PTAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
+		ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, BVAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
 		if (thumb is null || string.IsNullOrWhiteSpace(thumb.Value.Url))
 			throw new InvalidOperationException("Failed to resolve thumbnail URL");
 
@@ -143,7 +134,6 @@ public class PTAssetProvider : IAssetProvider
 	private void ApplyAssetAuthHeaders()
 	{
 		_client.DefaultRequestHeaders.Remove("Authorization");
-		_client.DefaultRequestHeaders.Remove("Cookie");
 
 		if (Globals.IsServerBuild)
 		{
@@ -158,10 +148,7 @@ public class PTAssetProvider : IAssetProvider
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			string cookieToken = CreatorAPI.Token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-				? CreatorAPI.Token[7..]
-				: CreatorAPI.Token;
-			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(cookieToken);
+			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(CreatorAPI.Token);
 		}
 #else
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
@@ -239,4 +226,4 @@ internal struct ThumbnailUrlResponse
 }
 
 [JsonSerializable(typeof(ThumbnailUrlResponse))]
-internal partial class PTAssetProviderGenerationContext : JsonSerializerContext { }
+internal partial class BVAssetProviderGenerationContext : JsonSerializerContext { }
