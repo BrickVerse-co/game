@@ -538,7 +538,7 @@ public static class CreatorAPI
 
 		ByteArrayContent fileContent = new(modelData);
 		fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		form.Add(fileContent, "file", "model.ptmd");
+		form.Add(fileContent, "file", "model.bvxm");
 
 		using HttpResponseMessage msg = await _client.PostAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/asset/create"),

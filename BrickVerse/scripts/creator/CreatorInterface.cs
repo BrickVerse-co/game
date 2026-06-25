@@ -278,7 +278,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		{
 			Title = "Import model",
 			DialogMode = DisplayServer.FileDialogMode.OpenFile,
-			Filters = ["*.ptmd;Polytoria Model"]
+			Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"]
 		}, OnPromptImportModelFile);
 	}
 
@@ -332,17 +332,17 @@ public partial class CreatorInterface : Control, IScriptObject
 		PromptFileSelect(new()
 		{
 			Title = "Export model",
-			FileName = $"{target.Name}.ptmd",
+			FileName = $"{target.Name}.bvxm",
 			DialogMode = DisplayServer.FileDialogMode.SaveFile,
-			Filters = ["*.ptmd;Polytoria Model"]
+			Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"]
 		}, async paths =>
 		{
 			if (paths.Length > 0)
 			{
 				string path = paths[0];
-				if (!path.EndsWith(".ptmd"))
+				if (!path.EndsWith(".bvxm") && !path.EndsWith(".bvmodel"))
 				{
-					path += ".ptmd";
+					path += ".bvxm";
 				}
 
 				try
