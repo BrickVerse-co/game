@@ -502,6 +502,9 @@ public struct APIV3AssetDiscoverItem
 
 	[JsonPropertyName("creatorId")]
 	public string CreatorId { get; set; }
+
+	[JsonPropertyName("creatorName")] 
+	public string CreatorName { get; set; }
 }
 
 public struct APIV3WorldRoot
