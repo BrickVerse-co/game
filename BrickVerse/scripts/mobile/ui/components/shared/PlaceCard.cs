@@ -35,7 +35,7 @@ public partial class PlaceCard : Button
 			_ratingLabel.Text = "--";
 		}
 
-		_iconAsset.ImageType = ImageTypeEnum.PlaceIcon;
+		_iconAsset.ImageType = ImageTypeEnum.WorldThumbnail;
 		_iconAsset.ImageID = PlaceData.Id.ToString();
 		_iconAsset.LoadResource();
 
