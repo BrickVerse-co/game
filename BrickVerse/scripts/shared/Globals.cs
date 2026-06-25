@@ -27,7 +27,7 @@ public sealed partial class Globals : Node
 	public const string MainEndpoint = "http://localhost:3000"; // "https://brickverse.gg/";
 	public const string ApiEndpoint = "http://localhost:3001/api"; // "https://api.brickverse.gg/api";
 	public const float AlphaThreshold = 0.025f;
-
+	public const string TestUserIdStart = "2";
 	public const string ToolboxFolderName = "toolbox";
 #if CREATOR
 	public const string ProjectMetaFileName = "project.bvxl";

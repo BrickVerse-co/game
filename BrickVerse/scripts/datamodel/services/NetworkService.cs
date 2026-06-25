@@ -222,23 +222,49 @@ public sealed partial class NetworkService : Instance
 
 	private static void ValidateAuthority(NetRpcAttribute rpcAttr, MethodInfo md, NetworkedObject netObj, int originFromPeer, TransferMode tfm, InternalNetMsg netMsg)
 	{
-		// Check if packet flag matches
-		if (rpcAttr.TransferMode == TransferMode.Reliable && tfm != TransferMode.Reliable) throw new NetworkException($"Flag mismatch (expected {rpcAttr.TransferMode} but got {tfm}) ({md.Name})");
+		if (rpcAttr.TransferMode == TransferMode.Reliable && tfm != TransferMode.Reliable)
+		{
+			throw new NetworkException(
+				$"Flag mismatch. Method={md.Name}, Expected={rpcAttr.TransferMode}, Actual={tfm}, " +
+				$"OriginPeer={originFromPeer}, Target={netMsg.Target}"
+			);
+		}
 
 		if (rpcAttr.AuthorMode == AuthorityMode.Server)
 		{
-			// Check if is server
-			if (originFromPeer != 1) throw new NetworkException($"Invalid authority, author mode is Server but is from peer {originFromPeer} ({md.Name})");
+			if (originFromPeer != 1)
+			{
+				throw new NetworkException(
+					$"Invalid authority. Method={md.Name}, Required=Server, OriginPeer={originFromPeer}, " +
+					$"Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}, TransferMode={tfm}"
+				);
+			}
+
+			return;
 		}
-		else if (rpcAttr.AuthorMode == AuthorityMode.Authority)
+
+		if (rpcAttr.AuthorMode == AuthorityMode.Authority)
 		{
-			// Check if is authority
-			if (originFromPeer != 1 && originFromPeer != netObj.NetworkAuthority) throw new NetworkException($"Invalid authority, author is {netObj.NetworkAuthority} but is from peer {originFromPeer} ({md.Name})");
+			if (originFromPeer != 1 && originFromPeer != netObj.NetworkAuthority)
+			{
+				throw new NetworkException(
+					$"Invalid authority. Method={md.Name}, RequiredAuthority={netObj.NetworkAuthority}, " +
+					$"OriginPeer={originFromPeer}, Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}"
+				);
+			}
+
+			return;
 		}
-		else if (rpcAttr.AuthorMode == AuthorityMode.Any)
+
+		if (rpcAttr.AuthorMode == AuthorityMode.Any)
 		{
-			// Check if is authority
-			if (originFromPeer != 1 && netMsg.BroadcastAll && rpcAttr.AllowToServerOnly) throw new NetworkException($"Broadcast to server only rule violation, from peer {originFromPeer} ({md.Name})");
+			if (originFromPeer != 1 && netMsg.BroadcastAll && rpcAttr.AllowToServerOnly)
+			{
+				throw new NetworkException(
+					$"Broadcast to server only rule violation. Method={md.Name}, OriginPeer={originFromPeer}, " +
+					$"Target={netMsg.Target}, TransferMode={tfm}"
+				);
+			}
 		}
 	}
 
@@ -273,6 +299,23 @@ public sealed partial class NetworkService : Instance
 			ValidateAuthority(dispatch.Attribute, dispatch.Method, netObj, originFromPeer, tfm, netMsg);
 
 			Type[] paramTypes = dispatch.ParameterTypes;
+			int expectedArgCount = paramTypes.Length;
+			int actualArgCount = netMsg.ByteArrays.Count;
+
+			if (actualArgCount != expectedArgCount)
+			{
+				PT.PrintErr(
+					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
+					$"FromPeer={fromPeer}, OriginPeer={originFromPeer}, Expected={expectedArgCount}, Actual={actualArgCount}"
+				);
+
+				for (int i = 0; i < actualArgCount; i++)
+				{
+					PT.PrintErr($"  Arg[{i}] bytes={netMsg.ByteArrays[i]?.Length ?? 0}");
+				}
+
+				return;
+			}
 
 			if (netMsg.BroadcastAll && IsServer)
 			{
@@ -316,13 +359,26 @@ public sealed partial class NetworkService : Instance
 			if (originFromPeer == LocalPeerID) return;
 			netObj.RemoteSenderId = originFromPeer;
 
-			object?[] args = ArrayPool<object?>.Shared.Rent(dispatch.ParameterTypes.Length);
+			object?[] args = ArrayPool<object?>.Shared.Rent(expectedArgCount);
 
 			try
 			{
-				for (int i = 0; i < dispatch.ParameterTypes.Length; i++)
+				for (int i = 0; i < expectedArgCount; i++)
 				{
-					args[i] = NetworkPropSync.DeserializePropValue(netMsg.ByteArrays[i], dispatch.ParameterTypes[i]);
+					try
+					{
+						args[i] = NetworkPropSync.DeserializePropValue(netMsg.ByteArrays[i], paramTypes[i]);
+					}
+					catch (Exception ex)
+					{
+						PT.PrintErr(
+							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
+							$"ArgIndex={i}, TargetType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, " +
+							$"FromPeer={fromPeer}, OriginPeer={originFromPeer}"
+						);
+						PT.PrintErr(ex);
+						return;
+					}
 				}
 
 				netObj.RemoteSenderId = originFromPeer;
@@ -338,7 +394,7 @@ public sealed partial class NetworkService : Instance
 			finally
 			{
 				netObj.RemoteSenderId = 0;
-				Array.Clear(args, 0, dispatch.ParameterTypes.Length);
+				Array.Clear(args, 0, expectedArgCount);
 				ArrayPool<object?>.Shared.Return(args);
 			}
 		}
@@ -511,6 +567,16 @@ public sealed partial class NetworkService : Instance
 
 	internal async void DisconnectPeer(int peerID, string reason = "", DisconnectionCodeEnum code = DisconnectionCodeEnum.Kicked)
 	{
+		if (!IsServer || LocalPeerID != 1)
+		{
+			PT.PrintErr(
+				$"DisconnectPeer blocked on non-server. LocalPeerID={LocalPeerID}, IsServer={IsServer}, " +
+				$"TargetPeer={peerID}, Reason={reason}, Code={code}"
+			);
+			return;
+		}
+
+		PT.Print($"DisconnectPeer -> Peer={peerID}, Reason={reason}, Code={code}");
 		RpcId(peerID, nameof(NetRecvDisconnect), reason, (int)code);
 		await Globals.Singleton.WaitAsync(3);
 		NetInstance?.DisconnectPeer(peerID, true);
@@ -568,15 +634,17 @@ public sealed partial class NetworkService : Instance
 			pk = IntegrityCheckLayer.Generate(platformName);
 		}
 
+		PT.Print($"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}");
 		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken, (int)NetworkMode, (int)platform, platformName, pk);
 	}
 
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
-	private async void NetAuthResponse(int testUserID, string userToken, int networkMode, int platform, string platformStr, byte[] pk)
+	private async void NetAuthResponse(string testUserID, string userToken, int networkMode, int platform, string platformStr, byte[] pk)
 	{
 		if (NetInstance == null) return;
 		int peerID = RemoteSenderId;
+		PT.Print($"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}");
 
 		if (IntegrityCheckLayer != null)
 		{
@@ -605,12 +673,12 @@ public sealed partial class NetworkService : Instance
 		APIUserInfo userData;
 		try
 		{
-			validateRes = new() { CanChat = true, UserID = testUserID.ToString(), IsCreator = false, IsAgeRestricted = false };
+			validateRes = new() { CanChat = true, UserID = testUserID, IsCreator = false, IsAgeRestricted = false };
 			if (OS.HasFeature("offline") || (Root.Entry != null && Root.Entry.IsSoloTest))
 			{
 				// Offline data
 				validateRes.IsCreator = true;
-				userData = new() { Username = "Player" + testUserID.ToString(), Id = testUserID.ToString(), IsStaff = false };
+				userData = new() { Username = "Player" + testUserID, Id = testUserID, IsStaff = false };
 			}
 			else if (IsProd)
 			{

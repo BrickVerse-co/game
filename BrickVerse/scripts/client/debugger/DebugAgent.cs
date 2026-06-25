@@ -109,7 +109,7 @@ public class DebugAgent
 					{
 						ConnectAddress = _address,
 						TestIsServer = false,
-						TestUserID = "1"
+						TestUserID = Globals.TestUserIdStart,
 					};
 					ce.Entry(entryData);
 				}

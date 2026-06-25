@@ -47,7 +47,7 @@ public sealed partial class ClientEntry : Node3D
 	public bool IsSoloTest { get; private set; }
 	public bool TestModeReady { get; private set; }
 
-	public string TestUserID { get; private set; } = "1";
+	public string TestUserID { get; private set; } = Globals.TestUserIdStart;
 	public int TestClientCount { get; private set; }
 
 #if ALLOW_SELFHOST
@@ -146,7 +146,7 @@ public sealed partial class ClientEntry : Node3D
 		options.LocalAddress = localAddress ?? DefaultLocalAddress;
 		options.LocalPort = (localPortText ?? DefaultLocalPort.ToString()).ToInt();
 		options.LocalWorldPath = localWorldPath;
-		options.TestUserId = string.IsNullOrWhiteSpace(testUserId) ? "1" : testUserId;
+		options.TestUserId = string.IsNullOrWhiteSpace(testUserId) ? Globals.TestUserIdStart : testUserId;
 		options.SoloWorldPath = soloWorldPath;
 		options.SoloClientCount = (soloClientCountText ?? "1").ToInt();
 		options.DebugSpawnPositionText = debugSpawnPositionText;
@@ -187,7 +187,7 @@ public sealed partial class ClientEntry : Node3D
 #if ALLOW_SELFHOST
 	private void ApplySelfHostedLaunchOptions(ClientLaunchOptions options)
 	{
-		TestUserID = string.IsNullOrWhiteSpace(options.TestUserId) ? "1" : options.TestUserId;
+		TestUserID = string.IsNullOrWhiteSpace(options.TestUserId) ? Globals.TestUserIdStart : options.TestUserId;
 
 		if (!string.IsNullOrWhiteSpace(options.DebugSpawnPositionText))
 		{
@@ -708,7 +708,7 @@ public sealed partial class ClientEntry : Node3D
 #if ALLOW_SELFHOST
 		public string LocalAddress { get; set; } = DefaultLocalAddress;
 		public int LocalPort { get; set; } = DefaultLocalPort;
-		public string TestUserId { get; set; } = "1";
+		public string TestUserId { get; set; } = Globals.TestUserIdStart;
 		public string? LocalWorldPath { get; set; }
 		public string? SoloWorldPath { get; set; }
 		public int SoloClientCount { get; set; } = 1;

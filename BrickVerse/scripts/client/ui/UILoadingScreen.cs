@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Client.UI;
 
@@ -23,13 +24,11 @@ public partial class UILoadingScreen : Control
 
 	private BVImageAsset _gameThumbnailImage = null!;
 	private BVImageAsset _gameIconImage = null!;
-
-	private bool _infoReady = false;
-	private bool _iconReady = false;
-	private bool _iconAppeared = false;
-	private bool _bgAppeared = false;
-
 	private ClientEntry _entry = null!;
+
+	private bool _iconAppeared;
+	private bool _bgAppeared;
+	private bool _hasReplicationProgress;
 
 	public override void _Ready()
 	{
@@ -38,142 +37,162 @@ public partial class UILoadingScreen : Control
 			Visible = false;
 			return;
 		}
-		_gameThumbnailImage = new();
-		_gameIconImage = new();
 
 		_entry = GetNode<ClientEntry>("../../");
-		if (_entry.IsNetEssentialsReady)
-		{
-			NetworkEssentialsReady();
-		}
-		else
-		{
-			_entry.NetworkEssentialsReady += NetworkEssentialsReady;
-		}
+
+		_gameThumbnailImage = new();
+		_gameIconImage = new();
 
 		_gameDetailsContainer.Visible = false;
 
 		_gameThumbnailImage.ResourceLoaded += OnGameThumbnailLoaded;
 		_gameIconImage.ResourceLoaded += OnGameIconLoaded;
 
-		SetStatusText("Waiting for server...");
+		SetProgress(0, 1);
+		SetStatusText("Preparing client...");
 		Visible = true;
+
+		if (_entry.IsNetEssentialsReady)
+			NetworkEssentialsReady();
+		else
+			_entry.NetworkEssentialsReady += NetworkEssentialsReady;
 	}
 
-	private void OnGameIconLoaded(Resource resource)
+	private void NetworkEssentialsReady()
 	{
-		_gameIconRect.Texture = (Texture2D)resource;
-		_iconReady = true;
-	}
+		_entry.NetworkEssentialsReady -= NetworkEssentialsReady;
 
-	private void OnGameThumbnailLoaded(Resource resource)
-	{
-		if (_bgAppeared) return;
-		_bgAppeared = true;
+		_entry.NetworkService.ClientConnectedToServer += OnClientConnectedToServer;
+		_entry.NetworkService.ClientWorldReady += OnWorldReady;
+		_entry.NetworkService.ClientReady += OnClientReady;
+		_entry.NetworkService.ReplicateSync.InstanceLoadedProgress += InstanceLoadedProgress;
+		_entry.TargetServerReady += OnServerReady;
 
-		_gameThumbnailRect.Texture = (Texture2D)resource;
-		_bgAnimPlay.Play("fade_in");
+		if (_entry.NetworkService.IsServer)
+		{
+			Visible = false;
+			return;
+		}
+
+		SetStatusText("Waiting for local server...");
+
+		if (_entry.Root.WorldInfo.HasValue)
+			OnWorldInfoReady(_entry.Root.WorldInfo.Value);
+		else
+			_entry.Root.WorldInfoReady += OnWorldInfoReady;
+
+		if (_entry.Root.WorldMedia != null)
+			OnWorldMediaReady(_entry.Root.WorldMedia);
+		else
+			_entry.Root.WorldMediaReady += OnWorldMediaReady;
 	}
 
 	private void SetStatusText(string text)
 	{
 		_statusLabel.Text = text;
+		PT.Print($"LoadingScreen: {text}");
 	}
 
-	private void NetworkEssentialsReady()
+	private void SetProgress(double current, double max)
 	{
-		_entry.NetworkService.ClientReady += OnClientReady;
-		_entry.NetworkService.ClientWorldReady += OnWorldReady;
-		_entry.NetworkService.ReplicateSync.InstanceLoadedProgress += InstanceLoadedProgress;
-		_entry.NetworkService.ClientConnectedToServer += OnClientConnectedToServer;
-		_entry.TargetServerReady += OnServerReady;
-		_entry.NetworkEssentialsReady -= NetworkEssentialsReady;
+		_statusProgressbar.MaxValue = Mathf.Max(max, 1);
+		_statusProgressbar.Value = Mathf.Clamp(current, 0, _statusProgressbar.MaxValue);
+	}
 
-		// Hide loading screen if is server
-		if (_entry.NetworkService.IsServer)
-		{
-			Visible = false;
-		}
-		SetStatusText("Waiting for server...");
+	private void OnServerReady()
+	{
+		SetStatusText("Server ready. Connecting...");
+		SetProgress(0, 1);
+	}
 
-		if (_entry.Root != null)
-		{
-			if (_entry.Root.WorldInfo.HasValue)
-			{
-				OnWorldInfoReady(_entry.Root.WorldInfo.Value);
-			}
-			else
-			{
-				_entry.Root.WorldInfoReady += OnWorldInfoReady;
-			}
+	private void OnClientConnectedToServer()
+	{
+		_hasReplicationProgress = false;
+		SetStatusText("Connected. Waiting for world replication...");
+		SetProgress(0, 1);
+	}
 
-			if (_entry.Root.WorldMedia != null)
-			{
-				OnWorldMediaReady(_entry.Root.WorldMedia);
-			}
-			else
-			{
-				_entry.Root.WorldMediaReady += OnWorldMediaReady;
-			}
-		}
+	private void InstanceLoadedProgress(int current, int max)
+	{
+		_hasReplicationProgress = true;
+
+		Loader?.QueueFree();
+		Loader = null;
+
+		SetProgress(current, max);
+		SetStatusText($"Replicating world ({current}/{max})...");
+	}
+
+	private void OnWorldReady()
+	{
+		if (!_hasReplicationProgress)
+			SetStatusText("World replicated. Waiting for player...");
+		else
+			SetStatusText("World constructed. Waiting for player...");
+	}
+
+	private void OnClientReady()
+	{
+		SetProgress(1, 1);
+		SetStatusText("Ready!");
+		_animPlay.Play("load_ready");
+
+		CleanupEvents();
 	}
 
 	private void OnWorldInfoReady(APIPlaceInfo info)
 	{
+		_entry.Root.WorldInfoReady -= OnWorldInfoReady;
+
 		_gameIconImage.ImageType = ImageTypeEnum.WorldThumbnail;
 		_gameIconImage.ImageID = info.Id.ToString();
-
-		// This has to be call manually to force resource load, usual load is queued in frame
 		_gameIconImage.LoadResource();
 
 		_gameTitleLabel.Text = info.Name;
 		_gameCreatorLabel.Text = "By " + info.Creator.Name;
-		AppearInfo();
-	}
 
-	private void AppearInfo()
-	{
-		if (_iconAppeared) return;
-		_iconAppeared = true;
-		_animPlay.Play("info_appear");
-		_gameDetailsContainer.Visible = true;
+		AppearInfo();
 	}
 
 	private void OnWorldMediaReady(APIPlaceMedia[] _)
 	{
+		_entry.Root.WorldMediaReady -= OnWorldMediaReady;
+
 		_gameThumbnailImage.ImageType = ImageTypeEnum.WorldThumbnail;
 		_gameThumbnailImage.ImageID = _entry.Root.FirstWorldMedia.ToString();
 		_gameThumbnailImage.LoadResource();
 	}
 
-	private void InstanceLoadedProgress(int current, int max)
+	private void OnGameIconLoaded(Resource resource)
 	{
-		Loader?.QueueFree();
-		Loader = null;
-		_statusProgressbar.Value = current;
-		_statusProgressbar.MaxValue = max;
-		SetStatusText($"Constructing ({current}/{max})...");
+		_gameIconRect.Texture = (Texture2D)resource;
 	}
 
-	private void OnWorldReady()
+	private void OnGameThumbnailLoaded(Resource resource)
 	{
-		SetStatusText("Waiting for player");
+		if (_bgAppeared) return;
+
+		_bgAppeared = true;
+		_gameThumbnailRect.Texture = (Texture2D)resource;
+		_bgAnimPlay.Play("fade_in");
 	}
 
-	private void OnServerReady()
+	private void AppearInfo()
 	{
-		SetStatusText("Connecting...");
+		if (_iconAppeared) return;
+
+		_iconAppeared = true;
+		_gameDetailsContainer.Visible = true;
+		_animPlay.Play("info_appear");
 	}
 
-	private void OnClientConnectedToServer()
+	private void CleanupEvents()
 	{
-		SetStatusText("Downloading world...");
-	}
-
-	private void OnClientReady()
-	{
-		SetStatusText("Ready!");
-		_animPlay.Play("load_ready");
+		_entry.TargetServerReady -= OnServerReady;
+		_entry.NetworkService.ClientConnectedToServer -= OnClientConnectedToServer;
+		_entry.NetworkService.ClientWorldReady -= OnWorldReady;
+		_entry.NetworkService.ClientReady -= OnClientReady;
+		_entry.NetworkService.ReplicateSync.InstanceLoadedProgress -= InstanceLoadedProgress;
 
 		_gameThumbnailImage.ResourceLoaded -= OnGameThumbnailLoaded;
 		_gameIconImage.ResourceLoaded -= OnGameIconLoaded;

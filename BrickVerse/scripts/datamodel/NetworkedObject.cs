@@ -431,30 +431,71 @@ public partial class NetworkedObject : IScriptObject
 
 		Dictionary<string, int> nameToId = [];
 		Dictionary<int, MethodInfo> idToMethod = [];
-		int id = 0;
 
 		Type? currentType = type;
-		while (currentType != null)
+
+		while (currentType != null && currentType != typeof(object))
 		{
 #pragma warning disable IL2075 // Reflection access is already defined
-			foreach (var method in currentType.GetMethods(
-				BindingFlags.Public | BindingFlags.NonPublic |
-				BindingFlags.Instance | BindingFlags.DeclaredOnly))
-			{
-				if (method.GetCustomAttribute<NetRpcAttribute>() != null &&
-					!nameToId.ContainsKey(method.Name))
-				{
-					nameToId[method.Name] = id;
-					idToMethod[id] = method;
-					id++;
-				}
-			}
+			IEnumerable<MethodInfo> rpcMethods = currentType
+				.GetMethods(
+					BindingFlags.Public |
+					BindingFlags.NonPublic |
+					BindingFlags.Instance |
+					BindingFlags.DeclaredOnly)
+				.Where(method => method.GetCustomAttribute<NetRpcAttribute>() != null)
+				.OrderBy(method => method.Name, StringComparer.Ordinal)
+				.ThenBy(
+					method => string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.FullName ?? parameter.ParameterType.Name)),
+					StringComparer.Ordinal);
 #pragma warning restore IL2075 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The return value of the source method does not have matching annotations.
+
+			foreach (MethodInfo method in rpcMethods)
+			{
+				if (nameToId.ContainsKey(method.Name))
+				{
+					throw new NetworkException($"Duplicate RPC method name is not allowed: {type.FullName}.{method.Name}");
+				}
+
+				int methodId = GetStableRpcMethodId(method);
+
+				if (idToMethod.TryGetValue(methodId, out MethodInfo? existingMethod))
+				{
+					throw new NetworkException(
+						$"RPC method ID collision on {type.FullName}. " +
+						$"MethodA={existingMethod.DeclaringType?.FullName}.{existingMethod.Name}, " +
+						$"MethodB={method.DeclaringType?.FullName}.{method.Name}, ID={methodId}");
+				}
+
+				nameToId[method.Name] = methodId;
+				idToMethod[methodId] = method;
+			}
+
 			currentType = currentType.BaseType;
 		}
 
 		_typeRpcIdMap[type] = nameToId;
 		_typeRpcMethodMap[type] = idToMethod;
+	}
+
+	private static int GetStableRpcMethodId(MethodInfo method)
+	{
+		string signature =
+			$"{method.DeclaringType?.FullName}.{method.Name}(" +
+			string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.FullName ?? parameter.ParameterType.Name)) +
+			")";
+
+		unchecked
+		{
+			int hash = 17;
+
+			foreach (char character in signature)
+			{
+				hash = (hash * 31) + character;
+			}
+
+			return hash;
+		}
 	}
 
 	private void RegisterName()
@@ -1696,7 +1737,7 @@ public partial class NetworkedObject : IScriptObject
 		MethodInfo? md = GetRpcMethod(methodName);
 		NetRpcAttribute? rpcA = md.GetCustomAttribute<NetRpcAttribute>() ?? throw new NetworkException($"Tried to call Rpc function which is not marked as Rpc ({md.Name})");
 
-		if (Root == null || Root.Network == null || Root.Network.NetInstance == null)
+		if (!CanSendNetworkRpc())
 		{
 			md.Invoke(this, args);
 			return;
@@ -1726,9 +1767,27 @@ public partial class NetworkedObject : IScriptObject
 
 	private string ProcessRpcTarget()
 	{
-		// If this is marked as no sync, use network path instead. as ID will not be available
-		if (GetType().IsDefined(typeof(NoSyncAttribute))) return NetworkPath;
+		// Root/internal service objects must be targeted by path because their numeric
+		// network IDs can overlap with replicated instances during startup.
+		if (this is World)
+			return NetworkPath;
+
+		if (this is Services.NetworkService)
+			return NetworkPath;
+
+		// If this is marked as no sync, use network path instead because an ID may not exist.
+		if (GetType().IsDefined(typeof(NoSyncAttribute)))
+			return NetworkPath;
+
 		return string.IsNullOrEmpty(NetworkedObjectID) ? NetworkPath : "i:" + NetworkedObjectID;
+	}
+
+	private bool CanSendNetworkRpc()
+	{
+		return Root != null &&
+			Root.Network != null &&
+			Root.Network.NetInstance != null &&
+			(Root.Network.IsServer || Root.Network.ClientConnected);
 	}
 
 	public void RpcId(int id, string methodName, params object?[]? args)
@@ -1750,7 +1809,7 @@ public partial class NetworkedObject : IScriptObject
 		MethodInfo? md = GetRpcMethod(methodName);
 		NetRpcAttribute? rpcA = md.GetCustomAttribute<NetRpcAttribute>() ?? throw new NetworkException($"Tried to call Rpc function which is not marked as Rpc ({md.Name})");
 
-		if (Root == null || Root.Network == null || Root.Network.NetInstance == null)
+		if (!CanSendNetworkRpc())
 		{
 			md.Invoke(this, args);
 			return;
@@ -1797,11 +1856,22 @@ public partial class NetworkedObject : IScriptObject
 
 	internal MethodInfo GetRpcMethod(int methodId)
 	{
-		if (!_typeRpcMethodMap.TryGetValue(GetType(), out var idToMethod))
-			throw new Exception($"RPC methods not initialized for type {GetType().Name}");
+		Type type = GetType();
+
+		if (!_typeRpcMethodMap.TryGetValue(type, out var idToMethod))
+			throw new Exception($"RPC methods not initialized for type {type.FullName}");
 
 		if (!idToMethod.TryGetValue(methodId, out var method))
-			throw new Exception($"No RPC method found with id '{methodId}'");
+		{
+			PT.PrintErr($"Missing RPC ID {methodId} on type {type.FullName}");
+
+			foreach (var kv in idToMethod.OrderBy(x => x.Key))
+			{
+				PT.PrintErr($"  Has RPC {kv.Key}: {kv.Value.DeclaringType?.FullName}.{kv.Value.Name}");
+			}
+
+			throw new Exception($"No RPC method found with id '{methodId}' on type {type.FullName}");
+		}
 
 		return method;
 	}
