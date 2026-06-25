@@ -254,9 +254,9 @@ public sealed partial class InsertService : Instance
 			_httpClient.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
 		}
 #else
-		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.Token))
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
-			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.Token);
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
 		}
 #endif
 	}

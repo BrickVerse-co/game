@@ -568,7 +568,7 @@ public sealed partial class NetworkService : Instance
 			pk = IntegrityCheckLayer.Generate(platformName);
 		}
 
-		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.Token, (int)NetworkMode, (int)platform, platformName, pk);
+		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken, (int)NetworkMode, (int)platform, platformName, pk);
 	}
 
 

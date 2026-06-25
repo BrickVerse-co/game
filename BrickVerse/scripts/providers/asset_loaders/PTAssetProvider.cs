@@ -164,9 +164,9 @@ public class PTAssetProvider : IAssetProvider
 			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(cookieToken);
 		}
 #else
-		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.Token))
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
-			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.Token);
+			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
 		}
 #endif
 	}
