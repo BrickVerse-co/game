@@ -15,7 +15,10 @@ public partial class ToolboxItemContextMenu : ContextMenu
 
 	public override void _Ready()
 	{
-		AddIconItem("copy", "Copy ID", 1);
+		AddIconItem("copy_name", "Copy Name", 0);
+		AddIconItem("copy_id", "Copy ID", 1);
+		AddIconItem("view", "View on BrickVerse", 2);
+		AddIconItem("report", "Report", 3);
 		IdPressed += OnIdPressed;
 	}
 
@@ -23,8 +26,17 @@ public partial class ToolboxItemContextMenu : ContextMenu
 	{
 		switch (id)
 		{
+			case 0:
+				DisplayServer.ClipboardSet(ItemData.Name);
+				break;
 			case 1:
 				DisplayServer.ClipboardSet(ItemData.ID.ToString());
+				break;
+			case 2:
+				OS.ShellOpen("https://brickverse.gg/assets/" + ItemData.ID);
+				break;
+			case 3:
+				OS.ShellOpen("https://brickverse.gg/report?type=developer_asset&id=" + ItemData.ID);
 				break;
 		}
 	}
