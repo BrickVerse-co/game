@@ -109,7 +109,7 @@ public sealed partial class Toolbox : Control
 	{
 		_loaderView.Visible = true;
 		_noResultView.Visible = false;
-		PT.Print("Querying Toolbox data...");
+		//PT.Print("Querying Toolbox data...");
 
 		// Disable the buttons
 		_pagNavNext.Disabled = true;
@@ -121,7 +121,7 @@ public sealed partial class Toolbox : Control
 		_pagNavPrev.Disabled = CurrentPage == 1;
 		_pagNavNext.Disabled = CurrentPage >= MaxPage;
 
-		PT.Print("Query Complete!");
+		//PT.Print("Query Complete!");
 
 		_loaderView.Visible = false;
 

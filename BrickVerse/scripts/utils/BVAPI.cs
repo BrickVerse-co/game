@@ -343,14 +343,17 @@ public static class BVAPI
 		{
 			mapped.Add(new APILibraryItem
 			{
-				ID = uint.TryParse(item.Id, out uint parsedId) ? parsedId : 0,
+				ID = item.Id ?? "0",
 				Name = item.Name,
 				ThumbnailUrl = item.ThumbnailId != null
 					? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.ThumbnailId)
-					: "",
-				CreatorID = int.TryParse(item.CreatorId, out int creatorId) ? creatorId : 0,
-				CreatorName = item.CreatorName ?? item.CreatorId,
-				CreatorUrl = "",
+					: item.ThumbnailUrl ?? "",
+				CreatorID = item.CreatorId ?? "0",
+				CreatorType = item.CreatorType ?? "",
+				CreatorName = item.CreatorName ?? item.CreatorId ?? "Unknown Creator",
+				CreatorUrl = item.CreatorType == "GUILD"
+					? Globals.MainEndpoint.PathJoin("/guilds/" + item.CreatorId)
+					: Globals.MainEndpoint.PathJoin("/users/" + item.CreatorId),
 			});
 		}
 

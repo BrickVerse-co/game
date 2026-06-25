@@ -28,7 +28,7 @@ public sealed partial class InsertService : Instance
 	private static readonly Dictionary<string, APIStoreItem> _storeItemCache = [];
 
 	[ScriptMethod, Attributes.Obsolete("Use ModelAsync instead")]
-	public void Model(int id, PTCallback? callback = null)
+	public void Model(string id, PTCallback? callback = null)
 	{
 		_ = ModelAsync(id).ContinueWith(tsk =>
 		{
@@ -97,7 +97,7 @@ public sealed partial class InsertService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task<Instance?> ModelAsync(int id)
+	public async Task<Instance?> ModelAsync(string id)
 	{
 		ApplyAssetAuthHeaders();
 		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
@@ -107,7 +107,7 @@ public sealed partial class InsertService : Instance
 	}
 
 #if CREATOR
-	public async Task<Instance?> CreatorImportWebModel(int id, string? optionalName = null)
+	public async Task<Instance?> CreatorImportWebModel(string id, string? optionalName = null)
 	{
 		ApplyAssetAuthHeaders();
 		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
@@ -183,7 +183,7 @@ public sealed partial class InsertService : Instance
 		meshAsset.AssetID = id;
 
 		BVImageAsset icon = New<BVImageAsset>();
-		icon.ImageID = id.ToString();
+		icon.ImageID = id;
 		icon.ImageType = ImageTypeEnum.AssetThumbnail;
 
 		Tool tool = New<Tool>(this);
@@ -220,7 +220,7 @@ public sealed partial class InsertService : Instance
 		return storeItem;
 	}
 
-	private string GetModelDownloadUrl(int id)
+	private string GetModelDownloadUrl(string id)
 	{
 		if (Globals.IsServerBuild)
 		{
@@ -228,7 +228,7 @@ public sealed partial class InsertService : Instance
 		}
 
 #if CREATOR
-		return Globals.ApiEndpoint.PathJoin("/v3/asset/" + id + "/download");
+		return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
 #else
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
 #endif

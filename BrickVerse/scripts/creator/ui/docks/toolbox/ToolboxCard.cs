@@ -113,7 +113,7 @@ public partial class ToolboxCard : Button
 		{
 			case LibraryQueryTypeEnum.Model:
 				{
-					Instance? i = await root.Insert.CreatorImportWebModel((int)ItemData.ID, ItemData.Name.ToPascalCase().RemoveSymbols());
+					Instance? i = await root.Insert.CreatorImportWebModel(ItemData.ID, ItemData.Name.ToPascalCase().RemoveSymbols());
 					if (i != null)
 					{
 						i.Parent = root.Environment;

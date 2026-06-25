@@ -135,7 +135,7 @@ public struct APITokenDataResponse
 public struct APILibraryItem
 {
 	[JsonPropertyName("id")]
-	public uint ID { get; set; }
+	public string ID { get; set; }
 
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
@@ -144,7 +144,10 @@ public struct APILibraryItem
 	public string ThumbnailUrl { get; set; }
 
 	[JsonPropertyName("creatorID")]
-	public int CreatorID { get; set; }
+	public string CreatorID { get; set; }
+
+	[JsonPropertyName("creatorType")]
+	public string CreatorType { get; set; }
 
 	[JsonPropertyName("creatorName")]
 	public string CreatorName { get; set; }
@@ -502,6 +505,12 @@ public struct APIV3AssetDiscoverItem
 
 	[JsonPropertyName("creatorId")]
 	public string CreatorId { get; set; }
+
+	[JsonPropertyName("creatorType")]
+	public string CreatorType { get; set; }
+
+	[JsonPropertyName("thumbnailUrl")]
+	public string ThumbnailUrl { get; set; }
 
 	[JsonPropertyName("creatorName")] 
 	public string CreatorName { get; set; }
