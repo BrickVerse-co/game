@@ -20,7 +20,7 @@ public partial class WebAssetLoader : Node
 
 	public static WebAssetLoader Singleton { get; private set; } = null!;
 
-	private const int MAX_CONCURRENT_REQUESTS = 1;
+	private const int MAX_CONCURRENT_REQUESTS = 10;
 
 	private readonly PTHttpClient _client = new();
 
@@ -53,7 +53,7 @@ public partial class WebAssetLoader : Node
 					}
 					catch (Exception exception)
 					{
-						PT.PrintErr("Failed to load resource (Type: " + item.Type + ", URL: " + item.URL + "): " + exception.Message);
+						PT.PrintErr("Failed to load brickverse.gg resource (Type: " + item.Type + ", URL: " + item.URL + "): " + exception.Message);
 					}
 				}
 			}));

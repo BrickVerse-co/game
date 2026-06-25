@@ -119,16 +119,13 @@ public class BVAssetProvider : IAssetProvider
 
 	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
 	{
-		if (itemType is ResourceType.Mesh or ResourceType.Sound or ResourceType.Texture)
-		{
-			return await _client.GetByteArrayAsync(url);
-		}
+		return await _client.GetByteArrayAsync(url);
 
-		ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, BVAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
+		/*ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, BVAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
 		if (thumb is null || string.IsNullOrWhiteSpace(thumb.Value.Url))
 			throw new InvalidOperationException("Failed to resolve thumbnail URL");
 
-		return await _client.GetByteArrayAsync(thumb.Value.Url);
+		return await _client.GetByteArrayAsync(thumb.Value.Url);*/
 	}
 
 	private void ApplyAssetAuthHeaders()

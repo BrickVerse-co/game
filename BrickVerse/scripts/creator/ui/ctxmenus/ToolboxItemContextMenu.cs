@@ -36,7 +36,7 @@ public partial class ToolboxItemContextMenu : ContextMenu
 				OS.ShellOpen("https://brickverse.gg/assets/" + ItemData.ID);
 				break;
 			case 3:
-				OS.ShellOpen("https://brickverse.gg/report?type=developer_asset&id=" + ItemData.ID);
+				OS.ShellOpen("https://brickverse.gg/report?type=asset&id=" + ItemData.ID);
 				break;
 		}
 	}
