@@ -42,6 +42,7 @@
 [ext_resource type="PackedScene" uid="uid://dccewf7osrg82" path="res://scenes/creator/popups/search/search.tscn" id="38_ce354"]
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
+[ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
 
 [sub_resource type="FontVariation" id="FontVariation_khfyn"]
 variation_opentype = {
@@ -625,7 +626,6 @@ button_pressed = true
 action_mode = 0
 button_group = SubResource("ButtonGroup_v0rtd")
 script = ExtResource("8_c8w7j")
-ToolMode = null
 
 [node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/Select" unique_id=75873074]
 layout_mode = 1
@@ -1295,6 +1295,9 @@ layout_mode = 1
 
 [node name="IntroductionWizard" parent="GUI" unique_id=1495403496 instance=ExtResource("39_dfqoe")]
 layout_mode = 1
+
+[node name="AuthRequiredPopup" parent="." unique_id=861667823 instance=ExtResource("42_ce354")]
+visible = false
 
 [node name="LoadOverlay" parent="." unique_id=777211887 instance=ExtResource("25_b5k6b")]
 visible = false

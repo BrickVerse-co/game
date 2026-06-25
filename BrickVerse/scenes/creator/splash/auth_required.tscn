@@ -1,0 +1,271 @@
+[gd_scene format=3 uid="uid://cuo86h56emn31"]
+
+[ext_resource type="Texture2D" uid="uid://cogra4uai3pt0" path="res://assets/textures/creator/banner/creator_code_bg.png" id="1_banner"]
+[ext_resource type="Script" uid="uid://hadpx003sfr6" path="res://scripts/creator/ui/splash/AuthSplash.cs" id="1_frk4r"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="2_close"]
+[ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="3_semibold"]
+[ext_resource type="FontFile" uid="uid://brlqij14aeyxy" path="res://assets/fonts/Montserrat-Medium.ttf" id="5_7v16m"]
+[ext_resource type="FontFile" uid="uid://bcqd3fm44o8nd" path="res://assets/fonts/Montserrat-Regular.ttf" id="6_frk4r"]
+
+[sub_resource type="Gradient" id="Gradient_dim"]
+colors = PackedColorArray(0, 0, 0, 0.68, 0, 0, 0, 0.92)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dim"]
+gradient = SubResource("Gradient_dim")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxTexture" id="Style_overlay"]
+texture = SubResource("GradientTexture2D_dim")
+
+[sub_resource type="StyleBoxFlat" id="Style_card"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.075, 0.078, 0.092, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.12)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 24
+shadow_offset = Vector2(0, 12)
+
+[sub_resource type="StyleBoxFlat" id="Style_hero"]
+bg_color = Color(0.08, 0.09, 0.115, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+
+[sub_resource type="StyleBoxFlat" id="Style_info"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.045)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.075)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_primary_normal"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0, 0.592, 1, 1)
+border_width_bottom = 3
+border_color = Color(0, 0.42, 0.72, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_primary_pressed"]
+content_margin_left = 18.0
+content_margin_top = 13.0
+content_margin_right = 18.0
+content_margin_bottom = 11.0
+bg_color = Color(0, 0.48, 0.82, 1)
+border_width_bottom = 1
+border_color = Color(0, 0.42, 0.72, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_primary_hover"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.18, 0.68, 1, 1)
+border_width_bottom = 3
+border_color = Color(0, 0.42, 0.72, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_secondary_normal"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.055)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_secondary_hover"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.095)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.16)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="AuthRequiredPopup" type="Panel" unique_id=861667823]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_overlay")
+script = ExtResource("1_frk4r")
+
+[node name="Card" type="Panel" parent="." unique_id=895654493]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -238.0
+offset_right = 260.0
+offset_bottom = 238.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_card")
+
+[node name="Hero" type="Panel" parent="Card" unique_id=1565247047]
+clip_children = 1
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 146.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("Style_hero")
+
+[node name="Banner" type="TextureRect" parent="Card/Hero" unique_id=1825157944]
+self_modulate = Color(1, 1, 1, 0.38)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_banner")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Close" type="Button" parent="Card/Hero" unique_id=1715707458]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -42.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 42.0
+grow_horizontal = 0
+icon = ExtResource("2_close")
+flat = true
+expand_icon = true
+
+[node name="Body" type="MarginContainer" parent="Card" unique_id=568977749]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 146.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Card/Body" unique_id=793194153]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Card/Body/Content" unique_id=589463610]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_semibold")
+theme_override_font_sizes/font_size = 26
+text = "Sign in to continue"
+
+[node name="Description" type="Label" parent="Card/Body/Content" unique_id=212651210]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.68)
+theme_override_fonts/font = ExtResource("5_7v16m")
+theme_override_font_sizes/font_size = 15
+text = "BrickVerse Creator needs your account before you can create, open, or publish projects. Your browser will open a secure BrickVerse login page."
+autowrap_mode = 3
+
+[node name="InfoBox" type="PanelContainer" parent="Card/Body/Content" unique_id=381102790]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_info")
+
+[node name="InfoText" type="Label" parent="Card/Body/Content/InfoBox" unique_id=1961502330]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.62)
+theme_override_fonts/font = ExtResource("6_frk4r")
+theme_override_font_sizes/font_size = 13
+text = "After signing in, return to Creator and this window will update automatically."
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="Card/Body/Content" unique_id=869513022]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="Card/Body/Content" unique_id=2078659453]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SignIn" type="Button" parent="Card/Body/Content/Actions" unique_id=1348416927]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_semibold")
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_primary_normal")
+theme_override_styles/pressed = SubResource("Style_primary_pressed")
+theme_override_styles/hover = SubResource("Style_primary_hover")
+text = "Sign in with BrickVerse"
+
+[node name="Cancel" type="Button" parent="Card/Body/Content/Actions" unique_id=326893615]
+custom_minimum_size = Vector2(120, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.78)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 0.78)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 0.78)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 0.92)
+theme_override_fonts/font = ExtResource("3_semibold")
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary_normal")
+theme_override_styles/pressed = SubResource("Style_secondary_normal")
+theme_override_styles/hover = SubResource("Style_secondary_hover")
+text = "Cancel"

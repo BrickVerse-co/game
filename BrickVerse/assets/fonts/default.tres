@@ -7,7 +7,7 @@
 fallbacks = Array[Font]([ExtResource("2_2br3k")])
 base_font = ExtResource("1_udeu7")
 variation_opentype = {
-2003265652: 600
+0: 1
 }
 opentype_features = {
 1667329140: 0
