@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://dhw3qjol775ji" path="res://assets/textures/creator/checked.svg" id="1_ecpax"]
 [ext_resource type="Texture2D" uid="uid://b3fg26m8pei4s" path="res://assets/textures/creator/unchecked.svg" id="2_e8ukp"]
 [ext_resource type="Texture2D" uid="uid://dbcumhwkqrv6y" path="res://assets/textures/creator/submenu.png" id="3_ybbki"]
+[ext_resource type="FontFile" uid="uid://bcqd3fm44o8nd" path="res://assets/fonts/Montserrat-Regular.ttf" id="4_t7da0"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yxoqv"]
 content_margin_left = 16.0
@@ -160,13 +161,9 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[sub_resource type="FontVariation" id="FontVariation_khfyn"]
-variation_opentype = {
-2003265652: 700
-}
-
 [resource]
 resource_name = "GlobalTheme"
+default_font = ExtResource("4_t7da0")
 default_font_size = 14
 AcceptDialog/styles/panel = SubResource("StyleBoxFlat_yxoqv")
 Button/colors/font_color = Color(0.8, 0.8, 0.8, 1)
@@ -258,5 +255,5 @@ TabContainer/colors/font_selected_color = Color(0.8, 0.8, 0.8, 1)
 TabContainer/colors/font_unselected_color = Color(0.8, 0.8, 0.8, 1)
 TabContainer/constants/side_margin = 0
 TabContainer/font_sizes/font_size = 14
-TabContainer/fonts/font = SubResource("FontVariation_khfyn")
+TabContainer/fonts/font = ExtResource("4_t7da0")
 TextEdit/font_sizes/font_size = 14
