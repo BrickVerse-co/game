@@ -29,7 +29,7 @@ public static class PublishManager
 			var packed = await PackedFormat.PackProject(projectPath, loadOverlay.CreateProgressReporter("Publishing world"));
 
 			loadOverlay?.SetStatus("Uploading now...");
-			CreatorPublishResponse publishRes = await PolyCreatorAPI.UploadWorld(packed, placeID, metadata.MainWorld);
+			CreatorPublishResponse publishRes = await CreatorAPI.UploadWorld(packed, placeID, metadata.MainWorld);
 
 			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 				OS.ShellOpen(publishRes.Link);
@@ -53,7 +53,7 @@ public static class PublishManager
 
 			CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
 
-			CreatorPublishResponse publishRes = await PolyCreatorAPI.UploadModel(packed, modelID);
+			CreatorPublishResponse publishRes = await CreatorAPI.UploadModel(packed, modelID);
 			CreatorService.Interface.LoadOverlay?.Hide();
 
 			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
@@ -80,7 +80,7 @@ public static class PublishManager
 
 		CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
 
-		CreatorPublishResponse publishRes = await PolyCreatorAPI.UploadAddon(packed, placeID);
+		CreatorPublishResponse publishRes = await CreatorAPI.UploadAddon(packed, placeID);
 		CreatorService.Interface.LoadOverlay?.Hide();
 
 		if (CreatorSettings.Singleton.GetSetting<bool>("Creator.OpenWebAfterPublish")!)

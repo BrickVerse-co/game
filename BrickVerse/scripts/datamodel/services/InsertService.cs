@@ -241,22 +241,22 @@ public sealed partial class InsertService : Instance
 
 		if (Globals.IsServerBuild)
 		{
-			if (!string.IsNullOrWhiteSpace(PolyServerAPI.AuthToken))
+			if (!string.IsNullOrWhiteSpace(ServerAPI.AuthToken))
 			{
-				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyServerAPI.AuthToken);
+				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ServerAPI.AuthToken);
 			}
 			return;
 		}
 
 #if CREATOR
-		if (!string.IsNullOrWhiteSpace(PolyCreatorAPI.Token))
+		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			_httpClient.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(PolyCreatorAPI.Token);
+			_httpClient.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
 		}
 #else
-		if (!string.IsNullOrWhiteSpace(PolyAuthAPI.Token))
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.Token))
 		{
-			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyAuthAPI.Token);
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.Token);
 		}
 #endif
 	}

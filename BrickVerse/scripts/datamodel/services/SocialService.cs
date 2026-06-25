@@ -85,7 +85,7 @@ public sealed partial class SocialService : Instance
 
 	public async Task WebSendFriendshipRequest(string senderID, string recipientID, FriendshipRequestType req)
 	{
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 
 		if (req == FriendshipRequestType.Friend)
 		{

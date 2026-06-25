@@ -147,7 +147,7 @@ public class PTAssetProvider : IAssetProvider
 
 		if (Globals.IsServerBuild)
 		{
-			string serverToken = PolyServerAPI.GetAuthorizationHeaderValue();
+			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
 			if (!string.IsNullOrWhiteSpace(serverToken))
 			{
 				_client.DefaultRequestHeaders["Authorization"] = serverToken;
@@ -156,17 +156,17 @@ public class PTAssetProvider : IAssetProvider
 		}
 
 #if CREATOR
-		if (!string.IsNullOrWhiteSpace(PolyCreatorAPI.Token))
+		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			string cookieToken = PolyCreatorAPI.Token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-				? PolyCreatorAPI.Token[7..]
-				: PolyCreatorAPI.Token;
+			string cookieToken = CreatorAPI.Token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+				? CreatorAPI.Token[7..]
+				: CreatorAPI.Token;
 			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(cookieToken);
 		}
 #else
-		if (!string.IsNullOrWhiteSpace(PolyAuthAPI.Token))
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.Token))
 		{
-			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(PolyAuthAPI.Token);
+			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.Token);
 		}
 #endif
 	}

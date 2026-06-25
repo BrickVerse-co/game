@@ -82,7 +82,7 @@ public partial class PublishPopup : PopupWindowBase
 	{
 		_loadingView.Visible = true;
 
-		CreatorPlaceItem[] items = await PolyCreatorAPI.GetPublishedWorlds();
+		CreatorPlaceItem[] items = await CreatorAPI.GetPublishedWorlds();
 
 		_loadingView.Visible = false;
 

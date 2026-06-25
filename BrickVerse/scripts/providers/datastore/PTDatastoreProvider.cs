@@ -32,7 +32,7 @@ public class PTDatastoreProvider : IDatastoreProvider
 	{
 		_dsKey = key;
 		_ds = ds;
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 	}
 
 	public bool UseReadRequest()

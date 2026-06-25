@@ -7,7 +7,7 @@ using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
-using BrickVerse.Creator.UI;
+using BrickVerse.Schemas.API;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -32,21 +32,13 @@ public partial class CreatorEntry : Node
 		// Login creator with token
 		if (launchToken != null)
 		{
-			PT.Print("CreatorEntry: Launch token provided. Logging in via PolyCreatorAPI...");
-			await PolyCreatorAPI.LoginWithToken(launchToken);
+			PT.Print("CreatorEntry: Launch token provided. Logging in via CreatorAPI...");
+			await CreatorAPI.LoginWithToken(launchToken);
 		}
 		else
 		{
-			PT.Print("CreatorEntry: No launch token provided. Preparing to authenticate via PolyAuthAPI...");
-
-			// Start local dev server that receives brickverse:// tokens during editor testing
-			DesktopAuthDevServer.StartIfEditor();
-
-			// No CLI token: ensure desktop auth (browser / quick code) for Workshop
-			PolyAuthAPI.UserAuthenticated += me => PT.Print("Creator authenticated via PolyAuthAPI as ", me.Username);
-			PolyAuthAPI.AskForAuthentication += () => PolyAuthAPI.StartBrowserLogin();
-			PolyAuthAPI.ShowQuickSignInCode += code => OS.Alert($"Quick Sign-In Code: {code}\n\nEnter it at brickverse.gg while signed in.", "Quick Sign-In");
-			PolyAuthAPI.Setup();
+			PT.Print("CreatorEntry: No launch token provided. Preparing to authenticate via ClientAuthAPI...");
+			await CreatorAPI.PromptLogin();
 		}
 
 		CreatorService creatorService = new();
@@ -80,5 +72,11 @@ public partial class CreatorEntry : Node
 		{
 			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.poly", ProjectName = new DirectoryInfo(legacyImportOut).Name });
 		}
+	}
+
+
+	private void OnClientAuthenticated(OpenIdUserInfoResponse me)
+	{
+		PT.Print("Authenticated as ", me.PreferredUsername ?? me.Sub);
 	}
 }

@@ -23,14 +23,14 @@ public partial class StatusBar : Control
 		CreatorService.Interface.StatusBar = this;
 		_versionLabel.Text = $"BrickVerse Creator {Globals.AppVersion}";
 
-		PolyAuthAPI.UserAuthenticated += UpdateUserDisplay;
+		ClientAuthAPI.UserAuthenticated += UpdateUserDisplay;
 #if CREATOR
-		if (PolyCreatorAPI.IsUserAuthenticated)
+		if (CreatorAPI.IsUserAuthenticated)
 		{
 			UpdateUserDisplay(new Schemas.API.APIV3AuthMeUser
 			{
-				Id = PolyCreatorAPI.UserID,
-				Username = PolyCreatorAPI.UserInfo.Username,
+				Id = CreatorAPI.UserID,
+				Username = CreatorAPI.UserInfo.Username,
 			});
 		}
 #endif

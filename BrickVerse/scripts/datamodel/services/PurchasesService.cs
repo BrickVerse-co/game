@@ -119,7 +119,7 @@ public sealed partial class PurchasesService : Instance
 	public async Task<bool> OwnsItemAsync(Player player, int assetID)
 	{
 		ServerGuard();
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 		using HttpResponseMessage res = await _client.GetAsync(
 			Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/ownership?entitlementId={assetID}&userId={player.UserID}")
 		);
@@ -204,7 +204,7 @@ public sealed partial class PurchasesService : Instance
 			];
 			FormUrlEncodedContent formContent = new(formVariables);
 
-			_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+			_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 			using var pa = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin($"/v3/asset/{req.AssetID}/buy"),
 				formContent

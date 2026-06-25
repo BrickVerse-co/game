@@ -29,9 +29,9 @@ public partial class CreatorAuthOverlay : Control
         _browserLoginBtn.Pressed += OnBrowserLogin;
         _quickCodeBtn.Pressed += OnQuickCode;
 
-        PolyAuthAPI.UserAuthenticated += OnAuthenticated;
-        PolyAuthAPI.ShowQuickSignInCode += OnShowQuickCode;
-        PolyAuthAPI.AskForAuthentication += ShowOverlay;
+        ClientAuthAPI.UserAuthenticated += OnAuthenticated;
+        ClientAuthAPI.ShowQuickSignInCode += OnShowQuickCode;
+        ClientAuthAPI.AskForAuthentication += ShowOverlay;
     }
 
     private void ShowOverlay()
@@ -46,14 +46,14 @@ public partial class CreatorAuthOverlay : Control
     {
         _statusLabel.Text = "Opening browser...";
         _browserLoginBtn.Disabled = true;
-        PolyAuthAPI.StartBrowserLogin();
+        ClientAuthAPI.StartBrowserLogin();
     }
 
     private async void OnQuickCode()
     {
         _statusLabel.Text = "Generating code...";
         _quickCodeBtn.Disabled = true;
-        await PolyAuthAPI.StartQuickSignInCodeFlow();
+        await ClientAuthAPI.StartQuickSignInCodeFlow();
     }
 
     private void OnShowQuickCode(string code)

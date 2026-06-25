@@ -188,7 +188,7 @@ public sealed partial class AchievementsService : Instance
 
 	private void SetHttpClientAuthToken()
 	{
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 	}
 
 	private void ServerGuard()

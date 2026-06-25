@@ -164,17 +164,6 @@ public sealed partial class ClientEntry : Node3D
 		}
 #endif
 
-		// Require account authentication for production clients (not solo/local playtests)
-		PT.Print($"ClientEntry: isClient={isClient}, token={(token != null ? "[REDACTED]" : "null")}, soloPath={soloPath}");
-		
-		if (isClient && token == null && soloPath == null)
-		{
-			PolyAuthAPI.AskForAuthentication += OnDesktopAskAuth;
-			PolyAuthAPI.UserAuthenticated += OnDesktopAuthenticated;
-			PolyAuthAPI.ShowQuickSignInCode += OnDesktopShowQuickCode;
-			PolyAuthAPI.Setup();
-		}
-
 		if (debugAddress != null)
 		{
 			DebugAgent = new();
@@ -257,7 +246,7 @@ public sealed partial class ClientEntry : Node3D
 		// Set creator token for testing (used for loading unapproved assets made by the user)
 		if (ctoken != null)
 		{
-			PolyCreatorAPI.SetToken(ctoken);
+			CreatorAPI.SetToken(ctoken);
 		}
 #endif
 
@@ -339,15 +328,15 @@ public sealed partial class ClientEntry : Node3D
 			{
 				networkService.IsProd = true;
 				PT.Print("Server Authenticating...");
-				PolyAuthAPI.SetAuthToken(token);
-				PolyServerAPI.SetAuthToken(token);
+				ClientAuthAPI.SetAuthToken(token);
+				ServerAPI.SetAuthToken(token);
 				Engine.MaxFps = 30;
 				try
 				{
 					Stopwatch sw2 = new();
 					sw2.Start();
 					PT.Print("Sending listen...");
-					APIServerListenResponse listenRes = await PolyAuthAPI.SendServerListen();
+					APIServerListenResponse listenRes = await ClientAuthAPI.SendServerListen();
 
 					PT.Print("BrickVerse Server Info ----");
 					PT.Print("Server ID: ", listenRes.ServerID);
@@ -363,7 +352,7 @@ public sealed partial class ClientEntry : Node3D
 					PT.Print("Downloading world...");
 
 					sw2.Restart();
-					byte[] worldContent = await PolyServerAPI.DownloadWorld(listenRes.WorldID);
+					byte[] worldContent = await ServerAPI.DownloadWorld(listenRes.WorldID);
 					PT.Print("World downloaded in ", sw2.ElapsedMilliseconds, "ms");
 					sw2.Restart();
 					PT.Print("Constructing...");
@@ -413,11 +402,11 @@ public sealed partial class ClientEntry : Node3D
 			{
 				PT.Print("Connecting to BrickVerse...");
 				// Request auth to server
-				PolyAuthAPI.SetAuthToken(token);
+				ClientAuthAPI.SetAuthToken(token);
 
 				try
 				{
-					_clientConnectData = await PolyAuthAPI.SendClientConnect();
+					_clientConnectData = await ClientAuthAPI.SendClientConnect();
 
 					PT.Print("BrickVerse Network Info ----");
 					PT.Print("World ID: ", _clientConnectData.Value.WorldID);
@@ -457,7 +446,7 @@ public sealed partial class ClientEntry : Node3D
 
 		try
 		{
-			APIServerStatus status = await PolyAuthAPI.CheckServerStatus();
+			APIServerStatus status = await ClientAuthAPI.CheckServerStatus();
 
 			PT.Print(status.Status);
 			if (status.Status == "started")
@@ -571,30 +560,6 @@ public sealed partial class ClientEntry : Node3D
 			Root.ForceDelete();
 			DatamodelBridge.Free();
 		}
-	}
-
-	// ===== Desktop Auth Handlers =====
-	private void OnDesktopAskAuth()
-	{
-		if (_authPromptShown) return;
-		_authPromptShown = true;
-
-		// Simple prompt: open browser for /auth/client consent flow.
-		// In a real UI you would show a modal with "Browser Login" and "Quick Code" buttons.
-		OS.Alert("You need to sign in to BrickVerse.\n\nClick OK to open the browser login page.", "Sign In Required");
-		PolyAuthAPI.StartBrowserLogin();
-	}
-
-	private void OnDesktopAuthenticated(APIV3AuthMeUser me)
-	{
-		PT.Print("Desktop authenticated as ", me.Username);
-		// After auth, if we were waiting on token for prod connect flow, the caller already set token via LoginWithAuthToken.
-		// If you need to auto-continue a pending join, trigger it here.
-	}
-
-	private void OnDesktopShowQuickCode(string code)
-	{
-		OS.Alert($"Quick Sign-In Code: {code}\n\nGo to brickverse.gg on another device, sign in, and enter this code.", "Quick Sign-In");
 	}
 
 	public struct ClientEntryData

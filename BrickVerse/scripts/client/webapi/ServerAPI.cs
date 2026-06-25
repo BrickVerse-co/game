@@ -11,30 +11,30 @@ using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
 
-public static class PolyServerAPI
+public static class ServerAPI
 {
-	internal static string AuthToken = "";
+	internal static string HostToken = "";
 	internal static IServerInterface? ServerInterface { get; set; }
 
-	public static void SetAuthToken(string userToken)
+	public static void SetAuthToken(string hostToken)
 	{
-		AuthToken = userToken;
-		ServerInterface?.SetToken(userToken);
+		HostToken = hostToken;
+		ServerInterface?.SetToken(hostToken);
 	}
 
 	public static string GetAuthorizationHeaderValue()
 	{
-		if (string.IsNullOrWhiteSpace(AuthToken))
+		if (string.IsNullOrWhiteSpace(HostToken))
 		{
 			return "";
 		}
 
-		if (AuthToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+		if (HostToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
 		{
-			return AuthToken;
+			return HostToken;
 		}
 
-		return "Bearer " + AuthToken;
+		return "Bearer " + HostToken;
 	}
 
 	public static Task<byte[]> DownloadWorld(int worldID)
@@ -49,10 +49,10 @@ public static class PolyServerAPI
 		return ServerInterface.Heartbeat(playerIDs);
 	}
 
-	public static Task<APIValidateResponse> ValidatePlayer(string token)
+	public static Task<APIValidateResponse> ValidatePlayer(string hostToken)
 	{
 		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.ValidatePlayer(token);
+		return ServerInterface.ValidatePlayer(hostToken);
 	}
 
 	public static Task LogServerEvent(ServerEventType eventType, Dictionary<string, string>? data = null)

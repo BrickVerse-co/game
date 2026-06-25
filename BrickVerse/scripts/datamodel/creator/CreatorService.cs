@@ -592,9 +592,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 
 		// Apply Creator token for loading unapproved assets
-		if (PolyCreatorAPI.Token != string.Empty)
+		if (CreatorAPI.Token != string.Empty)
 		{
-			args.InsertRange(0, ["-ctoken", PolyCreatorAPI.Token]);
+			args.InsertRange(0, ["-ctoken", CreatorAPI.Token]);
 		}
 
 		args.AddRange("--rendering-method", RenderingDeviceSwitcher.GetCurrentDriverName());

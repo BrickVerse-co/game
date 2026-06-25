@@ -243,7 +243,7 @@ public sealed partial class ChatService : Instance
 	{
 		if (Root.IsLocalTest) return;
 
-		_client.DefaultRequestHeaders["Authorization"] = PolyServerAPI.GetAuthorizationHeaderValue();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 
 		try
 		{

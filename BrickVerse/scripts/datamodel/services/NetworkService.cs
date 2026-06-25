@@ -416,7 +416,7 @@ public sealed partial class NetworkService : Instance
 	private async void ServerSendHeartbeat()
 	{
 		_heartbeatCount++;
-		APIHeartbeatResponse res = await PolyServerAPI.SendHeartbeat(World.Current!.Players.GetPlayerIDArray());
+		APIHeartbeatResponse res = await ServerAPI.SendHeartbeat(World.Current!.Players.GetPlayerIDArray());
 		if (res.Remove.Count > 0)
 		{
 			foreach (string r in res.Remove)
@@ -450,7 +450,7 @@ public sealed partial class NetworkService : Instance
 			{
 				{ "userID", player.UserID.ToString() }
 			};
-			_ = PolyServerAPI.LogServerEvent(ServerEventType.ClientConnected, data);
+			_ = ServerAPI.LogServerEvent(ServerEventType.ClientConnected, data);
 		}
 		OnPlayerChanged();
 	}
@@ -463,7 +463,7 @@ public sealed partial class NetworkService : Instance
 			{
 				{ "userID", player.UserID.ToString() }
 			};
-			_ = PolyServerAPI.LogServerEvent(ServerEventType.ClientDisconnected, data);
+			_ = ServerAPI.LogServerEvent(ServerEventType.ClientDisconnected, data);
 		}
 		OnPlayerChanged();
 	}
@@ -568,7 +568,7 @@ public sealed partial class NetworkService : Instance
 			pk = IntegrityCheckLayer.Generate(platformName);
 		}
 
-		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, PolyAuthAPI.Token, (int)NetworkMode, (int)platform, platformName, pk);
+		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.Token, (int)NetworkMode, (int)platform, platformName, pk);
 	}
 
 
@@ -765,7 +765,7 @@ public sealed partial class NetworkService : Instance
 		PT.Print("BrickVerse Server Started");
 		if (IsProd)
 		{
-			_ = PolyServerAPI.LogServerEvent(ServerEventType.ServerStarted);
+			_ = ServerAPI.LogServerEvent(ServerEventType.ServerStarted);
 		}
 		ServerStarted?.Invoke();
 	}
@@ -774,7 +774,7 @@ public sealed partial class NetworkService : Instance
 	{
 		if (IsProd)
 		{
-			await PolyServerAPI.LogServerEvent(ServerEventType.ServerStopped);
+			await ServerAPI.LogServerEvent(ServerEventType.ServerStopped);
 		}
 		Globals.Singleton.Quit();
 	}
@@ -786,7 +786,7 @@ public sealed partial class NetworkService : Instance
 
 	public static async Task<APIValidateResponse> AuthenticatePlayer(string token)
 	{
-		return await PolyServerAPI.ValidatePlayer(token);
+		return await ServerAPI.ValidatePlayer(token);
 	}
 
 	/// <summary>
