@@ -50,14 +50,13 @@ public partial class PTImageAsset : ImageAsset
 		if (string.IsNullOrEmpty(ImageID)) { return; }
 		ResourceType resourceType = ImageType switch
 		{
-			ImageTypeEnum.Asset => ResourceType.Decal,
-			ImageTypeEnum.AssetThumbnail => ResourceType.AssetThumbnail,
-			ImageTypeEnum.WorldThumbnail => ResourceType.PlaceThumbnail,
-			ImageTypeEnum.UserAvatar => ResourceType.UserThumbnail,
+			ImageTypeEnum.Asset => ResourceType.Texture,
+			ImageTypeEnum.AssetThumbnail => ResourceType.Texture,
+			ImageTypeEnum.WorldThumbnail => ResourceType.Texture,
+			ImageTypeEnum.UserAvatar => ResourceType.UserBodyshot,
 			ImageTypeEnum.UserAvatarHeadshot => ResourceType.UserHeadshot,
-			ImageTypeEnum.GuildIcon => ResourceType.GuildThumbnail,
+			ImageTypeEnum.GuildIcon => ResourceType.GuildIcon,
 			ImageTypeEnum.GuildBanner => ResourceType.GuildBanner,
-			ImageTypeEnum.PlaceIcon => ResourceType.PlaceIcon,
 			_ => throw new NotImplementedException()
 		};
 
@@ -83,6 +82,5 @@ public enum ImageTypeEnum
 	UserAvatar,
 	UserAvatarHeadshot,
 	GuildIcon,
-	GuildBanner,
-	PlaceIcon
+	GuildBanner
 }

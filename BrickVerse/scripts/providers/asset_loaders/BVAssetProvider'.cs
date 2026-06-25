@@ -94,14 +94,14 @@ public class BVAssetProvider : IAssetProvider
 
 	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
-		if (itemType is ResourceType.UserBodyshot)
+		if (itemType is ResourceType.UserBodyshot or ResourceType.UserHeadshot)
 		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/bodyshot/" + id + "?stream=true");
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/" + (itemType is ResourceType.UserBodyshot ? "bodyshot" : "headshot") + "/" + id + "?stream=true");
 		}
 
-		if (itemType is ResourceType.UserHeadshot)
+		if (itemType is ResourceType.GuildIcon or ResourceType.GuildBanner or ResourceType.Texture or ResourceType.AssetThumbnail)
 		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/headshot/" + id + "?stream=true");
+			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id + "?stream=true");
 		}
 
 		// Runtime-specific DRM endpoints
