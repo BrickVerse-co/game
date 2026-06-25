@@ -31,7 +31,7 @@ public sealed partial class Globals : Node
 
 	public const string ToolboxFolderName = "toolbox";
 #if CREATOR
-	public const string ProjectMetaFileName = "project.ptproj";
+	public const string ProjectMetaFileName = "project.bvxl";
 	public const string ProjectIndexName = "file-lock.json";
 	public const string ProjectInputMapName = "input.json";
 	public const string ModelFileExtension = "model";

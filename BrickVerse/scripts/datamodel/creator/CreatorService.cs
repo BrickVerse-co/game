@@ -112,15 +112,15 @@ public sealed partial class CreatorService : Node, IScriptObject
 		string firstFile = files[0];
 		string firstFileExt = firstFile.GetExtension();
 
-		if (firstFileExt == "ptmd")
+		if (firstFileExt == "bvxm" || firstFileExt == "bvmodel" || firstFileExt == "model")
 		{
 			Interface.ImportModel(firstFile);
 		}
-		else if (firstFileExt == "ptproj")
+		else if (firstFileExt == "bvxl" || firstFileExt == "bvproject")
 		{
 			await CreateNewSession(firstFile);
 		}
-		else if (firstFileExt == "poly")
+		else if (firstFileExt == "bvxw" || firstFileExt == "bvworld")
 		{
 			Interface.OpenWorldFile(firstFile);
 		}

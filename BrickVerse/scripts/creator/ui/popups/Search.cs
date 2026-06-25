@@ -158,7 +158,7 @@ public partial class Search : Panel
 		}
 	}
 
-	private string[] _textBasedFiles = ["md", "txt", "ptproj", "json", "xml", "lua", "luau", "cs"];
+	private string[] _textBasedFiles = ["md", "txt", "bvxl", "bvproject", "json", "xml", "lua", "luau", "cs"];
 	private bool IsTextBasedFile(string path)
 	{ // file extension checking as its cheap and fast :3
 		string? ext = Path.GetExtension(path);

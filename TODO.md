@@ -1,2 +1,0 @@
-- [ ] Change avatar
-- [ ] Switch poly file types (.poly, .ptproj, .ptm, .psm, .ptmd)
