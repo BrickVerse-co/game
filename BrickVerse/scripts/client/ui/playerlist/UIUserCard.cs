@@ -23,7 +23,7 @@ public partial class UIUserCard : Control
 	[Export] private TextureRect _pfpIconRect = null!;
 	[Export] private TextureRect _badgeRect = null!;
 	[Export] private UIPlayerList _playerList = null!;
-	private readonly PTImageAsset _plrIconAsset = new();
+	private readonly BVImageAsset _plrIconAsset = new();
 	private static World Root => CoreUIRoot.Singleton.Root;
 	internal static Player TargetPlayer => Root.Players.LocalPlayer;
 

@@ -25,8 +25,8 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 	[Export] private Button _leaveButton = null!;
 	[Export] private Button _reportButton = null!;
 
-	private PTImageAsset? _userAvatarImage;
-	private PTImageAsset? _placeThumbnailImage;
+	private BVImageAsset? _userAvatarImage;
+	private BVImageAsset? _placeThumbnailImage;
 
 	public override void _Ready()
 	{

@@ -18,7 +18,7 @@ public partial class UserHeadshotCard : Node
 	[Export] private TextureRect _imageRect = null!;
 	[Export] private Label _usernameLabel = null!;
 
-	private readonly PTImageAsset _iconAsset = new();
+	private readonly BVImageAsset _iconAsset = new();
 
 	public override void _Ready()
 	{

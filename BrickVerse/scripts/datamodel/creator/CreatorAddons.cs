@@ -62,7 +62,7 @@ public sealed partial class CreatorAddons : Instance
 	public class AddonObject : IScriptObject
 	{
 		private string _addonName = "No name";
-		private PTImageAsset? _addonIcon;
+		private BVImageAsset? _addonIcon;
 
 		public World Root = null!;
 		public Script ScriptSource = null!;
@@ -82,7 +82,7 @@ public sealed partial class CreatorAddons : Instance
 		}
 
 		[ScriptProperty]
-		public PTImageAsset? AddonIcon
+		public BVImageAsset? AddonIcon
 		{
 			get => _addonIcon;
 			set

@@ -8,15 +8,15 @@ using BrickVerse.Datamodel.Resources;
 
 namespace BrickVerse.Creator.Properties;
 
-public sealed partial class PTImageAssetSubview : Control, IPropertySubview
+public sealed partial class BVImageAssetSubview : Control, IPropertySubview
 {
 	public NetworkedObject TargetObject { get; set; } = null!;
-	private PTImageAsset _baseAsset = null!;
+	private BVImageAsset _baseAsset = null!;
 	private TextureRect _rect = null!;
 
 	public override void _Ready()
 	{
-		_baseAsset = (PTImageAsset)TargetObject;
+		_baseAsset = (BVImageAsset)TargetObject;
 		_rect = GetNode<TextureRect>("Alpha/Texture");
 
 		if (_baseAsset.Resource != null)

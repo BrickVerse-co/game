@@ -85,7 +85,7 @@ public sealed partial class Sound : Dynamic
 		set
 		{
 			_soundID = value;
-			CreatePTAudioAsset();
+			CreateBVAudioAsset();
 			OnPropertyChanged();
 		}
 	}
@@ -343,10 +343,10 @@ public sealed partial class Sound : Dynamic
 		_audioPlayer3D?.PitchScale = _pitch;
 	}
 
-	private void CreatePTAudioAsset()
+	private void CreateBVAudioAsset()
 	{
 		Loading = true;
-		PTAudioAsset audioAsset = new()
+		BVAudioAsset audioAsset = new()
 		{
 			Name = "AudioAsset"
 		};

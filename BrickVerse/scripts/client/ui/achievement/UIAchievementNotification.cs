@@ -16,7 +16,7 @@ public partial class UIAchievementNotification : UINotificationBase
 	[Export] public Label AchievementTitle = null!;
 	[Export] public TextureRect AchievementTexture = null!;
 	[Export] public AudioStreamPlayer _soundPlay = null!;
-	private PTImageAsset? _badgeImg;
+	private BVImageAsset? _badgeImg;
 	private bool _playing = false;
 
 	public override async void Fire(object? data)

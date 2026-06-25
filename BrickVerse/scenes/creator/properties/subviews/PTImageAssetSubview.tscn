@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://p1rg7w8044b6"]
 
-[ext_resource type="Script" uid="uid://ctap0u0em2554" path="res://scripts/creator/properties/subviews/PTImageAssetSubview.cs" id="1_iwnww"]
+[ext_resource type="Script" uid="uid://ctap0u0em2554" path="res://scripts/creator/properties/subviews/BVImageAssetSubview.cs" id="1_iwnww"]
 
-[node name="PTImageAssetView" type="AspectRatioContainer" unique_id=1557138754]
+[node name="BVImageAssetView" type="AspectRatioContainer" unique_id=1557138754]
 custom_minimum_size = Vector2(0, 60)
 size_flags_vertical = 4
 script = ExtResource("1_iwnww")

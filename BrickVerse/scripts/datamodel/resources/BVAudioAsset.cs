@@ -8,7 +8,7 @@ using BrickVerse.Shared.AssetLoaders;
 namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
-public partial class PTAudioAsset : AudioAsset
+public partial class BVAudioAsset : AudioAsset
 {
 	private string _audioID = "0";
 
@@ -26,7 +26,7 @@ public partial class PTAudioAsset : AudioAsset
 
 	public static void RegisterAsset()
 	{
-		RegisterType<PTAudioAsset>();
+		RegisterType<BVAudioAsset>();
 	}
 
 	public override void LoadResource()

@@ -81,7 +81,7 @@ public partial class UIImage : UIField
 		set
 		{
 			_imageID = value;
-			CreatePTImageAsset();
+			CreateBVImageAsset();
 		}
 	}
 
@@ -92,7 +92,7 @@ public partial class UIImage : UIField
 		set
 		{
 			_imageType = value;
-			CreatePTImageAsset();
+			CreateBVImageAsset();
 		}
 	}
 
@@ -196,14 +196,14 @@ public partial class UIImage : UIField
 	[ScriptProperty]
 	public bool Loading { get; private set; } = false;
 
-	private void CreatePTImageAsset()
+	private void CreateBVImageAsset()
 	{
 		if (string.IsNullOrEmpty(_imageID))
 		{
 			SetToDefaultImage();
 			return;
 		}
-		PTImageAsset polyImg = New<PTImageAsset>();
+		BVImageAsset polyImg = New<BVImageAsset>();
 		Image = polyImg;
 		polyImg.ImageType = _imageType;
 		polyImg.ImageID = _imageID;

@@ -133,7 +133,7 @@ public sealed partial class InsertService : Instance
 	{
 		APIStoreItem storeItem = await GetStoreItemCachedAsync(id);
 
-		PTMeshAsset meshAsset = New<PTMeshAsset>();
+		BVMeshAsset meshAsset = New<BVMeshAsset>();
 		meshAsset.AssetID = id;
 
 		Accessory accessory = New<Accessory>(this);
@@ -179,10 +179,10 @@ public sealed partial class InsertService : Instance
 	{
 		APIStoreItem storeItem = await GetStoreItemCachedAsync(id);
 
-		PTMeshAsset meshAsset = New<PTMeshAsset>();
+		BVMeshAsset meshAsset = New<BVMeshAsset>();
 		meshAsset.AssetID = id;
 
-		PTImageAsset icon = New<PTImageAsset>();
+		BVImageAsset icon = New<BVImageAsset>();
 		icon.ImageID = id.ToString();
 		icon.ImageType = ImageTypeEnum.AssetThumbnail;
 

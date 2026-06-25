@@ -70,7 +70,7 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_imageID = value;
-			CreatePTImageAsset();
+			CreateBVImageAsset();
 			OnPropertyChanged();
 		}
 	}
@@ -82,7 +82,7 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_imageType = value;
-			CreatePTImageAsset();
+			CreateBVImageAsset();
 			OnPropertyChanged();
 		}
 	}
@@ -218,14 +218,14 @@ public sealed partial class Image3D : Dynamic
 		base.OnNodeSizeChanged(newSize);
 	}
 
-	private void CreatePTImageAsset()
+	private void CreateBVImageAsset()
 	{
 		if (string.IsNullOrEmpty(_imageID))
 		{
 			return;
 		}
 
-		PTImageAsset polyImg = New<PTImageAsset>();
+		BVImageAsset polyImg = New<BVImageAsset>();
 		Image = polyImg;
 		polyImg.ImageType = _imageType;
 		polyImg.ImageID = _imageID;

@@ -9,7 +9,7 @@ using System;
 namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
-public partial class PTImageAsset : ImageAsset
+public partial class BVImageAsset : ImageAsset
 {
 	private string _imageID;
 	private ImageTypeEnum _imageType;
@@ -42,7 +42,7 @@ public partial class PTImageAsset : ImageAsset
 
 	public static void RegisterAsset()
 	{
-		RegisterType<PTImageAsset>();
+		RegisterType<BVImageAsset>();
 	}
 
 	public override void LoadResource()

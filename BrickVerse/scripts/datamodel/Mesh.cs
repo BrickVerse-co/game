@@ -79,7 +79,7 @@ public sealed partial class Mesh : Entity
 		set
 		{
 			_assetID = value;
-			CreatePTMeshAsset();
+			CreateBVMeshAsset();
 			if (_asset != null)
 			{
 				if (_asset.IsResourceLoaded && _asset.Resource != null)
@@ -236,10 +236,10 @@ public sealed partial class Mesh : Entity
 		base.PreDelete();
 	}
 
-	private void CreatePTMeshAsset()
+	private void CreateBVMeshAsset()
 	{
-		Asset = New<PTMeshAsset>();
-		if (Asset is PTMeshAsset mesh)
+		Asset = New<BVMeshAsset>();
+		if (Asset is BVMeshAsset mesh)
 		{
 			mesh.AssetID = _assetID.ToString();
 		}

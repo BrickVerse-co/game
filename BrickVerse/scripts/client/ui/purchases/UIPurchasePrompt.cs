@@ -21,7 +21,7 @@ public partial class UIPurchasePrompt : Control
 	[Export] private Button _cancelButton = null!;
 	[Export] private TextureRect _iconRect = null!;
 	[Export] private AnimationPlayer _animPlay = null!;
-	private PTImageAsset? _iconImg;
+	private BVImageAsset? _iconImg;
 
 	public event Action<bool>? Requested;
 

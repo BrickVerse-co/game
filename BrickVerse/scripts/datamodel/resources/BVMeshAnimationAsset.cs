@@ -9,7 +9,7 @@ using BrickVerse.Shared.AssetLoaders;
 namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
-public partial class PTMeshAnimationAsset : MeshAnimationAsset
+public partial class BVMeshAnimationAsset : MeshAnimationAsset
 {
 	private string _assetID;
 
@@ -27,7 +27,7 @@ public partial class PTMeshAnimationAsset : MeshAnimationAsset
 
 	public static void RegisterAsset()
 	{
-		RegisterType<PTMeshAnimationAsset>();
+		RegisterType<BVMeshAnimationAsset>();
 	}
 
 	public override void LoadResource()

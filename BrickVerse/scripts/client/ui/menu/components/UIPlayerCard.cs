@@ -15,7 +15,7 @@ public partial class UIPlayerCard : Node
 
 	public Player TargetPlayer = null!;
 
-	private PTImageAsset _plrIconAsset = null!;
+	private BVImageAsset _plrIconAsset = null!;
 
 	public override void _Ready()
 	{

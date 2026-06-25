@@ -34,25 +34,25 @@ public sealed partial class AssetsService : Instance
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTImageAsset? NewPTImage(string imgID)
+	public BVImageAsset? NewPTImage(string imgID)
 	{
-		PTImageAsset ptImg = New<PTImageAsset>();
+		BVImageAsset ptImg = New<BVImageAsset>();
 		ptImg.ImageID = imgID;
 		return ptImg;
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTAudioAsset? NewPTAudio(string audioID)
+	public BVAudioAsset? NewPTAudio(string audioID)
 	{
-		PTAudioAsset ptAudio = New<PTAudioAsset>();
+		BVAudioAsset ptAudio = New<BVAudioAsset>();
 		ptAudio.AudioID = audioID;
 		return ptAudio;
 	}
 
 	[ScriptMethod, Obsolete("Use .New static instead")]
-	public PTMeshAsset? NewPTMesh(string assetID)
+	public BVMeshAsset? NewPTMesh(string assetID)
 	{
-		PTMeshAsset ptMesh = New<PTMeshAsset>();
+		BVMeshAsset ptMesh = New<BVMeshAsset>();
 		ptMesh.AssetID = assetID;
 		return ptMesh;
 	}

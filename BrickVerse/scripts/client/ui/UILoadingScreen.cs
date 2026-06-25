@@ -21,8 +21,8 @@ public partial class UILoadingScreen : Control
 	[Export] private AnimationPlayer _animPlay = null!;
 	[Export] private AnimationPlayer _bgAnimPlay = null!;
 
-	private PTImageAsset _gameThumbnailImage = null!;
-	private PTImageAsset _gameIconImage = null!;
+	private BVImageAsset _gameThumbnailImage = null!;
+	private BVImageAsset _gameIconImage = null!;
 
 	private bool _infoReady = false;
 	private bool _iconReady = false;

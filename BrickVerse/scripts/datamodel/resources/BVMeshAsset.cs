@@ -8,7 +8,7 @@ using BrickVerse.Shared.AssetLoaders;
 namespace BrickVerse.Datamodel.Resources;
 
 [Instantiable]
-public partial class PTMeshAsset : MeshAsset
+public partial class BVMeshAsset : MeshAsset
 {
 	private string _assetID;
 
@@ -26,7 +26,7 @@ public partial class PTMeshAsset : MeshAsset
 
 	public static void RegisterAsset()
 	{
-		RegisterType<PTMeshAsset>();
+		RegisterType<BVMeshAsset>();
 	}
 
 	public override void LoadResource()

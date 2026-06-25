@@ -16,7 +16,7 @@ public sealed partial class PresenceService : Instance
 {
 	private const long DiscordAppID = 1500644112179789894;
 	private string? _state;
-	private PTImageAsset? _coverImage;
+	private BVImageAsset? _coverImage;
 	private ActivityManager? _activityManager;
 	private Discord.Discord? _discord;
 	private bool _updateDirty = false;
@@ -38,7 +38,7 @@ public sealed partial class PresenceService : Instance
 	}
 
 	[ScriptProperty, SyncVar]
-	public PTImageAsset? CoverImage
+	public BVImageAsset? CoverImage
 	{
 		get => _coverImage;
 		set

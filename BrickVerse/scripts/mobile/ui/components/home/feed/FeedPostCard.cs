@@ -20,7 +20,7 @@ public partial class FeedPostCard : Node
 	[Export] private Label _likeLabel = null!;
 	[Export] private Label _commentLabel = null!;
 
-	private readonly PTImageAsset _pfpAsset = new();
+	private readonly BVImageAsset _pfpAsset = new();
 
 	public APIFeedPostData Data;
 
