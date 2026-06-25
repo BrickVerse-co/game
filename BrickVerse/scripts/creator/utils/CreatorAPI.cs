@@ -23,8 +23,8 @@ public static class CreatorAPI
 	private const string OpenIDClientId = "328382387274645504";
 
 	private const string AuthorizePath = "/oauth/authorize";
-	private const string TokenPath = "/v3/openid/token";
-	private const string UserInfoPath = "/v3/openid/userinfo";
+	private const string TokenPath = "/v3/oauth/token";
+	private const string UserInfoPath = "/v3/oauth/userinfo";
 
 	private const string StoredTokenPath = "user://creator_auth";
 
@@ -46,13 +46,13 @@ public static class CreatorAPI
 	{
 		CreatorAuthServer.StartServer();
 
-		string? storedToken = LoadStoredToken();
+		OpenIdAuthSession? storedSession = LoadStoredSession();
 
-		if (!string.IsNullOrWhiteSpace(storedToken))
+		if (storedSession != null && !string.IsNullOrWhiteSpace(storedSession.AccessToken))
 		{
 			try
 			{
-				await LoginWithToken(storedToken, saveToken: false);
+				await LoginWithOpenIdSession(storedSession, saveToken: false);
 				return;
 			}
 			catch
@@ -89,7 +89,7 @@ public static class CreatorAPI
 			$"?client_id={Uri.EscapeDataString(OpenIDClientId)}" +
 			$"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}" +
 			"&response_type=code" +
-			"&scope=openid%20profile%20email%20guilds%20creator" +
+			"&scope=openid%20profile%20email%20guilds" +
 			$"&state={Uri.EscapeDataString(state)}" +
 			$"&code_challenge={Uri.EscapeDataString(codeChallenge)}" +
 			"&code_challenge_method=S256";
@@ -99,20 +99,94 @@ public static class CreatorAPI
 		await Task.CompletedTask;
 	}
 
+	private const string DiscoveryUrl = "https://api.brickverse.gg/.well-known/openid-configuration";
+
+	private sealed class OpenIdConfig
+	{
+		public string AuthorizationEndpoint { get; init; } = "";
+		public string TokenEndpoint { get; init; } = Globals.ApiEndpoint.PathJoin(TokenPath);
+		public string UserInfoEndpoint { get; init; } = Globals.ApiEndpoint.PathJoin(UserInfoPath);
+	}
+
+	private sealed class OpenIdTokenResponse
+	{
+		public string AccessToken { get; init; } = "";
+		public string TokenType { get; init; } = "Bearer";
+		public string RefreshToken { get; init; } = "";
+		public string IdToken { get; init; } = "";
+		public int ExpiresIn { get; init; }
+	}
+
+	private sealed class OpenIdAuthSession
+	{
+		public string AccessToken { get; init; } = "";
+		public string RefreshToken { get; init; } = "";
+		public string IdToken { get; init; } = "";
+	}
+
+	private static async Task<OpenIdConfig> GetOpenIdConfig()
+	{
+		using HttpResponseMessage msg = await _client.GetAsync(DiscoveryUrl);
+		string body = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+			throw new InvalidOperationException($"OpenID discovery failed: {msg.StatusCode} {body}");
+
+		using JsonDocument doc = JsonDocument.Parse(body);
+		JsonElement root = doc.RootElement;
+
+		string tokenEndpoint = GetString(root, "token_endpoint");
+		string userInfoEndpoint = GetString(root, "userinfo_endpoint");
+
+		if (string.IsNullOrWhiteSpace(tokenEndpoint))
+			throw new InvalidOperationException("OpenID discovery response did not include token_endpoint.");
+
+		if (string.IsNullOrWhiteSpace(userInfoEndpoint))
+			throw new InvalidOperationException("OpenID discovery response did not include userinfo_endpoint.");
+
+		return new OpenIdConfig
+		{
+			AuthorizationEndpoint = GetString(root, "authorization_endpoint"),
+			TokenEndpoint = tokenEndpoint,
+			UserInfoEndpoint = userInfoEndpoint,
+		};
+	}
+
 	public static async Task HandleOpenIdCallback(
 		string code,
 		string redirectUri,
 		string codeVerifier
 	)
 	{
-		string token = await ExchangeOpenIdCodeForToken(code, redirectUri, codeVerifier);
+		try
+		{
+			OpenIdConfig oidc = await GetOpenIdConfig();
 
-		PT.Print($"Authenticated with OpenID. Received token: {token.Substring(0, Math.Min(token.Length, 10))}...");
+			OpenIdTokenResponse tokens = await ExchangeOpenIdCodeForToken(
+				oidc,
+				code,
+				redirectUri,
+				codeVerifier
+			);
 
-		await LoginWithToken(token, saveToken: true);
+			PT.Print($"Authenticated with OpenID. Received access token: {tokens.AccessToken[..Math.Min(tokens.AccessToken.Length, 10)]}...");
+
+			await LoginWithOpenIdSession(new OpenIdAuthSession
+			{
+				AccessToken = tokens.AccessToken,
+				RefreshToken = tokens.RefreshToken,
+				IdToken = tokens.IdToken,
+			}, saveToken: true, oidc);
+		}
+		catch (Exception ex)
+		{
+			AuthenticationFailed?.Invoke(ex.Message);
+			throw;
+		}
 	}
 
-	public static async Task<string> ExchangeOpenIdCodeForToken(
+	private static async Task<OpenIdTokenResponse> ExchangeOpenIdCodeForToken(
+		OpenIdConfig oidc,
 		string code,
 		string redirectUri,
 		string codeVerifier
@@ -136,96 +210,180 @@ public static class CreatorAPI
 			["code_verifier"] = codeVerifier
 		});
 
-		using HttpResponseMessage msg = await _client.PostAsync(
-			Globals.ApiEndpoint.PathJoin(TokenPath),
-			form
-		);
-
+		using HttpResponseMessage msg = await _client.PostAsync(oidc.TokenEndpoint, form);
 		string body = await msg.Content.ReadAsStringAsync();
+
+		//PT.Print($"OpenID token exchange response: {body}");
 
 		if (!msg.IsSuccessStatusCode)
 			throw new InvalidOperationException($"OpenID token exchange failed: {msg.StatusCode} {body}");
 
 		using JsonDocument doc = JsonDocument.Parse(body);
+		JsonElement root = doc.RootElement;
 
-		if (!doc.RootElement.TryGetProperty("access_token", out JsonElement accessTokenNode) ||
-			accessTokenNode.ValueKind != JsonValueKind.String)
-		{
+		string accessToken = GetString(root, "access_token");
+
+		if (string.IsNullOrWhiteSpace(accessToken))
 			throw new InvalidOperationException("OpenID token response did not include access_token.");
-		}
 
-		return accessTokenNode.GetString() ?? "";
+		return new OpenIdTokenResponse
+		{
+			AccessToken = accessToken,
+			TokenType = GetString(root, "token_type", "Bearer"),
+			RefreshToken = GetString(root, "refresh_token"),
+			IdToken = GetString(root, "id_token"),
+			ExpiresIn = GetInt(root, "expires_in"),
+		};
 	}
 
-	public static async Task LoginWithToken(string token, bool saveToken = true)
+	public static Task LoginWithToken(string token, bool saveToken)
 	{
-		token = NormalizeToken(token);
-
-		if (string.IsNullOrWhiteSpace(token))
-			throw new ArgumentException("Token cannot be empty.", nameof(token));
-
-		SetToken(token);
-
-		try
+		return LoginWithOpenIdSession(new OpenIdAuthSession
 		{
-			OpenIdUserInfoResponse userInfo = await GetUserInfo();
+			AccessToken = NormalizeToken(token),
+		}, saveToken, null);
+	}
 
-			PT.Print("userInfo dump:", JsonSerializer.Serialize(userInfo, APIGenerationContextV3.Default.OpenIdUserInfoResponse));
+	private static async Task LoginWithOpenIdSession(
+		OpenIdAuthSession session,
+		bool saveToken,
+		OpenIdConfig? oidc = null
+	)
+	{
+		string accessToken = NormalizeToken(session.AccessToken);
 
-			if (!IsValidUserInfo(userInfo))
+		if (string.IsNullOrWhiteSpace(accessToken))
+			throw new ArgumentException("Access token cannot be empty.", nameof(session));
+
+		SetToken(accessToken);
+
+		OpenIdUserInfoResponse userInfo;
+
+		if (!string.IsNullOrWhiteSpace(session.IdToken))
+		{
+			userInfo = GetUserInfoFromIdToken(session.IdToken);
+		}
+		else
+		{
+			oidc ??= await GetOpenIdConfig();
+			userInfo = await GetUserInfo(accessToken, oidc);
+		}
+
+		if (!IsValidUserInfo(userInfo))
+			throw new InvalidOperationException("OpenID response did not include a valid subject and username.");
+
+		if (saveToken)
+			SaveStoredSession(new OpenIdAuthSession
 			{
-				PT.PrintErr("CreatorAPI: Invalid user info received from OpenID userinfo endpoint.");
-				throw new InvalidOperationException("OpenID userinfo response was invalid.");
-			}
+				AccessToken = accessToken,
+				RefreshToken = session.RefreshToken,
+				IdToken = session.IdToken,
+			});
 
-			CurrentUserInfo = userInfo;
-			UserID = userInfo.Sub;
-			Username = userInfo.PreferredUsername;
+		CurrentUserInfo = userInfo;
+		UserID = GetUserId(userInfo);
+		Username = userInfo.PreferredUsername;
+		IsUserAuthenticated = true;
 
-			IsUserAuthenticated = true;
+		PT.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
 
-			PT.Print("CreatorAPI: User authenticated as ", Username, " (", UserID, ")");
-
-			if (saveToken)
-				SaveToken(token);
-
-			UserAuthenticated?.Invoke(userInfo);
-		}
-		catch
-		{
-			PT.Print("CreatorAPI: Authentication failed. Clearing auth state.");
-			ClearAuth();
-			throw;
-		}
+		UserAuthenticated?.Invoke(userInfo);
 	}
 
-	public static async Task<OpenIdUserInfoResponse> GetUserInfo()
+	private static OpenIdUserInfoResponse GetUserInfoFromIdToken(string idToken)
 	{
-		if (string.IsNullOrWhiteSpace(Token))
-			throw new AuthenticationException("User authentication required.");
+		string[] parts = idToken.Split('.');
 
-		using HttpRequestMessage request = new(
-			HttpMethod.Get,
-			Globals.ApiEndpoint.PathJoin(UserInfoPath)
-		);
+		if (parts.Length < 2)
+			throw new InvalidOperationException("OpenID id_token is not a valid JWT.");
 
-		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+		byte[] payloadBytes = Base64UrlDecode(parts[1]);
+		using JsonDocument doc = JsonDocument.Parse(payloadBytes);
+		JsonElement root = doc.RootElement;
 
-		using HttpResponseMessage msg = await _client.SendAsync(request);
+		string sub = GetString(root, "sub");
+		string preferredUsername = GetString(root, "preferred_username");
+
+		if (string.IsNullOrWhiteSpace(preferredUsername))
+			preferredUsername = GetString(root, "name");
+
+		return new OpenIdUserInfoResponse
+		{
+			Sub = sub,
+			PreferredUsername = preferredUsername,
+		};
+	}
+
+	private static async Task<OpenIdUserInfoResponse> GetUserInfo(
+		string accessToken,
+		OpenIdConfig oidc
+	)
+	{
+		if (string.IsNullOrWhiteSpace(oidc.UserInfoEndpoint))
+			throw new InvalidOperationException("OpenID discovery response did not include userinfo_endpoint.");
+
+		using HttpRequestMessage req = new(HttpMethod.Get, oidc.UserInfoEndpoint);
+		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizeToken(accessToken));
+
+		using HttpResponseMessage msg = await _client.SendAsync(req);
 		string body = await msg.Content.ReadAsStringAsync();
+
+		PT.Print($"OpenID userinfo response: {body}");
 
 		if (!msg.IsSuccessStatusCode)
 			throw new InvalidOperationException($"OpenID userinfo failed: {msg.StatusCode} {body}");
 
-		OpenIdUserInfoResponse userInfo = JsonSerializer.Deserialize(
-			body,
-			APIGenerationContextV3.Default.OpenIdUserInfoResponse
-		);
+		using JsonDocument doc = JsonDocument.Parse(body);
+		JsonElement root = doc.RootElement;
 
-		if (!IsValidUserInfo(userInfo))
-			throw new InvalidOperationException("OpenID userinfo response was missing sub or preferred_username.");
+		string sub = GetString(root, "sub");
+		string preferredUsername = GetString(root, "preferred_username");
 
-		return userInfo;
+		if (string.IsNullOrWhiteSpace(preferredUsername))
+			preferredUsername = GetString(root, "name");
+
+		return new OpenIdUserInfoResponse
+		{
+			Sub = sub,
+			PreferredUsername = preferredUsername,
+		};
+	}
+
+	private static string GetUserId(OpenIdUserInfoResponse userInfo)
+	{
+		if (!string.IsNullOrWhiteSpace(userInfo.Sub))
+			return userInfo.Sub;
+
+		return "0";
+	}
+
+	private static string GetString(JsonElement root, string propertyName, string fallback = "")
+	{
+		if (!root.TryGetProperty(propertyName, out JsonElement node) ||
+			node.ValueKind == JsonValueKind.Null ||
+			node.ValueKind == JsonValueKind.Undefined)
+		{
+			return fallback;
+		}
+
+		if (node.ValueKind == JsonValueKind.String)
+			return node.GetString() ?? fallback;
+
+		return node.ToString();
+	}
+
+	private static int GetInt(JsonElement root, string propertyName, int fallback = 0)
+	{
+		if (!root.TryGetProperty(propertyName, out JsonElement node))
+			return fallback;
+
+		if (node.ValueKind == JsonValueKind.Number && node.TryGetInt32(out int value))
+			return value;
+
+		if (node.ValueKind == JsonValueKind.String && int.TryParse(node.GetString(), out value))
+			return value;
+
+		return fallback;
 	}
 
 	public static void ClearAuth()
@@ -482,19 +640,74 @@ public static class CreatorAPI
 			.Replace('/', '_');
 	}
 
-	private static string? LoadStoredToken()
+	private static byte[] Base64UrlDecode(string value)
+	{
+		string normalized = value
+			.Replace('-', '+')
+			.Replace('_', '/');
+
+		int padding = normalized.Length % 4;
+
+		if (padding > 0)
+			normalized = normalized.PadRight(normalized.Length + 4 - padding, '=');
+
+		return Convert.FromBase64String(normalized);
+	}
+
+	private static OpenIdAuthSession? LoadStoredSession()
 	{
 		if (!FileAccess.FileExists(StoredTokenPath))
 			return null;
 
 		using FileAccess access = FileAccess.Open(StoredTokenPath, FileAccess.ModeFlags.Read);
-		return access.GetAsText().Trim();
+		string raw = access.GetAsText().Trim();
+
+		if (string.IsNullOrWhiteSpace(raw))
+			return null;
+
+		// Backwards compatibility with the old file format, which only stored the access token.
+		if (!raw.StartsWith('{'))
+		{
+			return new OpenIdAuthSession
+			{
+				AccessToken = NormalizeToken(raw),
+			};
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(raw);
+		JsonElement root = doc.RootElement;
+
+		string accessToken = GetString(root, "access_token");
+
+		if (string.IsNullOrWhiteSpace(accessToken))
+			accessToken = GetString(root, "accessToken");
+
+		return new OpenIdAuthSession
+		{
+			AccessToken = NormalizeToken(accessToken),
+			RefreshToken = GetString(root, "refresh_token"),
+			IdToken = GetString(root, "id_token"),
+		};
 	}
 
-	private static void SaveToken(string token)
+	private static void SaveStoredSession(OpenIdAuthSession session)
 	{
 		using FileAccess f = FileAccess.Open(StoredTokenPath, FileAccess.ModeFlags.Write);
-		f.StoreString(NormalizeToken(token));
+
+		string json = "{" +
+			$"\"access_token\":\"{EscapeJson(NormalizeToken(session.AccessToken))}\"," +
+			$"\"refresh_token\":\"{EscapeJson(session.RefreshToken)}\"," +
+			$"\"id_token\":\"{EscapeJson(session.IdToken)}\"" +
+			"}";
+
+		f.StoreString(json);
+	}
+
+	private static string EscapeJson(string value)
+	{
+		return value
+			.Replace("\\", "\\\\")
+			.Replace("\"", "\\\"");
 	}
 
 	private static void DeleteStoredToken()

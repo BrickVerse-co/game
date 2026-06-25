@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared;
 using System;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.Utils;
 
@@ -18,8 +18,7 @@ public static class CreatorAuthServer
 	private const int CallbackPort = 42424;
 	private const string CallbackPath = "/openid/callback/";
 
-	public static string RedirectUri =>
-		$"http://{CallbackHost}:{CallbackPort}{CallbackPath}";
+	public static string RedirectUri => $"http://{CallbackHost}:{CallbackPort}{CallbackPath}";
 
 	private static readonly object AuthLock = new();
 
@@ -74,10 +73,13 @@ public static class CreatorAuthServer
 			{
 				HttpListenerContext ctx = await _listener.GetContextAsync();
 
-				_ = Task.Run(async () =>
-				{
-					await HandleCallbackAsync(ctx);
-				}, cancellationToken);
+				_ = Task.Run(
+					async () =>
+					{
+						await HandleCallbackAsync(ctx);
+					},
+					cancellationToken
+				);
 			}
 		}
 		catch (HttpListenerException)
@@ -91,7 +93,7 @@ public static class CreatorAuthServer
 		catch (Exception ex)
 		{
 			if (_running)
-				GD.PushError($"CreatorAuthServer error: {ex.Message}");
+				PT.PrintErr($"CreatorAuthServer error: {ex.Message}", ex);
 		}
 	}
 
@@ -122,7 +124,12 @@ public static class CreatorAuthServer
 
 			if (string.IsNullOrWhiteSpace(code))
 			{
-				await WriteHtmlAsync(ctx, 400, "BrickVerse Login Failed", "Missing authorization code.");
+				await WriteHtmlAsync(
+					ctx,
+					400,
+					"BrickVerse Login Failed",
+					"Missing authorization code."
+				);
 				return;
 			}
 
@@ -137,7 +144,12 @@ public static class CreatorAuthServer
 
 			if (string.IsNullOrWhiteSpace(expectedState) || string.IsNullOrWhiteSpace(codeVerifier))
 			{
-				await WriteHtmlAsync(ctx, 400, "BrickVerse Login Failed", "No active login request was found.");
+				await WriteHtmlAsync(
+					ctx,
+					400,
+					"BrickVerse Login Failed",
+					"No active login request was found."
+				);
 				return;
 			}
 
@@ -149,16 +161,9 @@ public static class CreatorAuthServer
 
 			ClearAuthAttempt();
 
-			Callable.From(async () =>
-			{
-				await CreatorAPI.HandleOpenIdCallback(
-					code,
-					RedirectUri,
-					codeVerifier
-				);
-			}).CallDeferred();
+			await CreatorAPI.HandleOpenIdCallback(code, RedirectUri, codeVerifier);
 
-			PT.Print("OpenID callback handled successfully - user should be authenticated now.");
+			//PT.Print("OpenID callback handled successfully - user should be authenticated now.");
 
 			await WriteHtmlAsync(
 				ctx,
@@ -169,11 +174,16 @@ public static class CreatorAuthServer
 		}
 		catch (Exception ex)
 		{
-			GD.PushError($"OpenID callback error: {ex.Message}");
+			PT.PrintErr($"OpenID callback error: {ex.Message}", ex);
 
 			try
 			{
-				await WriteHtmlAsync(ctx, 500, "BrickVerse Login Failed", "An internal error occurred.");
+				await WriteHtmlAsync(
+					ctx,
+					500,
+					"BrickVerse Login Failed",
+					"An internal error occurred."
+				);
 			}
 			catch
 			{
@@ -199,19 +209,19 @@ public static class CreatorAuthServer
 	)
 	{
 		string html = $"""
-		<!doctype html>
-		<html>
-			<head>
-				<meta charset="utf-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1">
-				<title>{WebUtility.HtmlEncode(title)}</title>
-			</head>
-			<body style="font-family: system-ui, sans-serif; padding: 32px; line-height: 1.5;">
-				<h1>{WebUtility.HtmlEncode(title)}</h1>
-				<p>{WebUtility.HtmlEncode(message)}</p>
-			</body>
-		</html>
-		""";
+			<!doctype html>
+			<html>
+				<head>
+					<meta charset="utf-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1">
+					<title>{WebUtility.HtmlEncode(title)}</title>
+				</head>
+				<body style="font-family: system-ui, sans-serif; padding: 32px; line-height: 1.5;">
+					<h1>{WebUtility.HtmlEncode(title)}</h1>
+					<p>{WebUtility.HtmlEncode(message)}</p>
+				</body>
+			</html>
+			""";
 
 		byte[] buffer = Encoding.UTF8.GetBytes(html);
 

@@ -29,15 +29,15 @@ public partial class CreatorEntry : Node
 
 		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
 
+		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
+
 		// Login creator with token
 		if (launchToken != null)
 		{
-			PT.Print("CreatorEntry: Launch token provided. Logging in via CreatorAPI...");
-			await CreatorAPI.LoginWithToken(launchToken);
+			await CreatorAPI.LoginWithToken(launchToken, false);
 		}
 		else
 		{
-			PT.Print("CreatorEntry: No launch token provided. Preparing to authenticate via ClientAuthAPI...");
 			await CreatorAPI.PromptLogin();
 		}
 
@@ -74,6 +74,10 @@ public partial class CreatorEntry : Node
 		}
 	}
 
+	private void OnClientAuthenticationFailed(string reason)
+	{
+		PT.PrintErr("CreatorEntry: Client authentication failed: ", reason);
+	}
 
 	private void OnClientAuthenticated(OpenIdUserInfoResponse me)
 	{
