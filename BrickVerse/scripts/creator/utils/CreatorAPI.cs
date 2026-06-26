@@ -25,7 +25,7 @@ public static class CreatorAPI
 
 	private static readonly string[] Scopes = new[]
 	{
-		"openid",
+		"open_id",
 		"profile",
 		"email",
 		"guilds", // view guilds the user is a member of (get list of guilds they can publish to)
@@ -124,7 +124,7 @@ public static class CreatorAPI
 			+ $"?client_id={Uri.EscapeDataString(OpenIDClientId)}"
 			+ $"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}"
 			+ "&response_type=code"
-			+ $"&scope={Uri.EscapeDataString(string.Join(" ", Scopes))}"
+			+ $"&scope={Uri.EscapeDataString(string.Join(",", Scopes))}"
 			+ $"&state={Uri.EscapeDataString(state)}"
 			+ $"&code_challenge={Uri.EscapeDataString(codeChallenge)}"
 			+ "&code_challenge_method=S256";
