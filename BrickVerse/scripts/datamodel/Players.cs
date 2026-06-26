@@ -53,6 +53,16 @@ public sealed partial class Players : Instance
 	[ScriptProperty]
 	public int PlayersCount => GetChildren().Count(c => c is Player plr && plr.IsReady);
 
+	
+	[ScriptProperty]
+	public int MaxPlayers { get; private set; } = 0;
+
+	public void SetMaxPlayers(int maxPlayers)
+	{
+		MaxPlayers = maxPlayers;
+		OnPropertyChanged();
+	}
+
 	/// <summary>
 	/// Get current player count including connecting
 	/// </summary>

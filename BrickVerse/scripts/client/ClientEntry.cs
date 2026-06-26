@@ -410,7 +410,7 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (!string.IsNullOrWhiteSpace(options.AuthToken))
 		{
-			await StartProductionServerAsync(options.AuthToken);
+			await StartProductionServerAsync(options.AuthToken, options.MaxPlayers);
 			return;
 		}
 
@@ -419,7 +419,7 @@ public sealed partial class ClientEntry : Node3D
 #endif
 	}
 
-	private async System.Threading.Tasks.Task StartProductionServerAsync(string authToken)
+	private async System.Threading.Tasks.Task StartProductionServerAsync(string authToken, int maxPlayers = 32)
 	{
 		NetworkService.IsProd = true;
 		Engine.MaxFps = 30;
@@ -454,7 +454,7 @@ public sealed partial class ClientEntry : Node3D
 #if PT_DOCKER
 			serverPort = 7777;
 #endif
-			NetworkService.CreateServer(serverPort);
+			NetworkService.CreateServer(serverPort, maxPlayers);
 		}
 		catch (Exception ex)
 		{
@@ -699,8 +699,9 @@ public sealed partial class ClientEntry : Node3D
 		public bool IsClient { get; set; } = true;
 		public bool IsServer { get; set; }
 		public bool IsSubWorld { get; set; }
+		public int MaxPlayers { get; set; } = 32; // Used by server only
 
-		public string? AuthToken { get; set; }
+		public string? AuthToken { get; set; } // Auth (Client) / Host (Server) token for production server
 		public string? WorldEntryPath { get; set; }
 		public string? DebugAddress { get; set; }
 		public string? DebugId { get; set; }

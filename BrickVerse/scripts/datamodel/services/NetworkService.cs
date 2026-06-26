@@ -438,7 +438,7 @@ public sealed partial class NetworkService : Instance
 		}
 	}
 
-	public void CreateServer(int port = 24221)
+	public void CreateServer(int port = 24221, int maxPlayers = 32)
 	{
 		SetupNetwork();
 		InitNodes();
@@ -475,8 +475,10 @@ public sealed partial class NetworkService : Instance
 			_heartbeatTimer.Start(HeartbeatIntervalSec);
 			ServerSendHeartbeat();
 		}
+		
 		Root.Players.PlayerAdded.Connect(OnPlayerAdded);
 		Root.Players.PlayerRemoved.Connect(OnPlayerRemoved);
+		Root.Players.SetMaxPlayers(maxPlayers);
 
 		OnServerStarted();
 		OnSessionStarted();
