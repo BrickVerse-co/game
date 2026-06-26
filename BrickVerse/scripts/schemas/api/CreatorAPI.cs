@@ -24,6 +24,12 @@ public struct CreatorPlaceItem
 	[JsonPropertyName("id")]
 	public int Id { get; set; }
 
+	[JsonPropertyName("worldId")]
+	public int? WorldId { get; set; }
+
+	[JsonPropertyName("universeId")]
+	public int? UniverseId { get; set; }
+
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
 

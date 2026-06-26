@@ -11,6 +11,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Datamodel.Creator;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -27,8 +28,12 @@ public partial class PublishPopup : PopupWindowBase
 	[Export] private Button _newButton = null!;
 	[Export] private Button _cancelButton = null!;
 	[Export] private Button _publishButton = null!;
+
 	private ButtonGroup _itemItemGroup = new();
 	private int _targetID = 0;
+
+	private int? _universeId = 0;
+	private int? _worldId = 0;
 
 	public PublishTypeEnum PublishType;
 	public Instance Target = null!;
@@ -36,7 +41,7 @@ public partial class PublishPopup : PopupWindowBase
 	public override void _Ready()
 	{
 		base._Ready();
-		PublishType = (Target is World) ? PublishTypeEnum.Project : PublishTypeEnum.Model;
+		PublishType = (Target is World) ? PublishTypeEnum.Project : (Target is Model) ? PublishTypeEnum.Model : PublishTypeEnum.Addon;
 		Title = "Publish " + PublishType.ToString();
 
 		_itemInfoView.Visible = false;
@@ -53,7 +58,7 @@ public partial class PublishPopup : PopupWindowBase
 
 	private void OnPublish()
 	{
-		Publish(_targetID);
+		Publish(_targetID, _worldId, _universeId);
 	}
 
 	private void OnPlaceItemPressed(BaseButton button)
@@ -68,6 +73,8 @@ public partial class PublishPopup : PopupWindowBase
 	{
 		_itemInfoView.Visible = true;
 		_targetID = item.Id;
+		_universeId = item.UniverseId;
+		_worldId = item.WorldId;
 		_itemNameLabel.Text = item.Name;
 		_itemCreatedAtLabel.Text = item.CreatedAt.ToLongDateString();
 		_itemLastUpdatedLabel.Text = item.UpdatedAt.Humanize();
@@ -107,12 +114,16 @@ public partial class PublishPopup : PopupWindowBase
 		Publish();
 	}
 
-	private async void Publish(int id = 0)
+	private async void Publish(int id = 0, int? worldId = null, int? universeId = null)
 	{
 		QueueFree();
 		if (Target is World game)
 		{
-			await PublishManager.PublishProject(game.LinkedSession.ProjectFolderPath, id);
+			await PublishManager.PublishProject(game.LinkedSession.ProjectFolderPath, worldId.Value, universeId.Value);
+		}
+		else if (Target is ServerScript script)
+		{
+			//await PublishManager.PublishAddon(script, id);
 		}
 		else
 		{
@@ -123,6 +134,7 @@ public partial class PublishPopup : PopupWindowBase
 	public enum PublishTypeEnum
 	{
 		Project,
-		Model
+		Model,
+		Addon
 	}
 }

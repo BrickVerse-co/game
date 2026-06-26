@@ -521,6 +521,16 @@ public static class CreatorAPI
 						? id
 						: 0,
 
+					UniverseId = universe.TryGetProperty("id", out JsonElement idNode2) &&
+						 int.TryParse(idNode2.GetString(), out int UniverseId)
+						? UniverseId
+						: 0,
+
+					WorldId = world.TryGetProperty("id", out JsonElement idNode3) &&
+						 int.TryParse(idNode3.GetString(), out int WorldId)
+						? WorldId
+						: 0,
+
 					Name = world.TryGetProperty("name", out JsonElement nameNode)
 						? nameNode.GetString() ?? ""
 						: "",
@@ -545,47 +555,27 @@ public static class CreatorAPI
 		return [.. worlds];
 	}
 
+	// <summary>
+	// Uploads a world to the BrickVerse API. If placeID is provided, it will update the existing world; otherwise, it will create a new world.
+	// </summary>
+	// <param name="placeData">The packed world data to upload.</param>
+	// <param name="universeId">The ID of the universe to upload the world to. If 0, a new universe will be created.</param>
+	// <param name="worldId">The ID of the existing world to update. If 0, a new world will be created.</param>
+	// <returns>A <see cref="CreatorPublishResponse"/> containing the link to the published world.</returns>
 	public static async Task<CreatorPublishResponse> UploadWorld(
 		byte[] placeData,
-		int placeID = 0,
-		string mainWorldPath = ""
+		int universeId = 0,
+		int worldId = 0
 	)
 	{
+		// Check if the user is authenticated before proceeding with the upload.
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		string universeId;
-		string worldId;
-
-		if (placeID != 0)
-		{
-			(universeId, worldId) = await ResolveWorldTarget(placeID);
-		}
-		else
-		{
-			using FormUrlEncodedContent createForm = new(new Dictionary<string, string>
-			{
-				["ownerId"] = UserID,
-				["ownerType"] = "USER"
-			});
-
-			using HttpResponseMessage createWorld = await _client.PostAsync(
-				Globals.ApiEndpoint.PathJoin("/v3/world"),
-				createForm
-			);
-
-			createWorld.EnsureSuccessStatusCode();
-
-			using JsonDocument createdDoc = JsonDocument.Parse(await createWorld.Content.ReadAsStringAsync());
-
-			worldId = createdDoc.RootElement.GetProperty("worldId").GetString() ?? "";
-			universeId = createdDoc.RootElement.GetProperty("universeId").GetString() ?? "";
-		}
-
 		using MultipartFormDataContent form = new()
 		{
-			{ new StringContent(universeId), "universeId" },
-			{ new StringContent(worldId), "worldId" },
+			{ new StringContent(universeId.ToString()), "universeId" },
+			{ new StringContent(worldId.ToString()), "worldId" },
 			{ new StringContent("true"), "publish" },
 		};
 
@@ -647,46 +637,6 @@ public static class CreatorAPI
 				? Globals.MainEndpoint.PathJoin("/creator")
 				: Globals.MainEndpoint.PathJoin("/asset/" + assetId),
 		};
-	}
-
-	private static async Task<(string UniverseId, string WorldId)> ResolveWorldTarget(int placeID)
-	{
-		using HttpResponseMessage msg = await _client.GetAsync(Globals.ApiEndpoint.PathJoin("/v3/created-worlds"));
-		msg.EnsureSuccessStatusCode();
-
-		using JsonDocument doc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
-
-		if (!doc.RootElement.TryGetProperty("universes", out JsonElement universes) ||
-			universes.ValueKind != JsonValueKind.Array)
-		{
-			throw new InvalidOperationException("Unable to resolve world target for publishing.");
-		}
-
-		string placeId = placeID.ToString();
-
-		foreach (JsonElement universe in universes.EnumerateArray())
-		{
-			string universeId = universe.TryGetProperty("id", out JsonElement universeIdNode)
-				? universeIdNode.GetString() ?? ""
-				: "";
-
-			if (!universe.TryGetProperty("worlds", out JsonElement worlds) ||
-				worlds.ValueKind != JsonValueKind.Array)
-			{
-				continue;
-			}
-
-			foreach (JsonElement world in worlds.EnumerateArray())
-			{
-				if (world.TryGetProperty("id", out JsonElement worldIdNode) &&
-					worldIdNode.GetString() == placeId)
-				{
-					return (universeId, placeId);
-				}
-			}
-		}
-
-		throw new InvalidOperationException("The target world could not be found in your created worlds list.");
 	}
 
 	private static bool IsValidUserInfo(OpenIdUserInfoResponse userInfo)

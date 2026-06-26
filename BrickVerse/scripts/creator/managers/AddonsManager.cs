@@ -291,6 +291,14 @@ public sealed partial class AddonsManager : Node
 		public string Description { get; set; }
 		public string Author { get; set; }
 		public string Version { get; set; }
+
+		public static AddonMetadata FromJson(string json)
+		{
+			return JsonSerializer.Deserialize(
+				json,
+				AddonJSONGenerationContext.Default.AddonMetadata
+			);
+		}
 	}
 
 	public class AddonSession
@@ -300,6 +308,7 @@ public sealed partial class AddonsManager : Node
 		public List<Script> Scripts { get; set; } = [];
 		public World? Root { get; set; }
 	}
+
 }
 
 public class AddonPermissionPair : Dictionary<string, ScriptPermissionFlags>;
