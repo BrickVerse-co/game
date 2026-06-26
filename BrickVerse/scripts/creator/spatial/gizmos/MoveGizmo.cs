@@ -13,18 +13,26 @@ namespace BrickVerse.Creator.Spatial;
 public partial class MoveGizmo : Node, IGizmo
 {
 	private const float GizmoArrowOffset = Gizmos.GizmoCircleSize + 0.3f;
-	private Vector3 _ivec = new(0f, 0f, -1f);
-	private Vector3 _nivec = new(-1f, -1f, 0f);
+	private const float GizmoBaseScale = 0.5f;
+	private const float GizmoDistanceScaleFactor = 0.12f;
+	private const float GizmoMinScale = 0.4f;
+	private const float GizmoSelectionRadiusFactor = 0.5f;
+	private const int ArrowSides = 12;
+	private const float ArrowShaftLength = 0.82f;
+	private const float ArrowHeadLength = 0.35f;
+	private const float ArrowShaftRadius = 0.04f;
+	private const float ArrowHeadRadius = 0.12f;
+	private static readonly Vector3 ArrowAxis = new(0f, 0f, -1f);
 
 	public List<Dynamic> Targets { get; set; } = [];
 	public bool Visible { get; set; }
 	public Gizmos? RootGizmos { get; set; }
-	private ArrayMesh[] _moveGizmo = new ArrayMesh[3];
-	private MeshInstance3D[] _moveGizmoInstance = new MeshInstance3D[3];
+	private ArrayMesh[] _moveGizmo = new ArrayMesh[6];
+	private MeshInstance3D[] _moveGizmoInstance = new MeshInstance3D[6];
 	private Camera3D GDCamera => RootGizmos!.Root.Environment.CurrentGDCamera!;
 	private MoveGizmoAxis _currentAxis = MoveGizmoAxis.None;
-	private StandardMaterial3D[] _gizmoColor = new StandardMaterial3D[3];
-	private StandardMaterial3D[] _gizmoHoverColor = new StandardMaterial3D[3];
+	private StandardMaterial3D[] _gizmoColor = new StandardMaterial3D[6];
+	private StandardMaterial3D[] _gizmoHoverColor = new StandardMaterial3D[6];
 	private bool _isMouseDragging;
 	private Vector3? _startRayOrigin;
 	private Vector3? _startRayNormal;
@@ -37,9 +45,12 @@ public partial class MoveGizmo : Node, IGizmo
 	public enum MoveGizmoAxis
 	{
 		None = -1,
-		MoveX,
-		MoveY,
-		MoveZ,
+		Left,
+		Right,
+		Down,
+		Up,
+		Back,
+		Front,
 	}
 
 	public override void _EnterTree()
@@ -55,9 +66,9 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void CreateSurfTool()
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
-			Color axisColor = Gizmos.AxisColors[i];
+			Color axisColor = Gizmos.AxisColors[i >> 1];
 			Color axisHoverColor = Color.FromHsv(axisColor.H, 0.25f, 1f);
 
 			StandardMaterial3D material = new()
@@ -77,54 +88,58 @@ public partial class MoveGizmo : Node, IGizmo
 
 			_moveGizmo[i] = new();
 
-			SurfaceTool surftool = new();
-			surftool.Begin(Godot.Mesh.PrimitiveType.Triangles);
-
-			Vector3[] arrow = [
-					_nivec * 0f + _ivec * 0f,
-						_nivec * 0.01f + _ivec * 0f,
-						_nivec * 0.01f + _ivec * GizmoArrowOffset,
-						_nivec * 0.065f + _ivec * GizmoArrowOffset,
-						_nivec * 0f + _ivec * (GizmoArrowOffset + Gizmos.GizmoArrowSize),
-					];
-
-			int arrowPoints = 5;
-			int arrowSides = 16;
-
-			float arrowSidesStep = Mathf.Tau / arrowSides;
-
-			for (int k = 0; k < arrowSides; k++)
-			{
-				Basis ma = new(_ivec, k * arrowSidesStep);
-				Basis mb = new(_ivec, (k + 1) * arrowSidesStep);
-
-				for (int j = 0; j < arrowPoints - 1; j++)
-				{
-					Vector3[] points = [
-								ma.Xform(arrow[j]),
-								mb.Xform(arrow[j]),
-								mb.Xform(arrow[j + 1]),
-								ma.Xform(arrow[j + 1]),
-							];
-
-					surftool.AddVertex(points[0]);
-					surftool.AddVertex(points[1]);
-					surftool.AddVertex(points[2]);
-
-					surftool.AddVertex(points[0]);
-					surftool.AddVertex(points[2]);
-					surftool.AddVertex(points[3]);
-				}
-			}
-
-			surftool.SetMaterial(material);
-			surftool.Commit(_moveGizmo[i]);
+			CreateArrowMesh(material, _moveGizmo[i]);
 		}
+	}
+
+	private static void CreateArrowMesh(StandardMaterial3D material, ArrayMesh mesh)
+	{
+		SurfaceTool surftool = new();
+		surftool.Begin(Godot.Mesh.PrimitiveType.Triangles);
+
+		Vector3[] profile =
+		[
+			new(0f, 0f, 0f),
+			new(ArrowShaftRadius, 0f, 0f),
+			new(ArrowShaftRadius, 0f, -ArrowShaftLength),
+			new(ArrowHeadRadius, 0f, -ArrowShaftLength),
+			new(0f, 0f, -(ArrowShaftLength + ArrowHeadLength)),
+		];
+
+		float arrowSidesStep = Mathf.Tau / ArrowSides;
+
+		for (int k = 0; k < ArrowSides; k++)
+		{
+			Basis ma = new(ArrowAxis, k * arrowSidesStep);
+			Basis mb = new(ArrowAxis, (k + 1) * arrowSidesStep);
+
+			for (int j = 0; j < profile.Length - 1; j++)
+			{
+				Vector3[] points =
+				[
+					ma.Xform(profile[j]),
+					mb.Xform(profile[j]),
+					mb.Xform(profile[j + 1]),
+					ma.Xform(profile[j + 1]),
+				];
+
+				surftool.AddVertex(points[0]);
+				surftool.AddVertex(points[1]);
+				surftool.AddVertex(points[2]);
+
+				surftool.AddVertex(points[0]);
+				surftool.AddVertex(points[2]);
+				surftool.AddVertex(points[3]);
+			}
+		}
+
+		surftool.SetMaterial(material);
+		surftool.Commit(mesh);
 	}
 
 	private void CreateInstances()
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
 			_moveGizmoInstance[i] = new MeshInstance3D
 			{
@@ -140,7 +155,7 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void ClearInstances()
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
 			_moveGizmoInstance[i].QueueFree();
 		}
@@ -149,6 +164,10 @@ public partial class MoveGizmo : Node, IGizmo
 	public override void _Process(double delta)
 	{
 		SetVisiblity();
+		if (!Visible || Targets.Count == 0)
+		{
+			RootGizmos?.Root.PlayerGUI.SetCursorShape(Control.CursorShape.Arrow);
+		}
 		RedrawGizmo();
 		UpdateDrag();
 	}
@@ -173,6 +192,7 @@ public partial class MoveGizmo : Node, IGizmo
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
+				RootGizmos?.Root.PlayerGUI.SetCursorShape(Control.CursorShape.CanDrop);
 				DragStarted?.Invoke();
 				_isMouseDragging = true;
 			}
@@ -182,6 +202,11 @@ public partial class MoveGizmo : Node, IGizmo
 				{
 					DragEnded?.Invoke();
 					_isMouseDragging = false;
+				}
+				if (RootGizmos != null)
+				{
+					RootGizmos.Root.PlayerGUI.SetCursorShape(
+						_currentAxis != MoveGizmoAxis.None ? Control.CursorShape.Drag : Control.CursorShape.Arrow);
 				}
 			}
 		}
@@ -225,24 +250,18 @@ public partial class MoveGizmo : Node, IGizmo
 		if (!Visible) return;
 
 		Transform3D pform = Gizmos.GetCenterPivot([.. Targets]);
-		float gizmoScale = pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+		float gizmoScale = GetGizmoScale(pform);
 		Vector3 pScale = new(gizmoScale, gizmoScale, gizmoScale);
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
-			Transform3D axisTransform = new();
-
-			if (pform.Basis.GetColumn(i).Normalized()
-				.Dot(pform.Basis.GetColumn((i + 1) % 3).Normalized()) < 1f)
-			{
-				axisTransform = axisTransform.LookingAt(
-					pform.Basis.GetColumn(i).Normalized(),
-					pform.Basis.GetColumn((i + 1) % 3).Normalized()
-				);
-			}
+			MoveGizmoAxis axis = (MoveGizmoAxis)i;
+			Vector3 axisDirection = GetHandleDirection(pform, axis);
+			Vector3 axisUp = GetHandleUpVector(pform, axis);
+			Transform3D axisTransform = new Transform3D().LookingAt(axisDirection, axisUp);
 
 			axisTransform.Basis = axisTransform.Basis.Scaled(pScale);
-			axisTransform.Origin = pform.Origin;
+			axisTransform.Origin = pform.Origin + axisDirection * gizmoScale * GizmoArrowOffset;
 
 			_moveGizmoInstance[i].Transform = axisTransform;
 		}
@@ -250,7 +269,7 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void SetVisiblity()
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
 			_moveGizmoInstance[i].Visible = Visible;
 		}
@@ -259,15 +278,17 @@ public partial class MoveGizmo : Node, IGizmo
 	private void UpdateAxis(Vector3 rayOrigin, Vector3 rayNormal)
 	{
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
-		float gizmoScale = pivot.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+		float gizmoScale = GetGizmoScale(pivot);
 
 		float colD = 1e20f;
 		int colAxis = -1;
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
-			Vector3 grabberPos = pivot.Origin + pivot.Basis.GetColumn(i).Normalized() * gizmoScale * (GizmoArrowOffset + Gizmos.GizmoArrowSize * 0.5f);
-			float grabberRadius = gizmoScale * Gizmos.GizmoArrowSize;
+			MoveGizmoAxis axis = (MoveGizmoAxis)i;
+			Vector3 axisDirection = GetHandleDirection(pivot, axis);
+			Vector3 grabberPos = pivot.Origin + axisDirection * gizmoScale * (GizmoArrowOffset + (ArrowShaftLength + ArrowHeadLength) * 0.5f);
+			float grabberRadius = gizmoScale * 0.42f;
 
 			Vector3[] result = Geometry3D.SegmentIntersectsSphere(rayOrigin, rayOrigin + rayNormal * Gizmos.MaxZ, grabberPos, grabberRadius);
 
@@ -288,7 +309,7 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void HighlightAxis(int axis)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 6; i++)
 		{
 			_moveGizmo[i].SurfaceSetMaterial(0, i == axis ? _gizmoHoverColor[i] : _gizmoColor[i]);
 		}
@@ -299,10 +320,12 @@ public partial class MoveGizmo : Node, IGizmo
 			if (_currentAxis != MoveGizmoAxis.None)
 			{
 				RootGizmos.HoveringGizmos = true;
+				RootGizmos.Root.PlayerGUI.SetCursorShape(Control.CursorShape.Drag);
 			}
 			else
 			{
 				RootGizmos.HoveringGizmos = false;
+				RootGizmos.Root.PlayerGUI.SetCursorShape(Control.CursorShape.Arrow);
 			}
 		}
 	}
@@ -311,7 +334,7 @@ public partial class MoveGizmo : Node, IGizmo
 	{
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
 
-		Vector3 motionMask = pivot.Basis.GetColumn((int)_currentAxis).Normalized();
+		Vector3 motionMask = GetHandleDirection(pivot, _currentAxis);
 		Plane plane = new(motionMask.Cross(motionMask.Cross(cameraNormal)).Normalized(), pivot.Origin);
 
 		Vector3? intersection = plane.IntersectsRay(rayOrigin, rayNormal);
@@ -323,5 +346,65 @@ public partial class MoveGizmo : Node, IGizmo
 		Vector3 motion = motionMask.Dot(intersection.Value - click.Value) * motionMask;
 
 		Dragged?.Invoke(motion);
+	}
+
+	private static int GetAxisIndex(MoveGizmoAxis axis)
+	{
+		return ((int)axis) >> 1;
+	}
+
+	private static float GetAxisSign(MoveGizmoAxis axis)
+	{
+		return ((int)axis & 1) == 0 ? -1f : 1f;
+	}
+
+	private static Vector3 GetHandleDirection(Transform3D pivot, MoveGizmoAxis axis)
+	{
+		int axisIndex = GetAxisIndex(axis);
+		return pivot.Basis.GetColumn(axisIndex).Normalized() * GetAxisSign(axis);
+	}
+
+	private static Vector3 GetHandleUpVector(Transform3D pivot, MoveGizmoAxis axis)
+	{
+		int axisIndex = GetAxisIndex(axis);
+		return pivot.Basis.GetColumn((axisIndex + 1) % 3).Normalized();
+	}
+
+	private float GetGizmoScale(Transform3D pivot)
+	{
+		float cameraDistance = pivot.Origin.DistanceTo(GDCamera.GlobalPosition);
+		float selectionRadiusBias = GetSelectionBoundsRadius() * GizmoSelectionRadiusFactor;
+		float surfaceDistance = Mathf.Max(0f, cameraDistance - selectionRadiusBias);
+		float gizmoScale = GizmoBaseScale + surfaceDistance * GizmoDistanceScaleFactor;
+
+		return Mathf.Max(GizmoMinScale, gizmoScale);
+	}
+
+	private float GetSelectionBoundsRadius()
+	{
+		if (Targets.Count == 0) return 0f;
+
+		Aabb? bounds = null;
+		foreach (Dynamic target in Targets)
+		{
+			Aabb targetBounds = GetTargetBounds(target);
+			bounds = bounds.HasValue ? bounds.Value.Merge(targetBounds) : targetBounds;
+		}
+
+		if (!bounds.HasValue)
+			return 0f;
+
+		return bounds.Value.Size.Length() * 0.5f;
+	}
+
+	private static Aabb GetTargetBounds(Dynamic target)
+	{
+		Aabb selfBounds = target.GetSelfBound();
+		if (selfBounds.Size != Vector3.Zero)
+		{
+			return selfBounds;
+		}
+
+		return target.CalculateBounds();
 	}
 }
