@@ -32,6 +32,7 @@ public partial class ScaleGizmo : Node, IGizmo
 	private bool _isMouseDragging;
 	private Vector3? _startRayOrigin;
 	private Vector3? _startRayNormal;
+	private Vector2 _lastDragMousePos;
 	private float _gizmoScale;
 
 	public event Action? DragStarted;
@@ -155,6 +156,7 @@ public partial class ScaleGizmo : Node, IGizmo
 	{
 		SetVisiblity();
 		RedrawGizmo();
+		UpdateDrag();
 	}
 
 	public override void _Input(InputEvent @event)
@@ -175,6 +177,7 @@ public partial class ScaleGizmo : Node, IGizmo
 				if (!Visible) return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
+				_lastDragMousePos = mousePos;
 				DragStarted?.Invoke();
 				_isMouseDragging = true;
 			}
@@ -192,10 +195,7 @@ public partial class ScaleGizmo : Node, IGizmo
 			if (!Visible) return;
 			if (_isMouseDragging)
 			{
-				if (_currentAxis != ScaleGizmoAxis.None)
-				{
-					DragTransform(rayOrigin, rayNormal, cameraNormal);
-				}
+				UpdateDrag();
 			}
 			else
 			{
@@ -203,6 +203,25 @@ public partial class ScaleGizmo : Node, IGizmo
 			}
 		}
 		base._Input(@event);
+	}
+
+	private void UpdateDrag()
+	{
+		if (!Visible) return;
+		if (!_isMouseDragging) return;
+		if (_currentAxis == ScaleGizmoAxis.None) return;
+		if (!Input.IsMouseButtonPressed(MouseButton.Left)) return;
+
+		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
+		if (mousePos == _lastDragMousePos) return;
+
+		_lastDragMousePos = mousePos;
+
+		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
+		Vector3 rayNormal = GDCamera.ProjectRayNormal(mousePos);
+		Vector3 cameraNormal = -GDCamera.GlobalBasis.Column2;
+
+		DragTransform(rayOrigin, rayNormal, cameraNormal);
 	}
 
 	private void RedrawGizmo()

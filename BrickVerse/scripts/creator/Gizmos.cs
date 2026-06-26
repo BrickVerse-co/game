@@ -34,6 +34,7 @@ public sealed partial class Gizmos : Node
 	public bool HoveringGizmos { get; set; }
 	public bool HoveringUIGizmo { get; set; }
 	public bool IsDraggingDynamic => _isDraggingDyn;
+	public bool IsTransformingSelected { get; private set; }
 
 	public static Color[] AxisColors { get; private set; } =
 	[
@@ -47,15 +48,15 @@ public sealed partial class Gizmos : Node
 	public ScaleGizmo Scale = new();
 	public ResizeGizmo Resize = new();
 
-	private bool _historyRecording;
-
 	public List<Dynamic> Selected = [];
 	public List<Dynamic> DragSelected = [];
 
 	private readonly Dictionary<Dynamic, Vector3> _dragStartOffsets = [];
+	private readonly Dictionary<Dynamic, Transform3D> _selectDragStartTransforms = [];
 	private readonly Dictionary<Dynamic, Transform3D> _initialRelativeTransforms = [];
 	private Transform3D _pivotStart;
 	private CreatorHistory _history = null!;
+	private Vector3 _lastMoveMotion = Vector3.Zero;
 
 	public void Attach(World game)
 	{
@@ -104,6 +105,7 @@ public sealed partial class Gizmos : Node
 
 	private void OnResizeDragStarted()
 	{
+		IsTransformingSelected = true;
 		_pivotStart = Selected[0].GetGlobalTransform();
 		_history.NewAction("Resize Transform");
 		RecordHistoryUndo();
@@ -175,11 +177,13 @@ public sealed partial class Gizmos : Node
 
 	private void OnResizeDragEnded()
 	{
+		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
 	}
 
 	private void OnScaleDragStarted()
 	{
+		IsTransformingSelected = true;
 		_pivotStart = GetSelectionPivot();
 		_initialRelativeTransforms.Clear();
 
@@ -230,12 +234,14 @@ public sealed partial class Gizmos : Node
 
 	private void OnScaleDragEnded()
 	{
+		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
 		_initialRelativeTransforms.Clear();
 	}
 
 	private void OnRotateDragStarted()
 	{
+		IsTransformingSelected = true;
 		_pivotStart = GetSelectionPivot();
 		_initialRelativeTransforms.Clear();
 
@@ -264,6 +270,7 @@ public sealed partial class Gizmos : Node
 
 	private void OnRotateDragEnded()
 	{
+		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
 		_initialRelativeTransforms.Clear();
 	}
@@ -286,22 +293,24 @@ public sealed partial class Gizmos : Node
 
 	private void OnMoveDragged(Vector3 vector)
 	{
-		foreach (Dynamic item in Selected)
-		{
-			if (_dragStartOffsets.TryGetValue(item, out Vector3 offset))
-			{
-				item.Position = vector.Snap(CreatorService.Interface.MoveSnapping) + offset;
-			}
-		}
+		_lastMoveMotion = vector;
+		ApplyMoveMotion(vector, snap: false);
 	}
 
 	private void OnMoveDragEnded()
 	{
+		if (Selected.Count > 0)
+		{
+			ApplyMoveMotion(_lastMoveMotion, snap: true);
+		}
+		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
 	}
 
 	private void OnMoveDragStarted()
 	{
+		IsTransformingSelected = true;
+		_lastMoveMotion = Vector3.Zero;
 		_dragStartOffsets.Clear();
 
 		foreach (Dynamic item in Selected)
@@ -311,6 +320,34 @@ public sealed partial class Gizmos : Node
 
 		_history.NewAction("Move Transform");
 		RecordHistoryUndo();
+	}
+
+	private void ApplyMoveMotion(Vector3 motion, bool snap)
+	{
+		Vector3 appliedMotion = snap ? motion.Snap(CreatorService.Interface.MoveSnapping) : motion;
+
+		foreach (Dynamic item in Selected)
+		{
+			if (_dragStartOffsets.TryGetValue(item, out Vector3 offset))
+			{
+				Transform3D current = item.GetGlobalTransform();
+				current.Origin = appliedMotion + offset;
+				item.SetGlobalTransform(current);
+			}
+		}
+	}
+
+	private void ApplySelectDragMotion(Vector3 motion)
+	{
+		foreach (Dynamic item in DragSelected)
+		{
+			if (_selectDragStartTransforms.TryGetValue(item, out Transform3D startTransform))
+			{
+				Transform3D updated = startTransform;
+				updated.Origin += motion;
+				item.SetGlobalTransform(updated);
+			}
+		}
 	}
 
 	private void RecordHistoryUndo()
@@ -466,10 +503,10 @@ public sealed partial class Gizmos : Node
 
 		if (hoveringOn != null)
 		{
-			selectInstance = Input.IsKeyPressed(Key.Alt) ? hoveringOn : GetModelRoot(hoveringOn) ?? hoveringOn;
+			selectInstance = Input.IsKeyPressed(Key.Alt) ? GetModelRoot(hoveringOn) ?? hoveringOn : hoveringOn;
 		}
 
-		if (selectInstance is Dynamic sdyn && !sdyn.Locked)
+		if (hoveringOn is Dynamic sdyn && !sdyn.Locked)
 		{
 			_hoverBox.Target = sdyn;
 		}
@@ -509,8 +546,10 @@ public sealed partial class Gizmos : Node
 				if (_isDraggingDyn)
 				{
 					_isDraggingDyn = false;
+					IsTransformingSelected = false;
 					CommitHistorySelectedTransform();
 				}
+				_selectDragStartTransforms.Clear();
 				DragSelected.Clear();
 				return;
 			}
@@ -556,7 +595,12 @@ public sealed partial class Gizmos : Node
 						Root.CreatorContext.Selections.SelectOnly(targetDyn);
 					}
 
-					if (toolMode == ToolModeEnum.Select)
+					bool canDirectDrag = toolMode == ToolModeEnum.Select
+						|| toolMode == ToolModeEnum.Move
+						|| toolMode == ToolModeEnum.Rotate
+						|| toolMode == ToolModeEnum.Scale;
+
+					if (canDirectDrag)
 					{
 						DragSelected.Add(targetDyn);
 						_isDragPending = true;
@@ -580,6 +624,13 @@ public sealed partial class Gizmos : Node
 				{
 					_isDraggingDyn = true;
 					_isDragPending = false;
+					IsTransformingSelected = true;
+					_pivotStart = GetCenterPivot([.. DragSelected]);
+					_selectDragStartTransforms.Clear();
+					foreach (Dynamic item in DragSelected)
+					{
+						_selectDragStartTransforms[item] = item.GetGlobalTransform();
+					}
 					_history.NewAction("Select Drag Transform");
 					RecordHistoryUndo();
 				}
@@ -686,79 +737,24 @@ public sealed partial class Gizmos : Node
 
 	private void DragSelectedDynamics()
 	{
+		if (DragSelected.Count == 0) return;
+
 		Vector2 mousePos = _camera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
-		Vector3 rayNormal = rayOrigin + _camera.ProjectRayNormal(mousePos) * 1000;
+		Vector3 rayNormal = _camera.ProjectRayNormal(mousePos);
+		Plane dragPlane = new(Vector3.Up, _pivotStart.Origin);
+		Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayNormal);
+		Vector3? startIntersection = dragPlane.IntersectsRay(_camera.ProjectRayOrigin(_dragStartPos), _camera.ProjectRayNormal(_dragStartPos));
 
-		PhysicsRayQueryParameters3D query = PhysicsRayQueryParameters3D.Create(rayOrigin, rayNormal);
-		query.CollideWithBodies = true;
-		query.CollideWithAreas = true;
-		query.CollisionMask = (1 << 0) | (1 << 1) | (1 << 3);
-
-		Godot.Collections.Array<Rid> excludeArray = [];
-
-		foreach (Dynamic item in DragSelected)
+		if (currentIntersection == null || startIntersection == null)
 		{
-			if (item is Physical p)
-			{
-				foreach (Rid rid in p.GetRids())
-					excludeArray.Add(rid);
-			}
-			// Add Descendants
-			foreach (Instance n in item.GetDescendants())
-			{
-				if (n is Physical p2)
-				{
-					foreach (Rid rid in p2.GetRids())
-						excludeArray.Add(rid);
-				}
-				if (n is Dynamic d)
-				{
-					excludeArray.Add(d.GetBoundRid());
-				}
-			}
-			excludeArray.Add(item.GetBoundRid());
-			item.UpdateCreatorBounds();
+			return;
 		}
 
-		query.Exclude = excludeArray;
+		Vector3 motion = currentIntersection.Value - startIntersection.Value;
+		motion.Y = 0f;
 
-		Godot.Collections.Dictionary intersection = Root.World3D.DirectSpaceState.IntersectRay(query);
-
-		if (intersection.Count > 0)
-		{
-			Vector3 pos = (Vector3)intersection["position"];
-			Vector3 hitNormal = (Vector3)intersection["normal"];
-			float snapAmount = CreatorService.Interface.MoveSnapping;
-
-			foreach (Dynamic item in DragSelected)
-			{
-				Aabb bounds = item.CreatorBounds;
-				Vector3 center = bounds.GetCenter();
-
-				Vector3 surfacePoint = center;
-
-				if (Mathf.Abs(hitNormal.X) > 0.5f)
-					surfacePoint.X = hitNormal.X > 0 ? bounds.Position.X : bounds.End.X;
-
-				if (Mathf.Abs(hitNormal.Y) > 0.5f)
-					surfacePoint.Y = hitNormal.Y > 0 ? bounds.Position.Y : bounds.End.Y;
-
-				if (Mathf.Abs(hitNormal.Z) > 0.5f)
-					surfacePoint.Z = hitNormal.Z > 0 ? bounds.Position.Z : bounds.End.Z;
-
-				Vector3 pivotOffset = item.GetGlobalPosition() - surfacePoint;
-
-				Vector3 snappedHitPos = new(
-					Mathf.Abs(hitNormal.X) > 0.9f ? pos.X : Mathf.Snapped(pos.X, snapAmount),
-					Mathf.Abs(hitNormal.Y) > 0.9f ? pos.Y : Mathf.Snapped(pos.Y, snapAmount),
-					Mathf.Abs(hitNormal.Z) > 0.9f ? pos.Z : Mathf.Snapped(pos.Z, snapAmount)
-				);
-
-				item.SetGlobalPosition(snappedHitPos + pivotOffset);
-				item.UpdateCurrentTransformCache();
-			}
-		}
+		ApplySelectDragMotion(motion);
 	}
 
 	public static Transform3D GetCenterPivot(Instance[] instances)

@@ -44,7 +44,7 @@ public partial class SelectionBox : Node
 	private StandardMaterial3D _matXray = null!;
 
 	private Aabb? _cachedGlobalBounds = null;
-	private Vector3 _cachedTargetPosition;
+	private Transform3D _cachedTargetTransform = Transform3D.Identity;
 
 	private bool _boxGenerated = false;
 
@@ -116,40 +116,48 @@ public partial class SelectionBox : Node
 	public void InvalidateBoundCache()
 	{
 		_cachedGlobalBounds = null;
+		_cachedTargetTransform = Transform3D.Identity;
 	}
 
 	public void UpdateBox()
 	{
-		_selectionBoxMesh.Visible = Target != null;
-		_selectionBoxXrayMesh.Visible = Target != null;
-		if (Target == null) return;
-
-		var toolMode = CreatorService.Interface.ToolMode;
-		Aabb globalBounds;
-		bool isDragging = RootGizmos != null && RootGizmos.HoveringGizmos && (toolMode == ToolModeEnum.Move || toolMode == ToolModeEnum.Select);
-
-		if (isDragging && _cachedGlobalBounds.HasValue)
+		Dynamic? target = Target;
+		if (target == null)
 		{
-			// Fast path: offset the cached bounds
-			Vector3 currentPosition = Target.GetGlobalPosition();
-			Vector3 positionDelta = currentPosition - _cachedTargetPosition;
+			_selectionBoxMesh.Visible = false;
+			_selectionBoxXrayMesh.Visible = false;
+			return;
+		}
 
-			globalBounds = new Aabb(
-				_cachedGlobalBounds.Value.Position + positionDelta,
-				_cachedGlobalBounds.Value.Size
-			);
+		UpdateBox(target);
+	}
+
+	private void UpdateBox(Dynamic target)
+	{
+		bool isDragging = RootGizmos != null && (RootGizmos.IsDraggingDynamic || RootGizmos.IsTransformingSelected);
+		bool shouldShow = !isDragging;
+
+		_selectionBoxMesh.Visible = shouldShow;
+		_selectionBoxXrayMesh.Visible = shouldShow;
+		if (!shouldShow) return;
+
+		Aabb globalBounds;
+		if (_cachedGlobalBounds.HasValue && _cachedTargetTransform != Transform3D.Identity)
+		{
+			Transform3D currentTransform = target.GetGlobalTransform();
+			Transform3D delta = currentTransform * _cachedTargetTransform.AffineInverse();
+
+			globalBounds = delta * _cachedGlobalBounds.Value;
 
 			_cachedGlobalBounds = globalBounds;
-			_cachedTargetPosition = currentPosition;
+			_cachedTargetTransform = currentTransform;
 		}
 		else
 		{
-			// Full recalculation
-			globalBounds = Target.CalculateBounds();
+			globalBounds = GetDisplayBounds(target);
 			_cachedGlobalBounds = globalBounds;
-			_cachedTargetPosition = Target.GetGlobalPosition();
+			_cachedTargetTransform = target.GetGlobalTransform();
 		}
-
 		Vector3 size = globalBounds.Size + Vector3.One * 0.005f;
 
 		Transform3D boxXform = new(
@@ -162,5 +170,16 @@ public partial class SelectionBox : Node
 
 		_selectionBoxMesh.GlobalTransform = boxXform;
 		_selectionBoxXrayMesh.GlobalTransform = boxXform;
+	}
+
+	private static Aabb GetDisplayBounds(Dynamic target)
+	{
+		Aabb selfBounds = target.GetSelfBound();
+		if (selfBounds.Size != Vector3.Zero)
+		{
+			return selfBounds;
+		}
+
+		return target.CalculateBounds();
 	}
 }

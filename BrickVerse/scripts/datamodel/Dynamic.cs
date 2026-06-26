@@ -719,14 +719,20 @@ public partial class Dynamic : Instance
 	internal void InvokeTransformChanged()
 	{
 #if CREATOR
+		bool isDraggingSelected =
+			Root.CreatorContext != null &&
+			Root.CreatorContext.Gizmos != null &&
+			(Root.CreatorContext.Gizmos.IsDraggingDynamic || Root.CreatorContext.Gizmos.IsTransformingSelected);
 		if (Root.CreatorContext != null && Root.CreatorContext.Gizmos != null)
 		{
-			if (!Root.CreatorContext.Gizmos.HoveringGizmos && !Root.CreatorContext.Gizmos.IsDraggingDynamic)
+			if (!Root.CreatorContext.Gizmos.HoveringGizmos && !isDraggingSelected)
 			{
 				// Update creator bounds if not changed by gizmos
 				UpdateCreatorBounds();
 			}
 		}
+#else
+		bool isDraggingSelected = false;
 #endif
 
 		// Notify transform change without sync to clients
@@ -740,11 +746,14 @@ public partial class Dynamic : Instance
 		OnPropertyChanged(nameof(LocalQuaternion), false);
 
 		TransformChanged?.Invoke();
-		foreach (Instance item in GetChildren())
+		if (!isDraggingSelected)
 		{
-			if (item is Dynamic dyn)
+			foreach (Instance item in GetChildren())
 			{
-				dyn.InvokeTransformChanged();
+				if (item is Dynamic dyn)
+				{
+					dyn.InvokeTransformChanged();
+				}
 			}
 		}
 
