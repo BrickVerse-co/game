@@ -64,6 +64,7 @@ public sealed partial class Menu : PanelContainer
 	public static Menu Singleton { get; private set; } = null!;
 
 	private Control _menuButtons = null!;
+	private HBoxContainer _topRightLayout = null!;
 
 	private readonly Dictionary<MenuButtonMenus, MenuItem[]> _menus = [];
 
@@ -468,6 +469,8 @@ public sealed partial class Menu : PanelContainer
 		);
 
 		_menuButtons = GetNode<Control>("Layout/MenuButtons");
+		_topRightLayout = GetNode<HBoxContainer>("Layout/Margin/Layout");
+		_topRightLayout.AddChild(new CreatorToolbarUserChip());
 
 		_polyButton = _menuButtons.GetNode<MenuButton>("Poly");
 		_polyMenu = _polyButton.GetPopup();

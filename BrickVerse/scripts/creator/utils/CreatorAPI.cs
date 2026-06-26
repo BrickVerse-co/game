@@ -36,11 +36,31 @@ public static class CreatorAPI
 	public static string Token { get; private set; } = "";
 
 	public static OpenIdUserInfoResponse? CurrentUserInfo { get; private set; }
+	public static AuthenticatedUserProfile? CurrentAuthenticatedProfile { get; private set; }
+	public static ToolbarIdentity? CurrentToolbarIdentity { get; private set; }
 	public static string? PendingIdToken { get; set; }
 
 	public static event Action<int>? LaunchPlaceRequest;
 	public static event Action<OpenIdUserInfoResponse>? UserAuthenticated;
+	public static event Action<AuthenticatedUserProfile?>? AuthenticatedProfileUpdated;
+	public static event Action<ToolbarIdentity?>? ToolbarIdentityUpdated;
 	public static event Action<string>? AuthenticationFailed;
+
+	public struct AuthenticatedUserProfile
+	{
+		public string Username { get; set; }
+		public string? HeadshotUrl { get; set; }
+		public bool IsModerator { get; set; }
+		public bool IsVerified { get; set; }
+	}
+
+	public struct ToolbarIdentity
+	{
+		public string Username { get; set; }
+		public string? HeadshotUrl { get; set; }
+		public string? BadgeIconPath { get; set; }
+		public string? BadgeTooltip { get; set; }
+	}
 
 	public static bool IsUserAuthenticated { get; private set; }
 
@@ -201,6 +221,8 @@ public static class CreatorAPI
 		PT.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
 
 		UserAuthenticated?.Invoke(userInfo);
+		await RefreshAuthenticatedProfile();
+		await RefreshToolbarIdentity();
 	}
 
 	private static OpenIdUserInfoResponse GetUserInfoFromIdToken(string idToken)
@@ -262,6 +284,141 @@ public static class CreatorAPI
 		};
 	}
 
+	private static async Task RefreshAuthenticatedProfile()
+	{
+		try
+		{
+			string authMeUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/me");
+			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizeToken(Token));
+
+			using HttpResponseMessage msg = await _client.SendAsync(req);
+			string body = await msg.Content.ReadAsStringAsync();
+
+			if (!msg.IsSuccessStatusCode)
+			{
+				throw new InvalidOperationException($"Auth profile request failed: {msg.StatusCode} {body}");
+			}
+
+			using JsonDocument doc = JsonDocument.Parse(body);
+			JsonElement root = doc.RootElement;
+
+			if (!root.TryGetProperty("success", out JsonElement successNode) ||
+				successNode.ValueKind != JsonValueKind.True && successNode.ValueKind != JsonValueKind.False ||
+				!successNode.GetBoolean())
+			{
+				throw new InvalidOperationException("Auth profile request did not return a successful response.");
+			}
+
+			if (!root.TryGetProperty("user", out JsonElement userNode) || userNode.ValueKind != JsonValueKind.Object)
+			{
+				throw new InvalidOperationException("Auth profile request did not include a user object.");
+			}
+
+			AuthenticatedUserProfile profile = new()
+			{
+				Username = GetString(userNode, "username", Username),
+				HeadshotUrl = GetString(userNode, "headshotUrl"),
+				IsModerator = GetBool(userNode, "isModerator"),
+				IsVerified = GetBool(userNode, "isVerified"),
+			};
+
+			CurrentAuthenticatedProfile = profile;
+			AuthenticatedProfileUpdated?.Invoke(profile);
+		}
+		catch (Exception error)
+		{
+			CurrentAuthenticatedProfile = null;
+			AuthenticatedProfileUpdated?.Invoke(null);
+			PT.PrintErr("CreatorAPI: Failed to load authenticated profile: ", error.Message);
+		}
+	}
+
+	private static async Task RefreshToolbarIdentity()
+	{
+		try
+		{
+			if (string.IsNullOrWhiteSpace(Username))
+			{
+				CurrentToolbarIdentity = null;
+				ToolbarIdentityUpdated?.Invoke(null);
+				return;
+			}
+
+			string lookupUrl = Globals.ApiEndpoint.PathJoin("/v3/users/lookup") + "?username=" + Uri.EscapeDataString(Username);
+			using HttpResponseMessage msg = await _client.GetAsync(lookupUrl);
+			string body = await msg.Content.ReadAsStringAsync();
+
+			if (!msg.IsSuccessStatusCode)
+			{
+				throw new InvalidOperationException($"User lookup failed: {msg.StatusCode} {body}");
+			}
+
+			using JsonDocument doc = JsonDocument.Parse(body);
+			JsonElement root = doc.RootElement;
+
+			if (!root.TryGetProperty("success", out JsonElement successNode) ||
+				(successNode.ValueKind != JsonValueKind.True && successNode.ValueKind != JsonValueKind.False) ||
+				!successNode.GetBoolean())
+			{
+				throw new InvalidOperationException("User lookup did not return a successful response.");
+			}
+
+			if (!root.TryGetProperty("user", out JsonElement userNode) || userNode.ValueKind != JsonValueKind.Object)
+			{
+				throw new InvalidOperationException("User lookup did not include a user object.");
+			}
+
+			ToolbarIdentity identity = new()
+			{
+				Username = GetString(userNode, "username", Username),
+				HeadshotUrl = GetString(userNode, "headshotUrl"),
+			};
+
+			ResolveToolbarBadge(userNode, ref identity);
+
+			CurrentToolbarIdentity = identity;
+			ToolbarIdentityUpdated?.Invoke(identity);
+		}
+		catch (Exception error)
+		{
+			CurrentToolbarIdentity = null;
+			ToolbarIdentityUpdated?.Invoke(null);
+			PT.PrintErr("CreatorAPI: Failed to load toolbar identity: ", error.Message);
+		}
+	}
+
+	private static void ResolveToolbarBadge(JsonElement userNode, ref ToolbarIdentity identity)
+	{
+		if (!userNode.TryGetProperty("nameplate", out JsonElement nameplateNode) ||
+			nameplateNode.ValueKind != JsonValueKind.Array)
+		{
+			return;
+		}
+
+		foreach (JsonElement plate in nameplateNode.EnumerateArray())
+		{
+			string name = GetString(plate, "name");
+			string iconName = GetString(plate, "iconName");
+
+			if (string.Equals(name, "Administrator", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(iconName, "Admin.png", StringComparison.OrdinalIgnoreCase))
+			{
+				identity.BadgeIconPath = "res://assets/textures/client/ui/AdminBadge.png";
+				identity.BadgeTooltip = "Administrator";
+				return;
+			}
+
+			if (string.Equals(name, "Verified", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(name, "Verified Account", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(iconName, "Verified.png", StringComparison.OrdinalIgnoreCase))
+			{
+				identity.BadgeIconPath = "res://assets/textures/client/ui/VerifiedBadge.png";
+				identity.BadgeTooltip = "Verified Account (Checkmark)";
+			}
+		}
+	}
+
 	private static string GetUserId(OpenIdUserInfoResponse userInfo)
 	{
 		if (!string.IsNullOrWhiteSpace(userInfo.Sub))
@@ -285,6 +442,20 @@ public static class CreatorAPI
 		return node.ToString();
 	}
 
+	private static bool GetBool(JsonElement root, string propertyName, bool fallback = false)
+	{
+		if (!root.TryGetProperty(propertyName, out JsonElement node))
+			return fallback;
+
+		return node.ValueKind switch
+		{
+			JsonValueKind.True => true,
+			JsonValueKind.False => false,
+			JsonValueKind.String when bool.TryParse(node.GetString(), out bool value) => value,
+			_ => fallback,
+		};
+	}
+
 	private static int GetInt(JsonElement root, string propertyName, int fallback = 0)
 	{
 		if (!root.TryGetProperty(propertyName, out JsonElement node))
@@ -305,10 +476,14 @@ public static class CreatorAPI
 		UserID = "0";
 		Username = "";
 		CurrentUserInfo = null;
+		CurrentAuthenticatedProfile = null;
+		CurrentToolbarIdentity = null;
 		IsUserAuthenticated = false;
 
 		_client.DefaultRequestHeaders.Remove("Authorization");
 		DeleteStoredToken();
+		AuthenticatedProfileUpdated?.Invoke(null);
+		ToolbarIdentityUpdated?.Invoke(null);
 	}
 
 	public static async Task<CreatorPlaceItem[]> GetPublishedWorlds()
