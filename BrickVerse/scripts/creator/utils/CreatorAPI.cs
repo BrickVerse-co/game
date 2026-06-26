@@ -14,6 +14,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.Utils;
@@ -35,6 +36,7 @@ public static class CreatorAPI
 	public static string Token { get; private set; } = "";
 
 	public static OpenIdUserInfoResponse? CurrentUserInfo { get; private set; }
+	public static string? PendingIdToken { get; set; }
 
 	public static event Action<int>? LaunchPlaceRequest;
 	public static event Action<OpenIdUserInfoResponse>? UserAuthenticated;
@@ -78,9 +80,10 @@ public static class CreatorAPI
 	{
 		CreatorAuthServer.StartServer();
 
-		string state = CreateCryptoRandomString(32);
+		string stateNonce = CreateCryptoRandomString(32);
 		string codeVerifier = CreateCryptoRandomString(64);
 		string codeChallenge = CreatePkceChallenge(codeVerifier);
+		string state = stateNonce + "." + codeVerifier;
 
 		CreatorAuthServer.BeginAuthAttempt(state, codeVerifier);
 
@@ -99,22 +102,12 @@ public static class CreatorAPI
 		await Task.CompletedTask;
 	}
 
-	private const string DiscoveryUrl = "https://api.brickverse.gg/.well-known/openid-configuration";
-
+	private static readonly string DiscoveryUrl = new Uri(new Uri(Globals.ApiEndpoint), "/.well-known/openid-configuration").ToString();
 	private sealed class OpenIdConfig
 	{
 		public string AuthorizationEndpoint { get; init; } = "";
 		public string TokenEndpoint { get; init; } = Globals.ApiEndpoint.PathJoin(TokenPath);
 		public string UserInfoEndpoint { get; init; } = Globals.ApiEndpoint.PathJoin(UserInfoPath);
-	}
-
-	private sealed class OpenIdTokenResponse
-	{
-		public string AccessToken { get; init; } = "";
-		public string TokenType { get; init; } = "Bearer";
-		public string RefreshToken { get; init; } = "";
-		public string IdToken { get; init; } = "";
-		public int ExpiresIn { get; init; }
 	}
 
 	private sealed class OpenIdAuthSession
@@ -152,95 +145,15 @@ public static class CreatorAPI
 		};
 	}
 
-	public static async Task HandleOpenIdCallback(
-		string code,
-		string redirectUri,
-		string codeVerifier
-	)
-	{
-		try
-		{
-			OpenIdConfig oidc = await GetOpenIdConfig();
-
-			OpenIdTokenResponse tokens = await ExchangeOpenIdCodeForToken(
-				oidc,
-				code,
-				redirectUri,
-				codeVerifier
-			);
-
-			PT.Print($"Authenticated with OpenID. Received access token: {tokens.AccessToken[..Math.Min(tokens.AccessToken.Length, 10)]}...");
-
-			await LoginWithOpenIdSession(new OpenIdAuthSession
-			{
-				AccessToken = tokens.AccessToken,
-				RefreshToken = tokens.RefreshToken,
-				IdToken = tokens.IdToken,
-			}, saveToken: true, oidc);
-		}
-		catch (Exception ex)
-		{
-			AuthenticationFailed?.Invoke(ex.Message);
-			throw;
-		}
-	}
-
-	private static async Task<OpenIdTokenResponse> ExchangeOpenIdCodeForToken(
-		OpenIdConfig oidc,
-		string code,
-		string redirectUri,
-		string codeVerifier
-	)
-	{
-		if (string.IsNullOrWhiteSpace(code))
-			throw new ArgumentException("Code cannot be empty.", nameof(code));
-
-		if (string.IsNullOrWhiteSpace(redirectUri))
-			throw new ArgumentException("Redirect URI cannot be empty.", nameof(redirectUri));
-
-		if (string.IsNullOrWhiteSpace(codeVerifier))
-			throw new ArgumentException("Code verifier cannot be empty.", nameof(codeVerifier));
-
-		using FormUrlEncodedContent form = new(new Dictionary<string, string>
-		{
-			["grant_type"] = "authorization_code",
-			["client_id"] = OpenIDClientId,
-			["code"] = code,
-			["redirect_uri"] = redirectUri,
-			["code_verifier"] = codeVerifier
-		});
-
-		using HttpResponseMessage msg = await _client.PostAsync(oidc.TokenEndpoint, form);
-		string body = await msg.Content.ReadAsStringAsync();
-
-		//PT.Print($"OpenID token exchange response: {body}");
-
-		if (!msg.IsSuccessStatusCode)
-			throw new InvalidOperationException($"OpenID token exchange failed: {msg.StatusCode} {body}");
-
-		using JsonDocument doc = JsonDocument.Parse(body);
-		JsonElement root = doc.RootElement;
-
-		string accessToken = GetString(root, "access_token");
-
-		if (string.IsNullOrWhiteSpace(accessToken))
-			throw new InvalidOperationException("OpenID token response did not include access_token.");
-
-		return new OpenIdTokenResponse
-		{
-			AccessToken = accessToken,
-			TokenType = GetString(root, "token_type", "Bearer"),
-			RefreshToken = GetString(root, "refresh_token"),
-			IdToken = GetString(root, "id_token"),
-			ExpiresIn = GetInt(root, "expires_in"),
-		};
-	}
-
 	public static Task LoginWithToken(string token, bool saveToken)
 	{
+		string? idToken = PendingIdToken;
+		PendingIdToken = null;
+
 		return LoginWithOpenIdSession(new OpenIdAuthSession
 		{
 			AccessToken = NormalizeToken(token),
+			IdToken = idToken ?? "",
 		}, saveToken, null);
 	}
 

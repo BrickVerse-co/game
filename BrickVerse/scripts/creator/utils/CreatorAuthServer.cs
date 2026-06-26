@@ -101,7 +101,18 @@ public static class CreatorAuthServer
 	{
 		try
 		{
+			SetCorsHeaders(ctx.Response);
+
+			if (ctx.Request.HttpMethod == "OPTIONS")
+			{
+				ctx.Response.StatusCode = 204;
+				ctx.Response.Close();
+				return;
+			}
+
 			string? code = ctx.Request.QueryString["code"];
+			string? token = ctx.Request.QueryString["token"];
+			string? idToken = ctx.Request.QueryString["id_token"];
 			string? state = ctx.Request.QueryString["state"];
 			string? error = ctx.Request.QueryString["error"];
 			string? errorDescription = ctx.Request.QueryString["error_description"];
@@ -124,13 +135,16 @@ public static class CreatorAuthServer
 
 			if (string.IsNullOrWhiteSpace(code))
 			{
-				await WriteHtmlAsync(
-					ctx,
-					400,
-					"BrickVerse Login Failed",
-					"Missing authorization code."
-				);
-				return;
+				if (string.IsNullOrWhiteSpace(token))
+				{
+					await WriteHtmlAsync(
+						ctx,
+						400,
+						"BrickVerse Login Failed",
+						"Missing authorization code."
+					);
+					return;
+				}
 			}
 
 			string? expectedState;
@@ -159,22 +173,36 @@ public static class CreatorAuthServer
 				return;
 			}
 
-			ClearAuthAttempt();
+			if (!string.IsNullOrWhiteSpace(token))
+			{
+				CreatorAPI.PendingIdToken = idToken;
+				await CreatorAPI.LoginWithToken(token, true);
+				ClearAuthAttempt();
 
-			await CreatorAPI.HandleOpenIdCallback(code, RedirectUri, codeVerifier);
+				//PT.Print("OpenID callback handled successfully - user should be authenticated now.");
 
-			//PT.Print("OpenID callback handled successfully - user should be authenticated now.");
+				await WriteHtmlAsync(
+					ctx,
+					200,
+					"BrickVerse Login Complete",
+					"You may now close this window and return to BrickVerse Studio."
+				);
+				return;
+			}
 
-			await WriteHtmlAsync(
-				ctx,
-				200,
-				"BrickVerse Login Complete",
-				"You may now close this window and return to BrickVerse Studio."
-			);
+			string browserCallbackUrl =
+				Globals.MainEndpoint.PathJoin("/auth/creator/callback") +
+				"?desktop_redirect_uri=" + Uri.EscapeDataString(RedirectUri) +
+				"&code=" + Uri.EscapeDataString(code!) +
+				"&state=" + Uri.EscapeDataString(state);
+
+			await WriteRedirectAsync(ctx, browserCallbackUrl);
+			return;
 		}
 		catch (Exception ex)
 		{
 			PT.PrintErr($"OpenID callback error: {ex.Message}", ex);
+			ClearAuthAttempt();
 
 			try
 			{
@@ -208,6 +236,8 @@ public static class CreatorAuthServer
 		string message
 	)
 	{
+		SetCorsHeaders(ctx.Response);
+
 		string html = $"""
 			<!doctype html>
 			<html>
@@ -231,6 +261,41 @@ public static class CreatorAuthServer
 
 		await ctx.Response.OutputStream.WriteAsync(buffer);
 		ctx.Response.Close();
+	}
+
+	private static async Task WriteRedirectAsync(HttpListenerContext ctx, string location)
+	{
+		SetCorsHeaders(ctx.Response);
+		ctx.Response.StatusCode = 302;
+		ctx.Response.RedirectLocation = location;
+		ctx.Response.ContentType = "text/html; charset=utf-8";
+
+		byte[] buffer = Encoding.UTF8.GetBytes(
+			"""
+			<!doctype html>
+			<html>
+				<head>
+					<meta charset="utf-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1">
+					<title>Redirecting</title>
+				</head>
+				<body style="font-family: system-ui, sans-serif; padding: 32px; line-height: 1.5;">
+					<p>Redirecting...</p>
+				</body>
+			</html>
+			"""
+		);
+
+		ctx.Response.ContentLength64 = buffer.Length;
+		await ctx.Response.OutputStream.WriteAsync(buffer);
+		ctx.Response.Close();
+	}
+
+	private static void SetCorsHeaders(HttpListenerResponse response)
+	{
+		response.AddHeader("Access-Control-Allow-Origin", "*");
+		response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 	}
 
 	public static void Stop()

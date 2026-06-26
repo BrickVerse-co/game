@@ -98,10 +98,6 @@ public partial class AppEntry : Node
 					{
 						ce.Entry();
 					}
-					else
-					{
-						PT.PrintErr($"AppEntry: Unknown entry type {entry}");
-					}
 				}
 				catch (Exception ex)
 				{
