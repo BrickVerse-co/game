@@ -2,10 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -16,12 +12,28 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Utils;
 
 public static class CreatorAPI
 {
 	private const string OpenIDClientId = "328382387274645504";
+
+	private static readonly string[] Scopes = new[]
+	{
+		"openid",
+		"profile",
+		"email",
+		"guilds", // view guilds the user is a member of (get list of guilds they can publish to)
+		"assets", // view owned assets (get list of models they can publish to)
+		"worlds",
+		"manage_assets", // manage owned assets (create/update models)
+		"manage_worlds", // manage owned worlds (create/update worlds)
+	};
 
 	private const string AuthorizePath = "/oauth/authorize";
 	private const string TokenPath = "/v3/oauth/token";
@@ -108,21 +120,25 @@ public static class CreatorAPI
 		CreatorAuthServer.BeginAuthAttempt(state, codeVerifier);
 
 		string authorizeUrl =
-			Globals.MainEndpoint.PathJoin(AuthorizePath) +
-			$"?client_id={Uri.EscapeDataString(OpenIDClientId)}" +
-			$"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}" +
-			"&response_type=code" +
-			"&scope=openid%20profile%20email%20guilds%20assets%20worlds" +
-			$"&state={Uri.EscapeDataString(state)}" +
-			$"&code_challenge={Uri.EscapeDataString(codeChallenge)}" +
-			"&code_challenge_method=S256";
+			Globals.MainEndpoint.PathJoin(AuthorizePath)
+			+ $"?client_id={Uri.EscapeDataString(OpenIDClientId)}"
+			+ $"&redirect_uri={Uri.EscapeDataString(CreatorAuthServer.RedirectUri)}"
+			+ "&response_type=code"
+			+ $"&scope={Uri.EscapeDataString(string.Join(" ", Scopes))}"
+			+ $"&state={Uri.EscapeDataString(state)}"
+			+ $"&code_challenge={Uri.EscapeDataString(codeChallenge)}"
+			+ "&code_challenge_method=S256";
 
 		OS.ShellOpen(authorizeUrl);
 
 		await Task.CompletedTask;
 	}
 
-	private static readonly string DiscoveryUrl = new Uri(new Uri(Globals.ApiEndpoint), "/.well-known/openid-configuration").ToString();
+	private static readonly string DiscoveryUrl = new Uri(
+		new Uri(Globals.ApiEndpoint),
+		"/.well-known/openid-configuration"
+	).ToString();
+
 	private sealed class OpenIdConfig
 	{
 		public string AuthorizationEndpoint { get; init; } = "";
@@ -143,7 +159,9 @@ public static class CreatorAPI
 		string body = await msg.Content.ReadAsStringAsync();
 
 		if (!msg.IsSuccessStatusCode)
-			throw new InvalidOperationException($"OpenID discovery failed: {msg.StatusCode} {body}");
+			throw new InvalidOperationException(
+				$"OpenID discovery failed: {msg.StatusCode} {body}"
+			);
 
 		using JsonDocument doc = JsonDocument.Parse(body);
 		JsonElement root = doc.RootElement;
@@ -152,10 +170,14 @@ public static class CreatorAPI
 		string userInfoEndpoint = GetString(root, "userinfo_endpoint");
 
 		if (string.IsNullOrWhiteSpace(tokenEndpoint))
-			throw new InvalidOperationException("OpenID discovery response did not include token_endpoint.");
+			throw new InvalidOperationException(
+				"OpenID discovery response did not include token_endpoint."
+			);
 
 		if (string.IsNullOrWhiteSpace(userInfoEndpoint))
-			throw new InvalidOperationException("OpenID discovery response did not include userinfo_endpoint.");
+			throw new InvalidOperationException(
+				"OpenID discovery response did not include userinfo_endpoint."
+			);
 
 		return new OpenIdConfig
 		{
@@ -170,11 +192,11 @@ public static class CreatorAPI
 		string? idToken = PendingIdToken;
 		PendingIdToken = null;
 
-		return LoginWithOpenIdSession(new OpenIdAuthSession
-		{
-			AccessToken = NormalizeToken(token),
-			IdToken = idToken ?? "",
-		}, saveToken, null);
+		return LoginWithOpenIdSession(
+			new OpenIdAuthSession { AccessToken = NormalizeToken(token), IdToken = idToken ?? "" },
+			saveToken,
+			null
+		);
 	}
 
 	private static async Task LoginWithOpenIdSession(
@@ -203,15 +225,19 @@ public static class CreatorAPI
 		}
 
 		if (!IsValidUserInfo(userInfo))
-			throw new InvalidOperationException("OpenID response did not include a valid subject and username.");
+			throw new InvalidOperationException(
+				"OpenID response did not include a valid subject and username."
+			);
 
 		if (saveToken)
-			SaveStoredSession(new OpenIdAuthSession
-			{
-				AccessToken = accessToken,
-				RefreshToken = session.RefreshToken,
-				IdToken = session.IdToken,
-			});
+			SaveStoredSession(
+				new OpenIdAuthSession
+				{
+					AccessToken = accessToken,
+					RefreshToken = session.RefreshToken,
+					IdToken = session.IdToken,
+				}
+			);
 
 		CurrentUserInfo = userInfo;
 		UserID = GetUserId(userInfo);
@@ -242,11 +268,7 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(preferredUsername))
 			preferredUsername = GetString(root, "name");
 
-		return new OpenIdUserInfoResponse
-		{
-			Sub = sub,
-			PreferredUsername = preferredUsername,
-		};
+		return new OpenIdUserInfoResponse { Sub = sub, PreferredUsername = preferredUsername };
 	}
 
 	private static async Task<OpenIdUserInfoResponse> GetUserInfo(
@@ -255,10 +277,15 @@ public static class CreatorAPI
 	)
 	{
 		if (string.IsNullOrWhiteSpace(oidc.UserInfoEndpoint))
-			throw new InvalidOperationException("OpenID discovery response did not include userinfo_endpoint.");
+			throw new InvalidOperationException(
+				"OpenID discovery response did not include userinfo_endpoint."
+			);
 
 		using HttpRequestMessage req = new(HttpMethod.Get, oidc.UserInfoEndpoint);
-		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizeToken(accessToken));
+		req.Headers.Authorization = new AuthenticationHeaderValue(
+			"Bearer",
+			NormalizeToken(accessToken)
+		);
 
 		using HttpResponseMessage msg = await _client.SendAsync(req);
 		string body = await msg.Content.ReadAsStringAsync();
@@ -277,11 +304,7 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(preferredUsername))
 			preferredUsername = GetString(root, "name");
 
-		return new OpenIdUserInfoResponse
-		{
-			Sub = sub,
-			PreferredUsername = preferredUsername,
-		};
+		return new OpenIdUserInfoResponse { Sub = sub, PreferredUsername = preferredUsername };
 	}
 
 	private static async Task RefreshAuthenticatedProfile()
@@ -290,29 +313,44 @@ public static class CreatorAPI
 		{
 			string authMeUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/me");
 			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
-			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizeToken(Token));
+			req.Headers.Authorization = new AuthenticationHeaderValue(
+				"Bearer",
+				NormalizeToken(Token)
+			);
 
 			using HttpResponseMessage msg = await _client.SendAsync(req);
 			string body = await msg.Content.ReadAsStringAsync();
 
 			if (!msg.IsSuccessStatusCode)
 			{
-				throw new InvalidOperationException($"Auth profile request failed: {msg.StatusCode} {body}");
+				throw new InvalidOperationException(
+					$"Auth profile request failed: {msg.StatusCode} {body}"
+				);
 			}
 
 			using JsonDocument doc = JsonDocument.Parse(body);
 			JsonElement root = doc.RootElement;
 
-			if (!root.TryGetProperty("success", out JsonElement successNode) ||
-				successNode.ValueKind != JsonValueKind.True && successNode.ValueKind != JsonValueKind.False ||
-				!successNode.GetBoolean())
+			if (
+				!root.TryGetProperty("success", out JsonElement successNode)
+				|| successNode.ValueKind != JsonValueKind.True
+					&& successNode.ValueKind != JsonValueKind.False
+				|| !successNode.GetBoolean()
+			)
 			{
-				throw new InvalidOperationException("Auth profile request did not return a successful response.");
+				throw new InvalidOperationException(
+					"Auth profile request did not return a successful response."
+				);
 			}
 
-			if (!root.TryGetProperty("user", out JsonElement userNode) || userNode.ValueKind != JsonValueKind.Object)
+			if (
+				!root.TryGetProperty("user", out JsonElement userNode)
+				|| userNode.ValueKind != JsonValueKind.Object
+			)
 			{
-				throw new InvalidOperationException("Auth profile request did not include a user object.");
+				throw new InvalidOperationException(
+					"Auth profile request did not include a user object."
+				);
 			}
 
 			AuthenticatedUserProfile profile = new()
@@ -345,7 +383,10 @@ public static class CreatorAPI
 				return;
 			}
 
-			string lookupUrl = Globals.ApiEndpoint.PathJoin("/v3/users/lookup") + "?username=" + Uri.EscapeDataString(Username);
+			string lookupUrl =
+				Globals.ApiEndpoint.PathJoin("/v3/users/lookup")
+				+ "?username="
+				+ Uri.EscapeDataString(Username);
 			using HttpResponseMessage msg = await _client.GetAsync(lookupUrl);
 			string body = await msg.Content.ReadAsStringAsync();
 
@@ -357,14 +398,24 @@ public static class CreatorAPI
 			using JsonDocument doc = JsonDocument.Parse(body);
 			JsonElement root = doc.RootElement;
 
-			if (!root.TryGetProperty("success", out JsonElement successNode) ||
-				(successNode.ValueKind != JsonValueKind.True && successNode.ValueKind != JsonValueKind.False) ||
-				!successNode.GetBoolean())
+			if (
+				!root.TryGetProperty("success", out JsonElement successNode)
+				|| (
+					successNode.ValueKind != JsonValueKind.True
+					&& successNode.ValueKind != JsonValueKind.False
+				)
+				|| !successNode.GetBoolean()
+			)
 			{
-				throw new InvalidOperationException("User lookup did not return a successful response.");
+				throw new InvalidOperationException(
+					"User lookup did not return a successful response."
+				);
 			}
 
-			if (!root.TryGetProperty("user", out JsonElement userNode) || userNode.ValueKind != JsonValueKind.Object)
+			if (
+				!root.TryGetProperty("user", out JsonElement userNode)
+				|| userNode.ValueKind != JsonValueKind.Object
+			)
 			{
 				throw new InvalidOperationException("User lookup did not include a user object.");
 			}
@@ -390,8 +441,10 @@ public static class CreatorAPI
 
 	private static void ResolveToolbarBadge(JsonElement userNode, ref ToolbarIdentity identity)
 	{
-		if (!userNode.TryGetProperty("nameplate", out JsonElement nameplateNode) ||
-			nameplateNode.ValueKind != JsonValueKind.Array)
+		if (
+			!userNode.TryGetProperty("nameplate", out JsonElement nameplateNode)
+			|| nameplateNode.ValueKind != JsonValueKind.Array
+		)
 		{
 			return;
 		}
@@ -401,17 +454,21 @@ public static class CreatorAPI
 			string name = GetString(plate, "name");
 			string iconName = GetString(plate, "iconName");
 
-			if (string.Equals(name, "Administrator", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(iconName, "Admin.png", StringComparison.OrdinalIgnoreCase))
+			if (
+				string.Equals(name, "Administrator", StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(iconName, "Admin.png", StringComparison.OrdinalIgnoreCase)
+			)
 			{
 				identity.BadgeIconPath = "res://assets/textures/client/ui/AdminBadge.png";
 				identity.BadgeTooltip = "Administrator";
 				return;
 			}
 
-			if (string.Equals(name, "Verified", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(name, "Verified Account", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(iconName, "Verified.png", StringComparison.OrdinalIgnoreCase))
+			if (
+				string.Equals(name, "Verified", StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(name, "Verified Account", StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(iconName, "Verified.png", StringComparison.OrdinalIgnoreCase)
+			)
 			{
 				identity.BadgeIconPath = "res://assets/textures/client/ui/VerifiedBadge.png";
 				identity.BadgeTooltip = "Verified Account (Checkmark)";
@@ -429,9 +486,11 @@ public static class CreatorAPI
 
 	private static string GetString(JsonElement root, string propertyName, string fallback = "")
 	{
-		if (!root.TryGetProperty(propertyName, out JsonElement node) ||
-			node.ValueKind == JsonValueKind.Null ||
-			node.ValueKind == JsonValueKind.Undefined)
+		if (
+			!root.TryGetProperty(propertyName, out JsonElement node)
+			|| node.ValueKind == JsonValueKind.Null
+			|| node.ValueKind == JsonValueKind.Undefined
+		)
 		{
 			return fallback;
 		}
@@ -491,13 +550,17 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		using HttpResponseMessage msg = await _client.GetAsync(Globals.ApiEndpoint.PathJoin("/v3/created-worlds"));
+		using HttpResponseMessage msg = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/created-worlds")
+		);
 		msg.EnsureSuccessStatusCode();
 
 		using JsonDocument doc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
 
-		if (!doc.RootElement.TryGetProperty("universes", out JsonElement universes) ||
-			universes.ValueKind != JsonValueKind.Array)
+		if (
+			!doc.RootElement.TryGetProperty("universes", out JsonElement universes)
+			|| universes.ValueKind != JsonValueKind.Array
+		)
 		{
 			return [];
 		}
@@ -506,49 +569,58 @@ public static class CreatorAPI
 
 		foreach (JsonElement universe in universes.EnumerateArray())
 		{
-			if (!universe.TryGetProperty("worlds", out JsonElement worldArray) ||
-				worldArray.ValueKind != JsonValueKind.Array)
+			if (
+				!universe.TryGetProperty("worlds", out JsonElement worldArray)
+				|| worldArray.ValueKind != JsonValueKind.Array
+			)
 			{
 				continue;
 			}
 
 			foreach (JsonElement world in worldArray.EnumerateArray())
 			{
-				worlds.Add(new CreatorPlaceItem
-				{
-					Id = world.TryGetProperty("id", out JsonElement idNode) &&
-						 int.TryParse(idNode.GetString(), out int id)
-						? id
-						: 0,
+				worlds.Add(
+					new CreatorPlaceItem
+					{
+						Id =
+							world.TryGetProperty("id", out JsonElement idNode)
+							&& int.TryParse(idNode.GetString(), out int id)
+								? id
+								: 0,
 
-					UniverseId = universe.TryGetProperty("id", out JsonElement idNode2) &&
-						 int.TryParse(idNode2.GetString(), out int UniverseId)
-						? UniverseId
-						: 0,
+						UniverseId =
+							universe.TryGetProperty("id", out JsonElement idNode2)
+							&& int.TryParse(idNode2.GetString(), out int UniverseId)
+								? UniverseId
+								: 0,
 
-					WorldId = world.TryGetProperty("id", out JsonElement idNode3) &&
-						 int.TryParse(idNode3.GetString(), out int WorldId)
-						? WorldId
-						: 0,
+						WorldId =
+							world.TryGetProperty("id", out JsonElement idNode3)
+							&& int.TryParse(idNode3.GetString(), out int WorldId)
+								? WorldId
+								: 0,
 
-					Name = world.TryGetProperty("name", out JsonElement nameNode)
-						? nameNode.GetString() ?? ""
-						: "",
+						Name = world.TryGetProperty("name", out JsonElement nameNode)
+							? nameNode.GetString() ?? ""
+							: "",
 
-					CreatedAt = world.TryGetProperty("createdAt", out JsonElement createdNode) &&
-								createdNode.ValueKind == JsonValueKind.String &&
-								DateTime.TryParse(createdNode.GetString(), out DateTime createdAt)
-						? createdAt
-						: DateTime.UtcNow,
+						CreatedAt =
+							world.TryGetProperty("createdAt", out JsonElement createdNode)
+							&& createdNode.ValueKind == JsonValueKind.String
+							&& DateTime.TryParse(createdNode.GetString(), out DateTime createdAt)
+								? createdAt
+								: DateTime.UtcNow,
 
-					UpdatedAt = world.TryGetProperty("updatedAt", out JsonElement updatedNode) &&
-								updatedNode.ValueKind == JsonValueKind.String &&
-								DateTime.TryParse(updatedNode.GetString(), out DateTime updatedAt)
-						? updatedAt
-						: null,
+						UpdatedAt =
+							world.TryGetProperty("updatedAt", out JsonElement updatedNode)
+							&& updatedNode.ValueKind == JsonValueKind.String
+							&& DateTime.TryParse(updatedNode.GetString(), out DateTime updatedAt)
+								? updatedAt
+								: null,
 
-					IconUrl = "",
-				});
+						IconUrl = "",
+					}
+				);
 			}
 		}
 
@@ -627,15 +699,19 @@ public static class CreatorAPI
 
 		using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
 
-		string assetId = createdDoc.RootElement.TryGetProperty("assetId", out JsonElement assetIdNode)
+		string assetId = createdDoc.RootElement.TryGetProperty(
+			"assetId",
+			out JsonElement assetIdNode
+		)
 			? assetIdNode.GetString() ?? ""
 			: "";
 
 		return new CreatorPublishResponse
 		{
-			Link = assetId.Length == 0
-				? Globals.MainEndpoint.PathJoin("/creator")
-				: Globals.MainEndpoint.PathJoin("/asset/" + assetId),
+			Link =
+				assetId.Length == 0
+					? Globals.MainEndpoint.PathJoin("/creator")
+					: Globals.MainEndpoint.PathJoin("/asset/" + assetId),
 		};
 	}
 
@@ -672,17 +748,12 @@ public static class CreatorAPI
 
 	private static string Base64UrlEncode(byte[] bytes)
 	{
-		return Convert.ToBase64String(bytes)
-			.TrimEnd('=')
-			.Replace('+', '-')
-			.Replace('/', '_');
+		return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 	}
 
 	private static byte[] Base64UrlDecode(string value)
 	{
-		string normalized = value
-			.Replace('-', '+')
-			.Replace('_', '/');
+		string normalized = value.Replace('-', '+').Replace('_', '/');
 
 		int padding = normalized.Length % 4;
 
@@ -706,10 +777,7 @@ public static class CreatorAPI
 		// Backwards compatibility with the old file format, which only stored the access token.
 		if (!raw.StartsWith('{'))
 		{
-			return new OpenIdAuthSession
-			{
-				AccessToken = NormalizeToken(raw),
-			};
+			return new OpenIdAuthSession { AccessToken = NormalizeToken(raw) };
 		}
 
 		using JsonDocument doc = JsonDocument.Parse(raw);
@@ -732,20 +800,19 @@ public static class CreatorAPI
 	{
 		using FileAccess f = FileAccess.Open(StoredTokenPath, FileAccess.ModeFlags.Write);
 
-		string json = "{" +
-			$"\"access_token\":\"{EscapeJson(NormalizeToken(session.AccessToken))}\"," +
-			$"\"refresh_token\":\"{EscapeJson(session.RefreshToken)}\"," +
-			$"\"id_token\":\"{EscapeJson(session.IdToken)}\"" +
-			"}";
+		string json =
+			"{"
+			+ $"\"access_token\":\"{EscapeJson(NormalizeToken(session.AccessToken))}\","
+			+ $"\"refresh_token\":\"{EscapeJson(session.RefreshToken)}\","
+			+ $"\"id_token\":\"{EscapeJson(session.IdToken)}\""
+			+ "}";
 
 		f.StoreString(json);
 	}
 
 	private static string EscapeJson(string value)
 	{
-		return value
-			.Replace("\\", "\\\\")
-			.Replace("\"", "\\\"");
+		return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 	}
 
 	private static void DeleteStoredToken()
