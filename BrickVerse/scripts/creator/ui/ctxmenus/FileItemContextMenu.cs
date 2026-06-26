@@ -44,7 +44,7 @@ public partial class FileItemContextMenu : ContextMenu
 				AddIconItem("play", "Run (Developer Only)", 71);
 			}
 
-			if (ext == "poly")
+			if (ext == "bvxw" || ext == "bvworld")
 			{
 				AddIconItem("star", "Set as main world", 89);
 				AddSeparator();
@@ -72,7 +72,7 @@ public partial class FileItemContextMenu : ContextMenu
 				AddSeparator();
 			}
 
-			if (ext == Globals.ModelFileExtension || ext == "poly")
+			if (ext == Globals.ModelFileExtension || ext == "bvxw" || ext == "bvworld")
 			{
 				AddCheckItem("Compressed", 81);
 				SetItemChecked(GetItemIndex(81), PolyFormat.IsPolyFileCompressed(Session.GlobalizePath(Target)));

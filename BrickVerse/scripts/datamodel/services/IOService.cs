@@ -19,8 +19,8 @@ namespace BrickVerse.Datamodel.Services;
 [SaveIgnore]
 public sealed partial class IOService : Instance
 {
-	private const string PolyCreatorTempPath = "polyc_temp";
-	private static readonly string[] AllowedExtensions = ["poly", "ptmd", "model", "lua", "luau", "json", "txt"];
+	private const string CreatorTempPath = "brickverse_creator_temp";
+	private static readonly string[] AllowedExtensions = ["bvxw", "bvworld", "bvxm", "bvmodel", "model", "lua", "luau", "json", "txt"];
 
 	internal Dictionary<string, byte[]> FileStructure = [];
 	internal Dictionary<string, string> FileToIndex = [];
@@ -31,7 +31,7 @@ public sealed partial class IOService : Instance
 
 	static IOService()
 	{
-		TempFilePath = Path.GetFullPath(Path.Join(Path.GetTempPath(), PolyCreatorTempPath));
+		TempFilePath = Path.GetFullPath(Path.Join(Path.GetTempPath(), CreatorTempPath));
 	}
 
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IORead)]

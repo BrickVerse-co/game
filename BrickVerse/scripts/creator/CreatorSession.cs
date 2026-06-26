@@ -801,7 +801,7 @@ return module";
 	public static void FileSwitchToCompressed(string path)
 	{
 		string ext = path.GetExtension();
-		if (ext == "poly" || ext == "model")
+		if (ext == "bvxw" || ext == "bvworld" || ext == "model")
 		{
 			PT.Print(path, " switching to compressed...");
 			byte[] data = File.ReadAllBytes(path);
@@ -813,7 +813,7 @@ return module";
 	public static void FileSwitchToUncompressed(string path)
 	{
 		string ext = path.GetExtension();
-		if (ext == "poly" || ext == "model")
+		if (ext == "bvxw" || ext == "bvworld" || ext == "model")
 		{
 			PT.Print(path, " switching to uncompressed...");
 			byte[] data = File.ReadAllBytes(path);

@@ -152,10 +152,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		string? targetPlace = null;
 		projectFilePath = ProjectSettings.GlobalizePath(projectFilePath);
 
-		if (File.GetAttributes(projectFilePath) == FileAttributes.Directory || projectFilePath.GetExtension() == "poly")
+		if (File.GetAttributes(projectFilePath) == FileAttributes.Directory || projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
 		{
 			string originFilePath = projectFilePath;
-			if (projectFilePath.GetExtension() == "poly")
+			if (projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
 			{
 				projectFilePath += "/../";
 			}
@@ -166,7 +166,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				return;
 			}
 
-			if (originFilePath.GetExtension() == "poly")
+			if (originFilePath.GetExtension() == "bvxw" || originFilePath.GetExtension() == "bvworld")
 			{
 				targetPlace = originFilePath;
 			}
@@ -355,7 +355,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		string ext = pathRelative.GetExtension();
 
-		if (ext == "poly")
+		if (ext == "bvxw" || ext == "bvworld")
 		{
 			CurrentSession.OpenWorld(pathRelative);
 			return;
