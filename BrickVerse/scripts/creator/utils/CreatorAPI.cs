@@ -25,20 +25,19 @@ public static class CreatorAPI
 
 	private static readonly string[] Scopes = new[]
 	{
-		"open_id",
+		"openid",
 		"profile",
 		"email",
 		"guilds", // view guilds the user is a member of (get list of guilds they can publish to)
 		"assets", // view owned assets (get list of models they can publish to)
 		"worlds",
 		"manage_assets", // manage owned assets (create/update models)
-		"manage_worlds", // manage owned worlds (create/update worlds)
+		"publish_worlds", // manage owned worlds (create/update worlds)
 	};
 
 	private const string AuthorizePath = "/oauth/authorize";
 	private const string TokenPath = "/v3/oauth/token";
 	private const string UserInfoPath = "/v3/oauth/userinfo";
-
 	private const string StoredTokenPath = "user://creator_auth";
 
 	private static readonly BVHttpClient _client = new();
@@ -211,7 +210,6 @@ public static class CreatorAPI
 			throw new ArgumentException("Access token cannot be empty.", nameof(session));
 
 		SetToken(accessToken);
-
 		OpenIdUserInfoResponse userInfo;
 
 		if (!string.IsNullOrWhiteSpace(session.IdToken))
@@ -282,12 +280,8 @@ public static class CreatorAPI
 			);
 
 		using HttpRequestMessage req = new(HttpMethod.Get, oidc.UserInfoEndpoint);
-		req.Headers.Authorization = new AuthenticationHeaderValue(
-			"Bearer",
-			NormalizeToken(accessToken)
-		);
-
 		using HttpResponseMessage msg = await _client.SendAsync(req);
+
 		string body = await msg.Content.ReadAsStringAsync();
 
 		PT.Print($"OpenID userinfo response: {body}");
@@ -312,13 +306,10 @@ public static class CreatorAPI
 		try
 		{
 			string authMeUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/me");
-			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
-			req.Headers.Authorization = new AuthenticationHeaderValue(
-				"Bearer",
-				NormalizeToken(Token)
-			);
 
+			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
 			using HttpResponseMessage msg = await _client.SendAsync(req);
+			
 			string body = await msg.Content.ReadAsStringAsync();
 
 			if (!msg.IsSuccessStatusCode)
