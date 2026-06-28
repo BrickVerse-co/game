@@ -19,6 +19,18 @@ public struct CreatorAuthResponse
 	public int? PlaceID { get; set; }
 }
 
+public struct CreatorGuildItem
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("canEditWorlds")]
+	public bool CanEditWorlds { get; set; }
+}
+
 public struct CreatorPlaceItem
 {
 	[JsonPropertyName("id")]
@@ -45,8 +57,33 @@ public struct CreatorPlaceItem
 
 public struct CreatorPublishResponse
 {
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
 	[JsonPropertyName("link")]
 	public string Link { get; set; }
+
+	[JsonPropertyName("worldId")]
+	public int WorldId { get; set; }
+
+	[JsonPropertyName("universeId")]
+	public int UniverseId { get; set; }
+}
+
+public sealed class CreatorGuildsResponse
+{
+	public CreatorGuildItem[] Guilds { get; set; } = [];
+	public PaginationInfo Pagination { get; set; } = new();
+}
+
+public sealed class PaginationInfo
+{
+	public int Page { get; set; }
+	public int Limit { get; set; }
+	public int Total { get; set; }
+	public int TotalPages { get; set; }
+	public bool HasNextPage { get; set; }
+	public bool HasPreviousPage { get; set; }
 }
 
 [JsonSerializable(typeof(CreatorPublishResponse))]

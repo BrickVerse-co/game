@@ -11,7 +11,6 @@ using BrickVerse.Datamodel;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
-using BrickVerse.Datamodel.Creator;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -117,11 +116,7 @@ public partial class PublishPopup : PopupWindowBase
 	private async void Publish(int id = 0, int? worldId = null, int? universeId = null)
 	{
 		QueueFree();
-		if (Target is World game)
-		{
-			await PublishManager.PublishProject(game.LinkedSession.ProjectFolderPath, worldId.Value, universeId.Value);
-		}
-		else if (Target is ServerScript script)
+		 if (Target is ServerScript script)
 		{
 			//await PublishManager.PublishAddon(script, id);
 		}

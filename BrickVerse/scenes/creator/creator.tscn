@@ -39,6 +39,7 @@
 [ext_resource type="PackedScene" uid="uid://msq1k3h4a75p" path="res://scenes/creator/wizard/new_project/new_project.tscn" id="31_87ukk"]
 [ext_resource type="PackedScene" uid="uid://cvxoyotxeotax" path="res://scenes/creator/docks/explorer/explorer.tscn" id="32_4fw2t"]
 [ext_resource type="PackedScene" uid="uid://duq8icfg2fwo0" path="res://scenes/creator/docks/properties/properties.tscn" id="34_bc04q"]
+[ext_resource type="Texture2D" uid="uid://dwqjb7jgqqk0v" path="res://assets/textures/logo/light_long.png" id="37_raaus"]
 [ext_resource type="PackedScene" uid="uid://dccewf7osrg82" path="res://scenes/creator/popups/search/search.tscn" id="38_ce354"]
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
@@ -979,6 +980,8 @@ custom_minimum_size = Vector2(0, 420)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 200.0
+offset_bottom = 428.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = SubResource("Theme_byekl")
@@ -1236,7 +1239,7 @@ mouse_filter = 2
 theme = SubResource("Theme_4t7x2")
 script = ExtResource("26_xdd36")
 _titleLabel = NodePath("Labels/Status")
-_versionLabel = NodePath("Labels/Version")
+_versionLabel = NodePath("")
 
 [node name="Labels" type="HBoxContainer" parent="GUI/Footer" unique_id=1074160864]
 layout_mode = 2
@@ -1249,12 +1252,11 @@ vertical_alignment = 1
 text_overrun_behavior = 3
 max_lines_visible = 1
 
-[node name="Version" type="Label" parent="GUI/Footer/Labels" unique_id=2133269996]
-layout_mode = 2
-text = "BrickVerse Creator v2.0.0"
-horizontal_alignment = 2
-vertical_alignment = 1
-max_lines_visible = 1
+[node name="LightLong" type="Sprite2D" parent="GUI/Footer" unique_id=478732043]
+modulate = Color(1, 1, 1, 0.078431375)
+position = Vector2(1094, 11.999997)
+scale = Vector2(0.06784158, 0.07012199)
+texture = ExtResource("37_raaus")
 
 [node name="ColorPicker" type="PanelContainer" parent="GUI" unique_id=1902970917]
 visible = false

@@ -1,0 +1,277 @@
+[gd_scene format=3 uid="uid://c7gpad5ny8xs3"]
+
+[ext_resource type="Script" uid="uid://cvafc8lirvt2n" path="res://scripts/creator/ui/popups/PublishPlaceModal.cs" id="1_22p0f"]
+[ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1_bt5w7"]
+[ext_resource type="FontFile" uid="uid://clwbylh8y2lf2" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2_22p0f"]
+
+[sub_resource type="StyleBoxFlat" id="OverlayBg"]
+bg_color = Color(0, 0, 0, 0.58)
+
+[sub_resource type="StyleBoxFlat" id="ModalBg"]
+bg_color = Color(0.105, 0.105, 0.11, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="FieldBg"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.055, 0.055, 0.06, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.15)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SegmentBg"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 0.075)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SegmentPressed"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0, 0.592, 1, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 3
+border_color = Color(0, 0.45, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SecondaryBtn"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 0.09)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="PrimaryBtn"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0, 0.592, 1, 1)
+border_width_bottom = 4
+border_color = Color(0, 0.47, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PublishPlaceModal" type="Panel" unique_id=1516226931]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("OverlayBg")
+script = ExtResource("1_22p0f")
+
+[node name="Modal" type="Panel" parent="." unique_id=965128555]
+custom_minimum_size = Vector2(560, 500)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -250.0
+offset_right = 280.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("ModalBg")
+
+[node name="Header" type="HBoxContainer" parent="Modal" unique_id=862203220]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = 56.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="SpacerLeft" type="Control" parent="Modal/Header" unique_id=210090312]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Modal/Header" unique_id=1369472529]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 22
+text = "Publish World"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="Modal/Header" unique_id=1358930394]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "×"
+flat = true
+
+[node name="Body" type="VBoxContainer" parent="Modal" unique_id=616669740]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 88.0
+offset_right = -32.0
+offset_bottom = -84.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="NameLabel" type="Label" parent="Modal/Body" unique_id=1532304448]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 16
+text = "World Name"
+
+[node name="PlaceName" type="LineEdit" parent="Modal/Body" unique_id=1814692619]
+layout_mode = 2
+theme_override_styles/normal = SubResource("FieldBg")
+placeholder_text = "My Awesome Level"
+max_length = 64
+
+[node name="UniverseLabel" type="Label" parent="Modal/Body" unique_id=778209538]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 16
+text = "Universe Name"
+
+[node name="UniverseName" type="LineEdit" parent="Modal/Body" unique_id=1656479556]
+layout_mode = 2
+theme_override_styles/normal = SubResource("FieldBg")
+placeholder_text = "My Awesome Place"
+max_length = 64
+
+[node name="DescriptionLabel" type="Label" parent="Modal/Body" unique_id=2115532380]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 16
+text = "Universe Description"
+
+[node name="Description" type="TextEdit" parent="Modal/Body" unique_id=1134158449]
+custom_minimum_size = Vector2(0, 115)
+layout_mode = 2
+theme_override_styles/normal = SubResource("FieldBg")
+placeholder_text = "Tell players what this place is about..."
+wrap_mode = 1
+
+[node name="PublishAsLabel" type="Label" parent="Modal/Body" unique_id=1828265531]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 16
+text = "Publish as"
+
+[node name="Ownership" type="HBoxContainer" parent="Modal/Body" unique_id=1262941691]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Personal" type="Button" parent="Modal/Body/Ownership" unique_id=844129733]
+custom_minimum_size = Vector2(130, 42)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_styles/normal = SubResource("SegmentBg")
+theme_override_styles/pressed = SubResource("SegmentPressed")
+theme_override_styles/hover = SubResource("SegmentBg")
+toggle_mode = true
+button_pressed = true
+text = "My account"
+
+[node name="Guild" type="Button" parent="Modal/Body/Ownership" unique_id=1313892143]
+custom_minimum_size = Vector2(100, 42)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_styles/normal = SubResource("SegmentBg")
+theme_override_styles/pressed = SubResource("SegmentPressed")
+theme_override_styles/hover = SubResource("SegmentBg")
+toggle_mode = true
+text = "Guild"
+
+[node name="GuildDropdown" type="OptionButton" parent="Modal/Body" unique_id=777477083]
+visible = false
+layout_mode = 2
+theme_override_styles/normal = SubResource("FieldBg")
+
+[node name="ErrorLabel" type="Label" parent="Modal/Body" unique_id=683396683]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.32, 0.32, 1)
+autowrap_mode = 3
+
+[node name="Loader" type="Label" parent="Modal/Body" unique_id=2005343369]
+visible = false
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_22p0f")
+theme_override_font_sizes/font_size = 13
+text = "Publishing..."
+horizontal_alignment = 1
+
+[node name="Footer" type="HBoxContainer" parent="Modal" unique_id=388472964]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -64.0
+offset_right = -32.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="Cancel" type="Button" parent="Modal/Footer" unique_id=450913585]
+custom_minimum_size = Vector2(100, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("SecondaryBtn")
+text = "Cancel"
+
+[node name="Publish" type="Button" parent="Modal/Footer" unique_id=39492356]
+custom_minimum_size = Vector2(110, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_styles/normal = SubResource("PrimaryBtn")
+text = "Publish"

@@ -310,7 +310,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static async void PackCurrentProject()
 	{
 		if (World.Current == null) { PT.Print("No current game opened, did not save"); return; }
-		string? exportPath = ProjectSettings.GlobalizePath("res://test.ptpacked");
+		string? exportPath = ProjectSettings.GlobalizePath("res://test.packed");
 
 		await PackedFormat.PackProjectToFile(World.Current.LinkedSession.ProjectFolderPath, exportPath);
 		Interface.StatusBar?.SetStatus("Packed to " + exportPath);

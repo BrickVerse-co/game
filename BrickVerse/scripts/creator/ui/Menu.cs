@@ -141,7 +141,17 @@ public sealed partial class Menu : PanelContainer
 					Pressed = async () => {
 						if (World.Current != null)
 						{
-							CreatorService.Interface.OpenPublish(World.Current);
+							CreatorService.Interface.OpenWorldPublish(World.Current);
+						}
+					}
+				},
+				new MenuButtonItem() {
+					Text = "Publish As...",
+					RequireGameOpen = true,
+					Pressed = async () => {
+						if (World.Current != null)
+						{
+							CreatorService.Interface.OpenWorldPublish(World.Current, true);
 						}
 					}
 				},

@@ -179,7 +179,9 @@ public static class BVAPI
 		return new APIPlaceInfo
 		{
 			Id = int.TryParse(info.World.Id, out int worldId) ? worldId : placeID,
+			UniverseId = int.TryParse(info.Universe.Id, out int universeId) ? universeId : 0,
 			Name = info.World.Name,
+			UniverseName = info.Universe.Name,
 			Description = info.Universe.Description,
 			Creator = creator,
 			Thumbnail = "",

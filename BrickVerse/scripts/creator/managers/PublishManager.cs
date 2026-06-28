@@ -6,14 +6,12 @@ using Godot;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Creator.Settings;
-using BrickVerse.Creator.Managers;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Formats;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.Managers;
@@ -22,26 +20,7 @@ public static class PublishManager
 {
 	public static async Task PublishProject(string projectPath, int universeId = 0, int worldId = 0)
 	{
-		var loadOverlay = CreatorService.Interface.LoadOverlay;
-		try
-		{
-			var metadata = PackedFormat.ReadProjectMetadata(File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName)));
-			var packed = await PackedFormat.PackProject(projectPath, loadOverlay.CreateProgressReporter("Publishing world"));
-
-			loadOverlay?.SetStatus("Uploading now...");
-			CreatorPublishResponse publishRes = await CreatorAPI.UploadWorld(packed, universeId, worldId);
-
-			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
-				OS.ShellOpen(publishRes.Link);
-			CreatorService.Interface.StatusBar?.SetStatus("World published");
-			loadOverlay?.Hide();
-		}
-		catch (Exception ex)
-		{
-			PT.PrintErr(ex);
-			CreatorService.Interface.PopupAlert(ex.Message);
-			loadOverlay?.Hide();
-		}
+		throw new Exception("PublishProject is deprecated. Use PublishPlaceModal instead.");
 	}
 
 	public static async Task PublishModel(Instance target, int modelID = 0)

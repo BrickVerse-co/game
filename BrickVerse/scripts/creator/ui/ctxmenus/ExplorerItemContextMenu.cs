@@ -150,6 +150,12 @@ public partial class ExplorerItemContextMenu : ContextMenu
 				}
 			case 39: // Publish
 				{
+					if (Target is World)
+					{
+						CreatorService.Interface.OpenWorldPublish((World)Target);
+						return;
+					}
+
 					CreatorService.Interface.OpenPublish(Target!);
 					break;
 				}

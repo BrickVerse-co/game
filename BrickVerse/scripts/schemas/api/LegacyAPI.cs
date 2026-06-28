@@ -697,8 +697,14 @@ public struct APIPlaceInfo
 	[JsonPropertyName("id")]
 	public int Id { get; set; }
 
+	[JsonPropertyName("universeId")]
+	public int UniverseId { get; set; }
+
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
+
+	[JsonPropertyName("universeName")]
+	public string UniverseName { get; set; }
 
 	[JsonPropertyName("description")]
 	public string Description { get; set; }

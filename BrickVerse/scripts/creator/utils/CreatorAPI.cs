@@ -309,7 +309,7 @@ public static class CreatorAPI
 
 			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
 			using HttpResponseMessage msg = await _client.SendAsync(req);
-			
+
 			string body = await msg.Content.ReadAsStringAsync();
 
 			if (!msg.IsSuccessStatusCode)
@@ -536,6 +536,78 @@ public static class CreatorAPI
 		ToolbarIdentityUpdated?.Invoke(null);
 	}
 
+	public static async Task<CreatorGuildItem[]> GetUserGuilds(bool limitToEditable = true)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+		const int limit = 25;
+
+		List<CreatorGuildItem> allGuilds = [];
+
+		int page = 1;
+		int pages = 1;
+
+		do
+		{
+			List<string> query = [
+				$"page={page}",
+			$"limit={limit}"
+			];
+
+			if (limitToEditable)
+				query.Add("editableOnly=true");
+
+			string guildsUrl =
+				Globals.ApiEndpoint.PathJoin($"/v3/social/guilds/user/{UserID}") +
+				"?" +
+				string.Join("&", query);
+
+			using HttpResponseMessage msg = await _client.GetAsync(guildsUrl);
+			msg.EnsureSuccessStatusCode();
+
+			using JsonDocument doc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+
+			bool success =
+				doc.RootElement.TryGetProperty("success", out JsonElement successNode)
+				&& successNode.ValueKind == JsonValueKind.True;
+
+			if (!success)
+				break;
+
+			if (
+				doc.RootElement.TryGetProperty("guilds", out JsonElement guildsNode)
+				&& guildsNode.ValueKind == JsonValueKind.Array
+			)
+			{
+				foreach (JsonElement guild in guildsNode.EnumerateArray())
+				{
+					allGuilds.Add(new CreatorGuildItem
+					{
+						Id = GetString(guild, "id"),
+						Name = GetString(guild, "name"),
+						CanEditWorlds = GetBool(guild, "canEditWorlds"),
+					});
+				}
+			}
+
+			if (
+				doc.RootElement.TryGetProperty("pagination", out JsonElement paginationNode)
+				&& paginationNode.ValueKind == JsonValueKind.Object
+			)
+			{
+				int nextPages = GetInt(paginationNode, "pages");
+
+				if (nextPages > 0)
+					pages = nextPages;
+			}
+
+			page++;
+		}
+		while (page <= pages);
+
+		return [.. allGuilds];
+	}
 	public static async Task<CreatorPlaceItem[]> GetPublishedWorlds()
 	{
 		if (!IsUserAuthenticated)
@@ -618,44 +690,69 @@ public static class CreatorAPI
 		return [.. worlds];
 	}
 
-	// <summary>
-	// Uploads a world to the BrickVerse API. If placeID is provided, it will update the existing world; otherwise, it will create a new world.
-	// </summary>
-	// <param name="placeData">The packed world data to upload.</param>
-	// <param name="universeId">The ID of the universe to upload the world to. If 0, a new universe will be created.</param>
-	// <param name="worldId">The ID of the existing world to update. If 0, a new world will be created.</param>
-	// <returns>A <see cref="CreatorPublishResponse"/> containing the link to the published world.</returns>
 	public static async Task<CreatorPublishResponse> UploadWorld(
-		byte[] placeData,
-		int universeId = 0,
-		int worldId = 0
-	)
+	byte[] placeData,
+	int? universeId = 0,
+	int? worldId = 0,
+	bool publish = true,
+	string? creationOwnerId = null,
+	string? creationOwnerType = "USER"
+)
 	{
-		// Check if the user is authenticated before proceeding with the upload.
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
 		using MultipartFormDataContent form = new()
-		{
-			{ new StringContent(universeId.ToString()), "universeId" },
-			{ new StringContent(worldId.ToString()), "worldId" },
-			{ new StringContent("true"), "publish" },
-		};
+	{
+		{ new StringContent((universeId ?? 0).ToString()), "universeId" },
+		{ new StringContent((worldId ?? 0).ToString()), "worldId" },
+		{ new StringContent(publish.ToString().ToLowerInvariant()), "publish" },
+	};
 
 		ByteArrayContent fileContent = new(placeData);
 		fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		form.Add(fileContent, "file", "level.ptpacked");
+		form.Add(fileContent, "file", "level.packed");
 
-		using HttpResponseMessage msg = await _client.PutAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree"),
-			form
-		);
+		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
+
+		// If we are creating a new universe we must provide the owner of the new universe.
+		if (universeId == 0)
+		{
+			url += $"?ownerId={Uri.EscapeDataString(creationOwnerId ?? UserID)}" +
+				   $"&ownerType={Uri.EscapeDataString(creationOwnerType ?? "USER")}";
+		}
+
+		using HttpResponseMessage msg = await _client.PutAsync(url, form);
+		string responseText = await msg.Content.ReadAsStringAsync();
 
 		msg.EnsureSuccessStatusCode();
 
+		using JsonDocument doc = JsonDocument.Parse(responseText);
+
+		JsonElement root = doc.RootElement;
+
+		bool success =
+			root.TryGetProperty("success", out JsonElement successNode)
+			&& successNode.ValueKind == JsonValueKind.True;
+
+		string nextWorldId =
+			GetString(root, "worldId");
+
+		string nextUniverseId =
+			GetString(root, "universeId");
+
+		if (string.IsNullOrWhiteSpace(nextWorldId))
+			nextWorldId = (worldId ?? 0).ToString();
+
+		if (string.IsNullOrWhiteSpace(nextUniverseId))
+			nextUniverseId = (universeId ?? 0).ToString();
+
 		return new CreatorPublishResponse
 		{
-			Link = Globals.MainEndpoint.PathJoin("/world/" + worldId),
+			Success = success,
+			WorldId = int.Parse(nextWorldId),
+			UniverseId = int.Parse(nextUniverseId),
+			Link = Globals.MainEndpoint.PathJoin("/world/" + nextWorldId),
 		};
 	}
 

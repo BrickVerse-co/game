@@ -49,7 +49,11 @@ public sealed partial class World : Instance
 
 	private const int ServerHighLoadThreshold = 10;
 	private static World? _current;
+	private int _universeID = 0;
 	private int _worldID = 0;
+	private string _worldName = "";
+	private string _universeName = "";
+	private string _universeDescription = "";
 	private bool _serverUnderLoad = false;
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<NetworkedObject?>> _pendingRequests = [];
 	private readonly ConcurrentDictionary<string, TaskCompletionSource<NetworkedObject?>> _pendingReadyRequests = [];
@@ -181,6 +185,29 @@ public sealed partial class World : Instance
 			}
 		}
 	}
+
+	[ScriptProperty]
+	public int UniverseID
+	{
+		get => _universeID;
+		internal set
+		{
+			_universeID = value;
+			if (_universeID != 0)
+			{
+				FetchWorldInfo();
+			}
+		}
+	}
+	
+	[ScriptProperty]
+	public string WorldName {get => _worldName; internal set { _worldName = value; OnPropertyChanged(); } }
+
+	[ScriptProperty]
+	public string UniverseName {get => _universeName; internal set { _universeName = value; OnPropertyChanged(); } }
+
+	[ScriptProperty]
+	public string UniverseDescription {get => _universeDescription; internal set { _universeDescription = value; OnPropertyChanged(); } }
 
 	[ScriptProperty]
 	public int ServerID { get; internal set; }
@@ -504,16 +531,34 @@ public sealed partial class World : Instance
 		}).CallDeferred();
 	}
 
-	private async void FetchWorldInfo()
+	private async void FetchWorldInfo(bool forceRefresh = false)
 	{
+		// We need the World ID to fetch the world info, so if it's not set yet, we can't proceed
+		if (WorldID == 0)
+		{
+			return;
+		}
+
+		if (!forceRefresh && WorldInfo != null && WorldInfo.Value.Id == WorldID)
+		{
+			// Already fetched, no need to fetch again
+			return;
+		}
+
 		WorldInfo = await BVAPI.GetWorldFromID(WorldID);
 		if (WorldInfo.HasValue)
 		{
 			// Set Window title to game name
 			DisplayServer.WindowSetTitle($"{TitleEllipsis(WorldInfo.Value.Name, 50)} - BrickVerse v{Globals.AppVersion}");
-
 			WorldInfoReady?.Invoke(WorldInfo.Value);
+
+			// Update world properties
+			UniverseID = WorldInfo.Value.UniverseId;
+			WorldName = WorldInfo.Value.Name;
+			UniverseName = WorldInfo.Value.UniverseName;
+			UniverseDescription = WorldInfo.Value.Description;
 		}
+		
 		WorldMedia = await BVAPI.GetWorldMedia(WorldID);
 		if (WorldMedia != null && WorldMedia.Length != 0)
 		{
