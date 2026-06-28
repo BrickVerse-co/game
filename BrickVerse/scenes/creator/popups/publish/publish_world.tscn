@@ -1,10 +1,9 @@
-[gd_scene format=3 uid="uid://dtv4sld73pg28"]
+[gd_scene format=3 uid="uid://c7gpad5ny8xs3"]
 
 [ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1_bt5w7"]
+[ext_resource type="Theme" uid="uid://2f3k1nh6p5ac" path="res://resources/themes/hud.tres" id="1_jjpyp"]
 [ext_resource type="FontFile" uid="uid://clwbylh8y2lf2" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2_22p0f"]
-
-[sub_resource type="StyleBoxFlat" id="OverlayBg"]
-bg_color = Color(0, 0, 0, 0.58)
+[ext_resource type="Script" uid="uid://dcoo3smlmrhwj" path="res://scripts/creator/ui/popups/publish/PublishPlaceModal.cs" id="2_jjpyp"]
 
 [sub_resource type="StyleBoxFlat" id="ModalBg"]
 bg_color = Color(0.105, 0.105, 0.11, 1)
@@ -90,26 +89,24 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="PublishPlaceModal" type="Panel" unique_id=1516226931]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("OverlayBg")
+[node name="PublishPlaceModal" type="Window" unique_id=1516226931]
+oversampling_override = 1.0
+title = "Publish World"
+position = Vector2i(0, 36)
+size = Vector2i(560, 500)
+exclusive = true
+unresizable = true
+borderless = true
+popup_window = true
+min_size = Vector2i(560, 500)
+theme = ExtResource("1_jjpyp")
+script = ExtResource("2_jjpyp")
 
 [node name="Modal" type="Panel" parent="." unique_id=965128555]
 custom_minimum_size = Vector2(560, 500)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -250.0
-offset_right = 280.0
-offset_bottom = 250.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("ModalBg")
@@ -134,7 +131,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_font_sizes/font_size = 22
-text = "Publish Place"
+text = "Publish World"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -162,19 +159,32 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_font_sizes/font_size = 16
-text = "Place name"
+text = "World Name"
 
 [node name="PlaceName" type="LineEdit" parent="Modal/Body" unique_id=1814692619]
+layout_mode = 2
+theme_override_styles/normal = SubResource("FieldBg")
+placeholder_text = "My Awesome Level"
+max_length = 64
+
+[node name="UniverseLabel" type="Label" parent="Modal/Body" unique_id=778209538]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 16
+text = "Universe Name"
+
+[node name="UniverseName" type="LineEdit" parent="Modal/Body" unique_id=1656479556]
 layout_mode = 2
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "My Awesome Place"
 max_length = 64
 
 [node name="DescriptionLabel" type="Label" parent="Modal/Body" unique_id=2115532380]
+visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_font_sizes/font_size = 16
-text = "Description"
+text = "Universe Description"
 
 [node name="Description" type="TextEdit" parent="Modal/Body" unique_id=1134158449]
 custom_minimum_size = Vector2(0, 115)
@@ -232,20 +242,6 @@ theme_override_fonts/font = ExtResource("2_22p0f")
 theme_override_font_sizes/font_size = 13
 text = "Publishing..."
 horizontal_alignment = 1
-
-[node name="ProgressWrap" type="VBoxContainer" parent="Modal/Body" unique_id=424528619]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="ProgressText" type="Label" parent="Modal/Body/ProgressWrap" unique_id=2064036098]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_22p0f")
-theme_override_font_sizes/font_size = 13
-text = "Uploading..."
-
-[node name="UploadProgress" type="ProgressBar" parent="Modal/Body/ProgressWrap" unique_id=83196530]
-layout_mode = 2
 
 [node name="Footer" type="HBoxContainer" parent="Modal" unique_id=388472964]
 layout_mode = 1

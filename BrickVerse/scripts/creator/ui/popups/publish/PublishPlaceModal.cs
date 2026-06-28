@@ -1,24 +1,24 @@
 // (c) 2026 Meta Games LLC. All Rights Reserved.
 
 using Godot;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
-using BrickVerse.Creator.UI;
-using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Formats;
-using System.Linq;
-using System.IO;
-using System.Threading.Tasks;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public partial class PublishPlaceModal : PopupWindowBase
 {
+	private static readonly Vector2I WindowSize = new(560, 500);
+
 	public enum PublishOwnerType
 	{
 		User,
@@ -55,14 +55,23 @@ public partial class PublishPlaceModal : PopupWindowBase
 	[Export] private Button _publishButton = null!;
 	[Export] private Button _cancelButton = null!;
 	[Export] private Label _errorLabel = null!;
+	[Export] private Label? _loaderLabel;
 
-	private World? world = null;
-
+	private World? world;
 	private readonly List<PublishGuildOption> _guilds = [];
 	private bool _isBusy;
 
 	public override void _Ready()
 	{
+		PT.Print("PublishPlaceModal _Ready called.");
+
+		base._Ready();
+		ResolveNodeReferences();
+
+		Size = WindowSize;
+		MinSize = WindowSize;
+		CloseRequested += Close;
+
 		_closeButton.Pressed += Close;
 		_cancelButton.Pressed += Close;
 		_publishButton.Pressed += Submit;
@@ -70,19 +79,15 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_ownerOption.Pressed += () => SetOwnerType(PublishOwnerType.User);
 		_guildOption.Pressed += () => SetOwnerType(PublishOwnerType.Guild);
 
-		SetOwnerType(PublishOwnerType.User);
-		SetBusy(false);
-		HideError();
-
-		PublishRequested += async (request) =>
+		PublishRequested += async request =>
 		{
-			if (this.world == null)
+			if (world == null)
 			{
 				ShowPublishError("Failed to publish: world data is missing.");
 				return;
 			}
 
-			string projectPath = this.world.LinkedSession.ProjectFolderPath;
+			string projectPath = world.LinkedSession.ProjectFolderPath;
 
 			if (!Directory.Exists(projectPath))
 			{
@@ -94,7 +99,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 			try
 			{
-				var metadata = PackedFormat.ReadProjectMetadata(File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName)));
+				PackedFormat.ReadProjectMetadata(File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName)));
 				var packed = await PackedFormat.PackProject(projectPath, loadOverlay.CreateProgressReporter("Publishing world"));
 
 				loadOverlay?.SetStatus("Uploading now...");
@@ -102,8 +107,11 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 				if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 					OS.ShellOpen(publishRes.Link);
+
 				CreatorService.Interface.StatusBar?.SetStatus("World published");
 				loadOverlay?.Hide();
+				SetBusy(false);
+				Close();
 			}
 			catch (Exception ex)
 			{
@@ -117,29 +125,34 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 	public async void Open(World world, bool publishAs = false)
 	{
-		// Load default world info
-		_placeNameInput.Text = world.WorldName ?? "";
-		_universeNameInput.Text = world.UniverseName ?? "";
-		_descriptionInput.Text = world.UniverseDescription ?? "";
+		if (world == null)
+		{
+			PT.PrintErr("Cannot open PublishPlaceModal: world is null.");
+			return;
+		}
+
+		PT.Print($"Opening PublishPlaceModal for world: {world.WorldName}, Universe: {world.UniverseName}, PublishAs: {publishAs}");
+
 		this.world = world;
 
-		// Fetch authenticated user's guilds and set the dropdown
+		_placeNameInput.Text = world.WorldName ?? "A cool planet";
+		_universeNameInput.Text = world.UniverseName ?? "The Universe";
+		_descriptionInput.Text = world.UniverseDescription ?? "A description of the universe.";
+
 		CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(limitToEditable: true);
 		SetGuilds(
-			creatorGuildItems
-				.Select(g => new PublishGuildOption
-				{
-					Id = g.Id,
-					Name = g.Name
-				})
+			creatorGuildItems.Select(g => new PublishGuildOption
+			{
+				Id = g.Id,
+				Name = g.Name
+			})
 		);
 
-		// Reset UI
 		HideError();
 		SetBusy(false);
 		SetOwnerType(PublishOwnerType.User);
 
-		Show();
+		PopupCentered(WindowSize);
 		_placeNameInput.GrabFocus();
 	}
 
@@ -150,7 +163,6 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 		Hide();
 		Closed?.Invoke();
-		QueueFree();
 	}
 
 	public void SetGuilds(IEnumerable<PublishGuildOption> guilds)
@@ -185,6 +197,9 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_descriptionInput.Editable = !busy;
 		_ownerOption.Disabled = busy;
 		_guildOption.Disabled = busy;
+
+		if (_loaderLabel != null)
+			_loaderLabel.Visible = busy;
 
 		RefreshGuildState();
 	}
@@ -289,17 +304,32 @@ public partial class PublishPlaceModal : PopupWindowBase
 			guildId = _guilds[selected].Id;
 		}
 
-		var request = new PublishPlaceRequest
+		SetBusy(true);
+
+		PublishRequested?.Invoke(new PublishPlaceRequest
 		{
 			WorldName = worldName,
 			UniverseName = universeName,
 			UniverseDescription = universeDescription,
 			OwnerType = publishToGuild ? PublishOwnerType.Guild : PublishOwnerType.User,
 			GuildId = guildId,
-			UniverseId = this.world?.UniverseID ?? 0,
-			WorldId = this.world?.WorldID ?? 0
-		};
+			UniverseId = world?.UniverseID ?? 0,
+			WorldId = world?.WorldID ?? 0
+		});
+	}
 
-		PublishRequested?.Invoke(request);
+	private void ResolveNodeReferences()
+	{
+		_closeButton ??= GetNode<Button>("Modal/Header/Close");
+		_universeNameInput ??= GetNode<LineEdit>("Modal/Body/UniverseName");
+		_placeNameInput ??= GetNode<LineEdit>("Modal/Body/PlaceName");
+		_descriptionInput ??= GetNode<TextEdit>("Modal/Body/Description");
+		_ownerOption ??= GetNode<Button>("Modal/Body/Ownership/Personal");
+		_guildOption ??= GetNode<Button>("Modal/Body/Ownership/Guild");
+		_guildDropdown ??= GetNode<OptionButton>("Modal/Body/GuildDropdown");
+		_publishButton ??= GetNode<Button>("Modal/Footer/Publish");
+		_cancelButton ??= GetNode<Button>("Modal/Footer/Cancel");
+		_errorLabel ??= GetNode<Label>("Modal/Body/ErrorLabel");
+		_loaderLabel ??= GetNodeOrNull<Label>("Modal/Body/Loader");
 	}
 }

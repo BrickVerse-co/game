@@ -142,6 +142,8 @@ public sealed partial class Menu : PanelContainer
 						if (World.Current != null)
 						{
 							CreatorService.Interface.OpenWorldPublish(World.Current);
+						} else {
+							CreatorService.Interface.PopupAlert("No world is currently open to publish.");
 						}
 					}
 				},
@@ -152,6 +154,8 @@ public sealed partial class Menu : PanelContainer
 						if (World.Current != null)
 						{
 							CreatorService.Interface.OpenWorldPublish(World.Current, true);
+						} else {
+							CreatorService.Interface.PopupAlert("No world is currently open to publish.");
 						}
 					}
 				},
