@@ -1,11 +1,11 @@
 [gd_resource type="FontVariation" format=3 uid="uid://c4ad5x0dhckrv"]
 
-[ext_resource type="FontFile" uid="uid://bigdiy2cvhoyc" path="res://assets/fonts/montserrat.ttf" id="1_udeu7"]
+[ext_resource type="FontFile" uid="uid://brlqij14aeyxy" path="res://assets/fonts/Montserrat-Medium.ttf" id="1_2br3k"]
 [ext_resource type="FontFile" uid="uid://dfgxvtudg1ot4" path="res://assets/fonts/emoji/twemoji.ttf" id="2_2br3k"]
 
 [resource]
 fallbacks = Array[Font]([ExtResource("2_2br3k")])
-base_font = ExtResource("1_udeu7")
+base_font = ExtResource("1_2br3k")
 variation_opentype = {
 0: 1
 }
