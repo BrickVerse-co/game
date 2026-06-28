@@ -50,7 +50,17 @@ public partial class BVHttpClient
 						List<string> headers = [];
 
 						foreach ((string k, string v) in DefaultRequestHeaders)
+						{
+							if (
+								k.Equals("Authorization", StringComparison.OrdinalIgnoreCase)
+								&& msg.Headers.Authorization != null
+							)
+							{
+								continue;
+							}
+
 							headers.Add($"{k}: {v}");
+						}
 
 						foreach (var item in msg.Headers)
 							headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
@@ -64,6 +74,8 @@ public partial class BVHttpClient
 
 								headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
 							}
+
+							headers.Add($"Content-Length: {body.Length}");
 						}
 
 						PT.Print("=== BVHttpClient Request ===");

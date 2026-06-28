@@ -102,9 +102,13 @@ public static class CreatorAPI
 		Token = NormalizeToken(token);
 
 		_client.DefaultRequestHeaders.Remove("Authorization");
+		_client.DefaultRequestHeaders.Remove("Cookie");
 
 		if (!string.IsNullOrWhiteSpace(Token))
+		{
 			_client.DefaultRequestHeaders["Authorization"] = "Bearer " + Token;
+			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(Token);
+		}
 	}
 
 	public static async Task PromptLogin()
@@ -167,6 +171,10 @@ public static class CreatorAPI
 
 		string tokenEndpoint = GetString(root, "token_endpoint");
 		string userInfoEndpoint = GetString(root, "userinfo_endpoint");
+		Uri apiBaseUri = new(Globals.ApiEndpoint);
+		Uri? discoveredUserInfoUri = Uri.TryCreate(userInfoEndpoint, UriKind.Absolute, out Uri? parsedUserInfo)
+			? parsedUserInfo
+			: null;
 
 		if (string.IsNullOrWhiteSpace(tokenEndpoint))
 			throw new InvalidOperationException(
@@ -178,11 +186,38 @@ public static class CreatorAPI
 				"OpenID discovery response did not include userinfo_endpoint."
 			);
 
+		string resolvedUserInfoEndpoint = Globals.ApiEndpoint.PathJoin(UserInfoPath);
+
+		if (
+			discoveredUserInfoUri != null
+			&& string.Equals(
+				discoveredUserInfoUri.Scheme,
+				apiBaseUri.Scheme,
+				StringComparison.OrdinalIgnoreCase
+			)
+			&& string.Equals(
+				discoveredUserInfoUri.Host,
+				apiBaseUri.Host,
+				StringComparison.OrdinalIgnoreCase
+			)
+			&& discoveredUserInfoUri.Port == apiBaseUri.Port
+		)
+		{
+			resolvedUserInfoEndpoint = userInfoEndpoint;
+		}
+		else
+		{
+			PT.Print(
+				"CreatorAPI: discovery userinfo endpoint does not match local API, using local endpoint instead: "
+				+ resolvedUserInfoEndpoint
+			);
+		}
+
 		return new OpenIdConfig
 		{
 			AuthorizationEndpoint = GetString(root, "authorization_endpoint"),
 			TokenEndpoint = tokenEndpoint,
-			UserInfoEndpoint = userInfoEndpoint,
+			UserInfoEndpoint = resolvedUserInfoEndpoint,
 		};
 	}
 
@@ -209,7 +244,6 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(accessToken))
 			throw new ArgumentException("Access token cannot be empty.", nameof(session));
 
-		SetToken(accessToken);
 		OpenIdUserInfoResponse userInfo;
 
 		if (!string.IsNullOrWhiteSpace(session.IdToken))
@@ -226,6 +260,8 @@ public static class CreatorAPI
 			throw new InvalidOperationException(
 				"OpenID response did not include a valid subject and username."
 			);
+
+		SetToken(accessToken);
 
 		if (saveToken)
 			SaveStoredSession(
@@ -280,6 +316,7 @@ public static class CreatorAPI
 			);
 
 		using HttpRequestMessage req = new(HttpMethod.Get, oidc.UserInfoEndpoint);
+		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 		using HttpResponseMessage msg = await _client.SendAsync(req);
 
 		string body = await msg.Content.ReadAsStringAsync();
@@ -692,9 +729,7 @@ public static class CreatorAPI
 
 	private static StringContent FormString(string value)
 	{
-		StringContent content = new(value, Encoding.UTF8);
-		content.Headers.ContentType = null;
-		return content;
+		return new StringContent(value, Encoding.UTF8, "text/plain");
 	}
 
 	private static ByteArrayContent FormFile(byte[] data)
