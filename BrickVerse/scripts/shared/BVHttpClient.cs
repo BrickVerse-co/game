@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using Godot;
 #if !USE_NATIVE_HTTP
 using System;
 using System.Net;
@@ -32,79 +32,113 @@ public partial class BVHttpClient
 #if !USE_NATIVE_HTTP
 	public Task<HttpResponseMessage> SendAsync(HttpRequestMessage msg)
 	{
-		// Check nohttp feature flag
-		if (Globals.UseNoHttp) throw new HttpRequestException("Http is disabled via feature flag");
-
-		List<string> headers = [];
-
-		foreach ((string k, string v) in DefaultRequestHeaders)
-		{
-			headers.Add(k + ": " + v);
-		}
-
-		foreach (var item in msg.Headers)
-		{
-			headers.Add(item.Key + ": " + string.Join(", ", item.Value));
-		}
-
-		// Add content headers if present
-		if (msg.Content != null)
-		{
-			foreach (var item in msg.Content.Headers)
-			{
-				headers.Add(item.Key + ": " + string.Join(", ", item.Value));
-			}
-		}
+		if (Globals.UseNoHttp)
+			throw new HttpRequestException("Http is disabled via feature flag");
 
 		TaskCompletionSource<HttpResponseMessage> tcs = new();
 
-		// needs to be callable due to add_child
-		Callable.From(() =>
-		{
-			// Workaround since callable dont support async
-			async void a()
+		Callable
+			.From(() =>
 			{
-				byte[] body = msg.Content != null ? await msg.Content.ReadAsByteArrayAsync() : [];
-
-				HttpRequest req = new() { DownloadChunkSize = DefaultDownloadChunkSize };
-
-				Globals.Singleton.AddChild(req);
-
-				req.RequestCompleted += (result, responseCode, responseHeaders, responseBody) =>
+				async void Run()
 				{
-					HttpResponseMessage response = new((HttpStatusCode)responseCode)
+					try
 					{
-						Content = new ByteArrayContent(responseBody)
-					};
+						byte[] body =
+							msg.Content != null ? await msg.Content.ReadAsByteArrayAsync() : [];
 
-					foreach (string header in responseHeaders)
-					{
-						string[] parts = header.Split(':', 2);
-						if (parts.Length == 2)
+						List<string> headers = [];
+
+						foreach ((string k, string v) in DefaultRequestHeaders)
+							headers.Add($"{k}: {v}");
+
+						foreach (var item in msg.Headers)
+							headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
+
+						if (msg.Content != null)
 						{
-							response.Headers.TryAddWithoutValidation(parts[0].Trim(), parts[1].Trim());
+							foreach (var item in msg.Content.Headers)
+							{
+								if (item.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+									continue;
+
+								headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
+							}
+						}
+
+						PT.Print("=== BVHttpClient Request ===");
+						PT.Print($"URL: {msg.RequestUri}");
+						PT.Print($"Method: {msg.Method}");
+						PT.Print($"Body Length: {body.Length}");
+
+						foreach (string header in headers)
+							PT.Print(header);
+
+						HttpRequest req = new() { DownloadChunkSize = DefaultDownloadChunkSize };
+
+						Globals.Singleton.AddChild(req);
+
+						req.RequestCompleted += (
+							result,
+							responseCode,
+							responseHeaders,
+							responseBody
+						) =>
+						{
+							HttpResponseMessage response = new((HttpStatusCode)responseCode)
+							{
+								Content = new ByteArrayContent(responseBody),
+							};
+
+							foreach (string header in responseHeaders)
+							{
+								string[] parts = header.Split(':', 2);
+
+								if (parts.Length != 2)
+									continue;
+
+								string key = parts[0].Trim();
+								string value = parts[1].Trim();
+
+								if (!response.Headers.TryAddWithoutValidation(key, value))
+									response.Content.Headers.TryAddWithoutValidation(key, value);
+							}
+
+							req.QueueFree();
+							tcs.TrySetResult(response);
+						};
+
+						Godot.HttpClient.Method method = Enum.Parse<Godot.HttpClient.Method>(
+							msg.Method.Method.ToLowerInvariant().Capitalize()
+						);
+
+						string[] headerArray = headers.ToArray();
+						byte[] bodyArray = body;
+
+						Error error = req.RequestRaw(
+							msg.RequestUri?.ToString() ?? throw new InvalidOperationException("URL is null"),
+							headerArray,
+							method,
+							bodyArray
+						);
+						
+						if (error != Error.Ok)
+						{
+							req.QueueFree();
+							tcs.TrySetException(
+								new HttpRequestException($"HttpRequest failed with error: {error}")
+							);
 						}
 					}
-
-					req.QueueFree();
-					tcs.SetResult(response);
-				};
-
-				Error error = req.RequestRaw(
-					msg.RequestUri?.ToString() ?? throw new InvalidOperationException("URL is null"),
-					[.. headers],
-					Enum.Parse<Godot.HttpClient.Method>(msg.Method.Method.ToLower().Capitalize()),
-					new ReadOnlySpan<byte>(body)
-				);
-
-				if (error != Error.Ok)
-				{
-					throw new HttpRequestException($"HttpRequest failed with error: {error}");
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
 				}
-			}
 
-			a();
-		}).CallDeferred();
+				Run();
+			})
+			.CallDeferred();
 
 		return tcs.Task;
 	}
@@ -147,21 +181,22 @@ public partial class BVHttpClient
 
 	public async Task<HttpResponseMessage> PostAsync(string url, HttpContent content)
 	{
-		using HttpRequestMessage msg = new(HttpMethod.Post, url)
-		{
-			Content = content
-		};
+		using HttpRequestMessage msg = new(HttpMethod.Post, url) { Content = content };
 
 		return await SendAsync(msg);
 	}
 
-	public async Task<HttpResponseMessage> PostAsJsonAsync<T>(string url, T value, JsonTypeInfo<T> jsonTypeInfo)
+	public async Task<HttpResponseMessage> PostAsJsonAsync<T>(
+		string url,
+		T value,
+		JsonTypeInfo<T> jsonTypeInfo
+	)
 	{
 		string json = JsonSerializer.Serialize(value, jsonTypeInfo);
 
 		using HttpRequestMessage msg = new(HttpMethod.Post, url)
 		{
-			Content = new StringContent(json, Encoding.UTF8, "application/json")
+			Content = new StringContent(json, Encoding.UTF8, "application/json"),
 		};
 
 		return await SendAsync(msg);
@@ -177,19 +212,20 @@ public partial class BVHttpClient
 
 	public async Task<HttpResponseMessage> PutAsync(string url, HttpContent content)
 	{
-		using HttpRequestMessage msg = new(HttpMethod.Put, url)
-		{
-			Content = content
-		};
+		using HttpRequestMessage msg = new(HttpMethod.Put, url) { Content = content };
 		return await SendAsync(msg);
 	}
 
-	public async Task<HttpResponseMessage> PutAsJsonAsync<T>(string url, T value, JsonTypeInfo<T> jsonTypeInfo)
+	public async Task<HttpResponseMessage> PutAsJsonAsync<T>(
+		string url,
+		T value,
+		JsonTypeInfo<T> jsonTypeInfo
+	)
 	{
 		string json = JsonSerializer.Serialize(value, jsonTypeInfo);
 		using HttpRequestMessage msg = new(HttpMethod.Put, url)
 		{
-			Content = new StringContent(json, Encoding.UTF8, "application/json")
+			Content = new StringContent(json, Encoding.UTF8, "application/json"),
 		};
 		return await SendAsync(msg);
 	}

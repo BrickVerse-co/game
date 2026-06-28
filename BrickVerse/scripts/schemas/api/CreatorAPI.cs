@@ -64,10 +64,10 @@ public struct CreatorPublishResponse
 	public string Link { get; set; }
 
 	[JsonPropertyName("worldId")]
-	public int WorldId { get; set; }
+	public long WorldId { get; set; }
 
 	[JsonPropertyName("universeId")]
-	public int UniverseId { get; set; }
+	public long UniverseId { get; set; }
 }
 
 public sealed class CreatorGuildsResponse

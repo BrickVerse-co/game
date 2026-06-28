@@ -690,68 +690,110 @@ public static class CreatorAPI
 		return [.. worlds];
 	}
 
+	private static StringContent FormString(string value)
+	{
+		StringContent content = new(value, Encoding.UTF8);
+		content.Headers.ContentType = null;
+		return content;
+	}
+
+	private static ByteArrayContent FormFile(byte[] data)
+	{
+		ByteArrayContent content = new(data);
+		content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+		return content;
+	}
+
 	public static async Task<CreatorPublishResponse> UploadWorld(
-	byte[] placeData,
-	int? universeId = 0,
-	int? worldId = 0,
-	bool publish = true,
-	string? creationOwnerId = null,
-	string? creationOwnerType = "USER"
-)
+		byte[] placeData,
+		long? universeId = 0,
+		long? worldId = 0,
+		bool publish = true,
+		string? creationOwnerId = null,
+		string? creationOwnerType = "USER"
+	)
 	{
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		using MultipartFormDataContent form = new()
-	{
-		{ new StringContent((universeId ?? 0).ToString()), "universeId" },
-		{ new StringContent((worldId ?? 0).ToString()), "worldId" },
-		{ new StringContent(publish.ToString().ToLowerInvariant()), "publish" },
-	};
+		long resolvedUniverseId = universeId ?? 0;
+		long resolvedWorldId = worldId ?? 0;
+		bool isNewUniverse = resolvedUniverseId == 0;
 
-		ByteArrayContent fileContent = new(placeData);
-		fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		form.Add(fileContent, "file", "level.packed");
+		using MultipartFormDataContent form = new();
+
+		form.Add(FormString(resolvedUniverseId.ToString()), "universeId");
+		form.Add(FormString(resolvedWorldId.ToString()), "worldId");
+		form.Add(FormString(publish ? "true" : "false"), "publish");
+
+		if (isNewUniverse)
+		{
+			string ownerId = !string.IsNullOrWhiteSpace(creationOwnerId)
+				? creationOwnerId
+				: UserID;
+
+			string ownerType = (creationOwnerType ?? "USER").ToLowerInvariant();
+
+			if (ownerType != "user" && ownerType != "guild")
+				ownerType = "user";
+
+			form.Add(FormString(ownerId), "ownerId");
+			form.Add(FormString(ownerType), "ownerType");
+		}
+
+		form.Add(FormFile(placeData), "file", "level.packed");
 
 		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
 
-		// If we are creating a new universe we must provide the owner of the new universe.
-		if (universeId == 0)
-		{
-			url += $"?ownerId={Uri.EscapeDataString(creationOwnerId ?? UserID)}" +
-				   $"&ownerType={Uri.EscapeDataString(creationOwnerType ?? "USER")}";
-		}
+		PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
+		PT.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
 
-		using HttpResponseMessage msg = await _client.PutAsync(url, form);
+		using HttpResponseMessage msg = await _client.PostAsync(url, form);
 		string responseText = await msg.Content.ReadAsStringAsync();
 
-		msg.EnsureSuccessStatusCode();
+		PT.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
+		PT.Print($"CreatorAPI UploadWorld Response Body: {responseText}");
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			string message = responseText;
+
+			try
+			{
+				using JsonDocument errorDoc = JsonDocument.Parse(responseText);
+				message = GetString(errorDoc.RootElement, "message");
+			}
+			catch
+			{
+				// keep raw responseText
+			}
+
+			throw new HttpRequestException(
+				$"CreatorAPI: Upload world failed: {(int)msg.StatusCode} {msg.StatusCode}: {message}"
+			);
+		}
 
 		using JsonDocument doc = JsonDocument.Parse(responseText);
-
 		JsonElement root = doc.RootElement;
 
 		bool success =
 			root.TryGetProperty("success", out JsonElement successNode)
 			&& successNode.ValueKind == JsonValueKind.True;
 
-		string nextWorldId =
-			GetString(root, "worldId");
-
-		string nextUniverseId =
-			GetString(root, "universeId");
+		string nextWorldId = GetString(root, "worldId");
+		string nextUniverseId = GetString(root, "universeId");
 
 		if (string.IsNullOrWhiteSpace(nextWorldId))
-			nextWorldId = (worldId ?? 0).ToString();
+			nextWorldId = resolvedWorldId.ToString();
 
 		if (string.IsNullOrWhiteSpace(nextUniverseId))
-			nextUniverseId = (universeId ?? 0).ToString();
+			nextUniverseId = resolvedUniverseId.ToString();
 
 		return new CreatorPublishResponse
 		{
 			Success = success,
-			WorldId = int.Parse(nextWorldId),
-			UniverseId = int.Parse(nextUniverseId),
+			WorldId = long.Parse(nextWorldId),
+			UniverseId = long.Parse(nextUniverseId),
 			Link = Globals.MainEndpoint.PathJoin("/world/" + nextWorldId),
 		};
 	}

@@ -33,8 +33,8 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 	public sealed class PublishPlaceRequest
 	{
-		public int? WorldId { get; init; }
-		public int? UniverseId { get; init; }
+		public long? WorldId { get; init; }
+		public long? UniverseId { get; init; }
 		public string WorldName { get; init; } = "";
 		public string UniverseName { get; init; } = "";
 		public string UniverseDescription { get; init; } = "";
@@ -116,7 +116,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				PT.PrintErr($"Failed to publish world: {ex.Message}");
 				CreatorService.Interface.PopupAlert(ex.Message);
 				ShowPublishError("Failed to publish: " + ex.Message);
 				loadOverlay?.Hide();

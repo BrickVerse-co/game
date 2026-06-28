@@ -49,8 +49,8 @@ public sealed partial class World : Instance
 
 	private const int ServerHighLoadThreshold = 10;
 	private static World? _current;
-	private int _universeID = 0;
-	private int _worldID = 0;
+	private long _universeID = 0;
+	private long _worldID = 0;
 	private string _worldName = "";
 	private string _universeName = "";
 	private string _universeDescription = "";
@@ -173,7 +173,7 @@ public sealed partial class World : Instance
 	public readonly ConcurrentDictionary<string, NetworkedObject> Objects = [];
 
 	[ScriptProperty, ScriptLegacyProperty("GameID")]
-	public int WorldID
+	public long  WorldID
 	{
 		get => _worldID;
 		internal set
@@ -187,7 +187,7 @@ public sealed partial class World : Instance
 	}
 
 	[ScriptProperty]
-	public int UniverseID
+	public long  UniverseID
 	{
 		get => _universeID;
 		internal set

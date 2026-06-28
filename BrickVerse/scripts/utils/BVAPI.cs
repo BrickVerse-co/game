@@ -162,14 +162,14 @@ public static class BVAPI
 		};
 	}
 
-	public static async Task<APIPlaceInfo> GetWorldFromID(int placeID)
+	public static async Task<APIPlaceInfo> GetWorldFromID(long placeID)
 	{
 		APIV3WorldRoot info = await GetWorldRootFromID(placeID);
 
 		APIPlaceCreator creator = new()
 		{
 			Type = info.Universe.CreatorType.ToLowerInvariant(),
-			Id = int.TryParse(info.Universe.CreatorId, out int creatorId) ? creatorId : 0,
+			Id = long.TryParse(info.Universe.CreatorId, out long creatorId) ? creatorId : 0,
 			Name = info.Universe.CreatorType == "GUILD"
 				? (info.Universe.CreatorGuild?.Name ?? "")
 				: (info.Universe.CreatorUser?.Username ?? ""),
@@ -178,8 +178,8 @@ public static class BVAPI
 
 		return new APIPlaceInfo
 		{
-			Id = int.TryParse(info.World.Id, out int worldId) ? worldId : placeID,
-			UniverseId = int.TryParse(info.Universe.Id, out int universeId) ? universeId : 0,
+			Id = long.TryParse(info.World.Id, out long worldId) ? worldId : placeID,
+			UniverseId = long.TryParse(info.Universe.Id, out long universeId) ? universeId : 0,
 			Name = info.World.Name,
 			UniverseName = info.Universe.Name,
 			Description = info.Universe.Description,
@@ -192,10 +192,10 @@ public static class BVAPI
 		};
 	}
 
-	public static Task<APIV3SocialGuild> GetGuildFromID(int guildID)
+	public static Task<APIV3SocialGuild> GetGuildFromID(long guildID)
 		=> GetGuildInfoV3(guildID);
 
-	private static async Task<APIV3SocialGuild> GetGuildInfoV3(int guildID)
+	private static async Task<APIV3SocialGuild> GetGuildInfoV3(long guildID)
 	{
 		APIV3SocialGuildRoot response = await _client.GetFromJsonAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/social/guilds/" + guildID.ToString()),
@@ -215,7 +215,7 @@ public static class BVAPI
 		};
 	}
 
-	public static async Task<APIPlaceMedia[]?> GetWorldMedia(int placeID)
+	public static async Task<APIPlaceMedia[]?> GetWorldMedia(long placeID)
 	{
 		APIV3WorldRoot info = await GetWorldRootFromID(placeID);
 		if (info.Universe.UniverseThumbnails == null || info.Universe.UniverseThumbnails.Length == 0)
@@ -237,7 +237,7 @@ public static class BVAPI
 		return [.. media];
 	}
 
-	private static Task<APIV3WorldRoot> GetWorldRootFromID(int placeID)
+	private static Task<APIV3WorldRoot> GetWorldRootFromID(long placeID)
 	{
 		return _client.GetFromJsonAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/world/" + placeID.ToString()),
