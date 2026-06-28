@@ -63,8 +63,6 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 	public override void _Ready()
 	{
-		PT.Print("PublishPlaceModal _Ready called.");
-
 		base._Ready();
 		ResolveNodeReferences();
 
@@ -107,6 +105,9 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 				if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 					OS.ShellOpen(publishRes.Link);
+
+				this.world.UniverseID = publishRes.UniverseId;
+				this.world.WorldID = publishRes.WorldId;
 
 				CreatorService.Interface.StatusBar?.SetStatus("World published");
 				loadOverlay?.Hide();
