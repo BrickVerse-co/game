@@ -17,8 +17,6 @@ namespace BrickVerse.Creator.UI.Popups;
 
 public partial class PublishPlaceModal : PopupWindowBase
 {
-	private static readonly Vector2I WindowSize = new(560, 500);
-
 	public enum PublishOwnerType
 	{
 		User,
@@ -39,6 +37,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		public string UniverseName { get; init; } = "";
 		public string UniverseDescription { get; init; } = "";
 		public PublishOwnerType OwnerType { get; init; }
+		public string OwnerId { get; init; } = "";
 		public string? GuildId { get; init; }
 	}
 
@@ -66,8 +65,6 @@ public partial class PublishPlaceModal : PopupWindowBase
 		base._Ready();
 		ResolveNodeReferences();
 
-		Size = WindowSize;
-		MinSize = WindowSize;
 		CloseRequested += Close;
 
 		_closeButton.Pressed += Close;
@@ -101,7 +98,14 @@ public partial class PublishPlaceModal : PopupWindowBase
 				var packed = await PackedFormat.PackProject(projectPath, loadOverlay.CreateProgressReporter("Publishing world"));
 
 				loadOverlay?.SetStatus("Uploading now...");
-				CreatorPublishResponse publishRes = await CreatorAPI.UploadWorld(packed, request.UniverseId, request.WorldId);
+				CreatorPublishResponse publishRes = await CreatorAPI.UploadWorld(
+					packed,
+					request.UniverseId,
+					request.WorldId,
+					true,
+					request.OwnerId,
+					request.OwnerType == PublishOwnerType.Guild ? "guild" : "user"
+				);
 
 				if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 					OS.ShellOpen(publishRes.Link);
@@ -153,7 +157,6 @@ public partial class PublishPlaceModal : PopupWindowBase
 		SetBusy(false);
 		SetOwnerType(PublishOwnerType.User);
 
-		PopupCentered(WindowSize);
 		_placeNameInput.GrabFocus();
 	}
 
@@ -313,6 +316,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 			UniverseName = universeName,
 			UniverseDescription = universeDescription,
 			OwnerType = publishToGuild ? PublishOwnerType.Guild : PublishOwnerType.User,
+			OwnerId = publishToGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID,
 			GuildId = guildId,
 			UniverseId = world?.UniverseID ?? 0,
 			WorldId = world?.WorldID ?? 0

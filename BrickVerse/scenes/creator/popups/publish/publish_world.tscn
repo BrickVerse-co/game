@@ -18,10 +18,10 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="FieldBg"]
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
 bg_color = Color(0.055, 0.055, 0.06, 1)
 border_width_left = 1
 border_width_top = 1
@@ -34,10 +34,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="SegmentBg"]
-content_margin_left = 14.0
-content_margin_top = 10.0
-content_margin_right = 14.0
-content_margin_bottom = 10.0
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
 bg_color = Color(1, 1, 1, 0.075)
 border_width_left = 1
 border_width_top = 1
@@ -50,10 +50,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="SegmentPressed"]
-content_margin_left = 14.0
-content_margin_top = 10.0
-content_margin_right = 14.0
-content_margin_bottom = 10.0
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
 bg_color = Color(0, 0.592, 1, 0.95)
 border_width_left = 1
 border_width_top = 1
@@ -66,10 +66,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="SecondaryBtn"]
-content_margin_left = 18.0
-content_margin_top = 10.0
-content_margin_right = 18.0
-content_margin_bottom = 10.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
 bg_color = Color(1, 1, 1, 0.09)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
@@ -77,10 +77,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="PrimaryBtn"]
-content_margin_left = 18.0
-content_margin_top = 10.0
-content_margin_right = 18.0
-content_margin_bottom = 10.0
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
 bg_color = Color(0, 0.592, 1, 1)
 border_width_bottom = 4
 border_color = Color(0, 0.47, 0.8, 1)
@@ -92,18 +92,18 @@ corner_radius_bottom_left = 8
 [node name="PublishPlaceModal" type="Window" unique_id=1516226931]
 oversampling_override = 1.0
 title = "Publish World"
-position = Vector2i(0, 36)
-size = Vector2i(560, 500)
+initial_position = 2
+size = Vector2i(420, 430)
 exclusive = true
 unresizable = true
 borderless = true
 popup_window = true
-min_size = Vector2i(560, 500)
+min_size = Vector2i(420, 430)
 theme = ExtResource("1_jjpyp")
 script = ExtResource("2_jjpyp")
 
 [node name="Modal" type="Panel" parent="." unique_id=965128555]
-custom_minimum_size = Vector2(560, 500)
+custom_minimum_size = Vector2(420, 430)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -115,30 +115,30 @@ theme_override_styles/panel = SubResource("ModalBg")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 18.0
+offset_left = 18.0
+offset_top = 12.0
 offset_right = -18.0
-offset_bottom = 56.0
+offset_bottom = 42.0
 grow_horizontal = 2
 alignment = 1
 
 [node name="SpacerLeft" type="Control" parent="Modal/Header" unique_id=210090312]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 
 [node name="Title" type="Label" parent="Modal/Header" unique_id=1369472529]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "Publish World"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Close" type="Button" parent="Modal/Header" unique_id=1358930394]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "×"
 flat = true
 
@@ -147,64 +147,69 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = 88.0
-offset_right = -32.0
-offset_bottom = -84.0
+offset_left = 18.0
+offset_top = 46.0
+offset_right = -18.0
+offset_bottom = -52.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="NameLabel" type="Label" parent="Modal/Body" unique_id=1532304448]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "World Name"
 
 [node name="PlaceName" type="LineEdit" parent="Modal/Body" unique_id=1814692619]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "My Awesome Level"
 max_length = 64
+theme_override_font_sizes/font_size = 12
 
 [node name="UniverseLabel" type="Label" parent="Modal/Body" unique_id=778209538]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Universe Name"
 
 [node name="UniverseName" type="LineEdit" parent="Modal/Body" unique_id=1656479556]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "My Awesome Place"
 max_length = 64
+theme_override_font_sizes/font_size = 12
 
 [node name="DescriptionLabel" type="Label" parent="Modal/Body" unique_id=2115532380]
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Universe Description"
 
 [node name="Description" type="TextEdit" parent="Modal/Body" unique_id=1134158449]
-custom_minimum_size = Vector2(0, 115)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "Tell players what this place is about..."
 wrap_mode = 1
+theme_override_font_sizes/font_size = 12
 
 [node name="PublishAsLabel" type="Label" parent="Modal/Body" unique_id=1828265531]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Publish as"
 
 [node name="Ownership" type="HBoxContainer" parent="Modal/Body" unique_id=1262941691]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="Personal" type="Button" parent="Modal/Body/Ownership" unique_id=844129733]
-custom_minimum_size = Vector2(130, 42)
+custom_minimum_size = Vector2(108, 30)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
@@ -215,7 +220,7 @@ button_pressed = true
 text = "My account"
 
 [node name="Guild" type="Button" parent="Modal/Body/Ownership" unique_id=1313892143]
-custom_minimum_size = Vector2(100, 42)
+custom_minimum_size = Vector2(88, 30)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
@@ -226,8 +231,10 @@ text = "Guild"
 
 [node name="GuildDropdown" type="OptionButton" parent="Modal/Body" unique_id=777477083]
 visible = false
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("FieldBg")
+theme_override_font_sizes/font_size = 12
 
 [node name="ErrorLabel" type="Label" parent="Modal/Body" unique_id=683396683]
 visible = false
@@ -239,7 +246,7 @@ autowrap_mode = 3
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_22p0f")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 11
 text = "Publishing..."
 horizontal_alignment = 1
 
@@ -249,23 +256,23 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = -64.0
-offset_right = -32.0
-offset_bottom = -20.0
+offset_left = 18.0
+offset_top = -42.0
+offset_right = -18.0
+offset_bottom = -14.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 alignment = 2
 
 [node name="Cancel" type="Button" parent="Modal/Footer" unique_id=450913585]
-custom_minimum_size = Vector2(100, 42)
+custom_minimum_size = Vector2(80, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("SecondaryBtn")
 text = "Cancel"
 
 [node name="Publish" type="Button" parent="Modal/Footer" unique_id=39492356]
-custom_minimum_size = Vector2(110, 42)
+custom_minimum_size = Vector2(88, 28)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("1_bt5w7")

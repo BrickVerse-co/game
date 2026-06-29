@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using SystemNetHttp = System.Net.Http;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -41,6 +42,7 @@ public static class CreatorAPI
 	private const string StoredTokenPath = "user://creator_auth";
 
 	private static readonly BVHttpClient _client = new();
+	private static readonly SystemNetHttp.HttpClient _uploadClient = new();
 
 	public static string UserID { get; private set; } = "0";
 	public static string Username { get; private set; } = "";
@@ -578,6 +580,9 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
+		if (Globals.UseNoHttp)
+			throw new HttpRequestException("Http is disabled via feature flag");
+
 		const int limit = 25;
 
 		List<CreatorGuildItem> allGuilds = [];
@@ -727,15 +732,25 @@ public static class CreatorAPI
 		return [.. worlds];
 	}
 
-	private static StringContent FormString(string value)
+	private static StringContent FormString(string name, string value)
 	{
-		return new StringContent(value, Encoding.UTF8, "text/plain");
+		StringContent content = new(value, Encoding.UTF8, "text/plain");
+		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+		{
+			Name = $"\"{name}\"",
+		};
+		return content;
 	}
 
-	private static ByteArrayContent FormFile(byte[] data)
+	private static ByteArrayContent FormFile(string name, string fileName, byte[] data)
 	{
 		ByteArrayContent content = new(data);
 		content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+		{
+			Name = $"\"{name}\"",
+			FileName = $"\"{fileName}\"",
+		};
 		return content;
 	}
 
@@ -755,35 +770,58 @@ public static class CreatorAPI
 		long resolvedWorldId = worldId ?? 0;
 		bool isNewUniverse = resolvedUniverseId == 0;
 
-		using MultipartFormDataContent form = new();
+		using MultipartContent form = new("form-data", Guid.NewGuid().ToString());
 
-		form.Add(FormString(resolvedUniverseId.ToString()), "universeId");
-		form.Add(FormString(resolvedWorldId.ToString()), "worldId");
-		form.Add(FormString(publish ? "true" : "false"), "publish");
+		form.Add(FormString("universeId", resolvedUniverseId.ToString()));
+		form.Add(FormString("worldId", resolvedWorldId.ToString()));
+		form.Add(FormString("publish", publish ? "true" : "false"));
 
 		if (isNewUniverse)
 		{
-			string ownerId = !string.IsNullOrWhiteSpace(creationOwnerId)
-				? creationOwnerId
-				: UserID;
+			if (string.IsNullOrWhiteSpace(creationOwnerId))
+			{
+				throw new ArgumentException("ownerId is required when creating a new universe.", nameof(creationOwnerId));
+			}
 
-			string ownerType = (creationOwnerType ?? "USER").ToLowerInvariant();
+			if (string.IsNullOrWhiteSpace(creationOwnerType))
+			{
+				throw new ArgumentException("ownerType is required when creating a new universe.", nameof(creationOwnerType));
+			}
+
+			string ownerId = creationOwnerId.Trim();
+			string ownerType = creationOwnerType.Trim().ToLowerInvariant();
 
 			if (ownerType != "user" && ownerType != "guild")
-				ownerType = "user";
+			{
+				throw new ArgumentOutOfRangeException(
+					nameof(creationOwnerType),
+					creationOwnerType,
+					"ownerType must be USER or GUILD when creating a new universe."
+				);
+			}
 
-			form.Add(FormString(ownerId), "ownerId");
-			form.Add(FormString(ownerType), "ownerType");
+			form.Add(FormString("ownerId", ownerId));
+			form.Add(FormString("ownerType", ownerType));
 		}
 
-		form.Add(FormFile(placeData), "file", "level.packed");
+		form.Add(FormFile("file", "level.packed", placeData));
 
 		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
+
+		using HttpRequestMessage request = new(HttpMethod.Post, url)
+		{
+			Content = form,
+		};
+
+		request.Headers.TryAddWithoutValidation("User-Agent", $"BrickVerse Client {Globals.AppVersion}");
+		request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + Token);
+		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Uri.EscapeDataString(Token));
+		request.Headers.TryAddWithoutValidation("Accept", "application/json");
 
 		PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
 		PT.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
 
-		using HttpResponseMessage msg = await _client.PostAsync(url, form);
+		using HttpResponseMessage msg = await _uploadClient.SendAsync(request);
 		string responseText = await msg.Content.ReadAsStringAsync();
 
 		PT.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");

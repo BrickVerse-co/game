@@ -40,16 +40,18 @@ public partial class PublishPopup : PopupWindowBase
 	public override void _Ready()
 	{
 		base._Ready();
+
 		PublishType = (Target is World) ? PublishTypeEnum.Project : (Target is Model) ? PublishTypeEnum.Model : PublishTypeEnum.Addon;
 		Title = "Publish " + PublishType.ToString();
 
 		_itemInfoView.Visible = false;
+		_publishButton.Disabled = true;
 		_itemItemGroup.Pressed += OnPlaceItemPressed;
 		_newButton.Pressed += OnCreateNew;
 		_publishButton.Pressed += OnPublish;
 		_cancelButton.Pressed += QueueFree;
 
-		if (PublishType == PublishTypeEnum.Project)
+		if (PublishType != PublishTypeEnum.Addon)
 		{
 			ListPublishedWorlds();
 		}
@@ -71,6 +73,7 @@ public partial class PublishPopup : PopupWindowBase
 	private void ShowPlaceInfo(CreatorPlaceItem item)
 	{
 		_itemInfoView.Visible = true;
+		_publishButton.Disabled = false;
 		_targetID = item.Id;
 		_universeId = item.UniverseId;
 		_worldId = item.WorldId;
@@ -87,12 +90,34 @@ public partial class PublishPopup : PopupWindowBase
 	private async void ListPublishedWorlds()
 	{
 		_loadingView.Visible = true;
+		_publishButton.Disabled = true;
+		_itemInfoView.Visible = false;
 
-		CreatorPlaceItem[] items = await CreatorAPI.GetPublishedWorlds();
+		foreach (Node child in _listContainer.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		CreatorPlaceItem[] items;
+
+		try
+		{
+			items = await CreatorAPI.GetPublishedWorlds();
+		}
+		catch (System.Exception ex)
+		{
+			PT.PrintErr($"Failed to load published worlds: {ex.Message}");
+			_loadingView.Visible = false;
+			return;
+		}
 
 		_loadingView.Visible = false;
 
-		bool isFirst = true;
+		if (items.Length == 0)
+		{
+			_itemInfoView.Visible = false;
+			return;
+		}
 
 		foreach (CreatorPlaceItem item in items)
 		{
@@ -100,15 +125,14 @@ public partial class PublishPopup : PopupWindowBase
 			card.Target = item;
 			card.ButtonGroup = _itemItemGroup;
 			_listContainer.AddChild(card);
-			if (isFirst)
-			{
-				isFirst = false;
-				card.ButtonPressed = true;
-			}
 		}
+
+		PublishPlaceItemUI firstCard = (PublishPlaceItemUI)_listContainer.GetChild(0);
+		firstCard.ButtonPressed = true;
+		ShowPlaceInfo(firstCard.Target);
 	}
 
-	private async void OnCreateNew()
+	private void OnCreateNew()
 	{
 		Publish();
 	}
@@ -116,7 +140,7 @@ public partial class PublishPopup : PopupWindowBase
 	private async void Publish(int id = 0, int? worldId = null, int? universeId = null)
 	{
 		QueueFree();
-		 if (Target is ServerScript script)
+		if (Target is ServerScript script)
 		{
 			//await PublishManager.PublishAddon(script, id);
 		}
