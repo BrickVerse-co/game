@@ -537,21 +537,35 @@ public sealed partial class Globals : Node
 
 		for (int i = 0; i < args.Length; i++)
 		{
-			string arg = args[i];
+			string arg = args[i].Trim();
 
-			if (arg.StartsWith('-'))
+			if (string.IsNullOrWhiteSpace(arg))
+				continue;
+
+			arg = arg.TrimStart('-');
+
+			// Supports: world=123
+			if (arg.Contains('='))
 			{
-				string key = arg.TrimStart('-');
-				string value = "";
+				string[] parts = arg.Split('=', 2);
+				string key = parts[0].Trim();
+				string value = parts[1].Trim();
 
-				// If next arg exists and is not another flag, treat it as value
-				if (i + 1 < args.Length && !args[i + 1].StartsWith('-'))
-				{
-					value = args[i + 1];
-					i++;
-				}
+				if (!string.IsNullOrWhiteSpace(key))
+					result[key] = value;
 
-				result[key] = value;
+				continue;
+			}
+
+			// Supports: -world 123 or --world 123
+			if (i + 1 < args.Length && !args[i + 1].StartsWith('-'))
+			{
+				result[arg] = args[i + 1].Trim();
+				i++;
+			}
+			else
+			{
+				result[arg] = "";
 			}
 		}
 

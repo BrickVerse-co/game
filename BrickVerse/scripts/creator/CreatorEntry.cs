@@ -16,16 +16,21 @@ using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Creator;
 
 public partial class CreatorEntry : Node
 {
 	public const int CreatorPort = 24220;
+	private Task _authInitializationTask = Task.CompletedTask;
+	private string? _pendingWorldId;
 
 	public override void _EnterTree()
 	{
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
+		PT.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
+
 		cmdargs.TryGetValue("token", out string? launchToken);
 
 		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
@@ -33,7 +38,7 @@ public partial class CreatorEntry : Node
 		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
 		CreatorAPI.UserAuthenticated += OnClientAuthenticated;
 
-		_ = InitializeAuthAsync(launchToken);
+		_authInitializationTask = InitializeAuthAsync(launchToken);
 
 		CreatorService creatorService = new();
 		AddChild(creatorService);
@@ -56,7 +61,7 @@ public partial class CreatorEntry : Node
 		if (worldId != null)
 		{
 			PT.Print("Attempting to open world by id: ", worldId);
-			_ = CreatorService.Singleton.CreateNewSessionByWorldId(worldId);
+			_pendingWorldId = worldId;
 		}
 
 		// Open project by file path cmd argument
@@ -78,7 +83,27 @@ public partial class CreatorEntry : Node
 		}
 	}
 
-	private static async System.Threading.Tasks.Task InitializeAuthAsync(string? launchToken)
+	public override async void _Ready()
+	{
+		base._Ready();
+
+		try
+		{
+			await _authInitializationTask;
+		}
+		catch (Exception error)
+		{
+			PT.PrintErr("CreatorEntry: Auth initialization failed before startup open: ", error.Message);
+		}
+
+		if (!string.IsNullOrWhiteSpace(_pendingWorldId))
+		{
+			await CreatorService.Singleton.CreateNewSessionByWorldId(_pendingWorldId);
+			_pendingWorldId = null;
+		}
+	}
+
+	private static async Task InitializeAuthAsync(string? launchToken)
 	{
 		// Keep auth/network work off the startup path so creator UI can render immediately.
 		if (launchToken != null)

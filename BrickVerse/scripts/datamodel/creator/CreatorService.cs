@@ -15,6 +15,7 @@ using BrickVerse.Formats;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using BrickVerse.Datamodel.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -149,76 +150,163 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async Task CreateNewSessionByWorldId(string worldId, bool forceNew = false)
 	{
-		if (worldId == "0" || worldId == string.Empty)
+		if (!long.TryParse(worldId, out long parsedWorldId) || parsedWorldId == 0)
 		{
 			PT.PrintErr("Invalid world id, world id 0 is reserved for local projects.");
 			return;
 		}
 
-		Interface.LoadOverlay?.SetTitle("Opening world creator");
-		Interface.LoadOverlay?.SetStatus("Determining project folder");
-		Interface.LoadOverlay?.SetMaxProgress(4);
-		Interface.LoadOverlay?.Show();
+		bool keepOverlayVisible = false;
 
-		// Check previous projects for existing world files
-		if (!forceNew)
+		try
 		{
-			ProjectManager.RecentData[] recents = await ProjectManager.GetRecents();
-			foreach (ProjectManager.RecentData r in recents)
+			PT.Print("Creating new session for world id ", worldId, " (forceNew=", forceNew, ")");
+			Interface.LoadOverlay?.SetTitle("Opening world creator");
+			Interface.LoadOverlay?.SetStatus("Determining project folder");
+			Interface.LoadOverlay?.SetMaxProgress(4);
+			Interface.LoadOverlay?.Show();
+
+			// Check previous projects for existing world files
+			if (!forceNew)
 			{
-				// Check if any of the recent projects have a matching world id
-				if (r.WorldId == long.Parse(worldId))
+				ProjectManager.RecentData[] recents = await ProjectManager.GetRecents();
+				foreach (ProjectManager.RecentData r in recents)
 				{
-					// Open the existing project
-					PT.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
-					await CreateNewSession(r.FolderPath);
-					return;
+					// Check if any of the recent projects have a matching world id
+					if (r.WorldId == parsedWorldId)
+					{
+						// Open the existing project
+						PT.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
+						keepOverlayVisible = true;
+						await CreateNewSession(r.FolderPath);
+						return;
+					}
 				}
 			}
+
+			Interface.LoadOverlay?.SetStatus("Downloading world");
+			Interface.LoadOverlay?.SetProgress(0);
+
+			// Download world from API
+			byte[] worldContent = await CreatorAPI.DownloadWorld(worldId);
+			PolyFileTypeEnum fileType = DatamodelLoader.DetermineFileTypeFromBytes(worldContent);
+			Interface.LoadOverlay?.SetProgress(1);
+
+			Interface.LoadOverlay?.SetStatus("Loading world bytes");
+			World root = Globals.LoadInstance<World>();
+			root.WorldID = parsedWorldId;
+			bool rootDeleted = false;
+			SubViewport? tempViewport = null;
+
+			try
+			{
+				if (fileType == PolyFileTypeEnum.PolyXML)
+				{
+					World3D world3D = new();
+					tempViewport = new()
+					{
+						RenderTargetClearMode = SubViewport.ClearMode.Never,
+						RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
+						World3D = world3D
+					};
+
+					root.SessionType = World.SessionTypeEnum.Creator;
+					root.World3D = world3D;
+
+					NetworkService netService = new();
+					netService.Attach(root);
+					netService.NetworkMode = NetworkService.NetworkModeEnum.Creator;
+					netService.IsServer = true;
+
+					AddChild(tempViewport);
+					tempViewport.AddChild(root.GDNode);
+
+					root.Root = root;
+					root.InitEntry();
+					root.Setup();
+				}
+
+				await DatamodelLoader.LoadWorldBytes(root, worldContent);
+				Interface.LoadOverlay?.SetProgress(2);
+
+				string projectName = string.IsNullOrWhiteSpace(root.Name) ? $"World {parsedWorldId}" : root.Name.Trim();
+				string projectFolderName = projectName.SanitizeFileName();
+
+				// Prompt to save to a project folder
+				Interface.LoadOverlay?.SetStatus("Choosing project folder");
+				string targetPath = await CreatorService.Interface.PromptFolderSelect(new()
+				{
+					Title = "Select a folder to create the project in",
+					CurrentDirectory = ProjectSettings.GlobalizePath("user://projects/"),
+				});
+
+				if (string.IsNullOrWhiteSpace(targetPath))
+				{
+					return;
+				}
+
+				string projectFolderPath = targetPath;
+				if (Directory.Exists(projectFolderPath))
+				{
+					bool hasExistingContent = Directory.GetFiles(projectFolderPath).Length != 0 || Directory.GetDirectories(projectFolderPath).Length != 0;
+					if (hasExistingContent && new DirectoryInfo(projectFolderPath).Name != projectFolderName)
+					{
+						projectFolderPath = Path.Join(projectFolderPath, projectFolderName);
+					}
+				}
+
+				Directory.CreateDirectory(projectFolderPath);
+
+				string projectFilePath = Path.Join(projectFolderPath, Globals.ProjectMetaFileName);
+				string mainWorldPath = Path.Join(projectFolderPath, "main.bvxw");
+				string scriptsPath = Path.Join(projectFolderPath, "scripts");
+				Directory.CreateDirectory(scriptsPath);
+				Directory.CreateDirectory(Path.Join(scriptsPath, "server"));
+				Directory.CreateDirectory(Path.Join(scriptsPath, "client"));
+				Directory.CreateDirectory(Path.Join(scriptsPath, "modules"));
+
+				CreatorProjectMetadata metadata = new()
+				{
+					WorldId = parsedWorldId,
+					ProjectName = projectName,
+					MainWorld = "main.bvxw",
+					IconID = null,
+				};
+
+				Interface.LoadOverlay?.SetStatus("Saving project files");
+				File.WriteAllText(projectFilePath, System.Text.Json.JsonSerializer.Serialize(metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+				PolyFormat.SaveWorldToFile(root, mainWorldPath);
+				Interface.LoadOverlay?.SetProgress(3);
+
+				Interface.LoadOverlay?.SetStatus("Opening project");
+				Interface.LoadOverlay?.SetProgress(4);
+				root.ForceDelete();
+				rootDeleted = true;
+				keepOverlayVisible = true;
+				await CreateNewSession(projectFilePath);
+			}
+			finally
+			{
+				if (!rootDeleted)
+				{
+					root.ForceDelete();
+				}
+
+				tempViewport?.QueueFree();
+			}
 		}
-
-		Interface.LoadOverlay?.SetStatus("Downloading world");
-		Interface.LoadOverlay?.SetProgress(0);
-
-		// Download world from API
-		byte[] worldContent = await CreatorAPI.DownloadWorld(worldId);
-		Interface.LoadOverlay?.SetProgress(1);
-
-		// Prompt to save to a project folder
-		Interface.LoadOverlay?.SetStatus("Saving world");
-		string targetPath = await CreatorService.Interface.PromptFolderSelect(new()
+		catch (Exception ex)
 		{
-			Title = "Select a folder to create the project in",
-			CurrentDirectory = ProjectSettings.GlobalizePath("user://projects/"),
-		});
-
-		if (string.IsNullOrWhiteSpace(targetPath))
-		{
-			return;
+			PT.PrintErr(ex);
+			Interface.PopupAlert(ex.Message, "Error opening world creator");
 		}
-
-		// Write a project file to the target path
-		Interface.LoadOverlay?.SetProgress(2);
-		Interface.LoadOverlay?.SetStatus("Creating world instance");
-		string projectFilePath = Path.Join(targetPath, Globals.ProjectMetaFileName);
-
-		// Create a new world instance 
-		World root = Globals.LoadInstance<World>();
-		root.WorldID = long.Parse(worldId);
-
-		// Load the world bytes into the new world instance
-		Interface.LoadOverlay?.SetStatus("Loading world bytes");
-		await DatamodelLoader.LoadWorldBytes(root, worldContent);
-		Interface.LoadOverlay?.SetProgress(3);
-
-		// Save world to the project file
-		Interface.LoadOverlay?.SetStatus("Saving project file");
-		PolyFormat.SaveWorldToFile(root, projectFilePath);
-		Interface.LoadOverlay?.SetProgress(4);
-		Interface.LoadOverlay?.Hide();
-
-		// Launch the new session
-		await CreateNewSession(projectFilePath, root);
+		finally
+		{
+			if (!keepOverlayVisible)
+			{
+				Interface.LoadOverlay?.Hide();
+			}
+		}
 	}
 
 	public async Task CreateNewSession(string projectFilePath = "", World? worldOverride = null)
