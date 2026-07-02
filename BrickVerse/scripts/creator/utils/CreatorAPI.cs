@@ -10,12 +10,10 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using SystemNetHttp = System.Net.Http;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using BrickVerse.Utils;
 using Godot;
 
 namespace BrickVerse.Creator.Utils;
@@ -85,15 +83,53 @@ public static class CreatorAPI
 
 		if (storedSession != null && !string.IsNullOrWhiteSpace(storedSession.AccessToken))
 		{
+			PT.Print("CreatorAPI: Attempting to restore auth session from storage...");
+
 			try
 			{
+				// Check if token is expired and needs refresh
+				if (IsTokenExpired(storedSession))
+				{
+					PT.Print("CreatorAPI: Stored token is expired, attempting refresh...");
+
+					if (!string.IsNullOrWhiteSpace(storedSession.RefreshToken))
+					{
+						storedSession = await RefreshAccessToken(storedSession);
+						if (storedSession == null)
+						{
+							PT.PrintErr("CreatorAPI: Failed to refresh expired token, prompting login");
+							ClearAuth();
+							await PromptLogin();
+							return;
+						}
+					}
+					else
+					{
+						// No refresh token and access token expired
+						PT.PrintErr("CreatorAPI: Token expired and no refresh token available, prompting login");
+						ClearAuth();
+						await PromptLogin();
+						return;
+					}
+				}
+				else
+				{
+					PT.Print("CreatorAPI: Stored token is still valid");
+				}
+
+				PT.Print("CreatorAPI: Restoring session from stored token");
 				await LoginWithOpenIdSession(storedSession, saveToken: false);
 				return;
 			}
-			catch
+			catch (Exception error)
 			{
+				PT.PrintErr("CreatorAPI: Failed to restore auth session: ", error.Message);
 				ClearAuth();
 			}
+		}
+		else
+		{
+			PT.Print("CreatorAPI: No stored session found or session is invalid");
 		}
 
 		await PromptLogin();
@@ -156,6 +192,81 @@ public static class CreatorAPI
 		public string AccessToken { get; init; } = "";
 		public string RefreshToken { get; init; } = "";
 		public string IdToken { get; init; } = "";
+		public long ExpiresAt { get; init; } = 0; // Unix timestamp
+	}
+
+	private static bool IsTokenExpired(OpenIdAuthSession session)
+	{
+		if (session.ExpiresAt <= 0)
+			return false; // Unknown expiration, assume valid
+
+		// Check if token expires in the next 5 minutes (300 seconds)
+		long currentTime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+		long bufferSeconds = 300;
+
+		return currentTime >= (session.ExpiresAt - bufferSeconds);
+	}
+
+	private static async Task<OpenIdAuthSession?> RefreshAccessToken(OpenIdAuthSession session)
+	{
+		try
+		{
+			if (string.IsNullOrWhiteSpace(session.RefreshToken))
+				return null;
+
+			OpenIdConfig oidc = await GetOpenIdConfig();
+
+			var content = new FormUrlEncodedContent(new[]
+			{
+				new KeyValuePair<string, string>("grant_type", "refresh_token"),
+				new KeyValuePair<string, string>("refresh_token", session.RefreshToken),
+				new KeyValuePair<string, string>("client_id", OpenIDClientId),
+			});
+
+			using HttpResponseMessage msg = await _client.PostAsync(oidc.TokenEndpoint, content);
+			string body = await msg.Content.ReadAsStringAsync();
+
+			if (!msg.IsSuccessStatusCode)
+			{
+				PT.PrintErr($"CreatorAPI: Token refresh failed: {msg.StatusCode} {body}");
+				return null;
+			}
+
+			using JsonDocument doc = JsonDocument.Parse(body);
+			JsonElement root = doc.RootElement;
+
+			string newAccessToken = GetString(root, "access_token");
+			string newRefreshToken = GetString(root, "refresh_token");
+			string newIdToken = GetString(root, "id_token");
+
+			if (string.IsNullOrWhiteSpace(newAccessToken))
+				return null;
+
+			// Use new refresh token if provided, otherwise keep the old one
+			if (string.IsNullOrWhiteSpace(newRefreshToken))
+				newRefreshToken = session.RefreshToken;
+
+			long expiresAt = 0;
+			if (!string.IsNullOrWhiteSpace(newIdToken))
+			{
+				expiresAt = GetTokenExpirationFromIdToken(newIdToken);
+			}
+
+			PT.Print("CreatorAPI: Token successfully refreshed");
+
+			return new OpenIdAuthSession
+			{
+				AccessToken = NormalizeToken(newAccessToken),
+				RefreshToken = newRefreshToken,
+				IdToken = newIdToken,
+				ExpiresAt = expiresAt,
+			};
+		}
+		catch (Exception error)
+		{
+			PT.PrintErr("CreatorAPI: Exception during token refresh: ", error.Message);
+			return null;
+		}
 	}
 
 	private static async Task<OpenIdConfig> GetOpenIdConfig()
@@ -247,10 +358,16 @@ public static class CreatorAPI
 			throw new ArgumentException("Access token cannot be empty.", nameof(session));
 
 		OpenIdUserInfoResponse userInfo;
+		long expiresAt = session.ExpiresAt;
 
 		if (!string.IsNullOrWhiteSpace(session.IdToken))
 		{
 			userInfo = GetUserInfoFromIdToken(session.IdToken);
+			// Extract expiration from ID token if not already set
+			if (expiresAt == 0)
+			{
+				expiresAt = GetTokenExpirationFromIdToken(session.IdToken);
+			}
 		}
 		else
 		{
@@ -272,6 +389,7 @@ public static class CreatorAPI
 					AccessToken = accessToken,
 					RefreshToken = session.RefreshToken,
 					IdToken = session.IdToken,
+					ExpiresAt = expiresAt,
 				}
 			);
 
@@ -307,6 +425,36 @@ public static class CreatorAPI
 		return new OpenIdUserInfoResponse { Sub = sub, PreferredUsername = preferredUsername };
 	}
 
+	private static long GetTokenExpirationFromIdToken(string idToken)
+	{
+		try
+		{
+			string[] parts = idToken.Split('.');
+
+			if (parts.Length < 2)
+				return 0;
+
+			byte[] payloadBytes = Base64UrlDecode(parts[1]);
+			using JsonDocument doc = JsonDocument.Parse(payloadBytes);
+			JsonElement root = doc.RootElement;
+
+			if (root.TryGetProperty("exp", out JsonElement expNode))
+			{
+				if (expNode.ValueKind == JsonValueKind.Number && expNode.TryGetInt64(out long expValue))
+					return expValue;
+
+				if (expNode.ValueKind == JsonValueKind.String && long.TryParse(expNode.GetString(), out long parsedExp))
+					return parsedExp;
+			}
+
+			return 0;
+		}
+		catch
+		{
+			return 0;
+		}
+	}
+
 	private static async Task<OpenIdUserInfoResponse> GetUserInfo(
 		string accessToken,
 		OpenIdConfig oidc
@@ -340,10 +488,32 @@ public static class CreatorAPI
 		return new OpenIdUserInfoResponse { Sub = sub, PreferredUsername = preferredUsername };
 	}
 
+	private static async Task EnsureTokenValid()
+	{
+		if (!IsUserAuthenticated || string.IsNullOrWhiteSpace(Token))
+			return;
+
+		OpenIdAuthSession? storedSession = LoadStoredSession();
+		if (storedSession != null && IsTokenExpired(storedSession))
+		{
+			if (!string.IsNullOrWhiteSpace(storedSession.RefreshToken))
+			{
+				OpenIdAuthSession? refreshedSession = await RefreshAccessToken(storedSession);
+				if (refreshedSession != null)
+				{
+					SetToken(refreshedSession.AccessToken);
+					SaveStoredSession(refreshedSession);
+					PT.Print("CreatorAPI: Token automatically refreshed before API call");
+				}
+			}
+		}
+	}
+
 	private static async Task RefreshAuthenticatedProfile()
 	{
 		try
 		{
+			await EnsureTokenValid();
 			string authMeUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/me");
 
 			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
@@ -406,6 +576,7 @@ public static class CreatorAPI
 	{
 		try
 		{
+			await EnsureTokenValid();
 			if (string.IsNullOrWhiteSpace(Username))
 			{
 				CurrentToolbarIdentity = null;
@@ -559,6 +730,20 @@ public static class CreatorAPI
 		return fallback;
 	}
 
+	private static long GetLong(JsonElement root, string propertyName, long fallback = 0)
+	{
+		if (!root.TryGetProperty(propertyName, out JsonElement node))
+			return fallback;
+
+		if (node.ValueKind == JsonValueKind.Number && node.TryGetInt64(out long value))
+			return value;
+
+		if (node.ValueKind == JsonValueKind.String && long.TryParse(node.GetString(), out value))
+			return value;
+
+		return fallback;
+	}
+
 	public static void ClearAuth()
 	{
 		Token = "";
@@ -582,6 +767,8 @@ public static class CreatorAPI
 
 		if (Globals.UseNoHttp)
 			throw new HttpRequestException("Http is disabled via feature flag");
+
+		await EnsureTokenValid();
 
 		const int limit = 25;
 
@@ -991,11 +1178,16 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(accessToken))
 			accessToken = GetString(root, "accessToken");
 
+		long expiresAt = GetLong(root, "expires_at");
+
+		PT.Print($"CreatorAPI: Loaded stored session - AccessToken valid: {!string.IsNullOrWhiteSpace(accessToken)}, HasRefreshToken: {!string.IsNullOrWhiteSpace(GetString(root, "refresh_token"))}, ExpiresAt: {expiresAt}");
+
 		return new OpenIdAuthSession
 		{
 			AccessToken = NormalizeToken(accessToken),
 			RefreshToken = GetString(root, "refresh_token"),
 			IdToken = GetString(root, "id_token"),
+			ExpiresAt = expiresAt,
 		};
 	}
 
@@ -1007,7 +1199,8 @@ public static class CreatorAPI
 			"{"
 			+ $"\"access_token\":\"{EscapeJson(NormalizeToken(session.AccessToken))}\","
 			+ $"\"refresh_token\":\"{EscapeJson(session.RefreshToken)}\","
-			+ $"\"id_token\":\"{EscapeJson(session.IdToken)}\""
+			+ $"\"id_token\":\"{EscapeJson(session.IdToken)}\","
+			+ $"\"expires_at\":{session.ExpiresAt}"
 			+ "}";
 
 		f.StoreString(json);
