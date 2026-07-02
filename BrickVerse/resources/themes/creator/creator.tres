@@ -43,6 +43,42 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 corner_detail = 5
 
+[sub_resource type="StyleBoxFlat" id="MenuButtonNormal"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.12549, 0.129412, 0.141176, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="MenuButtonHover"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.164706, 0.172549, 0.192157, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="MenuButtonPressed"]
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
+bg_color = Color(0.075, 0.19, 0.31, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+corner_detail = 5
+
 [sub_resource type="StyleBoxFlat" id="ButtonPressed"]
 content_margin_left = 5.0
 content_margin_top = 3.0
@@ -117,10 +153,10 @@ corner_radius_bottom_left = 6
 corner_detail = 5
 
 [sub_resource type="StyleBoxFlat" id="PopupPanel"]
-content_margin_left = 5.0
-content_margin_top = 4.0
-content_margin_right = 5.0
-content_margin_bottom = 4.0
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
 bg_color = Color(0.105882, 0.109804, 0.121569, 1)
 border_width_left = 1
 border_width_top = 1
@@ -231,9 +267,9 @@ MenuButton/colors/font_hover_color = Color(0.96, 0.98, 1, 1)
 MenuButton/colors/font_pressed_color = Color(0.96, 0.98, 1, 1)
 MenuButton/constants/icon_max_width = 16
 MenuButton/styles/focus = SubResource("FieldFocus")
-MenuButton/styles/hover = SubResource("ButtonHover")
-MenuButton/styles/normal = SubResource("ButtonNormal")
-MenuButton/styles/pressed = SubResource("ButtonPressed")
+MenuButton/styles/hover = SubResource("MenuButtonHover")
+MenuButton/styles/normal = SubResource("MenuButtonNormal")
+MenuButton/styles/pressed = SubResource("MenuButtonPressed")
 OptionButton/colors/font_color = Color(0.78, 0.81, 0.86, 1)
 OptionButton/colors/font_hover_color = Color(0.96, 0.98, 1, 1)
 OptionButton/colors/font_pressed_color = Color(0.96, 0.98, 1, 1)

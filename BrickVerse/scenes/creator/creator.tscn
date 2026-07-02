@@ -48,6 +48,10 @@ resource_name = "RibbonGroup"
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_0tvsp"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_9m4jd"]
+
 [node name="Creator" type="Node" unique_id=679959250]
 script = ExtResource("1_it5bq")
 
@@ -79,18 +83,20 @@ anchors_preset = -1
 anchor_right = 1.0
 offset_bottom = 40.0
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("1_qdfx8")
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu" unique_id=794089442]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="MenuButtons" type="HBoxContainer" parent="GUI/Menu/Layout" unique_id=1566220411]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 4
 
 [node name="Poly" type="MenuButton" parent="GUI/Menu/Layout/MenuButtons" unique_id=584138618]
-custom_minimum_size = Vector2(34, 30)
+custom_minimum_size = Vector2(40, 32)
 layout_mode = 2
 focus_mode = 2
 icon = ExtResource("5_1xu8h")
@@ -106,10 +112,10 @@ popup/item_1/id = 1
 [node name="Margin" type="MarginContainer" parent="GUI/Menu/Layout" unique_id=1215927633]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 2
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu/Layout/Margin" unique_id=1723129618]
 layout_mode = 2
@@ -227,8 +233,8 @@ stretch_mode = 5
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 38.0
-offset_bottom = 124.0
+offset_top = 42.0
+offset_bottom = 128.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("2_40iam")
@@ -669,7 +675,7 @@ layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 124.0
+offset_top = 128.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -681,7 +687,7 @@ layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 124.0
+offset_top = 128.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -787,6 +793,7 @@ size_flags_vertical = 3
 [node name="BottomTabs" type="PanelContainer" parent="GUI/Splitter/Center" unique_id=198117763]
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 
 [node name="Tabs" type="TabContainer" parent="GUI/Splitter/Center/BottomTabs" unique_id=1589727556]
 layout_mode = 2
@@ -794,6 +801,9 @@ size_flags_vertical = 3
 current_tab = 0
 tabs_position = 1
 deselect_enabled = true
+theme_override_constants/side_margin = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
+theme_override_styles/tabbar_background = SubResource("StyleBoxEmpty_9m4jd")
 
 [node name="Console" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=259802220 node_paths=PackedStringArray("_richLabel", "_searchEdit", "_clearBtn", "_filterBtn")]
 custom_minimum_size = Vector2(0, 190)
@@ -905,7 +915,7 @@ texture = ExtResource("37_raaus")
 visible = false
 layout_mode = 0
 offset_left = 516.0
-offset_top = 124.0
+offset_top = 128.0
 offset_right = 826.0
 offset_bottom = 546.0
 script = ExtResource("20_smqtq")

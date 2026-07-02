@@ -3,12 +3,17 @@
 [ext_resource type="Script" uid="uid://chhxryld70r0d" path="res://scripts/creator/ui/docks/files/FileBrowserTab.cs" id="1_c1les"]
 [ext_resource type="Script" uid="uid://blunnl16k1njh" path="res://scripts/creator/ui/docks/files/FileBrowserTree.cs" id="3_f76un"]
 
-[node name="FileTab" type="PanelContainer" unique_id=648034000 node_paths=PackedStringArray("BrowserTree", "SearchEdit")]
+[node name="FileTab" type="MarginContainer" unique_id=648034000 node_paths=PackedStringArray("BrowserTree", "SearchEdit")]
 offset_right = 236.0
 offset_bottom = 182.0
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 script = ExtResource("1_c1les")
 BrowserTree = NodePath("Container/Tree")
 SearchEdit = NodePath("Container/Search")
@@ -16,7 +21,10 @@ metadata/_tab_index = 0
 
 [node name="Container" type="VBoxContainer" parent="." unique_id=1373171044]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
+theme_override_constants/separation = 8
 
 [node name="Search" type="LineEdit" parent="Container" unique_id=2023648230]
 layout_mode = 2

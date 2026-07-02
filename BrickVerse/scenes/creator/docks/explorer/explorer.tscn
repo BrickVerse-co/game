@@ -20,15 +20,31 @@ Label/font_sizes/font_size = 14
 Label/fonts/font = SubResource("FontVariation_khfyn")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_f05cx")
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_byekl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1f7jh"]
+
+[sub_resource type="Theme" id="Theme_smqtq"]
+resource_name = "ExplorerTheme"
+TabContainer/constants/side_margin = 0
+TabContainer/styles/tabbar_background = SubResource("StyleBoxEmpty_byekl")
+TabContainer/styles/panel = SubResource("StyleBoxEmpty_byekl")
+PanelContainer/styles/panel = SubResource("StyleBoxEmpty_1f7jh")
+
 [node name="Explorer" type="VBoxContainer" unique_id=63511104]
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 10
 
-[node name="Header" type="PanelContainer" parent="." unique_id=352362473]
-custom_minimum_size = Vector2(0, 30)
+[node name="Header" type="MarginContainer" parent="." unique_id=352362473]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 mouse_filter = 2
+theme = SubResource("Theme_khfyn")
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="Label" type="Label" parent="Header" unique_id=716894610]
 layout_mode = 2
@@ -41,4 +57,5 @@ layout_mode = 2
 size_flags_vertical = 3
 tabs_visible = false
 deselect_enabled = true
+theme = SubResource("Theme_smqtq")
 script = ExtResource("2_a6sm1")

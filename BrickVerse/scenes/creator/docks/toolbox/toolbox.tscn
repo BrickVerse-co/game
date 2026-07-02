@@ -62,12 +62,17 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 10
 
-[node name="Header" type="PanelContainer" parent="." unique_id=808583813]
-custom_minimum_size = Vector2(0, 30)
+[node name="Header" type="MarginContainer" parent="." unique_id=808583813]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 mouse_filter = 2
+theme = SubResource("Theme_khfyn")
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="Label" type="Label" parent="Header" unique_id=1871889264]
 layout_mode = 2

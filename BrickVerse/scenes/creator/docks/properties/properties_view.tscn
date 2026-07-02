@@ -6,6 +6,10 @@
 [ext_resource type="Script" uid="uid://bjp1m700i0umd" path="res://scripts/creator/ui/docks/properties/tags/InstanceTagView.cs" id="3_jgprv"]
 [ext_resource type="Texture2D" uid="uid://cym4kvy4h2vh5" path="res://assets/textures/ui-icons/plus.svg" id="4_70iis"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_byekl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1f7jh"]
+
 [node name="TabContainer" type="TabContainer" unique_id=1892077787]
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,37 +19,42 @@ grow_vertical = 2
 theme = ExtResource("1_istb8")
 current_tab = 0
 tabs_position = 1
+theme_override_constants/side_margin = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_byekl")
+theme_override_styles/tabbar_background = SubResource("StyleBoxEmpty_1f7jh")
 script = ExtResource("1_qnycq")
 
 [node name="Properties" type="ScrollContainer" parent="." unique_id=1188109505]
 layout_mode = 2
 follow_focus = true
 scroll_hint_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_byekl")
 metadata/_tab_index = 0
 
 [node name="Margin" type="MarginContainer" parent="Properties" unique_id=594757500]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="Container" type="VBoxContainer" parent="Properties/Margin" unique_id=1965013980]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
+theme_override_constants/separation = 8
 theme = ExtResource("3_ckisg")
 
 [node name="Tags" type="MarginContainer" parent="." unique_id=184229998 node_paths=PackedStringArray("_container", "_newTagEdit", "_plusButton", "_tagLayout", "_blankLayout")]
 visible = false
 layout_mode = 2
-theme_override_constants/margin_left = 6
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 script = ExtResource("3_jgprv")
 _container = NodePath("Layout/Container")
 _newTagEdit = NodePath("Layout/NewTag/TagNameEdit")
