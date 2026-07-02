@@ -867,7 +867,7 @@ public static class CreatorAPI
 			Success = success,
 			WorldId = long.Parse(nextWorldId),
 			UniverseId = long.Parse(nextUniverseId),
-			Link = Globals.MainEndpoint.PathJoin("/world/" + nextWorldId),
+			Link = Globals.MainEndpoint.PathJoin("/worlds/" + nextWorldId),
 		};
 	}
 
