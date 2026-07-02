@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
-public sealed partial class BrickversianModal : CharacterModel
+public sealed partial class BrickversianModel : CharacterModel
 {
 	private const double NetLookBlendUpdateInterval = 0.1;
 	private double _lastNetUpdateTime = 0.0;
@@ -32,6 +32,8 @@ public sealed partial class BrickversianModal : CharacterModel
 	internal MeshInstance3D TorsoMeshInstance = null!;
 	internal MeshInstance3D LeftArmMeshInstance = null!;
 	internal MeshInstance3D RightArmMeshInstance = null!;
+	internal MeshInstance3D LeftHandMeshInstance = null!;
+	internal MeshInstance3D RightHandMeshInstance = null!;
 	internal MeshInstance3D LeftLegMeshInstance = null!;
 	internal MeshInstance3D RightLegMeshInstance = null!;
 	internal Node3D Pivot = null!;
@@ -55,13 +57,14 @@ public sealed partial class BrickversianModal : CharacterModel
 	private static readonly Texture2D _defaultFace = GD.Load<Texture2D>("res://assets/textures/client/character/DefaultFace.png");
 	private static readonly StringName _albedoParam = "albedo";
 	private static readonly StringName _albedoTexParam = "albedo_texture";
+	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
 	private MeshAsset? _bodyMesh;
 	private readonly ShaderMaterial _headMat = new() { Shader = _limbShader };
 	private readonly ShaderMaterial _limbMat = new() { Shader = _limbShader };
 	private readonly ShaderMaterial _transparentLimbMat = new() { Shader = _transparentLimbShader };
-	private PhysicalBoneSimulator3D _ragdollBoneSim = null!;
+	private PhysicalBoneSimulator3D? _ragdollBoneSim;
 	private PhysicalBoneSimulator3D? _lastPhysicalBoneSim = null!;
 	private readonly Dictionary<string, float> _blendTargets = [];
 	private int _toBeLoadedCount = 0;
@@ -107,6 +110,7 @@ public sealed partial class BrickversianModal : CharacterModel
 		set
 		{
 			MeshSetAlbedo(LeftArmMeshInstance, value);
+			MeshSetAlbedo(LeftHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -118,6 +122,7 @@ public sealed partial class BrickversianModal : CharacterModel
 		set
 		{
 			MeshSetAlbedo(RightArmMeshInstance, value);
+			MeshSetAlbedo(RightHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -248,16 +253,56 @@ public sealed partial class BrickversianModal : CharacterModel
 		_helper = new() { Name = "CharacterHelper", Target = this };
 		Globals.Singleton.AddChild(_helper, true);
 
-		Skeleton = GDNode.GetNode<Skeleton3D>("Character/Poly/Skeleton3D");
+		Skeleton = GetRequiredNodeCompat<Skeleton3D>(
+			"Character/Poly/Skeleton3D"
+		);
 		Skeleton.ShowRestOnly = false;
-		_ragdollBoneSim = GDNode.GetNode<PhysicalBoneSimulator3D>("Character/Poly/Skeleton3D/RagdollBone");
-		HeadMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/Head");
-		TorsoMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/Torso");
-		LeftArmMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/LeftArm");
-		RightArmMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/RightArm");
-		LeftLegMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/LeftLeg");
-		RightLegMeshInstance = GDNode.GetNode<MeshInstance3D>("Character/Poly/Skeleton3D/RightLeg");
-		Pivot = GDNode.GetNode<Node3D>("Character/Poly");
+		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
+			"Character/Poly/Skeleton3D/RagdollBone",
+			"Character/Poly/RagdollBone"
+		);
+		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/Head",
+			"Character/Poly/Skeleton3D/head"
+		);
+		TorsoMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/Torso",
+			"Character/Poly/Skeleton3D/torso"
+		);
+		LeftArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/LeftArm",
+			"Character/Poly/Skeleton3D/left_arm"
+		);
+		RightArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/RightArm",
+			"Character/Poly/Skeleton3D/right_arm"
+		);
+		LeftHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/LeftHand",
+			"Character/Poly/Skeleton3D/left_hand"
+		);
+		RightHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/RightHand",
+			"Character/Poly/Skeleton3D/right_hand"
+		);
+		LeftLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/LeftLeg",
+			"Character/Poly/Skeleton3D/left_leg"
+		);
+		RightLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
+			"Character/Poly/Skeleton3D/RightLeg",
+			"Character/Poly/Skeleton3D/right_leg"
+		);
+		Pivot = GetRequiredNodeCompat<Node3D>("Character/Poly");
+
+		if (_ragdollBoneSim == null)
+		{
+			if (!_loggedMissingRagdollNode)
+			{
+				_loggedMissingRagdollNode = true;
+				PT.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
+			}
+		}
 
 		Pivot.Scale = NodeSize;
 
@@ -265,6 +310,8 @@ public sealed partial class BrickversianModal : CharacterModel
 		TorsoMeshInstance.MaterialOverride = _limbMat;
 		LeftArmMeshInstance.MaterialOverride = _limbMat;
 		RightArmMeshInstance.MaterialOverride = _limbMat;
+		LeftHandMeshInstance.MaterialOverride = _limbMat;
+		RightHandMeshInstance.MaterialOverride = _limbMat;
 		LeftLegMeshInstance.MaterialOverride = _limbMat;
 		RightLegMeshInstance.MaterialOverride = _limbMat;
 
@@ -273,6 +320,31 @@ public sealed partial class BrickversianModal : CharacterModel
 
 		base.Init();
 		SetProcess(true);
+	}
+
+	private T? GetNodeCompat<T>(params string[] paths) where T : Node
+	{
+		foreach (string path in paths)
+		{
+			T? node = GDNode.GetNodeOrNull<T>(path);
+			if (node != null)
+			{
+				return node;
+			}
+		}
+
+		return null;
+	}
+
+	private T GetRequiredNodeCompat<T>(params string[] paths) where T : Node
+	{
+		T? node = GetNodeCompat<T>(paths);
+		if (node != null)
+		{
+			return node;
+		}
+
+		throw new InvalidOperationException($"Missing required node {typeof(T).Name}. Tried paths: {string.Join(", ", paths)}");
 	}
 
 	public override void PreDelete()
@@ -290,7 +362,17 @@ public sealed partial class BrickversianModal : CharacterModel
 
 	public override Node CreateGDNode()
 	{
-		return Globals.LoadNetworkedObjectScene(ClassName)!;
+		Node? scene = Globals.LoadNetworkedObjectScene(ClassName);
+		scene ??= Globals.LoadNetworkedObjectScene("BrickversianModal");
+
+		if (scene == null)
+		{
+			throw new InvalidOperationException(
+				$"Unable to load character scene for {ClassName}. Tried scenes: {ClassName}.tscn, BrickversianModal.tscn"
+			);
+		}
+
+		return scene;
 	}
 
 	public override void EnterTree()
@@ -299,7 +381,7 @@ public sealed partial class BrickversianModal : CharacterModel
 		{
 			_oldPhyParent = phy;
 
-			// Configure default collision shape for BrickversianModal
+			// Configure default collision shape for BrickversianModel
 			CollisionPivot = new()
 			{
 				Scale = NodeSize
@@ -547,6 +629,8 @@ public sealed partial class BrickversianModal : CharacterModel
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
 	private async void NetStartRagdoll(Vector3 force)
 	{
+		if (_ragdollBoneSim == null) return;
+
 		if (_lastPhysicalBoneSim != null) return;
 
 		// need duplicates cuz godot won't adapt dynamically to bones
@@ -588,6 +672,7 @@ public sealed partial class BrickversianModal : CharacterModel
 			Node3D a = GetNode3DAttachment(attachmentEnum);
 			dyn = New<Dynamic>();
 			dyn.OverrideGDNode(a);
+			_attachmentEnumToDyn[attachmentEnum] = dyn;
 		}
 
 		return dyn;
@@ -597,19 +682,58 @@ public sealed partial class BrickversianModal : CharacterModel
 	{
 		Node3D result = attachmentEnum switch
 		{
-			CharacterAttachmentEnum.Head => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_Head/HeadAttachment"),
-			CharacterAttachmentEnum.UpperTorso => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_UpperTorso/UpperTorsoAttachment"),
-			CharacterAttachmentEnum.LowerTorso => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_LowerTorso/LowerTorsoAttachment"),
-			CharacterAttachmentEnum.ShoulderLeft => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_UpperArm_L/ShoulderLeftAttachment"),
-			CharacterAttachmentEnum.ShoulderRight => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_UpperArm_R/RightShoulderAttachment"),
-			CharacterAttachmentEnum.ElbowLeft => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_LowerArm_L/LeftElbowAttachment"),
-			CharacterAttachmentEnum.ElbowRight => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_LowerArm_R/RightElbowAttachment"),
-			CharacterAttachmentEnum.HandLeft => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_Hand_L/LeftHandAttachment"),
-			CharacterAttachmentEnum.HandRight => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_Hand_R/RightHandAttachment"),
-			CharacterAttachmentEnum.LegLeft => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_UpperLeg_L/LeftLegAttachment"),
-			CharacterAttachmentEnum.LegRight => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_UpperLeg_R/RightLegAttachment"),
-			CharacterAttachmentEnum.KneeLeft => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_LowerLeg_L/LeftKneeAttachment"),
-			CharacterAttachmentEnum.KneeRight => GDNode.GetNode<Node3D>("Character/Poly/Skeleton3D/O_LowerLeg_R/RightKneeAttachment"),
+			CharacterAttachmentEnum.Head => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_Head/HeadAttachment",
+				"Character/Poly/Skeleton3D/Head_2/HeadAttachment"
+			),
+			CharacterAttachmentEnum.UpperTorso => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_UpperTorso/UpperTorsoAttachment",
+				"Character/Poly/Skeleton3D/UpperTorso/UpperTorsoAttachment"
+			),
+			CharacterAttachmentEnum.LowerTorso => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_LowerTorso/LowerTorsoAttachment",
+				"Character/Poly/Skeleton3D/LowerTorso/LowerTorsoAttachment"
+			),
+			CharacterAttachmentEnum.ShoulderLeft => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_UpperArm_L/ShoulderLeftAttachment",
+				"Character/Poly/Skeleton3D/UpperArm_L/LeftShoulderAttachment"
+			),
+			CharacterAttachmentEnum.ShoulderRight => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_UpperArm_R/RightShoulderAttachment",
+				"Character/Poly/Skeleton3D/UpperArm_R/RightShoulderAttachment"
+			),
+			CharacterAttachmentEnum.ElbowLeft => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_LowerArm_L/LeftElbowAttachment",
+				"Character/Poly/Skeleton3D/LowerArm_L/LeftElbowAttachment"
+			),
+			CharacterAttachmentEnum.ElbowRight => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_LowerArm_R/RightElbowAttachment",
+				"Character/Poly/Skeleton3D/LowerArm_R/RightElbowAttachment"
+			),
+			CharacterAttachmentEnum.HandLeft => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_Hand_L/LeftHandAttachment",
+				"Character/Poly/Skeleton3D/Hand_L/LeftHandAttachment"
+			),
+			CharacterAttachmentEnum.HandRight => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_Hand_R/RightHandAttachment",
+				"Character/Poly/Skeleton3D/Hand_R/RightHandAttachment"
+			),
+			CharacterAttachmentEnum.LegLeft => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_UpperLeg_L/LeftLegAttachment",
+				"Character/Poly/Skeleton3D/UpperLeg_L/LeftLegAttachment"
+			),
+			CharacterAttachmentEnum.LegRight => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_UpperLeg_R/RightLegAttachment",
+				"Character/Poly/Skeleton3D/UpperLeg_R/RightLegAttachment"
+			),
+			CharacterAttachmentEnum.KneeLeft => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_LowerLeg_L/LeftKneeAttachment",
+				"Character/Poly/Skeleton3D/LowerLeg_L/LeftKneeAttachment"
+			),
+			CharacterAttachmentEnum.KneeRight => GetRequiredNodeCompat<Node3D>(
+				"Character/Poly/Skeleton3D/O_LowerLeg_R/RightKneeAttachment",
+				"Character/Poly/Skeleton3D/LowerLeg_R/RightKneeAttachment"
+			),
 			_ => throw new NotImplementedException(),
 		};
 

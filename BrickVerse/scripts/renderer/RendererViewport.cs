@@ -76,11 +76,11 @@ public partial class RendererViewport : SubViewport
 		npc.Parent = Root.Environment;
 		npc.UseNametag = false;
 		npc.GDNode3D.RotationDegrees = new(0, 15, 0);
-		BrickversianModal ptm = (BrickversianModal)npc.Character!;
+		BrickversianModel ptm = (BrickversianModel)npc.Character!;
 
 		ptm.SetAnimationOverrideTo(true);
 		AnimationPlayer ply = ptm.AnimTree.GetNode<AnimationPlayer>(ptm.AnimTree.AnimPlayer);
-		BrickversianModal.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(id, loadToolNpc: true);
+		BrickversianModel.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(id, loadToolNpc: true);
 
 		if (loadRes.HasTool)
 		{

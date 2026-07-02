@@ -620,7 +620,7 @@ public sealed partial class Player : NPC
 
 		if (Root.SessionType != World.SessionTypeEnum.Client || !IsLocal || !IsReady) { return; }
 
-		if (Character is BrickversianModal pt && pt.Ragdolling)
+		if (Character is BrickversianModel pt && pt.Ragdolling)
 		{
 			// ragdoll camera update
 			UpdateCamera(delta);
@@ -667,7 +667,7 @@ public sealed partial class Player : NPC
 		if (Anchored)
 		{
 			// just in case it's anchored cuz ragdoll
-			if (Character is BrickversianModal pt2 && pt2.Ragdolling == false)
+			if (Character is BrickversianModel pt2 && pt2.Ragdolling == false)
 			{
 				UpdateCamera(delta);
 			}
@@ -836,7 +836,7 @@ public sealed partial class Player : NPC
 		// Disable auto update, this will be updated manually
 		AutoUpdateNetTransform = false;
 
-		if (Character is BrickversianModal ptc)
+		if (Character is BrickversianModel ptc)
 		{
 			ptc.RagdollStarted.Connect(OnRagdollStarted);
 			ptc.RagdollStopped.Connect(OnRagdollStopped);
@@ -1024,7 +1024,7 @@ public sealed partial class Player : NPC
 		AutoLoadAppearance = Root.PlayerDefaults.AutoLoadAppearance;
 		MovementMode = Root.PlayerDefaults.MovementMode;
 
-		if (Character is BrickversianModal ptmodel)
+		if (Character is BrickversianModel ptmodel)
 		{
 			ptmodel.StopRagdoll();
 		}

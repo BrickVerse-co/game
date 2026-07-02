@@ -10,7 +10,7 @@ namespace BrickVerse.Mobile.UI;
 public partial class ViewHomePage : MobileViewBase
 {
 	//private Label _usernameLabel = null!;
-	//private BrickversianModal _polytorian = null!;
+	//private BrickversianModel _polytorian = null!;
 
 	public override void _EnterTree()
 	{

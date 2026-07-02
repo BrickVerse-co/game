@@ -9,7 +9,7 @@ namespace BrickVerse.Shared;
 
 public partial class LoadingGuy : Control
 {
-	private BrickversianModal _pt = null!;
+	private BrickversianModel _pt = null!;
 
 	public override void _Ready()
 	{

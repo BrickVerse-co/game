@@ -94,10 +94,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character"), CloneIgnore]
 	public Color HeadColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.HeadColor : _pendingHeadColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.HeadColor : _pendingHeadColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.HeadColor = value;
 				_pendingHeadColor = null;
@@ -112,10 +112,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color TorsoColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.TorsoColor : _pendingTorsoColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.TorsoColor : _pendingTorsoColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.TorsoColor = value;
 				_pendingTorsoColor = null;
@@ -130,10 +130,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color LeftArmColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.LeftArmColor : _pendingLeftArmColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.LeftArmColor : _pendingLeftArmColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.LeftArmColor = value;
 				_pendingLeftArmColor = null;
@@ -148,10 +148,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color RightArmColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.RightArmColor : _pendingRightArmColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.RightArmColor : _pendingRightArmColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.RightArmColor = value;
 				_pendingRightArmColor = null;
@@ -166,10 +166,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color LeftLegColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.LeftLegColor : _pendingLeftLegColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.LeftLegColor : _pendingLeftLegColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.LeftLegColor = value;
 				_pendingLeftLegColor = null;
@@ -184,10 +184,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public Color RightLegColor
 	{
-		get => (Character is BrickversianModal rig) ? rig.RightLegColor : _pendingRightLegColor ?? new Color();
+		get => (Character is BrickversianModel rig) ? rig.RightLegColor : _pendingRightLegColor ?? new Color();
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.RightLegColor = value;
 				_pendingRightLegColor = null;
@@ -202,10 +202,10 @@ public partial class NPC : Physical
 	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Apply them to Character instead"), CloneIgnore]
 	public string FaceID
 	{
-		get => (Character is BrickversianModal rig) ? rig.FaceID : _pendingFaceID ?? "0";
+		get => (Character is BrickversianModel rig) ? rig.FaceID : _pendingFaceID ?? "0";
 		set
 		{
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				rig.FaceID = value;
 				_pendingFaceID = null;
@@ -497,7 +497,7 @@ public partial class NPC : Physical
 			// Create default character on legacy world. If character is not set
 			Root.Insert.InitializeDefaultNPC(this);
 
-			if (Character is BrickversianModal rig)
+			if (Character is BrickversianModel rig)
 			{
 				if (_pendingHeadColor.HasValue)
 				{
@@ -752,7 +752,7 @@ public partial class NPC : Physical
 		Character?.Animator?.StopAnimation();
 		Character?.Animator?.StopOneShotAnimation();
 
-		if (Character is BrickversianModal ptmodel)
+		if (Character is BrickversianModel ptmodel)
 		{
 			ptmodel.StartRagdoll(Velocity);
 		}
@@ -1054,7 +1054,7 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public void LoadAppearance(string userID)
 	{
-		if (Character is BrickversianModal ptm)
+		if (Character is BrickversianModel ptm)
 		{
 			ptm.LoadAppearance(userID, Root.PlayerDefaults.LoadAppearanceTools);
 		}
@@ -1063,7 +1063,7 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public void ClearAppearance()
 	{
-		if (Character is BrickversianModal ptm)
+		if (Character is BrickversianModel ptm)
 		{
 			ptm.ClearAppearance();
 		}
@@ -1112,7 +1112,7 @@ public partial class NPC : Physical
 		Anchored = false;
 		IsDead = false;
 
-		if (Character is BrickversianModal ptmodel)
+		if (Character is BrickversianModel ptmodel)
 		{
 			ptmodel.StopRagdoll();
 		}

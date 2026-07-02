@@ -12,7 +12,7 @@ namespace BrickVerse.Datamodel;
 public partial class Clothing : Instance
 {
 	private ImageAsset? _asset;
-	private BrickversianModal? _target;
+	private BrickversianModel? _target;
 
 	internal Texture2D? ClothTexture;
 
@@ -63,7 +63,7 @@ public partial class Clothing : Instance
 	public override void EnterTree()
 	{
 		base.EnterTree();
-		if (Parent is BrickversianModal c)
+		if (Parent is BrickversianModel c)
 		{
 			_target = c;
 			NotifyCharacter();

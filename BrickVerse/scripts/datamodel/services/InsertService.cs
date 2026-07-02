@@ -84,9 +84,9 @@ public sealed partial class InsertService : Instance
 	}
 
 	[ScriptMethod]
-	public BrickversianModal DefaultCharacter()
+	public BrickversianModel DefaultCharacter()
 	{
-		var ptm = New<BrickversianModal>();
+		var ptm = New<BrickversianModel>();
 		var animator = New<Animator>();
 		animator.AutoInit = false;
 		animator.Name = "Animator";
@@ -150,7 +150,7 @@ public sealed partial class InsertService : Instance
 		mesh.Name = "Mesh";
 		mesh.CanCollide = false;
 		mesh.Anchored = true;
-		accessory.Name = storeItem.Name;
+		accessory.Name = string.IsNullOrWhiteSpace(storeItem.Name) ? $"Accessory_{id}" : storeItem.Name;
 
 		mesh.LocalPosition = new Vector3(0, -10.7f, 0);
 
@@ -159,16 +159,16 @@ public sealed partial class InsertService : Instance
 		if (accessoryType == "backAccessory" || accessoryType == "frontAccessory" || accessoryType == "waistAccessory")
 		{
 			mesh.LocalPosition = new Vector3(0, -6.8f, 0);
-			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.LowerTorso;
+			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.LowerTorso;
 		}
 		else if (accessoryType == "neckAccessory" || accessoryType == "shoulderAccessory")
 		{
 			mesh.LocalPosition = new Vector3(0, -8.8f, 0);
-			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.UpperTorso;
+			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.UpperTorso;
 		}
 		else
 		{
-			accessory.TargetAttachment = BrickversianModal.CharacterAttachmentEnum.Head;
+			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.Head;
 		}
 
 		return accessory;
@@ -203,7 +203,7 @@ public sealed partial class InsertService : Instance
 		mesh.Name = "Mesh";
 		mesh.CanCollide = false;
 		mesh.Anchored = true;
-		tool.Name = storeItem.Name;
+		tool.Name = string.IsNullOrWhiteSpace(storeItem.Name) ? $"Tool_{id}" : storeItem.Name;
 
 		mesh.LocalPosition = new Vector3(1f, -7f, -3f);
 
@@ -212,12 +212,61 @@ public sealed partial class InsertService : Instance
 
 	private static async Task<APIStoreItem> GetStoreItemCachedAsync(string id)
 	{
+		if (string.IsNullOrWhiteSpace(id))
+			return CreateFallbackStoreItem(id, "Unknown Asset");
+
 		if (_storeItemCache.TryGetValue(id, out var cached))
 			return cached;
 
-		APIStoreItem storeItem = await BVAPI.GetStoreItem(id);
+		APIStoreItem storeItem;
+		try
+		{
+			storeItem = await BVAPI.GetStoreItem(id);
+		}
+		catch (HttpRequestException ex) when (IsRecoverableStoreLookupError(ex))
+		{
+			storeItem = CreateFallbackStoreItem(id, $"Asset_{id}");
+			PT.PrintErr($"Store metadata unavailable for asset {id} ({ex.StatusCode?.ToString() ?? "UnknownStatus"}). Using fallback metadata.");
+		}
+
 		_storeItemCache[id] = storeItem;
 		return storeItem;
+	}
+
+	private static bool IsRecoverableStoreLookupError(HttpRequestException ex)
+	{
+		return ex.StatusCode == System.Net.HttpStatusCode.BadRequest
+			|| ex.StatusCode == System.Net.HttpStatusCode.Unauthorized
+			|| ex.StatusCode == System.Net.HttpStatusCode.Forbidden
+			|| ex.StatusCode == System.Net.HttpStatusCode.NotFound;
+	}
+
+	private static APIStoreItem CreateFallbackStoreItem(string? id, string fallbackName)
+	{
+		return new APIStoreItem
+		{
+			Id = string.IsNullOrWhiteSpace(id) ? "0" : id,
+			Type = "",
+			AccessoryType = null,
+			Name = fallbackName,
+			Description = "",
+			Tags = [],
+			Creator = new APIStoreItemCreator
+			{
+				Type = "",
+				Id = 0,
+				Name = "",
+				Thumbnail = ""
+			},
+			Thumbnail = "",
+			Version = 0,
+			Sales = null,
+			Price = null,
+			Favorites = null,
+			IsLimited = false,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = null,
+		};
 	}
 
 	private string GetModelDownloadUrl(string id)

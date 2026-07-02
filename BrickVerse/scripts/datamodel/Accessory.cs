@@ -11,11 +11,11 @@ namespace BrickVerse.Datamodel;
 public partial class Accessory : Dynamic
 {
 	private CharacterModel? _targetCharacter;
-	private BrickversianModal.CharacterAttachmentEnum _targetAttachment;
+	private BrickversianModel.CharacterAttachmentEnum _targetAttachment;
 	private RemoteTransform3D? remoteTransform;
 
 	[Editable, ScriptProperty]
-	public BrickversianModal.CharacterAttachmentEnum TargetAttachment
+	public BrickversianModel.CharacterAttachmentEnum TargetAttachment
 	{
 		get => _targetAttachment;
 		set
