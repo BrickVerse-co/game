@@ -233,10 +233,10 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 
 		state.PushString(Globals.AppVersion);
-		state.SetGlobal("_POLY_VERSION");
+		state.SetGlobal("_BV_VERSION");
 
 		state.PushBoolean(true);
-		state.SetGlobal("_POLY_2");
+		state.SetGlobal("_BV_2");
 
 		Assembly assembly = Assembly.GetExecutingAssembly();
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code

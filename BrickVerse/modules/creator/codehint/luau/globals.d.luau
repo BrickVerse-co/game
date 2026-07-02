@@ -10,9 +10,9 @@ declare guid: {
     empty: (() -> string),
 }
 
-declare _POLY_VERSION: string
+declare _BV_VERSION: string
 
-declare _POLY_2: boolean
+declare _BV_2: boolean
 
 declare _LOCALTEST: boolean
 
