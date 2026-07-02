@@ -12,17 +12,21 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 	private const int AvatarSize = 24;
 	private const int BadgeSize = 16;
 	private const string DefaultHeadshotUrl = "https://f004.backblazeb2.com/file/brickverse-ugc-public/defaults/headshot.png";
+	private const int MenuSwitchAccount = 0;
+	private const int MenuRefreshIdentity = 1;
+	private const int MenuCopyUserId = 2;
+	private const int MenuSignOut = 3;
 
 	private readonly SystemNetHttp.HttpClient _http = new();
 
 	private TextureRect _avatar = null!;
 	private TextureRect _badge = null!;
-	private Label _username = null!;
+	private MenuButton _usernameMenu = null!;
 	private int _avatarRequestId;
 
 	public override void _Ready()
 	{
-		MouseFilter = MouseFilterEnum.Ignore;
+		MouseFilter = MouseFilterEnum.Pass;
 		AddThemeConstantOverride("separation", 8);
 
 		CreateUi();
@@ -42,15 +46,26 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 	{
 		CustomMinimumSize = new(0, AvatarSize);
 
-		_username = new Label
+		_usernameMenu = new MenuButton
 		{
-			MouseFilter = MouseFilterEnum.Ignore,
-			VerticalAlignment = VerticalAlignment.Center,
+			Flat = true,
+			SwitchOnHover = true,
+			MouseFilter = MouseFilterEnum.Stop,
 			SizeFlagsVertical = SizeFlags.ShrinkCenter,
+			TooltipText = "Account options",
 		};
-		_username.AddThemeColorOverride("font_color", new Color(0.88f, 0.88f, 0.88f));
-		_username.AddThemeFontSizeOverride("font_size", 13);
-		_username.CustomMinimumSize = new(0, AvatarSize);
+		_usernameMenu.AddThemeColorOverride("font_color", new Color(0.88f, 0.88f, 0.88f));
+		_usernameMenu.AddThemeFontSizeOverride("font_size", 13);
+		_usernameMenu.CustomMinimumSize = new(0, AvatarSize);
+
+		PopupMenu menu = _usernameMenu.GetPopup();
+		menu.AddItem("Switch account...", MenuSwitchAccount);
+		menu.AddItem("Refresh identity", MenuRefreshIdentity);
+		menu.AddSeparator();
+		menu.AddItem("Copy user ID", MenuCopyUserId);
+		menu.AddSeparator();
+		menu.AddItem("Sign out", MenuSignOut);
+		menu.IdPressed += OnMenuIdPressed;
 
 		_avatar = new TextureRect
 		{
@@ -76,7 +91,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 
 		AddChild(_badge);
 		AddChild(_avatar);
-		AddChild(_username);
+		AddChild(_usernameMenu);
 	}
 
 	private void BindEvents()
@@ -101,13 +116,48 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		OpenIdUserInfoResponse? openId = CreatorAPI.CurrentUserInfo;
 
 		string username = ResolveUsername(identity, openId);
-		_username.Text = username;
+		_usernameMenu.Text = username;
+		_usernameMenu.TooltipText = username;
 		TooltipText = username;
+		UpdateMenuState();
 
 		string headshotUrl = ResolveHeadshotUrl(identity, openId);
 		_ = UpdateAvatarAsync(headshotUrl);
 
 		UpdateBadge(identity);
+	}
+
+	private void UpdateMenuState()
+	{
+		PopupMenu menu = _usernameMenu.GetPopup();
+		bool isAuthenticated = CreatorAPI.IsUserAuthenticated;
+		bool hasUserId = !string.IsNullOrWhiteSpace(CreatorAPI.UserID) && CreatorAPI.UserID != "0";
+
+		menu.SetItemDisabled(menu.GetItemIndex(MenuRefreshIdentity), !isAuthenticated);
+		menu.SetItemDisabled(menu.GetItemIndex(MenuCopyUserId), !hasUserId);
+		menu.SetItemDisabled(menu.GetItemIndex(MenuSignOut), !isAuthenticated);
+	}
+
+	private async void OnMenuIdPressed(long id)
+	{
+		switch ((int)id)
+		{
+			case MenuSwitchAccount:
+				await CreatorAPI.SwitchAccount();
+				break;
+			case MenuRefreshIdentity:
+				await CreatorAPI.RefreshToolbarIdentityAsync();
+				break;
+			case MenuCopyUserId:
+				if (!string.IsNullOrWhiteSpace(CreatorAPI.UserID) && CreatorAPI.UserID != "0")
+				{
+					DisplayServer.ClipboardSet(CreatorAPI.UserID);
+				}
+				break;
+			case MenuSignOut:
+				CreatorAPI.ClearAuth();
+				break;
+		}
 	}
 
 	private static string ResolveUsername(

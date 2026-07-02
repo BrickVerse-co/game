@@ -604,6 +604,17 @@ public static class CreatorAPI
 		}
 	}
 
+	public static async Task RefreshToolbarIdentityAsync()
+	{
+		await RefreshToolbarIdentity();
+	}
+
+	public static async Task SwitchAccount()
+	{
+		ClearAuth();
+		await PromptLogin();
+	}
+
 	private static void ResolveToolbarBadge(JsonElement userNode, ref ToolbarIdentity identity)
 	{
 		if (
