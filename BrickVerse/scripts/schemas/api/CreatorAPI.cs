@@ -34,13 +34,13 @@ public struct CreatorGuildItem
 public struct CreatorPlaceItem
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("worldId")]
-	public int? WorldId { get; set; }
+	public long? WorldId { get; set; }
 
 	[JsonPropertyName("universeId")]
-	public int? UniverseId { get; set; }
+	public long? UniverseId { get; set; }
 
 	[JsonPropertyName("name")]
 	public string Name { get; set; }

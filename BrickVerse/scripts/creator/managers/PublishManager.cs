@@ -23,7 +23,7 @@ public static class PublishManager
 		throw new Exception("PublishProject is deprecated. Use PublishPlaceModal instead.");
 	}
 
-	public static async Task PublishModel(Instance target, int modelID = 0)
+	public static async Task PublishModel(Instance target, long modelID = 0)
 	{
 		var loadOverlay = CreatorService.Interface.LoadOverlay;
 		try

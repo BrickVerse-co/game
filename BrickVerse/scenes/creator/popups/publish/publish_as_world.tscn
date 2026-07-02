@@ -1,0 +1,315 @@
+[gd_scene format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/hud.tres" id="2"]
+[ext_resource type="FontFile" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="3"]
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/PublishAsPlaceModal.cs" id="4"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+bg_color = Color(0.105, 0.105, 0.11, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="2"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.055, 0.055, 0.06, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.15)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="3"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0.075)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="4"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0.592, 1, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 3
+border_color = Color(0, 0.45, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="5"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0.09)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="6"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0.592, 1, 1)
+border_width_bottom = 4
+border_color = Color(0, 0.47, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PublishAsPlaceModal" type="Window"]
+title = "Publish As"
+exclusive = true
+unresizable = true
+borderless = true
+popup_window = true
+min_size = Vector2i(880, 620)
+size = Vector2i(1180, 760)
+theme = ExtResource("2")
+script = ExtResource("4")
+
+[node name="Modal" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("1")
+
+[node name="ContentMargin" type="MarginContainer" parent="Modal"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="ContentRoot" type="VBoxContainer" parent="Modal/ContentMargin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="TopBar" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Modal/ContentMargin/ContentRoot/TopBar"]
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1")
+theme_override_font_sizes/font_size = 20
+text = "Publish As"
+horizontal_alignment = 0
+
+[node name="SpacerLeft" type="Control" parent="Modal/ContentMargin/ContentRoot/TopBar"]
+custom_minimum_size = Vector2(8, 8)
+size_flags_horizontal = 3
+
+[node name="Close" type="Button" parent="Modal/ContentMargin/ContentRoot/TopBar"]
+custom_minimum_size = Vector2(22, 22)
+text = "×"
+flat = true
+
+[node name="LeadGroup" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="LeadTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+theme_override_fonts/font = ExtResource("1")
+theme_override_font_sizes/font_size = 14
+text = "Choose an experience to overwrite"
+
+[node name="LeadBody" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+theme_override_font_sizes/font_size = 11
+autowrap_mode = 3
+text = "Pick a destination, preview it on the right, and publish over the top or create a fresh experience."
+
+[node name="CurrentProject" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 11
+text = "Current project"
+
+[node name="Split" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="ListPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
+custom_minimum_size = Vector2(740, 0)
+size_flags_horizontal = 0
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("1")
+
+[node name="ListMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="ListColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderRow" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HeaderTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1")
+theme_override_font_sizes/font_size = 14
+text = "Your experiences"
+
+[node name="Results" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 11
+text = "0 experiences"
+
+[node name="Search" type="LineEdit" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+custom_minimum_size = Vector2(0, 34)
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("2")
+theme_override_font_sizes/font_size = 12
+placeholder_text = "Search your experiences"
+
+[node name="Loading" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+visible = false
+theme_override_font_sizes/font_size = 11
+text = "Loading your experiences..."
+
+[node name="Empty" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+visible = false
+theme_override_font_sizes/font_size = 11
+text = "No experiences found."
+
+[node name="ListScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ListList" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/ListScroll"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="DetailPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
+custom_minimum_size = Vector2(320, 0)
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("1")
+
+[node name="DetailMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="DetailColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 10
+
+[node name="DetailBadge" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 11
+text = "NEW EXPERIENCE"
+
+[node name="DetailPreviewPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+custom_minimum_size = Vector2(0, 190)
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("1")
+
+[node name="DetailPreview" type="TextureRect" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn/DetailPreviewPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="DetailTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+theme_override_fonts/font = ExtResource("1")
+theme_override_font_sizes/font_size = 16
+text = "Create a new experience"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="DetailMeta" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+theme_override_font_sizes/font_size = 11
+text = "Creates a brand-new world entry with the current project."
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="DetailBody" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 11
+autowrap_mode = 3
+clip_text = true
+text = "Use this when you want the publish flow to create a new destination instead of replacing an existing one."
+
+[node name="Footer" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+alignment = 2
+theme_override_constants/separation = 8
+
+[node name="Cancel" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
+custom_minimum_size = Vector2(88, 32)
+theme_override_styles/normal = SubResource("5")
+text = "Cancel"
+
+[node name="Publish" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
+custom_minimum_size = Vector2(124, 32)
+theme_override_fonts/font = ExtResource("1")
+theme_override_styles/normal = SubResource("6")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Create New Experience"

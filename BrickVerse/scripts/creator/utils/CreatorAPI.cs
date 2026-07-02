@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using SystemNetHttp = System.Net.Http;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using BrickVerse.Utils;
 using Godot;
 
 namespace BrickVerse.Creator.Utils;
@@ -142,8 +143,10 @@ public static class CreatorAPI
 		if (!string.IsNullOrWhiteSpace(Token))
 		{
 			_client.DefaultRequestHeaders["Authorization"] = "Bearer " + Token;
-			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(Token);
+			_client.DefaultRequestHeaders["Cookie"] = "auth_token=" + Token;
 		}
+
+		BVAPI.SetAuthToken(Token);
 	}
 
 	public static async Task PromptLogin()
@@ -392,8 +395,10 @@ public static class CreatorAPI
 
 		PendingIdToken = null;
 		CurrentUserInfo = userInfo;
-		UserID = GetUserId(userInfo);
-		Username = userInfo.PreferredUsername;
+
+		(string userId, string username) = await GetAuthenticatedUserIdentity(userInfo);
+		UserID = userId;
+		Username = username;
 		IsUserAuthenticated = true;
 
 		PT.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
@@ -652,12 +657,64 @@ public static class CreatorAPI
 		}
 	}
 
-	private static string GetUserId(OpenIdUserInfoResponse userInfo)
+	private static async Task<(string UserId, string Username)> GetAuthenticatedUserIdentity(
+		OpenIdUserInfoResponse userInfo
+	)
 	{
-		if (!string.IsNullOrWhiteSpace(userInfo.Sub))
-			return userInfo.Sub;
+		string username =
+			!string.IsNullOrWhiteSpace(userInfo.PreferredUsername)
+				? userInfo.PreferredUsername
+				: userInfo.Name;
 
-		return "0";
+		if (string.IsNullOrWhiteSpace(username))
+			throw new InvalidOperationException("CreatorAPI: OpenID session did not include a usable username.");
+
+		PT.Print($"CreatorAPI: Resolving creator identity for username '{username}'");
+
+		string lookupUrl =
+			Globals.ApiEndpoint.PathJoin("/v3/users/lookup")
+			+ "?username="
+			+ Uri.EscapeDataString(username);
+
+		using HttpResponseMessage msg = await _client.GetAsync(lookupUrl);
+		string body = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException(
+				$"CreatorAPI: Failed to resolve authenticated user: {(int)msg.StatusCode} {msg.StatusCode}: {body}"
+			);
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(body);
+
+		if (
+			!doc.RootElement.TryGetProperty("success", out JsonElement successNode)
+			|| successNode.ValueKind != JsonValueKind.True
+		)
+		{
+			throw new InvalidOperationException("CreatorAPI: user lookup did not return a successful response.");
+		}
+
+		if (
+			!doc.RootElement.TryGetProperty("user", out JsonElement user)
+			|| user.ValueKind != JsonValueKind.Object
+		)
+		{
+			throw new InvalidOperationException("CreatorAPI: user lookup did not include a user object.");
+		}
+
+		string userId = GetString(user, "id");
+		string resolvedUsername = GetString(user, "username", username);
+
+		if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(resolvedUsername))
+		{
+			throw new InvalidOperationException("CreatorAPI: user lookup did not include a valid user id or username.");
+		}
+
+		PT.Print($"CreatorAPI: Resolved creator identity '{resolvedUsername}' -> {userId}");
+
+		return (userId, resolvedUsername);
 	}
 
 	private static string GetString(JsonElement root, string propertyName, string fallback = "")
@@ -731,6 +788,7 @@ public static class CreatorAPI
 
 		_client.DefaultRequestHeaders.Remove("Authorization");
 		_client.DefaultRequestHeaders.Remove("Cookie");
+		BVAPI.SetAuthToken("");
 		DeleteStoredToken();
 		AuthenticatedProfileUpdated?.Invoke(null);
 		ToolbarIdentityUpdated?.Invoke(null);
@@ -818,79 +876,183 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
+		PT.Print($"CreatorAPI: Loading published worlds for user '{Username}' ({UserID})");
+		CreatorPlaceItem[] publishedWorlds = await GetCreatedWorldsFromCreatedWorldsEndpoint();
+		PT.Print($"CreatorAPI: Published worlds endpoint returned {publishedWorlds.Length} item(s)");
+		return publishedWorlds;
+	}
+
+	public static async Task<CreatorPlaceItem[]> GetCreatedWorlds()
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+		PT.Print($"CreatorAPI: Loading publish-as worlds for user '{Username}' ({UserID})");
+		CreatorPlaceItem[] createdWorlds = await GetCreatedWorldsFromUserGamesEndpoint();
+		PT.Print($"CreatorAPI: Publish-as user-games endpoint returned {createdWorlds.Length} world(s)");
+		if (createdWorlds.Length > 0)
+			return createdWorlds;
+
+		PT.Print("CreatorAPI: Falling back to /v3/created-worlds for publish-as targets");
+		return await GetCreatedWorldsFromCreatedWorldsEndpoint();
+	}
+
+	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromCreatedWorldsEndpoint()
+	{
+		PT.Print("CreatorAPI: Requesting /v3/created-worlds");
 		using HttpResponseMessage msg = await _client.GetAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/created-worlds")
 		);
-		msg.EnsureSuccessStatusCode();
+		string body = await msg.Content.ReadAsStringAsync();
 
-		using JsonDocument doc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException(
+				$"CreatorAPI: Failed to load created worlds: {(int)msg.StatusCode} {msg.StatusCode}: {body}"
+			);
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(body);
 
 		if (
 			!doc.RootElement.TryGetProperty("universes", out JsonElement universes)
 			|| universes.ValueKind != JsonValueKind.Array
 		)
 		{
+			PT.Print("CreatorAPI: /v3/created-worlds response did not include a universes array");
 			return [];
 		}
 
 		List<CreatorPlaceItem> worlds = [];
+		PT.Print($"CreatorAPI: /v3/created-worlds returned {universes.GetArrayLength()} universe(s)");
 
 		foreach (JsonElement universe in universes.EnumerateArray())
 		{
-			if (
-				!universe.TryGetProperty("worlds", out JsonElement worldArray)
-				|| worldArray.ValueKind != JsonValueKind.Array
-			)
+			AppendWorldsFromUniverse(worlds, universe);
+		}
+
+		PT.Print($"CreatorAPI: /v3/created-worlds resolved {worlds.Count} publish target(s)");
+
+		return [.. worlds];
+	}
+
+	private static void AppendWorldsFromUniverse(List<CreatorPlaceItem> worlds, JsonElement universe)
+	{
+		if (
+			!universe.TryGetProperty("worlds", out JsonElement worldArray)
+			|| worldArray.ValueKind != JsonValueKind.Array
+		)
+		{
+			return;
+		}
+
+		long universeId = GetLong(universe, "id");
+		PT.Print(
+			$"CreatorAPI: Inspecting universe {universeId} with {worldArray.GetArrayLength()} world(s)"
+		);
+
+		foreach (JsonElement world in worldArray.EnumerateArray())
+		{
+			long worldId = GetLong(world, "id");
+			string worldName = GetString(world, "name");
+
+			if (universeId == 0 || worldId == 0)
 			{
+				PT.Print(
+					$"CreatorAPI: Skipping universe/world entry because ids were invalid (universeId={universeId}, worldId={worldId}, name='{worldName}')"
+				);
 				continue;
 			}
 
-			foreach (JsonElement world in worldArray.EnumerateArray())
+			worlds.Add(
+				new CreatorPlaceItem
+				{
+					Id = worldId,
+					UniverseId = universeId,
+					WorldId = worldId,
+					Name = GetString(world, "name"),
+					CreatedAt =
+						DateTime.TryParse(GetString(world, "createdAt"), out DateTime createdAt)
+							? createdAt
+							: DateTime.UtcNow,
+					UpdatedAt =
+						DateTime.TryParse(GetString(world, "updatedAt"), out DateTime updatedAt)
+							? updatedAt
+							: null,
+					IconUrl = "",
+				}
+			);
+
+			PT.Print(
+				$"CreatorAPI: Added published world '{worldName}' worldId={worldId} universeId={universeId}"
+			);
+		}
+	}
+
+	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromUserGamesEndpoint()
+	{
+		string requestUrl = Globals.ApiEndpoint.PathJoin($"/v3/worlds/user/{UserID}");
+		PT.Print($"CreatorAPI: Requesting {requestUrl}");
+
+		using HttpResponseMessage msg = await _client.GetAsync(requestUrl);
+		string body = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException(
+				$"CreatorAPI: Failed to load user games for Publish As: {(int)msg.StatusCode} {msg.StatusCode}: {body}"
+			);
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(body);
+
+		if (
+			!doc.RootElement.TryGetProperty("games", out JsonElement games)
+			|| games.ValueKind != JsonValueKind.Array
+		)
+		{
+			PT.Print("CreatorAPI: /v3/worlds/user/{userId} response did not include a games array");
+			return [];
+		}
+
+		List<CreatorPlaceItem> worlds = [];
+		int skippedGames = 0;
+
+		foreach (JsonElement game in games.EnumerateArray())
+		{
+			if (!long.TryParse(GetString(game, "id"), out long worldId) || worldId == 0)
 			{
+				skippedGames++;
+				continue;
+			}
+
+			try
+			{
+				APIPlaceInfo worldInfo = await BVAPI.GetWorldFromID(worldId);
+
 				worlds.Add(
 					new CreatorPlaceItem
 					{
-						Id =
-							world.TryGetProperty("id", out JsonElement idNode)
-							&& int.TryParse(idNode.GetString(), out int id)
-								? id
-								: 0,
-
-						UniverseId =
-							universe.TryGetProperty("id", out JsonElement idNode2)
-							&& int.TryParse(idNode2.GetString(), out int UniverseId)
-								? UniverseId
-								: 0,
-
-						WorldId =
-							world.TryGetProperty("id", out JsonElement idNode3)
-							&& int.TryParse(idNode3.GetString(), out int WorldId)
-								? WorldId
-								: 0,
-
-						Name = world.TryGetProperty("name", out JsonElement nameNode)
-							? nameNode.GetString() ?? ""
-							: "",
-
-						CreatedAt =
-							world.TryGetProperty("createdAt", out JsonElement createdNode)
-							&& createdNode.ValueKind == JsonValueKind.String
-							&& DateTime.TryParse(createdNode.GetString(), out DateTime createdAt)
-								? createdAt
-								: DateTime.UtcNow,
-
-						UpdatedAt =
-							world.TryGetProperty("updatedAt", out JsonElement updatedNode)
-							&& updatedNode.ValueKind == JsonValueKind.String
-							&& DateTime.TryParse(updatedNode.GetString(), out DateTime updatedAt)
-								? updatedAt
-								: null,
-
-						IconUrl = "",
+						Id = worldInfo.Id,
+						WorldId = worldInfo.Id,
+						UniverseId = worldInfo.UniverseId,
+						Name = string.IsNullOrWhiteSpace(worldInfo.Name) ? GetString(game, "name") : worldInfo.Name,
+						CreatedAt = worldInfo.CreatedAt,
+						UpdatedAt = worldInfo.UpdatedAt,
+						IconUrl = GetString(game, "thumbnailUrl"),
 					}
 				);
 			}
+			catch (Exception ex)
+			{
+				skippedGames++;
+				PT.PrintErr($"CreatorAPI: Skipping world {worldId} while loading Publish As targets: {ex.Message}");
+			}
 		}
+
+		PT.Print(
+			$"CreatorAPI: /v3/worlds/user/{UserID} produced {worlds.Count} publish-as target(s) with {skippedGames} skipped item(s)"
+		);
 
 		return [.. worlds];
 	}
@@ -998,7 +1160,7 @@ public static class CreatorAPI
 
 		request.Headers.TryAddWithoutValidation("User-Agent", $"BrickVerse Client {Globals.AppVersion}");
 		request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + Token);
-		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Uri.EscapeDataString(Token));
+		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Token);
 		request.Headers.TryAddWithoutValidation("Accept", "application/json");
 
 		//PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
@@ -1054,7 +1216,7 @@ public static class CreatorAPI
 		};
 	}
 
-	public static async Task<CreatorPublishResponse> UploadModel(byte[] modelData, int modelId = 0)
+	public static async Task<CreatorPublishResponse> UploadModel(byte[] modelData, long modelId = 0)
 	{
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");

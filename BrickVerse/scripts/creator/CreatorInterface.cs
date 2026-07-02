@@ -38,6 +38,7 @@ public partial class CreatorInterface : Control, IScriptObject
 	private const string BindKeyPopupPath = "res://scenes/creator/popups/bind_key.tscn";
 	private const string PublishPopupPath = "res://scenes/creator/popups/publish/publish.tscn";
 	private const string WorldPublishPopupPath = "res://scenes/creator/popups/publish/publish_world.tscn";
+	private const string WorldPublishAsPopupPath = "res://scenes/creator/popups/publish/publish_as_world.tscn";
 	private const string AddonReqPermPopupPath = "res://scenes/creator/popups/addon_perm_request.tscn";
 
 	private const string CreditPopupPath = "res://scenes/creator/popups/credits.tscn";
@@ -628,11 +629,26 @@ public partial class CreatorInterface : Control, IScriptObject
 		PopupWindow(popup);
 	}
 
-	public void OpenWorldPublish(World world, bool publishAs = false)
+	public void OpenWorldPublish(World? world, bool publishAs = false)
 	{
-		PublishPlaceModal popup = Globals.CreateInstanceFromScene<PublishPlaceModal>(WorldPublishPopupPath);
-		popup.Open(world, publishAs);
-		PopupWindow(popup);
+		PT.Print($"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}");
+		if (world == null)
+		{
+			PT.PrintErr("CreatorInterface: OpenWorldPublish called without an active world.");
+			return;
+		}
+
+		if (publishAs)
+		{
+			PublishAsPlaceModal popup = Globals.CreateInstanceFromScene<PublishAsPlaceModal>(WorldPublishAsPopupPath);
+			popup.Open(world);
+			PopupWindow(popup);
+			return;
+		}
+
+		PublishPlaceModal normalPopup = Globals.CreateInstanceFromScene<PublishPlaceModal>(WorldPublishPopupPath);
+		normalPopup.Open(world, false);
+		PopupWindow(normalPopup);
 	}
 
 	public void OpenPublish(Instance target)

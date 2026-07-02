@@ -29,10 +29,10 @@ public partial class PublishPopup : PopupWindowBase
 	[Export] private Button _publishButton = null!;
 
 	private ButtonGroup _itemItemGroup = new();
-	private int _targetID = 0;
+	private long _targetID = 0;
 
-	private int? _universeId = 0;
-	private int? _worldId = 0;
+	private long? _universeId = 0;
+	private long? _worldId = 0;
 
 	public PublishTypeEnum PublishType;
 	public Instance Target = null!;
@@ -137,7 +137,7 @@ public partial class PublishPopup : PopupWindowBase
 		Publish();
 	}
 
-	private async void Publish(int id = 0, int? worldId = null, int? universeId = null)
+	private async void Publish(long id = 0, long? worldId = null, long? universeId = null)
 	{
 		QueueFree();
 		if (Target is ServerScript script)

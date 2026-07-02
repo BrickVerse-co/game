@@ -1,0 +1,147 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/components/PublishAsPlaceCardUI.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+bg_color = Color(0.07, 0.07, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="2"]
+bg_color = Color(0.1, 0.18, 0.3, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.23, 0.74, 1, 0.5)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="3"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.09, 0.09, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="4"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.11, 0.11, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.76, 1, 0.45)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxEmpty" id="5"]
+
+[node name="PublishAsPlaceCard" type="Button" unique_id=1139912567 node_paths=PackedStringArray("_thumbnailRect", "_badgeLabel", "_titleLabel", "_metaLabel", "_descriptionLabel")]
+toggle_mode = true
+custom_minimum_size = Vector2(0, 216)
+size_flags_horizontal = 3
+size_flags_vertical = 0
+focus_mode = 2
+text = ""
+flat = true
+clip_text = true
+script = ExtResource("1")
+theme_override_styles/normal = SubResource("1")
+theme_override_styles/hover = SubResource("2")
+theme_override_styles/pressed = SubResource("2")
+theme_override_styles/focus = SubResource("5")
+_thumbnailRect = NodePath("MarginContainer/VBoxContainer/ThumbnailPanel/Thumbnail")
+_badgeLabel = NodePath("MarginContainer/VBoxContainer/BadgePanel/Badge")
+_titleLabel = NodePath("MarginContainer/VBoxContainer/Title")
+_metaLabel = NodePath("MarginContainer/VBoxContainer/Meta")
+_descriptionLabel = NodePath("MarginContainer/VBoxContainer/Description")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=380221042]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1459574162]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ThumbnailPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1110971527]
+custom_minimum_size = Vector2(0, 98)
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("1")
+
+[node name="Thumbnail" type="TextureRect" parent="MarginContainer/VBoxContainer/ThumbnailPanel" unique_id=1707808810]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BadgePanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1941674639]
+custom_minimum_size = Vector2(0, 24)
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("3")
+
+[node name="Badge" type="Label" parent="MarginContainer/VBoxContainer/BadgePanel" unique_id=405945708]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "OVR"
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1159595043]
+theme_override_font_sizes/font_size = 14
+text = "Untitled world"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Meta" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1471953852]
+theme_override_font_sizes/font_size = 10
+text = "World #0 · Universe #0"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Description" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1744253930]
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 10
+autowrap_mode = 3
+text = "Publish as will overwrite this experience with the current project."
