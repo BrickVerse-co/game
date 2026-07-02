@@ -906,6 +906,26 @@ public static class CreatorAPI
 		return content;
 	}
 
+	public static async Task<byte[]> DownloadWorld(string worldId)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+		string url = Globals.ApiEndpoint.PathJoin($"/v3/world/editor/tree?worldId={worldId}&stream=true");
+
+		using HttpResponseMessage msg = await _client.GetAsync(url);
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			string responseText = await msg.Content.ReadAsStringAsync();
+			throw new HttpRequestException(
+				$"CreatorAPI: Download world failed: {(int)msg.StatusCode} {msg.StatusCode}: {responseText}"
+			);
+		}
+
+		return await msg.Content.ReadAsByteArrayAsync();
+	}
+
 	public static async Task<CreatorPublishResponse> UploadWorld(
 		byte[] placeData,
 		long? universeId = 0,

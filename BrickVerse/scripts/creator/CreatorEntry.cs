@@ -51,10 +51,19 @@ public partial class CreatorEntry : Node
 
 		GetViewport().GuiEmbedSubwindows = true;
 
-		// Open project
+		// Open project by world id cmd argument
+		cmdargs.TryGetValue("world", out string? worldId);
+		if (worldId != null)
+		{
+			PT.Print("Attempting to open world by id: ", worldId);
+			_ = CreatorService.Singleton.CreateNewSessionByWorldId(worldId);
+		}
+
+		// Open project by file path cmd argument
 		cmdargs.TryGetValue("proj", out string? creatorFilePath);
 		if (creatorFilePath != null)
 		{
+			PT.Print("Attempting to open project by file path: ", creatorFilePath);
 			_ = CreatorService.Singleton.CreateNewSession(creatorFilePath);
 		}
 
@@ -64,6 +73,7 @@ public partial class CreatorEntry : Node
 
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
+			PT.Print("Attempting to import legacy world from ", legacyImportIn, " to ", legacyImportOut);
 			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.bvxw", ProjectName = new DirectoryInfo(legacyImportOut).Name });
 		}
 	}

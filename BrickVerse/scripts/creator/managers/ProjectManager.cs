@@ -59,6 +59,7 @@ public static class ProjectManager
 							{
 								finalData.Add(new()
 								{
+									WorldId = metadata.WorldId,
 									PlaceName = metadata.ProjectName,
 									IconID = metadata.IconID,
 									FolderPath = r.FolderPath,
@@ -428,6 +429,7 @@ public static class ProjectManager
 		[JsonInclude] public DateTime LastOpened;
 		[JsonIgnore] public string PlaceName;
 		[JsonIgnore] public int? IconID;
+		[JsonIgnore] public long? WorldId;
 	}
 
 	public struct TemplateProjectJSON
@@ -443,6 +445,7 @@ public static class ProjectManager
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long?))]
 internal partial class RecentsFileGenerationContext : JsonSerializerContext { }
 
 [JsonSerializable(typeof(TemplateProjectJSON))]

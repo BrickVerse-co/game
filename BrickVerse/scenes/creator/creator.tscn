@@ -1228,7 +1228,7 @@ layout_mode = 2
 [node name="Properties" parent="GUI/Splitter/Right/Split" unique_id=2034223215 instance=ExtResource("34_bc04q")]
 layout_mode = 2
 
-[node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel", "_versionLabel")]
+[node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel")]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0
@@ -1239,7 +1239,6 @@ mouse_filter = 2
 theme = SubResource("Theme_4t7x2")
 script = ExtResource("26_xdd36")
 _titleLabel = NodePath("Labels/Status")
-_versionLabel = NodePath("")
 
 [node name="Labels" type="HBoxContainer" parent="GUI/Footer" unique_id=1074160864]
 layout_mode = 2

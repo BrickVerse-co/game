@@ -663,6 +663,31 @@ public partial class CreatorInterface : Control, IScriptObject
 		return InsertMenu;
 	}
 
+	public async Task<string> PromptFolderSelect(FileSelectPromptPayload data)
+	{
+		TaskCompletionSource<string> tcs = new();
+
+		PromptFileSelect(new()
+		{
+			Title = data.Title,
+			CurrentDirectory = data.CurrentDirectory,
+			FileName = data.FileName,
+			ShowHidden = data.ShowHidden,
+			DialogMode = DisplayServer.FileDialogMode.OpenDir,
+		}, paths =>
+		{
+			if (paths.Length == 0 || string.IsNullOrWhiteSpace(paths[0]))
+			{
+				tcs.TrySetResult(string.Empty);
+				return;
+			}
+
+			tcs.TrySetResult(paths[0]);
+		}, () => tcs.TrySetResult(string.Empty));
+
+		return await tcs.Task;
+	}
+
 	public void PromptFileSelect(FileSelectPromptPayload data, Action<string[]> callback, Action? onCancel = null)
 	{
 		bool replaceCur = string.IsNullOrEmpty(data.CurrentDirectory);

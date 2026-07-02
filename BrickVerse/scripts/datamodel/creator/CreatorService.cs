@@ -147,6 +147,80 @@ public sealed partial class CreatorService : Node, IScriptObject
 		base._Process(delta);
 	}
 
+	public async Task CreateNewSessionByWorldId(string worldId, bool forceNew = false)
+	{
+		if (worldId == "0" || worldId == string.Empty)
+		{
+			PT.PrintErr("Invalid world id, world id 0 is reserved for local projects.");
+			return;
+		}
+
+		Interface.LoadOverlay?.SetTitle("Opening world creator");
+		Interface.LoadOverlay?.SetStatus("Determining project folder");
+		Interface.LoadOverlay?.SetMaxProgress(4);
+		Interface.LoadOverlay?.Show();
+
+		// Check previous projects for existing world files
+		if (!forceNew)
+		{
+			ProjectManager.RecentData[] recents = await ProjectManager.GetRecents();
+			foreach (ProjectManager.RecentData r in recents)
+			{
+				// Check if any of the recent projects have a matching world id
+				if (r.WorldId == long.Parse(worldId))
+				{
+					// Open the existing project
+					PT.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
+					await CreateNewSession(r.FolderPath);
+					return;
+				}
+			}
+		}
+
+		Interface.LoadOverlay?.SetStatus("Downloading world");
+		Interface.LoadOverlay?.SetProgress(0);
+
+		// Download world from API
+		byte[] worldContent = await CreatorAPI.DownloadWorld(worldId);
+		Interface.LoadOverlay?.SetProgress(1);
+
+		// Prompt to save to a project folder
+		Interface.LoadOverlay?.SetStatus("Saving world");
+		string targetPath = await CreatorService.Interface.PromptFolderSelect(new()
+		{
+			Title = "Select a folder to create the project in",
+			CurrentDirectory = ProjectSettings.GlobalizePath("user://projects/"),
+		});
+
+		if (string.IsNullOrWhiteSpace(targetPath))
+		{
+			return;
+		}
+
+		// Write a project file to the target path
+		Interface.LoadOverlay?.SetProgress(2);
+		Interface.LoadOverlay?.SetStatus("Creating world instance");
+		string projectFilePath = Path.Join(targetPath, Globals.ProjectMetaFileName);
+
+		// Create a new world instance 
+		World root = Globals.LoadInstance<World>();
+		root.WorldID = long.Parse(worldId);
+
+		// Load the world bytes into the new world instance
+		Interface.LoadOverlay?.SetStatus("Loading world bytes");
+		await DatamodelLoader.LoadWorldBytes(root, worldContent);
+		Interface.LoadOverlay?.SetProgress(3);
+
+		// Save world to the project file
+		Interface.LoadOverlay?.SetStatus("Saving project file");
+		PolyFormat.SaveWorldToFile(root, projectFilePath);
+		Interface.LoadOverlay?.SetProgress(4);
+		Interface.LoadOverlay?.Hide();
+
+		// Launch the new session
+		await CreateNewSession(projectFilePath, root);
+	}
+
 	public async Task CreateNewSession(string projectFilePath = "", World? worldOverride = null)
 	{
 		string? targetPlace = null;
