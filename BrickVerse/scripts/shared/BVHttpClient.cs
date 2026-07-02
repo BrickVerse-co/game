@@ -78,10 +78,11 @@ public partial class BVHttpClient
 							headers.Add($"Content-Length: {body.Length}");
 						}
 
-						PT.Print("=== BVHttpClient Request ===");
+						/*PT.Print("=== BVHttpClient Request ===");
 						PT.Print($"URL: {msg.RequestUri}");
 						PT.Print($"Method: {msg.Method}");
 						PT.Print($"Body Length: {body.Length}");
+						*/
 
 						foreach (string header in headers)
 							PT.Print(header);
