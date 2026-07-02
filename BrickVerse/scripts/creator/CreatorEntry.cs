@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
 using Godot;
 using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Client.WebAPI;
@@ -31,14 +32,23 @@ public partial class CreatorEntry : Node
 
 		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
 
-		// Login creator with token
+		// Prefer restoring a saved session. If the app was launched with a token,
+		// use it and persist it so subsequent launches can restore without prompting.
 		if (launchToken != null)
 		{
-			await CreatorAPI.LoginWithToken(launchToken, false);
+			try
+			{
+				await CreatorAPI.LoginWithToken(launchToken, true);
+			}
+			catch (Exception error)
+			{
+				PT.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+				await CreatorAPI.SetupAuth();
+			}
 		}
 		else
 		{
-			await CreatorAPI.PromptLogin();
+			await CreatorAPI.SetupAuth();
 		}
 
 		CreatorService creatorService = new();
