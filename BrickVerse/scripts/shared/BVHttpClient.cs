@@ -82,10 +82,10 @@ public partial class BVHttpClient
 						PT.Print($"URL: {msg.RequestUri}");
 						PT.Print($"Method: {msg.Method}");
 						PT.Print($"Body Length: {body.Length}");
-						*/
-
 						foreach (string header in headers)
 							PT.Print(header);
+
+						*/
 
 						HttpRequest req = new() { DownloadChunkSize = DefaultDownloadChunkSize };
 
