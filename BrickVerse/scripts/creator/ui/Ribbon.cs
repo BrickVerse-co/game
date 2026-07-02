@@ -3,10 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using System;
-
 
 namespace BrickVerse.Creator.UI;
 
@@ -84,19 +84,19 @@ public sealed partial class Ribbon : PanelContainer
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
-		if (@event.IsActionPressed("tool_select"))
+		if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolSelect, Key.Key1))
 		{
 			_container.GetNode<Button>("Select").ButtonPressed = true;
 		}
-		else if (@event.IsActionPressed("tool_move"))
+		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolMove, Key.Key2))
 		{
 			_container.GetNode<Button>("Move").ButtonPressed = true;
 		}
-		else if (@event.IsActionPressed("tool_rotate"))
+		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolRotate, Key.Key3))
 		{
 			_container.GetNode<Button>("Rotate").ButtonPressed = true;
 		}
-		else if (@event.IsActionPressed("tool_scale"))
+		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolScale, Key.Key4))
 		{
 			_container.GetNode<Button>("Scale").ButtonPressed = true;
 		}

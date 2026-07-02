@@ -9,6 +9,7 @@ using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -17,6 +18,8 @@ public sealed partial class SettingsPopup : PopupWindowBase
 	private const string SettingsPropertyPath = "res://scenes/creator/popups/settings/components/settings_property.tscn";
 	[Export] private Tree _categoryTree = null!;
 	[Export] private Control _layout = null!;
+	[Export] private LineEdit _settingsSearchEdit = null!;
+	[Export] private LineEdit _keybindSearchEdit = null!;
 
 	private static readonly Dictionary<string, List<SettingDef>> SectionDefs =
 		CreatorSettingsRegistry.Definitions.Values
@@ -28,7 +31,26 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 	private readonly Dictionary<TreeItem, string> _itemToSectionKey = [];
 	private readonly Dictionary<string, List<Control>> _sectionUIs = [];
+	private readonly Dictionary<Control, string> _keybindGroupByControl = [];
 	private string _activeSection = string.Empty;
+
+	private static readonly (string GroupKey, string Label, string[] SettingKeys)[] KeybindGroups =
+	[
+		("tools", "Tools", [
+			CreatorSettingKeys.Keybinds.ToolSelect,
+			CreatorSettingKeys.Keybinds.ToolMove,
+			CreatorSettingKeys.Keybinds.ToolRotate,
+			CreatorSettingKeys.Keybinds.ToolScale,
+		]),
+		("transform", "Transform", [
+			CreatorSettingKeys.Keybinds.RotateSelection,
+			CreatorSettingKeys.Keybinds.TiltSelection,
+		]),
+		("modes", "Modes", [
+			CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
+			CreatorSettingKeys.Keybinds.TogglePivotMode,
+		]),
+	];
 
 	public override void _Ready()
 	{
@@ -47,6 +69,8 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		}
 
 		_categoryTree.ItemSelected += OnItemSelected;
+		_settingsSearchEdit.TextChanged += OnSearchChanged;
+		_keybindSearchEdit.TextChanged += OnSearchChanged;
 		firstSelected?.Select(0);
 		base._Ready();
 	}
@@ -54,6 +78,8 @@ public sealed partial class SettingsPopup : PopupWindowBase
 	public override void _ExitTree()
 	{
 		_categoryTree.ItemSelected -= OnItemSelected;
+		_settingsSearchEdit.TextChanged -= OnSearchChanged;
+		_keybindSearchEdit.TextChanged -= OnSearchChanged;
 		base._ExitTree();
 	}
 
@@ -78,12 +104,19 @@ public sealed partial class SettingsPopup : PopupWindowBase
 			cachedUIs = [];
 			if (!SectionDefs.TryGetValue(sectionKey, out var defs))
 				return;
-			foreach (SettingDef def in defs)
+
+			if (sectionKey == "keybinds")
 			{
-				SettingsPropertyUI ui = Globals.CreateInstanceFromScene<SettingsPropertyUI>(SettingsPropertyPath);
-				ui.Init(def, CreatorSettingsService.Instance);
-				cachedUIs.Add(ui);
-				_layout.AddChild(ui);
+				BuildKeybindSection(defs, cachedUIs);
+			}
+			else
+			{
+				foreach (SettingDef def in defs)
+				{
+					SettingsPropertyUI ui = CreatePropertyUI(def);
+					cachedUIs.Add(ui);
+					_layout.AddChild(ui);
+				}
 			}
 
 			if (sectionKey == "advanced")
@@ -100,15 +133,120 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 			_sectionUIs[sectionKey] = cachedUIs;
 		}
-		else
+
+		UpdateSearchVisibility();
+		ApplyFiltersToSection(sectionKey);
+	}
+
+	private void OnSearchChanged(string _)
+	{
+		UpdateSearchVisibility();
+		ApplyFiltersToSection(_activeSection);
+	}
+
+	private void UpdateSearchVisibility()
+	{
+		if (!IsInstanceValid(_keybindSearchEdit))
+			return;
+
+		bool isKeybindSection = _activeSection.Equals("keybinds", StringComparison.OrdinalIgnoreCase);
+		_keybindSearchEdit.Visible = isKeybindSection;
+	}
+
+	private void ApplyFiltersToSection(string sectionKey)
+	{
+		if (!_sectionUIs.TryGetValue(sectionKey, out var controls))
+			return;
+
+		string settingQuery = _settingsSearchEdit.Text?.Trim() ?? string.Empty;
+		string keybindQuery = _keybindSearchEdit.Text?.Trim() ?? string.Empty;
+		bool isKeybindSection = sectionKey.Equals("keybinds", StringComparison.OrdinalIgnoreCase);
+		Dictionary<string, bool> visibleGroup = [];
+
+		foreach (Control child in controls)
 		{
-			foreach (Control child in cachedUIs)
+			if (child is not SettingsPropertyUI spui)
+				continue;
+
+
+			bool visible = spui.PropertyVisible
+				&& MatchesQuery(spui.SettingDef, settingQuery)
+				&& (!isKeybindSection || MatchesQuery(spui.SettingDef, keybindQuery));
+			spui.Visible = visible;
+
+			if (isKeybindSection && _keybindGroupByControl.TryGetValue(spui, out string? groupKey) && !string.IsNullOrEmpty(groupKey) && visible)
+				visibleGroup[groupKey] = true;
+		}
+
+		foreach (Control child in controls)
+		{
+			if (child is SettingsPropertyUI)
+				continue;
+
+			if (isKeybindSection && _keybindGroupByControl.TryGetValue(child, out string? groupKey) && !string.IsNullOrEmpty(groupKey))
 			{
-				if (child is SettingsPropertyUI spui)
-					spui.Visible = spui.PropertyVisible;
-				else
-					child.Visible = true;
+				child.Visible = visibleGroup.ContainsKey(groupKey);
+				continue;
+			}
+
+			child.Visible = true;
+		}
+	}
+
+	private void BuildKeybindSection(List<SettingDef> defs, List<Control> cachedUIs)
+	{
+		Dictionary<string, SettingDef> byKey = defs.ToDictionary(x => x.Key, x => x);
+
+		foreach (var group in KeybindGroups)
+		{
+			List<SettingDef> groupDefs = [];
+			foreach (string key in group.SettingKeys)
+			{
+				if (byKey.TryGetValue(key, out SettingDef? def) && def != null)
+					groupDefs.Add(def);
+			}
+
+			if (groupDefs.Count == 0)
+				continue;
+
+			Label header = new()
+			{
+				Text = group.Label,
+			};
+			header.AddThemeFontSizeOverride("font_size", 15);
+			_layout.AddChild(header);
+			cachedUIs.Add(header);
+			_keybindGroupByControl[header] = group.GroupKey;
+
+			HSeparator separator = new();
+			_layout.AddChild(separator);
+			cachedUIs.Add(separator);
+			_keybindGroupByControl[separator] = group.GroupKey;
+
+			foreach (SettingDef def in groupDefs)
+			{
+				SettingsPropertyUI ui = CreatePropertyUI(def);
+				_layout.AddChild(ui);
+				cachedUIs.Add(ui);
+				_keybindGroupByControl[ui] = group.GroupKey;
 			}
 		}
+	}
+
+	private static SettingsPropertyUI CreatePropertyUI(SettingDef def)
+	{
+		SettingsPropertyUI ui = Globals.CreateInstanceFromScene<SettingsPropertyUI>(SettingsPropertyPath);
+		ui.Init(def, CreatorSettingsService.Instance);
+		return ui;
+	}
+
+	private static bool MatchesQuery(SettingDef def, string query)
+	{
+		if (string.IsNullOrWhiteSpace(query))
+			return true;
+
+		return def.Label.Contains(query, StringComparison.OrdinalIgnoreCase)
+			|| def.Description.Contains(query, StringComparison.OrdinalIgnoreCase)
+			|| def.Key.Contains(query, StringComparison.OrdinalIgnoreCase);
 	}
 }

@@ -14,6 +14,27 @@ public static class CreatorSettingKeys
 	public static class Interface
 	{
 		public const string UiScale = "interface.ui_scale";
+		public const string ThemeMode = "interface.theme_mode";
+		public const string MoveSnapEnabled = "interface.move_snap_enabled";
+		public const string MoveSnapStep = "interface.move_snap_step";
+		public const string RotateSnapEnabled = "interface.rotate_snap_enabled";
+		public const string RotateSnapStep = "interface.rotate_snap_step";
+		public const string SnapToPartEnabled = "interface.snap_to_part_enabled";
+		public const string DuplicateOnDragEnabled = "interface.duplicate_on_drag_enabled";
+		public const string TransformOrientation = "interface.transform_orientation";
+		public const string SelectionPivotMode = "interface.selection_pivot_mode";
+	}
+
+	public static class Keybinds
+	{
+		public const string ToolSelect = "keybinds.tool_select";
+		public const string ToolMove = "keybinds.tool_move";
+		public const string ToolRotate = "keybinds.tool_rotate";
+		public const string ToolScale = "keybinds.tool_scale";
+		public const string RotateSelection = "keybinds.rotate_selection";
+		public const string TiltSelection = "keybinds.tilt_selection";
+		public const string ToggleTransformOrientation = "keybinds.toggle_transform_orientation";
+		public const string TogglePivotMode = "keybinds.toggle_pivot_mode";
 	}
 
 	public static class Backup
@@ -27,6 +48,14 @@ public static class CreatorSettingKeys
 		public const string PreferredEditor = "code_editor.preferred_editor";
 		public const string IndentationMode = "code_editor.indentation_mode";
 		public const string IndentationSize = "code_editor.indentation_size";
+		public const string ShowLineNumbers = "code_editor.show_line_numbers";
+		public const string HighlightCurrentLine = "code_editor.highlight_current_line";
+		public const string WordWrap = "code_editor.word_wrap";
+		public const string ShowWhitespace = "code_editor.show_whitespace";
+		public const string MinimapEnabled = "code_editor.minimap_enabled";
+		public const string CursorBlink = "code_editor.cursor_blink";
+		public const string CursorBlinkSpeed = "code_editor.cursor_blink_speed";
+		public const string CursorWidth = "code_editor.cursor_width";
 	}
 
 	public static class Popups

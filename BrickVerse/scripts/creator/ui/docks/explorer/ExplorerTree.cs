@@ -23,8 +23,24 @@ public partial class ExplorerTree : Tree
 
 	public override void _Ready()
 	{
+		ApplyCompactExplorerThemeOverrides();
 		ItemActivated += OnItemActivated;
 		base._Ready();
+	}
+
+	private void ApplyCompactExplorerThemeOverrides()
+	{
+		// Keep explorer rows close to Godot/Unity/Roblox Studio density.
+		// Oversized icons or inherited theme constants can otherwise force 50px+ rows.
+		AddThemeConstantOverride("icon_max_width", 18);
+		AddThemeConstantOverride("v_separation", 0);
+		AddThemeConstantOverride("h_separation", 4);
+		AddThemeConstantOverride("item_margin", 2);
+		AddThemeConstantOverride("button_margin", 2);
+		AddThemeConstantOverride("inner_item_margin_top", 1);
+		AddThemeConstantOverride("inner_item_margin_bottom", 1);
+		AddThemeConstantOverride("inner_item_margin_left", 4);
+		AddThemeConstantOverride("inner_item_margin_right", 4);
 	}
 
 	public override void _Process(double delta)

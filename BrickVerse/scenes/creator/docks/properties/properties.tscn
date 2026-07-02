@@ -37,7 +37,6 @@ theme_override_constants/separation = 0
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("Theme_khfyn")
 
 [node name="Label" type="Label" parent="Header" unique_id=1729874311]
 layout_mode = 2
@@ -48,7 +47,6 @@ vertical_alignment = 1
 [node name="Tabs" type="TabContainer" parent="." unique_id=469721165]
 layout_mode = 2
 size_flags_vertical = 3
-theme = SubResource("Theme_smqtq")
 tabs_visible = false
 deselect_enabled = true
 script = ExtResource("1_n0wlv")

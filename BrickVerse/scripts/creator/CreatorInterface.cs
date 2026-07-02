@@ -41,12 +41,15 @@ public partial class CreatorInterface : Control, IScriptObject
 	private const string AddonReqPermPopupPath = "res://scenes/creator/popups/addon_perm_request.tscn";
 
 	private const string CreditPopupPath = "res://scenes/creator/popups/credits.tscn";
-	private const string CreatorThemePath = "res://resources/themes/creator/creator.tres";
+	private const string CreatorDarkThemePath = "res://resources/themes/creator/creator.tres";
+	private const string CreatorLightThemePath = "res://resources/themes/creator/creator_light.tres";
 	private string? _pendingLegacyWorld;
 	private PackedScene _insertMenuPopupPacked = GD.Load<PackedScene>("res://scenes/creator/popups/insert/insert_menu.tscn");
 
 	private Theme _creatorTheme = null!;
+	private Theme _creatorLightTheme = null!;
 	private Label? _followCursorLabel;
+	private CreatorThemeModeEnum _activeThemeMode = CreatorThemeModeEnum.Dark;
 
 	public StatusBar? StatusBar { get; internal set; }
 	public LoadOverlay? LoadOverlay { get; internal set; }
@@ -87,6 +90,10 @@ public partial class CreatorInterface : Control, IScriptObject
 	}
 
 	[ScriptProperty] public float UserRotateSnapping { get; internal set; } = 45;
+	[ScriptProperty] public bool SnapToPartEnabled { get; internal set; } = true;
+	[ScriptProperty] public bool DuplicateOnDragEnabled { get; internal set; } = true;
+	[ScriptProperty] public TransformOrientationEnum TransformOrientation { get; internal set; } = TransformOrientationEnum.Global;
+	[ScriptProperty] public SelectionPivotModeEnum SelectionPivotMode { get; internal set; } = SelectionPivotModeEnum.Center;
 
 	public static bool TempDisableSnap => Input.IsKeyPressed(Key.Alt);
 
@@ -99,7 +106,10 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _Ready()
 	{
-		_creatorTheme = ResourceLoader.Load<Theme>(CreatorThemePath, cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
+		_creatorTheme = ResourceLoader.Load<Theme>(CreatorDarkThemePath, cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
+		_creatorLightTheme = ResourceLoader.Exists(CreatorLightThemePath)
+			? ResourceLoader.Load<Theme>(CreatorLightThemePath, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			: _creatorTheme;
 		LastFilePromptFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
 
 		Theme = _creatorTheme;
@@ -114,6 +124,9 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 
 		CreatorSettingsService.Instance.Changed += OnSettingChanged;
+		ApplyEditorTransformSettings();
+		ApplyThemeMode();
+		ChildEnteredTree += OnChildEnteredTree;
 		ApplyUIScale();
 		ApplyFullscreen();
 		ApplyVSync();
@@ -124,6 +137,7 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _ExitTree()
 	{
+		ChildEnteredTree -= OnChildEnteredTree;
 		CreatorSettingsService.Instance.Changed -= OnSettingChanged;
 		base._ExitTree();
 	}
@@ -147,6 +161,63 @@ public partial class CreatorInterface : Control, IScriptObject
 			case SharedSettingKeys.Display.FpsCap:
 				ApplyFpsCap();
 				break;
+			case CreatorSettingKeys.Interface.MoveSnapEnabled:
+			case CreatorSettingKeys.Interface.MoveSnapStep:
+			case CreatorSettingKeys.Interface.RotateSnapEnabled:
+			case CreatorSettingKeys.Interface.RotateSnapStep:
+			case CreatorSettingKeys.Interface.SnapToPartEnabled:
+			case CreatorSettingKeys.Interface.DuplicateOnDragEnabled:
+			case CreatorSettingKeys.Interface.TransformOrientation:
+			case CreatorSettingKeys.Interface.SelectionPivotMode:
+				ApplyEditorTransformSettings();
+				break;
+			case CreatorSettingKeys.Interface.ThemeMode:
+				ApplyThemeMode();
+				break;
+		}
+	}
+
+	private void ApplyEditorTransformSettings()
+	{
+		var settings = CreatorSettingsService.Instance;
+		MoveSnapEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.MoveSnapEnabled);
+		UserMoveSnapping = settings.Get<float>(CreatorSettingKeys.Interface.MoveSnapStep);
+		RotateSnapEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.RotateSnapEnabled);
+		UserRotateSnapping = settings.Get<float>(CreatorSettingKeys.Interface.RotateSnapStep);
+		SnapToPartEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.SnapToPartEnabled);
+		DuplicateOnDragEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.DuplicateOnDragEnabled);
+		TransformOrientation = settings.Get<TransformOrientationEnum>(CreatorSettingKeys.Interface.TransformOrientation);
+		SelectionPivotMode = settings.Get<SelectionPivotModeEnum>(CreatorSettingKeys.Interface.SelectionPivotMode);
+	}
+
+	private void ApplyThemeMode()
+	{
+		CreatorThemeModeEnum mode = CreatorSettingsService.Instance.Get<CreatorThemeModeEnum>(CreatorSettingKeys.Interface.ThemeMode);
+		_activeThemeMode = mode;
+		Theme = mode == CreatorThemeModeEnum.Light ? _creatorLightTheme : _creatorTheme;
+		ApplyThemeRecursively(this);
+	}
+
+	private void OnChildEnteredTree(Node node)
+	{
+		ApplyThemeRecursively(node);
+	}
+
+	private void ApplyThemeRecursively(Node root)
+	{
+		if (root is Control control)
+		{
+			control.Theme = Theme;
+		}
+
+		if (root is Window window)
+		{
+			window.Theme = Theme;
+		}
+
+		foreach (Node child in root.GetChildren())
+		{
+			ApplyThemeRecursively(child);
 		}
 	}
 
@@ -639,7 +710,7 @@ public partial class CreatorInterface : Control, IScriptObject
 	{
 		window.Visible = false;
 		window.ForceNative = true;
-		window.Theme = _creatorTheme;
+		window.Theme = Theme;
 
 		float uiScale = GetWindow().ContentScaleFactor;
 		window.ContentScaleFactor = uiScale;

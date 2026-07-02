@@ -67,12 +67,18 @@ public sealed partial class Tabs : Control
 	private Control _tabsClip = null!;
 	private TabBar _tabBar = null!;
 	private PanelContainer _tabsContainer = null!;
+	private PopupMenu _tabContextMenu = null!;
+	private int _tabContextIndex = -1;
 
 	private Button _leftButton = null!, _rightButton = null!;
 	private bool _scrollLeft, _scrollRight;
 	private int _maxScroll;
 
 	private const int _scrollSidePadding = 2;
+	private const int TabActionClose = 1;
+	private const int TabActionCloseOthers = 2;
+	private const int TabActionCloseRight = 3;
+	private const int TabActionCloseAll = 4;
 
 	public static Tabs Singleton { get; private set; } = null!;
 	public Tabs()
@@ -85,6 +91,14 @@ public sealed partial class Tabs : Control
 		_tabsClip = GetNode<Control>("Bar/TabsClip");
 		_tabBar = GetNode<TabBar>("Bar/TabsClip/TabBar");
 		_tabsContainer = GetNode<PanelContainer>("Container");
+		_tabContextMenu = new PopupMenu();
+		_tabContextMenu.Name = "TabContextMenu";
+		_tabContextMenu.AddItem("Close", TabActionClose);
+		_tabContextMenu.AddItem("Close Others", TabActionCloseOthers);
+		_tabContextMenu.AddItem("Close Tabs to the Right", TabActionCloseRight);
+		_tabContextMenu.AddSeparator();
+		_tabContextMenu.AddItem("Close All", TabActionCloseAll);
+		AddChild(_tabContextMenu);
 
 		_leftButton = GetNode<Button>("Bar/TabsClip/LeftButton");
 		_rightButton = GetNode<Button>("Bar/TabsClip/RightButton");
@@ -113,6 +127,7 @@ public sealed partial class Tabs : Control
 
 		_tabBar.TabClosePressed += async idx => await Remove(_orderedControls[(int)idx]);
 		_tabBar.GuiInput += OnTabBarGUIInput;
+		_tabContextMenu.IdPressed += OnTabContextActionPressed;
 
 		_leftButton.ButtonDown += () => _scrollLeft = true;
 		_leftButton.ButtonUp += () => _scrollLeft = false;
@@ -274,6 +289,22 @@ public sealed partial class Tabs : Control
 	{
 		if (@event is InputEventMouseButton btn)
 		{
+			if (btn.ButtonIndex == MouseButton.Right && btn.Pressed)
+			{
+				int tabIndex = _tabBar.GetTabIdxAtPoint(btn.Position);
+				if (tabIndex < 0 || tabIndex >= _orderedControls.Count)
+					return;
+
+				_tabContextIndex = tabIndex;
+				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseOthers), _orderedControls.Count <= 1);
+				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseRight), tabIndex >= _orderedControls.Count - 1);
+				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseAll), _orderedControls.Count == 0);
+				_tabContextMenu.Position = (Vector2I)GetViewport().GetMousePosition();
+				_tabContextMenu.Popup();
+				AcceptEvent();
+				return;
+			}
+
 			if (btn.ButtonIndex == MouseButton.WheelUp)
 			{
 				ScrollTabBar((float)(10 * btn.Factor));
@@ -282,6 +313,98 @@ public sealed partial class Tabs : Control
 			{
 				ScrollTabBar((float)(10 * -btn.Factor));
 			}
+		}
+	}
+
+	private async void OnTabContextActionPressed(long id)
+	{
+		if (_tabContextIndex < 0 || _tabContextIndex >= _orderedControls.Count)
+			return;
+
+		switch ((int)id)
+		{
+			case TabActionClose:
+				await Remove(_orderedControls[_tabContextIndex]);
+				break;
+			case TabActionCloseOthers:
+				await RemoveAllExcept(_tabContextIndex);
+				break;
+			case TabActionCloseRight:
+				await RemoveTabsToRight(_tabContextIndex);
+				break;
+			case TabActionCloseAll:
+				await RemoveAllTabs();
+				break;
+		}
+	}
+
+	private async Task RemoveAllExcept(int keepIndex)
+	{
+		if (keepIndex < 0 || keepIndex >= _orderedControls.Count)
+			return;
+
+		Control keepControl = _orderedControls[keepIndex];
+		List<int> indicesToRemove = [];
+		for (int i = 0; i < _orderedControls.Count; i++)
+		{
+			if (i != keepIndex)
+				indicesToRemove.Add(i);
+		}
+
+		indicesToRemove.Sort((a, b) => b.CompareTo(a));
+		foreach (int index in indicesToRemove)
+		{
+			await Remove(_orderedControls[index], isBulkOp: true);
+		}
+
+		if (_tabBar.TabCount > 0)
+		{
+			RebuildLookup();
+			CurrentControl = keepControl;
+		}
+	}
+
+	private async Task RemoveTabsToRight(int startIndex)
+	{
+		if (startIndex < 0 || startIndex >= _orderedControls.Count)
+			return;
+
+		Control keepControl = _orderedControls[startIndex];
+		List<int> indicesToRemove = [];
+		for (int i = _orderedControls.Count - 1; i > startIndex; i--)
+		{
+			indicesToRemove.Add(i);
+		}
+
+		foreach (int index in indicesToRemove)
+		{
+			await Remove(_orderedControls[index], isBulkOp: true);
+		}
+
+		if (_tabBar.TabCount > 0)
+		{
+			RebuildLookup();
+			CurrentControl = keepControl;
+		}
+	}
+
+	private async Task RemoveAllTabs()
+	{
+		List<int> indicesToRemove = [];
+		for (int i = _orderedControls.Count - 1; i >= 0; i--)
+		{
+			indicesToRemove.Add(i);
+		}
+
+		foreach (int index in indicesToRemove)
+		{
+			await Remove(_orderedControls[index], isBulkOp: true);
+		}
+
+		if (_tabBar.TabCount > 0)
+		{
+			RebuildLookup();
+			CurrentControl = _orderedControls[0];
 		}
 	}
 

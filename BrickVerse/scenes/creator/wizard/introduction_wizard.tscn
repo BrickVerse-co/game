@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://b3rl13yoiy15o" path="res://assets/textures/creator/external/codeeditors/zed.png" id="6_q8ilt"]
 
 [sub_resource type="Gradient" id="Gradient_ubkni"]
-colors = PackedColorArray(0, 0, 0, 0.49803922, 0, 0, 0, 1)
+colors = PackedColorArray(0, 0, 0, 0.55, 0, 0, 0, 0.72)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_5xv5o"]
 gradient = SubResource("Gradient_ubkni")
@@ -22,71 +22,79 @@ texture = SubResource("GradientTexture2D_5xv5o")
 default_font_size = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bc04q"]
-bg_color = Color(0.14901961, 0.14901961, 0.14901961, 1)
+bg_color = Color(0.105882, 0.113725, 0.12549, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dfqoe"]
 bg_color = Color(0.14901961, 0.14901961, 0.14901961, 1)
 draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 1, 1, 0.08627451)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.27451, 0.321569, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4n5gq"]
+bg_color = Color(0.058824, 0.517647, 0.956863, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4n5gq"]
-bg_color = Color(0, 0.5921569, 1, 1)
-corner_radius_top_left = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dfqoe"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w8gex"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.129412, 0.141176, 0.160784, 1)
 draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.27451, 0.321569, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0jcko"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.105882, 0.117647, 0.137255, 1)
 draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.168627, 0.576471, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cyxfl"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
-bg_color = Color(1, 1, 1, 0.14117648)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.164706, 0.184314, 0.215686, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.168627, 0.576471, 1, 0.7)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -95,76 +103,96 @@ corner_radius_bottom_left = 8
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r1hsb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntijg"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0, 0.5921569, 1, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0, 0.4745098, 0.8, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.058824, 0.517647, 0.956863, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.243137, 0.635294, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ce354"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0, 0.4679999, 0.78, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0, 0.4745098, 0.8, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.039216, 0.376471, 0.741176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.168627, 0.576471, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_raaus"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0.24000001, 0.6959999, 1, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0, 0.4745098, 0.8, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.129412, 0.588235, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.427451, 0.72549, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r1hsb"]
-bg_color = Color(0.101960786, 0.101960786, 0.101960786, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.129412, 0.141176, 0.160784, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.27451, 0.321569, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2ib2a"]
-bg_color = Color(0.14901961, 0.14901961, 0.14901961, 1)
+bg_color = Color(0.14902, 0.164706, 0.188235, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.27451, 0.321569, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5ay1h"]
-bg_color = Color(0.24, 0.24, 0.24, 1)
+bg_color = Color(0.078431, 0.282353, 0.501961, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.168627, 0.576471, 1, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ll2un"]
-bg_color = Color(0.18, 0.18, 0.18, 1)
+bg_color = Color(0.180392, 0.196078, 0.223529, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.168627, 0.576471, 1, 0.6)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -273,13 +301,13 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer/VBoxContainer" unique_id=945333783]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Welcome to BrickVerse Workshop!"
+theme_override_font_sizes/font_size = 28
+text = "Welcome to the Creator"
 autowrap_mode = 3
 
 [node name="Label2" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer/VBoxContainer" unique_id=1445484956]
 layout_mode = 2
-text = "Let’s get BrickVerse Workshop to suit you!"
+text = "Let’s get the BrickVerse Creator to suit you!"
 autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="Panel/HBoxContainer/Control/TabContainer/FirstPage/VBoxContainer" unique_id=1660774073]
@@ -293,7 +321,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-theme_override_colors/font_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.870588, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_w8gex")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_0jcko")
@@ -334,7 +362,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/VBoxContainer" unique_id=876352003]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "Choose Your Code Editor"
 autowrap_mode = 3
 
@@ -368,7 +396,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="BuiltIn" type="Button" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/Panel/MarginContainer/ScrollContainer/VBoxContainer" unique_id=1878703772]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_2ib2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_5ay1h")
@@ -392,7 +420,7 @@ grow_vertical = 2
 theme_override_constants/separation = 8
 
 [node name="TextureRect" type="TextureRect" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/Panel/MarginContainer/ScrollContainer/VBoxContainer/BuiltIn/HBoxContainer" unique_id=554077771]
-self_modulate = Color(1, 0.7372549, 0.34509805, 1)
+self_modulate = Color(0.168627, 0.576471, 1, 1)
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 texture = ExtResource("3_b3oqs")
@@ -404,7 +432,7 @@ layout_mode = 2
 text = "Built In"
 
 [node name="SystemDefault" type="Button" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/Panel/MarginContainer/ScrollContainer/VBoxContainer" unique_id=1634621618]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_2ib2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_5ay1h")
@@ -439,7 +467,7 @@ layout_mode = 2
 text = "System Default"
 
 [node name="VSCode" type="Button" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/Panel/MarginContainer/ScrollContainer/VBoxContainer" unique_id=243377433]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_2ib2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_5ay1h")
@@ -473,7 +501,7 @@ layout_mode = 2
 text = "Visual Studio Code"
 
 [node name="Zed" type="Button" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer/Panel/MarginContainer/ScrollContainer/VBoxContainer" unique_id=1006815918]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_2ib2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_5ay1h")
@@ -507,7 +535,7 @@ layout_mode = 2
 text = "Zed"
 
 [node name="Label3" type="Label" parent="Panel/HBoxContainer/Control/TabContainer/CodeEditorSelect/VBoxContainer" unique_id=2249612]
-modulate = Color(0.5, 0.5, 0.5, 1)
+modulate = Color(0.596078, 0.643137, 0.713725, 1)
 layout_mode = 2
 text = "You can change this later in Tools > Settings"
 autowrap_mode = 3
@@ -519,7 +547,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-theme_override_colors/font_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.870588, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_w8gex")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_0jcko")

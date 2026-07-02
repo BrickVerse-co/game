@@ -15,6 +15,9 @@ namespace BrickVerse.Creator.UI;
 public sealed partial class Explorer : TabContainer
 {
 	private const string ExplorerTabPath = "res://scenes/creator/docks/explorer/explorer_tab.tscn";
+	private const int ExplorerIconMaxWidth = 18;
+	private const int ExplorerRowHeight = 24;
+
 	public static Explorer Singleton { get; private set; } = null!;
 	public Explorer()
 	{
@@ -97,8 +100,7 @@ public sealed partial class Explorer : TabContainer
 			}
 		}
 
-		item.SetIcon(0, Globals.LoadIcon(instance.ClassName));
-		item.SetText(0, instance.Name);
+		ApplyCompactTreeItemStyle(item, instance);
 
 		_instanceToItem[instance] = item;
 		_itemToInstance[item] = instance;
@@ -124,6 +126,14 @@ public sealed partial class Explorer : TabContainer
 			}
 			_pendingChildren.Remove(instance);
 		}
+	}
+
+	private static void ApplyCompactTreeItemStyle(TreeItem item, Instance instance)
+	{
+		item.SetIcon(0, Globals.LoadIcon(instance.ClassName));
+		item.SetIconMaxWidth(0, ExplorerIconMaxWidth);
+		item.SetCustomMinimumHeight(ExplorerRowHeight);
+		item.SetText(0, instance.Name);
 	}
 
 	private static bool HasExcludedAncestor(Instance instance)

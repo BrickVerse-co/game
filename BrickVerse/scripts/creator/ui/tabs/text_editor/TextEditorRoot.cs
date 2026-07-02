@@ -12,6 +12,7 @@ using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,6 +47,7 @@ public partial class TextEditorRoot : Node
 
 	private Godot.Timer _autoCompleteTimer = null!;
 	private CancellationTokenSource? _diagCts;
+	private HashSet<string>? _editorPropertySet;
 
 	public override void _EnterTree()
 	{
@@ -87,6 +89,7 @@ public partial class TextEditorRoot : Node
 
 		CreatorSettingsService.Instance.Changed += OnCreatorSettingChanged;
 		ApplyIndentSettings();
+		ApplyEditorViewSettings();
 
 		CodeEditor.GuiInput += OnCodeEditGUIInput;
 
@@ -117,6 +120,20 @@ public partial class TextEditorRoot : Node
 		{
 			ApplyIndentSettings();
 		}
+
+		if (
+			e.Key == CreatorSettingKeys.CodeEditor.ShowLineNumbers
+			|| e.Key == CreatorSettingKeys.CodeEditor.HighlightCurrentLine
+			|| e.Key == CreatorSettingKeys.CodeEditor.WordWrap
+			|| e.Key == CreatorSettingKeys.CodeEditor.ShowWhitespace
+			|| e.Key == CreatorSettingKeys.CodeEditor.MinimapEnabled
+			|| e.Key == CreatorSettingKeys.CodeEditor.CursorBlink
+			|| e.Key == CreatorSettingKeys.CodeEditor.CursorBlinkSpeed
+			|| e.Key == CreatorSettingKeys.CodeEditor.CursorWidth
+		)
+		{
+			ApplyEditorViewSettings();
+		}
 	}
 
 	private void ApplyIndentSettings()
@@ -125,6 +142,33 @@ public partial class TextEditorRoot : Node
 		int indentationSize = CreatorSettingsService.Instance.Get<int>(CreatorSettingKeys.CodeEditor.IndentationSize);
 		CodeEditor.IndentUseSpaces = indentationMode == IndentationModeEnum.Spaces;
 		CodeEditor.IndentSize = indentationSize;
+	}
+
+	private void ApplyEditorViewSettings()
+	{
+		var settings = CreatorSettingsService.Instance;
+
+		CodeEditor.GuttersDrawLineNumbers = settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowLineNumbers);
+		TrySetEditorProperty("highlight_current_line", settings.Get<bool>(CreatorSettingKeys.CodeEditor.HighlightCurrentLine));
+		TrySetEditorProperty("draw_tabs", settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace));
+		TrySetEditorProperty("draw_spaces", settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace));
+		TrySetEditorProperty("draw_minimap", settings.Get<bool>(CreatorSettingKeys.CodeEditor.MinimapEnabled));
+		TrySetEditorProperty("caret_blink", settings.Get<bool>(CreatorSettingKeys.CodeEditor.CursorBlink));
+		TrySetEditorProperty("caret_blink_interval", settings.Get<float>(CreatorSettingKeys.CodeEditor.CursorBlinkSpeed));
+		CodeEditor.AddThemeConstantOverride("caret_width", settings.Get<int>(CreatorSettingKeys.CodeEditor.CursorWidth));
+
+		bool wrap = settings.Get<bool>(CreatorSettingKeys.CodeEditor.WordWrap);
+		// TextEdit line wrapping mode: 0 = None, 1 = Boundary.
+		TrySetEditorProperty("wrap_mode", wrap ? 1 : 0);
+	}
+
+	private void TrySetEditorProperty(string propertyName, Variant value)
+	{
+		_editorPropertySet ??= [.. CodeEditor.GetPropertyList().Select(p => p["name"].ToString() ?? string.Empty)];
+		if (_editorPropertySet.Contains(propertyName))
+		{
+			CodeEditor.Set(propertyName, value);
+		}
 	}
 
 	private async void OnPublishDiagnostics(string path, List<LspDiagnostic> diagnostics)

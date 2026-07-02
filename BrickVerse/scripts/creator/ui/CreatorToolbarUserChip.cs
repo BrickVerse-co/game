@@ -54,7 +54,6 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			SizeFlagsVertical = SizeFlags.ShrinkCenter,
 			TooltipText = "Account options",
 		};
-		_usernameMenu.AddThemeColorOverride("font_color", new Color(0.88f, 0.88f, 0.88f));
 		_usernameMenu.AddThemeFontSizeOverride("font_size", 13);
 		_usernameMenu.CustomMinimumSize = new(0, AvatarSize);
 

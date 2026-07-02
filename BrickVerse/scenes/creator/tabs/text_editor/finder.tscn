@@ -9,17 +9,6 @@
 [ext_resource type="Texture2D" uid="uid://c0qtrarcj5b5x" path="res://assets/textures/ui-icons/case-match.svg" id="7_jflwj"]
 [ext_resource type="Texture2D" uid="uid://ulqgqmj1j2bh" path="res://assets/textures/ui-icons/whole-word.svg" id="8_ccork"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bcejg"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0.16, 0.16, 0.16, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b55b1"]
 content_margin_left = 4.0
 content_margin_top = 4.0
@@ -62,7 +51,6 @@ offset_right = -8.0
 offset_bottom = 88.0
 grow_horizontal = 0
 pivot_offset_ratio = Vector2(1, 0)
-theme_override_styles/panel = SubResource("StyleBoxFlat_bcejg")
 
 [node name="Layout" type="VBoxContainer" parent="Panel" unique_id=1879390448]
 layout_mode = 2

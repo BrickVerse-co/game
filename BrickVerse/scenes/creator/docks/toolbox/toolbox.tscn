@@ -68,7 +68,6 @@ theme_override_constants/separation = 0
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("Theme_khfyn")
 
 [node name="Label" type="Label" parent="Header" unique_id=1871889264]
 layout_mode = 2
@@ -80,7 +79,6 @@ vertical_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
-theme = SubResource("Theme_qt6xe")
 script = ExtResource("1_akuy4")
 _typeOption = NodePath("Container/Options/Type")
 _filterOption = NodePath("Container/Options/Filter")
@@ -144,7 +142,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
-theme = SubResource("Theme_h1wj5")
 scroll_hint_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Content/Container/Control/ScrollContainer" unique_id=294109174]
@@ -216,7 +213,6 @@ expand_icon = true
 
 [node name="Label" type="Label" parent="Content/Container/Pagination" unique_id=248314019]
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_657cn")
 text = "Page 1 of 1"
 horizontal_alignment = 1
 vertical_alignment = 1

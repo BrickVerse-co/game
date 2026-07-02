@@ -3,11 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Spatial;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Utils;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Creator;
 
@@ -25,6 +27,7 @@ public sealed partial class Gizmos : Node
 	private bool _isMouseDragging;
 	private bool _isDraggingDyn;
 	private bool _isDragPending;
+	private bool _duplicatedOnCurrentDrag;
 	private Vector2 _dragStartPos;
 	private const float DragThreshold = 8f;
 	private Dynamic? _lastHovered;
@@ -294,7 +297,7 @@ public sealed partial class Gizmos : Node
 	private void OnMoveDragged(Vector3 vector)
 	{
 		_lastMoveMotion = vector;
-		ApplyMoveMotion(vector, snap: false);
+		ApplyMoveMotion(vector, snap: true);
 	}
 
 	private void OnMoveDragEnded()
@@ -515,18 +518,44 @@ public sealed partial class Gizmos : Node
 			_hoverBox.Target = null;
 		}
 
-		// Select shortcuts
-		if (toolMode == ToolModeEnum.Select)
+		if (Selected.Count > 0)
 		{
-			if (@event.IsActionPressed("gizmo_rotate"))
+			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToggleTransformOrientation, Key.L))
+			{
+				TransformOrientationEnum nextOrientation = CreatorService.Interface.TransformOrientation == TransformOrientationEnum.Global
+					? TransformOrientationEnum.Local
+					: TransformOrientationEnum.Global;
+				CreatorSettingsService.Instance.Set(CreatorSettingKeys.Interface.TransformOrientation, nextOrientation);
+				CreatorService.Interface.StatusBar?.SetStatus($"Transform Orientation: {nextOrientation}");
+				if (_isDraggingDyn) RebaseActiveDirectDrag();
+			}
+
+			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.TogglePivotMode, Key.P))
+			{
+				SelectionPivotModeEnum nextPivot = CreatorService.Interface.SelectionPivotMode == SelectionPivotModeEnum.Center
+					? SelectionPivotModeEnum.PrimarySelection
+					: SelectionPivotModeEnum.Center;
+				CreatorSettingsService.Instance.Set(CreatorSettingKeys.Interface.SelectionPivotMode, nextPivot);
+				CreatorService.Interface.StatusBar?.SetStatus($"Selection Pivot: {nextPivot}");
+				if (_isDraggingDyn) RebaseActiveDirectDrag();
+			}
+
+			// Selection orientation shortcuts (Roblox-style R/T behavior).
+			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.RotateSelection, Key.R))
 			{
 				RotateSelectedAround(90);
-				DragSelectedDynamics();
+				if (_isDraggingDyn)
+				{
+					RebaseActiveDirectDrag();
+				}
 			}
-			if (@event.IsActionPressed("gizmo_tilt"))
+			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.TiltSelection, Key.T))
 			{
 				TiltSelectedAround(90);
-				DragSelectedDynamics();
+				if (_isDraggingDyn)
+				{
+					RebaseActiveDirectDrag();
+				}
 			}
 		}
 
@@ -538,6 +567,7 @@ public sealed partial class Gizmos : Node
 			{
 				_isMouseDragging = true;
 				_dragStartPos = button.Position;
+				_duplicatedOnCurrentDrag = false;
 			}
 			else
 			{
@@ -602,7 +632,24 @@ public sealed partial class Gizmos : Node
 
 					if (canDirectDrag)
 					{
-						DragSelected.Add(targetDyn);
+						DragSelected.Clear();
+
+						// If the clicked instance is already selected, drag the full selection.
+						if (Root.CreatorContext.Selections.HasSelected(targetDyn))
+						{
+							foreach (Dynamic selectedDyn in Selected)
+							{
+								if (!selectedDyn.Locked)
+								{
+									DragSelected.Add(selectedDyn);
+								}
+							}
+						}
+						else
+						{
+							DragSelected.Add(targetDyn);
+						}
+
 						_isDragPending = true;
 					}
 				}
@@ -622,10 +669,32 @@ public sealed partial class Gizmos : Node
 				float distance = motion.Position.DistanceTo(_dragStartPos);
 				if (distance >= DragThreshold)
 				{
+					if (
+						CreatorService.Interface.DuplicateOnDragEnabled
+						&& Input.IsKeyPressed(Key.Ctrl)
+						&& !_duplicatedOnCurrentDrag
+					)
+					{
+						Instance[] source = [.. Root.CreatorContext.Selections.SelectedInstances];
+						if (source.Length > 0)
+						{
+							Root.CreatorContext.History.DuplicateInstances(source);
+							DragSelected.Clear();
+							foreach (Instance selected in Root.CreatorContext.Selections.SelectedInstances)
+							{
+								if (selected is Dynamic selectedDyn && !selectedDyn.Locked)
+								{
+									DragSelected.Add(selectedDyn);
+								}
+							}
+							_duplicatedOnCurrentDrag = true;
+						}
+					}
+
 					_isDraggingDyn = true;
 					_isDragPending = false;
 					IsTransformingSelected = true;
-					_pivotStart = GetCenterPivot([.. DragSelected]);
+					_pivotStart = GetSelectionPivot();
 					_selectDragStartTransforms.Clear();
 					foreach (Dynamic item in DragSelected)
 					{
@@ -643,6 +712,21 @@ public sealed partial class Gizmos : Node
 		}
 
 		_lastHovered = hoveringOn;
+	}
+
+	private void RebaseActiveDirectDrag()
+	{
+		if (!_isDraggingDyn)
+			return;
+
+		_dragStartPos = _camera.GetViewport().GetMousePosition();
+		_pivotStart = GetSelectionPivot();
+		_selectDragStartTransforms.Clear();
+
+		foreach (Dynamic item in DragSelected)
+		{
+			_selectDragStartTransforms[item] = item.GetGlobalTransform();
+		}
 	}
 
 	private void RotateSelectedAround(float angle)
@@ -740,31 +824,73 @@ public sealed partial class Gizmos : Node
 		if (DragSelected.Count == 0) return;
 
 		Vector2 mousePos = _camera.GetViewport().GetMousePosition();
-		Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
-		Vector3 rayNormal = _camera.ProjectRayNormal(mousePos);
-		Plane dragPlane = new(Vector3.Up, _pivotStart.Origin);
-		Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayNormal);
-		Vector3? startIntersection = dragPlane.IntersectsRay(_camera.ProjectRayOrigin(_dragStartPos), _camera.ProjectRayNormal(_dragStartPos));
+		Vector3 motion;
+		Instance[] ignoreList = [.. DragSelected];
+		Datamodel.Environment.RayResult? hit = Root.Environment.CurrentCamera?.ScreenPointToRay(mousePos, ignoreList);
 
-		if (currentIntersection == null || startIntersection == null)
+		if (CreatorService.Interface.SnapToPartEnabled && hit.HasValue)
 		{
-			return;
+			Vector3 halfExtents = GetCombinedHalfExtents([.. DragSelected]);
+			Vector3 normal = hit.Value.Normal.Normalized();
+			float pushOut =
+				Mathf.Abs(normal.X) * halfExtents.X
+				+ Mathf.Abs(normal.Y) * halfExtents.Y
+				+ Mathf.Abs(normal.Z) * halfExtents.Z;
+
+			Vector3 targetPivot = hit.Value.Position + normal * pushOut;
+			motion = targetPivot - _pivotStart.Origin;
+		}
+		else
+		{
+			Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
+			Vector3 rayNormal = _camera.ProjectRayNormal(mousePos);
+			Plane dragPlane = new(Vector3.Up, _pivotStart.Origin);
+			Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayNormal);
+			Vector3? startIntersection = dragPlane.IntersectsRay(_camera.ProjectRayOrigin(_dragStartPos), _camera.ProjectRayNormal(_dragStartPos));
+
+			if (currentIntersection == null || startIntersection == null)
+			{
+				return;
+			}
+
+			motion = currentIntersection.Value - startIntersection.Value;
 		}
 
-		Vector3 motion = currentIntersection.Value - startIntersection.Value;
-		motion.Y = 0f;
+		if (CreatorService.Interface.MoveSnapEnabled)
+		{
+			motion = motion.Snap(CreatorService.Interface.MoveSnapping);
+		}
 
 		ApplySelectDragMotion(motion);
+	}
+
+	private static Vector3 GetCombinedHalfExtents(Dynamic[] targets)
+	{
+		if (targets.Length == 0)
+			return Vector3.Zero;
+
+		Aabb merged = targets[0].CalculateBounds();
+		for (int i = 1; i < targets.Length; i++)
+		{
+			merged = merged.Merge(targets[i].CalculateBounds());
+		}
+
+		return merged.Size * 0.5f;
 	}
 
 	public static Transform3D GetCenterPivot(Instance[] instances)
 	{
 		Vector3 center = Vector3.Zero;
 		int count = 0;
+		Dynamic? firstDynamic = null;
+		TransformOrientationEnum orientationMode = CreatorService.Interface?.TransformOrientation ?? TransformOrientationEnum.Global;
+		SelectionPivotModeEnum pivotMode = CreatorService.Interface?.SelectionPivotMode ?? SelectionPivotModeEnum.Center;
+
 		foreach (Instance sel in instances)
 		{
 			if (sel is Dynamic dyn)
 			{
+				firstDynamic ??= dyn;
 				Transform3D xform = dyn.GetGlobalTransform();
 				center += xform.Origin;
 				count++;
@@ -773,7 +899,19 @@ public sealed partial class Gizmos : Node
 		if (count == 0) return Transform3D.Identity;
 		center /= count;
 
-		return new Transform3D(Basis.Identity, center);
+		Vector3 origin = center;
+		if (pivotMode == SelectionPivotModeEnum.PrimarySelection && firstDynamic != null)
+		{
+			origin = firstDynamic.GetGlobalTransform().Origin;
+		}
+
+		Basis basis = Basis.Identity;
+		if (orientationMode == TransformOrientationEnum.Local && firstDynamic != null)
+		{
+			basis = firstDynamic.GetGlobalTransform().Basis.Orthonormalized();
+		}
+
+		return new Transform3D(basis, origin);
 	}
 
 	private Transform3D GetSelectionPivot()

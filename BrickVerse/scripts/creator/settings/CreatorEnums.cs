@@ -17,3 +17,21 @@ public enum IndentationModeEnum
 	Tabs,
 	Spaces
 }
+
+public enum CreatorThemeModeEnum
+{
+	Dark,
+	Light
+}
+
+public enum TransformOrientationEnum
+{
+	Global,
+	Local
+}
+
+public enum SelectionPivotModeEnum
+{
+	Center,
+	PrimarySelection
+}
