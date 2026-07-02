@@ -83,14 +83,14 @@ public static class CreatorAPI
 
 		if (storedSession != null && !string.IsNullOrWhiteSpace(storedSession.AccessToken))
 		{
-			PT.Print("CreatorAPI: Attempting to restore auth session from storage...");
+			//PT.Print("CreatorAPI: Attempting to restore auth session from storage...");
 
 			try
 			{
 				// Check if token is expired and needs refresh
 				if (IsTokenExpired(storedSession))
 				{
-					PT.Print("CreatorAPI: Stored token is expired, attempting refresh...");
+					//PT.Print("CreatorAPI: Stored token is expired, attempting refresh...");
 
 					if (!string.IsNullOrWhiteSpace(storedSession.RefreshToken))
 					{
@@ -112,10 +112,10 @@ public static class CreatorAPI
 						return;
 					}
 				}
-				else
+				/*else
 				{
 					PT.Print("CreatorAPI: Stored token is still valid");
-				}
+				}*/
 
 				PT.Print("CreatorAPI: Restoring session from stored token");
 				await LoginWithOpenIdSession(storedSession, saveToken: false);
@@ -252,7 +252,7 @@ public static class CreatorAPI
 				expiresAt = GetTokenExpirationFromIdToken(newIdToken);
 			}
 
-			PT.Print("CreatorAPI: Token successfully refreshed");
+			//PT.Print("CreatorAPI: Token successfully refreshed");
 
 			return new OpenIdAuthSession
 			{
@@ -471,7 +471,7 @@ public static class CreatorAPI
 
 		string body = await msg.Content.ReadAsStringAsync();
 
-		PT.Print($"OpenID userinfo response: {body}");
+		//PT.Print($"OpenID userinfo response: {body}");
 
 		if (!msg.IsSuccessStatusCode)
 			throw new InvalidOperationException($"OpenID userinfo failed: {msg.StatusCode} {body}");
@@ -503,7 +503,7 @@ public static class CreatorAPI
 				{
 					SetToken(refreshedSession.AccessToken);
 					SaveStoredSession(refreshedSession);
-					PT.Print("CreatorAPI: Token automatically refreshed before API call");
+					//PT.Print("CreatorAPI: Token automatically refreshed before API call");
 				}
 			}
 		}
@@ -1005,14 +1005,14 @@ public static class CreatorAPI
 		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Uri.EscapeDataString(Token));
 		request.Headers.TryAddWithoutValidation("Accept", "application/json");
 
-		PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
-		PT.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
+		//PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
+		//PT.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
 
 		using HttpResponseMessage msg = await _uploadClient.SendAsync(request);
 		string responseText = await msg.Content.ReadAsStringAsync();
 
-		PT.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
-		PT.Print($"CreatorAPI UploadWorld Response Body: {responseText}");
+		//PT.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
+		//PT.Print($"CreatorAPI UploadWorld Response Body: {responseText}");
 
 		if (!msg.IsSuccessStatusCode)
 		{
@@ -1180,7 +1180,7 @@ public static class CreatorAPI
 
 		long expiresAt = GetLong(root, "expires_at");
 
-		PT.Print($"CreatorAPI: Loaded stored session - AccessToken valid: {!string.IsNullOrWhiteSpace(accessToken)}, HasRefreshToken: {!string.IsNullOrWhiteSpace(GetString(root, "refresh_token"))}, ExpiresAt: {expiresAt}");
+		//PT.Print($"CreatorAPI: Loaded stored session - AccessToken valid: {!string.IsNullOrWhiteSpace(accessToken)}, HasRefreshToken: {!string.IsNullOrWhiteSpace(GetString(root, "refresh_token"))}, ExpiresAt: {expiresAt}");
 
 		return new OpenIdAuthSession
 		{
