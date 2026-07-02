@@ -43,7 +43,7 @@ public static class CreatorAuthServer
 
 		_ = Task.Run(() => RunListenerAsync(_cts.Token));
 
-		PT.Print($"CreatorAuthServer listening on {RedirectUri}");
+		//PT.Print($"CreatorAuthServer listening on {RedirectUri}");
 	}
 
 	public static void BeginAuthAttempt(string expectedState, string codeVerifier)

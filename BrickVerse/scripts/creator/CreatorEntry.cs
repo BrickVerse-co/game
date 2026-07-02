@@ -23,7 +23,7 @@ public partial class CreatorEntry : Node
 {
 	public const int CreatorPort = 24220;
 
-	public async override void _EnterTree()
+	public override void _EnterTree()
 	{
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
 		cmdargs.TryGetValue("token", out string? launchToken);
@@ -31,25 +31,9 @@ public partial class CreatorEntry : Node
 		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
 
 		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
+		CreatorAPI.UserAuthenticated += OnClientAuthenticated;
 
-		// Prefer restoring a saved session. If the app was launched with a token,
-		// use it and persist it so subsequent launches can restore without prompting.
-		if (launchToken != null)
-		{
-			try
-			{
-				await CreatorAPI.LoginWithToken(launchToken, true);
-			}
-			catch (Exception error)
-			{
-				PT.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
-				await CreatorAPI.SetupAuth();
-			}
-		}
-		else
-		{
-			await CreatorAPI.SetupAuth();
-		}
+		_ = InitializeAuthAsync(launchToken);
 
 		CreatorService creatorService = new();
 		AddChild(creatorService);
@@ -81,6 +65,32 @@ public partial class CreatorEntry : Node
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
 			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.bvxw", ProjectName = new DirectoryInfo(legacyImportOut).Name });
+		}
+	}
+
+	private static async System.Threading.Tasks.Task InitializeAuthAsync(string? launchToken)
+	{
+		// Keep auth/network work off the startup path so creator UI can render immediately.
+		if (launchToken != null)
+		{
+			try
+			{
+				await CreatorAPI.LoginWithToken(launchToken, true);
+				return;
+			}
+			catch (Exception error)
+			{
+				PT.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+			}
+		}
+
+		try
+		{
+			await CreatorAPI.SetupAuth();
+		}
+		catch (Exception error)
+		{
+			PT.PrintErr("CreatorEntry: Auth setup failed: ", error.Message);
 		}
 	}
 

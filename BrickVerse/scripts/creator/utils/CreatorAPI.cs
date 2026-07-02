@@ -112,13 +112,10 @@ public static class CreatorAPI
 						return;
 					}
 				}
-				/*else
-				{
-					PT.Print("CreatorAPI: Stored token is still valid");
-				}*/
 
-				PT.Print("CreatorAPI: Restoring session from stored token");
+				//PT.Print("CreatorAPI: Restoring session from stored token");
 				await LoginWithOpenIdSession(storedSession, saveToken: false);
+
 				return;
 			}
 			catch (Exception error)
@@ -393,6 +390,7 @@ public static class CreatorAPI
 				}
 			);
 
+		PendingIdToken = null;
 		CurrentUserInfo = userInfo;
 		UserID = GetUserId(userInfo);
 		Username = userInfo.PreferredUsername;
@@ -401,7 +399,7 @@ public static class CreatorAPI
 		PT.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
 
 		UserAuthenticated?.Invoke(userInfo);
-		await RefreshAuthenticatedProfile();
+		UpdateAuthenticatedProfile(userInfo);
 		await RefreshToolbarIdentity();
 	}
 
@@ -509,67 +507,33 @@ public static class CreatorAPI
 		}
 	}
 
-	private static async Task RefreshAuthenticatedProfile()
+	private static void UpdateAuthenticatedProfile(OpenIdUserInfoResponse userInfo)
 	{
-		try
-		{
-			await EnsureTokenValid();
-			string authMeUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/me");
-
-			using HttpRequestMessage req = new(HttpMethod.Get, authMeUrl);
-			using HttpResponseMessage msg = await _client.SendAsync(req);
-
-			string body = await msg.Content.ReadAsStringAsync();
-
-			if (!msg.IsSuccessStatusCode)
-			{
-				throw new InvalidOperationException(
-					$"Auth profile request failed: {msg.StatusCode} {body}"
-				);
-			}
-
-			using JsonDocument doc = JsonDocument.Parse(body);
-			JsonElement root = doc.RootElement;
-
-			if (
-				!root.TryGetProperty("success", out JsonElement successNode)
-				|| successNode.ValueKind != JsonValueKind.True
-					&& successNode.ValueKind != JsonValueKind.False
-				|| !successNode.GetBoolean()
-			)
-			{
-				throw new InvalidOperationException(
-					"Auth profile request did not return a successful response."
-				);
-			}
-
-			if (
-				!root.TryGetProperty("user", out JsonElement userNode)
-				|| userNode.ValueKind != JsonValueKind.Object
-			)
-			{
-				throw new InvalidOperationException(
-					"Auth profile request did not include a user object."
-				);
-			}
-
-			AuthenticatedUserProfile profile = new()
-			{
-				Username = GetString(userNode, "username", Username),
-				HeadshotUrl = GetString(userNode, "headshotUrl"),
-				IsModerator = GetBool(userNode, "isModerator"),
-				IsVerified = GetBool(userNode, "isVerified"),
-			};
-
-			CurrentAuthenticatedProfile = profile;
-			AuthenticatedProfileUpdated?.Invoke(profile);
-		}
-		catch (Exception error)
+		if (!IsValidUserInfo(userInfo))
 		{
 			CurrentAuthenticatedProfile = null;
 			AuthenticatedProfileUpdated?.Invoke(null);
-			PT.PrintErr("CreatorAPI: Failed to load authenticated profile: ", error.Message);
+			return;
 		}
+
+		string resolvedUsername = !string.IsNullOrWhiteSpace(userInfo.PreferredUsername)
+			? userInfo.PreferredUsername
+			: userInfo.Name;
+
+		string? headshot = !string.IsNullOrWhiteSpace(userInfo.HeadshotUrl)
+			? userInfo.HeadshotUrl
+			: userInfo.Picture;
+
+		AuthenticatedUserProfile profile = new()
+		{
+			Username = resolvedUsername,
+			HeadshotUrl = headshot,
+			IsModerator = false,
+			IsVerified = false,
+		};
+
+		CurrentAuthenticatedProfile = profile;
+		AuthenticatedProfileUpdated?.Invoke(profile);
 	}
 
 	private static async Task RefreshToolbarIdentity()
@@ -755,6 +719,7 @@ public static class CreatorAPI
 		IsUserAuthenticated = false;
 
 		_client.DefaultRequestHeaders.Remove("Authorization");
+		_client.DefaultRequestHeaders.Remove("Cookie");
 		DeleteStoredToken();
 		AuthenticatedProfileUpdated?.Invoke(null);
 		ToolbarIdentityUpdated?.Invoke(null);
