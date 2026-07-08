@@ -9,6 +9,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
@@ -18,11 +19,6 @@ namespace BrickVerse.Client.WebAPI;
 /// </summary>
 internal sealed class ClientConnector : IClientConnector
 {
-	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-	{
-		PropertyNameCaseInsensitive = true,
-	};
-
 	private readonly BVHttpClient _httpClient = new();
 	private string _token = "";
 
@@ -40,7 +36,7 @@ internal sealed class ClientConnector : IClientConnector
 	{
 		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath("/v3/world/client/server/status"));
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse<APIServerStatus>(response, "server status");
+		return await ReadJsonResponse(response, "server status", BrickVerseJsonContext.Default.APIServerStatus);
 	}
 
 	public async Task<APIClientAuthResponseMessage> Connect()
@@ -49,9 +45,9 @@ internal sealed class ClientConnector : IClientConnector
 			Integrity: OfficialClientIntegrity.CreateProof()
 		);
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/client/server/authorize-connection"), body);
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/client/server/authorize-connection"), body, BrickVerseJsonContext.Default.ClientConnectRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse<APIClientAuthResponseMessage>(response, "client connect");
+		return await ReadJsonResponse(response, "client connect", BrickVerseJsonContext.Default.APIClientAuthResponseMessage);
 	}
 
 	private HttpRequestMessage CreateRequest(HttpMethod method, string url)
@@ -63,9 +59,9 @@ internal sealed class ClientConnector : IClientConnector
 		return request;
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value)
+	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
 	{
-		string json = JsonSerializer.Serialize(value, JsonOptions);
+		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = CreateRequest(method, url);
 		request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 		return request;
@@ -95,7 +91,7 @@ internal sealed class ClientConnector : IClientConnector
 		request.Headers.TryAddWithoutValidation("X-BrickVerse-Build-Channel", proof.BuildChannel);
 	}
 
-	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action)
+	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action, JsonTypeInfo<T> typeInfo)
 	{
 		string body = await response.Content.ReadAsStringAsync();
 
@@ -104,7 +100,7 @@ internal sealed class ClientConnector : IClientConnector
 			throw new HttpRequestException($"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
 		}
 
-		T? result = JsonSerializer.Deserialize<T>(body, JsonOptions);
+		T? result = JsonSerializer.Deserialize(body, typeInfo);
 		return result ?? throw new InvalidOperationException($"BrickVerse {action} returned an empty response.");
 	}
 
@@ -112,6 +108,6 @@ internal sealed class ClientConnector : IClientConnector
 	{
 		return Globals.ApiEndpoint.TrimEnd('/') + path;
 	}
-
-	private sealed record ClientConnectRequest(ClientIntegrityProof Integrity);
 }
+
+internal sealed record ClientConnectRequest(ClientIntegrityProof Integrity);

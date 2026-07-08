@@ -9,6 +9,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
@@ -18,8 +19,6 @@ namespace BrickVerse.Client.WebAPI;
 /// </summary>
 internal sealed class ServerListener : IServerListener
 {
-	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
 	private readonly BVHttpClient _httpClient = new();
 	private string _token = "";
 
@@ -37,14 +36,14 @@ internal sealed class ServerListener : IServerListener
 			StartedAtUnix: DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 		);
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/awaken"), body);
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/awaken"), body, BrickVerseJsonContext.Default.ServerListenRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse<APIServerListenResponse>(response, "server listen");
+		return await ReadJsonResponse(response, "server listen", BrickVerseJsonContext.Default.APIServerListenResponse);
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value)
+	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
 	{
-		string json = JsonSerializer.Serialize(value, JsonOptions);
+		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = new(method, url)
 		{
 			Content = new StringContent(json, Encoding.UTF8, "application/json"),
@@ -69,7 +68,7 @@ internal sealed class ServerListener : IServerListener
 		request.Headers.TryAddWithoutValidation("Authorization", authorization);
 	}
 
-	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action)
+	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action, JsonTypeInfo<T> typeInfo)
 	{
 		string body = await response.Content.ReadAsStringAsync();
 
@@ -78,7 +77,7 @@ internal sealed class ServerListener : IServerListener
 			throw new HttpRequestException($"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
 		}
 
-		T? result = JsonSerializer.Deserialize<T>(body, JsonOptions);
+		T? result = JsonSerializer.Deserialize(body, typeInfo);
 		return result ?? throw new InvalidOperationException($"BrickVerse {action} returned an empty response.");
 	}
 
@@ -86,6 +85,6 @@ internal sealed class ServerListener : IServerListener
 	{
 		return Globals.ApiEndpoint.TrimEnd('/') + path;
 	}
-
-	private sealed record ServerListenRequest(string Token, string Version, string Platform, long StartedAtUnix);
 }
+
+internal sealed record ServerListenRequest(string Token, string Version, string Platform, long StartedAtUnix);

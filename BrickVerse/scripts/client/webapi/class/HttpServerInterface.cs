@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
@@ -20,11 +21,6 @@ namespace BrickVerse.Client.WebAPI;
 /// </summary>
 public sealed class HttpServerInterface : IServerInterface
 {
-	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-	{
-		PropertyNameCaseInsensitive = true,
-	};
-
 	private readonly BVHttpClient _httpClient = new();
 	private string _token = "";
 
@@ -50,17 +46,17 @@ public sealed class HttpServerInterface : IServerInterface
 	public async Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs)
 	{
 		HeartbeatRequest body = new(playerIDs, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/heartbeat"), body);
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/heartbeat"), body, BrickVerseJsonContext.Default.HeartbeatRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse<APIHeartbeatResponse>(response, "server heartbeat");
+		return await ReadJsonResponse(response, "server heartbeat", BrickVerseJsonContext.Default.APIHeartbeatResponse);
 	}
 
 	public async Task<APIValidateResponse> ValidatePlayer(string token)
 	{
 		ValidatePlayerRequest body = new(token);
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/user"), body);
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/user"), body, BrickVerseJsonContext.Default.ValidatePlayerRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse<APIValidateResponse>(response, "player validate");
+		return await ReadJsonResponse(response, "player validate", BrickVerseJsonContext.Default.APIValidateResponse);
 	}
 
 	public async Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null)
@@ -87,7 +83,7 @@ public sealed class HttpServerInterface : IServerInterface
 			MapLevel(level)
 		);
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/logs/ingest"), body);
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/logs/ingest"), body, BrickVerseJsonContext.Default.LogIngestRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
 		if (!response.IsSuccessStatusCode)
@@ -105,9 +101,9 @@ public sealed class HttpServerInterface : IServerInterface
 		return request;
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value)
+	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
 	{
-		string json = JsonSerializer.Serialize(value, JsonOptions);
+		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = CreateRequest(method, url);
 		request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 		return request;
@@ -127,7 +123,7 @@ public sealed class HttpServerInterface : IServerInterface
 		request.Headers.TryAddWithoutValidation("Authorization", authorization);
 	}
 
-	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action)
+	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action, JsonTypeInfo<T> typeInfo)
 	{
 		string body = await response.Content.ReadAsStringAsync();
 
@@ -136,7 +132,7 @@ public sealed class HttpServerInterface : IServerInterface
 			throw new HttpRequestException($"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
 		}
 
-		T? result = JsonSerializer.Deserialize<T>(body, JsonOptions);
+		T? result = JsonSerializer.Deserialize(body, typeInfo);
 		return result ?? throw new InvalidOperationException($"BrickVerse {action} returned an empty response.");
 	}
 
@@ -184,8 +180,8 @@ public sealed class HttpServerInterface : IServerInterface
 			_ => "INFO"
 		};
 	}
-
-	private sealed record HeartbeatRequest(string[] PlayerIDs, long SentAtUnix);
-	private sealed record ValidatePlayerRequest(string Token);
-	private sealed record LogIngestRequest(string Log, long Timestamp, string Source, string Level);
 }
+
+internal sealed record HeartbeatRequest(string[] PlayerIDs, long SentAtUnix);
+internal sealed record ValidatePlayerRequest(string Token);
+internal sealed record LogIngestRequest(string Log, long Timestamp, string Source, string Level);
