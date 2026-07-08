@@ -6,7 +6,7 @@ on:
     branches: [main, beta]
 
 env:
-  GODOT_VERSION: 4.7.0
+  GODOT_VERSION: 4.7-stable
   PROJECT_DIR: BrickVerse
   APP: client
   EXPORT_PRESET: Client Windows
@@ -26,33 +26,40 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - uses: chickensoft-games/setup-godot@v2
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          use-dotnet: true
+      - name: Install Godot .NET
+        run: |
+          wget https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+          unzip Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+          sudo mv Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64/Godot_v${{ env.GODOT_VERSION }}_mono_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
 
       - name: Build C#
         run: |
-          dotnet restore "${{ env.PROJECT_DIR }}/BrickVerse.csproj"
-          dotnet build "${{ env.PROJECT_DIR }}/BrickVerse.csproj" -c Release --no-restore
+          dotnet restore "${{ github.workspace }}/${{ env.PROJECT_DIR }}/BrickVerse.csproj"
+          dotnet build "${{ github.workspace }}/${{ env.PROJECT_DIR }}/BrickVerse.csproj" -c Release --no-restore
+
+      - name: Import Godot Assets
+        run: |
+          cd "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
+          godot --headless --editor --quit
 
       - name: Export Windows
-        working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          mkdir -p ../dist/windows
-          godot --headless --export-release "${{ env.EXPORT_PRESET }}" "../dist/windows/${{ env.BUILD_NAME }}.exe"
+          mkdir -p "${{ github.workspace }}/dist/windows"
+          cd "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
+          godot --headless --export-release "${{ env.EXPORT_PRESET }}" "${{ github.workspace }}/dist/windows/${{ env.BUILD_NAME }}.exe"
 
       - name: Package
         run: |
-          cd dist/windows
+          cd "${{ github.workspace }}/dist/windows"
           zip -r "../${{ env.ZIP_NAME }}" .
-          cd ../..
 
       - name: Hash
         id: hash
         run: |
-          EXE_SHA=$(sha256sum "dist/windows/${{ env.BUILD_NAME }}.exe" | awk '{print $1}')
-          MANAGED_SHA=$(find dist/windows -type f \( -name "*.dll" -o -name "*.pck" \) -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          EXE_SHA=$(sha256sum "${{ github.workspace }}/dist/windows/${{ env.BUILD_NAME }}.exe" | awk '{print $1}')
+          MANAGED_SHA=$(find "${{ github.workspace }}/dist/windows" -type f \( -name "*.dll" -o -name "*.pck" \) -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
 
           echo "exe_sha=$EXE_SHA" >> $GITHUB_OUTPUT
           echo "managed_sha=$MANAGED_SHA" >> $GITHUB_OUTPUT
@@ -69,7 +76,7 @@ jobs:
               --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
               --container-name "${{ secrets.AZURE_STORAGE_CONTAINER }}" \
               --name "$BLOB_PATH" \
-              --file "dist/${{ env.ZIP_NAME }}" \
+              --file "${{ github.workspace }}/dist/${{ env.ZIP_NAME }}" \
               --content-type "application/zip" \
               --overwrite true
 
@@ -107,4 +114,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: dist/${{ env.ZIP_NAME }}
+          path: ${{ github.workspace }}/dist/${{ env.ZIP_NAME }}
