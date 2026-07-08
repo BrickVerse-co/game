@@ -39,6 +39,16 @@ jobs:
 
           godot --version
 
+      - name: Install Godot Export Templates
+        run: |
+          wget https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz
+
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.stable.mono"
+
+          unzip Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz -d /tmp/godot-templates
+
+          cp -r /tmp/godot-templates/templates/* "$HOME/.local/share/godot/export_templates/4.7.stable.mono/"
+
       - name: Build C#
         run: |
           dotnet restore "${{ github.workspace }}/${{ env.PROJECT_DIR }}/BrickVerse.csproj"
