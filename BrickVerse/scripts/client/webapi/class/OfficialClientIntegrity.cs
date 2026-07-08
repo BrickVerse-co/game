@@ -59,14 +59,14 @@ public static class OfficialClientIntegrity
 
 	private static string GetBuildChannel()
 	{
-		if (Globals.IsBetaBuild)
-		{
-			return "beta";
-		}
-
 		if (OS.IsDebugBuild())
 		{
 			return "debug";
+		}
+
+		if (Globals.IsBetaBuild)
+		{
+			return "beta";
 		}
 
 		return "prod";
