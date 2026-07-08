@@ -75,7 +75,7 @@ public partial class DatamodelTestEntry : Node3D
 		Root.Setup();
 
 		string tempPath = Path.GetTempPath();
-		string placeFilePath = tempPath.PathJoin("pt_test_" + new DateTimeOffset(DateTime.Now).Millisecond + ".zip");
+		string placeFilePath = tempPath.PathJoin("bv_test_" + new DateTimeOffset(DateTime.Now).Millisecond + ".zip");
 
 		IsTesting = true;
 

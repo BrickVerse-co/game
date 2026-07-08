@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#if CREATOR || DEBUG || PT_DOCKER
+#if CREATOR || DEBUG || BV_DOCKER
 #define ALLOW_SELFHOST
 #endif
 
@@ -154,7 +154,7 @@ public sealed partial class ClientEntry : Node3D
 		options.DebugSpawnPositionText = debugSpawnPositionText;
 		options.CreatorToken = creatorToken;
 
-#if PT_DOCKER
+#if BV_DOCKER
 		options.LocalPort = 7777;
 #endif
 #endif
@@ -453,7 +453,7 @@ public sealed partial class ClientEntry : Node3D
 			PT.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
 
 			int serverPort = listenResponse.Port;
-#if PT_DOCKER
+#if BV_DOCKER
 			serverPort = 7777;
 #endif
 			NetworkService.CreateServer(serverPort, maxPlayers);
@@ -503,7 +503,8 @@ public sealed partial class ClientEntry : Node3D
 		{
 			await StartProductionClientAsync(options.AuthToken);
 			return;
-		} else
+		}
+		else
 		{
 			PT.PrintErr("No auth token provided, cannot start production client.");
 		}

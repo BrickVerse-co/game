@@ -180,7 +180,7 @@ public sealed partial class Globals : Node
 
 		// Link with BrickVerse's Private API Components
 		// NOTE: If you wanted to implement your own, search for "MissingComponentException" to see which part requires it.
-#if PT_PRIVATE_API
+#if BV_PRIVATE_API
 		BrickVerse.Private.PrivateNode pv = new();
 		AddChild(pv);
 #endif
