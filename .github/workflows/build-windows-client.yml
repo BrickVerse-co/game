@@ -6,7 +6,7 @@ on:
     branches: [main, beta]
 
 env:
-  GODOT_VERSION: 4.7-stable
+  GODOT_VERSION: 4.7.0
   PROJECT_DIR: BrickVerse
   APP: client
   EXPORT_PRESET: Client Windows
