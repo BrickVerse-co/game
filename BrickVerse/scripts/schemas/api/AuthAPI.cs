@@ -18,34 +18,41 @@ public struct APIServerListenResponse
 {
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
-	[JsonPropertyName("placeID")]
+	[JsonPropertyName("worldId")]
 	public int WorldID { get; set; }
 	[JsonPropertyName("port")]
 	public int Port { get; set; }
-	[JsonPropertyName("serverID")]
+	[JsonPropertyName("serverId")]
 	public int ServerID { get; set; }
 	[JsonPropertyName("placePath")]
 	public string? PlacePath { get; set; }
 }
 
-public struct APIClientAuthResponseMessage
-{
-	[JsonPropertyName("name")]
-	public string PlaceName { get; set; }
-	[JsonPropertyName("ip")]
-	public string IP { get; set; }
-	[JsonPropertyName("port")]
-	public int Port { get; set; }
-	[JsonPropertyName("placeID")]
-	public int WorldID { get; set; }
-	[JsonPropertyName("serverID")]
-	public int ServerID { get; set; }
-}
-
-public struct APIServerStatus
+public class APIServerStatus
 {
 	[JsonPropertyName("status")]
-	public string Status { get; set; }
+	public string Status { get; set; } = string.Empty;
+}
+
+public class APIClientAuthResponseMessage : APIServerStatus
+{
+	[JsonPropertyName("worldName")]
+	public string PlaceName { get; set; } = string.Empty;
+
+	[JsonPropertyName("ip")]
+	public string IP { get; set; } = string.Empty;
+
+	[JsonPropertyName("port")]
+	public int Port { get; set; }
+
+	[JsonPropertyName("universeId")]
+	public int UniverseID { get; set; }
+
+	[JsonPropertyName("worldId")]
+	public int WorldID { get; set; }
+
+	[JsonPropertyName("serverId")]
+	public int ServerID { get; set; }
 }
 
 [JsonSerializable(typeof(APIServerAuthRequestMessage))]

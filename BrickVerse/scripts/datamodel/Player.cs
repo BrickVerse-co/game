@@ -83,6 +83,9 @@ public sealed partial class Player : NPC
 	public bool CanChat { get; set; } = false;
 
 	[SyncVar]
+	public string ChatRestrictionReason { get; set; } = "";
+
+	[SyncVar]
 	public bool IsAgeRestricted { get; set; } = false;
 
 	internal APIUserInfo? UserInfo { get; private set; }
@@ -295,6 +298,12 @@ public sealed partial class Player : NPC
 	public bool IsAdmin { get; internal set; }
 
 	[ScriptProperty, SyncVar]
+	public bool IsStarCreator { get; internal set; }
+
+	[ScriptProperty, SyncVar]
+	public bool HasVerifiedBadge { get; internal set; }
+
+	[ScriptProperty, SyncVar]
 	public bool IsCreator { get; internal set; }
 
 	[ScriptProperty, SyncVar]
@@ -342,6 +351,8 @@ public sealed partial class Player : NPC
 		string badgeName = player.IsCreator ? "creator"
 			: !string.IsNullOrEmpty(player.UserRoleClass) ? player.UserRoleClass
 			: player.IsAdmin ? "admin"
+			: player.IsStarCreator ? "star"
+			: player.HasVerifiedBadge ? "verified"
 			: "";
 
 		if (string.IsNullOrEmpty(badgeName))

@@ -15,6 +15,7 @@ public interface IServerInterface
 	Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs);
 	Task<APIValidateResponse> ValidatePlayer(string token);
 	Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null);
+	Task Log(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null);
 }
 
 public enum ServerEventType
@@ -23,4 +24,17 @@ public enum ServerEventType
 	ServerStopped,
 	ClientConnected,
 	ClientDisconnected
+}
+
+public enum ServerLogSource
+{
+	Server,
+	Client
+}
+
+public enum ServerLogLevel
+{
+	Info,
+	Warning,
+	Error
 }

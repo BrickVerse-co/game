@@ -78,6 +78,8 @@ public sealed partial class ClientEntry : Node3D
 
 		IsFocused = !IsContained;
 
+		ClientAuthAPI.Initialize(launchOptions.IsServer);
+
 #if ALLOW_SELFHOST
 		ApplySelfHostedLaunchOptions(launchOptions);
 #endif
@@ -523,10 +525,10 @@ public sealed partial class ClientEntry : Node3D
 			PT.Print("Calling ClientAuthAPI.SendClientConnect()...");
 
 			_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
-			LogClientConnectionInfo(_clientConnectionInfo.Value);
+			LogClientConnectionInfo(_clientConnectionInfo);
 
-			Root.WorldID = _clientConnectionInfo.Value.WorldID;
-			Root.ServerID = _clientConnectionInfo.Value.ServerID;
+			Root.WorldID = _clientConnectionInfo.WorldID;
+			Root.ServerID = _clientConnectionInfo.ServerID;
 			NetworkService.IsProd = true;
 
 			StartServerStatusPolling();
@@ -558,7 +560,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private async void PollServerStatus()
 	{
-		if (_serverStatusPollTimer == null || !_clientConnectionInfo.HasValue)
+		if (_serverStatusPollTimer == null || _clientConnectionInfo == null)
 		{
 			return;
 		}
@@ -568,10 +570,18 @@ public sealed partial class ClientEntry : Node3D
 			APIServerStatus status = await ClientAuthAPI.CheckServerStatus();
 			PT.Print(status.Status);
 
-			if (status.Status == "started")
+			if (status.Status == "STOPPED" || status.Status == "STOPPING")
+			{
+				NetworkService.DisconnectSelf($"Server {status.Status.ToLower()} by universe developer.", NetworkService.DisconnectionCodeEnum.ConnectionFailure);
+				_serverStatusPollTimer.QueueFree();
+				_serverStatusPollTimer = null;
+				return;
+			}
+
+			if (status.Status == "STARTED")
 			{
 				TargetServerReady?.Invoke();
-				NetworkService.CreateClient(_clientConnectionInfo.Value.IP, _clientConnectionInfo.Value.Port);
+				NetworkService.CreateClient(_clientConnectionInfo.IP, _clientConnectionInfo.Port);
 				_serverStatusPollTimer.QueueFree();
 				_serverStatusPollTimer = null;
 				return;

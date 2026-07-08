@@ -19,14 +19,30 @@ public struct APIValidateResponse
 {
 	[JsonPropertyName("id")]
 	public string UserID { get; set; }
+	
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
+
 	[JsonPropertyName("canChat")]
 	public bool CanChat { get; set; }
+
+	[JsonPropertyName("chatRestrictionReason")]
+	public string? ChatRestrictionReason { get; set; }
+
 	[JsonPropertyName("isAgeRestricted")]
 	public bool IsAgeRestricted { get; set; }
+
 	[JsonPropertyName("isCreator")]
 	public bool IsCreator { get; set; }
+
+	[JsonPropertyName("isStaff")]
+	public bool IsStaff { get; set; }
+
+	[JsonPropertyName("isStarCreator")]
+	public bool IsStarCreator { get; set; }
+
+	[JsonPropertyName("hasVerifiedBadge")]
+	public bool HasVerifiedBadge { get; set; }
 }
 
 public struct APIHasAchievementResponse

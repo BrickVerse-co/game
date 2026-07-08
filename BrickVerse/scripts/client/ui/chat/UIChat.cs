@@ -73,17 +73,40 @@ public partial class UIChat : Control
 		{
 			if (!LocalPlayer.CanChat)
 			{
-				_chatField.Text = "Please verify your email to send chats";
+				switch (LocalPlayer.ChatRestrictionReason)
+				{
+					case "AGE_RESTRICTED":
+						_chatField.PlaceholderText = "Chat is disabled due to age restrictions";
+						break;
+					case "MUTED":
+						_chatField.PlaceholderText = "You are muted and cannot chat";
+						break;
+					case "CHAT_MODERATION":
+						_chatField.PlaceholderText = "Chat is disabled due to moderation";
+						break;
+					case "UNVERIFIED_EMAIL":
+						_chatField.PlaceholderText = "Chat is disabled until your email is verified";
+						break;
+					default:
+						_chatField.PlaceholderText = "Chat is disabled for your account";
+						break;
+				}
 			}
-			else if (LocalPlayer.IsAgeRestricted)
+			else
 			{
-				// Disable chat field entirely on age restricted accounts
-				_chatFieldPanel.Visible = false;
+				_chatField.PlaceholderText = "Chat is disabled due to account restrictions";
 			}
-			_chatField.Editable = false;
-			_sendButton.Visible = false;
-			_emojiButton.Visible = false;
 		}
+		else if (LocalPlayer.IsAgeRestricted)
+		{
+			// Disable chat field entirely on age restricted accounts
+			_chatFieldPanel.Visible = false;
+		}
+		
+		_chatField.Editable = false;
+		_sendButton.Visible = false;
+		_emojiButton.Visible = false;
+
 		ClampToViewport();
 	}
 

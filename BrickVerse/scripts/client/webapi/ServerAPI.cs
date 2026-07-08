@@ -60,4 +60,10 @@ public static class ServerAPI
 		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
 		return ServerInterface.LogEvent(eventType, data);
 	}
+
+	public static Task LogServerLog(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null)
+	{
+		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
+		return ServerInterface.Log(log, source, level, timestampUnixMs);
+	}
 }

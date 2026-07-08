@@ -4,6 +4,8 @@
 
 using MemoryPack;
 using BrickVerse.Attributes;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Client.WebAPI.Interfaces;
 #if CREATOR
 using BrickVerse.Creator.UI;
 #endif
@@ -13,6 +15,7 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace BrickVerse.Scripting;
 
@@ -20,10 +23,19 @@ namespace BrickVerse.Scripting;
 public partial class LogDispatcher : NetworkedObject
 {
 	private const int MaxLogLength = 16384;
+	private const int ClientForwardLimitCount = 12;
+	private const long ClientForwardLimitWindowMs = 60000;
+	private const int ServerForwardLimitCount = 12;
+	private const long ServerForwardLimitWindowMs = 60000;
+	private const int MaxForwardedContentLength = 1000;
 	public event Action<LogData>? NewLog;
 	public event Action<LogData[]>? LogSynchronized;
 	public List<LogData> ServerLogs = [];
 	public List<LogData> Logs = [];
+	private readonly Queue<long> _clientForwardWindow = [];
+	private int _clientForwardDroppedCount;
+	private readonly Dictionary<int, Queue<long>> _serverForwardWindows = [];
+	private readonly Dictionary<int, int> _serverForwardDroppedCounts = [];
 
 	public override void Init()
 	{
@@ -73,9 +85,9 @@ public partial class LogDispatcher : NetworkedObject
 		});
 	}
 
-	internal async void DispatchLog(LogData data)
+	internal async void DispatchLog(LogData data, bool preserveSource = false)
 	{
-		if (Root.Network.IsServer && Root.SessionType == World.SessionTypeEnum.Client)
+		if (!preserveSource && Root.Network.IsServer && Root.SessionType == World.SessionTypeEnum.Client)
 		{
 			// Explicitly set on server if is client/ from server
 			data.LogFrom = LogFromEnum.Server;
@@ -104,6 +116,158 @@ public partial class LogDispatcher : NetworkedObject
 		{
 			await Root.Entry.DebugAgent.SendLogDispatch(data);
 		}
+
+		TryForwardClientLogToServer(data);
+
+		if (Root.Network.IsServer && Root.Network.IsProd)
+		{
+			ServerLogSource source = data.LogFrom == LogFromEnum.Client ? ServerLogSource.Client : ServerLogSource.Server;
+			ServerLogLevel level = data.LogType switch
+			{
+				LogTypeEnum.Warning => ServerLogLevel.Warning,
+				LogTypeEnum.Error => ServerLogLevel.Error,
+				_ => ServerLogLevel.Info
+			};
+
+			long timestampUnixMs = new DateTimeOffset(data.LoggedAt).ToUnixTimeMilliseconds();
+			_ = ServerAPI.LogServerLog(data.Content, source, level, timestampUnixMs);
+		}
+	}
+
+	private void TryForwardClientLogToServer(LogData data)
+	{
+		if (Root.Network.IsServer || Root.SessionType != World.SessionTypeEnum.Client)
+		{
+			return;
+		}
+
+		if (!CanForwardClientLog())
+		{
+			return;
+		}
+
+		LogData payload = new()
+		{
+			ID = data.ID,
+			LogType = data.LogType,
+			LogFrom = LogFromEnum.Client,
+			Content = TruncateForForward(data.Content),
+			LoggedAt = data.LoggedAt
+		};
+
+		RpcId(1, nameof(NetReqClientLog), SerializeUtils.Serialize(payload));
+	}
+
+	private bool CanForwardClientLog()
+	{
+		long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		while (_clientForwardWindow.Count > 0 && nowMs - _clientForwardWindow.Peek() > ClientForwardLimitWindowMs)
+		{
+			_clientForwardWindow.Dequeue();
+		}
+
+		if (_clientForwardWindow.Count >= ClientForwardLimitCount)
+		{
+			_clientForwardDroppedCount++;
+			if (_clientForwardDroppedCount == 1 || _clientForwardDroppedCount % 10 == 0)
+			{
+				PT.PrintWarn($"[ClientLogForward] Rate limited. Dropped {_clientForwardDroppedCount} client log(s).");
+			}
+
+			return false;
+		}
+
+		if (_clientForwardDroppedCount > 0)
+		{
+			PT.Print($"[ClientLogForward] Recovered after dropping {_clientForwardDroppedCount} client log(s).");
+			_clientForwardDroppedCount = 0;
+		}
+
+		_clientForwardWindow.Enqueue(nowMs);
+		return true;
+	}
+
+	private static string TruncateForForward(string content)
+	{
+		if (content.Length <= MaxForwardedContentLength)
+		{
+			return content;
+		}
+
+		StringBuilder sb = new(MaxForwardedContentLength + 32);
+		sb.Append(content.AsSpan(0, MaxForwardedContentLength));
+		sb.Append("...[truncated]");
+		return sb.ToString();
+	}
+
+	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
+	private void NetReqClientLog(byte[] rawdata)
+	{
+		if (!Root.Network.IsServer)
+		{
+			return;
+		}
+
+		if (RemoteSenderId <= 1)
+		{
+			return;
+		}
+
+		if (!CanAcceptClientLogFromPeer(RemoteSenderId))
+		{
+			return;
+		}
+
+		LogData? data = SerializeUtils.Deserialize<LogData>(rawdata);
+		if (data == null)
+		{
+			return;
+		}
+
+		data.ID = Guid.NewGuid().ToString();
+		data.LogFrom = LogFromEnum.Client;
+		data.Content = TruncateForForward(data.Content ?? string.Empty);
+		DispatchLog(data, preserveSource: true);
+	}
+
+	private bool CanAcceptClientLogFromPeer(int peerID)
+	{
+		long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		if (!_serverForwardWindows.TryGetValue(peerID, out Queue<long>? window))
+		{
+			window = [];
+			_serverForwardWindows[peerID] = window;
+		}
+
+		while (window.Count > 0 && nowMs - window.Peek() > ServerForwardLimitWindowMs)
+		{
+			window.Dequeue();
+		}
+
+		if (window.Count >= ServerForwardLimitCount)
+		{
+			int dropped = 1;
+			if (_serverForwardDroppedCounts.TryGetValue(peerID, out int currentDropped))
+			{
+				dropped = currentDropped + 1;
+			}
+
+			_serverForwardDroppedCounts[peerID] = dropped;
+			if (dropped == 1 || dropped % 10 == 0)
+			{
+				PT.PrintWarn($"[ClientLogForward] Server rate limit exceeded for peer {peerID}. Dropped {dropped} log(s).");
+			}
+
+			return false;
+		}
+
+		window.Enqueue(nowMs);
+		if (_serverForwardDroppedCounts.Remove(peerID, out int recoveredDropped) && recoveredDropped > 0)
+		{
+			PT.Print($"[ClientLogForward] Server limiter recovered for peer {peerID} after dropping {recoveredDropped} log(s).");
+		}
+
+		return true;
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]

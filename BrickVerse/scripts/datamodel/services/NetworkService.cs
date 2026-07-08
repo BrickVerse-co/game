@@ -725,7 +725,11 @@ public sealed partial class NetworkService : Instance
 					CanChat = true,
 					UserID = testUserID,
 					IsCreator = true,
-					IsAgeRestricted = false
+					IsAgeRestricted = false,
+					ChatRestrictionReason = null,
+					IsStarCreator = false,
+					HasVerifiedBadge = false,
+					IsStaff = false
 				};
 
 				userData = new()
@@ -739,12 +743,6 @@ public sealed partial class NetworkService : Instance
 			{
 				validateRes = await AuthenticatePlayer(userToken);
 				userData = await BVAPI.GetUserFromID(validateRes.UserID);
-			}
-
-			if (IsProd && Root.WorldInfo.HasValue && Root.WorldInfo.Value.Creator.Type == "guild")
-			{
-				APIV3SocialGuild guildInfo = await BVAPI.GetGuildFromID(Root.WorldInfo.Value.Creator.Id);
-				validateRes.IsCreator = guildInfo.Creator.Id == userData.Id;
 			}
 		}
 		catch (Exception ex)
@@ -782,17 +780,23 @@ public sealed partial class NetworkService : Instance
 			plr.PeerID = peerID;
 			plr.UserID = userData.Id;
 			plr.Name = username;
-			plr.IsAdmin = userData.IsStaff;
+			plr.IsAdmin = validateRes.IsStaff;
 			plr.UserRoleClass = userData.UserRoleClass ?? "";
-
+			plr.IsStarCreator = validateRes.IsStarCreator;
+			plr.HasVerifiedBadge = validateRes.HasVerifiedBadge;
 			plr.IsCreator = validateRes.IsCreator;
 			plr.IsAgeRestricted = validateRes.IsAgeRestricted;
+			plr.ChatRestrictionReason = validateRes.ChatRestrictionReason ?? "";
 			plr.CanChat = validateRes.CanChat;
 			plr.UserPlatform = (ClientPlatformEnum)platform;
 
 			if (plr.IsAdmin)
 			{
 				plr.ChatColor = Color.FromHtml("#DD5555");
+			}
+			else if (plr.IsCreator)
+			{
+				plr.ChatColor = Color.FromHtml("#ffa723");
 			}
 			else if (Root.PlayerDefaults.ChatColorsEnabled)
 			{

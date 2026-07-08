@@ -5,16 +5,35 @@
 using BrickVerse.Client.WebAPI.Interfaces;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using BrickVerse.Datamodel.Services;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
 
 public static class ClientAuthAPI
 {
+	private static bool _bootstrapped;
 	internal static string JoinToken = "";
-
 	internal static IClientConnector? ClientConnector { get; set; }
 	internal static IServerListener? ServerListener { get; set; }
+
+	public static void Initialize(bool isServer = false)
+	{
+		if (_bootstrapped)
+		{
+			return;
+		}
+
+		ClientConnector = new ClientConnector();
+		ServerListener = new ServerListener();
+		NetworkService.IntegrityCheckLayer = new OfficialNetworkIntegrityCheck();
+
+		if (isServer)
+		{
+			ServerAPI.ServerInterface = new HttpServerInterface();
+		}
+		_bootstrapped = true;
+	}
 
 	public static void SetAuthToken(string joinToken)
 	{
