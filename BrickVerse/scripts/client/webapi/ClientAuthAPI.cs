@@ -6,37 +6,47 @@ using BrickVerse.Client.WebAPI.Interfaces;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Datamodel.Services;
+using System;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
 
 public static class ClientAuthAPI
 {
+	private static readonly object BootstrapLock = new();
 	private static bool _bootstrapped;
-	internal static string JoinToken = "";
-	internal static IClientConnector? ClientConnector { get; set; }
-	internal static IServerListener? ServerListener { get; set; }
+	internal static string JoinToken { get; private set; } = string.Empty;
+	internal static IClientConnector? ClientConnector { get; private set; }
+	internal static IServerListener? ServerListener { get; private set; }
 
 	public static void Initialize(bool isServer = false)
 	{
-		if (_bootstrapped)
+		lock (BootstrapLock)
 		{
-			return;
-		}
+			if (_bootstrapped)
+			{
+				return;
+			}
 
-		ClientConnector = new ClientConnector();
-		ServerListener = new ServerListener();
-		NetworkService.IntegrityCheckLayer = new OfficialNetworkIntegrityCheck();
+			ClientConnector = new ClientConnector();
+			ServerListener = new ServerListener();
+			ClientConnector.SetToken(JoinToken);
+			ServerListener.SetToken(JoinToken);
+			NetworkService.IntegrityCheckLayer = new OfficialNetworkIntegrityCheck();
 
-		if (isServer)
-		{
-			ServerAPI.ServerInterface = new HttpServerInterface();
+			if (isServer)
+			{
+				ServerAPI.ServerInterface = new HttpServerInterface();
+				ServerAPI.ServerInterface.SetToken(ServerAPI.HostToken);
+			}
+			_bootstrapped = true;
 		}
-		_bootstrapped = true;
 	}
 
 	public static void SetAuthToken(string joinToken)
 	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(joinToken);
+
 		JoinToken = joinToken;
 		ClientConnector?.SetToken(joinToken);
 		ServerListener?.SetToken(joinToken);
@@ -44,19 +54,19 @@ public static class ClientAuthAPI
 
 	public static Task<APIServerStatus> CheckServerStatus()
 	{
-		if (ClientConnector == null) throw new MissingComponentException("Client Connector component missing");
-		return ClientConnector.CheckServerStatus();
+		return ClientConnector?.CheckServerStatus()
+			?? throw new MissingComponentException("Client Connector component missing");
 	}
 
 	public static Task<APIClientAuthResponseMessage> SendClientConnect()
 	{
-		if (ClientConnector == null) throw new MissingComponentException("Client Connector component missing");
-		return ClientConnector.Connect();
+		return ClientConnector?.Connect()
+			?? throw new MissingComponentException("Client Connector component missing");
 	}
 
 	public static Task<APIServerListenResponse> SendServerListen()
 	{
-		if (ServerListener == null) throw new MissingComponentException("Server listener component missing");
-		return ServerListener.Listen();
+		return ServerListener?.Listen()
+			?? throw new MissingComponentException("Server listener component missing");
 	}
 }
