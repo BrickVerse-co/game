@@ -41,21 +41,12 @@ if "%host_token%"=="" (
     exit /b 1
 )
 
-REM Verify the world file exists.
-if not exist "samples\worlds\baseplate.poly" (
-    color 0C
-    echo ERROR: World file not found.
-    echo Expected: samples\worlds\baseplate.poly
-    pause
-    exit /b 1
-)
-
 echo Starting BrickVerse Test Server...
 echo.
 
 server.console.exe ^
     -network=server ^
     -token=%host_token% ^
-    -world="res://samples/worlds/baseplate.poly"
+    -world="baseplate.bvxw"
 
 pause
