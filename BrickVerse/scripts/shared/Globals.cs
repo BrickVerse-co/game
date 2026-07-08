@@ -736,11 +736,6 @@ public sealed partial class Globals : Node
 
 		if (!OS.HasFeature("x86_64"))
 		{
-			if (IsInGDEditor)
-			{
-				PT.PrintWarn("Unsupported platform for development");
-			}
-
 			// i wasted an hour finding this damn return statement... -jeweleyed
 			if (platform == "android" || platform == "ios")
 			{
