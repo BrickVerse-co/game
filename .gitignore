@@ -4,7 +4,7 @@
 .godot/
 
 # Godot Export Templates (Please copy from the template: export_presets.cfg.template)
-BrickVerse/export_presets.cfg
+#BrickVerse/export_presets.cfg
 
 ## -- .NET/C# Build Artifacts -- ##
 
