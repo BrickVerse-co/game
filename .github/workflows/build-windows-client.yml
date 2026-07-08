@@ -28,10 +28,15 @@ jobs:
 
       - name: Install Godot .NET
         run: |
-          wget https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+         wget https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
           unzip Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
-          sudo mv Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64/Godot_v${{ env.GODOT_VERSION }}_mono_linux.x86_64 /usr/local/bin/godot
-          sudo chmod +x /usr/local/bin/godot
+
+          sudo mkdir -p /opt/godot
+          sudo cp -r Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64/* /opt/godot/
+
+          sudo ln -sf /opt/godot/Godot_v${{ env.GODOT_VERSION }}_mono_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /opt/godot/Godot_v${{ env.GODOT_VERSION }}_mono_linux.x86_64
+
           godot --version
 
       - name: Build C#
