@@ -135,18 +135,21 @@ public class BVAssetProvider : IAssetProvider
 			}
 			return;
 		}
+		else
+		{
+			if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+			{
+				_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
+			}
+		}
 
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
 			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(CreatorAPI.Token);
 		}
-#else
-		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
-		{
-			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
-		}
 #endif
+
 	}
 
 	private static string BuildBearerToken(string token)

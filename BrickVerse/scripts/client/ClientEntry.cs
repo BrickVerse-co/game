@@ -165,6 +165,7 @@ public sealed partial class ClientEntry : Node3D
 		};
 
 		PT.IsServer = runAsServer;
+		ClientAuthAPI.SetAuthToken(options.AuthToken ?? "");
 
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
@@ -465,10 +466,7 @@ public sealed partial class ClientEntry : Node3D
 
 		NetworkService.IsProd = true;
 		Engine.MaxFps = 30;
-
-		string authToken = options.AuthToken;
-		ClientAuthAPI.SetAuthToken(authToken);
-		ServerAPI.SetAuthToken(authToken);
+		ServerAPI.SetAuthToken(options.AuthToken);
 
 		try
 		{
