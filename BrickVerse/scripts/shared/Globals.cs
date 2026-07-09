@@ -24,8 +24,22 @@ namespace BrickVerse.Shared;
 
 public sealed partial class Globals : Node
 {
-	public const string MainEndpoint = "http://localhost:3000"; // "https://brickverse.gg/";
-	public const string ApiEndpoint = "http://localhost:3001/api"; // "https://api.brickverse.gg/api";
+	public static readonly Uri MainEndpoint = new(
+#if DEBUG
+		"http://localhost:3000"
+#else
+    "https://brickverse.gg"
+#endif
+	);
+
+	public static readonly Uri ApiEndpoint = new(
+#if DEBUG
+		"http://localhost:3001/api"
+#else
+    "https://api.brickverse.gg/api"
+#endif
+	);
+	
 	public const float AlphaThreshold = 0.025f;
 	public const string TestUserIdStart = "2";
 	public const string ToolboxFolderName = "toolbox";
