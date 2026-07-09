@@ -61,8 +61,8 @@ public sealed class HttpServerInterface : IServerInterface
 
 	public async Task<APIValidateResponse> ValidatePlayer(string token)
 	{
-		ValidatePlayerRequest body = new(token);
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/user"), body, BrickVerseJsonContext.Default.ValidatePlayerRequest);
+		string escapedToken = Uri.EscapeDataString(token ?? string.Empty);
+		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath($"/v3/world/server/user?joinToken={escapedToken}"));
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		return await ReadJsonResponse(response, "player validate", BrickVerseJsonContext.Default.APIValidateResponse);
 	}
