@@ -192,6 +192,8 @@ public sealed partial class ClientEntry : Node3D
 			ApplyEntryDataOverrides(options, entryData.Value);
 		}
 
+		PT.IsServer = options.IsServer;
+
 		PT.Print(
 			"Launch args: " +
 			string.Join(", ", args.Select(x => $"--{x.Key}={x.Value}"))

@@ -10,6 +10,8 @@ using BrickVerse.Creator.Utils;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -21,8 +23,6 @@ public class BVAssetProvider : IAssetProvider
 
 	public async Task<CacheItem> LoadResource(CacheItem item)
 	{
-		ApplyAssetAuthHeaders();
-
 		string url = GetAssetServeURL(item.ID, item.Type);
 		byte[] buffer = await GetResourceBuffer(url, item.Type);
 		item.SizeBytes = buffer.LongLength;
@@ -104,62 +104,64 @@ public class BVAssetProvider : IAssetProvider
 			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id + "?stream=true");
 		}
 
-		// Runtime-specific DRM endpoints
-		if (Globals.IsServerBuild || PT.IsServer)
+		// Runtime-specific DRM endpoints (must be runtime mode, not build feature)
+		if (PT.IsServer)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
-#if CREATOR
-		return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
-#else
+		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token) && string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
+		}
+
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
-#endif
 	}
 
 	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
 	{
-		return await _client.GetByteArrayAsync(url);
+		using HttpRequestMessage request = new(HttpMethod.Get, url);
+		request.Headers.TryAddWithoutValidation("Accept", "application/octet-stream");
+		ApplyAssetAuthHeaders(request);
+		//PT.Print("Fetching resource buffer from URL: ", url, " for resource type: ", itemType, " Authorization: ", request.Headers.Authorization);
+
+		using HttpResponseMessage response = await _client.SendAsync(request);
+		response.EnsureSuccessStatusCode();
+		return await response.Content.ReadAsByteArrayAsync();
 	}
 
-	private void ApplyAssetAuthHeaders()
+	private void ApplyAssetAuthHeaders(HttpRequestMessage request)
 	{
-		_client.DefaultRequestHeaders.Remove("Authorization");
-
-		if (Globals.IsServerBuild || PT.IsServer)
-		{
-			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
-			if (!string.IsNullOrWhiteSpace(serverToken))
-			{
-				_client.DefaultRequestHeaders["Authorization"] = serverToken;
-			}
-			return;
-		}
-		else
-		{
-			if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
-			{
-				_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
-			}
-		}
+		string? token = null;
 
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			_client.DefaultRequestHeaders["Authorization"] = BuildBearerToken(CreatorAPI.Token);
+			token = CreatorAPI.Token;
 		}
 #endif
 
-	}
-
-	private static string BuildBearerToken(string token)
-	{
-		if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+		if (string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
-			return token;
+			token = ClientAuthAPI.JoinToken;
 		}
 
-		return "Bearer " + token;
+		if (PT.IsServer)
+		{
+			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
+
+			if (!string.IsNullOrWhiteSpace(serverToken))
+			{
+				token = serverToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+					? serverToken["Bearer ".Length..].Trim()
+					: serverToken.Trim();
+			}
+		}
+
+		if (!string.IsNullOrWhiteSpace(token))
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
+		}
 	}
 
 	public void Dispose()

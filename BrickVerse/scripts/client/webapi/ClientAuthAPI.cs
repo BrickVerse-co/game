@@ -45,7 +45,10 @@ public static class ClientAuthAPI
 
 	public static void SetAuthToken(string joinToken)
 	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(joinToken);
+		if (string.IsNullOrWhiteSpace(joinToken))
+		{
+			return;
+		}
 
 		JoinToken = joinToken;
 		ClientConnector?.SetToken(joinToken);
