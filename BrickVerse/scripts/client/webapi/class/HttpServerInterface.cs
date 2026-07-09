@@ -223,8 +223,8 @@ internal sealed record ValidatePlayerRequest(
 );
 
 internal sealed record LogIngestRequest(
-	[property: JsonPropertyName("Log")] string Log,
-	[property: JsonPropertyName("Timestamp")] long Timestamp,
-	[property: JsonPropertyName("Source")] string Source,
-	[property: JsonPropertyName("Level")] string Level
+	[property: JsonPropertyName("log")] string Log,
+	[property: JsonPropertyName("timestamp")] long Timestamp,
+	[property: JsonPropertyName("source")] string Source,
+	[property: JsonPropertyName("level")] string Level
 );

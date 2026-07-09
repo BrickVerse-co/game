@@ -74,7 +74,7 @@ public partial class UILoadingScreen : Control
 			return;
 		}
 
-		SetStatusText("Waiting for local server...");
+		SetStatusText("Waiting for server...");
 
 		if (_entry.Root.WorldInfo.HasValue)
 			OnWorldInfoReady(_entry.Root.WorldInfo.Value);
