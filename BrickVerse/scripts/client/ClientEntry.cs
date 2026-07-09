@@ -194,12 +194,13 @@ public sealed partial class ClientEntry : Node3D
 
 		PT.IsServer = options.IsServer;
 
-		PT.Print(
+		/*PT.Print(
 			"Launch args: " +
 			string.Join(", ", args.Select(x => $"--{x.Key}={x.Value}"))
 		);
 
 		PT.Print("Launch Options: ", FormatLaunchOptions(options));
+		*/
 
 		return options;
 	}

@@ -24,12 +24,8 @@ if not defined host_token call :fail "host_token.txt is empty." 1
 set "SERVER_PORT=%BRICKVERSE_TEST_PORT%"
 if not defined SERVER_PORT set "SERVER_PORT=5555"
 
-set "SERVER_WORLD=%BRICKVERSE_TEST_WORLD%"
-if not defined SERVER_WORLD set "SERVER_WORLD=baseplate.bvxw"
-
 echo Starting BrickVerse Test Server...
 echo Port: %SERVER_PORT%
-echo World: %SERVER_WORLD%
 echo.
 
 pushd "%BIN_DIR%" >nul || call :fail "Failed to enter bin directory." 1
@@ -38,7 +34,6 @@ pushd "%BIN_DIR%" >nul || call :fail "Failed to enter bin directory." 1
     -network=server ^
     -token=%host_token% ^
     -port=%SERVER_PORT% ^
-    -world="%SERVER_WORLD%" ^
     %*
 
 set "exit_code=%ERRORLEVEL%"
