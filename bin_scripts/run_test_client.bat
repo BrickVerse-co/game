@@ -14,10 +14,10 @@ cd /d "%~dp0..\bin" || (
     exit /b 1
 )
 
-REM Verify the server executable exists.
-if not exist "server.console.exe" (
+REM Verify the client executable exists.
+if not exist "client/client.console.exe" (
     color 0C
-    echo ERROR: server.console.exe was not found.
+    echo ERROR: client.console.exe was not found.
     pause
     exit /b 1
 )
@@ -44,7 +44,7 @@ if "%join_token%"=="" (
 echo Starting BrickVerse Test Client...
 echo.
 
-client.console.exe ^
+client/client.console.exe ^
     -network=client ^
     -token=%join_token% ^
 

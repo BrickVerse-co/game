@@ -15,7 +15,7 @@ cd /d "%~dp0..\bin" || (
 )
 
 REM Verify the server executable exists.
-if not exist "server.console.exe" (
+if not exist "server/server.console.exe" (
     color 0C
     echo ERROR: server.console.exe was not found.
     pause
@@ -44,7 +44,7 @@ if "%host_token%"=="" (
 echo Starting BrickVerse Test Server...
 echo.
 
-server.console.exe ^
+server/server.console.exe ^
     -network=server ^
     -token=%host_token% ^
     -world="baseplate.bvxw"
