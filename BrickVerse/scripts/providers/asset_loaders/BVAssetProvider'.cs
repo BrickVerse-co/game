@@ -105,7 +105,7 @@ public class BVAssetProvider : IAssetProvider
 		}
 
 		// Runtime-specific DRM endpoints
-		if (Globals.IsServerBuild)
+		if (Globals.IsServerBuild || PT.IsServer)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
@@ -120,19 +120,13 @@ public class BVAssetProvider : IAssetProvider
 	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
 	{
 		return await _client.GetByteArrayAsync(url);
-
-		/*ThumbnailUrlResponse? thumb = await _client.GetFromJsonAsync(url, BVAssetProviderGenerationContext.Default.ThumbnailUrlResponse);
-		if (thumb is null || string.IsNullOrWhiteSpace(thumb.Value.Url))
-			throw new InvalidOperationException("Failed to resolve thumbnail URL");
-
-		return await _client.GetByteArrayAsync(thumb.Value.Url);*/
 	}
 
 	private void ApplyAssetAuthHeaders()
 	{
 		_client.DefaultRequestHeaders.Remove("Authorization");
 
-		if (Globals.IsServerBuild)
+		if (Globals.IsServerBuild || PT.IsServer)
 		{
 			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
 			if (!string.IsNullOrWhiteSpace(serverToken))
