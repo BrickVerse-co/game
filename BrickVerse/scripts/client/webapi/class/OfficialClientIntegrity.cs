@@ -3,15 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
-using BrickVerse.Datamodel.Services;
 using BrickVerse.Networking.Interfaces;
 using BrickVerse.Shared;
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -24,12 +23,12 @@ namespace BrickVerse.Client.WebAPI;
 /// the existing NetworkService integrity challenge.
 /// </summary>
 public readonly record struct ClientIntegrityProof(
-	string Version,
-	string Platform,
-	string ExecutableSha256,
-	string ManagedSha256,
-	string BuildChannel,
-	long TimestampUnix
+	[property: JsonPropertyName("Version")] string Version,
+	[property: JsonPropertyName("Platform")] string Platform,
+	[property: JsonPropertyName("ExecutableSha256")] string ExecutableSha256,
+	[property: JsonPropertyName("ManagedSha256")] string ManagedSha256,
+	[property: JsonPropertyName("BuildChannel")] string BuildChannel,
+	[property: JsonPropertyName("TimestampUnix")] long TimestampUnix
 );
 
 /// <summary>
@@ -45,7 +44,7 @@ public static class OfficialClientIntegrity
 			Version: Globals.AppVersion,
 			Platform: Globals.ResolveCurrentPlatform(),
 			ExecutableSha256: HashFileSafe(OS.GetExecutablePath()),
-			ManagedSha256: HashFileSafe(AppContext.BaseDirectory),
+			ManagedSha256: HashFileSafe(ResolveManagedBinaryPath()),
 			BuildChannel: GetBuildChannel(),
 			TimestampUnix: DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 		);
@@ -70,6 +69,31 @@ public static class OfficialClientIntegrity
 		}
 
 		return "prod";
+	}
+
+	private static string? ResolveManagedBinaryPath()
+	{
+		string baseDirectory = AppContext.BaseDirectory;
+		string expectedPath = Path.Combine(baseDirectory, "BrickVerse.dll");
+		if (File.Exists(expectedPath))
+		{
+			return expectedPath;
+		}
+
+		string[] candidates = Directory.GetFiles(baseDirectory, "*.dll", SearchOption.TopDirectoryOnly);
+		string? candidate = candidates.FirstOrDefault();
+		if (!string.IsNullOrWhiteSpace(candidate))
+		{
+			return candidate;
+		}
+
+		string executablePath = OS.GetExecutablePath();
+		if (!string.IsNullOrWhiteSpace(executablePath) && File.Exists(executablePath))
+		{
+			return executablePath;
+		}
+
+		return null;
 	}
 
 	private static string HashFileSafe(string? path)

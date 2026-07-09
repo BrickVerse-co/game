@@ -10,7 +10,6 @@ namespace BrickVerse.Client.WebAPI;
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
 [JsonSerializable(typeof(ClientConnectRequest))]
-[JsonSerializable(typeof(ServerListenRequest))]
 [JsonSerializable(typeof(HeartbeatRequest))]
 [JsonSerializable(typeof(ValidatePlayerRequest))]
 [JsonSerializable(typeof(LogIngestRequest))]

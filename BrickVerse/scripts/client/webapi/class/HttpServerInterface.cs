@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
@@ -29,9 +30,9 @@ public sealed class HttpServerInterface : IServerInterface
 		_token = token ?? "";
 	}
 
-	public async Task<byte[]> DownloadWorld(int worldID)
+	public async Task<byte[]> DownloadWorld(long worldID)
 	{
-		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath($"/v3/world/server/tree?worldId={worldID}"));
+		using HttpRequestMessage request = CreateBinaryRequest(HttpMethod.Get, ApiPath($"/v3/world/server/tree?worldId={worldID}&stream=true"));
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
 		if (!response.IsSuccessStatusCode)
@@ -40,12 +41,19 @@ public sealed class HttpServerInterface : IServerInterface
 			throw new HttpRequestException($"BrickVerse world download failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
 		}
 
-		return await response.Content.ReadAsByteArrayAsync();
+		byte[] data = await response.Content.ReadAsByteArrayAsync();
+		if (LooksLikeJson(data))
+		{
+			string body = Encoding.UTF8.GetString(data);
+			throw new InvalidOperationException($"BrickVerse world download returned JSON instead of stream: {body}");
+		}
+
+		return data;
 	}
 
 	public async Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs)
 	{
-		HeartbeatRequest body = new(playerIDs, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+		HeartbeatRequest body = new(playerIDs?.Length ?? 0);
 		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/heartbeat"), body, BrickVerseJsonContext.Default.HeartbeatRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		return await ReadJsonResponse(response, "server heartbeat", BrickVerseJsonContext.Default.APIHeartbeatResponse);
@@ -101,6 +109,14 @@ public sealed class HttpServerInterface : IServerInterface
 		return request;
 	}
 
+	private HttpRequestMessage CreateBinaryRequest(HttpMethod method, string url)
+	{
+		HttpRequestMessage request = new(method, url);
+		request.Headers.TryAddWithoutValidation("Accept", "application/octet-stream");
+		ApplyAuthorization(request);
+		return request;
+	}
+
 	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
 	{
 		string json = JsonSerializer.Serialize(value, typeInfo);
@@ -139,6 +155,22 @@ public sealed class HttpServerInterface : IServerInterface
 	private static string ApiPath(string path)
 	{
 		return Globals.ApiEndpoint.TrimEnd('/') + path;
+	}
+
+	private static bool LooksLikeJson(byte[] bytes)
+	{
+		for (int i = 0; i < bytes.Length; i++)
+		{
+			byte value = bytes[i];
+			if (value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n')
+			{
+				continue;
+			}
+
+			return value == (byte)'{' || value == (byte)'[';
+		}
+
+		return false;
 	}
 
 	private static string NormalizeLogMessage(string? log)
@@ -182,6 +214,17 @@ public sealed class HttpServerInterface : IServerInterface
 	}
 }
 
-internal sealed record HeartbeatRequest(string[] PlayerIDs, long SentAtUnix);
-internal sealed record ValidatePlayerRequest(string Token);
-internal sealed record LogIngestRequest(string Log, long Timestamp, string Source, string Level);
+internal sealed record HeartbeatRequest(
+	[property: JsonPropertyName("connectedClients")] int ConnectedClients
+);
+
+internal sealed record ValidatePlayerRequest(
+	[property: JsonPropertyName("Token")] string Token
+);
+
+internal sealed record LogIngestRequest(
+	[property: JsonPropertyName("Log")] string Log,
+	[property: JsonPropertyName("Timestamp")] long Timestamp,
+	[property: JsonPropertyName("Source")] string Source,
+	[property: JsonPropertyName("Level")] string Level
+);

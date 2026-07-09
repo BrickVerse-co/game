@@ -44,7 +44,7 @@ public static class ServerAPI
 		return ServerInterface ?? throw new MissingComponentException("Missing server interface component");
 	}
 
-	public static Task<byte[]> DownloadWorld(int worldID)
+	public static Task<byte[]> DownloadWorld(long worldID)
 	{
 		if (worldID <= 0)
 		{

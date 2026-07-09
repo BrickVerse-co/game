@@ -6,6 +6,7 @@ using BrickVerse.Client.WebAPI.Interfaces;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -29,21 +30,25 @@ internal sealed class ServerListener : IServerListener
 
 	public async Task<APIServerListenResponse> Listen()
 	{
-		ServerListenRequest body = new(
-			Token: _token,
-			Version: Globals.AppVersion,
-			Platform: Globals.ResolveCurrentPlatform(),
-			StartedAtUnix: DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-		);
+		Dictionary<string, object> body = new()
+		{
+			["Token"] = _token,
+			["Version"] = Globals.AppVersion,
+			["Platform"] = Globals.ResolveCurrentPlatform(),
+			["StartedAtUnix"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+		};
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/awaken"), body, BrickVerseJsonContext.Default.ServerListenRequest);
+		string json = JsonSerializer.Serialize(body);
+
+		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/awaken"), json);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse(response, "server listen", BrickVerseJsonContext.Default.APIServerListenResponse);
+		
+		APIServerListenResponse result = await ReadJsonResponse(response, "server listen", BrickVerseJsonContext.Default.APIServerListenResponse);
+		return result;
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
+	private HttpRequestMessage CreateJsonRequest(HttpMethod method, string url, string json)
 	{
-		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = new(method, url)
 		{
 			Content = new StringContent(json, Encoding.UTF8, "application/json"),
@@ -86,5 +91,3 @@ internal sealed class ServerListener : IServerListener
 		return Globals.ApiEndpoint.TrimEnd('/') + path;
 	}
 }
-
-internal sealed record ServerListenRequest(string Token, string Version, string Platform, long StartedAtUnix);

@@ -23,6 +23,8 @@ using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace BrickVerse.Client;
 
@@ -70,59 +72,86 @@ public sealed partial class ClientEntry : Node3D
 
 	public async void Entry(ClientEntryData? entryData = null)
 	{
-		PT.Print("ClientEntry starting...");
 		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-		Stopwatch stopwatch = Stopwatch.StartNew();
-		ClientLaunchOptions launchOptions = BuildLaunchOptions(entryData);
+		try
+		{
+			Stopwatch stopwatch = Stopwatch.StartNew();
+			ClientLaunchOptions launchOptions = BuildLaunchOptions(entryData);
 
-		IsFocused = !IsContained;
+			IsFocused = !IsContained;
 
-		ClientAuthAPI.Initialize(launchOptions.IsServer);
+			ClientAuthAPI.Initialize(launchOptions.IsServer);
 
 #if ALLOW_SELFHOST
-		ApplySelfHostedLaunchOptions(launchOptions);
+			ApplySelfHostedLaunchOptions(launchOptions);
 #endif
 
-		await ConnectDebugAgentAsync(launchOptions.DebugAddress, launchOptions.DebugId, stopwatch);
-		ApplyMobileWindowSettings();
-		CreateCoreServices(launchOptions.IsServer);
-		InitializeWorld(stopwatch);
+			await ConnectDebugAgentAsync(launchOptions.DebugAddress, launchOptions.DebugId, stopwatch);
+			ApplyMobileWindowSettings();
+			CreateCoreServices(launchOptions.IsServer);
+			InitializeWorld(stopwatch);
 
 #if CREATOR
-		ApplyCreatorTestToken(launchOptions.CreatorToken);
+			ApplyCreatorTestToken(launchOptions.CreatorToken);
 #endif
 
 #if ALLOW_SELFHOST
-		await LoadSelfHostedWorldIfNeededAsync(launchOptions, stopwatch);
-		StartSoloTestClientsIfNeeded(launchOptions);
+			await LoadSelfHostedWorldIfNeededAsync(launchOptions, stopwatch);
+			StartSoloTestClientsIfNeeded(launchOptions);
 #endif
 
-		ApplyFpsFlags();
+			ApplyFpsFlags();
 
-		if (launchOptions.IsServer)
-		{
-			PT.Print("Starting server...");
-			await StartServerAsync(launchOptions);
-		}
+			if (launchOptions.IsServer)
+			{
+				PT.Print("Starting server...");
+				await StartServerAsync(launchOptions);
+			}
 
-		if (launchOptions.IsClient)
-		{
-			PT.Print("Starting client...");
-			await StartClientAsync(launchOptions);
+			if (launchOptions.IsClient)
+			{
+				PT.Print("Starting client...");
+				await StartClientAsync(launchOptions);
+			}
 		}
+		catch (Exception ex)
+		{
+			PT.PrintErr("Error during client entry: ", ex);
+		}
+	}
+
+	private static string FormatLaunchOptions(ClientLaunchOptions options)
+	{
+		return string.Join(", ",
+			typeof(ClientLaunchOptions)
+				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+				.Select(p =>
+				{
+					object? value = p.GetValue(options);
+
+					// Hide secrets
+					if (p.Name is nameof(ClientLaunchOptions.AuthToken) or nameof(ClientLaunchOptions.CreatorToken))
+					{
+						value = string.IsNullOrWhiteSpace(value?.ToString()) ? "<null>" : "***";
+					}
+
+					return $"{p.Name}={value ?? "<null>"}";
+				}));
 	}
 
 	private static ClientLaunchOptions BuildLaunchOptions(ClientEntryData? entryData)
 	{
 		Dictionary<string, string> args = Globals.ReadCmdArgs();
+
 		args.TryGetValue("network", out string? networkMode);
 		args.TryGetValue("entry", out string? worldEntryPath);
 		args.TryGetValue("token", out string? authToken);
 		args.TryGetValue("debug", out string? debugAddress);
 		args.TryGetValue("debug-id", out string? debugId);
 
-		bool runAsServer = networkMode == "server";
+		bool runAsServer = string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
+			|| (string.IsNullOrWhiteSpace(networkMode) && Globals.IsServerBuild);
 
 		ClientLaunchOptions options = new()
 		{
@@ -134,6 +163,8 @@ public sealed partial class ClientEntry : Node3D
 			DebugAddress = debugAddress,
 			DebugId = debugId,
 		};
+
+		PT.IsServer = runAsServer;
 
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
@@ -153,16 +184,19 @@ public sealed partial class ClientEntry : Node3D
 		options.SoloClientCount = (soloClientCountText ?? "1").ToInt();
 		options.DebugSpawnPositionText = debugSpawnPositionText;
 		options.CreatorToken = creatorToken;
-
-#if BV_DOCKER
-		options.LocalPort = 7777;
-#endif
 #endif
 
 		if (entryData.HasValue)
 		{
 			ApplyEntryDataOverrides(options, entryData.Value);
 		}
+
+		PT.Print(
+			"Launch args: " +
+			string.Join(", ", args.Select(x => $"--{x.Key}={x.Value}"))
+		);
+
+		PT.Print("Launch Options: ", FormatLaunchOptions(options));
 
 		return options;
 	}
@@ -412,7 +446,7 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (!string.IsNullOrWhiteSpace(options.AuthToken))
 		{
-			await StartProductionServerAsync(options.AuthToken, options.MaxPlayers);
+			await StartProductionServerAsync(options);
 			return;
 		}
 
@@ -421,11 +455,18 @@ public sealed partial class ClientEntry : Node3D
 #endif
 	}
 
-	private async System.Threading.Tasks.Task StartProductionServerAsync(string authToken, int maxPlayers = 32)
+	private async System.Threading.Tasks.Task StartProductionServerAsync(ClientLaunchOptions options)
 	{
+		PT.Print("Starting production server...");
+		if (string.IsNullOrWhiteSpace(options.AuthToken))
+		{
+			throw new InvalidOperationException("Production server launch requires an auth token.");
+		}
+
 		NetworkService.IsProd = true;
 		Engine.MaxFps = 30;
 
+		string authToken = options.AuthToken;
 		ClientAuthAPI.SetAuthToken(authToken);
 		ServerAPI.SetAuthToken(authToken);
 
@@ -446,6 +487,7 @@ public sealed partial class ClientEntry : Node3D
 			stopwatch.Restart();
 			byte[] worldContent = await ServerAPI.DownloadWorld(listenResponse.WorldID);
 			PT.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
+			PT.Print("World bytes: ", worldContent.Length);
 
 			stopwatch.Restart();
 			PT.Print("Constructing...");
@@ -453,10 +495,7 @@ public sealed partial class ClientEntry : Node3D
 			PT.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
 
 			int serverPort = listenResponse.Port;
-#if BV_DOCKER
-			serverPort = 7777;
-#endif
-			NetworkService.CreateServer(serverPort, maxPlayers);
+			NetworkService.CreateServer(serverPort, options.MaxPlayers);
 		}
 		catch (Exception ex)
 		{
@@ -471,6 +510,7 @@ public sealed partial class ClientEntry : Node3D
 		PT.Print("Server ID: ", listenResponse.ServerID);
 		PT.Print("World ID: ", listenResponse.WorldID);
 		PT.Print("Port: ", listenResponse.Port);
+		PT.Print("Place path: ", listenResponse.PlacePath);
 		PT.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
 		PT.Print("--------------------------");
 	}
@@ -521,10 +561,6 @@ public sealed partial class ClientEntry : Node3D
 
 		try
 		{
-			PT.Print("========== CLIENT CONNECT ==========");
-			PT.Print($"Auth Token Present: {!string.IsNullOrWhiteSpace(authToken)}");
-			PT.Print("Calling ClientAuthAPI.SendClientConnect()...");
-
 			_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
 			LogClientConnectionInfo(_clientConnectionInfo);
 
@@ -543,9 +579,11 @@ public sealed partial class ClientEntry : Node3D
 
 	private static void LogClientConnectionInfo(APIClientAuthResponseMessage connectionInfo)
 	{
-		PT.Print("BrickVerse Network Info ----");
-		PT.Print("World ID: ", connectionInfo.WorldID);
+		PT.Print(" ---- BrickVerse Network Info ----");
 		PT.Print("Server ID: ", connectionInfo.ServerID);
+		PT.Print("World ID: ", connectionInfo.WorldID);
+		PT.Print("IP: ", connectionInfo.IP);
+		PT.Print("Port: ", connectionInfo.Port);
 		PT.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
 		PT.Print("--------------------------");
 	}

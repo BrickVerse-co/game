@@ -15,6 +15,7 @@ namespace BrickVerse.Shared;
 public static class PT
 {
 	public static int OwnerThreadId { get; private set; }
+	public static bool IsServer { get; set; } = false;
 
 	static PT()
 	{
@@ -24,6 +25,14 @@ public static class PT
 	public static void Print(params object?[] str)
 	{
 		string result = "";
+		if (IsServer)
+		{
+			result += "[SERVER] ";
+		} else
+		{
+			result += "[CLIENT] ";
+		}
+
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
@@ -46,10 +55,19 @@ public static class PT
 	public static void PrintV(params object?[] str)
 	{
 		string result = "";
+		if (IsServer)
+		{
+			result += "[SERVER] ";
+		} else
+		{
+			result += "[CLIENT] ";
+		}
+		
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
 		}
+
 		if (Globals.GDAvailable)
 		{
 			GD.Print(result);
@@ -63,10 +81,19 @@ public static class PT
 	public static void PrintWarn(params object?[] str)
 	{
 		string result = "";
+		if (IsServer)
+		{
+			result += "[SERVER] ";
+		} else
+		{
+			result += "[CLIENT] ";
+		}
+		
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
 		}
+
 		if (Globals.GDAvailable)
 		{
 			GD.PrintRich($"[color=yellow][WARN] {result}[/color]");
@@ -81,10 +108,19 @@ public static class PT
 	public static void PrintErr(params object?[] str)
 	{
 		string result = "";
+		if (IsServer)
+		{
+			result += "[SERVER] ";
+		} else
+		{
+			result += "[CLIENT] ";
+		}
+		
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
 		}
+
 		if (Globals.GDAvailable)
 		{
 			GD.PrintRich($"[color=red][ERROR] {result}[/color]");
@@ -104,10 +140,19 @@ public static class PT
 	public static void PrintErrV(params object?[] str)
 	{
 		string result = "";
+		if (IsServer)
+		{
+			result += "[SERVER] ";
+		} else
+		{
+			result += "[CLIENT] ";
+		}
+		
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
 		}
+		
 		if (Globals.GDAvailable)
 		{
 			GD.PrintRich($"[color=red][ERROR] {result}[/color]");

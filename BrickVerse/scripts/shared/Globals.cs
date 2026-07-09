@@ -14,6 +14,8 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
 using Godot;
 using Mesh = Godot.Mesh;
+using BrickVerse.Utils;
+
 #if CREATOR
 using BrickVerse.Creator.Properties;
 using BrickVerse.Datamodel.Creator;
@@ -25,8 +27,8 @@ namespace BrickVerse.Shared;
 public sealed partial class Globals : Node
 {
 #if DEBUG
-public const string MainEndpoint = "http://localhost:3000";
-public const string ApiEndpoint = "http://localhost:3001/api";
+	public const string MainEndpoint = "http://localhost:3000";
+	public const string ApiEndpoint = "http://localhost:3001/api";
 #else
 public const string MainEndpoint = "https://brickverse.gg";
 public const string ApiEndpoint = "https://api.brickverse.gg/api";
@@ -659,10 +661,6 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		[CallerLineNumber] int line = 0
 	)
 	{
-		PT.Print(
-			$"SwitchEntry({appEntry}) called from {System.IO.Path.GetFileName(file)}:{line} ({caller})"
-		);
-
 		CurrentAppEntryNode?.QueueFree();
 		CurrentAppEntry = appEntry;
 
@@ -702,8 +700,6 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 
 			string iconPath = $"res://assets/textures/logo/{iconToLoad}/{platform}.png";
 
-			PT.Print($"LoadEntry: loading icon {iconPath}");
-
 			Image icon = Image.LoadFromFile(iconPath);
 
 			if (icon != null)
@@ -716,7 +712,6 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 			}
 		}
 
-		PT.Print(appEntry, ": Loading Entry scene");
 		Node node = CreateInstanceFromScene<Node>(sceneToLoad);
 		return node;
 	}

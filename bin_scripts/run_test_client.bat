@@ -1,51 +1,56 @@
 @echo off
-setlocal
+setlocal EnableExtensions DisableDelayedExpansion
 
 color 0A
-
 echo (c) 2026 Meta Games LLC. All rights reserved.
 echo.
 
-REM Change to the bin directory relative to this script.
-cd /d "%~dp0..\bin" || (
-    color 0C
-    echo ERROR: Failed to locate the bin directory.
-    pause
-    exit /b 1
+set "SCRIPT_DIR=%~dp0"
+set "BIN_DIR=%SCRIPT_DIR%..\bin"
+set "CLIENT_EXE=%BIN_DIR%\client\client.console.exe"
+set "TOKEN_FILE=%SCRIPT_DIR%join_token.txt"
+
+if not exist "%BIN_DIR%\" call :fail "Failed to locate the bin directory." 1
+if not exist "%CLIENT_EXE%" call :fail "client.console.exe was not found." 1
+if not exist "%TOKEN_FILE%" call :fail "join_token.txt was not found. Expected: %TOKEN_FILE%" 1
+
+set "join_token="
+for /f "usebackq tokens=* delims=" %%A in ("%TOKEN_FILE%") do (
+    if not defined join_token set "join_token=%%A"
 )
 
-REM Verify the client executable exists.
-if not exist "client/client.console.exe" (
-    color 0C
-    echo ERROR: client.console.exe was not found.
-    pause
-    exit /b 1
-)
-
-REM Verify the host token file exists.
-if not exist "..\bin_scripts\join_token.txt" (
-    color 0C
-    echo ERROR: join_token.txt was not found.
-    echo Expected: ..\bin_scripts\join_token.txt
-    pause
-    exit /b 1
-)
-
-REM Read the join token.
-set /p join_token=<"..\bin_scripts\join_token.txt"
-
-if "%join_token%"=="" (
-    color 0C
-    echo ERROR: join_token.txt is empty.
-    pause
-    exit /b 1
-)
+if not defined join_token call :fail "join_token.txt is empty." 1
 
 echo Starting BrickVerse Test Client...
 echo.
 
-client/client.console.exe ^
+pushd "%BIN_DIR%" >nul || call :fail "Failed to enter bin directory." 1
+
+"%CLIENT_EXE%" ^
     -network=client ^
     -token=%join_token% ^
+    %*
+
+set "exit_code=%ERRORLEVEL%"
+popd >nul
+
+if not "%exit_code%"=="0" (
+    color 0C
+    echo.
+    echo BrickVerse Test Client exited with code %exit_code%.
+) else (
+    color 0A
+    echo.
+    echo BrickVerse Test Client exited successfully.
+)
 
 pause
+color 07
+exit /b %exit_code%
+
+:fail
+color 0C
+echo ERROR: %~1
+pause
+color 07
+exit /b %~2

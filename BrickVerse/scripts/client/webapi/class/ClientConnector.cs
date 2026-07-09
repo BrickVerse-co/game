@@ -9,6 +9,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
@@ -29,7 +30,7 @@ internal sealed class ClientConnector : IClientConnector
 
 	public void SetToken(string token)
 	{
-		_token = token ?? "";
+		_token = (token ?? "").Trim();
 	}
 
 	public async Task<APIServerStatus> CheckServerStatus()
@@ -45,9 +46,37 @@ internal sealed class ClientConnector : IClientConnector
 			Integrity: OfficialClientIntegrity.CreateProof()
 		);
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/client/server/authorize-connection"), body, BrickVerseJsonContext.Default.ClientConnectRequest);
-		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse(response, "client connect", BrickVerseJsonContext.Default.APIClientAuthResponseMessage);
+		for (int attempt = 1; attempt <= 6; attempt++)
+		{
+			using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/client/server/authorize-connection"), body, BrickVerseJsonContext.Default.ClientConnectRequest);
+			using HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+			if (response.IsSuccessStatusCode)
+			{
+				return await ReadJsonResponse(response, "client connect", BrickVerseJsonContext.Default.APIClientAuthResponseMessage);
+			}
+
+			string responseBody = await response.Content.ReadAsStringAsync();
+			if (!ShouldRetryClientConnect(response, responseBody) || attempt == 6)
+			{
+				throw new HttpRequestException($"BrickVerse client connect failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}");
+			}
+
+			PT.Print($"Client connect retry {attempt}/6: waiting for server awaken...");
+			await Task.Delay(TimeSpan.FromMilliseconds(750));
+		}
+
+		throw new InvalidOperationException("BrickVerse client connect retry loop exhausted.");
+	}
+
+	private static bool ShouldRetryClientConnect(HttpResponseMessage response, string responseBody)
+	{
+		if (response.StatusCode != System.Net.HttpStatusCode.Unauthorized)
+		{
+			return false;
+		}
+
+		return responseBody.Contains("World server not found", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private HttpRequestMessage CreateRequest(HttpMethod method, string url)
@@ -74,11 +103,11 @@ internal sealed class ClientConnector : IClientConnector
 			return;
 		}
 
-		string authorization = _token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-			? _token
-			: "Bearer " + _token;
+		string token = _token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+			? _token["Bearer ".Length..].Trim()
+			: _token;
 
-		request.Headers.TryAddWithoutValidation("Authorization", authorization);
+		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 	}
 
 	private static void ApplyIntegrityHeaders(HttpRequestMessage request)
@@ -110,4 +139,6 @@ internal sealed class ClientConnector : IClientConnector
 	}
 }
 
-internal sealed record ClientConnectRequest(ClientIntegrityProof Integrity);
+internal sealed record ClientConnectRequest(
+	[property: JsonPropertyName("Integrity")] ClientIntegrityProof Integrity
+);
