@@ -29,11 +29,11 @@ public partial class CreatorEntry : Node
 	public override void _EnterTree()
 	{
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
-		PT.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
+		//PT.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
 
 		cmdargs.TryGetValue("token", out string? launchToken);
 
-		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
+		//PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
 
 		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
 		CreatorAPI.UserAuthenticated += OnClientAuthenticated;
