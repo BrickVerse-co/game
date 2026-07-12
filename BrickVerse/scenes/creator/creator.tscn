@@ -42,13 +42,14 @@
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
 [ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
+[ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_v0rtd"]
 resource_name = "RibbonGroup"
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_0tvsp"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_9m4jd"]
 
@@ -620,10 +621,10 @@ custom_minimum_size = Vector2(0, 420)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 5.0
-offset_top = 4.0
-offset_right = 195.0
-offset_bottom = 424.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 190.0
+offset_bottom = 428.0
 grow_horizontal = 2
 grow_vertical = 2
 auto_width = true
@@ -798,12 +799,12 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 [node name="Tabs" type="TabContainer" parent="GUI/Splitter/Center/BottomTabs" unique_id=1589727556]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 0
-tabs_position = 1
-deselect_enabled = true
 theme_override_constants/side_margin = 0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 theme_override_styles/tabbar_background = SubResource("StyleBoxEmpty_9m4jd")
+current_tab = 0
+tabs_position = 1
+deselect_enabled = true
 
 [node name="Console" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=259802220 node_paths=PackedStringArray("_richLabel", "_searchEdit", "_clearBtn", "_filterBtn")]
 custom_minimum_size = Vector2(0, 190)
@@ -955,3 +956,6 @@ visible = false
 visible = false
 offset_top = -52.0
 offset_bottom = 52.0
+
+[node name="LauncherAutoInstaller" type="Node" parent="." unique_id=490248868]
+script = ExtResource("43_ce354")
