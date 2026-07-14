@@ -87,7 +87,7 @@ public sealed partial class AddonsManager : Node
 	public static async Task InstallAddonFromScript(Script s)
 	{
 		string addonName = s.Name;
-		string addonFileName = addonName + ".ptaddon";
+		string addonFileName = addonName + ".bvaddon";
 		string addonPath = Path.GetFullPath(Path.Join(_addonsAbsolutePath, addonFileName));
 		PT.Print("Installing addon ", addonName, " to ", addonPath);
 		await PackedFormat.PackAddonToFile(s, addonPath, new() { Name = s.Name });
