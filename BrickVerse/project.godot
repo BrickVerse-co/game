@@ -37,9 +37,8 @@ config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/flush_stdout_on_print=true
 boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
-boot_splash/stretch_mode=0
 boot_splash/use_filter=false
-boot_splash/image="uid://b3sjmxnxgp4tg"
+boot_splash/image="uid://bs34jgixa1n2r"
 config/icon="uid://bvolad7rptrsm"
 boot_splash/minimum_display_time=3000
 
