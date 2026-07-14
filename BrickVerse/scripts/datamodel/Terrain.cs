@@ -4,9 +4,6 @@
 
 using Godot;
 using BrickVerse.Attributes;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -61,6 +58,9 @@ public sealed partial class Terrain : Instance
 	private GodotObject? _voxelTool;
 	private GodotObject? _mesher;
 	private GodotObject? _generator;
+	private GodotObject? _stream;
+	private GodotObject? _voxelFormat;
+	private ShaderMaterial? _terrainMaterial;
 	private Node3D? _viewerNode;
 
 	private readonly List<TerrainOperation> _operations = [];
@@ -75,6 +75,26 @@ public sealed partial class Terrain : Instance
 	private float _defaultSdfStrength = 1.0f;
 	private float _defaultSdfScale = 1.0f;
 	private int _viewDistance = 512;
+	private Color _baseColor = new(0.92f, 0.92f, 0.92f, 1.0f);
+	private Color _grassColor = new(0.55f, 0.78f, 0.42f, 1.0f);
+	private Color _stoneColor = new(0.70f, 0.72f, 0.74f, 1.0f);
+	private Color _sandColor = new(0.90f, 0.82f, 0.60f, 1.0f);
+	private Color _dirtColor = new(0.52f, 0.40f, 0.30f, 1.0f);
+	private Color _snowColor = new(0.96f, 0.98f, 1.00f, 1.0f);
+	private Color _concreteColor = new(0.74f, 0.74f, 0.72f, 1.0f);
+	private Color _brickColor = new(0.70f, 0.32f, 0.27f, 1.0f);
+
+	public static readonly Part.PartMaterialEnum[] MaterialPalette =
+	[
+		Part.PartMaterialEnum.SmoothPlastic,
+		Part.PartMaterialEnum.Grass,
+		Part.PartMaterialEnum.Stone,
+		Part.PartMaterialEnum.Sand,
+		Part.PartMaterialEnum.Dirt,
+		Part.PartMaterialEnum.Snow,
+		Part.PartMaterialEnum.Concrete,
+		Part.PartMaterialEnum.Brick,
+	];
 
 	/// <summary>
 	/// Compressed terrain edit data.
@@ -225,8 +245,69 @@ public sealed partial class Terrain : Instance
 				TrySet(_viewerNode, "view_distance", _viewDistance);
 			}
 
+			if (_voxelTerrain != null)
+			{
+				TrySet(_voxelTerrain, "view_distance", _viewDistance);
+			}
+
 			OnPropertyChanged();
 		}
+	}
+
+	[Editable, ScriptProperty]
+	public Color BaseColor
+	{
+		get => _baseColor;
+		set => SetMaterialTint(ref _baseColor, value, nameof(BaseColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color GrassColor
+	{
+		get => _grassColor;
+		set => SetMaterialTint(ref _grassColor, value, nameof(GrassColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color StoneColor
+	{
+		get => _stoneColor;
+		set => SetMaterialTint(ref _stoneColor, value, nameof(StoneColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color SandColor
+	{
+		get => _sandColor;
+		set => SetMaterialTint(ref _sandColor, value, nameof(SandColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color DirtColor
+	{
+		get => _dirtColor;
+		set => SetMaterialTint(ref _dirtColor, value, nameof(DirtColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color SnowColor
+	{
+		get => _snowColor;
+		set => SetMaterialTint(ref _snowColor, value, nameof(SnowColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color ConcreteColor
+	{
+		get => _concreteColor;
+		set => SetMaterialTint(ref _concreteColor, value, nameof(ConcreteColor));
+	}
+
+	[Editable, ScriptProperty]
+	public Color BrickColor
+	{
+		get => _brickColor;
+		set => SetMaterialTint(ref _brickColor, value, nameof(BrickColor));
 	}
 
 	internal Node3D? VoxelTerrainNode => _voxelTerrainNode;
@@ -234,6 +315,7 @@ public sealed partial class Terrain : Instance
 	public override void Init()
 	{
 		CreateVoxelTerrain();
+		SetProcess(true);
 		_initialized = true;
 
 		if (!string.IsNullOrWhiteSpace(_serialisedTerrain))
@@ -242,6 +324,21 @@ public sealed partial class Terrain : Instance
 		}
 
 		base.Init();
+	}
+
+	public override void Process(double delta)
+	{
+		base.Process(delta);
+
+		Camera3D? camera =
+			Root?.Environment?.CurrentGDCamera
+			?? Root?.RootViewport?.GetCamera3D()
+			?? GDNode?.GetViewport()?.GetCamera3D();
+
+		if (camera != null)
+		{
+			SetEditorViewerPosition(camera.GlobalPosition);
+		}
 	}
 
 	public override void PreDelete()
@@ -519,11 +616,38 @@ public sealed partial class Terrain : Instance
 	public int GetVoxelMaterial(Vector3 position)
 	{
 		EnsureTool();
-		SetToolChannel("CHANNEL_INDICES", 4);
 
-		return _voxelTool!
-			.Call("get_voxel", ToVector3I(position))
+		Vector3I voxelPosition = ToVector3I(position);
+
+		SetToolChannel("CHANNEL_INDICES", 3);
+		int packedIndices = _voxelTool!
+			.Call("get_voxel", voxelPosition)
 			.AsInt32();
+
+		SetToolChannel("CHANNEL_WEIGHTS", 4);
+		int packedWeights = _voxelTool!
+			.Call("get_voxel", voxelPosition)
+			.AsInt32();
+
+		int bestMaterial = packedIndices & 0x0f;
+		int bestWeight = packedWeights & 0x0f;
+
+		for (int slot = 1; slot < 4; slot++)
+		{
+			int shift = slot * 4;
+			int weight = (packedWeights >> shift) & 0x0f;
+
+			if (weight > bestWeight)
+			{
+				bestWeight = weight;
+				bestMaterial = (packedIndices >> shift) & 0x0f;
+			}
+		}
+
+		return Math.Clamp(
+			bestMaterial,
+			0,
+			MaterialPalette.Length - 1);
 	}
 
 	[ScriptMethod]
@@ -560,12 +684,93 @@ public sealed partial class Terrain : Instance
 			return true;
 		}
 
+		Vector3 min = new(
+			Mathf.Min(minimum.X, maximum.X),
+			Mathf.Min(minimum.Y, maximum.Y),
+			Mathf.Min(minimum.Z, maximum.Z));
+
+		Vector3 max = new(
+			Mathf.Max(minimum.X, maximum.X),
+			Mathf.Max(minimum.Y, maximum.Y),
+			Mathf.Max(minimum.Z, maximum.Z));
+
+		Aabb area = new(min, (max - min).Max(Vector3.One));
+
 		return _voxelTool
-			.Call(
-				"is_area_editable",
-				ToVector3I(minimum),
-				ToVector3I(maximum))
+			.Call("is_area_editable", area)
 			.AsBool();
+	}
+
+	internal void SetEditorViewerPosition(Vector3 worldPosition)
+	{
+		if (_viewerNode != null &&
+			GodotObject.IsInstanceValid(_viewerNode))
+		{
+			_viewerNode.GlobalPosition = worldPosition;
+		}
+	}
+
+	internal bool TryRaycast(
+		Vector3 origin,
+		Vector3 direction,
+		float maximumDistance,
+		out Vector3 position,
+		out Vector3 normal)
+	{
+		position = default;
+		normal = Vector3.Up;
+
+		if (direction.IsZeroApprox() || maximumDistance <= 0.0f)
+		{
+			return false;
+		}
+
+		EnsureTool();
+
+		if (!_voxelTool!.HasMethod("raycast"))
+		{
+			return false;
+		}
+
+		_voxelTool.Call("set_raycast_normal_enabled", true);
+
+		Variant raycastVariant = _voxelTool.Call(
+			"raycast",
+			origin,
+			direction.Normalized(),
+			maximumDistance);
+
+		GodotObject? result = raycastVariant.AsGodotObject();
+
+		if (result == null)
+		{
+			return false;
+		}
+
+		float distance = result.Get("distance").AsSingle();
+
+		if (!float.IsFinite(distance) ||
+			distance < 0.0f ||
+			distance > maximumDistance)
+		{
+			return false;
+		}
+
+		position = origin + direction.Normalized() * distance;
+
+		Variant normalVariant = result.Get("normal");
+
+		if (normalVariant.VariantType == Variant.Type.Vector3)
+		{
+			Vector3 hitNormal = normalVariant.AsVector3();
+
+			if (!hitNormal.IsZeroApprox())
+			{
+				normal = hitNormal.Normalized();
+			}
+		}
+
+		return true;
 	}
 
 	[ScriptMethod]
@@ -791,7 +996,7 @@ public sealed partial class Terrain : Instance
 	{
 		DestroyVoxelTerrain();
 
-		_voxelTerrain = InstantiateExtensionClass("VoxelTerrain");
+		_voxelTerrain = InstantiateExtensionClass("VoxelLodTerrain");
 		_voxelTerrainNode = _voxelTerrain as Node3D;
 
 		if (_voxelTerrainNode == null)
@@ -799,7 +1004,7 @@ public sealed partial class Terrain : Instance
 			_voxelTerrain = null;
 
 			throw new InvalidOperationException(
-				"VoxelTerrain was created but was not a Node3D.");
+				"VoxelLodTerrain was created but was not a Node3D.");
 		}
 
 		_voxelTerrainNode.Name = "VoxelTerrain";
@@ -808,9 +1013,12 @@ public sealed partial class Terrain : Instance
 			false,
 			Node.InternalMode.Front);
 
+		ConfigureVoxelFormat();
+		ConfigureStream();
 		ConfigureMesher();
 		ConfigureGenerator();
 		ConfigureTerrain();
+		ApplyTerrainMaterial();
 		CreateViewer();
 		RefreshVoxelTool();
 	}
@@ -820,6 +1028,9 @@ public sealed partial class Terrain : Instance
 		_voxelTool = null;
 		_mesher = null;
 		_generator = null;
+		_stream = null;
+		_voxelFormat = null;
+		_terrainMaterial = null;
 		_voxelTerrain = null;
 		_viewerNode = null;
 
@@ -832,15 +1043,224 @@ public sealed partial class Terrain : Instance
 		_voxelTerrainNode = null;
 	}
 
+	private void ConfigureVoxelFormat()
+	{
+		EnsureTerrain();
+
+		if (!ClassDB.ClassExists("VoxelFormat"))
+		{
+			return;
+		}
+
+		_voxelFormat = InstantiateExtensionClass("VoxelFormat");
+
+		TrySet(_voxelFormat, "sdf_depth", 1);
+		TrySet(_voxelFormat, "indices_depth", 1);
+		TrySet(_voxelFormat, "weights_depth", 1);
+
+		TrySet(
+			_voxelTerrain!,
+			"voxel_format",
+			Variant.From(_voxelFormat));
+	}
+
+	private void ConfigureStream()
+	{
+		EnsureTerrain();
+
+		if (!ClassDB.ClassExists("VoxelStreamMemory"))
+		{
+			return;
+		}
+
+		_stream = InstantiateExtensionClass("VoxelStreamMemory");
+		TrySet(_voxelTerrain!, "stream", Variant.From(_stream));
+	}
+
 	private void ConfigureMesher()
 	{
 		EnsureTerrain();
 
 		_mesher = InstantiateExtensionClass("VoxelMesherTransvoxel");
 
-		// Mixel4 is the VoxelTool texture-paint compatible mode.
-		TrySet(_mesher, "texturing_mode", 0);
+		int mixel4Mode = ResolveTransvoxelTexturingMode();
+
+		if (!TrySet(_mesher, "texturing_mode", mixel4Mode))
+		{
+			throw new InvalidOperationException(
+				"VoxelMesherTransvoxel does not expose texturing_mode. " +
+				"The installed Voxel Tools build is incompatible.");
+		}
+
 		_voxelTerrain!.Set("mesher", Variant.From(_mesher));
+	}
+
+	private static int ResolveTransvoxelTexturingMode()
+	{
+		const string className = "VoxelMesherTransvoxel";
+
+		string[] candidateConstants =
+		[
+			"TEXTURES_BLEND_4_OVER_16",
+			"TEXTURES_MIXEL4",
+			"TEXTURING_MIXEL4",
+			"TEXTURES_BLEND_4_OVER_16_INDEXED"
+		];
+
+		foreach (string constantName in candidateConstants)
+		{
+			if (ClassDB.ClassHasIntegerConstant(
+				className,
+				constantName))
+			{
+				return (int)ClassDB.ClassGetIntegerConstant(
+					className,
+					constantName);
+			}
+		}
+
+		return 0;
+	}
+
+	private void ApplyTerrainMaterial()
+	{
+		EnsureTerrain();
+
+		Shader shader = new()
+		{
+			Code = GetTerrainShaderCode()
+		};
+
+		_terrainMaterial = new ShaderMaterial
+		{
+			Shader = shader
+		};
+
+		UpdateTerrainMaterialParameters();
+		_voxelTerrain!.Set("material", _terrainMaterial);
+	}
+
+	private void UpdateTerrainMaterialParameters()
+	{
+		if (_terrainMaterial == null)
+		{
+			return;
+		}
+
+		_terrainMaterial.SetShaderParameter("u_color_0", _baseColor);
+		_terrainMaterial.SetShaderParameter("u_color_1", _grassColor);
+		_terrainMaterial.SetShaderParameter("u_color_2", _stoneColor);
+		_terrainMaterial.SetShaderParameter("u_color_3", _sandColor);
+		_terrainMaterial.SetShaderParameter("u_color_4", _dirtColor);
+		_terrainMaterial.SetShaderParameter("u_color_5", _snowColor);
+		_terrainMaterial.SetShaderParameter("u_color_6", _concreteColor);
+		_terrainMaterial.SetShaderParameter("u_color_7", _brickColor);
+	}
+
+	private static string GetTerrainShaderCode()
+	{
+		return """
+shader_type spatial;
+render_mode cull_back, depth_draw_opaque;
+
+uniform int u_transition_mask;
+
+uniform vec4 u_color_0 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_1 : source_color = vec4(0.55, 0.78, 0.42, 1.0);
+uniform vec4 u_color_2 : source_color = vec4(0.70, 0.72, 0.74, 1.0);
+uniform vec4 u_color_3 : source_color = vec4(0.90, 0.82, 0.60, 1.0);
+uniform vec4 u_color_4 : source_color = vec4(0.52, 0.40, 0.30, 1.0);
+uniform vec4 u_color_5 : source_color = vec4(0.96, 0.98, 1.00, 1.0);
+uniform vec4 u_color_6 : source_color = vec4(0.74, 0.74, 0.72, 1.0);
+uniform vec4 u_color_7 : source_color = vec4(0.70, 0.32, 0.27, 1.0);
+
+varying vec4 v_indices;
+varying vec4 v_weights;
+varying vec3 v_world_normal;
+
+vec4 decode_8bit_vec4(float value) {
+	uint packed = floatBitsToUint(value);
+	return vec4(
+		float(packed & uint(0xff)),
+		float((packed >> uint(8)) & uint(0xff)),
+		float((packed >> uint(16)) & uint(0xff)),
+		float((packed >> uint(24)) & uint(0xff))
+	);
+}
+
+float get_transvoxel_secondary_factor(int data) {
+	int transition_mask = u_transition_mask & 0xff;
+	int cell_border_mask = (data >> 0) & 63;
+	int vertex_border_mask = (data >> 8) & 63;
+	int matching = transition_mask & cell_border_mask;
+	float factor = float(matching != 0);
+	factor *= float((vertex_border_mask & ~transition_mask) == 0);
+	return factor;
+}
+
+vec3 get_transvoxel_position(vec3 vertex_position, vec4 data) {
+	int packed = floatBitsToInt(data.a);
+	float secondary_factor =
+		get_transvoxel_secondary_factor(packed);
+	vec3 result =
+		mix(vertex_position, data.xyz, secondary_factor);
+
+	int transition = (packed >> 16) & 0xff;
+	float transition_cull = float(
+		transition == 0 ||
+		(transition & u_transition_mask) != 0);
+
+	return result * transition_cull;
+}
+
+vec3 palette_color(int index) {
+	switch (index) {
+		case 1: return u_color_1.rgb;
+		case 2: return u_color_2.rgb;
+		case 3: return u_color_3.rgb;
+		case 4: return u_color_4.rgb;
+		case 5: return u_color_5.rgb;
+		case 6: return u_color_6.rgb;
+		case 7: return u_color_7.rgb;
+		default: return u_color_0.rgb;
+	}
+}
+
+void vertex() {
+	VERTEX = get_transvoxel_position(VERTEX, CUSTOM0);
+	v_indices = decode_8bit_vec4(CUSTOM1.x);
+	v_weights = decode_8bit_vec4(CUSTOM1.y) / 255.0;
+	v_world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
+}
+
+void fragment() {
+	vec4 weights = max(v_weights, vec4(0.0));
+	float total =
+		weights.x +
+		weights.y +
+		weights.z +
+		weights.w;
+
+	if (total <= 0.00001) {
+		weights = vec4(1.0, 0.0, 0.0, 0.0);
+	} else {
+		weights /= total;
+	}
+
+	vec3 color =
+		palette_color(int(v_indices.x + 0.5)) * weights.x +
+		palette_color(int(v_indices.y + 0.5)) * weights.y +
+		palette_color(int(v_indices.z + 0.5)) * weights.z +
+		palette_color(int(v_indices.w + 0.5)) * weights.w;
+
+	float up = clamp(v_world_normal.y * 0.5 + 0.5, 0.0, 1.0);
+	color *= mix(0.78, 1.05, up);
+
+	ALBEDO = color;
+	ROUGHNESS = 0.92;
+	METALLIC = 0.0;
+}
+""";
 	}
 
 	private void ConfigureGenerator()
@@ -849,7 +1269,10 @@ public sealed partial class Terrain : Instance
 
 		_generator = InstantiateExtensionClass("VoxelGeneratorFlat");
 
-		TrySet(_generator, "height", 0.0f);
+		// Keep a coherent SDF source, but place its generated ground far
+		// below the editable workspace. A height of zero creates the large
+		// square platform that previously returned after Clear().
+		TrySet(_generator, "height", -100000.0f);
 		TrySet(
 			_generator,
 			"channel",
@@ -876,6 +1299,39 @@ public sealed partial class Terrain : Instance
 			_voxelTerrain!,
 			"full_load_mode_enabled",
 			true);
+
+		TrySet(_voxelTerrain!, "lod_count", 5);
+		TrySet(_voxelTerrain!, "lod_distance", 64.0f);
+		TrySet(_voxelTerrain!, "secondary_lod_distance", 64.0f);
+		TrySet(_voxelTerrain!, "view_distance", ViewDistance);
+		TrySet(_voxelTerrain!, "lod_fade_duration", 0.0f);
+	}
+
+	private Color GetTintForMaterial(Part.PartMaterialEnum materialEnum)
+	{
+		return materialEnum switch
+		{
+			Part.PartMaterialEnum.Grass => _grassColor,
+			Part.PartMaterialEnum.Stone => _stoneColor,
+			Part.PartMaterialEnum.Sand => _sandColor,
+			Part.PartMaterialEnum.Dirt => _dirtColor,
+			Part.PartMaterialEnum.Snow => _snowColor,
+			Part.PartMaterialEnum.Concrete => _concreteColor,
+			Part.PartMaterialEnum.Brick => _brickColor,
+			_ => _baseColor,
+		};
+	}
+
+	private void SetMaterialTint(ref Color target, Color value, string propertyName)
+	{
+		if (target == value)
+		{
+			return;
+		}
+
+		target = value;
+		UpdateTerrainMaterialParameters();
+		OnPropertyChanged(propertyName);
 	}
 
 	private void CreateViewer()
@@ -914,7 +1370,7 @@ public sealed partial class Terrain : Instance
 		if (_voxelTool == null)
 		{
 			throw new InvalidOperationException(
-				"VoxelTerrain.get_voxel_tool() returned null.");
+				"VoxelLodTerrain.get_voxel_tool() returned null.");
 		}
 
 		ConfigureSdfTool(ToolMode.Add);
@@ -1044,12 +1500,11 @@ public sealed partial class Terrain : Instance
 				break;
 
 			case TerrainOperationType.SetVoxelMaterial:
-				SetToolChannel("CHANNEL_INDICES", 4);
-				_voxelTool!.Set("mode", (int)ToolMode.Set);
-				_voxelTool.Set("value", operation.Material);
-				_voxelTool.Call(
-					"do_point",
-					ToVector3I(operation.Position));
+				ConfigureTexturePaintTool(operation.Material, 1.0f);
+				_voxelTool!.Call(
+					"do_sphere",
+					(Vector3)ToVector3I(operation.Position),
+					0.75f);
 				break;
 
 			default:
@@ -1060,7 +1515,7 @@ public sealed partial class Terrain : Instance
 
 	private void PaintShape(TerrainOperation operation)
 	{
-		if (operation.Material <= 0)
+		if (operation.Material < 0)
 		{
 			return;
 		}
@@ -1149,6 +1604,9 @@ public sealed partial class Terrain : Instance
 		float opacity)
 	{
 		EnsureTool();
+		ValidateMaterial(material);
+
+		SetToolChannel("CHANNEL_SDF", 1);
 
 		_voxelTool!.Set(
 			"mode",
@@ -1156,18 +1614,24 @@ public sealed partial class Terrain : Instance
 
 		_voxelTool.Set("texture_index", material);
 
-		// Current Voxel Tools uses set_texture_opacity. Older builds exposed
-		// texture_opacity, so support either property.
+		float clampedOpacity =
+			Mathf.Clamp(opacity, 0.0f, 1.0f);
+
 		if (!TrySet(
 			_voxelTool,
-			"set_texture_opacity",
-			Mathf.Clamp(opacity, 0.0f, 1.0f)))
+			"texture_opacity",
+			clampedOpacity))
 		{
 			TrySet(
 				_voxelTool,
-				"texture_opacity",
-				Mathf.Clamp(opacity, 0.0f, 1.0f));
+				"set_texture_opacity",
+				clampedOpacity);
 		}
+
+		TrySet(
+			_voxelTool,
+			"texture_falloff",
+			0.1f);
 	}
 
 	private void SetToolChannel(
@@ -1317,11 +1781,11 @@ public sealed partial class Terrain : Instance
 
 	private static void ValidateMaterial(int material)
 	{
-		if (material < 0)
+		if (material < 0 || material >= MaterialPalette.Length)
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(material),
-				"Material index cannot be negative.");
+				$"Material index must be between 0 and {MaterialPalette.Length - 1}.");
 		}
 	}
 

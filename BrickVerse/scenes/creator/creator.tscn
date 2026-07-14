@@ -865,7 +865,7 @@ icon = ExtResource("22_i1txp")
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
 visible = false
 
-[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_growButton", "_erodeButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
+[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_growButton", "_erodeButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
 visible = false
 custom_minimum_size = Vector2(0, 210)
 clip_contents = true
@@ -889,6 +889,13 @@ _strengthSlider = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Strength
 _strengthSpinBox = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Strength/Value")
 _spacingSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Spacing/Slider")
 _spacingSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Spacing/Value")
+_intervalSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Interval/Slider")
+_intervalSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Interval/Value")
+_spacingFloorSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor/Slider")
+_spacingFloorSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor/Value")
+_snapOffsetSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset/Slider")
+_snapOffsetSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset/Value")
+_enabledCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Enabled")
 _surfaceSnapCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/SurfaceSnap")
 _continuousCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Continuous")
 _clearButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Clear")
@@ -1154,6 +1161,79 @@ max_value = 1.0
 step = 0.05
 value = 0.25
 
+[node name="Interval" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=1652779001]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=1952606459]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Interval"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=102752759]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 40.0
+max_value = 300.0
+step = 5.0
+value = 140.0
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=1742948388]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 40.0
+max_value = 300.0
+step = 5.0
+value = 140.0
+
+[node name="SpacingFloor" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=1300280522]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=2018949665]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Spacing Min"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=276975647]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 2.0
+step = 0.05
+value = 0.35
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=188332917]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 0.05
+max_value = 2.0
+step = 0.05
+value = 0.35
+
+[node name="SnapOffset" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=2108428184]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=1464375995]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Snap"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=206081868]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 0.2
+step = 0.005
+value = 0.01
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=1550798415]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+max_value = 0.2
+step = 0.005
+value = 0.01
+
 [node name="Options" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=514941723]
 custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
@@ -1178,6 +1258,11 @@ theme_override_constants/margin_bottom = 8
 [node name="Content" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin" unique_id=247882093]
 layout_mode = 2
 theme_override_constants/separation = 5
+
+[node name="Enabled" type="CheckButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=402211944]
+layout_mode = 2
+button_pressed = true
+text = "Enable terrain editing"
 
 [node name="SurfaceSnap" type="CheckButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1632412563]
 layout_mode = 2
