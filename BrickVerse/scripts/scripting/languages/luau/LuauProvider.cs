@@ -197,6 +197,8 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		SetGlobalTablePtr(state, _loggerPtr, script.Root.ScriptService.Logger);
 
 		state.Register("print", LuaPrint);
+		state.Register("error", LuaError);
+		state.Register("warn", LuaWarn);
 		state.Register("wait", LuaWait);
 		state.Register("spawn", LuaSpawn);
 		state.Register("tick", LuaTick);
@@ -598,37 +600,59 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		_gdToProxy[target] = proxy.GetMethod(nameof(IScriptGDObject.FromGDClass), BindingFlags.Public | BindingFlags.Static);
 	}
 
-	public static int LuaPrint(IntPtr L)
+	private static string BuildLuaLogMessage(LuaState lua)
+	{
+		int count = lua.GetTop();
+		StringBuilder builder = new();
+
+		for (int i = 1; i <= count; i++)
+		{
+			if (i > 1)
+				builder.Append('\t');
+
+			switch (lua.Type(i))
+			{
+				case LuaType.Boolean:
+					builder.Append(lua.ToBoolean(i));
+					break;
+
+				case LuaType.Number:
+					builder.Append(lua.ToNumber(i));
+					break;
+
+				default:
+					builder.Append(lua.ToString(i, true) ?? $"<{lua.TypeName(i)}>");
+					break;
+			}
+		}
+
+		return builder.ToString();
+	}
+
+	private static int LuaLog(
+		IntPtr L,
+		Action<LogDispatcher, Script, string> logAction)
 	{
 		LuaState lua = LuaState.FromIntPtr(L);
 		Script script = GetScriptInstance(lua);
 		LogDispatcher logger = GetLogger(lua);
 
-		int n = lua.GetTop();
-		StringBuilder sb = new();
-
-		for (int i = 1; i <= n; i++)
-		{
-			if (i > 1)
-				sb.Append('\t');
-			LuaType dataType = lua.Type(i);
-			if (dataType == LuaType.Boolean)
-			{
-				sb.Append(lua.ToBoolean(i));
-			}
-			else if (dataType == LuaType.Number)
-			{
-				sb.Append(lua.ToNumber(i));
-			}
-			else
-			{
-				sb.Append(lua.ToString(i, true) ?? "<" + lua.TypeName(i) + ">");
-			}
-		}
-		string logInfo = sb.ToString();
-		logger.LogInfo(script, logInfo);
+		logAction(logger, script, BuildLuaLogMessage(lua));
 		return 0;
 	}
+
+	public static int LuaPrint(IntPtr L) =>
+		LuaLog(L, static (logger, script, message) =>
+			logger.LogInfo(script, message));
+
+	public static int LuaWarn(IntPtr L) =>
+		LuaLog(L, static (logger, script, message) =>
+			logger.LogWarning(script, message));
+
+	public static int LuaError(IntPtr L) =>
+		LuaLog(L, static (logger, script, message) =>
+			logger.LogError(script, message));
+
 	public int LuaWait(IntPtr L)
 	{
 		LuaState lua = LuaState.FromIntPtr(L);

@@ -17,7 +17,11 @@ declare _BV_2: boolean
 declare _LOCALTEST: boolean
 
 declare function wait(seconds: number?)
-    
+	
+declare function error(error: string)
+
+declare function warn(message: string)
+
 declare function spawn(callback: () -> ())
 
 declare function tick(): number
