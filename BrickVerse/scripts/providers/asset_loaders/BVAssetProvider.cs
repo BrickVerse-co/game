@@ -105,7 +105,7 @@ public class BVAssetProvider : IAssetProvider
 		}
 
 		// Runtime-specific DRM endpoints (must be runtime mode, not build feature)
-		if (PT.IsServer)
+		if (BV.IsServer)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
@@ -123,7 +123,7 @@ public class BVAssetProvider : IAssetProvider
 		using HttpRequestMessage request = new(HttpMethod.Get, url);
 		request.Headers.TryAddWithoutValidation("Accept", "application/octet-stream");
 		ApplyAssetAuthHeaders(request);
-		//PT.Print("Fetching resource buffer from URL: ", url, " for resource type: ", itemType, " Authorization: ", request.Headers.Authorization);
+		//BV.Print("Fetching resource buffer from URL: ", url, " for resource type: ", itemType, " Authorization: ", request.Headers.Authorization);
 
 		using HttpResponseMessage response = await _client.SendAsync(request);
 		response.EnsureSuccessStatusCode();
@@ -146,7 +146,7 @@ public class BVAssetProvider : IAssetProvider
 			token = ClientAuthAPI.JoinToken;
 		}
 
-		if (PT.IsServer)
+		if (BV.IsServer)
 		{
 			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
 

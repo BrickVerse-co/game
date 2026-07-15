@@ -12,12 +12,12 @@ using System;
 
 namespace BrickVerse.Shared;
 
-public static class PT
+public static class BV
 {
 	public static int OwnerThreadId { get; private set; }
 	public static bool IsServer { get; set; } = false;
 
-	static PT()
+	static BV()
 	{
 		OwnerThreadId = System.Environment.CurrentManagedThreadId;
 	}

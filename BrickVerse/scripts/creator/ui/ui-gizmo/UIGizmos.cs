@@ -36,7 +36,7 @@ public partial class UIGizmos : CanvasLayer
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Failed to crearte UIGizmoBox for '{ui.Name}': ", ex);
+			BV.PrintErr($"Failed to crearte UIGizmoBox for '{ui.Name}': ", ex);
 			return null;
 		}
 

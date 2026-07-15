@@ -32,9 +32,9 @@ public partial class AppEntry : Node
 
 		if (isApiRefGen && IsInGDEditor)
 		{
-			PT.Print("Generating references...");
+			BV.Print("Generating references...");
 			APIReferenceGenerator.GenerateRefFile();
-			PT.Print("Completed! Exiting...");
+			BV.Print("Completed! Exiting...");
 			Globals.Singleton.Quit();
 			return;
 		}
@@ -52,7 +52,7 @@ public partial class AppEntry : Node
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				Singleton.Quit(force: true, code: 1);
 			}
 			return;
@@ -101,8 +101,8 @@ public partial class AppEntry : Node
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr("AppEntry: SwitchEntry/startup failed.");
-					PT.PrintErr(ex.ToString());
+					BV.PrintErr("AppEntry: SwitchEntry/startup failed.");
+					BV.PrintErr(ex.ToString());
 				}
 				finally
 				{

@@ -148,7 +148,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 	public void Run(Script script)
 	{
-		PT.Print("Running script: ", script.LuaPath);
+		BV.Print("Running script: ", script.LuaPath);
 		LuaState state = InitalizeScript(script);
 
 		// Try compile
@@ -489,7 +489,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		{
 			if (script == null)
 			{
-				PT.PrintErr("Script not present in registry");
+				BV.PrintErr("Script not present in registry");
 				return;
 			}
 
@@ -497,13 +497,13 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 			{
 				if (thread == null)
 				{
-					PT.PrintErr("Thread's null");
+					BV.PrintErr("Thread's null");
 					break;
 				}
 
 				if (!thread.IsAlive)
 				{
-					PT.PrintErr("Pointer's null");
+					BV.PrintErr("Pointer's null");
 					break;
 				}
 
@@ -1246,19 +1246,19 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	public static void DebugShowStack(LuaState lua)
 	{
 		int top = lua.GetTop();
-		PT.Print($"Debug stack {top} ---");
+		BV.Print($"Debug stack {top} ---");
 
 		for (int i = -2; i <= top; i++)
 		{
 			LuaType t = lua.Type(i);
-			PT.Print($"[{i}] {lua.Type(i)} {lua.TypeName(i)}");
+			BV.Print($"[{i}] {lua.Type(i)} {lua.TypeName(i)}");
 			if (t == LuaType.String)
 			{
-				PT.Print("CONTENT: ", lua.ToString(i));
+				BV.Print("CONTENT: ", lua.ToString(i));
 			}
 			else if (t == LuaType.UserData)
 			{
-				PT.Print("CONTENT: ", lua.ToUserData(i));
+				BV.Print("CONTENT: ", lua.ToUserData(i));
 			}
 		}
 	}
@@ -1619,7 +1619,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	{
 		if (!lua.IsAlive)
 		{
-			PT.PrintErr("LuaState state is dead");
+			BV.PrintErr("LuaState state is dead");
 			return;
 		}
 
@@ -1720,7 +1720,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	{
 		if (type.IsAssignableTo(typeof(IScriptGDObject)))
 		{
-			return type.Name.TrimPrefix("PT");
+			return type.Name.TrimPrefix("BV");
 		}
 		return type.Name;
 	}

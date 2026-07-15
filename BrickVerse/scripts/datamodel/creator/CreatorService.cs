@@ -96,7 +96,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Error while quitting: ", ex);
+			BV.PrintErr("Error while quitting: ", ex);
 		}
 		try
 		{
@@ -104,7 +104,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Error while quitting: ", ex);
+			BV.PrintErr("Error while quitting: ", ex);
 		}
 	}
 
@@ -152,7 +152,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		if (!long.TryParse(worldId, out long parsedWorldId) || parsedWorldId == 0)
 		{
-			PT.PrintErr("Invalid world id, world id 0 is reserved for local projects.");
+			BV.PrintErr("Invalid world id, world id 0 is reserved for local projects.");
 			return;
 		}
 
@@ -160,7 +160,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		try
 		{
-			PT.Print("Creating new session for world id ", worldId, " (forceNew=", forceNew, ")");
+			BV.Print("Creating new session for world id ", worldId, " (forceNew=", forceNew, ")");
 			Interface.LoadOverlay?.SetTitle("Opening world creator");
 			Interface.LoadOverlay?.SetStatus("Determining project folder");
 			Interface.LoadOverlay?.SetMaxProgress(4);
@@ -176,7 +176,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 					if (r.WorldId == parsedWorldId)
 					{
 						// Open the existing project
-						PT.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
+						BV.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
 						keepOverlayVisible = true;
 						await CreateNewSession(r.FolderPath);
 						return;
@@ -297,7 +297,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			Interface.PopupAlert(ex.Message, "Error opening world creator");
 		}
 		finally
@@ -338,7 +338,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		projectFilePath = projectFilePath.SanitizePath();
 
-		PT.Print("Opening ", projectFilePath);
+		BV.Print("Opening ", projectFilePath);
 
 		string folder = Path.GetFullPath(Path.Combine(projectFilePath, "../")).SanitizePath();
 		CreatorSession session = new()
@@ -361,7 +361,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			Interface.PopupAlert(ex.Message, "Error opening project");
 			throw;
 		}
@@ -471,7 +471,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public static async void PackCurrentProject()
 	{
-		if (World.Current == null) { PT.Print("No current game opened, did not save"); return; }
+		if (World.Current == null) { BV.Print("No current game opened, did not save"); return; }
 		string? exportPath = ProjectSettings.GlobalizePath("res://test.packed");
 
 		await PackedFormat.PackProjectToFile(World.Current.LinkedSession.ProjectFolderPath, exportPath);
@@ -500,7 +500,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				Interface.PopupAlert("Script's file reference's invalid, please reinsert the script from the file browser.");
 				return;
 			}
-			PT.Print("Opening ", scriptPath);
+			BV.Print("Opening ", scriptPath);
 			OpenFile(scriptPath);
 		}
 		else
@@ -688,7 +688,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async void StartLocalTest(bool atCamera = false)
 	{
-		if (World.Current == null) { PT.PrintErr("World is null, did not test"); return; }
+		if (World.Current == null) { BV.PrintErr("World is null, did not test"); return; }
 		World game = World.Current;
 		CreatorSession session = game.LinkedSession;
 
@@ -767,7 +767,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		LocalTestWorlds.Add(placeFilePath);
 
 		int procID = OS.CreateProcess(exePath, [.. args]);
-		PT.Print("Starting server with args: ", string.Join(" ", args));
+		BV.Print("Starting server with args: ", string.Join(" ", args));
 
 		LocalTestProcesses.Add(procID);
 	}
@@ -799,7 +799,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 			}
 		}
 		LocalTestWorlds.Clear();

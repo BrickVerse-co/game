@@ -66,7 +66,7 @@ public class NetworkInstance
 
 		if (e != Error.Ok)
 		{
-			PT.PrintErr("Couldn't create host: ", e);
+			BV.PrintErr("Couldn't create host: ", e);
 		}
 
 		IsServer = true;
@@ -82,7 +82,7 @@ public class NetworkInstance
 
 		if (e != Error.Ok)
 		{
-			PT.PrintErr("Couldn't create host: ", e);
+			BV.PrintErr("Couldn't create host: ", e);
 			return;
 		}
 
@@ -238,7 +238,7 @@ public class NetworkInstance
 
 			if (eventType == ENetConnection.EventType.Connect)
 			{
-				if (fromPeer == null) { PT.PrintWarn("Connect received but peer is null, return"); return; }
+				if (fromPeer == null) { BV.PrintWarn("Connect received but peer is null, return"); return; }
 
 				if (!IsServer)
 				{
@@ -264,7 +264,7 @@ public class NetworkInstance
 			}
 			else if (eventType == ENetConnection.EventType.Disconnect)
 			{
-				if (fromPeer == null) { PT.PrintWarn("Disconnect received but peer is null, return"); return; }
+				if (fromPeer == null) { BV.PrintWarn("Disconnect received but peer is null, return"); return; }
 				IdToPeer.TryRemove(peerID, out _);
 				PeerToId.TryRemove(fromPeer, out _);
 				if (IsServer)
@@ -279,7 +279,7 @@ public class NetworkInstance
 			else if (eventType == ENetConnection.EventType.Receive)
 			{
 				Interlocked.Exchange(ref _lastMessageTicks, DateTime.UtcNow.Ticks);
-				if (fromPeer == null) { PT.PrintWarn("Message received but peer is null, return"); return; }
+				if (fromPeer == null) { BV.PrintWarn("Message received but peer is null, return"); return; }
 				while (fromPeer.GetAvailablePacketCount() > 0)
 				{
 					int pkf = fromPeer.GetPacketFlags();
@@ -297,7 +297,7 @@ public class NetworkInstance
 			}
 			else if (eventType == ENetConnection.EventType.Error)
 			{
-				PT.PrintErr("Client error");
+				BV.PrintErr("Client error");
 				EnqueueEvent(new ClientErrorEvent(NetInstanceErrorEnum.NetworkError));
 			}
 			else if (eventType == ENetConnection.EventType.None) return;
@@ -321,11 +321,11 @@ public class NetworkInstance
 			IsSilence = currentlySilent;
 			if (IsSilence)
 			{
-				PT.PrintErr("[!] Network connection has gone silent");
+				BV.PrintErr("[!] Network connection has gone silent");
 			}
 			else
 			{
-				PT.Print("[i] Network connection resumed.");
+				BV.Print("[i] Network connection resumed.");
 			}
 		}
 	}

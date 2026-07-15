@@ -42,7 +42,8 @@ public sealed partial class WorldsService : Instance
 			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(data.WorldPath);
 			_testServers.Add(newID, newServer);
 			return newID;
-		} else
+		}
+		else
 		{
 			throw new InvalidOperationException("NewServerAsync can only be called in local test mode");
 		}
@@ -82,7 +83,8 @@ public sealed partial class WorldsService : Instance
 				if (plr.teleporting) continue;
 				_ = TeleportPlayerToTest(plr, newServer);
 			}
-		} else
+		}
+		else
 		{
 			throw new InvalidOperationException("JoinWorldPartyAsync can only be called in local test mode");
 		}
@@ -108,7 +110,8 @@ public sealed partial class WorldsService : Instance
 			{
 				throw new InvalidOperationException($"Private instance {accessID} not found");
 			}
-		} else
+		}
+		else
 		{
 			throw new InvalidOperationException("JoinPrivateAsync can only be called in local test mode");
 		}
@@ -133,7 +136,8 @@ public sealed partial class WorldsService : Instance
 			{
 				throw new InvalidOperationException($"Private instance {accessID} not found");
 			}
-		} else
+		}
+		else
 		{
 			throw new InvalidOperationException("JoinPrivatePartyAsync can only be called in local test mode");
 		}
@@ -152,7 +156,7 @@ public sealed partial class WorldsService : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetRecvJoinTestPlace(string address, int port, string debugID)
 	{
-		PT.Print("Teleporting to Test: ", address, ":", port);
+		BV.Print("Teleporting to Test: ", address, ":", port);
 		string userID = Root.Players.LocalPlayer.UserID;
 		Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 		if (app is ClientEntry ce)

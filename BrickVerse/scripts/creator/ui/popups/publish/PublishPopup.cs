@@ -106,7 +106,7 @@ public partial class PublishPopup : PopupWindowBase
 		}
 		catch (System.Exception ex)
 		{
-			PT.PrintErr($"Failed to load published worlds: {ex.Message}");
+			BV.PrintErr($"Failed to load published worlds: {ex.Message}");
 			_loadingView.Visible = false;
 			return;
 		}

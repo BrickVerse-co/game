@@ -52,20 +52,20 @@ public class LuaCompletionService(CreatorSession session)
 		{
 			if (!string.IsNullOrEmpty(e.Data))
 			{
-				PT.PrintErr($"Server Error: {e.Data}");
+				BV.PrintErr($"Server Error: {e.Data}");
 			}
 		};
 
 		_luaLSProcess.BeginErrorReadLine();
 
-		PT.Print("LuaLS Started");
+		BV.Print("LuaLS Started");
 
 		_client = new LspClient(_luaLSProcess.StandardOutput.BaseStream, _luaLSProcess.StandardInput.BaseStream);
 		await _client.InitializeAsync(_workspacePath);
 
 		_client.PublishDiagnostics += OnPublishDiagnostics;
 
-		PT.Print("Language server initialized at ", _workspacePath);
+		BV.Print("Language server initialized at ", _workspacePath);
 	}
 
 	private void OnPublishDiagnostics(LspPublishDiagnosticsParams @params)

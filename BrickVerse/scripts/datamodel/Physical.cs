@@ -554,7 +554,7 @@ public partial class Physical : Dynamic
 		if (!_canTouch)
 		{
 			_canTouch = true;
-			PT.CallOnMainThread(() =>
+			BV.CallOnMainThread(() =>
 			{
 				PhysicalArea?.Monitoring = true;
 			});
@@ -566,7 +566,7 @@ public partial class Physical : Dynamic
 		if (_canTouch)
 		{
 			_canTouch = false;
-			PT.CallOnMainThread(() =>
+			BV.CallOnMainThread(() =>
 			{
 				PhysicalArea?.Monitoring = false;
 			});

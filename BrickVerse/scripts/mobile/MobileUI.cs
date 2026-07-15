@@ -132,7 +132,7 @@ public partial class MobileUI : Control
 
 		if (url.Host == "client")
 		{
-			PT.Print(url);
+			BV.Print(url);
 		}
 	}
 
@@ -178,7 +178,7 @@ public partial class MobileUI : Control
 		// Check if cached
 		if (!_viewCache.TryGetValue(viewEnum, out MobileViewBase? page))
 		{
-			PT.Print("Loading ", viewEnum);
+			BV.Print("Loading ", viewEnum);
 			string pathToLoad = viewEnum switch
 			{
 				MobileViewEnum.Home => "res://scenes/mobile/views/home.tscn",
@@ -190,7 +190,7 @@ public partial class MobileUI : Control
 					 $"No scene defined for {viewEnum}")
 			};
 
-			PT.Print("Loading ", viewEnum);
+			BV.Print("Loading ", viewEnum);
 
 			PackedScene packed = ResourceLoader.Load<PackedScene>(pathToLoad, cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
 			page = packed.Instantiate<MobileViewBase>();

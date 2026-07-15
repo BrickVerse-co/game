@@ -237,7 +237,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		float osScale = DisplayServer.ScreenGetScale(screenId);
 
 		float finalScale = baseUIScale * osScale;
-		PT.Print($"Final UI Scale: {finalScale}");
+		BV.Print($"Final UI Scale: {finalScale}");
 		GetWindow().ContentScaleFactor = finalScale;
 	}
 
@@ -338,7 +338,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			PopupAlert(ex.Message);
 		}
 	}
@@ -378,7 +378,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			PopupAlert(ex.Message, "Error importing model");
 		}
 	}
@@ -425,7 +425,7 @@ public partial class CreatorInterface : Control, IScriptObject
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 					PopupAlert(ex.Message, "Error exporting model");
 				}
 			}
@@ -474,7 +474,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				PopupAlert(ex.Message, "Error creating folder");
 			}
 		}, "Give Folder name");
@@ -493,7 +493,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				PopupAlert(ex.Message, "Error creating file");
 			}
 		}, "Give File name");
@@ -519,7 +519,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				PopupAlert(ex.Message, "Error creating world");
 			}
 		}, "Give World name");
@@ -552,7 +552,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			PopupAlert(ex.Message, "Error deleting files");
 		}
 		session.RescanFolder();
@@ -631,10 +631,10 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void OpenWorldPublish(World? world, bool publishAs = false)
 	{
-		PT.Print($"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}");
+		BV.Print($"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}");
 		if (world == null)
 		{
-			PT.PrintErr("CreatorInterface: OpenWorldPublish called without an active world.");
+			BV.PrintErr("CreatorInterface: OpenWorldPublish called without an active world.");
 			return;
 		}
 

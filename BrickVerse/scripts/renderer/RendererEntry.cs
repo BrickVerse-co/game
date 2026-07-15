@@ -19,17 +19,17 @@ public partial class RendererEntry : AppEntry
 		RendererViewport viewport = new();
 		AddChild(viewport);
 		viewport.Setup();
-		PT.Print("Viewport setup: ", sw.ElapsedMilliseconds, "ms");
+		BV.Print("Viewport setup: ", sw.ElapsedMilliseconds, "ms");
 
 		sw.Restart();
-		PT.Print("Loading avatar...");
+		BV.Print("Loading avatar...");
 		await viewport.AddAvatar("1", RendererViewport.AvatarPhotoTypeEnum.FullAvatar);
 		//await viewport.AddAccessory(48150);
-		PT.Print("Load avatar: ", sw.ElapsedMilliseconds, "ms");
+		BV.Print("Load avatar: ", sw.ElapsedMilliseconds, "ms");
 
 		sw.Restart();
 		byte[] png = await viewport.SavePng();
-		PT.Print("Save to png: ", sw.ElapsedMilliseconds, "ms");
+		BV.Print("Save to png: ", sw.ElapsedMilliseconds, "ms");
 		File.WriteAllBytes(ProjectSettings.GlobalizePath("res://temp/test.png"), png);
 	}
 }

@@ -24,7 +24,7 @@ internal static class SettingsFileUtility
 			using var file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
 			if (file == null)
 			{
-				PT.PrintErr($"FileAccess.Open returned null for path {path}");
+				BV.PrintErr($"FileAccess.Open returned null for path {path}");
 				return false;
 			}
 			file.StoreString(json);
@@ -32,7 +32,7 @@ internal static class SettingsFileUtility
 		}
 		catch (Exception e)
 		{
-			PT.PrintErr($"Failed to save settings to {path}: {e}");
+			BV.PrintErr($"Failed to save settings to {path}: {e}");
 			return false;
 		}
 	}
@@ -48,7 +48,7 @@ internal static class SettingsFileUtility
 
 			if (string.IsNullOrEmpty(json))
 			{
-				PT.PrintWarn($"Settings file at '{path}' is empty, removing and using defaults.");
+				BV.PrintWarn($"Settings file at '{path}' is empty, removing and using defaults.");
 				DirAccess.RemoveAbsolute(path);
 				return;
 			}
@@ -57,7 +57,7 @@ internal static class SettingsFileUtility
 
 			if (document.RootElement.ValueKind != JsonValueKind.Object)
 			{
-				PT.PrintWarn($"Settings file at '{path}' has unexpected root type {document.RootElement.ValueKind}, ignoring.");
+				BV.PrintWarn($"Settings file at '{path}' has unexpected root type {document.RootElement.ValueKind}, ignoring.");
 				return;
 			}
 
@@ -73,13 +73,13 @@ internal static class SettingsFileUtility
 				}
 				catch (Exception e)
 				{
-					PT.PrintErr($"Failed to parse setting '{property.Name}': {e}");
+					BV.PrintErr($"Failed to parse setting '{property.Name}': {e}");
 				}
 			}
 		}
 		catch (Exception e)
 		{
-			PT.PrintErr($"Failed to load settings from {path}: {e}");
+			BV.PrintErr($"Failed to load settings from {path}: {e}");
 		}
 	}
 
@@ -87,7 +87,7 @@ internal static class SettingsFileUtility
 	{
 		if (!IsJsonKindCompatible(el.ValueKind, def.ValueKind))
 		{
-			PT.PrintErr($"Settings type mismatch for '{def.Key}': expected {def.ValueKind}, got {el.ValueKind}. Using default.");
+			BV.PrintErr($"Settings type mismatch for '{def.Key}': expected {def.ValueKind}, got {el.ValueKind}. Using default.");
 			return def.UntypedDefault;
 		}
 
@@ -114,19 +114,19 @@ internal static class SettingsFileUtility
 			case SettingValueKind.Bool:
 				if (bool.TryParse(value, out bool bv))
 					return bv;
-				PT.PrintErr($"Failed to parse bool setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr($"Failed to parse bool setting '{def.Key}' from string value '{value}'.");
 				return def.UntypedDefault;
 
 			case SettingValueKind.Int:
 				if (int.TryParse(value, out int iv))
 					return iv;
-				PT.PrintErr($"Failed to parse int setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr($"Failed to parse int setting '{def.Key}' from string value '{value}'.");
 				return def.UntypedDefault;
 
 			case SettingValueKind.Float:
 				if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float fv))
 					return fv;
-				PT.PrintErr($"Failed to parse float setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr($"Failed to parse float setting '{def.Key}' from string value '{value}'.");
 				return def.UntypedDefault;
 
 			case SettingValueKind.String:

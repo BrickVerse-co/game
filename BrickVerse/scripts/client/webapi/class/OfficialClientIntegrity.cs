@@ -120,7 +120,7 @@ public static class OfficialClientIntegrity
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Failed to hash client binary: ", ex.Message);
+			BV.PrintErr("Failed to hash client binary: ", ex.Message);
 			return "";
 		}
 	}

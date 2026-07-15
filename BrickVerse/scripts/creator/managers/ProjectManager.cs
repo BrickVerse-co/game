@@ -69,7 +69,7 @@ public static class ProjectManager
 						}
 						catch (Exception ex)
 						{
-							PT.Print($"failed to load recent project: {ex.Message}");
+							BV.Print($"failed to load recent project: {ex.Message}");
 						}
 					}));
 				}
@@ -390,7 +390,7 @@ public static class ProjectManager
 
 		CreatorService.Interface.LoadOverlay?.Hide();
 		await CreatorService.Singleton.CreateNewSession(projectMetaPath);
-		PT.Print("Legacy conversion took ", sw.ElapsedMilliseconds, "ms");
+		BV.Print("Legacy conversion took ", sw.ElapsedMilliseconds, "ms");
 	}
 
 	public static async Task InitializeGit(string projPath)

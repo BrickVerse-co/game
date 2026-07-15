@@ -300,7 +300,7 @@ public sealed partial class BrickversianModel : CharacterModel
 			if (!_loggedMissingRagdollNode)
 			{
 				_loggedMissingRagdollNode = true;
-				PT.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
+				BV.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
 			}
 		}
 
@@ -916,7 +916,7 @@ public sealed partial class BrickversianModel : CharacterModel
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 				}
 			}
 			else if (asset.Type == "tool")
@@ -937,7 +937,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 					}
 				}
 				else if (Parent is NPC npc && loadToolNpc)
@@ -957,7 +957,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 					}
 				}
 			}

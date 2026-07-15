@@ -333,9 +333,9 @@ public sealed partial class Tool : RigidBody
 	{
 		// NOTE: HACKY!!!
 		// call deferred to let scripts run first
-		PT.CallDeferred(() =>
+		BV.CallDeferred(() =>
 		{
-			PT.CallDeferred(() =>
+			BV.CallDeferred(() =>
 			{
 				Equipped?.Invoke();
 			});

@@ -93,7 +93,7 @@ public static partial class PolyFormat
 					}
 			}
 
-			PT.PrintErr($"Failed to deserialize enum {targetType.Name} from {element.ValueKind}");
+			BV.PrintErr($"Failed to deserialize enum {targetType.Name} from {element.ValueKind}");
 			return null;
 		}
 
@@ -121,12 +121,12 @@ public static partial class PolyFormat
 			}
 			else
 			{
-				PT.PrintErr($"INTERNAL BUG: PolyFormat No typeinfo for {targetType}");
+				BV.PrintErr($"INTERNAL BUG: PolyFormat No typeinfo for {targetType}");
 			}
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"INTERNAL BUG: {ex}");
+			BV.PrintErr($"INTERNAL BUG: {ex}");
 		}
 
 		return null;
@@ -314,14 +314,14 @@ public static partial class PolyFormat
 		{
 			if (loadContext.LoadingModelChain.Contains(obj.LinkedModel))
 			{
-				PT.PrintWarn($"Circular reference detected at {obj.LinkedModel}, model not loaded.");
+				BV.PrintWarn($"Circular reference detected at {obj.LinkedModel}, model not loaded.");
 				return null;
 			}
 
 			byte[]? linkedModelData = loadContext.Root.IO.ReadBytesFromID(obj.LinkedModel);
 			if (linkedModelData == null)
 			{
-				PT.PrintErr("Failed to load linked model: ", obj.LinkedModel);
+				BV.PrintErr("Failed to load linked model: ", obj.LinkedModel);
 				return null;
 			}
 
@@ -358,13 +358,13 @@ public static partial class PolyFormat
 
 		if (netObj == null)
 		{
-			PT.PrintWarn("[PF] [WARN] Unknown class: ", className);
+			BV.PrintWarn("[PF] [WARN] Unknown class: ", className);
 			netObj = Globals.LoadNetworkedObject("MissingInstance");
 		}
 
 		if (netObj == null)
 		{
-			PT.PrintWarn("[PF] [WARN] netObj is null");
+			BV.PrintWarn("[PF] [WARN] netObj is null");
 			return null;
 		}
 
@@ -439,7 +439,7 @@ public static partial class PolyFormat
 			}
 			else
 			{
-				PT.PrintWarn($"[PF] [Warn] {child.Name} override doesn't exist");
+				BV.PrintWarn($"[PF] [Warn] {child.Name} override doesn't exist");
 			}
 		}
 
@@ -521,7 +521,7 @@ public static partial class PolyFormat
 
 			if (!propertyCache.TryGetValue(propName, out PropertyInfo? property))
 			{
-				PT.Print("Unknown property: ", dataModelType.Name, ".", propName);
+				BV.Print("Unknown property: ", dataModelType.Name, ".", propName);
 				continue;
 			}
 
@@ -551,7 +551,7 @@ public static partial class PolyFormat
 
 				if (objID == null)
 				{
-					PT.PrintWarn(propName, " doesn't have ID");
+					BV.PrintWarn(propName, " doesn't have ID");
 					continue;
 				}
 
@@ -651,7 +651,7 @@ public static partial class PolyFormat
 					catch (Exception ex)
 					{
 						// Failed to change type, continue anyway
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 						continue;
 					}
 				}
@@ -685,7 +685,7 @@ public static partial class PolyFormat
 				}
 				catch (Exception ex)
 				{
-					PT.PrintWarn("error when serialize: ", ex);
+					BV.PrintWarn("error when serialize: ", ex);
 				}
 			}
 		}

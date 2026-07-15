@@ -153,7 +153,7 @@ public sealed partial class ChatService : Instance
 			// Log chat message
 			_ = LogChatMessageAsync(player.UserID, filteredContent);
 
-			PT.Print(player.Name, ": ", filteredContent);
+			BV.Print(player.Name, ": ", filteredContent);
 			Rpc(nameof(NetRecvChatMessage), player.UserID, filteredContent);
 		}
 	}
@@ -171,7 +171,7 @@ public sealed partial class ChatService : Instance
 		}
 		else
 		{
-			PT.PrintWarn(userID, " not found in chat");
+			BV.PrintWarn(userID, " not found in chat");
 		}
 	}
 
@@ -257,7 +257,7 @@ public sealed partial class ChatService : Instance
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Chat Logging Error: {ex.Message}");
+			BV.PrintErr($"Chat Logging Error: {ex.Message}");
 		}
 	}
 }

@@ -211,7 +211,7 @@ public class LspClient : IDisposable
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"LSP Reader error: {ex.Message}");
+			BV.PrintErr($"LSP Reader error: {ex.Message}");
 		}
 	}
 
@@ -287,7 +287,7 @@ public class LspClient : IDisposable
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Error processing LSP message: {ex.Message}");
+			BV.PrintErr($"Error processing LSP message: {ex.Message}");
 		}
 	}
 
@@ -339,7 +339,7 @@ public class LspClient : IDisposable
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Error handling server request '{method}': {ex.Message}");
+			BV.PrintErr($"Error handling server request '{method}': {ex.Message}");
 		}
 	}
 

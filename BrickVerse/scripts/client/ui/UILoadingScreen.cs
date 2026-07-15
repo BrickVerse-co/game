@@ -90,7 +90,7 @@ public partial class UILoadingScreen : Control
 	private void SetStatusText(string text)
 	{
 		_statusLabel.Text = text;
-		//PT.Print($"LoadingScreen: {text}");
+		//BV.Print($"LoadingScreen: {text}");
 	}
 
 	private void SetProgress(double current, double max)

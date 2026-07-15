@@ -241,11 +241,11 @@ public class APIReferenceGenerator
 		if (Globals.IsInGDEditor)
 		{
 			// Display enum map missing warnings
-			PT.Print("APIREF Generation Complete");
-			PT.Print("Missing enums: ", missingEnums.Count);
+			BV.Print("APIREF Generation Complete");
+			BV.Print("Missing enums: ", missingEnums.Count);
 			foreach (Type item in missingEnums)
 			{
-				PT.PrintErr("Enum Missing ", item.Name);
+				BV.PrintErr("Enum Missing ", item.Name);
 			}
 		}
 
@@ -390,7 +390,7 @@ public class APIReferenceGenerator
 	{
 		if (type.IsAssignableTo(typeof(IScriptGDObject)))
 		{
-			return type.Name.TrimPrefix("PT");
+			return type.Name.TrimPrefix("BV");
 		}
 		return type.Name;
 	}

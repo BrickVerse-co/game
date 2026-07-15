@@ -79,7 +79,7 @@ public sealed partial class AddonsManager : Node
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 			}
 		}
 	}
@@ -89,9 +89,9 @@ public sealed partial class AddonsManager : Node
 		string addonName = s.Name;
 		string addonFileName = addonName + ".bvaddon";
 		string addonPath = Path.GetFullPath(Path.Join(_addonsAbsolutePath, addonFileName));
-		PT.Print("Installing addon ", addonName, " to ", addonPath);
+		BV.Print("Installing addon ", addonName, " to ", addonPath);
 		await PackedFormat.PackAddonToFile(s, addonPath, new() { Name = s.Name });
-		PT.Print("Addon Installed!");
+		BV.Print("Addon Installed!");
 
 		// Run addon for all registered roots
 		foreach (var root in _registeredRoots.ToList())

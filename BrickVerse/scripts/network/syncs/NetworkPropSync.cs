@@ -171,7 +171,7 @@ public sealed partial class NetworkPropSync : Instance
 				}
 				else
 				{
-					PT.PrintErr("Enum not defined: ", targetType.Name, ": ", enumValue);
+					BV.PrintErr("Enum not defined: ", targetType.Name, ": ", enumValue);
 					return null;
 				}
 			}
@@ -183,7 +183,7 @@ public sealed partial class NetworkPropSync : Instance
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 					return null;
 				}
 			}
@@ -293,7 +293,7 @@ public sealed partial class NetworkPropSync : Instance
 				}
 				else
 				{
-					PT.PrintErr("Enum not defined: ", targetType.Name, ": ", enumValue);
+					BV.PrintErr("Enum not defined: ", targetType.Name, ": ", enumValue);
 					return null;
 				}
 			}
@@ -305,7 +305,7 @@ public sealed partial class NetworkPropSync : Instance
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 					return null;
 				}
 			}

@@ -37,7 +37,7 @@ public class DebugServer
 		_ = Task.Run(ServerMainLoop);
 		ServerStarted = true;
 
-		PT.Print($"-- Debug server started at {localAddr}:{Port} --");
+		BV.Print($"-- Debug server started at {localAddr}:{Port} --");
 	}
 
 	private async Task ServerMainLoop()
@@ -45,7 +45,7 @@ public class DebugServer
 		while (ServerStarted)
 		{
 			TcpClient client = await _server.AcceptTcpClientAsync();
-			PT.Print("Debug client connected");
+			BV.Print("Debug client connected");
 			_ = HandleClient(client);
 		}
 	}
@@ -76,7 +76,7 @@ public class DebugServer
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 					}
 				}
 			}
@@ -84,7 +84,7 @@ public class DebugServer
 		finally
 		{
 			client.Close();
-			PT.Print("Debug client disconnected");
+			BV.Print("Debug client disconnected");
 			if (_clientToData.Remove(client, out var data))
 			{
 				// Cleanup local test process
@@ -119,14 +119,14 @@ public class DebugServer
 		}
 		else if (msg is MessageLogDispatch log)
 		{
-			PT.DispatchLog(new() { Content = log.Content, LogFrom = log.LogFrom, LogType = log.LogType });
+			BV.DispatchLog(new() { Content = log.Content, LogFrom = log.LogFrom, LogType = log.LogType });
 		}
 		else if (msg is MessageNewServerRequest req)
 		{
 			if (_clientToData.TryGetValue(from, out ClientData cdata))
 			{
 				CreatorSession session = CreatorService.LocalTestIDToSession[cdata.DebugID];
-				PT.Print("Server start request: ", req.WorldPath);
+				BV.Print("Server start request: ", req.WorldPath);
 				string worldPath = req.WorldPath;
 				string originPlacePath = worldPath;
 
@@ -134,7 +134,7 @@ public class DebugServer
 				if (!worldPath.EndsWith(".bvxw") && !worldPath.EndsWith(".bvworld")) worldPath += ".bvxw";
 
 				// call on main thread
-				PT.CallOnMainThread(async () =>
+				BV.CallOnMainThread(async () =>
 				{
 					try
 					{
@@ -146,9 +146,9 @@ public class DebugServer
 
 						await CreatorService.Singleton.StartLocalTestOnEntry(session.ProjectFolderPath, worldPath, cdata.DebugID, port, true);
 
-						PT.Print($"Awaiting server start.. ({worldPath})");
+						BV.Print($"Awaiting server start.. ({worldPath})");
 						await tcs.Task.WaitAsync(WorldServerAllocTimeout);
-						PT.Print("New server started!");
+						BV.Print("New server started!");
 
 						SendMessage(from, new MessageNewServerResponse() { WorldPath = originPlacePath, Address = "127.0.0.1", Port = port, DebugID = cdata.DebugID });
 					}
@@ -160,7 +160,7 @@ public class DebugServer
 			}
 			else
 			{
-				PT.PrintErr("World join failure: no client data");
+				BV.PrintErr("World join failure: no client data");
 			}
 		}
 		else if (msg is MessageServerReady serverReady)
@@ -169,7 +169,7 @@ public class DebugServer
 			{
 				if (_pendingServerInstance.TryGetValue(cdata.DebugID, out TaskCompletionSource? tcs))
 				{
-					PT.Print("Server start resolved");
+					BV.Print("Server start resolved");
 					tcs.SetResult();
 				}
 			}

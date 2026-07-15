@@ -43,7 +43,7 @@ public static class CreatorAuthServer
 
 		_ = Task.Run(() => RunListenerAsync(_cts.Token));
 
-		//PT.Print($"CreatorAuthServer listening on {RedirectUri}");
+		//BV.Print($"CreatorAuthServer listening on {RedirectUri}");
 	}
 
 	public static void BeginAuthAttempt(string expectedState, string codeVerifier)
@@ -93,7 +93,7 @@ public static class CreatorAuthServer
 		catch (Exception ex)
 		{
 			if (_running)
-				PT.PrintErr($"CreatorAuthServer error: {ex.Message}", ex);
+				BV.PrintErr($"CreatorAuthServer error: {ex.Message}", ex);
 		}
 	}
 
@@ -179,7 +179,7 @@ public static class CreatorAuthServer
 				await CreatorAPI.LoginWithToken(token, true);
 				ClearAuthAttempt();
 
-				//PT.Print("OpenID callback handled successfully - user should be authenticated now.");
+				//BV.Print("OpenID callback handled successfully - user should be authenticated now.");
 
 				await WriteHtmlAsync(
 					ctx,
@@ -201,7 +201,7 @@ public static class CreatorAuthServer
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"OpenID callback error: {ex.Message}", ex);
+			BV.PrintErr($"OpenID callback error: {ex.Message}", ex);
 			ClearAuthAttempt();
 
 			try

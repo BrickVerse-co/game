@@ -114,13 +114,13 @@ public partial class CreatorSession : Node, IDisposable
 	{
 		try
 		{
-			PT.Print("Starting Luau LSP...");
+			BV.Print("Starting Luau LSP...");
 			LuaCompletion = new(this);
 			await LuaCompletion.InitAsync();
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			LuaCompletion = null;
 		}
 	}
@@ -129,7 +129,7 @@ public partial class CreatorSession : Node, IDisposable
 	{
 		if (!File.Exists(OldIndexFilePath)) return;
 
-		PT.Print("Migrating index.json to .meta files...");
+		BV.Print("Migrating index.json to .meta files...");
 
 		string raw = File.ReadAllText(OldIndexFilePath);
 		Dictionary<string, string> legacyIndex;
@@ -140,7 +140,7 @@ public partial class CreatorSession : Node, IDisposable
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("-> Failed to read legacy index.json: ", ex);
+			BV.PrintErr("-> Failed to read legacy index.json: ", ex);
 			return;
 		}
 
@@ -150,7 +150,7 @@ public partial class CreatorSession : Node, IDisposable
 
 			if (!File.Exists(absolutePath))
 			{
-				PT.Print($"-> Skipping missing: {relativePath}");
+				BV.Print($"-> Skipping missing: {relativePath}");
 				continue;
 			}
 
@@ -158,17 +158,17 @@ public partial class CreatorSession : Node, IDisposable
 
 			if (File.Exists(metaPath))
 			{
-				PT.Print($"-> Skipping already migrated file: {relativePath}");
+				BV.Print($"-> Skipping already migrated file: {relativePath}");
 				continue;
 			}
 
-			PT.Print($"-> Writing .meta for: {relativePath}");
+			BV.Print($"-> Writing .meta for: {relativePath}");
 			PackedFormat.WriteMetaId(metaPath, id);
 		}
 
 		string archivePath = OldIndexFilePath + ".old";
 		File.Move(OldIndexFilePath, archivePath);
-		PT.Print("Migration complete.");
+		BV.Print("Migration complete.");
 	}
 
 	private async Task SetupFolders()
@@ -183,7 +183,7 @@ public partial class CreatorSession : Node, IDisposable
 
 		MigrateIndexFile();
 
-		PT.Print("Rebuilding index from .meta files...");
+		BV.Print("Rebuilding index from .meta files...");
 		RescanFolder();
 	}
 
@@ -200,19 +200,19 @@ public partial class CreatorSession : Node, IDisposable
 
 		if (!File.Exists(versionPath))
 		{
-			PT.Print("Writing version...");
+			BV.Print("Writing version...");
 			File.WriteAllText(versionPath, "");
 		}
 
-		PT.Print("Reading version...");
+		BV.Print("Reading version...");
 		string versionData = File.ReadAllText(versionPath);
 
 		if (versionData != Globals.AppVersion || Globals.IsInGDEditor)
 		{
-			PT.Print("Generating doc...");
+			BV.Print("Generating doc...");
 			LuaDefinitionGenerator.GenerateDocFiles(luauPath);
 
-			PT.Print("Writing doc...");
+			BV.Print("Writing doc...");
 			File.WriteAllText(versionPath, Globals.AppVersion);
 			File.WriteAllText(luauRcPath, LuauRCContent);
 		}
@@ -271,8 +271,8 @@ public partial class CreatorSession : Node, IDisposable
 
 		root.GDNode.AddChild(dmBridge, true, Node.InternalMode.Back);
 
-		PT.Print("Opening ", filePath);
-		PT.Print("-> Full Path: ", placePath);
+		BV.Print("Opening ", filePath);
+		BV.Print("-> Full Path: ", placePath);
 
 		Tabs.Singleton.Insert(new Tabs.GameTab() { World = root, Title = placePath.GetFile() });
 
@@ -281,7 +281,7 @@ public partial class CreatorSession : Node, IDisposable
 
 		void deletedHandler()
 		{
-			PT.Print(filePath, " closed");
+			BV.Print(filePath, " closed");
 			root.Deleted -= deletedHandler;
 			OpenedWorlds.Remove(root);
 			WorldPathToRoot.Remove(filePath);
@@ -321,7 +321,7 @@ public partial class CreatorSession : Node, IDisposable
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				CreatorService.Interface.PopupAlert(ex.Message, "World load failure");
 			}
 		}
@@ -341,7 +341,7 @@ public partial class CreatorSession : Node, IDisposable
 	public void QueueDispose()
 	{
 		_cleanupQueued = true;
-		PT.CallDeferred(() =>
+		BV.CallDeferred(() =>
 		{
 			if (_cleanupQueued)
 				Dispose();
@@ -551,7 +551,7 @@ return module";
 		{
 			Error err = OS.MoveToTrash(absoluteSrc);
 			if (err != Error.Ok)
-				PT.PrintWarn($"Failed to move to recycle bin: {absoluteSrc}");
+				BV.PrintWarn($"Failed to move to recycle bin: {absoluteSrc}");
 
 			// Move the .meta file to trash if it exists
 			string metaPath = PackedFormat.GetMetaPath(absoluteSrc);
@@ -559,7 +559,7 @@ return module";
 			{
 				err = OS.MoveToTrash(metaPath);
 				if (err != Error.Ok)
-					PT.PrintWarn($"Failed to move .meta to recycle bin: {metaPath}");
+					BV.PrintWarn($"Failed to move .meta to recycle bin: {metaPath}");
 			}
 		}
 		else if (File.GetAttributes(absoluteSrc) == FileAttributes.Directory)
@@ -608,7 +608,7 @@ return module";
 
 		if (FileToIndex.TryGetValue(srcRelative, out string? id))
 		{
-			PT.Print("Renaming change index");
+			BV.Print("Renaming change index");
 			IndexToFile[id] = newPathRelative;
 			SyncFileIndex();
 		}
@@ -667,7 +667,7 @@ return module";
 			string key = IndexToFile.FirstOrDefault(x => x.Value == srcRelative).Key;
 			if (key != null)
 			{
-				PT.Print("Updating index: ", key);
+				BV.Print("Updating index: ", key);
 				IndexToFile[key] = finalDest;
 			}
 			SyncFileIndex();
@@ -691,7 +691,7 @@ return module";
 			string relativePath = val[oldDirPath.Length..];
 			string newPath = newDirPath + relativePath;
 
-			PT.Print($"Updating subfile index: {key} from {val} to {newPath}");
+			BV.Print($"Updating subfile index: {key} from {val} to {newPath}");
 			IndexToFile[key] = newPath.SanitizePath();
 		}
 
@@ -702,7 +702,7 @@ return module";
 	{
 		try
 		{
-			PT.Print("Writing model to ", dest);
+			BV.Print("Writing model to ", dest);
 			bool prevEditPref = src.EditableChildren;
 			src.EditableChildren = false;
 
@@ -748,13 +748,13 @@ return module";
 			SyncFileIndex();
 
 			src.EditableChildren = prevEditPref;
-			PT.Print("Success! ", src.LinkedModel.Name);
+			BV.Print("Success! ", src.LinkedModel.Name);
 
 			QueueRescanFolder();
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			CreatorService.Interface.PopupAlert(ex.Message, "Failed creating model");
 		}
 	}
@@ -763,7 +763,7 @@ return module";
 	{
 		try
 		{
-			PT.Print("Inserting model from ", path);
+			BV.Print("Inserting model from ", path);
 			string pathRelative = path;
 			path = GlobalizePath(path);
 			Instance? i = PolyFormat.LoadModelFromFile(parent.Root, path, parent);
@@ -778,7 +778,7 @@ return module";
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			CreatorService.Interface.PopupAlert(ex.Message, "Failed inserting model");
 			return null;
 		}
@@ -803,7 +803,7 @@ return module";
 		string ext = path.GetExtension();
 		if (ext == "bvxw" || ext == "bvworld" || ext == "model")
 		{
-			PT.Print(path, " switching to compressed...");
+			BV.Print(path, " switching to compressed...");
 			byte[] data = File.ReadAllBytes(path);
 			byte[] final = PolyFormat.CompressPolyContent(data);
 			File.WriteAllBytes(path, final);
@@ -815,7 +815,7 @@ return module";
 		string ext = path.GetExtension();
 		if (ext == "bvxw" || ext == "bvworld" || ext == "model")
 		{
-			PT.Print(path, " switching to uncompressed...");
+			BV.Print(path, " switching to uncompressed...");
 			byte[] data = File.ReadAllBytes(path);
 			byte[] final = PolyFormat.DecompressPolyContent(data);
 			File.WriteAllBytes(path, final);
@@ -824,7 +824,7 @@ return module";
 
 	public void RunScript(string path)
 	{
-		if (World.Current == null) { PT.Print("World current is null, did not run script"); return; }
+		if (World.Current == null) { BV.Print("World current is null, did not run script"); return; }
 		Script s = new() { Root = World.Current };
 		path = GlobalizePath(path);
 		s.Source = File.ReadAllText(path);
@@ -903,7 +903,7 @@ return module";
 	{
 		if (!File.Exists(InputMapFilePath))
 		{
-			PT.Print("Writing input map...");
+			BV.Print("Writing input map...");
 
 			// Write default input map
 			InputActionAxis h = InputMap.BindAxis("Horizontal");
@@ -925,7 +925,7 @@ return module";
 		}
 		else
 		{
-			PT.Print("Reading input map... ", InputMapFilePath);
+			BV.Print("Reading input map... ", InputMapFilePath);
 			string inputData = File.ReadAllText(InputMapFilePath);
 			try
 			{
@@ -933,14 +933,14 @@ return module";
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 			}
 		}
 	}
 
 	public void SaveInputMap()
 	{
-		PT.Print("Writing input map... ", InputMapFilePath);
+		BV.Print("Writing input map... ", InputMapFilePath);
 		string jsonContent = InputMap.SaveToString();
 		File.WriteAllText(InputMapFilePath, jsonContent);
 	}
@@ -979,7 +979,7 @@ return module";
 
 		foreach (World game in OpenedWorlds)
 		{
-			if (game.WorldFilePath == null) { PT.PrintWarn("Skipping game instance, no linked world file path"); continue; }
+			if (game.WorldFilePath == null) { BV.PrintWarn("Skipping game instance, no linked world file path"); continue; }
 			string fpath = game.WorldFilePath;
 			string writeTo = snapshotFolder + "/" + fpath;
 			string baseDir = writeTo.GetBaseDir();

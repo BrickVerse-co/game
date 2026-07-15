@@ -120,7 +120,7 @@ public sealed partial class HttpService : Instance
 				}
 			}
 		}
-		msg.Headers.Add("PT-World-ID", Root.WorldID.ToString());
+		msg.Headers.Add("BV-World-ID", Root.WorldID.ToString());
 
 		using HttpResponseMessage res = await _client.SendAsync(msg);
 		Dictionary<string, string> headers = [];
@@ -340,7 +340,7 @@ public sealed partial class HttpService : Instance
 				}
 			}
 		}
-		msg.Headers.Add("PT-Game-ID", Root.WorldID.ToString());
+		msg.Headers.Add("BV-Game-ID", Root.WorldID.ToString());
 
 		try
 		{

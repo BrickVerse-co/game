@@ -735,10 +735,10 @@ public class LuaMetatable : LuaObject
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErrV(ex.Message, " argn: ", args.Length);
+					BV.PrintErrV(ex.Message, " argn: ", args.Length);
 					foreach (var item in args)
 					{
-						PT.PrintErrV(item, $" ({item?.GetType()})");
+						BV.PrintErrV(item, $" ({item?.GetType()})");
 					}
 					throw;
 				}
@@ -817,7 +817,7 @@ public class LuaMetatable : LuaObject
 			}
 			else
 			{
-				PT.PrintErr(script.LuaPath, " couldn't find method with matching overload (" + key + ")");
+				BV.PrintErr(script.LuaPath, " couldn't find method with matching overload (" + key + ")");
 			}
 			return 0;
 		}

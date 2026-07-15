@@ -226,7 +226,7 @@ public sealed partial class InsertService : Instance
 		catch (HttpRequestException ex) when (IsRecoverableStoreLookupError(ex))
 		{
 			storeItem = CreateFallbackStoreItem(id, $"Asset_{id}");
-			PT.PrintErr($"Store metadata unavailable for asset {id} ({ex.StatusCode?.ToString() ?? "UnknownStatus"}). Using fallback metadata.");
+			BV.PrintErr($"Store metadata unavailable for asset {id} ({ex.StatusCode?.ToString() ?? "UnknownStatus"}). Using fallback metadata.");
 		}
 
 		_storeItemCache[id] = storeItem;

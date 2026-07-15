@@ -182,7 +182,7 @@ public sealed partial class Properties : TabContainer
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 			}
 
 			hasProperties = true;

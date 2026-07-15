@@ -302,7 +302,7 @@ public sealed partial class NetworkService : Instance
 
 			if (netObj == null)
 			{
-				PT.PrintErr(
+				BV.PrintErr(
 					$"Dropped packet: target not found. " +
 					$"Target={netMsg.Target}, MethodId={netMsg.TargetMethod}, " +
 					$"FromPeer={fromPeer}, OriginPeer={originFromPeer}, TransferMode={tfm}"
@@ -319,7 +319,7 @@ public sealed partial class NetworkService : Instance
 
 			if (actualArgCount != expectedArgCount)
 			{
-				PT.PrintErr(
+				BV.PrintErr(
 					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
 					$"TargetType={netObj.GetType().FullName}, FromPeer={fromPeer}, OriginPeer={originFromPeer}, " +
 					$"Expected={expectedArgCount}, Actual={actualArgCount}"
@@ -327,7 +327,7 @@ public sealed partial class NetworkService : Instance
 
 				for (int i = 0; i < actualArgCount; i++)
 				{
-					PT.PrintErr($"  Arg[{i}] bytes={netMsg.ByteArrays[i]?.Length ?? 0}");
+					BV.PrintErr($"  Arg[{i}] bytes={netMsg.ByteArrays[i]?.Length ?? 0}");
 				}
 
 				return;
@@ -343,7 +343,7 @@ public sealed partial class NetworkService : Instance
 					{
 						if (!_peerRateLimiters.TryGetValue(originFromPeer, out RateLimiters? rateLimiter))
 						{
-							PT.PrintErr($"Dropped broadcast RPC from unknown peer {originFromPeer}");
+							BV.PrintErr($"Dropped broadcast RPC from unknown peer {originFromPeer}");
 							return;
 						}
 
@@ -363,7 +363,7 @@ public sealed partial class NetworkService : Instance
 				{
 					if (Globals.UseLogRPC)
 					{
-						PT.Print($"Broadcast {dispatch.Method.Name} from {originFromPeer} to all");
+						BV.Print($"Broadcast {dispatch.Method.Name} from {originFromPeer} to all");
 					}
 
 					NetInstance.BroadcastMessage(
@@ -377,7 +377,7 @@ public sealed partial class NetworkService : Instance
 				{
 					if (Globals.UseLogRPC)
 					{
-						PT.Print($"Blocked {dispatch.Method.Name} from {originFromPeer}");
+						BV.Print($"Blocked {dispatch.Method.Name} from {originFromPeer}");
 					}
 
 					return;
@@ -399,13 +399,13 @@ public sealed partial class NetworkService : Instance
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(
+						BV.PrintErr(
 							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
 							$"TargetType={netObj.GetType().FullName}, ArgIndex={i}, " +
 							$"TargetArgType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, " +
 							$"FromPeer={fromPeer}, OriginPeer={originFromPeer}"
 						);
-						PT.PrintErr(ex.ToString());
+						BV.PrintErr(ex.ToString());
 						return;
 					}
 				}
@@ -417,7 +417,7 @@ public sealed partial class NetworkService : Instance
 			{
 				if (OS.IsDebugBuild())
 				{
-					PT.PrintErr($"{dispatch.Method.Name} invoke failure: {ex}");
+					BV.PrintErr($"{dispatch.Method.Name} invoke failure: {ex}");
 				}
 			}
 			finally
@@ -432,7 +432,7 @@ public sealed partial class NetworkService : Instance
 #if DEBUG
 			if (OS.IsDebugBuild())
 			{
-				PT.PrintErr("Invalid Packet: ", ex, "\nOrigin stack trace: ", netDebugTrace);
+				BV.PrintErr("Invalid Packet: ", ex, "\nOrigin stack trace: ", netDebugTrace);
 			}
 #endif
 		}
@@ -475,7 +475,7 @@ public sealed partial class NetworkService : Instance
 			_heartbeatTimer.Start(HeartbeatIntervalSec);
 			ServerSendHeartbeat();
 		}
-		
+
 		Root.Players.PlayerAdded.Connect(OnPlayerAdded);
 		Root.Players.PlayerRemoved.Connect(OnPlayerRemoved);
 		Root.Players.SetMaxPlayers(maxPlayers);
@@ -521,7 +521,7 @@ public sealed partial class NetworkService : Instance
 		{
 			if (World.Current.Players.AbsolutePlayersCount <= 0)
 			{
-				PT.Print("No players, shutting down");
+				BV.Print("No players, shutting down");
 				ShutdownServer();
 			}
 		}
@@ -600,14 +600,14 @@ public sealed partial class NetworkService : Instance
 	{
 		if (!IsServer || LocalPeerID != 1)
 		{
-			PT.PrintErr(
+			BV.PrintErr(
 				$"DisconnectPeer blocked on non-server. LocalPeerID={LocalPeerID}, IsServer={IsServer}, " +
 				$"TargetPeer={peerID}, Reason={reason}, Code={code}"
 			);
 			return;
 		}
 
-		PT.Print($"DisconnectPeer -> Peer={peerID}, Reason={reason}, Code={code}");
+		BV.Print($"DisconnectPeer -> Peer={peerID}, Reason={reason}, Code={code}");
 		RpcId(peerID, nameof(NetRecvDisconnect), reason, (int)code);
 		await Globals.Singleton.WaitAsync(3);
 		NetInstance?.DisconnectPeer(peerID, true);
@@ -622,7 +622,7 @@ public sealed partial class NetworkService : Instance
 	internal void DisconnectSelf(string reason = "", DisconnectionCodeEnum code = DisconnectionCodeEnum.Unknown)
 	{
 		if (IsDisconnected) return;
-		PT.Print("Shutting down network instance.");
+		BV.Print("Shutting down network instance.");
 		IsDisconnected = true;
 		NetInstance?.Shutdown();
 		Callable.From(() =>
@@ -665,7 +665,7 @@ public sealed partial class NetworkService : Instance
 			pk = IntegrityCheckLayer.Generate(platformName);
 		}
 
-		PT.Print($"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}");
+		BV.Print($"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}");
 		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken, (int)NetworkMode, (int)platform, platformName, pk);
 	}
 
@@ -678,14 +678,14 @@ public sealed partial class NetworkService : Instance
 
 		int peerID = RemoteSenderId;
 
-		PT.Print(
+		BV.Print(
 			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, " +
 			$"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
 		);
 
 		if (peerID <= 1)
 		{
-			PT.PrintErr($"Auth rejected: invalid peer id {peerID}");
+			BV.PrintErr($"Auth rejected: invalid peer id {peerID}");
 			return;
 		}
 
@@ -716,7 +716,7 @@ public sealed partial class NetworkService : Instance
 
 		try
 		{
-			PT.Print("Auth: starting user validation...");
+			BV.Print("Auth: starting user validation...");
 
 			if (!IsProd)
 			{
@@ -747,15 +747,15 @@ public sealed partial class NetworkService : Instance
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Auth failure:");
-			PT.PrintErr(ex.ToString());
+			BV.PrintErr("Auth failure:");
+			BV.PrintErr(ex.ToString());
 			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
 			return;
 		}
 
 		if (!NetInstance.IsPeerConnected(peerID))
 		{
-			PT.PrintErr($"Auth stopped: peer {peerID} disconnected before player creation.");
+			BV.PrintErr($"Auth stopped: peer {peerID} disconnected before player creation.");
 			return;
 		}
 
@@ -771,7 +771,7 @@ public sealed partial class NetworkService : Instance
 
 		try
 		{
-			PT.Print("Auth: creating player...");
+			BV.Print("Auth: creating player...");
 
 			plr = Globals.LoadInstance<Player>(Root)!;
 
@@ -837,29 +837,29 @@ public sealed partial class NetworkService : Instance
 				}
 			}
 
-			PT.Print($"Auth: player created. Peer={peerID}, UserID={plr.UserID}, Username={plr.Name}");
+			BV.Print($"Auth: player created. Peer={peerID}, UserID={plr.UserID}, Username={plr.Name}");
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Auth: player creation failed.");
-			PT.PrintErr(ex.ToString());
+			BV.PrintErr("Auth: player creation failed.");
+			BV.PrintErr(ex.ToString());
 			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
 			return;
 		}
 
 		try
 		{
-			PT.Print("Auth: invoking PeerPreInit...");
+			BV.Print("Auth: invoking PeerPreInit...");
 			PeerPreInit?.Invoke(peerID);
 
-			PT.Print("Auth: starting SyncPlaceToPlayer...");
+			BV.Print("Auth: starting SyncPlaceToPlayer...");
 			ReplicateSync.SyncPlaceToPlayer(plr);
-			PT.Print("Auth: SyncPlaceToPlayer returned.");
+			BV.Print("Auth: SyncPlaceToPlayer returned.");
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Auth: SyncPlaceToPlayer failed.");
-			PT.PrintErr(ex.ToString());
+			BV.PrintErr("Auth: SyncPlaceToPlayer failed.");
+			BV.PrintErr(ex.ToString());
 			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
 			return;
 		}
@@ -875,7 +875,7 @@ public sealed partial class NetworkService : Instance
 
 	private void ConnectedToServer()
 	{
-		PT.Print("Connected to server");
+		BV.Print("Connected to server");
 		ClientConnected = true;
 		ClientConnectedToServer?.Invoke();
 		placeReplicationStartTime = Time.GetTicksMsec();
@@ -883,7 +883,7 @@ public sealed partial class NetworkService : Instance
 
 	private void ConnectionFailed(NetworkInstance.NetInstanceErrorEnum netInstanceError)
 	{
-		PT.Print("NetInstance Failure");
+		BV.Print("NetInstance Failure");
 		string errMsg = "Network Instance Failure";
 		if (_netInstanceErrorMessages.TryGetValue(netInstanceError, out var preMsg))
 		{
@@ -900,7 +900,7 @@ public sealed partial class NetworkService : Instance
 		{
 			if (!IsDisconnected)
 			{
-				PT.Print("Disconnected from server");
+				BV.Print("Disconnected from server");
 				DisconnectSelf("Disconnected from server", DisconnectionCodeEnum.Unknown);
 			}
 		}).CallDeferred();
@@ -908,7 +908,7 @@ public sealed partial class NetworkService : Instance
 
 	private void OnServerStarted()
 	{
-		PT.Print("BrickVerse Server Started");
+		BV.Print("BrickVerse Server Started");
 		if (IsProd)
 		{
 			_ = ServerAPI.LogServerEvent(ServerEventType.ServerStarted);
@@ -927,7 +927,7 @@ public sealed partial class NetworkService : Instance
 
 	private static void OnSessionStarted()
 	{
-		PT.Print("BrickVerse Network session started");
+		BV.Print("BrickVerse Network session started");
 	}
 
 	public static async Task<APIValidateResponse> AuthenticatePlayer(string token)
@@ -948,7 +948,7 @@ public sealed partial class NetworkService : Instance
 
 		InitNodes();
 
-		PT.Print("[Client] World Replicated");
+		BV.Print("[Client] World Replicated");
 		RpcId(1, nameof(NetReqAllTransform));
 	}
 
@@ -962,7 +962,7 @@ public sealed partial class NetworkService : Instance
 			return;
 		}
 		IsTransformReplicateDone = true;
-		PT.Print("[Client] Transform Replicated");
+		BV.Print("[Client] Transform Replicated");
 
 		// Request for Localplayer
 		if (_players != null)
@@ -988,10 +988,10 @@ public sealed partial class NetworkService : Instance
 
 		IsReplicationDone = true;
 
-		PT.Print("[Client] Script Replicated");
+		BV.Print("[Client] Script Replicated");
 		ClientWorldReady?.Invoke();
 
-		PT.Print("[Client] Replication done in: ", (Time.GetTicksMsec() - placeReplicationStartTime) / 1000, "s");
+		BV.Print("[Client] Replication done in: ", (Time.GetTicksMsec() - placeReplicationStartTime) / 1000, "s");
 
 		// Request for Localplayer
 		if (_players != null)
@@ -1062,7 +1062,7 @@ public sealed partial class NetworkService : Instance
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 		}
 	}
 

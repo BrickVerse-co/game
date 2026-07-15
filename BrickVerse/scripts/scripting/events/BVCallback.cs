@@ -24,7 +24,7 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 	public void Invoke(params object?[] args)
 	{
 		if (_disposed) return;
-		PT.CallOnMainThread(() =>
+		BV.CallOnMainThread(() =>
 		{
 			TargetAction.Invoke(args);
 		});
@@ -33,7 +33,7 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 	public void InvokeDirect(object?[] args)
 	{
 		if (_disposed) return;
-		PT.CallOnMainThread(() =>
+		BV.CallOnMainThread(() =>
 		{
 			TargetAction.Invoke(args);
 		});

@@ -27,7 +27,7 @@ public static class DatamodelLoader
 	public static async Task LoadWorldBytes(World root, byte[] data, string? entryPath = null)
 	{
 		PolyFileTypeEnum fileType = DetermineFileTypeFromBytes(data);
-		PT.Print("Determined file type: ", fileType);
+		BV.Print("Determined file type: ", fileType);
 		if (fileType == PolyFileTypeEnum.PolyXML)
 		{
 			if (data[0] == 0xEF)

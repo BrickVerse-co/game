@@ -26,7 +26,7 @@ public partial class DatamodelTestEntry : Node3D
 	public async void Entry()
 	{
 		// Fallsafe so test doesn't last forever
-		PT.CallDeferred(async () =>
+		BV.CallDeferred(async () =>
 		{
 			await Globals.Singleton.WaitAsync(TestTimeoutSec);
 			Globals.Singleton.Quit(true, 1);

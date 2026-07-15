@@ -62,7 +62,7 @@ internal sealed class ClientConnector : IClientConnector
 				throw new HttpRequestException($"BrickVerse client connect failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}");
 			}
 
-			PT.Print($"Client connect retry {attempt}/6: waiting for server awaken...");
+			BV.Print($"Client connect retry {attempt}/6: waiting for server awaken...");
 			await Task.Delay(TimeSpan.FromMilliseconds(750));
 		}
 

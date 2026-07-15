@@ -41,8 +41,8 @@ public static class PolyMobileAuthAPI
 			MobileAuthData? auth = JsonSerializer.Deserialize(data, MobileAuthDataGenerationContext.Default.MobileAuthData);
 			if (auth != null)
 			{
-				PT.Print("Existing auth data exists, using");
-				PT.Print(_authData.Token);
+				BV.Print("Existing auth data exists, using");
+				BV.Print(_authData.Token);
 				_authData = auth.Value;
 			}
 		}
@@ -113,7 +113,7 @@ public static class PolyMobileAuthAPI
 			_authData.Token = userToken;
 			_authData.UserID = me.Id;
 			SaveAuthData();
-			PT.Print("Hello!! ", me.Username);
+			BV.Print("Hello!! ", me.Username);
 
 			CurrentUserInfo = me;
 			UserAuthenticated?.Invoke(me);

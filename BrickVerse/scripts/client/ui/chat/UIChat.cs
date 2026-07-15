@@ -325,7 +325,7 @@ public partial class UIChat : Control
 		bool atBottom = vScrollBar.Value + 5 >= (vScrollBar.MaxValue - vScrollBar.Page);
 		if (atBottom)
 		{
-			PT.CallDeferred(() =>
+			BV.CallDeferred(() =>
 			{
 				int scrollVal = (int)vScrollBar.MaxValue + 1000;
 				_chatScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, scrollVal);

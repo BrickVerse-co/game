@@ -78,12 +78,12 @@ public partial class BVHttpClient
 							headers.Add($"Content-Length: {body.Length}");
 						}
 
-						/*PT.Print("=== BVHttpClient Request ===");
-						PT.Print($"URL: {msg.RequestUri}");
-						PT.Print($"Method: {msg.Method}");
-						PT.Print($"Body Length: {body.Length}");
+						/*BV.Print("=== BVHttpClient Request ===");
+						BV.Print($"URL: {msg.RequestUri}");
+						BV.Print($"Method: {msg.Method}");
+						BV.Print($"Body Length: {body.Length}");
 						foreach (string header in headers)
-							PT.Print(header);
+							BV.Print(header);
 
 						*/
 
@@ -134,7 +134,7 @@ public partial class BVHttpClient
 							method,
 							bodyArray
 						);
-						
+
 						if (error != Error.Ok)
 						{
 							req.QueueFree();

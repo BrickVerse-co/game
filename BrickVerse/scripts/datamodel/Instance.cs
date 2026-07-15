@@ -399,7 +399,7 @@ public partial class Instance : NetworkedObject
 				await Task.Delay(TimeSpan.FromSeconds(WaitChildWarningSec), warningCts.Token);
 				if (!tcs.Task.IsCompleted)
 				{
-					PT.PrintWarn($"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s.");
+					BV.PrintWarn($"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s.");
 				}
 			}
 			catch (OperationCanceledException) { }

@@ -37,7 +37,7 @@ public partial class WorldsGrid : Control
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			if (OS.IsDebugBuild())
 			{
 				OS.Alert(ex.ToString(), "Error loading games");

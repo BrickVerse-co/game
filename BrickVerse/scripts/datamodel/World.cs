@@ -574,7 +574,7 @@ public sealed partial class World : Instance
 
 	internal void DispatchClientScriptRun()
 	{
-		PT.Print("Dispatch Client run");
+		BV.Print("Dispatch Client run");
 		ClientScriptRunDispatch?.Invoke();
 	}
 

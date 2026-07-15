@@ -44,7 +44,7 @@ public partial class CreatorClipboard : Node
 			if (i == null) continue;
 			foreach (var item1 in i.GetChildren())
 			{
-				PT.Print("Copied instance child: ", item1.Name);
+				BV.Print("Copied instance child: ", item1.Name);
 			}
 			instances.Add(i);
 		}
@@ -139,7 +139,7 @@ public partial class CreatorClipboard : Node
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Error decompressing clipboard data: {ex}");
+			BV.PrintErr($"Error decompressing clipboard data: {ex}");
 			throw;
 		}
 	}

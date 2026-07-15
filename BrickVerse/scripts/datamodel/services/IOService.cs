@@ -51,7 +51,7 @@ public sealed partial class IOService : Instance
 
 			if (!PathUtils.IsPathInsideDirectory(rp, baseFolder))
 			{
-				PT.PrintErr("Tried to access file beyond the project folder. ", path);
+				BV.PrintErr("Tried to access file beyond the project folder. ", path);
 				return null;
 			}
 
@@ -67,7 +67,7 @@ public sealed partial class IOService : Instance
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				return null;
 			}
 		}
@@ -104,7 +104,7 @@ public sealed partial class IOService : Instance
 
 			if (!PathUtils.IsPathInsideDirectory(rp, baseFolder))
 			{
-				PT.PrintErr("Tried to access file beyond the project folder. ", path);
+				BV.PrintErr("Tried to access file beyond the project folder. ", path);
 				return;
 			}
 

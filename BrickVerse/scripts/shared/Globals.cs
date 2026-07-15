@@ -175,13 +175,13 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		AppVersion += "+dev";
 #endif
 
-		PT.Print($"BrickVerse v{AppVersion}");
-		PT.Print("https://brickverse.gg/");
-		PT.Print("-- System Info --");
-		PT.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
-		PT.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
-		PT.Print("Video adapter: ", OS.GetVideoAdapterDriverInfo().Join(", "));
-		PT.Print("----");
+		BV.Print($"BrickVerse v{AppVersion}");
+		BV.Print("https://brickverse.gg/");
+		BV.Print("-- System Info --");
+		BV.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
+		BV.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
+		BV.Print("Video adapter: ", OS.GetVideoAdapterDriverInfo().Join(", "));
+		BV.Print("----");
 
 		GetTree().AutoAcceptQuit = false;
 		GetTree().QuitOnGoBack = false;
@@ -200,7 +200,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Failure initializing native: ", ex);
+			BV.PrintErr("Failure initializing native: ", ex);
 		}
 
 #if CREATOR
@@ -630,7 +630,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		}
 		catch (Exception ex)
 		{
-			PT.PrintWarn("Error present when quitting: ", ex);
+			BV.PrintWarn("Error present when quitting: ", ex);
 		}
 		Callable
 			.From(() =>
@@ -708,7 +708,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 			}
 			else
 			{
-				PT.PrintWarn($"LoadEntry: failed to load icon {iconPath}");
+				BV.PrintWarn($"LoadEntry: failed to load icon {iconPath}");
 			}
 		}
 

@@ -139,7 +139,7 @@ public sealed partial class PurchasesService : Instance
 	{
 		_currentPurchaseRef = refID;
 
-		PT.Print("Purchase initiated with ID ", assetID);
+		BV.Print("Purchase initiated with ID ", assetID);
 
 		try
 		{
@@ -150,7 +150,7 @@ public sealed partial class PurchasesService : Instance
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Purchase processing failure: ", ex.Message);
+			BV.PrintErr("Purchase processing failure: ", ex.Message);
 		}
 	}
 
@@ -222,7 +222,7 @@ public sealed partial class PurchasesService : Instance
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Purchase processing failure: ", ex.Message);
+			BV.PrintErr("Purchase processing failure: ", ex.Message);
 			SendProcessSuccessful(req, false);
 		}
 	}

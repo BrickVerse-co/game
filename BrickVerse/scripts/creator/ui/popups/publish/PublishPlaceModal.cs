@@ -120,7 +120,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr($"Failed to publish world: {ex.Message}");
+				BV.PrintErr($"Failed to publish world: {ex.Message}");
 				CreatorService.Interface.PopupAlert(ex.Message);
 				ShowPublishError("Failed to publish: " + ex.Message);
 				loadOverlay?.Hide();
@@ -132,11 +132,11 @@ public partial class PublishPlaceModal : PopupWindowBase
 	{
 		if (world == null)
 		{
-			PT.PrintErr("Cannot open PublishPlaceModal: world is null.");
+			BV.PrintErr("Cannot open PublishPlaceModal: world is null.");
 			return;
 		}
 
-		PT.Print($"Opening PublishPlaceModal for world: {world.WorldName}, Universe: {world.UniverseName}, PublishAs: {publishAs}");
+		BV.Print($"Opening PublishPlaceModal for world: {world.WorldName}, Universe: {world.UniverseName}, PublishAs: {publishAs}");
 
 		this.world = world;
 

@@ -104,7 +104,7 @@ public partial class TextEditorRoot : Node
 
 		// TODO: Can be made into TextEditorRoot.GrabFocus() ?
 		// Needs to be call deferred to be the last to grab
-		PT.CallDeferred(CodeEditor.GrabFocus);
+		BV.CallDeferred(CodeEditor.GrabFocus);
 
 		if (_completion != null)
 		{

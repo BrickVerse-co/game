@@ -145,7 +145,7 @@ public partial class NetworkTransformSync : Instance
 		{
 			if (isReliable)
 			{
-				if (_useNetworkLog) { PT.Print($"[Net] [Transform] {dyn.NetworkPath} Reliable update"); }
+				if (_useNetworkLog) { BV.Print($"[Net] [Transform] {dyn.NetworkPath} Reliable update"); }
 
 				Rpc(nameof(NetRecvUpdateTransformReliable), objID, payload, lerpTransform);
 			}
@@ -177,7 +177,7 @@ public partial class NetworkTransformSync : Instance
 		}
 		else
 		{
-			if (_useNetworkLog) { PT.Print($"[Net] [Transform] [?] {objID} Pending"); }
+			if (_useNetworkLog) { BV.Print($"[Net] [Transform] [?] {objID} Pending"); }
 			_pendingTransforms[objID] = new() { Transform = transform, FromPeer = fromPeer };
 		}
 	}
@@ -237,14 +237,14 @@ public partial class NetworkTransformSync : Instance
 		{
 			if (!CheckDynAuthor(dyn, fromPeer))
 			{
-				PT.PrintErr($"[Net] Unauthorized transform from peer {fromPeer} for {objID}");
+				BV.PrintErr($"[Net] Unauthorized transform from peer {fromPeer} for {objID}");
 				return;
 			}
 
 			// server-side validation
 			if (!dyn.TransformNetworkCheck(transform))
 			{
-				PT.PrintErr($"[Net] Invalid transform from peer {fromPeer}");
+				BV.PrintErr($"[Net] Invalid transform from peer {fromPeer}");
 
 				// Send correction back
 				SendUpdateTransform(dyn, true, fromPeer);

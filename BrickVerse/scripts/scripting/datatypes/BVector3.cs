@@ -79,7 +79,7 @@ public class BVector3 : IScriptGDObject
 	[ScriptMethod]
 	public static BVector3 New(float x, float y, float z)
 	{
-		//PT.Print("New vector3: ", x, y, z);
+		//BV.Print("New vector3: ", x, y, z);
 		return new()
 		{
 			X = x,

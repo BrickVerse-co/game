@@ -105,19 +105,19 @@ public sealed partial class ClientEntry : Node3D
 
 			if (launchOptions.IsServer)
 			{
-				PT.Print("Starting server...");
+				BV.Print("Starting server...");
 				await StartServerAsync(launchOptions);
 			}
 
 			if (launchOptions.IsClient)
 			{
-				PT.Print("Starting client...");
+				BV.Print("Starting client...");
 				await StartClientAsync(launchOptions);
 			}
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Error during client entry: ", ex);
+			BV.PrintErr("Error during client entry: ", ex);
 		}
 	}
 
@@ -164,7 +164,7 @@ public sealed partial class ClientEntry : Node3D
 			DebugId = debugId,
 		};
 
-		PT.IsServer = runAsServer;
+		BV.IsServer = runAsServer;
 		ClientAuthAPI.SetAuthToken(options.AuthToken ?? "");
 
 #if ALLOW_SELFHOST
@@ -192,14 +192,14 @@ public sealed partial class ClientEntry : Node3D
 			ApplyEntryDataOverrides(options, entryData.Value);
 		}
 
-		PT.IsServer = options.IsServer;
+		BV.IsServer = options.IsServer;
 
-		/*PT.Print(
+		/*BV.Print(
 			"Launch args: " +
 			string.Join(", ", args.Select(x => $"--{x.Key}={x.Value}"))
 		);
 
-		PT.Print("Launch Options: ", FormatLaunchOptions(options));
+		BV.Print("Launch Options: ", FormatLaunchOptions(options));
 		*/
 
 		return options;
@@ -265,7 +265,7 @@ public sealed partial class ClientEntry : Node3D
 
 		DebugAgent = new DebugAgent();
 		stopwatch.Restart();
-		PT.Print($"Connecting to debug server {debugAddress}");
+		BV.Print($"Connecting to debug server {debugAddress}");
 
 		try
 		{
@@ -274,7 +274,7 @@ public sealed partial class ClientEntry : Node3D
 			_debugServerPort = int.Parse(addressParts[1]);
 
 			await DebugAgent.Start(_debugServerAddress, _debugServerPort.Value, debugId);
-			PT.Print($"Debug server connected in {stopwatch.ElapsedMilliseconds}ms");
+			BV.Print($"Debug server connected in {stopwatch.ElapsedMilliseconds}ms");
 		}
 		catch (Exception ex)
 		{
@@ -342,7 +342,7 @@ public sealed partial class ClientEntry : Node3D
 
 		stopwatch.Restart();
 		Root.Setup();
-		PT.Print($"World setup in {stopwatch.ElapsedMilliseconds}ms");
+		BV.Print($"World setup in {stopwatch.ElapsedMilliseconds}ms");
 	}
 
 #if CREATOR
@@ -372,7 +372,7 @@ public sealed partial class ClientEntry : Node3D
 		}
 
 		Root.Environment.CameraOverride = freeLook;
-		PT.Print($"World loaded in {stopwatch.ElapsedMilliseconds}ms");
+		BV.Print($"World loaded in {stopwatch.ElapsedMilliseconds}ms");
 	}
 
 	private FreeLook CreateLocalServerCamera()
@@ -389,16 +389,16 @@ public sealed partial class ClientEntry : Node3D
 	private async System.Threading.Tasks.Task LoadLocalWorldFileAsync(string worldPath, string? worldEntryPath)
 	{
 		string absoluteWorldPath = ProjectSettings.GlobalizePath(worldPath);
-		PT.Print("Loading world with entry: ", worldEntryPath);
+		BV.Print("Loading world with entry: ", worldEntryPath);
 
 		try
 		{
 			await DatamodelLoader.LoadWorldFile(Root, absoluteWorldPath, worldEntryPath);
-			PT.Print("World loaded!");
+			BV.Print("World loaded!");
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			OS.Alert("World load failed");
 			Globals.Singleton.Quit();
 		}
@@ -461,7 +461,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private async System.Threading.Tasks.Task StartProductionServerAsync(ClientLaunchOptions options)
 	{
-		PT.Print("Starting production server...");
+		BV.Print("Starting production server...");
 		if (string.IsNullOrWhiteSpace(options.AuthToken))
 		{
 			throw new InvalidOperationException("Production server launch requires an auth token.");
@@ -473,7 +473,7 @@ public sealed partial class ClientEntry : Node3D
 
 		try
 		{
-			PT.Print("Server authenticating...");
+			BV.Print("Server authenticating...");
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			APIServerListenResponse listenResponse = await ClientAuthAPI.SendServerListen();
@@ -482,38 +482,38 @@ public sealed partial class ClientEntry : Node3D
 			Root.WorldID = listenResponse.WorldID;
 			Root.ServerID = listenResponse.ServerID;
 
-			PT.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
-			PT.Print("Downloading world...");
+			BV.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
+			BV.Print("Downloading world...");
 
 			stopwatch.Restart();
 			byte[] worldContent = await ServerAPI.DownloadWorld(listenResponse.WorldID);
-			PT.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
-			PT.Print("World bytes: ", worldContent.Length);
+			BV.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
+			BV.Print("World bytes: ", worldContent.Length);
 
 			stopwatch.Restart();
-			PT.Print("Constructing...");
+			BV.Print("Constructing...");
 			await DatamodelLoader.LoadWorldBytes(Root, worldContent, listenResponse.PlacePath);
-			PT.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
+			BV.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
 
 			int serverPort = listenResponse.Port;
 			NetworkService.CreateServer(serverPort, options.MaxPlayers);
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex.ToString());
+			BV.PrintErr(ex.ToString());
 			Globals.Singleton.Quit();
 		}
 	}
 
 	private static void LogServerListenResponse(APIServerListenResponse listenResponse)
 	{
-		PT.Print("BrickVerse Server Info ----");
-		PT.Print("Server ID: ", listenResponse.ServerID);
-		PT.Print("World ID: ", listenResponse.WorldID);
-		PT.Print("Port: ", listenResponse.Port);
-		PT.Print("Place path: ", listenResponse.PlacePath);
-		PT.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
-		PT.Print("--------------------------");
+		BV.Print("BrickVerse Server Info ----");
+		BV.Print("Server ID: ", listenResponse.ServerID);
+		BV.Print("World ID: ", listenResponse.WorldID);
+		BV.Print("Port: ", listenResponse.Port);
+		BV.Print("Place path: ", listenResponse.PlacePath);
+		BV.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
+		BV.Print("--------------------------");
 	}
 
 #if ALLOW_SELFHOST
@@ -521,7 +521,7 @@ public sealed partial class ClientEntry : Node3D
 	{
 		try
 		{
-			PT.Print("Starting local server on " + port);
+			BV.Print("Starting local server on " + port);
 			NetworkService.CreateServer(port);
 
 			if (DebugAgent != null)
@@ -547,7 +547,7 @@ public sealed partial class ClientEntry : Node3D
 		}
 		else
 		{
-			PT.PrintErr("No auth token provided, cannot start production client.");
+			BV.PrintErr("No auth token provided, cannot start production client.");
 		}
 
 #if ALLOW_SELFHOST
@@ -557,7 +557,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private async System.Threading.Tasks.Task StartProductionClientAsync(string authToken)
 	{
-		PT.Print("Connecting to BrickVerse...");
+		BV.Print("Connecting to BrickVerse...");
 		ClientAuthAPI.SetAuthToken(authToken);
 
 		try
@@ -573,20 +573,20 @@ public sealed partial class ClientEntry : Node3D
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			NetworkService.DisconnectSelf(ex.Message, NetworkService.DisconnectionCodeEnum.ConnectionFailure);
 		}
 	}
 
 	private static void LogClientConnectionInfo(APIClientAuthResponseMessage connectionInfo)
 	{
-		PT.Print(" ---- BrickVerse Network Info ----");
-		PT.Print("Server ID: ", connectionInfo.ServerID);
-		PT.Print("World ID: ", connectionInfo.WorldID);
-		PT.Print("IP: ", connectionInfo.IP);
-		PT.Print("Port: ", connectionInfo.Port);
-		PT.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
-		PT.Print("--------------------------");
+		BV.Print(" ---- BrickVerse Network Info ----");
+		BV.Print("Server ID: ", connectionInfo.ServerID);
+		BV.Print("World ID: ", connectionInfo.WorldID);
+		BV.Print("IP: ", connectionInfo.IP);
+		BV.Print("Port: ", connectionInfo.Port);
+		BV.Print("Connected at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
+		BV.Print("--------------------------");
 	}
 
 	private void StartServerStatusPolling()
@@ -608,7 +608,7 @@ public sealed partial class ClientEntry : Node3D
 		try
 		{
 			APIServerStatus status = await ClientAuthAPI.CheckServerStatus();
-			PT.Print(status.Status);
+			BV.Print(status.Status);
 
 			if (status.Status == "STOPPED" || status.Status == "STOPPING")
 			{
@@ -730,7 +730,7 @@ public sealed partial class ClientEntry : Node3D
 		int processId = OS.CreateProcess(executablePath, [.. args]);
 		_localTestClientProcessIds.Add(processId);
 
-		PT.Print($"Started new client process with ID {processId}");
+		BV.Print($"Started new client process with ID {processId}");
 	}
 
 	public override void _ExitTree()
