@@ -417,7 +417,7 @@ public sealed partial class InteractionPrompt : Physical
 		Interacted.Invoke(p);
 	}
 
-	[ScriptProperty] public PTSignal<Player> Interacted { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Player> Interacted { get; private set; } = new();
 
 	[ScriptEnum("UIMode")]
 	public enum UIModeEnum

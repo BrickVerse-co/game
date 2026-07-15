@@ -35,8 +35,8 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	private const int GCStepThreshold = 100;
 
 	private static readonly Dictionary<Type, MethodInfo?> _gdToProxy = [];
-	private static readonly Dictionary<IntPtr, PTCallbackData> _ptrToCallback = [];
-	private static readonly Dictionary<PTCallbackData, IntPtr> _callbackToPtr = [];
+	private static readonly Dictionary<IntPtr, BVCallbackData> _ptrToCallback = [];
+	private static readonly Dictionary<BVCallbackData, IntPtr> _callbackToPtr = [];
 	private static readonly Dictionary<IntPtr, object> _ptrToObject = [];
 	private const string WeakUserdataCache = "__UDCACHE";
 	private static readonly int ThreadDataKey = 0x1247;
@@ -365,7 +365,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		// Free function pointer references
 		foreach (IntPtr funcPtr in script.LuauFunctionPointers)
 		{
-			if (_ptrToCallback.TryGetValue(funcPtr, out PTCallbackData func))
+			if (_ptrToCallback.TryGetValue(funcPtr, out BVCallbackData func))
 			{
 				func.Callback.Dispose();
 				_callbackToPtr.Remove(func);
@@ -373,7 +373,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 			_ptrToCallback.Remove(funcPtr);
 		}
 
-		PTSignal.CleanupScript(script);
+		BVSignal.CleanupScript(script);
 	}
 
 	public void CallUpdate(Script script, double delta)
@@ -1305,7 +1305,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 				return i;
 			}
 		}
-		else if (state.IsFunction(index) && getAsFunction) // PTFunction
+		else if (state.IsFunction(index) && getAsFunction) // BVFunction
 		{
 			Script script = GetScriptInstance(state);
 
@@ -1314,7 +1314,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 			LuaState mainState = script.LuauState ?? throw new Exception("INTERNAL BUG: No main thread");
 
-			PTFunction del = new(async (args) =>
+			BVFunction del = new(async (args) =>
 			{
 				if (!mainState.IsAlive) return [];
 
@@ -1366,10 +1366,10 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 			return del;
 		}
-		else if (state.IsFunction(index) && !getAsFunction) // PTCallback
+		else if (state.IsFunction(index) && !getAsFunction) // BVCallback
 		{
 			IntPtr funcPtr = state.ToPointer(index);
-			if (_ptrToCallback.TryGetValue(funcPtr, out PTCallbackData cached))
+			if (_ptrToCallback.TryGetValue(funcPtr, out BVCallbackData cached))
 			{
 				return cached.Callback;
 			}
@@ -1384,7 +1384,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 			LuaState handler = NewThread(mainState);
 			int handlerRef = mainState.Ref();
 
-			PTCallback del = new(async (args) =>
+			BVCallback del = new(async (args) =>
 			{
 				if (!mainState.IsAlive) return;
 
@@ -1417,7 +1417,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 			}
 		;
 
-			PTCallbackData data = new()
+			BVCallbackData data = new()
 			{
 				RefID = funcRef,
 				HandlerRefID = handlerRef,
@@ -1725,12 +1725,12 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		return type.Name;
 	}
 
-	public void FreePTCallback(PTCallback action)
+	public void FreeBVCallback(BVCallback action)
 	{
-		PTCallbackData? data = _ptrToCallback.Values.FirstOrDefault(data => data.Callback == action);
+		BVCallbackData? data = _ptrToCallback.Values.FirstOrDefault(data => data.Callback == action);
 		if (data.HasValue)
 		{
-			PTCallbackData callbackData = data.Value;
+			BVCallbackData callbackData = data.Value;
 			LuaState lua = callbackData.State;
 			lua.Unref(callbackData.RefID);
 			lua.Unref(callbackData.HandlerRefID);
@@ -1832,17 +1832,17 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 	}
 
-	private struct PTCallbackData : IEquatable<PTCallbackData>
+	private struct BVCallbackData : IEquatable<BVCallbackData>
 	{
 		public int RefID { get; set; }
 		public int HandlerRefID { get; set; }
 		public IntPtr FuncPtr { get; set; }
-		public PTCallback Callback { get; set; }
+		public BVCallback Callback { get; set; }
 		public LuaState State { get; set; }
 
-		public readonly bool Equals(PTCallbackData other)
+		public readonly bool Equals(BVCallbackData other)
 		{
-			return other is PTCallbackData otherData && FuncPtr.Equals(otherData.FuncPtr);
+			return other is BVCallbackData otherData && FuncPtr.Equals(otherData.FuncPtr);
 		}
 
 		public override readonly int GetHashCode()
@@ -1852,7 +1852,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 		public override readonly bool Equals(object? obj)
 		{
-			return obj is PTCallbackData otherData && FuncPtr.Equals(otherData.FuncPtr);
+			return obj is BVCallbackData otherData && FuncPtr.Equals(otherData.FuncPtr);
 		}
 	}
 

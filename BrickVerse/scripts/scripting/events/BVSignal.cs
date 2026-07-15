@@ -16,16 +16,16 @@ namespace BrickVerse.Scripting;
 
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
-public class PTSignal : IScriptObject
+public class BVSignal : IScriptObject
 {
 	public event Action? Subscribed;
 	public event Action? Unsubscribed;
 
-	private readonly List<PTCallback> _ptCallbacks = [];
+	private readonly List<BVCallback> _ptCallbacks = [];
 
-	private readonly HashSet<PTCallback> _ptSet = [];
+	private readonly HashSet<BVCallback> _ptSet = [];
 
-	private static readonly Dictionary<Script, List<PTSignal>> _subscribedScripts = [];
+	private static readonly Dictionary<Script, List<BVSignal>> _subscribedScripts = [];
 
 	public void Invoke(params object?[]? args)
 	{
@@ -36,7 +36,7 @@ public class PTSignal : IScriptObject
 	{
 		for (int i = _ptCallbacks.Count - 1; i >= 0; i--)
 		{
-			PTCallback? cb = _ptCallbacks[i];
+			BVCallback? cb = _ptCallbacks[i];
 			if (cb is null || cb.Disposed)
 			{
 				_ptCallbacks.RemoveAt(i);
@@ -45,13 +45,13 @@ public class PTSignal : IScriptObject
 			}
 
 			try { cb.InvokeDirect(args); }
-			catch (Exception ex) { GD.PushError($"PTCallback Length: {args.Length} : " + ex.ToString()); }
+			catch (Exception ex) { GD.PushError($"BVCallback Length: {args.Length} : " + ex.ToString()); }
 		}
 	}
 
-	private static List<PTSignal> GetSignalListFromScript(Script s)
+	private static List<BVSignal> GetSignalListFromScript(Script s)
 	{
-		if (!_subscribedScripts.TryGetValue(s, out List<PTSignal>? signals))
+		if (!_subscribedScripts.TryGetValue(s, out List<BVSignal>? signals))
 		{
 			signals = [];
 			_subscribedScripts[s] = signals;
@@ -61,7 +61,7 @@ public class PTSignal : IScriptObject
 
 	private void AddThisSignalToScript(Script s)
 	{
-		List<PTSignal> signals = GetSignalListFromScript(s);
+		List<BVSignal> signals = GetSignalListFromScript(s);
 		if (!signals.Contains(this))
 		{
 			signals.Add(this);
@@ -70,14 +70,14 @@ public class PTSignal : IScriptObject
 
 	private void RemoveThisSignalFromScript(Script s)
 	{
-		List<PTSignal> signals = GetSignalListFromScript(s);
+		List<BVSignal> signals = GetSignalListFromScript(s);
 		signals.Remove(this);
 	}
 
 	[ScriptMethod]
-	public PTSignalConnection Connect(PTCallback action)
+	public BVSignalConnection Connect(BVCallback action)
 	{
-		PTSignalConnection sc = new() { Callback = action, Signal = this };
+		BVSignalConnection sc = new() { Callback = action, Signal = this };
 
 		if (!_ptSet.Add(action)) return sc;
 		_ptCallbacks.Add(action);
@@ -92,13 +92,13 @@ public class PTSignal : IScriptObject
 
 	public void Connect(Action action)
 	{
-		PTCallback cb = new(_ => action()) { OriginalDelegate = action };
+		BVCallback cb = new(_ => action()) { OriginalDelegate = action };
 		Connect(cb);
 	}
 
 	public void Connect(Action<object> action)
 	{
-		PTCallback cb = new(args => action(args?.Length > 0 ? args[0]! : null!)) { OriginalDelegate = action };
+		BVCallback cb = new(args => action(args?.Length > 0 ? args[0]! : null!)) { OriginalDelegate = action };
 		Connect(cb);
 	}
 
@@ -116,16 +116,16 @@ public class PTSignal : IScriptObject
 		int paramCount = del.Method.GetParameters().Length;
 		bool takesArray = paramCount == 1 && del.Method.GetParameters()[0].ParameterType == typeof(object[]);
 
-		PTCallback cb = new(args => del.DynamicInvoke(takesArray ? [args] : args)) { OriginalDelegate = del };
+		BVCallback cb = new(args => del.DynamicInvoke(takesArray ? [args] : args)) { OriginalDelegate = del };
 		Connect(cb);
 	}
 
 	[ScriptMethod]
-	public void Disconnect(PTCallback action)
+	public void Disconnect(BVCallback action)
 	{
 		if (!_ptSet.Remove(action)) return;
 		_ptCallbacks.Remove(action);
-		ScriptService.FreePTCallback(action);
+		ScriptService.FreeBVCallback(action);
 
 		if (action.FromScript != null)
 		{
@@ -160,9 +160,9 @@ public class PTSignal : IScriptObject
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
-	public static string ToString(PTSignal? _)
+	public static string ToString(BVSignal? _)
 	{
-		return "<PTSignal>";
+		return "<BVSignal>";
 	}
 
 	[ScriptMethod]
@@ -174,9 +174,9 @@ public class PTSignal : IScriptObject
 	}
 
 	[ScriptMethod]
-	public void Once(PTCallback action)
+	public void Once(BVCallback action)
 	{
-		PTCallback? handler = null;
+		BVCallback? handler = null;
 		handler = new(args =>
 		{
 			if (handler != null)
@@ -193,8 +193,8 @@ public class PTSignal : IScriptObject
 
 	public void Once(Action<object> action)
 	{
-		PTCallback? cb = null;
-		cb = new PTCallback(args =>
+		BVCallback? cb = null;
+		cb = new BVCallback(args =>
 		{
 			Disconnect(cb!);
 			action.Invoke(args?.Length > 0 ? args[0]! : null!);
@@ -205,8 +205,8 @@ public class PTSignal : IScriptObject
 
 	public void Once(Action<object?[]> action)
 	{
-		PTCallback? cb = null;
-		cb = new PTCallback(args =>
+		BVCallback? cb = null;
+		cb = new BVCallback(args =>
 		{
 			Disconnect(cb!);
 			action.Invoke(args ?? []);
@@ -220,8 +220,8 @@ public class PTSignal : IScriptObject
 		if (del is Action<object> a) { Once(a); return; }
 		if (del is Action<object?[]> a2) { Once(a2); return; }
 
-		PTCallback? cb = null;
-		cb = new PTCallback(args =>
+		BVCallback? cb = null;
+		cb = new BVCallback(args =>
 		{
 			Disconnect(cb!);
 			del.DynamicInvoke(args ?? []);
@@ -250,7 +250,7 @@ public class PTSignal : IScriptObject
 		{
 			if (cb != null && !cb.Disposed)
 			{
-				ScriptService.FreePTCallback(cb);
+				ScriptService.FreeBVCallback(cb);
 			}
 		}
 
@@ -266,7 +266,7 @@ public class PTSignal : IScriptObject
 	{
 		for (int i = _ptCallbacks.Count - 1; i >= 0; i--)
 		{
-			PTCallback? cb = _ptCallbacks[i];
+			BVCallback? cb = _ptCallbacks[i];
 			if (cb is null || cb.Disposed || cb.FromScript == s)
 			{
 				_ptCallbacks.RemoveAt(i);
@@ -277,14 +277,14 @@ public class PTSignal : IScriptObject
 	}
 
 	/// <summary>
-	/// Cleanup all PTSignals from target script
+	/// Cleanup all BVSignals from target script
 	/// </summary>
 	/// <param name="s"></param>
 	public static void CleanupScript(Script s)
 	{
-		if (_subscribedScripts.TryGetValue(s, out List<PTSignal>? signals))
+		if (_subscribedScripts.TryGetValue(s, out List<BVSignal>? signals))
 		{
-			foreach (PTSignal signal in signals.ToArray())
+			foreach (BVSignal signal in signals.ToArray())
 			{
 				signal.DisconnectFromScript(s);
 			}
@@ -293,10 +293,10 @@ public class PTSignal : IScriptObject
 	}
 }
 
-public struct PTSignalConnection() : IScriptObject
+public struct BVSignalConnection() : IScriptObject
 {
-	internal PTSignal Signal = null!;
-	internal PTCallback Callback = null!;
+	internal BVSignal Signal = null!;
+	internal BVCallback Callback = null!;
 
 	[ScriptMethod]
 	public readonly void Disconnect()
@@ -305,7 +305,7 @@ public struct PTSignalConnection() : IScriptObject
 	}
 }
 
-public class PTSignal<T1> : PTSignal { }
-public class PTSignal<T1, T2> : PTSignal { }
-public class PTSignal<T1, T2, T3> : PTSignal { }
-public class PTSignal<T1, T2, T3, T4> : PTSignal { }
+public class BVSignal<T1> : BVSignal { }
+public class BVSignal<T1, T2> : BVSignal { }
+public class BVSignal<T1, T2, T3> : BVSignal { }
+public class BVSignal<T1, T2, T3, T4> : BVSignal { }

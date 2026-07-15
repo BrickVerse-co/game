@@ -8,19 +8,19 @@ using System.Threading.Tasks;
 
 namespace BrickVerse.Tests;
 
-public class PTSignalTest
+public class BVSignalTest
 {
-	private static (PTCallback cb, List<object?[]> calls) MakeCallback()
+	private static (BVCallback cb, List<object?[]> calls) MakeCallback()
 	{
 		List<object?[]> calls = [];
-		PTCallback cb = new(calls.Add);
+		BVCallback cb = new(calls.Add);
 		return (cb, calls);
 	}
 
 	[Fact]
 	public void Invoke_NoSubscribers_DoesNotThrow()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		var ex = Record.Exception(() => signal.Invoke("hello"));
 		Assert.Null(ex);
 	}
@@ -28,7 +28,7 @@ public class PTSignalTest
 	[Fact]
 	public void Invoke_CallsConnectedCallback()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		var (cb, calls) = MakeCallback();
 
 		signal.Connect(cb);
@@ -41,12 +41,12 @@ public class PTSignalTest
 	[Fact]
 	public void Invoke_CallsMultipleCallbacksInOrder()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		List<int> order = [];
 
-		PTCallback cb1 = new(_ => order.Add(1));
-		PTCallback cb2 = new(_ => order.Add(2));
-		PTCallback cb3 = new(_ => order.Add(3));
+		BVCallback cb1 = new(_ => order.Add(1));
+		BVCallback cb2 = new(_ => order.Add(2));
+		BVCallback cb3 = new(_ => order.Add(3));
 
 		signal.Connect(cb1);
 		signal.Connect(cb2);
@@ -63,7 +63,7 @@ public class PTSignalTest
 	[Fact]
 	public void Invoke_NullArgs_TreatedAsEmptyArray()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		var (cb, calls) = MakeCallback();
 
 		signal.Connect(cb);
@@ -75,9 +75,9 @@ public class PTSignalTest
 	[Fact]
 	public void Connect_SameCallbackTwice_NotDuplicated()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int invocations = 0;
-		PTCallback cb = new(_ => invocations++);
+		BVCallback cb = new(_ => invocations++);
 
 		signal.Connect(cb);
 		signal.Connect(cb); // duplicate — should be ignored
@@ -89,11 +89,11 @@ public class PTSignalTest
 	[Fact]
 	public void Connect_RaisesSubscribedEvent()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int raised = 0;
 		signal.Subscribed += () => raised++;
 
-		PTCallback cb = new(_ => { });
+		BVCallback cb = new(_ => { });
 		signal.Connect(cb);
 
 		Assert.Equal(1, raised);
@@ -102,11 +102,11 @@ public class PTSignalTest
 	[Fact]
 	public void Connect_DuplicateCallback_DoesNotRaiseSubscribedEvent()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int raised = 0;
 		signal.Subscribed += () => raised++;
 
-		PTCallback cb = new(_ => { });
+		BVCallback cb = new(_ => { });
 		signal.Connect(cb);
 		signal.Connect(cb);
 
@@ -116,7 +116,7 @@ public class PTSignalTest
 	[Fact]
 	public void Connect_ActionOverload_InvokesWhenSignalFires()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		bool fired = false;
 		signal.Connect(() => fired = true);
 		signal.Invoke();
@@ -126,7 +126,7 @@ public class PTSignalTest
 	[Fact]
 	public void Connect_ActionObjectOverload_PassesFirstArg()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		object? received = null;
 		signal.Connect(arg => received = arg);
 		signal.Invoke("hello");
@@ -137,9 +137,9 @@ public class PTSignalTest
 	[Fact]
 	public void Disconnect_RemovesCallback_StopsInvocation()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
-		PTCallback cb = new(_ => count++);
+		BVCallback cb = new(_ => count++);
 
 		signal.Connect(cb);
 		signal.Disconnect(cb);
@@ -151,11 +151,11 @@ public class PTSignalTest
 	[Fact]
 	public void Disconnect_RaisesUnsubscribedEvent()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int raised = 0;
 		signal.Unsubscribed += () => raised++;
 
-		PTCallback cb = new(_ => { });
+		BVCallback cb = new(_ => { });
 		signal.Connect(cb);
 		signal.Disconnect(cb);
 
@@ -165,8 +165,8 @@ public class PTSignalTest
 	[Fact]
 	public void Disconnect_UnknownCallback_DoesNotThrow()
 	{
-		PTSignal signal = new();
-		PTCallback cb = new(_ => { });
+		BVSignal signal = new();
+		BVCallback cb = new(_ => { });
 
 		var ex = Record.Exception(() => signal.Disconnect(cb));
 		Assert.Null(ex);
@@ -175,9 +175,9 @@ public class PTSignalTest
 	[Fact]
 	public void Disconnect_ViaConnection_RemovesCallback()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
-		PTCallback cb = new(_ => count++);
+		BVCallback cb = new(_ => count++);
 
 		var conn = signal.Connect(cb);
 		conn.Disconnect();
@@ -189,7 +189,7 @@ public class PTSignalTest
 	[Fact]
 	public void Disconnect_ActionOverload_RemovesCorrectCallback()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int countA = 0, countB = 0;
 
 		void a() => countA++;
@@ -205,11 +205,11 @@ public class PTSignalTest
 	}
 
 	[Fact]
-	public void Once_PTCallback_FiresOnlyOnFirstInvoke()
+	public void Once_BVCallback_FiresOnlyOnFirstInvoke()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
-		PTCallback cb = new(_ => count++);
+		BVCallback cb = new(_ => count++);
 
 		signal.Once(cb);
 		signal.Invoke();
@@ -222,7 +222,7 @@ public class PTSignalTest
 	[Fact]
 	public void Once_Action_FiresOnlyOnce()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
 		signal.Once(_ => count++);
 
@@ -235,7 +235,7 @@ public class PTSignalTest
 	[Fact]
 	public void Once_PassesCorrectArgs()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		object? got = null;
 		signal.Once(arg => got = arg);
 		signal.Invoke("expected");
@@ -245,7 +245,7 @@ public class PTSignalTest
 	[Fact]
 	public async Task Wait_ReturnsArgsOnNextInvoke()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 
 		Task<object?[]> waitTask = signal.Wait();
 
@@ -259,7 +259,7 @@ public class PTSignalTest
 	[Fact]
 	public async Task Wait_WithNoArgs_ReturnsEmptyArray()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		Task<object?[]> waitTask = signal.Wait();
 		await Task.Run(() => signal.Invoke(), TestContext.Current.CancellationToken);
 		object?[] result = await waitTask;
@@ -269,7 +269,7 @@ public class PTSignalTest
 	[Fact]
 	public async Task Wait_OnlyResolvesOnce()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		Task<object?[]> waitTask = signal.Wait();
 
 		signal.Invoke("first");
@@ -282,12 +282,12 @@ public class PTSignalTest
 	[Fact]
 	public void DisconnectAll_StopsAllCallbacks()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
 
-		signal.Connect(new PTCallback(_ => count++));
-		signal.Connect(new PTCallback(_ => count++));
-		signal.Connect(new PTCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
 
 		signal.DisconnectAll();
 		signal.Invoke();
@@ -298,13 +298,13 @@ public class PTSignalTest
 	[Fact]
 	public void DisconnectAll_ThenConnect_WorksNormally()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
 
-		signal.Connect(new PTCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
 		signal.DisconnectAll();
 
-		signal.Connect(new PTCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
 		signal.Invoke();
 
 		Assert.Equal(1, count);
@@ -313,11 +313,11 @@ public class PTSignalTest
 	[Fact]
 	public void Invoke_SkipsDisposedCallbacks_WithoutThrowing()
 	{
-		PTSignal signal = new();
+		BVSignal signal = new();
 		int count = 0;
 
-		var goodCb = new PTCallback(_ => count++);
-		var disposedCb = new PTCallback(_ => count++);
+		var goodCb = new BVCallback(_ => count++);
+		var disposedCb = new BVCallback(_ => count++);
 
 		signal.Connect(goodCb);
 		signal.Connect(disposedCb);
@@ -330,11 +330,11 @@ public class PTSignalTest
 	}
 
 	[Fact]
-	public void GenericSubclasses_WorkLikePTSignal()
+	public void GenericSubclasses_WorkLikeBVSignal()
 	{
-		PTSignal<string> signal = new();
+		BVSignal<string> signal = new();
 		int count = 0;
-		signal.Connect(new PTCallback(_ => count++));
+		signal.Connect(new BVCallback(_ => count++));
 		signal.Invoke("hello");
 		Assert.Equal(1, count);
 	}
@@ -342,7 +342,7 @@ public class PTSignalTest
 	[Fact]
 	public void ToString_ReturnsExpectedString()
 	{
-		string result = PTSignal.ToString(null);
-		Assert.Equal("<PTSignal>", result);
+		string result = BVSignal.ToString(null);
+		Assert.Equal("<BVSignal>", result);
 	}
 }

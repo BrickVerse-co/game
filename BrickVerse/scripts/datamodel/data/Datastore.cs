@@ -19,7 +19,7 @@ public partial class Datastore : IScriptObject
 
 	[ScriptLegacyProperty("Loading")] public bool LegacyLoading { get; private set; } = true;
 
-	[ScriptLegacyProperty("Loaded")] public PTSignal LegacyLoaded { get; private set; } = new();
+	[ScriptLegacyProperty("Loaded")] public BVSignal LegacyLoaded { get; private set; } = new();
 
 	[ScriptProperty]
 	public string Key => _dsKey;
@@ -52,7 +52,7 @@ public partial class Datastore : IScriptObject
 	}
 
 	[ScriptLegacyMethod(nameof(Get))]
-	public void Get(string key, PTCallback? callback)
+	public void Get(string key, BVCallback? callback)
 	{
 		_ = GetAsync(key).ContinueWith(tsk =>
 		{
@@ -69,7 +69,7 @@ public partial class Datastore : IScriptObject
 	}
 
 	[ScriptLegacyMethod(nameof(Set))]
-	public void Set(string key, object value, PTCallback? callback)
+	public void Set(string key, object value, BVCallback? callback)
 	{
 		_ = SetAsync(key, value).ContinueWith(tsk =>
 		{
@@ -85,7 +85,7 @@ public partial class Datastore : IScriptObject
 	}
 
 	[ScriptLegacyMethod(nameof(Remove))]
-	public void Remove(string key, PTCallback? callback)
+	public void Remove(string key, BVCallback? callback)
 	{
 		_ = RemoveAsync(key).ContinueWith(tsk =>
 		{

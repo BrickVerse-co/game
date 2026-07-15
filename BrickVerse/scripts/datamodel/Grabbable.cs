@@ -80,9 +80,9 @@ public partial class Grabbable : Instance
 	}
 
 	[ScriptProperty] public Player? Dragger => _dragger;
-	[ScriptProperty] public PTFunction? PermissionPredicate { get; set; }
-	[ScriptProperty] public PTSignal<Player> Grabbed { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Player> Released { get; private set; } = new();
+	[ScriptProperty] public BVFunction? PermissionPredicate { get; set; }
+	[ScriptProperty] public BVSignal<Player> Grabbed { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Player> Released { get; private set; } = new();
 
 	public override void EnterTree()
 	{

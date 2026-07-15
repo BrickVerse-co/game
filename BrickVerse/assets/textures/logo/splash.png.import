@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jk5841ssqifj"
-path="res://.godot/imported/polytoria.png-7067ae625712bc9d731d48f6f3ba57f7.ctex"
+uid="uid://bs34jgixa1n2r"
+path="res://.godot/imported/splash.png-5e3050431dfadc2b20b8c0c6370af070.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/client/emojis/polytoria.png"
-dest_files=["res://.godot/imported/polytoria.png-7067ae625712bc9d731d48f6f3ba57f7.ctex"]
+source_file="res://assets/textures/logo/splash.png"
+dest_files=["res://.godot/imported/splash.png-5e3050431dfadc2b20b8c0c6370af070.ctex"]
 
 [params]
 

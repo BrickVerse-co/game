@@ -25,8 +25,8 @@ public sealed partial class CreatorSelections : Instance
 	private bool _propertiesDirty = false;
 	private TaskCompletionSource<Instance>? _pickTcs;
 
-	[ScriptProperty] public PTSignal<Instance> Selected { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> Deselected { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> Selected { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> Deselected { get; private set; } = new();
 
 	private InputHelper _inputHelper = null!;
 

@@ -251,8 +251,8 @@ public sealed partial class Sound : Dynamic
 	[ScriptProperty]
 	public float Length => (_currentStream != null ? (float)_currentStream.GetLength() : 0);
 
-	[ScriptProperty] public PTSignal Loaded { get; private set; } = new();
-	[ScriptProperty] public PTSignal Finished { get; private set; } = new();
+	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
+	[ScriptProperty] public BVSignal Finished { get; private set; } = new();
 
 	[SyncVar]
 	public bool ServerIsPlaying

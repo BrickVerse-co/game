@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 namespace BrickVerse.Scripting;
 
-public class PTFunction(Func<object?[], Task<object?[]>> target) : IScriptObject
+public class BVFunction(Func<object?[], Task<object?[]>> target) : IScriptObject
 {
 	public Func<object?[], Task<object?[]>> _targetAction = target;
 	public IScriptLanguageProvider LangProvider = null!;

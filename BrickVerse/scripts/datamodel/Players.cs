@@ -45,15 +45,15 @@ public sealed partial class Players : Instance
 	}
 
 	[ScriptProperty]
-	public PTSignal<Player> PlayerAdded { get; private set; } = new();
+	public BVSignal<Player> PlayerAdded { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal<Player> PlayerRemoved { get; private set; } = new();
+	public BVSignal<Player> PlayerRemoved { get; private set; } = new();
 
 	[ScriptProperty]
 	public int PlayersCount => GetChildren().Count(c => c is Player plr && plr.IsReady);
 
-	
+
 	[ScriptProperty]
 	public int MaxPlayers { get; private set; } = 0;
 

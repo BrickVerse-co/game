@@ -14,36 +14,71 @@ namespace BrickVerse.Datamodel.Services;
 [SaveIgnore]
 public sealed partial class DatastoreService : Instance
 {
-	private readonly Dictionary<string, Datastore> datastores = [];
+	private const int MaxDataStoreNameLength = 32;
+
+	private readonly Dictionary<string, Datastore> _dataStores =
+		new(StringComparer.Ordinal);
 
 	[ScriptMethod]
+	public Datastore GetDataStore(string name)
+	{
+		EnsureServerAccess();
+		ValidateDataStoreName(name);
+
+		if (_dataStores.TryGetValue(name, out Datastore? dataStore))
+		{
+			return dataStore;
+		}
+
+		IDatastoreProvider provider = CreateProvider();
+
+		dataStore = new Datastore
+		{
+			DatastoreService = this
+		};
+
+		dataStore.Connect(name, provider);
+		_dataStores.Add(name, dataStore);
+
+		return dataStore;
+	}
+
+	[System.Obsolete("Use GetDataStore instead.")]
 	public Datastore GetDatastore(string key)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Datastore can only be accessed by server");
-		if (key.Length > 32)
-		{
-			throw new System.Exception("Datastore key must be 32 characters or less");
-		}
-		if (!datastores.TryGetValue(key, out Datastore? ds))
-		{
-			IDatastoreProvider provider;
+		return GetDataStore(key);
+	}
 
-			if (Root.Network.IsProd)
-			{
-				provider = new PTDatastoreProvider();
-			}
-			else
-			{
-				provider = new LocalDatastoreProvider();
-			}
-
-			ds = new()
-			{
-				DatastoreService = this
-			};
-			ds.Connect(key, provider);
-			datastores.Add(key, ds);
+	private void EnsureServerAccess()
+	{
+		if (!Root.Network.IsServer)
+		{
+			throw new InvalidOperationException(
+				"DataStoreService can only be accessed from the server.");
 		}
-		return ds;
+	}
+
+	private static void ValidateDataStoreName(string name)
+	{
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException(
+				"Datastore name cannot be empty.",
+				nameof(name));
+		}
+
+		if (name.Length > MaxDataStoreNameLength)
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(name),
+				$"Datastore name must be {MaxDataStoreNameLength} characters or fewer.");
+		}
+	}
+
+	private IDatastoreProvider CreateProvider()
+	{
+		return Root.Network.IsProd
+			? new BVDatastoreProvider()
+			: new LocalDatastoreProvider();
 	}
 }

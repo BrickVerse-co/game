@@ -30,7 +30,7 @@ public sealed partial class AchievementsService : Instance
 	private int _requestsThisMinute = 0;
 	private int _currentMinute = 0;
 
-	[ScriptProperty] public PTSignal<int> GotAchievement { get; private set; } = new();
+	[ScriptProperty] public BVSignal<int> GotAchievement { get; private set; } = new();
 
 	[Editable, ScriptProperty]
 	public bool UseAchievementSound
@@ -74,7 +74,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptLegacyMethod("Award")]
-	public void Award(string userID, int achievementID, PTCallback? callback)
+	public void Award(string userID, int achievementID, BVCallback? callback)
 	{
 		_ = AwardAsync(userID, achievementID).ContinueWith(tsk =>
 		{
@@ -125,7 +125,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[ScriptLegacyMethod("HasAchievement")]
-	public void HasAchievement(string userID, int achievementID, PTCallback callback)
+	public void HasAchievement(string userID, int achievementID, BVCallback callback)
 	{
 		_ = HasAchievementAsync(userID, achievementID).ContinueWith(tsk =>
 		{

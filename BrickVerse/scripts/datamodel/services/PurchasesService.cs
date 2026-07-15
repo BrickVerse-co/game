@@ -99,7 +99,7 @@ public sealed partial class PurchasesService : Instance
 	}
 
 	[ScriptLegacyMethod("Prompt")]
-	public void LegacyPrompt(Player player, int assetID, PTCallback callback)
+	public void LegacyPrompt(Player player, int assetID, BVCallback callback)
 	{
 		ServerGuard();
 		PromptAsync(player, assetID).ContinueWith(task =>

@@ -243,8 +243,8 @@ public sealed partial class BrickversianModel : CharacterModel
 	public bool IsAvatarLoaded { get; private set; } = false;
 	public event Action? AvatarLoaded;
 
-	[ScriptProperty] public PTSignal RagdollStarted { get; private set; } = new();
-	[ScriptProperty] public PTSignal RagdollStopped { get; private set; } = new();
+	[ScriptProperty] public BVSignal RagdollStarted { get; private set; } = new();
+	[ScriptProperty] public BVSignal RagdollStopped { get; private set; } = new();
 
 	public override void Init()
 	{

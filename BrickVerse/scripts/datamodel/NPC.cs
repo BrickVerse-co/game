@@ -413,13 +413,13 @@ public partial class NPC : Physical
 	public Vector3 CharacterVelocity = Vector3.Zero;
 
 	[ScriptProperty]
-	public PTSignal Died { get; private set; } = new();
+	public BVSignal Died { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal Landed { get; private set; } = new();
+	public BVSignal Landed { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal NavFinished { get; private set; } = new();
+	public BVSignal NavFinished { get; private set; } = new();
 
 	public override Node CreateGDNode()
 	{

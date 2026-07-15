@@ -233,8 +233,8 @@ public partial class NetworkedObject : IScriptObject
 	public event Action? NetPropertiesReady;
 	public event Action? Deleted;
 
-	[ScriptProperty] public PTSignal<string> PropertyChanged { get; private set; } = new();
-	[ScriptProperty] public PTSignal Renamed { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string> PropertyChanged { get; private set; } = new();
+	[ScriptProperty] public BVSignal Renamed { get; private set; } = new();
 
 	private string _networkedObjectID = "";
 	private string _objectID = "";
@@ -338,10 +338,10 @@ public partial class NetworkedObject : IScriptObject
 
 	internal Dictionary<string, NetworkedObject> UniqueNames = [];
 
-	[ScriptProperty] public PTSignal TreeEntered { get; private set; } = new();
-	[ScriptProperty] public PTSignal TreeExited { get; private set; } = new();
+	[ScriptProperty] public BVSignal TreeEntered { get; private set; } = new();
+	[ScriptProperty] public BVSignal TreeExited { get; private set; } = new();
 
-	[ScriptProperty] public PTSignal Destroying { get; private set; } = new();
+	[ScriptProperty] public BVSignal Destroying { get; private set; } = new();
 
 	public NetworkedObject()
 	{
@@ -791,11 +791,11 @@ public partial class NetworkedObject : IScriptObject
 	{
 		foreach (PropertyInfo propInfo in GetScriptProperties())
 		{
-			if (propInfo.PropertyType == typeof(PTSignal))
+			if (propInfo.PropertyType == typeof(BVSignal))
 			{
 				// Disconnect all signals
 				object? val = propInfo.GetValue(this);
-				if (val is PTSignal signal)
+				if (val is BVSignal signal)
 				{
 					signal.DisconnectAll();
 				}
