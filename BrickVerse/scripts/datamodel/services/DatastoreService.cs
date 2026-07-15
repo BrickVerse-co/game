@@ -30,7 +30,7 @@ public sealed partial class DatastoreService : Instance
 
 			if (Root.Network.IsProd)
 			{
-				provider = new PTDatastoreProvider();
+				provider = new BVDatastoreProvider();
 			}
 			else
 			{

@@ -42,8 +42,12 @@ public sealed partial class WorldsService : Instance
 			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(data.WorldPath);
 			_testServers.Add(newID, newServer);
 			return newID;
+		} else
+		{
+			throw new InvalidOperationException("NewServerAsync can only be called in local test mode");
 		}
-		return null;
+
+		//return null;
 	}
 
 	[ScriptMethod]
@@ -78,6 +82,9 @@ public sealed partial class WorldsService : Instance
 				if (plr.teleporting) continue;
 				_ = TeleportPlayerToTest(plr, newServer);
 			}
+		} else
+		{
+			throw new InvalidOperationException("JoinWorldPartyAsync can only be called in local test mode");
 		}
 	}
 
@@ -101,6 +108,9 @@ public sealed partial class WorldsService : Instance
 			{
 				throw new InvalidOperationException($"Private instance {accessID} not found");
 			}
+		} else
+		{
+			throw new InvalidOperationException("JoinPrivateAsync can only be called in local test mode");
 		}
 	}
 
@@ -123,6 +133,9 @@ public sealed partial class WorldsService : Instance
 			{
 				throw new InvalidOperationException($"Private instance {accessID} not found");
 			}
+		} else
+		{
+			throw new InvalidOperationException("JoinPrivatePartyAsync can only be called in local test mode");
 		}
 	}
 

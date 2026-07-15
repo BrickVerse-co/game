@@ -8,14 +8,13 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Providers.Datastore;
 
-public class PTDatastoreProvider : IDatastoreProvider
+public class BVDatastoreProvider : IDatastoreProvider
 {
 	private const int MaxReadRequestsPerMinute = 30;
 	private const int ReadRequestsPerPlayerModifier = 10;
