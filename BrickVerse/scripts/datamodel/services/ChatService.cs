@@ -12,8 +12,6 @@ using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -30,25 +28,25 @@ public sealed partial class ChatService : Instance
 	/// Fire when there's new chat message from player
 	/// </summary>
 	[ScriptProperty]
-	public PTSignal<Player, string> NewChatMessage { get; private set; } = new();
+	public BVSignal<Player, string> NewChatMessage { get; private set; } = new();
 
 	/// <summary>
 	/// Fire when there's new message from broadcast/unicast
 	/// </summary>
 	[ScriptProperty]
-	public PTSignal<string> MessageReceived { get; private set; } = new();
+	public BVSignal<string> MessageReceived { get; private set; } = new();
 
 	/// <summary>
 	/// Fire when the sent message is declined by the server
 	/// </summary>
 	[ScriptProperty]
-	public PTSignal MessageDeclined { get; private set; } = new();
+	public BVSignal MessageDeclined { get; private set; } = new();
 
 	/// <summary>
 	/// Predicate function to determine if this message should be sent or not
 	/// </summary>
 	[ScriptProperty]
-	public PTFunction? ChatPredicate { get; set; }
+	public BVFunction? ChatPredicate { get; set; }
 
 	private readonly BVHttpClient _client = new();
 

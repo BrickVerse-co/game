@@ -28,7 +28,7 @@ public sealed partial class InsertService : Instance
 	private static readonly Dictionary<string, APIStoreItem> _storeItemCache = [];
 
 	[ScriptMethod, Attributes.Obsolete("Use ModelAsync instead")]
-	public void Model(string id, PTCallback? callback = null)
+	public void Model(string id, BVCallback? callback = null)
 	{
 		_ = ModelAsync(id).ContinueWith(tsk =>
 		{

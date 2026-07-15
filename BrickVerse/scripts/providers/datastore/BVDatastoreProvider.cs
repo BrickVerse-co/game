@@ -2,176 +2,269 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Shared;
 using System;
-using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Providers.Datastore;
 
-public class BVDatastoreProvider : IDatastoreProvider
+public sealed class BVDatastoreProvider : IDatastoreProvider
 {
 	private const int MaxReadRequestsPerMinute = 30;
 	private const int ReadRequestsPerPlayerModifier = 10;
+
 	private const int MaxWriteRequestsPerMinute = 30;
 	private const int WriteRequestsPerPlayerModifier = 10;
 
-	private string _dsKey = "";
 	private readonly BVHttpClient _client = new();
-	private readonly Dictionary<string, DatastoreEntry> _data = [];
-	private static int _readRequestsThisMinute = 0, _writeRequestThisMinute = 0, _currentMinute = 0;
-	private Datamodel.Data.Datastore _ds = null!;
 
-	public void Connect(string key, Datamodel.Data.Datastore ds)
+	private string _dataStoreName = string.Empty;
+	private Datamodel.Data.Datastore _dataStore = null!;
+
+	private int _quotaMinute = -1;
+	private int _readRequestsThisMinute;
+	private int _writeRequestsThisMinute;
+
+	private bool _disposed;
+
+	public void Connect(string dataStoreName, Datamodel.Data.Datastore dataStore)
 	{
-		_dsKey = key;
-		_ds = ds;
-		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
-	}
+		ThrowIfDisposed();
 
-	public bool UseReadRequest()
-	{
-		if (_currentMinute != DateTime.Now.Minute)
-		{
-			_currentMinute = DateTime.Now.Minute;
-			_readRequestsThisMinute = 0;
-		}
+		_dataStoreName = dataStoreName;
+		_dataStore = dataStore;
 
-		if (_readRequestsThisMinute >= MaxReadRequestsPerMinute + (ReadRequestsPerPlayerModifier * _ds.DatastoreService.Root.Players.PlayersCount))
+		_client.DefaultRequestHeaders.Remove("Authorization");
+
+		string authorization = ServerAPI.GetAuthorizationHeaderValue();
+		if (!string.IsNullOrWhiteSpace(authorization))
 		{
-			return false;
-		}
-		else
-		{
-			_readRequestsThisMinute++;
-			return true;
+			_client.DefaultRequestHeaders["Authorization"] = authorization;
 		}
 	}
 
-	public bool UseWriteRequest()
+	public async Task<object?> GetAsync(string key)
 	{
-		if (_currentMinute != DateTime.Now.Minute)
-		{
-			_currentMinute = DateTime.Now.Minute;
-			_writeRequestThisMinute = 0;
-		}
+		ThrowIfDisposed();
+		EnsureConnected();
+		ValidateKey(key);
+		ConsumeReadRequest();
 
-		if (_writeRequestThisMinute >= MaxWriteRequestsPerMinute + (WriteRequestsPerPlayerModifier * _ds.DatastoreService.Root.Players.PlayersCount))
-		{
-			return false;
-		}
-		else
-		{
-			_writeRequestThisMinute++;
-			return true;
-		}
-	}
+		string url = Globals.ApiEndpoint + $"/v3/world/server/storage?storeName={Uri.EscapeDataString(_dataStoreName)}&key={Uri.EscapeDataString(key)}";
 
+		using HttpResponseMessage response = await _client.GetAsync(url);
 
-	public async Task<object?> ReadData(string key)
-	{
-		if (!UseReadRequest()) throw new PTDatastoreQuotaException("Read quota exceeded");
-
-		string storeName = Uri.EscapeDataString(_dsKey);
-		string escapedKey = Uri.EscapeDataString(key);
-		using var req = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/storage?storeName={storeName}&key={escapedKey}"));
-		if (!req.IsSuccessStatusCode)
+		if (response.StatusCode == HttpStatusCode.NotFound)
 		{
 			return null;
 		}
 
-		using JsonDocument document = JsonDocument.Parse(await req.Content.ReadAsStringAsync());
+		response.EnsureSuccessStatusCode();
+
+		using JsonDocument document = JsonDocument.Parse(
+			await response.Content.ReadAsStringAsync());
+
 		if (!document.RootElement.TryGetProperty("value", out JsonElement valueRoot))
 		{
 			return null;
 		}
 
 		JsonElement value = valueRoot;
-		if (valueRoot.ValueKind == JsonValueKind.Object && valueRoot.TryGetProperty("value", out JsonElement wrappedValue))
+
+		if (valueRoot.ValueKind == JsonValueKind.Object &&
+			valueRoot.TryGetProperty("value", out JsonElement wrapped))
 		{
-			value = wrappedValue;
+			value = wrapped;
 		}
 
-		return ParsePrimitiveJsonValue(value);
+		return ParseJsonValue(value);
 	}
 
-	public async Task WriteData(string key, object? value)
+	public async Task SetAsync(string key, object? value)
 	{
-		if (value != null && !CheckSupportedType(value))
-		{
-			throw new InvalidOperationException("Invalid value type");
-		}
-		if (!UseWriteRequest()) throw new PTDatastoreQuotaException("Write quota exceeded");
+		ThrowIfDisposed();
+		EnsureConnected();
+		ValidateKey(key);
+		ValidateValue(value);
+		ConsumeWriteRequest();
 
-		JsonNode? valueNode = value switch
+		JsonObject body = new()
 		{
-			null => null,
-			string stringValue => JsonValue.Create(stringValue),
-			bool boolValue => JsonValue.Create(boolValue),
-			int intValue => JsonValue.Create(intValue),
-			float floatValue => JsonValue.Create(floatValue),
-			double doubleValue => JsonValue.Create(doubleValue),
-			_ => null,
+			["storeName"] = _dataStoreName,
+			["key"] = key,
+			["value"] = new JsonObject
+			{
+				["value"] = JsonSerializer.SerializeToNode(value)
+			}
 		};
 
-		JsonObject requestBody =
-		[
-			new("storeName", _dsKey),
-			new("key", key),
-			new("value", new JsonObject { ["value"] = valueNode }),
-		];
+		using StringContent content = new(
+			body.ToJsonString(),
+			Encoding.UTF8,
+			"application/json");
 
-		string jsonBody = requestBody.ToJsonString();
-		using var req = await _client.PutAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/world/server/storage"),
-			new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json")
-		);
+		using HttpResponseMessage response = await _client.PutAsync(
+			Globals.ApiEndpoint + "/v3/world/server/storage",
+			content);
+
+		response.EnsureSuccessStatusCode();
 	}
 
-	private static object? ParsePrimitiveJsonValue(JsonElement value)
+	// ---------------------------------------------------------------------
+	// Compatibility wrappers
+	// ---------------------------------------------------------------------
+
+	[ObsoleteAttribute("Use GetAsync instead.")]
+	public Task<object?> ReadData(string key)
 	{
-		switch (value.ValueKind)
-		{
-			case JsonValueKind.True:
-			case JsonValueKind.False:
-				return value.GetBoolean();
-			case JsonValueKind.String:
-				return value.GetString() ?? "";
-			case JsonValueKind.Number:
-				return value.GetDouble();
-			default:
-				return null;
-		}
+		return GetAsync(key);
 	}
 
-	private static bool CheckSupportedType(object obj)
+	[ObsoleteAttribute("Use SetAsync instead.")]
+	public Task WriteData(string key, object? value)
 	{
-		if (obj == null) return false;
-		if (obj is int) return true;
-		if (obj is double) return true;
-		if (obj is float) return true;
-		if (obj is string) return true;
-		if (obj is bool) return true;
-		return false;
+		return SetAsync(key, value);
 	}
-
 
 	public void Dispose()
 	{
-		_data.Clear();
+		if (_disposed)
+		{
+			return;
+		}
+
+		_disposed = true;
+
 		GC.SuppressFinalize(this);
 	}
 
-	private struct DatastoreEntry
+	private void ConsumeReadRequest()
 	{
-		public object Value;
-		public float Timestamp;
+		ResetQuotaWindow();
+
+		int limit = MaxReadRequestsPerMinute +
+			(ReadRequestsPerPlayerModifier * _dataStore.DatastoreService.Root.Players.PlayersCount);
+
+		if (_readRequestsThisMinute >= limit)
+		{
+			throw new DataStoreQuotaException("Read quota exceeded.");
+		}
+
+		_readRequestsThisMinute++;
 	}
 
-	public class PTDatastoreQuotaException(string msg) : Exception(msg);
+	private void ConsumeWriteRequest()
+	{
+		ResetQuotaWindow();
+
+		int limit = MaxWriteRequestsPerMinute +
+			(WriteRequestsPerPlayerModifier * _dataStore.DatastoreService.Root.Players.PlayersCount);
+
+		if (_writeRequestsThisMinute >= limit)
+		{
+			throw new DataStoreQuotaException("Write quota exceeded.");
+		}
+
+		_writeRequestsThisMinute++;
+	}
+
+	private void ResetQuotaWindow()
+	{
+		int currentMinute =
+			(int)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60);
+
+		if (_quotaMinute == currentMinute)
+		{
+			return;
+		}
+
+		_quotaMinute = currentMinute;
+		_readRequestsThisMinute = 0;
+		_writeRequestsThisMinute = 0;
+	}
+
+	private void EnsureConnected()
+	{
+		if (_dataStore == null || string.IsNullOrWhiteSpace(_dataStoreName))
+		{
+			throw new InvalidOperationException(
+				"The datastore provider has not been connected.");
+		}
+	}
+
+	private static void ValidateKey(string key)
+	{
+		if (string.IsNullOrWhiteSpace(key))
+		{
+			throw new ArgumentException(
+				"Datastore key cannot be empty.",
+				nameof(key));
+		}
+	}
+
+	private static void ValidateValue(object? value)
+	{
+		if (value is null ||
+			value is string ||
+			value is bool ||
+			value is byte ||
+			value is sbyte ||
+			value is short ||
+			value is ushort ||
+			value is int ||
+			value is uint ||
+			value is long ||
+			value is ulong ||
+			value is float ||
+			value is double ||
+			value is decimal)
+		{
+			return;
+		}
+
+		throw new InvalidOperationException(
+			"Datastore values must be null, strings, booleans, or numbers.");
+	}
+
+	private static object? ParseJsonValue(JsonElement value)
+	{
+		return value.ValueKind switch
+		{
+			JsonValueKind.Null => null,
+			JsonValueKind.True => true,
+			JsonValueKind.False => false,
+			JsonValueKind.String => value.GetString(),
+
+			JsonValueKind.Number
+				when value.TryGetInt32(out int intValue)
+				=> intValue,
+
+			JsonValueKind.Number
+				when value.TryGetInt64(out long longValue)
+				=> longValue,
+
+			JsonValueKind.Number
+				=> value.GetDouble(),
+
+			_ => null
+		};
+	}
+
+	private void ThrowIfDisposed()
+	{
+		ObjectDisposedException.ThrowIf(_disposed, this);
+	}
+
+	public sealed class DataStoreQuotaException(string message)
+		: Exception(message);
+
+	[Obsolete("Use DataStoreQuotaException instead.")]
+	public sealed class PTDatastoreQuotaException(string message)
+		: Exception(message);
 }

@@ -419,7 +419,7 @@ public sealed partial class Environment : Instance
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Explosion can be created using Instance.New('Explosion')")]
-	public void CreateExplosion(Vector3 position, float radius = 10f, float force = 5000f, bool affectAnchored = true, PTCallback? callback = null, float damage = 10000f)
+	public void CreateExplosion(Vector3 position, float radius = 10f, float force = 5000f, bool affectAnchored = true, BVCallback? callback = null, float damage = 10000f)
 	{
 		Explosion explod = New<Explosion>();
 		explod.Position = position;

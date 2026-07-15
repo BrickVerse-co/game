@@ -16,7 +16,7 @@ public partial class VoiceBox : Part
 {
 	private BubbleText _bubbleText = null!;
 	public const string BubbleChatScene = "res://scenes/client/spatial/chat/bubble_text.tscn";
-	public PTSignal<string> CreateChatBubble { get; private set; } = new();
+	public BVSignal<string> CreateChatBubble { get; private set; } = new();
 
 	[ScriptMethod]
 	public void Speak(string msg)

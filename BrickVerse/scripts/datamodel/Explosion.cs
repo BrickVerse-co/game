@@ -77,9 +77,9 @@ public partial class Explosion : Dynamic
 		}
 	}
 
-	[ScriptProperty] public PTFunction? AffectPredicate { get; set; }
+	[ScriptProperty] public BVFunction? AffectPredicate { get; set; }
 
-	[ScriptProperty] public PTSignal<Instance> Touched { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> Touched { get; private set; } = new();
 
 	public override Node CreateGDNode()
 	{

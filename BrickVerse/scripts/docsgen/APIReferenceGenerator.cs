@@ -65,9 +65,9 @@ public class APIReferenceGenerator
 
 				if (propAttribute == null && editableAttribute == null) continue;
 
-				if (property.PropertyType == typeof(PTSignal) ||
+				if (property.PropertyType == typeof(BVSignal) ||
 					(property.PropertyType.IsGenericType &&
-					 property.PropertyType.GetGenericTypeDefinition().Name.StartsWith(nameof(PTSignal))))
+					 property.PropertyType.GetGenericTypeDefinition().Name.StartsWith(nameof(BVSignal))))
 				{
 					ScriptEvent eventDef = new()
 					{
@@ -466,12 +466,12 @@ public class APIReferenceGenerator
 			return "{ " + elementTypeName + " }";
 		}
 
-		if (type == typeof(PTCallback))
+		if (type == typeof(BVCallback))
 		{
 			return "() -> ()";
 		}
 
-		if (type == typeof(PTFunction))
+		if (type == typeof(BVFunction))
 		{
 			return "() -> ()";
 		}

@@ -68,7 +68,7 @@ public sealed partial class CreatorAddons : Instance
 		public Script ScriptSource = null!;
 
 		[ScriptProperty] public string Identifier { get; internal set; } = "";
-		[ScriptProperty] public PTSignal CleanupReceived { get; private set; } = new();
+		[ScriptProperty] public BVSignal CleanupReceived { get; private set; } = new();
 
 		[ScriptProperty]
 		public string AddonName
@@ -129,7 +129,7 @@ public sealed partial class CreatorAddons : Instance
 	{
 		public string Text = txt;
 
-		[ScriptProperty] public PTSignal Pressed { get; private set; } = new();
+		[ScriptProperty] public BVSignal Pressed { get; private set; } = new();
 	}
 
 	[ScriptEnum(IsCreatorOnly = true)]

@@ -209,7 +209,7 @@ public sealed partial class TweenService : Instance
 
 
 	[ScriptLegacyMethod("TweenPosition")]
-	public int CompatTweenPosition(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenPosition(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		return CompatTweenVector3(target.Position, destination, time, new((v3) =>
 		{
@@ -218,7 +218,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenRotation")]
-	public int CompatTweenRotation(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenRotation(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
@@ -240,7 +240,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenSize")]
-	public int CompatTweenSize(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenSize(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		return CompatTweenVector3(target.Size, destination, time, new((v3) =>
 		{
@@ -249,7 +249,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenNumber")]
-	public int CompatTweenNumber(float from, float to, float time, PTCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenNumber(float from, float to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
@@ -271,7 +271,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenColor")]
-	public int CompatTweenColor(Color from, Color to, float time, PTCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenColor(Color from, Color to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
@@ -293,7 +293,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenVector3")]
-	public int CompatTweenVector3(Vector3 from, Vector3 to, float time, PTCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenVector3(Vector3 from, Vector3 to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
@@ -315,7 +315,7 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenVector2")]
-	public int CompatTweenVector2(Vector2 from, Vector2 to, float time, PTCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, PTCallback? callOnComplete = null)
+	public int CompatTweenVector2(Vector2 from, Vector2 to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
@@ -444,8 +444,8 @@ public sealed partial class TweenService : Instance
 
 		[ScriptProperty] public bool IsRunning => tween.IsRunning();
 		[ScriptProperty] public double ElapsedTime => tween.GetTotalElapsedTime();
-		[ScriptProperty] public PTSignal Finished { get; private set; } = new();
-		[ScriptProperty] public PTSignal Canceled { get; private set; } = new();
+		[ScriptProperty] public BVSignal Finished { get; private set; } = new();
+		[ScriptProperty] public BVSignal Canceled { get; private set; } = new();
 
 		public void Init()
 		{
@@ -496,7 +496,7 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenColor(Color from, Color to, float time, PTCallback callback)
+		public void TweenColor(Color from, Color to, float time, BVCallback callback)
 		{
 			tween.TweenMethod(Callable.From((Color val) =>
 			{
@@ -505,7 +505,7 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenNumber(float from, float to, float time, PTCallback callback)
+		public void TweenNumber(float from, float to, float time, BVCallback callback)
 		{
 			tween.TweenMethod(Callable.From((float val) =>
 			{
@@ -514,7 +514,7 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenVector2(Vector2 from, Vector2 to, float time, PTCallback callback)
+		public void TweenVector2(Vector2 from, Vector2 to, float time, BVCallback callback)
 		{
 			tween.TweenMethod(Callable.From((Vector2 val) =>
 			{
@@ -523,7 +523,7 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenVector3(Vector3 from, Vector3 to, float time, PTCallback callback)
+		public void TweenVector3(Vector3 from, Vector3 to, float time, BVCallback callback)
 		{
 			tween.TweenMethod(Callable.From((Vector3 val) =>
 			{
@@ -532,7 +532,7 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenQuaternion(Quaternion from, Quaternion to, float time, PTCallback callback)
+		public void TweenQuaternion(Quaternion from, Quaternion to, float time, BVCallback callback)
 		{
 			tween.TweenMethod(Callable.From((Quaternion val) =>
 			{

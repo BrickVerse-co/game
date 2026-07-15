@@ -540,7 +540,7 @@ public sealed partial class Gizmos : Node
 				if (_isDraggingDyn) RebaseActiveDirectDrag();
 			}
 
-			// Selection orientation shortcuts (Roblox-style R/T behavior).
+			// Selection orientation shortcuts
 			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.RotateSelection, Key.R))
 			{
 				RotateSelectedAround(90);

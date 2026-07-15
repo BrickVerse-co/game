@@ -19,16 +19,16 @@ public sealed partial class NetworkEvent : Instance
 	/// <summary>
 	/// Fires when the server receives a message from the client.
 	/// </summary>
-	[ScriptProperty] public PTSignal<Player, NetMessage> InvokedServer { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Player, NetMessage> InvokedServer { get; private set; } = new();
 	/// <summary>
 	/// Fires when the client receives a message from the server.
 	/// </summary>
-	[ScriptProperty] public PTSignal<NetMessage> InvokedClient { get; private set; } = new();
+	[ScriptProperty] public BVSignal<NetMessage> InvokedClient { get; private set; } = new();
 
 	/// <summary>
 	/// Fires when the client receives a message from the server.
 	/// </summary>
-	[ScriptLegacyProperty("InvokedClient")] public PTSignal LegacyInvokedClient { get; private set; } = new();
+	[ScriptLegacyProperty("InvokedClient")] public BVSignal LegacyInvokedClient { get; private set; } = new();
 
 	/// <summary>
 	/// Determine whether this network event should send messages reliably. It's recommended to enable this option when sending a large number of messages.

@@ -7,7 +7,7 @@ using BrickVerse.Attributes;
 
 namespace BrickVerse.Scripting.Datatypes;
 
-public class PTBounds : IScriptGDObject
+public class BVBounds : IScriptGDObject
 {
 	internal Aabb aabb;
 
@@ -18,9 +18,9 @@ public class PTBounds : IScriptGDObject
 	[ScriptProperty, ScriptLegacyProperty("Max")] public Vector3 End { get => aabb.End; set => aabb.End = value; }
 	[ScriptProperty] public float Volume => aabb.Volume;
 
-	public static PTBounds FromGDClass(Aabb bound)
+	public static BVBounds FromGDClass(Aabb bound)
 	{
-		return new PTBounds()
+		return new BVBounds()
 		{
 			aabb = bound
 		};
@@ -32,38 +32,38 @@ public class PTBounds : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTBounds New()
+	public static BVBounds New()
 	{
 		return FromGDClass(new Aabb(Vector3.Zero, Vector3.Zero));
 	}
 
 	[ScriptMethod]
-	public static PTBounds New(Vector3 position, Vector3 size)
+	public static BVBounds New(Vector3 position, Vector3 size)
 	{
 		return FromGDClass(new Aabb(position, size));
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
-	public static bool Eq(PTBounds a, PTBounds b)
+	public static bool Eq(BVBounds a, BVBounds b)
 	{
 		return a.aabb == b.aabb;
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
-	public static string ToString(PTBounds? v)
+	public static string ToString(BVBounds? v)
 	{
 		if (v == null) return "<Bounds>";
 		return $"<Bounds:({v.Start}, {v.End}, {v.Size})>";
 	}
 
-	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static Vector3 ClosestPoint(PTBounds bounds, PTVector3 point) => bounds.aabb.GetSupport(point.vector);
-	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static bool Contains(PTBounds bounds, PTVector3 point) => bounds.aabb.HasPoint(point.vector);
-	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static PTBounds Encapsulate(PTBounds bounds, PTVector3 point) => FromGDClass(bounds.aabb.Expand(point.vector));
-	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static PTBounds Expand(PTBounds bounds, float amount) => FromGDClass(bounds.aabb.Grow(amount));
-	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static bool Intersects(PTBounds bounds, PTBounds other) => bounds.aabb.Intersects(other.aabb);
+	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static Vector3 ClosestPoint(BVBounds bounds, BVector3 point) => bounds.aabb.GetSupport(point.vector);
+	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static bool Contains(BVBounds bounds, BVector3 point) => bounds.aabb.HasPoint(point.vector);
+	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static BVBounds Encapsulate(BVBounds bounds, BVector3 point) => FromGDClass(bounds.aabb.Expand(point.vector));
+	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static BVBounds Expand(BVBounds bounds, float amount) => FromGDClass(bounds.aabb.Grow(amount));
+	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)] public static bool Intersects(BVBounds bounds, BVBounds other) => bounds.aabb.Intersects(other.aabb);
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTBounds SetMinMax(PTBounds bounds, PTVector3 min, PTVector3 max)
+	public static BVBounds SetMinMax(BVBounds bounds, BVector3 min, BVector3 max)
 	{
 		Aabb aabb = bounds.aabb;
 		aabb.Position = min.vector;
@@ -72,14 +72,14 @@ public class PTBounds : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float Distance(PTBounds bounds, PTVector3 point)
+	public static float Distance(BVBounds bounds, BVector3 point)
 	{
 		Vector3 closest = bounds.aabb.GetCenter().Clamp(bounds.aabb.Position, bounds.aabb.End);
 		return point.vector.DistanceSquaredTo(closest);
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float SqrDistance(PTBounds bounds, PTVector3 point)
+	public static float SqrDistance(BVBounds bounds, BVector3 point)
 	{
 		Vector3 closest = Vector3.Zero;
 		closest.X = Mathf.Clamp(point.vector.X, bounds.aabb.Position.X, bounds.aabb.End.X);

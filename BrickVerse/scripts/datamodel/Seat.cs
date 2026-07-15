@@ -62,8 +62,8 @@ public partial class Seat : Part
 		}
 	}
 
-	[ScriptProperty] public PTSignal<NPC> Sat { get; private set; } = new();
-	[ScriptProperty] public PTSignal<NPC> Vacated { get; private set; } = new();
+	[ScriptProperty] public BVSignal<NPC> Sat { get; private set; } = new();
+	[ScriptProperty] public BVSignal<NPC> Vacated { get; private set; } = new();
 
 	public override void Init()
 	{

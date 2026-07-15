@@ -98,16 +98,16 @@ public sealed partial class Tool : RigidBody
 	}
 
 	[ScriptProperty]
-	public PTSignal Equipped { get; private set; } = new();
+	public BVSignal Equipped { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal Unequipped { get; private set; } = new();
+	public BVSignal Unequipped { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal Activated { get; private set; } = new();
+	public BVSignal Activated { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal Deactivated { get; private set; } = new();
+	public BVSignal Deactivated { get; private set; } = new();
 
 	internal Texture2D? ToolImgTexture = null!;
 	internal event Action? ToolImgTextureLoaded;

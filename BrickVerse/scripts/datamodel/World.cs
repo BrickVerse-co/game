@@ -60,10 +60,10 @@ public sealed partial class World : Instance
 
 	internal int WorldSessionID = 0;
 
-	public PTSignal Loaded { get; private set; } = new();
+	public BVSignal Loaded { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal<double> Rendered { get; private set; } = new();
+	public BVSignal<double> Rendered { get; private set; } = new();
 
 	[ScriptProperty]
 	public bool IsLocalTest => _worldID == 0;

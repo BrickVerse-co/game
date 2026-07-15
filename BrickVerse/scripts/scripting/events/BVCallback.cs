@@ -12,7 +12,7 @@ using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Scripting;
 
-public class PTCallback(Action<object?[]> target) : IDisposable, IScriptObject
+public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 {
 	public Delegate? OriginalDelegate = null!;
 	public Action<object?[]> TargetAction = target;

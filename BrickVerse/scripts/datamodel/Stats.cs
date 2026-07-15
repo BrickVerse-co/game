@@ -11,9 +11,9 @@ namespace BrickVerse.Datamodel;
 [Static("Stats")]
 public sealed partial class Stats : Instance
 {
-	public PTSignal<Stat> StatAdded { get; private set; } = new();
-	public PTSignal<Stat> StatRemoved { get; private set; } = new();
-	public PTSignal<Stat> StatPropertyChanged { get; private set; } = new();
+	public BVSignal<Stat> StatAdded { get; private set; } = new();
+	public BVSignal<Stat> StatRemoved { get; private set; } = new();
+	public BVSignal<Stat> StatPropertyChanged { get; private set; } = new();
 
 	public override void Init()
 	{

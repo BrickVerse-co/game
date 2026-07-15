@@ -43,17 +43,17 @@ public class LuaDefinitionGenerator
 
 		File.WriteAllText(atFolder.PathJoin("def.json"), JsonSerializer.Serialize(refer, APIRefGenerationContext.Default.APIReferenceRoot));
 
-		// Add PTSignal type definitions
-		builder.AppendLine("declare class PTSignalConnection");
+		// Add BVSignal type definitions
+		builder.AppendLine("declare class BVSignalConnection");
 		builder.AppendLine("\tfunction Disconnect(self): ()");
 		builder.AppendLine("end");
 		builder.AppendLine();
 
-		builder.AppendLine("export type PTSignal<T... = ...any> = {");
-		builder.AppendLine("\tConnect: (self: PTSignal<T...>, callback: (T...) -> ()) -> PTSignalConnection,");
-		builder.AppendLine("\tDisconnect: (self: PTSignal<T...>, callback: (T...) -> ()) -> nil,");
-		builder.AppendLine("\tOnce: (self: PTSignal<T...>, callback: (T...) -> ()) -> PTSignalConnection,");
-		builder.AppendLine("\tWait: (self: PTSignal<T...>) -> T...,");
+		builder.AppendLine("export type BVSignal<T... = ...any> = {");
+		builder.AppendLine("\tConnect: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,");
+		builder.AppendLine("\tDisconnect: (self: BVSignal<T...>, callback: (T...) -> ()) -> nil,");
+		builder.AppendLine("\tOnce: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,");
+		builder.AppendLine("\tWait: (self: BVSignal<T...>) -> T...,");
 		builder.AppendLine("}");
 		builder.AppendLine();
 
@@ -81,7 +81,7 @@ public class LuaDefinitionGenerator
 		foreach (ScriptClass item in refer.Classes)
 		{
 			// Ignore already declared types
-			if (item.Name == "PTSignal" || item.Name == "PTSignalConnection") continue;
+			if (item.Name == "BVSignal" || item.Name == "BVSignalConnection") continue;
 
 			builder.AppendLine(GenerateClass(item));
 		}
@@ -129,11 +129,11 @@ public class LuaDefinitionGenerator
 			if (e.Parameters != null && e.Parameters.Count > 0)
 			{
 				string typeParams = string.Join(", ", e.Parameters.Select(p => ProcessType(p.Type ?? "nil")));
-				builder.AppendLine($"\t{e.Name} : PTSignal<{typeParams}>");
+				builder.AppendLine($"\t{e.Name} : BVSignal<{typeParams}>");
 			}
 			else
 			{
-				builder.AppendLine($"\t{e.Name} : PTSignal");
+				builder.AppendLine($"\t{e.Name} : BVSignal");
 			}
 		}
 

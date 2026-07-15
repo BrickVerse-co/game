@@ -77,18 +77,18 @@ public sealed partial class InputService : Instance
 	internal bool OverrideMousePos { get; set; }
 	internal Vector2 OverrideMousePosTo { get; set; }
 
-	[ScriptProperty] public PTSignal<Vector2> MouseMoved { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Vector2> MouseMoved { get; private set; } = new();
 
-	[ScriptProperty] public PTSignal GameFocused { get; private set; } = new();
-	[ScriptProperty] public PTSignal GameUnfocused { get; private set; } = new();
-	[ScriptProperty] public PTSignal GamepadConnected { get; private set; } = new();
-	[ScriptProperty] public PTSignal GamepadDisconnected { get; private set; } = new();
+	[ScriptProperty] public BVSignal GameFocused { get; private set; } = new();
+	[ScriptProperty] public BVSignal GameUnfocused { get; private set; } = new();
+	[ScriptProperty] public BVSignal GamepadConnected { get; private set; } = new();
+	[ScriptProperty] public BVSignal GamepadDisconnected { get; private set; } = new();
 
-	[ScriptProperty] public PTSignal<KeyCodeEnum, bool> KeyDown { get; private set; } = new();
-	[ScriptProperty] public PTSignal<KeyCodeEnum, bool> KeyUp { get; private set; } = new();
-	[ScriptProperty] public PTSignal<KeyCodeEnum, float> AxisValueChanged { get; private set; } = new();
-	[ScriptLegacyProperty("KeyDown")] public PTSignal LegacyKeyDown { get; private set; } = new();
-	[ScriptLegacyProperty("KeyUp")] public PTSignal LegacyKeyUp { get; private set; } = new();
+	[ScriptProperty] public BVSignal<KeyCodeEnum, bool> KeyDown { get; private set; } = new();
+	[ScriptProperty] public BVSignal<KeyCodeEnum, bool> KeyUp { get; private set; } = new();
+	[ScriptProperty] public BVSignal<KeyCodeEnum, float> AxisValueChanged { get; private set; } = new();
+	[ScriptLegacyProperty("KeyDown")] public BVSignal LegacyKeyDown { get; private set; } = new();
+	[ScriptLegacyProperty("KeyUp")] public BVSignal LegacyKeyUp { get; private set; } = new();
 
 	internal event Action<InputEvent>? GodotInputEvent;
 

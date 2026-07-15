@@ -9,7 +9,7 @@ using BrickVerse.Utils;
 namespace BrickVerse.Scripting.Datatypes;
 
 // NOTE: Quaternion exposed to developers is in degrees
-public class PTQuaternion : IScriptGDObject
+public class BVQuaternion : IScriptGDObject
 {
 	internal Quaternion quat;
 
@@ -17,11 +17,11 @@ public class PTQuaternion : IScriptGDObject
 	[ScriptProperty] public float Y { get => quat.Y; set => quat.Y = value; }
 	[ScriptProperty] public float Z { get => quat.Z; set => quat.Z = value; }
 	[ScriptProperty] public float W { get => quat.W; set => quat.W = value; }
-	[ScriptProperty] public static PTQuaternion Identity => new() { X = 0, Y = 0, Z = 0, W = 1 };
+	[ScriptProperty] public static BVQuaternion Identity => new() { X = 0, Y = 0, Z = 0, W = 1 };
 
-	public static PTQuaternion FromGDClass(Quaternion qu)
+	public static BVQuaternion FromGDClass(Quaternion qu)
 	{
-		return new PTQuaternion()
+		return new BVQuaternion()
 		{
 			quat = qu
 		};
@@ -33,13 +33,13 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion New()
+	public static BVQuaternion New()
 	{
 		return Identity;
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion New(float x, float y, float z, float w)
+	public static BVQuaternion New(float x, float y, float z, float w)
 	{
 		return new()
 		{
@@ -51,84 +51,84 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Add)]
-	public static PTQuaternion Add(PTQuaternion a, PTQuaternion b)
+	public static BVQuaternion Add(BVQuaternion a, BVQuaternion b)
 	{
 		return FromGDClass(a.quat + b.quat);
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Sub)]
-	public static PTQuaternion SubQuaternionQuaternion(PTQuaternion a, PTQuaternion b)
+	public static BVQuaternion SubQuaternionQuaternion(BVQuaternion a, BVQuaternion b)
 		=> FromGDClass(a.quat - b.quat);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Sub)]
-	public static PTQuaternion SubQuaternionVector(PTQuaternion a, PTVector3 v)
+	public static BVQuaternion SubQuaternionVector(BVQuaternion a, BVector3 v)
 		=> FromGDClass(a.quat - new Quaternion(v.X, v.Y, v.Z, 1));
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static PTQuaternion MulQuaternionQuaternion(PTQuaternion a, PTQuaternion b)
+	public static BVQuaternion MulQuaternionQuaternion(BVQuaternion a, BVQuaternion b)
 		=> FromGDClass(a.quat.Normalized() * b.quat.Normalized());
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static PTVector3 MulQuaternionVector(PTQuaternion a, PTVector3 v)
-		=> PTVector3.FromGDClass(a.quat.Normalized() * v.vector);
+	public static BVector3 MulQuaternionVector(BVQuaternion a, BVector3 v)
+		=> BVector3.FromGDClass(a.quat.Normalized() * v.vector);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static PTVector3 MulVectorQuaternion(PTVector3 v, PTQuaternion q)
-	=> PTVector3.FromGDClass(q.quat.Normalized() * v.vector);
+	public static BVector3 MulVectorQuaternion(BVector3 v, BVQuaternion q)
+	=> BVector3.FromGDClass(q.quat.Normalized() * v.vector);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
-	public static bool Eq(PTQuaternion a, PTQuaternion b)
+	public static bool Eq(BVQuaternion a, BVQuaternion b)
 	{
 		return a.quat == b.quat;
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
-	public static string ToString(PTQuaternion? v)
+	public static string ToString(BVQuaternion? v)
 	{
 		if (v == null) return "<Quaternion>";
 		return $"<Quaternion:({v.quat.X}, {v.quat.Y}, {v.quat.Z}, {v.quat.W})>";
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float Angle(PTQuaternion a, PTQuaternion b)
+	public static float Angle(BVQuaternion a, BVQuaternion b)
 	{
 		// Angle still Works with Deg
 		return Mathf.RadToDeg(a.quat.AngleTo(b.quat));
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion AngleAxis(float angle, Vector3 axis)
+	public static BVQuaternion AngleAxis(float angle, Vector3 axis)
 	{
 		return FromGDClass(new Quaternion(axis, angle));
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float Dot(PTQuaternion a, PTQuaternion b)
+	public static float Dot(BVQuaternion a, BVQuaternion b)
 	{
 		return a.quat.Dot(b.quat);
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion Euler(float x, float y, float z)
+	public static BVQuaternion Euler(float x, float y, float z)
 	{
 		return FromGDClass(Quaternion.FromEuler(MathUtils.Vector3DegToRad(new(x, y, z))));
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion Euler(Vector3 euler)
+	public static BVQuaternion Euler(Vector3 euler)
 	{
 		return FromGDClass(Quaternion.FromEuler(euler.DegToRad()));
 	}
 
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static Vector3 ToEuler(PTQuaternion euler)
+	public static Vector3 ToEuler(BVQuaternion euler)
 	{
 		return MathUtils.Vector3RadToDeg(euler.quat.GetEuler());
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion FromToRotation(Vector3 fromDirection, Vector3 toDirection)
+	public static BVQuaternion FromToRotation(Vector3 fromDirection, Vector3 toDirection)
 	{
 		Vector3 from = fromDirection.Normalized();
 		Vector3 to = toDirection.Normalized();
@@ -154,13 +154,13 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion Inverse(PTQuaternion rotation)
+	public static BVQuaternion Inverse(BVQuaternion rotation)
 	{
 		return FromGDClass(rotation.quat.Inverse());
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion Lerp(PTQuaternion a, PTQuaternion b, float t)
+	public static BVQuaternion Lerp(BVQuaternion a, BVQuaternion b, float t)
 	{
 		Quaternion q = new(
 			Mathf.Lerp(a.quat.X, b.quat.X, t),
@@ -173,7 +173,7 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion LerpUnclamped(PTQuaternion a, PTQuaternion b, float t)
+	public static BVQuaternion LerpUnclamped(BVQuaternion a, BVQuaternion b, float t)
 	{
 		Quaternion q = new(
 			Mathf.Lerp(a.quat.X, b.quat.X, t),
@@ -185,13 +185,13 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion LookRotation(Vector3 forward)
+	public static BVQuaternion LookRotation(Vector3 forward)
 	{
 		return LookRotation(forward, Vector3.Up);
 	}
 
 	[ScriptMethod]
-	public static PTQuaternion LookRotation(Vector3 forward, Vector3 upwards)
+	public static BVQuaternion LookRotation(Vector3 forward, Vector3 upwards)
 	{
 		forward = forward.Normalized();
 		upwards = upwards.Normalized();
@@ -201,13 +201,13 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion Normalize(PTQuaternion quaternion)
+	public static BVQuaternion Normalize(BVQuaternion quaternion)
 	{
 		return FromGDClass(quaternion.quat.Normalized());
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion RotateTowards(PTQuaternion from, PTQuaternion to, float maxDegreesDelta)
+	public static BVQuaternion RotateTowards(BVQuaternion from, BVQuaternion to, float maxDegreesDelta)
 	{
 		Quaternion fromQ = from.quat;
 		Quaternion toQ = to.quat;
@@ -226,13 +226,13 @@ public class PTQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion Slerp(PTQuaternion a, PTQuaternion b, float t)
+	public static BVQuaternion Slerp(BVQuaternion a, BVQuaternion b, float t)
 	{
 		return FromGDClass(a.quat.Slerp(b.quat, t));
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTQuaternion SlerpUnclamped(PTQuaternion a, PTQuaternion b, float t)
+	public static BVQuaternion SlerpUnclamped(BVQuaternion a, BVQuaternion b, float t)
 	{
 		return FromGDClass(a.quat.Slerpni(b.quat, t));
 	}

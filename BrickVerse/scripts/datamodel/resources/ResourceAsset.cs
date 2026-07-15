@@ -19,12 +19,12 @@ public partial class ResourceAsset : BaseAsset
 	public event Action<Resource>? ResourceLoaded;
 	public Resource? Resource { get; private set; }
 	public bool IsResourceLoaded = false;
-	public PTSignal ResourceLoadedInternal { get; private set; } = new();
+	public BVSignal ResourceLoadedInternal { get; private set; } = new();
 
 	[ScriptProperty]
 	public bool Loading => !IsResourceLoaded;
 
-	[ScriptProperty] public PTSignal Loaded { get; private set; } = new();
+	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
 
 	public override void Init()
 	{

@@ -205,7 +205,7 @@ public sealed partial class Mesh : Entity
 
 	[ScriptProperty] public bool Loading { get; private set; } = false;
 
-	[ScriptProperty] public PTSignal Loaded { get; private set; } = new();
+	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
 
 	[ScriptEnum("MeshCollisionType")]
 	public enum CollisionTypeEnum

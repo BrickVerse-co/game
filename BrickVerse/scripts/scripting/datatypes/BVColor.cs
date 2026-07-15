@@ -7,7 +7,7 @@ using BrickVerse.Attributes;
 
 namespace BrickVerse.Scripting.Datatypes;
 
-public class PTColor : IScriptGDObject
+public class BVColor : IScriptGDObject
 {
 	Color color;
 
@@ -16,9 +16,9 @@ public class PTColor : IScriptGDObject
 	[ScriptProperty] public float B { get => color.B; set => color.B = value; }
 	[ScriptProperty] public float A { get => color.A; set => color.A = value; }
 
-	public static PTColor FromGDClass(Color clr)
+	public static BVColor FromGDClass(Color clr)
 	{
-		return new PTColor()
+		return new BVColor()
 		{
 			color = clr
 		};
@@ -30,7 +30,7 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTColor New()
+	public static BVColor New()
 	{
 		return new()
 		{
@@ -42,7 +42,7 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTColor New(float d)
+	public static BVColor New(float d)
 	{
 		return new()
 		{
@@ -54,7 +54,7 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTColor New(float r, float g, float b)
+	public static BVColor New(float r, float g, float b)
 	{
 		return new()
 		{
@@ -66,7 +66,7 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMethod]
-	public static PTColor New(float r, float g, float b, float a)
+	public static BVColor New(float r, float g, float b, float a)
 	{
 		return new()
 		{
@@ -78,19 +78,19 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Add)]
-	public static PTColor Add(PTColor a, PTColor b)
+	public static BVColor Add(BVColor a, BVColor b)
 	{
 		return FromGDClass(a.color + b.color);
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Sub)]
-	public static PTColor Sub(PTColor a, PTColor b)
+	public static BVColor Sub(BVColor a, BVColor b)
 	{
 		return FromGDClass(a.color - b.color);
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static object Mul(PTColor a, object b)
+	public static object Mul(BVColor a, object b)
 	{
 		if (b is double d)
 			return FromGDClass(a.color * new Color((float)d, (float)d, (float)d));
@@ -98,50 +98,50 @@ public class PTColor : IScriptGDObject
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
-	public static bool Eq(PTColor a, PTColor b)
+	public static bool Eq(BVColor a, BVColor b)
 	{
 		return a.color == b.color;
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
-	public static string ToString(PTColor? v)
+	public static string ToString(BVColor? v)
 	{
 		if (v == null) return "<Color>";
 		return $"<Color:({v.color.R}, {v.color.G}, {v.color.B}, {v.color.A})>";
 	}
 
 	[ScriptMethod]
-	public static PTColor Random()
+	public static BVColor Random()
 	{
 		return New(GD.Randf(), GD.Randf(), GD.Randf());
 	}
 
 	[ScriptMethod]
-	public static PTColor FromRGB(float r, float g, float b, float a = 1)
+	public static BVColor FromRGB(float r, float g, float b, float a = 1)
 	{
 		return FromGDClass(new Color(r / 255, g / 255, b / 255, a));
 	}
 
 	[ScriptMethod]
-	public static PTColor FromHex(string hex)
+	public static BVColor FromHex(string hex)
 	{
 		return FromGDClass(Color.FromString(hex, new(1, 1, 1)));
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static string ToHex(PTColor c)
+	public static string ToHex(BVColor c)
 	{
 		return c.color.ToHtml();
 	}
 
 	[ScriptMethod]
-	public static PTColor FromHSV(float h, float s, float v, float a = 1)
+	public static BVColor FromHSV(float h, float s, float v, float a = 1)
 	{
 		return FromGDClass(Color.FromHsv(h, s, v, a));
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static PTColor Lerp(PTColor a, PTColor b, float t)
+	public static BVColor Lerp(BVColor a, BVColor b, float t)
 	{
 		return FromGDClass(a.color.Lerp(b.color, t));
 	}

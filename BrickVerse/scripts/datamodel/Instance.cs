@@ -288,10 +288,10 @@ public partial class Instance : NetworkedObject
 
 	public bool IsInTemporary => IsDescendantOfClass<Temporary>();
 
-	[ScriptProperty] public PTSignal<Instance> ChildAdded { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildRemoved { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildDeleting { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildDeleted { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildAdded { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildRemoved { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildDeleting { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildDeleted { get; private set; } = new();
 
 	internal void AddLegacyNameToParent()
 	{

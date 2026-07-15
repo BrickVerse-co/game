@@ -364,10 +364,10 @@ public sealed partial class Camera : Dynamic
 	}
 
 	[ScriptProperty]
-	public PTSignal FirstPersonEntered { get; private set; } = new();
+	public BVSignal FirstPersonEntered { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal FirstPersonExited { get; private set; } = new();
+	public BVSignal FirstPersonExited { get; private set; } = new();
 
 	/// <summary>
 	/// Should camera be updating itself or not.

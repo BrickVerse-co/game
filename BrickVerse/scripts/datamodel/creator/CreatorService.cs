@@ -39,8 +39,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static CreatorService Singleton { get; set; } = null!;
 	public static CreatorSession? CurrentSession { get; internal set; }
 
-	[ScriptProperty] public PTSignal LocalTestStarted { get; private set; } = new();
-	[ScriptProperty] public PTSignal LocalTestStopped { get; private set; } = new();
+	[ScriptProperty] public BVSignal LocalTestStarted { get; private set; } = new();
+	[ScriptProperty] public BVSignal LocalTestStopped { get; private set; } = new();
 	[ScriptProperty] public bool LocalTestActive => LocalTestProcesses.Count != 0;
 	public List<int> LocalTestProcesses { get; private set; } = [];
 	public List<string> LocalTestWorlds { get; private set; } = [];
