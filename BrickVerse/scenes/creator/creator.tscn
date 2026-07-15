@@ -36,6 +36,7 @@
 [ext_resource type="Script" uid="uid://c5celm4bxr4vy" path="res://scripts/creator/ui/docks/bottombar/console/DebugConsole.cs" id="30_bc04q"]
 [ext_resource type="PackedScene" uid="uid://msq1k3h4a75p" path="res://scenes/creator/wizard/new_project/new_project.tscn" id="31_87ukk"]
 [ext_resource type="PackedScene" uid="uid://cvxoyotxeotax" path="res://scenes/creator/docks/explorer/explorer.tscn" id="32_4fw2t"]
+[ext_resource type="Script" uid="uid://6otbi1akgf8g" path="res://scripts/creator/ui/docks/bottombar/terrain-editor/TerrainEditor.cs" id="32_raaus"]
 [ext_resource type="PackedScene" uid="uid://duq8icfg2fwo0" path="res://scenes/creator/docks/properties/properties.tscn" id="34_bc04q"]
 [ext_resource type="Texture2D" uid="uid://dwqjb7jgqqk0v" path="res://assets/textures/logo/light_long.png" id="37_raaus"]
 [ext_resource type="PackedScene" uid="uid://dccewf7osrg82" path="res://scenes/creator/popups/search/search.tscn" id="38_ce354"]
@@ -863,6 +864,426 @@ icon = ExtResource("22_i1txp")
 
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
 visible = false
+
+[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_growButton", "_erodeButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
+visible = false
+custom_minimum_size = Vector2(0, 210)
+clip_contents = true
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("32_raaus")
+_addButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Add")
+_removeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Remove")
+_paintButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Paint")
+_smoothButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Smooth")
+_growButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Grow")
+_erodeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Erode")
+_shapeOption = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Shape/Option")
+_materialOption = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Material/Option")
+_sizeSlider = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Size/Slider")
+_sizeSpinBox = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Size/Value")
+_strengthSlider = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Strength/Slider")
+_strengthSpinBox = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Strength/Value")
+_spacingSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Spacing/Slider")
+_spacingSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Spacing/Value")
+_intervalSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Interval/Slider")
+_intervalSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Interval/Value")
+_spacingFloorSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor/Slider")
+_spacingFloorSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor/Value")
+_snapOffsetSlider = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset/Slider")
+_snapOffsetSpinBox = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset/Value")
+_enabledCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Enabled")
+_surfaceSnapCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/SurfaceSnap")
+_continuousCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Continuous")
+_clearButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Clear")
+_statusLabel = NodePath("Layout/Status")
+metadata/_tab_index = 1
+
+[node name="Layout" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor" unique_id=372424487]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Scroll" type="ScrollContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout" unique_id=1133011980]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical_scroll_mode = 0
+
+[node name="Top" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll" unique_id=766238855]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Tools" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=1258961917]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools" unique_id=544476001]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "TOOLS"
+
+[node name="Card" type="PanelContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools" unique_id=349751532]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card" unique_id=1248604598]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin" unique_id=1981663292]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Buttons" type="GridContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content" unique_id=631426852]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 3
+
+[node name="Add" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1509464646]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "Add"
+
+[node name="Remove" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1797462675]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+text = "Remove"
+
+[node name="Paint" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=2003367013]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+text = "Paint"
+
+[node name="Smooth" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=296838765]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+text = "Smooth"
+
+[node name="Grow" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1911821286]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+text = "Grow"
+
+[node name="Erode" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=31295122]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+toggle_mode = true
+text = "Erode"
+
+[node name="Brush" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=1573421257]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush" unique_id=1500692605]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "BRUSH"
+
+[node name="Card" type="PanelContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush" unique_id=493779371]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card" unique_id=1859913810]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin" unique_id=1453939971]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Shape" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content" unique_id=1342678634]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Shape" unique_id=1132233736]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Shape"
+vertical_alignment = 1
+
+[node name="Option" type="OptionButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Shape" unique_id=305715097]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 3
+popup/item_0/text = "Sphere"
+popup/item_0/id = 0
+popup/item_1/text = "Block"
+popup/item_1/id = 1
+popup/item_2/text = "Cylinder"
+popup/item_2/id = 2
+
+[node name="Size" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content" unique_id=1299980530]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Size" unique_id=2145168093]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Size"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Size" unique_id=666534487]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 128.0
+value = 16.0
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Size" unique_id=365687858]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 128.0
+value = 16.0
+
+[node name="Strength" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content" unique_id=92990765]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Strength" unique_id=187670436]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Strength"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Strength" unique_id=237637775]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 0.5
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Brush/Card/Margin/Content/Strength" unique_id=349773703]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 0.5
+
+[node name="Material" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=983421062]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material" unique_id=757755997]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "MATERIAL & STROKE"
+
+[node name="Card" type="PanelContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material" unique_id=911877380]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card" unique_id=1280621170]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin" unique_id=161473808]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Material" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=944548284]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Material" unique_id=864946399]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Material"
+vertical_alignment = 1
+
+[node name="Option" type="OptionButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Material" unique_id=477694477]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 8
+popup/item_0/text = "Base"
+popup/item_0/id = 0
+popup/item_1/text = "Grass"
+popup/item_1/id = 1
+popup/item_2/text = "Rock"
+popup/item_2/id = 2
+popup/item_3/text = "Sand"
+popup/item_3/id = 3
+popup/item_4/text = "Dirt"
+popup/item_4/id = 4
+popup/item_5/text = "Snow"
+popup/item_5/id = 5
+popup/item_6/text = "Mud"
+popup/item_6/id = 6
+popup/item_7/text = "Cobble"
+popup/item_7/id = 7
+
+[node name="Spacing" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=222381919]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Spacing" unique_id=391417361]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Spacing"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Spacing" unique_id=1894934371]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 0.25
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Spacing" unique_id=400653407]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 0.25
+
+[node name="Interval" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=1652779001]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=1952606459]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Interval"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=102752759]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 40.0
+max_value = 300.0
+step = 5.0
+value = 140.0
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/Interval" unique_id=1742948388]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 40.0
+max_value = 300.0
+step = 5.0
+value = 140.0
+
+[node name="SpacingFloor" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=1300280522]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=2018949665]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Spacing Min"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=276975647]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 2.0
+step = 0.05
+value = 0.35
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SpacingFloor" unique_id=188332917]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+min_value = 0.05
+max_value = 2.0
+step = 0.05
+value = 0.35
+
+[node name="SnapOffset" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content" unique_id=2108428184]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=1464375995]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "Snap"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=206081868]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 0.2
+step = 0.005
+value = 0.01
+
+[node name="Value" type="SpinBox" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Material/Card/Margin/Content/SnapOffset" unique_id=1550798415]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+max_value = 0.2
+step = 0.005
+value = 0.01
+
+[node name="Options" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=514941723]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options" unique_id=1343512529]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "OPTIONS"
+
+[node name="Card" type="PanelContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options" unique_id=621731684]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card" unique_id=1980154400]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin" unique_id=247882093]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Enabled" type="CheckButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=402211944]
+layout_mode = 2
+button_pressed = true
+text = "Enable terrain editing"
+
+[node name="SurfaceSnap" type="CheckButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1632412563]
+layout_mode = 2
+button_pressed = true
+text = "Surface snap"
+
+[node name="Continuous" type="CheckButton" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1674058363]
+layout_mode = 2
+button_pressed = true
+text = "Continuous stroke"
+
+[node name="Clear" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=45068541]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Clear terrain"
+
+[node name="Status" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout" unique_id=331984099]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.64, 0.7, 1)
+text = "Add · Sphere · Size 16"
+text_overrun_behavior = 3
 
 [node name="Right" type="PanelContainer" parent="GUI/Splitter" unique_id=528512110]
 custom_minimum_size = Vector2(280, 0)

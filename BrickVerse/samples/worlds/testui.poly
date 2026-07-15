@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <game version="1.4.151">
+    <Item class="Terrain">
+      <Properties>
+        <string name="Name">Terrain</string>
+      </Properties>
+    </Item>
   <Item class="Environment">
     <Properties>
       <int name="Skybox">0</int>

@@ -95,3 +95,117 @@ declare History: CreatorHistory
 declare CreatorGUI: CreatorGUI
 
 declare Preferences: PreferencesService
+
+declare class Terrain extends Instance
+	-- Persisted terrain data
+	SerialisedTerrain: string
+
+	-- Settings
+	AutoSerialise: boolean
+	GenerateCollisions: boolean
+	DefaultSdfStrength: number
+	DefaultSdfScale: number
+	ViewDistance: number
+
+	-- Shapes
+	FillBall: (self: Terrain, center: Vector3, radius: number, material: number?) -> ()
+	DigBall: (self: Terrain, center: Vector3, radius: number) -> ()
+
+	FillBlock: (self: Terrain, center: Vector3, size: Vector3, material: number?) -> ()
+	DigBlock: (self: Terrain, center: Vector3, size: Vector3) -> ()
+
+	FillCylinder: (
+		self: Terrain,
+		center: Vector3,
+		height: number,
+		radius: number,
+		material: number?
+	) -> ()
+
+	DigCylinder: (
+		self: Terrain,
+		center: Vector3,
+		height: number,
+		radius: number
+	) -> ()
+
+	-- Painting
+	PaintBall: (
+		self: Terrain,
+		center: Vector3,
+		radius: number,
+		material: number,
+		opacity: number?
+	) -> ()
+
+	SmoothBall: (
+		self: Terrain,
+		center: Vector3,
+		radius: number,
+		blurRadius: number?
+	) -> ()
+
+	GrowBall: (
+		self: Terrain,
+		center: Vector3,
+		radius: number,
+		strength: number?
+	) -> ()
+
+	ErodeBall: (
+		self: Terrain,
+		center: Vector3,
+		radius: number,
+		strength: number?
+	) -> ()
+
+	-- Individual voxels
+	SetVoxelSdf: (
+		self: Terrain,
+		position: Vector3,
+		sdf: number
+	) -> ()
+
+	GetVoxelSdf: (
+		self: Terrain,
+		position: Vector3
+	) -> number
+
+	SetVoxelMaterial: (
+		self: Terrain,
+		position: Vector3,
+		material: number
+	) -> ()
+
+	GetVoxelMaterial: (
+		self: Terrain,
+		position: Vector3
+	) -> number
+
+	SetVoxelMetadata: (
+		self: Terrain,
+		position: Vector3,
+		metadata: any
+	) -> ()
+
+	GetVoxelMetadata: (
+		self: Terrain,
+		position: Vector3
+	) -> any
+
+	-- Persistence
+	SaveTerrain: (self: Terrain) -> string
+	LoadSerialisedTerrain: (self: Terrain) -> ()
+	Clear: (self: Terrain) -> ()
+
+	-- Utilities
+	IsAreaEditable: (
+		self: Terrain,
+		minimum: Vector3,
+		maximum: Vector3
+	) -> boolean
+
+	CountOperations: (self: Terrain) -> number
+end
+
+declare Terrain: Terrain

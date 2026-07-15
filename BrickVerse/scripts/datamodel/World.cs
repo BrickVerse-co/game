@@ -102,6 +102,7 @@ public sealed partial class World : Instance
 	internal event Action<APIPlaceMedia[]>? WorldMediaReady;
 
 	public Environment Environment => FindChild<Environment>("Environment")!;
+	public Terrain Terrain => FindChild<Terrain>("Terrain")!;
 	public Players Players => FindChild<Players>("Players")!;
 	public Lighting Lighting => FindChild<Lighting>("Lighting")!;
 	public PlayerDefaults PlayerDefaults => FindChild<PlayerDefaults>("PlayerDefaults")!;
@@ -619,6 +620,13 @@ public sealed partial class World : Instance
 			environment.NetworkParent = this;
 		}
 
+		Terrain? terrain = FindChild<Terrain>("Terrain");
+		if (terrain == null)
+		{
+			terrain = Globals.LoadInstance<Terrain>(Root);
+			terrain.NetworkParent = this;
+		}
+
 		Lighting? lighting = FindChild<Lighting>("Lighting");
 
 		if (lighting == null)
@@ -854,6 +862,7 @@ public sealed partial class World : Instance
 		List<Instance> orderedChildren =
 		[
 			environment,
+			terrain,
 			lighting,
 			players,
 			scriptService,
