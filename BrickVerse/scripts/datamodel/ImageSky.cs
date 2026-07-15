@@ -232,7 +232,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_topId = value;
-			TopImage = Root.Assets.NewPTImage(value);
+			TopImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
@@ -244,7 +244,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_bottomId = value;
-			BottomImage = Root.Assets.NewPTImage(value);
+			BottomImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
@@ -256,7 +256,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_leftId = value;
-			LeftImage = Root.Assets.NewPTImage(value);
+			LeftImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
@@ -268,7 +268,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_rightId = value;
-			RightImage = Root.Assets.NewPTImage(value);
+			RightImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
@@ -280,7 +280,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_frontId = value;
-			FrontImage = Root.Assets.NewPTImage(value);
+			FrontImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
@@ -292,7 +292,7 @@ public sealed partial class ImageSky : Sky
 		set
 		{
 			_backId = value;
-			BackImage = Root.Assets.NewPTImage(value);
+			BackImage = Root.Assets.NewBVImage(value);
 			OnPropertyChanged();
 		}
 	}
