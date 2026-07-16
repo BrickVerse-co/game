@@ -2,87 +2,162 @@
 
 [ext_resource type="Script" uid="uid://k116yf3eiwrf" path="res://scripts/creator/ui/LoadOverlay.cs" id="1_4enpk"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x2wx7"]
-bg_color = Color(0.099985994, 0.099985994, 0.099985994, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backdrop"]
+bg_color = Color(0.0156863, 0.0196078, 0.027451, 0.78)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.0431373, 0.054902, 0.0745098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12549, 0.160784, 0.211765, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_accent"]
+bg_color = Color(0.04490546, 0.057278126, 0.07583731, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon"]
+bg_color = Color(0.00392157, 0.529412, 0.972549, 0.12)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.34)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.105882354)
-shadow_size = 6
-shadow_offset = Vector2(0, 3)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1i2dm"]
-bg_color = Color(0.019607844, 0.019607844, 0.019607844, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.12069818, 0.14684239, 0.17886937, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.0054597035, 0.008407566, 0.014279885, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4enpk"]
-bg_color = Color(0, 0.5921569, 1, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="Theme" id="Theme_1i2dm"]
-ProgressBar/styles/background = SubResource("StyleBoxFlat_1i2dm")
-ProgressBar/styles/fill = SubResource("StyleBoxFlat_4enpk")
+[sub_resource type="Theme" id="Theme_load_overlay"]
+ProgressBar/styles/background = SubResource("StyleBoxFlat_progress_bg")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_progress_fill")
 
 [node name="LoadOverlay" type="Panel" unique_id=596595339 node_paths=PackedStringArray("_titleLabel", "_statusLabel", "_progressBar")]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -60.0
-offset_right = 200.0
-offset_bottom = 60.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_x2wx7")
+theme_override_styles/panel = SubResource("StyleBoxFlat_backdrop")
 script = ExtResource("1_4enpk")
-_titleLabel = NodePath("MarginContainer/VBoxContainer/VBoxContainer/Title")
-_statusLabel = NodePath("MarginContainer/VBoxContainer/VBoxContainer/SubTitle")
-_progressBar = NodePath("MarginContainer/VBoxContainer/ProgressBar")
+_titleLabel = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text/Title")
+_statusLabel = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text/Status")
+_progressBar = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/ProgressBar")
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=672094972]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=672094972]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_1i2dm")
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1627541567]
+[node name="LoadingCard" type="PanelContainer" parent="CenterContainer" unique_id=1627541567]
+custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1833451830]
+[node name="Accent" type="Panel" parent="CenterContainer/LoadingCard" unique_id=1833451830]
+custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
-theme_override_constants/separation = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_accent")
 
-[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=1906413147]
+[node name="CardMargin" type="MarginContainer" parent="CenterContainer/LoadingCard" unique_id=1906413147]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Hi"
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 20
+
+[node name="CardContent" type="VBoxContainer" parent="CenterContainer/LoadingCard/CardMargin" unique_id=934125916]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="CenterContainer/LoadingCard/CardMargin/CardContent" unique_id=218615087]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="IconPanel" type="PanelContainer" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header" unique_id=817448416]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_icon")
+
+[node name="Icon" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header/IconPanel" unique_id=817448417]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.00015690624, 0.5111591, 0.9603879, 1)
+theme_override_font_sizes/font_size = 24
+text = "●"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="SubTitle" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer" unique_id=934125916]
+[node name="Text" type="VBoxContainer" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header" unique_id=817448418]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Hi"
-horizontal_alignment = 1
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text" unique_id=817448419]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92549, 0.945098, 0.976471, 1)
+theme_override_font_sizes/font_size = 17
+text = "Loading Creator"
+
+[node name="Status" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text" unique_id=817448420]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29900023, 0.33995873, 0.40139082, 1)
+theme_override_font_sizes/font_size = 13
+text = "Preparing your workspace..."
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBoxContainer" unique_id=218615087]
+[node name="ProgressBar" type="ProgressBar" parent="CenterContainer/LoadingCard/CardMargin/CardContent" unique_id=817448421]
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
+theme = SubResource("Theme_load_overlay")
+value = 35.0
+show_percentage = false
+
+[node name="Footer" type="HBoxContainer" parent="CenterContainer/LoadingCard/CardMargin/CardContent" unique_id=817448422]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Footer" unique_id=817448423]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.97465366, 0.97835475, 0.98391885, 1)
+theme_override_font_sizes/font_size = 11
+text = "BrickVerse Creator"
+
+[node name="Activity" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Footer" unique_id=817448424]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.00392157, 0.529412, 0.972549, 1)
+theme_override_font_sizes/font_size = 11
+text = "WORKING"
+horizontal_alignment = 2

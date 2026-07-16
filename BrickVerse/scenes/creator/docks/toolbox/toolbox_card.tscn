@@ -4,11 +4,70 @@
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="2_bngdg"]
 [ext_resource type="Texture2D" uid="uid://ds3dnhxrqnyp" path="res://assets/textures/ui-icons/pause-filled.svg" id="3_o5xi3"]
 
+[sub_resource type="StyleBoxFlat" id="CardNormal"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0705882, 0.0941176, 0.12549, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12549, 0.164706, 0.211765, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0941176, 0.129412, 0.172549, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.7)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="CardPressed"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0313726, 0.211765, 0.352941, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="ThumbnailPanel"]
+bg_color = Color(0.0352941, 0.0470588, 0.0627451, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [node name="ToolboxCard" type="Button" unique_id=554432727 node_paths=PackedStringArray("_thumbnailRect", "_nameLabel", "_byLabel", "_audioPreView", "_playButton")]
-custom_minimum_size = Vector2(84, 136)
-offset_right = 84.0
-offset_bottom = 136.0
-flat = true
+custom_minimum_size = Vector2(104, 146)
+offset_right = 104.0
+offset_bottom = 146.0
+flat = false
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardPressed")
+theme_override_styles/focus = SubResource("CardHover")
 script = ExtResource("1_bngdg")
 _thumbnailRect = NodePath("Panel/MarginContainer/TextureRect")
 _nameLabel = NodePath("VBoxContainer/Label")
@@ -17,11 +76,14 @@ _audioPreView = NodePath("Panel/AudioPreview")
 _playButton = NodePath("Panel/AudioPreview/PreviewBtn")
 
 [node name="Panel" type="Panel" parent="." unique_id=45100742]
-custom_minimum_size = Vector2(0, 84)
+custom_minimum_size = Vector2(0, 94)
 layout_mode = 0
-offset_right = 84.0
-offset_bottom = 84.0
-mouse_filter = 1
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 98.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("ThumbnailPanel")
 
 [node name="MarginContainer" type="MarginContainer" parent="Panel" unique_id=1134450936]
 layout_mode = 1
@@ -30,10 +92,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 7
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 7
 
 [node name="TextureRect" type="TextureRect" parent="Panel/MarginContainer" unique_id=257831549]
 layout_mode = 2
@@ -71,22 +133,25 @@ stretch_mode = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1740318989]
 layout_mode = 0
-offset_top = 92.0
-offset_right = 84.0
-offset_bottom = 130.0
-theme_override_constants/separation = 0
+offset_left = 7.0
+offset_top = 106.0
+offset_right = 97.0
+offset_bottom = 140.0
+theme_override_constants/separation = 1
 
 [node name="Label" type="Label" parent="VBoxContainer" unique_id=1300133575]
 layout_mode = 2
-mouse_filter = 1
-theme_override_font_sizes/font_size = 14
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.854902, 0.890196, 0.929412, 1)
+theme_override_font_sizes/font_size = 11
 text = "Title"
 text_overrun_behavior = 3
 
 [node name="Label2" type="Label" parent="VBoxContainer" unique_id=1281878823]
 layout_mode = 2
-mouse_filter = 1
-theme_override_font_sizes/font_size = 12
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+theme_override_font_sizes/font_size = 9
 text = "By Hello"
 clip_text = true
 text_overrun_behavior = 3

@@ -4,8 +4,12 @@
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_of3th"]
 [ext_resource type="Texture2D" uid="uid://1446cbgvb2wo" path="res://assets/textures/ui-icons/addon.svg" id="3_mam5l"]
 [ext_resource type="Texture2D" uid="uid://cma54623spmlg" path="res://assets/textures/ui-icons/search.svg" id="4_3arhl"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [node name="LinkDevicePopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_textureRect")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
 oversampling_override = 1.0
 title = "Link Device"
 size = Vector2i(350, 400)

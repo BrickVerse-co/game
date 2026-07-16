@@ -1,230 +1,289 @@
 [gd_scene format=3 uid="uid://dumyp52mdmhfk"]
 
-[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_ka27s"]
-[ext_resource type="Script" uid="uid://cirhnli124hob" path="res://scripts/creator/ui/popups/CreditsPopup.cs" id="2_fxs13"]
-[ext_resource type="Texture2D" uid="uid://b3sjmxnxgp4tg" path="res://assets/textures/logo/brickverse_blue.png" id="3_edfiy"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://cirhnli124hob" path="res://scripts/creator/ui/popups/CreditsPopup.cs" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://b3sjmxnxgp4tg" path="res://assets/textures/logo/brickverse_blue.png" id="3_logo"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_window"]
-content_margin_left = 18.0
-content_margin_top = 16.0
-content_margin_right = 18.0
-content_margin_bottom = 18.0
-bg_color = Color(0.105882, 0.113725, 0.12549, 1)
+[sub_resource type="StyleBoxFlat" id="StyleWindow"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.0431373, 0.0509804, 0.0627451, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.231373, 0.25098, 0.282353, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 14
-shadow_offset = Vector2(0, 5)
+border_color = Color(0.117647, 0.145098, 0.184314, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+[sub_resource type="StyleBoxFlat" id="StyleHeader"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.0588235, 0.0666667, 0.0823529, 1)
+border_width_bottom = 1
+border_color = Color(0.117647, 0.145098, 0.184314, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleHero"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.054902, 0.0627451, 0.0745098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105882, 0.129412, 0.164706, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleAccent"]
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleCredits"]
 content_margin_left = 16.0
 content_margin_top = 14.0
 content_margin_right = 16.0
 content_margin_bottom = 14.0
-bg_color = Color(0.133333, 0.145098, 0.164706, 1)
+bg_color = Color(0.0352941, 0.0431373, 0.054902, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.215686, 0.235294, 0.266667, 1)
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
+border_color = Color(0.0980392, 0.121569, 0.152941, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_section"]
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
-bg_color = Color(0.129412, 0.137255, 0.152941, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.211765, 0.231373, 0.258824, 1)
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
-
-[node name="Credits" type="Window" unique_id=439088174 node_paths=PackedStringArray("_versionLabel")]
+[node name="Credits" type="Window" unique_id=1607974302 node_paths=PackedStringArray("_versionLabel")]
+transparent_bg = true
 oversampling_override = 1.0
-title = "About BrickVerse"
+title = "About BrickVerse Creator"
 initial_position = 2
-size = Vector2i(659, 420)
+size = Vector2i(720, 520)
 wrap_controls = true
 transient = true
 transient_to_focused = true
 exclusive = true
-unresizable = true
 borderless = true
+transparent = true
 minimize_disabled = true
 maximize_disabled = true
-theme = ExtResource("1_ka27s")
-script = ExtResource("2_fxs13")
-_versionLabel = NodePath("RootMargin/Card/Main/Header/HeaderRow/TitleBlock/VersionRow/VersionLabel")
+min_size = Vector2i(560, 420)
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+_versionLabel = NodePath("Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow/VersionLabel")
 
-[node name="RootMargin" type="MarginContainer" parent="." unique_id=839167000]
+[node name="Root" type="MarginContainer" parent="." unique_id=1166161985]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Card" type="PanelContainer" parent="Root" unique_id=64317654]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleWindow")
+
+[node name="Layout" type="VBoxContainer" parent="Root/Card" unique_id=1464478756]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Header" type="PanelContainer" parent="Root/Card/Layout" unique_id=1416319186]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleHeader")
+
+[node name="HeaderRow" type="HBoxContainer" parent="Root/Card/Layout/Header" unique_id=1846784002]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Root/Card/Layout/Header/HeaderRow" unique_id=552359898]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "About BrickVerse Creator"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Root/Card/Layout/Header/HeaderRow" unique_id=333037522]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 17
+text = "×"
+flat = true
+
+[node name="BodyScroll" type="ScrollContainer" parent="Root/Card/Layout" unique_id=565460739]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll" unique_id=1513942376]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="BodyMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body" unique_id=916326419]
+layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
 
-[node name="Card" type="PanelContainer" parent="RootMargin" unique_id=89954894]
+[node name="Overview" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin" unique_id=478257704]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_window")
+theme_override_styles/panel = SubResource("StyleHero")
 
-[node name="Main" type="VBoxContainer" parent="RootMargin/Card" unique_id=1005402283]
+[node name="HeroContent" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview" unique_id=1725789309]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 20
 
-[node name="Header" type="PanelContainer" parent="RootMargin/Card/Main" unique_id=1202722670]
+[node name="LogoWrap" type="CenterContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent" unique_id=686152333]
+custom_minimum_size = Vector2(160, 92)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_header")
 
-[node name="HeaderRow" type="HBoxContainer" parent="RootMargin/Card/Main/Header" unique_id=354818028]
+[node name="Logo" type="TextureRect" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/LogoWrap" unique_id=1716101283]
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="Logo" type="TextureRect" parent="RootMargin/Card/Main/Header/HeaderRow" unique_id=455420179]
-custom_minimum_size = Vector2(190, 46)
-layout_mode = 2
-texture = ExtResource("3_edfiy")
+texture = ExtResource("3_logo")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TitleBlock" type="VBoxContainer" parent="RootMargin/Card/Main/Header/HeaderRow" unique_id=486586325]
+[node name="TextBlock" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent" unique_id=716577177]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 3
+theme_override_constants/separation = 5
 
-[node name="Title" type="Label" parent="RootMargin/Card/Main/Header/HeaderRow/TitleBlock" unique_id=863962340]
+[node name="ProductName" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=1050788011]
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 21
 text = "BrickVerse Creator"
 
-[node name="Subtitle" type="Label" parent="RootMargin/Card/Main/Header/HeaderRow/TitleBlock" unique_id=326451073]
-modulate = Color(1, 1, 1, 0.58)
+[node name="Description" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=692266261]
+modulate = Color(1, 1, 1, 0.62)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 12
-text = "A modern editor for building and publishing worlds."
+text = "Build, test, and publish immersive worlds with the BrickVerse creation tools."
+autowrap_mode = 3
 
-[node name="VersionRow" type="HBoxContainer" parent="RootMargin/Card/Main/Header/HeaderRow/TitleBlock" unique_id=438298574]
+[node name="VersionRow" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=122272747]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 
-[node name="VersionText" type="Label" parent="RootMargin/Card/Main/Header/HeaderRow/TitleBlock/VersionRow" unique_id=1566843215]
+[node name="VersionText" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow" unique_id=1838199885]
 modulate = Color(1, 1, 1, 0.42)
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Version"
 
-[node name="VersionLabel" type="Label" parent="RootMargin/Card/Main/Header/HeaderRow/TitleBlock/VersionRow" unique_id=1427191024]
-modulate = Color(0.45, 0.68, 1, 1)
+[node name="VersionLabel" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow" unique_id=966904561]
+modulate = Color(0.2, 0.67, 1, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "vXXXXX"
 
-[node name="CloseButton" type="Button" parent="RootMargin/Card/Main/Header/HeaderRow" unique_id=13789871]
-custom_minimum_size = Vector2(30, 30)
-layout_mode = 2
-size_flags_vertical = 0
-theme_override_font_sizes/font_size = 18
-text = "×"
-flat = true
-
-[node name="Content" type="HBoxContainer" parent="RootMargin/Card/Main" unique_id=1252859377]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 12
-
-[node name="InfoPanel" type="PanelContainer" parent="RootMargin/Card/Main/Content" unique_id=1184270610]
-custom_minimum_size = Vector2(210, 0)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_section")
-
-[node name="InfoStack" type="VBoxContainer" parent="RootMargin/Card/Main/Content/InfoPanel" unique_id=2078124828]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="AboutTitle" type="Label" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=2091336200]
-layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text = "About"
-
-[node name="AccentLine" type="ColorRect" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=906679664]
-custom_minimum_size = Vector2(38, 3)
+[node name="Accent" type="Panel" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=1275392519]
+custom_minimum_size = Vector2(42, 3)
 layout_mode = 2
 size_flags_horizontal = 0
-color = Color(0.117647, 0.34902, 0.690196, 1)
+theme_override_styles/panel = SubResource("StyleAccent")
 
-[node name="Copyright" type="Label" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=1228693159]
-modulate = Color(1, 1, 1, 0.7)
+[node name="ContentMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body" unique_id=564068154]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_right = 18
+
+[node name="Content" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin" unique_id=445380644]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="About" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content" unique_id=359806185]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/About" unique_id=1942345694]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "About"
+
+[node name="Copyright" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/About" unique_id=1669110368]
+modulate = Color(1, 1, 1, 0.72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "© 2026 Meta Games LLC"
 
-[node name="License" type="Label" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=233695812]
-modulate = Color(1, 1, 1, 0.42)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "See LICENSE for additional copyright and third-party notices."
-autowrap_mode = 3
-
-[node name="Spacer" type="Control" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=911221477]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="Footer" type="Label" parent="RootMargin/Card/Main/Content/InfoPanel/InfoStack" unique_id=1928466821]
-modulate = Color(1, 1, 1, 0.34)
-layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "BrickVerse Creator"
-
-[node name="CreditsPanel" type="PanelContainer" parent="RootMargin/Card/Main/Content" unique_id=467561797]
+[node name="License" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/About" unique_id=1288824638]
+modulate = Color(1, 1, 1, 0.46)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_section")
-
-[node name="CreditsStack" type="VBoxContainer" parent="RootMargin/Card/Main/Content/CreditsPanel" unique_id=2056280710]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="CreditsTitle" type="Label" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack" unique_id=237701277]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Credits"
-
-[node name="Intro" type="Label" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack" unique_id=594548142]
-modulate = Color(1, 1, 1, 0.62)
-layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Engine originally developed by the following contributors:"
+text = "See LICENSE for copyright, licensing, and third-party notices."
 autowrap_mode = 3
 
-[node name="NamesScroll" type="ScrollContainer" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack" unique_id=1930533201]
+[node name="Maintenance" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/About" unique_id=1017231565]
+modulate = Color(1, 1, 1, 0.46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Maintained by Meta Games LLC and community contributors."
+autowrap_mode = 3
+
+[node name="CreditsPanel" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content" unique_id=456034231]
+custom_minimum_size = Vector2(280, 190)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleCredits")
+
+[node name="CreditsStack" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel" unique_id=84532857]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=1261841754]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Original Contributors"
+
+[node name="Intro" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=1367147266]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Engine foundation and early development:"
+autowrap_mode = 3
+
+[node name="NamesScroll" type="ScrollContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=454193606]
+custom_minimum_size = Vector2(0, 112)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Names" type="Label" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack/NamesScroll" unique_id=1831049444]
+[node name="Names" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack/NamesScroll" unique_id=1780499833]
 modulate = Color(1, 1, 1, 0.78)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
+theme_override_constants/line_spacing = 4
+theme_override_font_sizes/font_size = 12
 text = "willemsteller
 Bandito Burrito
 mawji
@@ -232,25 +291,36 @@ Alyx
 Crunchitect
 Tsuwuki"
 
-[node name="HSeparator" type="HSeparator" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack" unique_id=35364213]
+[node name="BottomSpacer" type="Control" parent="Root/Card/Layout/BodyScroll/Body" unique_id=83230645]
+custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 
-[node name="Maintained" type="Label" parent="RootMargin/Card/Main/Content/CreditsPanel/CreditsStack" unique_id=120472031]
-modulate = Color(1, 1, 1, 0.58)
+[node name="Footer" type="PanelContainer" parent="Root/Card/Layout" unique_id=122355756]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Maintained by Meta Games LLC and its contributors."
-autowrap_mode = 3
+theme_override_styles/panel = SubResource("StyleHeader")
 
-[node name="BottomActions" type="HBoxContainer" parent="RootMargin/Card/Main" unique_id=42652024]
+[node name="FooterMargin" type="MarginContainer" parent="Root/Card/Layout/Footer" unique_id=1503166008]
 layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
 
-[node name="DoneButton" type="Button" parent="RootMargin/Card/Main/BottomActions" unique_id=78286168]
-custom_minimum_size = Vector2(94, 32)
+[node name="FooterRow" type="HBoxContainer" parent="Root/Card/Layout/Footer/FooterMargin" unique_id=1679521811]
+layout_mode = 2
+
+[node name="FooterText" type="Label" parent="Root/Card/Layout/Footer/FooterMargin/FooterRow" unique_id=1115040403]
+modulate = Color(1, 1, 1, 0.34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "BrickVerse Creator"
+vertical_alignment = 1
+
+[node name="DoneButton" type="Button" parent="Root/Card/Layout/Footer/FooterMargin/FooterRow" unique_id=46944394]
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
 text = "Done"
 
-[connection signal="pressed" from="RootMargin/Card/Main/Header/HeaderRow/CloseButton" to="." method="hide"]
-[connection signal="pressed" from="RootMargin/Card/Main/BottomActions/DoneButton" to="." method="hide"]
+[connection signal="pressed" from="Root/Card/Layout/Header/HeaderRow/CloseButton" to="." method="hide"]
+[connection signal="pressed" from="Root/Card/Layout/Footer/FooterMargin/FooterRow/DoneButton" to="." method="hide"]

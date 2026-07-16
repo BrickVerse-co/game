@@ -2,8 +2,12 @@
 
 [ext_resource type="Script" uid="uid://cop42ge70vewl" path="res://scripts/creator/ui/popups/AddonPermRequestPopup.cs" id="1_11ma4"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_aslvr"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [node name="AddonPermRequest" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_titleLabel", "_permissionLabel", "_allowButton", "_declineButton")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
 oversampling_override = 1.0
 title = "Addon Permission Request"
 position = Vector2i(0, 36)
