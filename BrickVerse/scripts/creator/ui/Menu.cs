@@ -659,20 +659,28 @@ public sealed partial class Menu : PanelContainer
 	public void SwitchTo(World? game)
 	{
 		bool disabled = game == null;
-		foreach ((MenuButtonMenus mbtn, MenuItem[] items) in _menus)
+
+		try
 		{
-			if (mbtn.DevOnly) continue;
-			if (mbtn.RequireGameOpen)
+			foreach ((MenuButtonMenus mbtn, MenuItem[] items) in _menus)
 			{
-				mbtn.Button.Disabled = disabled;
-			}
-			foreach (MenuItem item in items)
-			{
-				if (item is MenuButtonItem btnI && btnI.RequireGameOpen)
+				if (mbtn.DevOnly) continue;
+				if (mbtn.RequireGameOpen)
 				{
-					mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
+					mbtn.Button.Disabled = disabled;
+				}
+				foreach (MenuItem item in items)
+				{
+					if (item is MenuButtonItem btnI && btnI.RequireGameOpen)
+					{
+						mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
+					}
 				}
 			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error switching menu to game {game?.Name}: {e}");
 		}
 
 		// Switch addon menus to the new root

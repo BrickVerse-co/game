@@ -5,7 +5,6 @@
 [ext_resource type="Script" uid="uid://dffprgh01hthq" path="res://scripts/creator/ui/Menu.cs" id="1_qdfx8"]
 [ext_resource type="Script" uid="uid://bnqfp5a8m8467" path="res://scripts/creator/ui/Ribbon.cs" id="2_40iam"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_a562s"]
-[ext_resource type="Texture2D" uid="uid://y1tgfxo86kip" path="res://assets/textures/logo/logo.png" id="5_1xu8h"]
 [ext_resource type="Script" uid="uid://dcqosirkqdsbu" path="res://scripts/creator/ui/topmenu/PlayOptionsMenu.cs" id="5_c7ht3"]
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="5_imygl"]
 [ext_resource type="Texture2D" uid="uid://b3xwnjral0p0n" path="res://assets/textures/creator/ribbon/select.svg" id="7_7a4vs"]
@@ -44,8 +43,12 @@
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
 [ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
 [ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
+[ext_resource type="Script" uid="uid://7yfe1c8ir6fn" path="res://scripts/creator/ui/docks/forge-ai-chat/ForgeTab.cs" id="44_forge"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ce354"]
+load_path = "res://.godot/imported/boot.png-28724752f4f95ee94ae7ba92c3ee1281.ctex"
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_v0rtd"]
 resource_name = "RibbonGroup"
@@ -97,11 +100,12 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="Poly" type="MenuButton" parent="GUI/Menu/Layout/MenuButtons" unique_id=584138618]
-custom_minimum_size = Vector2(40, 32)
+[node name="BV" type="MenuButton" parent="GUI/Menu/Layout/MenuButtons" unique_id=584138618]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 focus_mode = 2
-icon = ExtResource("5_1xu8h")
+theme_override_constants/icon_max_width = 32
+icon = SubResource("CompressedTexture2D_ce354")
 flat = false
 icon_alignment = 1
 switch_on_hover = true
@@ -1290,7 +1294,21 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Split" type="VSplitContainer" parent="GUI/Splitter/Right" unique_id=670313949]
+[node name="RightTabs" type="TabContainer" parent="GUI/Splitter/Right" unique_id=2060552461]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+current_tab = 1
+
+[node name="Inspector" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs" unique_id=75943773]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+metadata/_tab_index = 0
+
+[node name="Split" type="VSplitContainer" parent="GUI/Splitter/Right/RightTabs/Inspector" unique_id=670313949]
 custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 theme_override_constants/separation = 6
@@ -1299,11 +1317,331 @@ theme_override_icons/grabber = SubResource("PlaceholderTexture2D_0tvsp")
 split_offsets = PackedInt32Array(-250)
 split_offset = -250
 
-[node name="Explorer" parent="GUI/Splitter/Right/Split" unique_id=63511104 instance=ExtResource("32_4fw2t")]
+[node name="Explorer" parent="GUI/Splitter/Right/RightTabs/Inspector/Split" unique_id=63511104 instance=ExtResource("32_4fw2t")]
 layout_mode = 2
 
-[node name="Properties" parent="GUI/Splitter/Right/Split" unique_id=2034223215 instance=ExtResource("34_bc04q")]
+[node name="Properties" parent="GUI/Splitter/Right/RightTabs/Inspector/Split" unique_id=2034223215 instance=ExtResource("34_bc04q")]
 layout_mode = 2
+
+[node name="Forge" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs" unique_id=814668537]
+layout_mode = 2
+theme_override_constants/separation = 0
+script = ExtResource("44_forge")
+metadata/_tab_name = "Forge"
+metadata/_tab_index = 1
+
+[node name="Header" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs/Forge" unique_id=271114295]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Row" type="HBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/Header" unique_id=437910880]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleGroup" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/Header/Row" unique_id=707643738]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/Header/Row/TitleGroup" unique_id=1934559548]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Forge"
+
+[node name="Status" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/Header/Row/TitleGroup" unique_id=830169698]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.58, 0.65, 1)
+theme_override_font_sizes/font_size = 11
+text = "Agentic Creator assistant"
+
+[node name="NewChat" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/Header/Row" unique_id=1877941867]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "New chat"
+text = "+"
+
+[node name="Settings" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/Header/Row" unique_id=1677582692]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Provider and API key settings"
+text = "⚙"
+
+[node name="Separator" type="HSeparator" parent="GUI/Splitter/Right/RightTabs/Forge" unique_id=78528013]
+layout_mode = 2
+
+[node name="ChatScroll" type="ScrollContainer" parent="GUI/Splitter/Right/RightTabs/Forge" unique_id=540828619]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChatMargin" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll" unique_id=1474183610]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 16
+
+[node name="Messages" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin" unique_id=812723101]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Welcome" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages" unique_id=1384567211]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Mark" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Welcome" unique_id=1849830754]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.62, 0.96, 1)
+theme_override_font_sizes/font_size = 24
+text = "◆"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Welcome" unique_id=1472374149]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Build with Forge"
+horizontal_alignment = 1
+
+[node name="Description" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Welcome" unique_id=1328752298]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.61, 0.68, 1)
+text = "Ask questions, generate Luau, edit selected objects, or diagnose Creator errors."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Suggestions" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages" unique_id=1903347719]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Script" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Suggestions" unique_id=1830420212]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Create a day and night cycle"
+alignment = 0
+
+[node name="Explain" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Suggestions" unique_id=468076506]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Explain the selected script"
+alignment = 0
+
+[node name="Fix" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/Suggestions" unique_id=755700213]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Fix errors from the Console"
+alignment = 0
+
+[node name="ProviderNotice" type="PanelContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages" unique_id=413786104]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/ProviderNotice" unique_id=1199323076]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Text" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ChatScroll/ChatMargin/Messages/ProviderNotice/Margin" unique_id=1867294182]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Forge can inspect your selection, scripts, full Inspector hierarchy, properties, and console. Review changes before running or publishing your world."
+autowrap_mode = 2
+
+[node name="Composer" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs/Forge" unique_id=1149306694]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/Composer" unique_id=588364208]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ContextRow" type="HBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout" unique_id=513512726]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Model" type="OptionButton" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout/ContextRow" unique_id=1825535956]
+custom_minimum_size = Vector2(138, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 4
+popup/item_0/text = "Select a model"
+popup/item_0/id = 0
+popup/item_1/text = "OpenAI"
+popup/item_1/id = 1
+popup/item_2/text = "xAI"
+popup/item_2/id = 2
+popup/item_3/text = "Local model"
+popup/item_3/id = 3
+
+[node name="Context" type="MenuButton" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout/ContextRow" unique_id=1629342071]
+custom_minimum_size = Vector2(84, 28)
+layout_mode = 2
+text = "Context"
+item_count = 5
+popup/item_0/text = "Current selection"
+popup/item_0/checkable = 1
+popup/item_0/checked = true
+popup/item_0/id = 0
+popup/item_1/text = "Open scripts"
+popup/item_1/checkable = 1
+popup/item_1/checked = true
+popup/item_1/id = 1
+popup/item_2/text = "Inspector"
+popup/item_2/checkable = 1
+popup/item_2/checked = true
+popup/item_2/id = 2
+popup/item_3/text = "Console"
+popup/item_3/checkable = 1
+popup/item_3/checked = true
+popup/item_3/id = 3
+popup/item_4/text = "Documentation"
+popup/item_4/checkable = 1
+popup/item_4/checked = true
+popup/item_4/id = 4
+
+[node name="Prompt" type="TextEdit" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout" unique_id=30484226]
+custom_minimum_size = Vector2(0, 82)
+layout_mode = 2
+placeholder_text = "Ask Forge to build, edit a script, explain code, or fix an error…"
+wrap_mode = 1
+
+[node name="Actions" type="HBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout" unique_id=1637632509]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout/Actions" unique_id=1050058621]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.47, 0.5, 0.56, 1)
+theme_override_font_sizes/font_size = 10
+text = "AI can make mistakes."
+vertical_alignment = 1
+
+[node name="Send" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/Composer/Layout/Actions" unique_id=1023170881]
+custom_minimum_size = Vector2(64, 30)
+layout_mode = 2
+disabled = true
+text = "Send"
+
+[node name="ProviderSettings" type="Window" parent="GUI/Splitter/Right/RightTabs/Forge" unique_id=741897170]
+oversampling_override = 1.0
+title = "Forge Settings"
+initial_position = 1
+size = Vector2i(540, 540)
+visible = false
+force_native = true
+min_size = Vector2i(420, 420)
+
+[node name="Margin" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings" unique_id=947011097]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin" unique_id=1424634608]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=322603890]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Model provider"
+
+[node name="Description" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=2140298685]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.61, 0.68, 1)
+text = "Choose Forge Free with Astro Basic+, or connect your preferred provider, local model, or OpenAI-compatible endpoint."
+autowrap_mode = 2
+
+[node name="ProviderLabel" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=893878611]
+layout_mode = 2
+text = "Provider"
+
+[node name="Provider" type="OptionButton" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1308381717]
+layout_mode = 2
+item_count = 7
+popup/item_0/text = "Forge Free (Astro Basic+)"
+popup/item_0/id = 0
+popup/item_1/text = "OpenAI"
+popup/item_1/id = 1
+popup/item_2/text = "Anthropic"
+popup/item_2/id = 2
+popup/item_3/text = "xAI"
+popup/item_3/id = 3
+popup/item_4/text = "Google Gemini"
+popup/item_4/id = 4
+popup/item_5/text = "OpenRouter"
+popup/item_5/id = 5
+popup/item_6/text = "Local / OpenAI-compatible"
+popup/item_6/id = 6
+
+[node name="EndpointLabel" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1431433932]
+layout_mode = 2
+text = "API endpoint"
+
+[node name="Endpoint" type="LineEdit" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1039290718]
+layout_mode = 2
+placeholder_text = "https://api.openai.com/v1"
+
+[node name="KeyLabel" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1877019267]
+layout_mode = 2
+text = "API key"
+
+[node name="ApiKey" type="LineEdit" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1774285157]
+layout_mode = 2
+placeholder_text = "Enter API key"
+secret = true
+
+[node name="ModelLabel" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1206954617]
+layout_mode = 2
+text = "Model"
+
+[node name="Model" type="LineEdit" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1081930886]
+layout_mode = 2
+placeholder_text = "Model ID"
+
+[node name="StoreKey" type="CheckBox" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=295412564]
+layout_mode = 2
+button_pressed = true
+text = "Remember key on this device"
+
+[node name="Privacy" type="Label" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=862860183]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.53, 0.59, 1)
+theme_override_font_sizes/font_size = 10
+text = "Forge Free requests are processed by BrickVerse. BYOK requests go directly to your selected provider and do not pass through BrickVerse servers. Remembered keys stay on this device."
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=1894191334]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="HBoxContainer" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout" unique_id=975949539]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Test" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout/Buttons" unique_id=1141617133]
+layout_mode = 2
+text = "Test connection"
+
+[node name="Save" type="Button" parent="GUI/Splitter/Right/RightTabs/Forge/ProviderSettings/Margin/Layout/Buttons" unique_id=1205604711]
+layout_mode = 2
+text = "Save"
 
 [node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel")]
 layout_mode = 1
