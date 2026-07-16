@@ -364,11 +364,7 @@ text_overrun_behavior = 3
 [node name="DetailBody" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
 size_flags_vertical = 0
 theme_override_font_sizes/font_size = 11
-<<<<<<< Updated upstream
 autowrap_mode = 3
-=======
-text = "Use this when you want the publish flow to create a new destination instead of replacing an existing one."
->>>>>>> Stashed changes
 clip_text = true
 text = "Use this when you want the publish flow to create a new destination instead of replacing an existing one."
 

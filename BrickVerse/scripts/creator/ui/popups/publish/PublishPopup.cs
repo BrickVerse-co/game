@@ -119,6 +119,7 @@ public partial class PublishPopup : PopupWindowBase
 			BV.PrintErr($"Failed to load published assets: {ex.Message}");
 			CreatorService.Interface.PopupAlert($"Failed to load published assets: {ex.Message}");
 			_loadingView.Visible = false;
+			QueueFree();
 			return;
 		}
 
