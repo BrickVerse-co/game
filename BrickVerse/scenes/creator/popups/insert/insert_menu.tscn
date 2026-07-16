@@ -3,6 +3,7 @@
 [ext_resource type="Theme" uid="uid://dbxwtosagdk2p" path="res://resources/themes/creator/popup.tres" id="1_qe2nl"]
 [ext_resource type="Script" uid="uid://csf126mxf4cae" path="res://scripts/creator/ui/ctxmenus/InsertMenuPopup.cs" id="2_hy0vi"]
 [ext_resource type="Texture2D" uid="uid://cma54623spmlg" path="res://assets/textures/ui-icons/search.svg" id="3_0ak45"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c8w7j"]
 content_margin_left = 6.0
@@ -63,6 +64,7 @@ content_margin_right = 8.0
 content_margin_bottom = 8.0
 
 [node name="InsertMenu" type="PopupPanel" unique_id=1040719958 node_paths=PackedStringArray("SearchBox", "ItemContainer")]
+theme = ExtResource("99_creator_theme")
 oversampling_override = 1.0
 size = Vector2i(250, 350)
 visible = true

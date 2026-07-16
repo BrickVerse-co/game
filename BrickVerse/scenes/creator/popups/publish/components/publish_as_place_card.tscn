@@ -2,80 +2,92 @@
 
 [ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/components/PublishAsPlaceCardUI.cs" id="1"]
 
-[sub_resource type="StyleBoxFlat" id="1"]
-bg_color = Color(0.07, 0.07, 0.08, 1)
+[sub_resource type="StyleBoxFlat" id="CardNormal"]
+content_margin_left = 1.0
+content_margin_top = 1.0
+content_margin_right = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.0392157, 0.0509804, 0.0705882, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.08)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="2"]
-bg_color = Color(0.1, 0.18, 0.3, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.23, 0.74, 1, 0.5)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="3"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.09, 0.09, 0.1, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.08)
+border_color = Color(0.105882, 0.145098, 0.2, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="4"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.11, 0.11, 0.12, 1)
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+content_margin_left = 1.0
+content_margin_top = 1.0
+content_margin_right = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.0509804, 0.0705882, 0.0980392, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.3, 0.76, 1, 0.45)
+border_color = Color(0.0862745, 0.392157, 0.65098, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxEmpty" id="5"]
+[sub_resource type="StyleBoxFlat" id="CardSelected"]
+content_margin_left = 1.0
+content_margin_top = 1.0
+content_margin_right = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.0352941, 0.117647, 0.196078, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="ThumbSurface"]
+bg_color = Color(0.0196078, 0.027451, 0.0392157, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+
+[sub_resource type="StyleBoxFlat" id="BadgeSurface"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 8.0
+content_margin_bottom = 3.0
+bg_color = Color(0.00392157, 0.529412, 0.972549, 0.16)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.38)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxEmpty" id="NoFocus"]
 
 [node name="PublishAsPlaceCard" type="Button" unique_id=1139912567 node_paths=PackedStringArray("_thumbnailRect", "_badgeLabel", "_titleLabel", "_metaLabel", "_descriptionLabel")]
-toggle_mode = true
-custom_minimum_size = Vector2(0, 216)
+custom_minimum_size = Vector2(0, 236)
 size_flags_horizontal = 3
-size_flags_vertical = 0
 focus_mode = 2
-text = ""
+toggle_mode = true
 flat = true
 clip_text = true
+text = ""
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("NoFocus")
 script = ExtResource("1")
-theme_override_styles/normal = SubResource("1")
-theme_override_styles/hover = SubResource("2")
-theme_override_styles/pressed = SubResource("2")
-theme_override_styles/focus = SubResource("5")
 _thumbnailRect = NodePath("MarginContainer/VBoxContainer/ThumbnailPanel/Thumbnail")
-_badgeLabel = NodePath("MarginContainer/VBoxContainer/BadgePanel/Badge")
+_badgeLabel = NodePath("MarginContainer/VBoxContainer/InfoRow/BadgePanel/Badge")
 _titleLabel = NodePath("MarginContainer/VBoxContainer/Title")
 _metaLabel = NodePath("MarginContainer/VBoxContainer/Meta")
 _descriptionLabel = NodePath("MarginContainer/VBoxContainer/Description")
@@ -86,62 +98,70 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 12
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1459574162]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 
 [node name="ThumbnailPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1110971527]
-custom_minimum_size = Vector2(0, 98)
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("1")
+clip_children = 1
+theme_override_styles/panel = SubResource("ThumbSurface")
 
 [node name="Thumbnail" type="TextureRect" parent="MarginContainer/VBoxContainer/ThumbnailPanel" unique_id=1707808810]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
+texture_filter = 1
 
-[node name="BadgePanel" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1941674639]
-custom_minimum_size = Vector2(0, 24)
+[node name="InfoRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BadgePanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/InfoRow" unique_id=1941674639]
+layout_mode = 2
 size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("3")
+theme_override_styles/panel = SubResource("BadgeSurface")
 
-[node name="Badge" type="Label" parent="MarginContainer/VBoxContainer/BadgePanel" unique_id=405945708]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 11
+[node name="Badge" type="Label" parent="MarginContainer/VBoxContainer/InfoRow/BadgePanel" unique_id=405945708]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.78, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "OVERWRITE"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "OVR"
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/InfoRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1159595043]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.94, 0.98, 1)
 theme_override_font_sizes/font_size = 14
 text = "Untitled world"
 clip_text = true
 text_overrun_behavior = 3
 
 [node name="Meta" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1471953852]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.51, 0.58, 0.68, 1)
 theme_override_font_sizes/font_size = 10
 text = "World #0 · Universe #0"
 clip_text = true
 text_overrun_behavior = 3
 
 [node name="Description" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1744253930]
+layout_mode = 2
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.65, 0.7, 0.78, 1)
 theme_override_font_sizes/font_size = 10
 autowrap_mode = 3
-text = "Publish as will overwrite this experience with the current project."
+text = "Publish as will replace this destination with the current project."

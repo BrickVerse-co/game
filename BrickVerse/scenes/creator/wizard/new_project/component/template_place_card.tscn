@@ -4,12 +4,12 @@
 [ext_resource type="Script" uid="uid://cajmxafb4rca4" path="res://scripts/creator/ui/wizards/new_project/components/TemplatePlaceCard.cs" id="1_fydjh"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fydjh"]
-bg_color = Color(0.129412, 0.141176, 0.160784, 1)
+bg_color = Color(0.0627451, 0.0823529, 0.109804, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.247059, 0.27451, 0.321569, 1)
+border_color = Color(0.137255, 0.180392, 0.239216, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -17,18 +17,18 @@ corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b06r0"]
 bg_color = Color(0.078431, 0.282353, 0.501961, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.168627, 0.576471, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c5l2b"]
-bg_color = Color(0.164706, 0.184314, 0.215686, 1)
+bg_color = Color(0.0901961, 0.12549, 0.168627, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -47,7 +47,7 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.247059, 0.27451, 0.321569, 1)
+border_color = Color(0.137255, 0.180392, 0.239216, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10

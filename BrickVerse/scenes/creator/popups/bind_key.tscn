@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c88lbbdug7kxh" path="res://scripts/creator/ui/popups/BindKeyPopup.cs" id="1_3qgo3"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_r0quq"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3qgo3"]
 content_margin_left = 8.0
@@ -35,6 +36,9 @@ expand_margin_right = 2.0
 expand_margin_bottom = 2.0
 
 [node name="BindKeyPopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_bindBtn", "_searchEdit", "_viewTree", "_okBtn", "_cancelBtn")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
 oversampling_override = 1.0
 title = "Bind Key"
 position = Vector2i(0, 36)

@@ -6,7 +6,7 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xypu1"]
 
 [node name="ActionItem" type="Button" unique_id=69203119 node_paths=PackedStringArray("_nameLabel", "_iconRect")]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 44)
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 8.0
@@ -24,16 +24,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 7
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=1961997917]
 layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer/HBoxContainer" unique_id=1093991348]
-custom_minimum_size = Vector2(20, 0)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 texture = ExtResource("2_cykar")
 expand_mode = 1

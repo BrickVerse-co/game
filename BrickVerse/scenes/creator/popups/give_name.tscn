@@ -2,8 +2,12 @@
 
 [ext_resource type="Script" uid="uid://doujh671vhmha" path="res://scripts/creator/ui/popups/GiveNamePopup.cs" id="1_5mfhk"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_ilf23"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [node name="GiveNamePopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_pathEdit", "_createBtn", "_cancelBtn")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
 oversampling_override = 1.0
 title = "Give Name..."
 position = Vector2i(0, 36)

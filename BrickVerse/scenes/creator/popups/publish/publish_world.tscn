@@ -1,17 +1,52 @@
 [gd_scene format=3 uid="uid://c7gpad5ny8xs3"]
 
 [ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1_bt5w7"]
-[ext_resource type="Theme" uid="uid://2f3k1nh6p5ac" path="res://resources/themes/hud.tres" id="1_jjpyp"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_jjpyp"]
 [ext_resource type="FontFile" uid="uid://clwbylh8y2lf2" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2_22p0f"]
 [ext_resource type="Script" uid="uid://dcoo3smlmrhwj" path="res://scripts/creator/ui/popups/publish/PublishPlaceModal.cs" id="2_jjpyp"]
 
-[sub_resource type="StyleBoxFlat" id="ModalBg"]
-bg_color = Color(0.105, 0.105, 0.11, 1)
+[sub_resource type="StyleBoxFlat" id="PopupSurface"]
+bg_color = Color(0.0352941, 0.0470588, 0.0666667, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.1)
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="PopupTitleSurface"]
+bg_color = Color(0.0509804, 0.0666667, 0.0901961, 1)
+border_width_bottom = 1
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="GDScript" id="PopupDragScript"]
+script/source = "extends PanelContainer
+var dragging := false
+func _ready():
+    var close_button = get_node_or_null(\"Margin/Row/Close\")
+    if close_button:
+        close_button.pressed.connect(func(): get_window().hide())
+func _gui_input(event):
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+        dragging = event.pressed
+    elif event is InputEventMouseMotion and dragging:
+        get_window().position += Vector2i(event.relative)
+"
+
+[sub_resource type="StyleBoxFlat" id="ModalBg"]
+bg_color = Color(0.0392157, 0.0509804, 0.0705882, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105882, 0.145098, 0.2, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -22,12 +57,12 @@ content_margin_left = 10.0
 content_margin_top = 7.0
 content_margin_right = 10.0
 content_margin_bottom = 7.0
-bg_color = Color(0.055, 0.055, 0.06, 1)
+bg_color = Color(0.025, 0.033, 0.047, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.15)
+border_color = Color(0.121569, 0.172549, 0.239216, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -38,12 +73,12 @@ content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 0.075)
+bg_color = Color(0.0627451, 0.0823529, 0.113725, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.08)
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -54,7 +89,7 @@ content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
-bg_color = Color(0, 0.592, 1, 0.95)
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -70,7 +105,7 @@ content_margin_left = 16.0
 content_margin_top = 8.0
 content_margin_right = 16.0
 content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 0.09)
+bg_color = Color(0.0627451, 0.0823529, 0.113725, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -81,7 +116,7 @@ content_margin_left = 16.0
 content_margin_top = 8.0
 content_margin_right = 16.0
 content_margin_bottom = 8.0
-bg_color = Color(0, 0.592, 1, 1)
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
 border_width_bottom = 4
 border_color = Color(0, 0.47, 0.8, 1)
 corner_radius_top_left = 8
@@ -90,28 +125,73 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [node name="PublishPlaceModal" type="Window" unique_id=1516226931]
+transparent_bg = true
 oversampling_override = 1.0
 title = "Publish World"
 initial_position = 2
-size = Vector2i(420, 430)
+size = Vector2i(520, 560)
 exclusive = true
 unresizable = true
 borderless = true
+transparent = true
 popup_window = true
-min_size = Vector2i(420, 430)
+min_size = Vector2i(520, 560)
 theme = ExtResource("1_jjpyp")
 script = ExtResource("2_jjpyp")
 
-[node name="Modal" type="Panel" parent="." unique_id=965128555]
-custom_minimum_size = Vector2(420, 430)
+[node name="PopupSurface" type="Panel" parent="." unique_id=1555940934]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PopupSurface")
+
+[node name="TitleBar" type="PanelContainer" parent="." unique_id=191034980]
+custom_minimum_size = Vector2(0, 42)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 42.0
+grow_horizontal = 2
+mouse_default_cursor_shape = 13
+theme_override_styles/panel = SubResource("PopupTitleSurface")
+script = SubResource("PopupDragScript")
+
+[node name="Margin" type="MarginContainer" parent="TitleBar" unique_id=939897911]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 8
+
+[node name="Row" type="HBoxContainer" parent="TitleBar/Margin" unique_id=773293569]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TitleBar/Margin/Row" unique_id=696673743]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "Publish Experience"
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="TitleBar/Margin/Row" unique_id=1058938951]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "×"
+flat = true
+
+[node name="Modal" type="Panel" parent="." unique_id=965128555]
+custom_minimum_size = Vector2(0, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 42.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("ModalBg")
 
 [node name="Header" type="HBoxContainer" parent="Modal" unique_id=862203220]
+visible = false
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -147,13 +227,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 18.0
-offset_top = 46.0
-offset_right = -18.0
-offset_bottom = -52.0
+offset_left = 26.0
+offset_top = 26.0
+offset_right = -26.0
+offset_bottom = -78.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="NameLabel" type="Label" parent="Modal/Body" unique_id=1532304448]
 layout_mode = 2
@@ -162,12 +242,12 @@ theme_override_font_sizes/font_size = 12
 text = "World Name"
 
 [node name="PlaceName" type="LineEdit" parent="Modal/Body" unique_id=1814692619]
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "My Awesome Level"
 max_length = 64
-theme_override_font_sizes/font_size = 12
 
 [node name="UniverseLabel" type="Label" parent="Modal/Body" unique_id=778209538]
 layout_mode = 2
@@ -176,12 +256,12 @@ theme_override_font_sizes/font_size = 12
 text = "Universe Name"
 
 [node name="UniverseName" type="LineEdit" parent="Modal/Body" unique_id=1656479556]
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "My Awesome Place"
 max_length = 64
-theme_override_font_sizes/font_size = 12
 
 [node name="DescriptionLabel" type="Label" parent="Modal/Body" unique_id=2115532380]
 visible = false
@@ -191,12 +271,12 @@ theme_override_font_sizes/font_size = 12
 text = "Universe Description"
 
 [node name="Description" type="TextEdit" parent="Modal/Body" unique_id=1134158449]
-custom_minimum_size = Vector2(0, 74)
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
+theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "Tell players what this place is about..."
 wrap_mode = 1
-theme_override_font_sizes/font_size = 12
 
 [node name="PublishAsLabel" type="Label" parent="Modal/Body" unique_id=1828265531]
 layout_mode = 2
@@ -209,7 +289,8 @@ layout_mode = 2
 theme_override_constants/separation = 6
 
 [node name="Personal" type="Button" parent="Modal/Body/Ownership" unique_id=844129733]
-custom_minimum_size = Vector2(108, 30)
+custom_minimum_size = Vector2(0, 38)
+size_flags_horizontal = 3
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
@@ -220,7 +301,8 @@ button_pressed = true
 text = "My account"
 
 [node name="Guild" type="Button" parent="Modal/Body/Ownership" unique_id=1313892143]
-custom_minimum_size = Vector2(88, 30)
+custom_minimum_size = Vector2(0, 38)
+size_flags_horizontal = 3
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
@@ -231,10 +313,10 @@ text = "Guild"
 
 [node name="GuildDropdown" type="OptionButton" parent="Modal/Body" unique_id=777477083]
 visible = false
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_styles/normal = SubResource("FieldBg")
 theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("FieldBg")
 
 [node name="ErrorLabel" type="Label" parent="Modal/Body" unique_id=683396683]
 visible = false
@@ -256,23 +338,23 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 18.0
-offset_top = -42.0
-offset_right = -18.0
-offset_bottom = -14.0
+offset_left = 26.0
+offset_top = -58.0
+offset_right = -26.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 6
 alignment = 2
 
 [node name="Cancel" type="Button" parent="Modal/Footer" unique_id=450913585]
-custom_minimum_size = Vector2(80, 28)
+custom_minimum_size = Vector2(96, 38)
 layout_mode = 2
 theme_override_styles/normal = SubResource("SecondaryBtn")
 text = "Cancel"
 
 [node name="Publish" type="Button" parent="Modal/Footer" unique_id=39492356]
-custom_minimum_size = Vector2(88, 28)
+custom_minimum_size = Vector2(110, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("1_bt5w7")

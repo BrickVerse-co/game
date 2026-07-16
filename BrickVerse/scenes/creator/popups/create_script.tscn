@@ -6,12 +6,16 @@
 [ext_resource type="Texture2D" uid="uid://b5rx0326gw2mg" path="res://assets/textures/datamodel/ClientScript.svg" id="3_b7t1w"]
 [ext_resource type="Texture2D" uid="uid://ho5m6pf7dsmh" path="res://assets/textures/datamodel/ModuleScript.svg" id="4_bd64o"]
 [ext_resource type="Texture2D" uid="uid://bq1iu50it1cw2" path="res://assets/textures/ui-icons/folder.svg" id="6_b7t1w"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_4aee4"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b7t1w"]
 
 [node name="CreateScriptPopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_pathEdit", "_browseBtn", "_createBtn", "_cancelBtn", "_errorLabel")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
 oversampling_override = 1.0
 title = "Create Script"
 size = Vector2i(316, 200)
