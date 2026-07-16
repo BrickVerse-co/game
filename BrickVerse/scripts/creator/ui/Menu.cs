@@ -72,8 +72,8 @@ public sealed partial class Menu : PanelContainer
 	private World? _currentRoot = null;
 	private int _addonItemId = 0;
 
-	private MenuButton _polyButton = null!;
-	private PopupMenu _polyMenu = null!;
+	private MenuButton _bvButton = null!;
+	private PopupMenu _bvMenu = null!;
 	private PopupMenu _addonSlotMenu = null!;
 
 	public Menu()
@@ -486,10 +486,10 @@ public sealed partial class Menu : PanelContainer
 		_topRightLayout = GetNode<HBoxContainer>("Layout/Margin/Layout");
 		_topRightLayout.AddChild(new CreatorToolbarUserChip());
 
-		_polyButton = _menuButtons.GetNode<MenuButton>("Poly");
-		_polyMenu = _polyButton.GetPopup();
+		_bvButton = _menuButtons.GetNode<MenuButton>("BV");
+		_bvMenu = _bvButton.GetPopup();
 
-		_polyMenu.IdPressed += OnPoly;
+		_bvMenu.IdPressed += OnBV;
 
 		foreach ((MenuButtonMenus mbtn, MenuItem[] items) in _menus)
 		{
@@ -673,7 +673,11 @@ public sealed partial class Menu : PanelContainer
 				{
 					if (item is MenuButtonItem btnI && btnI.RequireGameOpen)
 					{
-						mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
+						try {
+							mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
+						} catch (Exception e) {
+							GD.PrintErr($"Error setting menu item disabled: {e}");
+						}
 					}
 				}
 			}
@@ -713,7 +717,7 @@ public sealed partial class Menu : PanelContainer
 		}
 	}
 
-	private void OnPoly(long idx)
+	private void OnBV(long idx)
 	{
 		switch (idx)
 		{
