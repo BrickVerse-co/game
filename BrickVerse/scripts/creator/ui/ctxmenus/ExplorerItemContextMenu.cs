@@ -60,15 +60,21 @@ public partial class ExplorerItemContextMenu : ContextMenu
 			AddIconItem("ungroup", "Ungroup", 32);
 		}
 
-		// TODO: Implement Model publish
-		//AddIconItem("publish", "Publish", 39);
+		if (Target is World)
+		{
+			AddSeparator();
+			AddIconItem("publish", "Publish world", 39);
+		}
+		else if (Target is Model)
+		{
+			AddSeparator();
+			AddIconItem("publish", "Publish prefab", 39);
+		}
 
 		if (isSingle)
 		{
 			AddIconItem("route", "Copy Lua Path", 51);
-
-			// TODO: Implement Open Documentation
-			//AddIconItem("book", "Open Documentation", 59);
+			AddIconItem("book", "Open Documentation", 59);
 		}
 		AddSeparator();
 		AddIconItem("lock", "Lock/Unlock", 61);
@@ -76,6 +82,7 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		{
 			AddSeparator();
 			AddIconItem("addon", "Install as addon", 71);
+			AddIconItem("publish", "Publish addon", 39);
 		}
 		if (!Targets[0].GetType().IsDefined(typeof(StaticAttribute), false))
 		{
@@ -188,7 +195,7 @@ public partial class ExplorerItemContextMenu : ContextMenu
 				}
 			case 59: // Open Documentation
 				{
-					//OS.ShellOpen(Target!.ClassName);
+					OS.ShellOpen("https://developers.brickverse.gg/game-api/types/" + Target!.ClassName.ToLower());
 					break;
 				}
 			case 61: // Lock/Unlock

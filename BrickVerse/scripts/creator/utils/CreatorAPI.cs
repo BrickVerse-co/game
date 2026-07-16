@@ -897,6 +897,66 @@ public static class CreatorAPI
 		return await GetCreatedWorldsFromCreatedWorldsEndpoint();
 	}
 
+	private static CreatorAssetItem ParseCreatorAssetItem(JsonElement asset)
+	{
+		return new CreatorAssetItem
+		{
+			Id = GetLong(asset, "id"),
+			Name = GetString(asset, "name"),
+			Description = GetString(asset, "description"),
+			Type = GetString(asset, "assetType"),
+			CreatorType = GetString(asset, "creatorType"),
+			CreatedAt =
+				DateTime.TryParse(GetString(asset, "createdAt"), out DateTime createdAt)
+					? createdAt
+					: DateTime.UtcNow,
+			UpdatedAt =
+				DateTime.TryParse(GetString(asset, "updatedAt"), out DateTime updatedAt)
+					? updatedAt
+					: null,
+			IconUrl = GetString(asset, "textureUrl"),
+		};
+	}
+
+	public static async Task<CreatorAssetItem[]> GetCreatorAssets(UI.Popups.PublishPopup.PublishTypeEnum assetType, int? cursor = null)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+
+		using HttpResponseMessage msg = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/assets?limit=50&type=" + assetType.ToString().ToUpper() + (cursor.HasValue ? "&cursor=" + cursor.Value : ""))
+		);
+		string body = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException(
+				$"CreatorAPI: Failed to load created assets: {(int)msg.StatusCode} {msg.StatusCode}: {body}"
+			);
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(body);
+
+		if (
+			!doc.RootElement.TryGetProperty("assets", out JsonElement assets)
+			|| assets.ValueKind != JsonValueKind.Array
+		)
+		{
+			BV.PrintErr("CreatorAPI: /v3/assets response did not include an assets array");
+			return [];
+		}
+
+		List<CreatorAssetItem> assetList = [];
+
+		foreach (JsonElement asset in assets.EnumerateArray())
+		{
+			assetList.Add(ParseCreatorAssetItem(asset));
+		}
+
+		return [.. assetList];
+	}
+
 	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromCreatedWorldsEndpoint()
 	{
 		BV.Print("CreatorAPI: Requesting /v3/created-worlds");
@@ -919,19 +979,16 @@ public static class CreatorAPI
 			|| universes.ValueKind != JsonValueKind.Array
 		)
 		{
-			BV.Print("CreatorAPI: /v3/created-worlds response did not include a universes array");
+			BV.PrintErr("CreatorAPI: /v3/created-worlds response did not include a universes array");
 			return [];
 		}
 
 		List<CreatorPlaceItem> worlds = [];
-		BV.Print($"CreatorAPI: /v3/created-worlds returned {universes.GetArrayLength()} universe(s)");
 
 		foreach (JsonElement universe in universes.EnumerateArray())
 		{
 			AppendWorldsFromUniverse(worlds, universe);
 		}
-
-		BV.Print($"CreatorAPI: /v3/created-worlds resolved {worlds.Count} publish target(s)");
 
 		return [.. worlds];
 	}
@@ -1216,51 +1273,88 @@ public static class CreatorAPI
 		};
 	}
 
-	public static async Task<CreatorPublishResponse> UploadModel(byte[] modelData, long modelId = 0)
+	public static async Task<CreatorPublishResponse> UploadAsset(byte[] assetData, long assetId = 0, string assetType = "PREFAB")
 	{
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		using MultipartFormDataContent form = new()
+
+		// If the assetId is 0, we are creating a new asset.
+		if (assetId == 0)
+		{
+			using MultipartFormDataContent form = new()
 		{
 			{ new StringContent("studio-upload"), "captchaToken" },
 			{ new StringContent(UserID), "ownerId" },
 			{ new StringContent("USER"), "ownerType" },
-			{ new StringContent("PREFAB"), "assetType" },
-			{ new StringContent(modelId == 0 ? "Model" : "Model " + modelId), "name" },
-			{ new StringContent(""), "description" },
-			{ new StringContent("0"), "price" },
-			{ new StringContent("false"), "isForSale" },
-			{ new StringContent("Ownership"), "assetPrivacy" },
+			{ new StringContent(assetType), "assetType" },
 		};
 
-		ByteArrayContent fileContent = new(modelData);
-		fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		form.Add(fileContent, "file", "model.bvxm");
+			ByteArrayContent fileContent = new(assetData);
+			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			form.Add(fileContent, "file", "asset.bvxm");
 
-		using HttpResponseMessage msg = await _client.PostAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
-			form
-		);
+			using HttpResponseMessage msg = await _client.PostAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
+				form
+			);
 
-		msg.EnsureSuccessStatusCode();
+			msg.EnsureSuccessStatusCode();
 
-		using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+			using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
 
-		string assetId = createdDoc.RootElement.TryGetProperty(
-			"assetId",
-			out JsonElement assetIdNode
-		)
-			? assetIdNode.GetString() ?? ""
-			: "";
+			string newAssetId = createdDoc.RootElement.TryGetProperty(
+				"assetId",
+				out JsonElement assetIdNode
+			)
+				? assetIdNode.GetString() ?? ""
+				: "";
 
-		return new CreatorPublishResponse
+			return new CreatorPublishResponse
+			{
+				Link =
+					newAssetId.Length == 0
+						? Globals.MainEndpoint.PathJoin("/creator")
+						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+			};
+		}
+		else
 		{
-			Link =
-				assetId.Length == 0
-					? Globals.MainEndpoint.PathJoin("/creator")
-					: Globals.MainEndpoint.PathJoin("/asset/" + assetId),
+			// Otherwise, we are updating an existing asset
+			using MultipartFormDataContent form = new()
+		{
+			{ new StringContent(assetId.ToString()), "assetId" },
+			{ new StringContent("studio-upload"), "captchaToken" },
 		};
+
+			ByteArrayContent fileContent = new(assetData);
+			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			form.Add(fileContent, "file", "asset.bvxm");
+
+			using HttpResponseMessage msg = await _client.PostAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/asset/publish"),
+				form
+			);
+
+			msg.EnsureSuccessStatusCode();
+
+			using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+
+			string newAssetId = createdDoc.RootElement.TryGetProperty(
+				"assetId",
+				out JsonElement assetIdNode
+			)
+				? assetIdNode.GetString() ?? ""
+				: "";
+
+			return new CreatorPublishResponse
+			{
+				Link =
+					newAssetId.Length == 0
+						? Globals.MainEndpoint.PathJoin("/creator")
+						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+			};
+		}
 	}
 
 	private static bool IsValidUserInfo(OpenIdUserInfoResponse userInfo)

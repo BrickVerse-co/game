@@ -903,7 +903,7 @@ return module";
 	{
 		if (!File.Exists(InputMapFilePath))
 		{
-			BV.Print("Writing input map...");
+			//BV.Print("Writing input map...");
 
 			// Write default input map
 			InputActionAxis h = InputMap.BindAxis("Horizontal");
@@ -925,7 +925,7 @@ return module";
 		}
 		else
 		{
-			BV.Print("Reading input map... ", InputMapFilePath);
+			//BV.Print("Reading input map... ", InputMapFilePath);
 			string inputData = File.ReadAllText(InputMapFilePath);
 			try
 			{
@@ -940,7 +940,7 @@ return module";
 
 	public void SaveInputMap()
 	{
-		BV.Print("Writing input map... ", InputMapFilePath);
+		//BV.Print("Writing input map... ", InputMapFilePath);
 		string jsonContent = InputMap.SaveToString();
 		File.WriteAllText(InputMapFilePath, jsonContent);
 	}

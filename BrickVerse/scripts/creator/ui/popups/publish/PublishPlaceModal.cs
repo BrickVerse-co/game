@@ -130,13 +130,12 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 	public async void Open(World world, bool publishAs = false)
 	{
-		if (world == null)
+		if (world == null || world.WorldID == 0 || world.UniverseID == 0)
 		{
-			BV.PrintErr("Cannot open PublishPlaceModal: world is null.");
+			CreatorService.Interface.PopupAlert("This experience hasn't been published yet.\nTo publish it, first use Publish As to create a new experience or overwrite an existing one. Once it has been published, you'll be able to use Publish to save future changes.");
+			Close();
 			return;
 		}
-
-		BV.Print($"Opening PublishPlaceModal for world: {world.WorldName}, Universe: {world.UniverseName}, PublishAs: {publishAs}");
 
 		this.world = world;
 

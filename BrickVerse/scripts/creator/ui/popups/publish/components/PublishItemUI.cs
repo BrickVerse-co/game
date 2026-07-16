@@ -8,20 +8,23 @@ using BrickVerse.Shared.AssetLoaders;
 
 namespace BrickVerse.Creator.UI.Components;
 
-public partial class PublishPlaceItemUI : Button
+public partial class PublishItemUI : Button
 {
 	[Export] private TextureRect _iconRect = null!;
 	[Export] private Label _placeNameLabel = null!;
 
-	public CreatorPlaceItem Target;
+	public CreatorAssetItem Target;
 
 	public override void _Ready()
 	{
 		_placeNameLabel.Text = Target.Name;
 
-		WebAssetLoader.Singleton.GetResource(new() { URL = Target.IconUrl }, r =>
+		if (!string.IsNullOrEmpty(Target.IconUrl))
 		{
-			_iconRect.Texture = (Texture2D)r;
-		});
+			WebAssetLoader.Singleton.GetResource(new() { URL = Target.IconUrl }, r =>
+			{
+				_iconRect.Texture = (Texture2D)r;
+			});
+		}
 	}
 }

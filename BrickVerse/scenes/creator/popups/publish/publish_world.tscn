@@ -181,7 +181,6 @@ text = "×"
 flat = true
 
 [node name="Modal" type="Panel" parent="." unique_id=965128555]
-custom_minimum_size = Vector2(0, 0)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -235,20 +234,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="NameLabel" type="Label" parent="Modal/Body" unique_id=1532304448]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("1_bt5w7")
-theme_override_font_sizes/font_size = 12
-text = "World Name"
-
-[node name="PlaceName" type="LineEdit" parent="Modal/Body" unique_id=1814692619]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("FieldBg")
-placeholder_text = "My Awesome Level"
-max_length = 64
-
 [node name="UniverseLabel" type="Label" parent="Modal/Body" unique_id=778209538]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")
@@ -290,8 +275,8 @@ theme_override_constants/separation = 6
 
 [node name="Personal" type="Button" parent="Modal/Body/Ownership" unique_id=844129733]
 custom_minimum_size = Vector2(0, 38)
-size_flags_horizontal = 3
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
 theme_override_styles/pressed = SubResource("SegmentPressed")
@@ -302,8 +287,8 @@ text = "My account"
 
 [node name="Guild" type="Button" parent="Modal/Body/Ownership" unique_id=1313892143]
 custom_minimum_size = Vector2(0, 38)
-size_flags_horizontal = 3
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_bt5w7")
 theme_override_styles/normal = SubResource("SegmentBg")
 theme_override_styles/pressed = SubResource("SegmentPressed")

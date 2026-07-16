@@ -55,6 +55,33 @@ public struct CreatorPlaceItem
 	public string IconUrl { get; set; }
 }
 
+public struct CreatorAssetItem
+{
+	[JsonPropertyName("id")]
+	public long Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
+	[JsonPropertyName("assetType")]
+	public string Type { get; set; }
+
+	[JsonPropertyName("creatorType")]
+	public string CreatorType { get; set; }
+
+	[JsonPropertyName("createdAt")]
+	public DateTime CreatedAt { get; set; }
+
+	[JsonPropertyName("updatedAt")]
+	public DateTime? UpdatedAt { get; set; }
+
+	[JsonPropertyName("textureUrl")]
+	public string? IconUrl { get; set; }
+}
+
 public struct CreatorPublishResponse
 {
 	[JsonPropertyName("success")]
