@@ -2,55 +2,34 @@
 
 [ext_resource type="Script" uid="uid://d2ov1gcf4ccdq" path="res://scripts/creator/ui/FileBrowser.cs" id="1_lnpe1"]
 
-[sub_resource type="FontVariation" id="FontVariation_khfyn"]
-variation_opentype = {
-2003265652: 700
-}
+[sub_resource type="StyleBoxFlat" id="DockContent"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f05cx"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.0862745, 0.0862745, 0.0862745, 1)
+[sub_resource type="StyleBoxEmpty" id="Empty"]
 
-[sub_resource type="Theme" id="Theme_khfyn"]
-resource_name = "HeaderTheme"
-Label/font_sizes/font_size = 14
-Label/fonts/font = SubResource("FontVariation_khfyn")
-PanelContainer/styles/panel = SubResource("StyleBoxFlat_f05cx")
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_byekl"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1f7jh"]
-
-[sub_resource type="Theme" id="Theme_smqtq"]
-resource_name = "FileBrowserTheme"
+[sub_resource type="Theme" id="FileBrowserTheme"]
 TabContainer/constants/side_margin = 0
-TabContainer/styles/tabbar_background = SubResource("StyleBoxEmpty_byekl")
-TabContainer/styles/panel = SubResource("StyleBoxEmpty_byekl")
-PanelContainer/styles/panel = SubResource("StyleBoxEmpty_1f7jh")
+TabContainer/styles/tabbar_background = SubResource("Empty")
+TabContainer/styles/panel = SubResource("DockContent")
+PanelContainer/styles/panel = SubResource("Empty")
 
 [node name="FileBrowser" type="VBoxContainer" unique_id=1200544874]
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 0
 
-[node name="Header" type="MarginContainer" parent="." unique_id=430200614]
-custom_minimum_size = Vector2(0, 34)
+[node name="Header" type="Control" parent="." unique_id=430200614]
+visible = false
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("Theme_khfyn")
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Label" type="Label" parent="Header" unique_id=75168433]
-layout_mode = 2
-size_flags_vertical = 1
+layout_mode = 1
 text = "File Browser"
-vertical_alignment = 1
 
 [node name="Tabs" type="TabContainer" parent="." unique_id=783602287]
 layout_mode = 2
@@ -58,5 +37,5 @@ size_flags_vertical = 3
 tabs_visible = false
 switch_on_drag_hover = false
 deselect_enabled = true
-theme = SubResource("Theme_smqtq")
+theme = SubResource("FileBrowserTheme")
 script = ExtResource("1_lnpe1")

@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://bapb8jf0mnc6b" path="res://assets/textures/ui-icons/input-vector2.svg" id="3_frgw1"]
 [ext_resource type="Texture2D" uid="uid://dfxe1ar0nqdf6" path="res://assets/textures/ui-icons/input-button.svg" id="5_rk5gy"]
 [ext_resource type="Texture2D" uid="uid://bvr6e3eexw46d" path="res://assets/textures/ui-icons/input-axis.svg" id="6_tllr4"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="Theme" id="Theme_smwws"]
 default_base_scale = 16.0
@@ -31,11 +32,39 @@ corner_detail = 5
 [sub_resource type="Theme" id="Theme_m0en2"]
 Button/styles/pressed = SubResource("StyleBoxFlat_xypu1")
 
+[sub_resource type="StyleBoxFlat" id="PopupSurface"]
+bg_color = Color(0.0352941, 0.0470588, 0.0666667, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="PopupTitleSurface"]
+bg_color = Color(0.0509804, 0.0666667, 0.0901961, 1)
+border_width_bottom = 1
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="GDScript" id="PopupDragScript"]
+script/source = "extends PanelContainer\nvar dragging := false\nfunc _ready():\n    var close_button = get_node_or_null(\"Margin/Row/Close\")\n    if close_button:\n        close_button.pressed.connect(func(): get_window().hide())\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
+
 [node name="InputManager" type="Window" unique_id=439088174 node_paths=PackedStringArray("_searchEdit", "_addButton", "_viewContainer", "_inputList")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
+borderless = true
 oversampling_override = 1.0
 title = "Input Manager"
 initial_position = 2
-size = Vector2i(750, 450)
+size = Vector2i(900, 560)
 transient = true
 transient_to_focused = true
 exclusive = true
@@ -49,10 +78,55 @@ _addButton = NodePath("MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer
 _viewContainer = NodePath("MarginContainer/HBoxContainer/Control2/Control3")
 _inputList = NodePath("MarginContainer/HBoxContainer/VBoxContainer/Control/VBoxContainer")
 
+[node name="PopupSurface" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PopupSurface")
+
+[node name="TitleBar" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 42)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 42.0
+grow_horizontal = 2
+mouse_default_cursor_shape = 13
+theme_override_styles/panel = SubResource("PopupTitleSurface")
+script = SubResource("PopupDragScript")
+
+[node name="Margin" type="MarginContainer" parent="TitleBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 8
+
+[node name="Row" type="HBoxContainer" parent="TitleBar/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TitleBar/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "Input Manager"
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="TitleBar/Margin/Row"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+flat = true
+text = "×"
+
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=839167000]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 46.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 16
@@ -66,27 +140,28 @@ theme = SubResource("Theme_smwws")
 theme_override_constants/separation = 16
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1049965580]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=663576217]
 layout_mode = 2
 
 [node name="LineEdit" type="LineEdit" parent="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1210318774]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Search..."
+custom_minimum_size = Vector2(0, 36)
+placeholder_text = "Search actions…"
 caret_blink = true
 
 [node name="Button" type="MenuButton" parent="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer" unique_id=97309169]
-custom_minimum_size = Vector2(24, 24)
+custom_minimum_size = Vector2(112, 36)
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Add New"
+tooltip_text = "Add Action"
+text = "Add Action"
 icon = ExtResource("2_3tgka")
 flat = false
-icon_alignment = 1
+icon_alignment = 0
 expand_icon = true
 item_count = 3
 popup/item_0/text = "Button"

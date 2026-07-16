@@ -4,16 +4,45 @@
 [ext_resource type="StyleBox" uid="uid://bwksp3bsrvcf6" path="res://resources/styles/card_rounded.tres" id="2_sh75v"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_uyter"]
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="3_lg06a"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ksoaw"]
-bg_color = Color(0.12, 0.12, 0.12, 1)
+bg_color = Color(0.0470588, 0.0627451, 0.0862745, 1)
+
+[sub_resource type="StyleBoxFlat" id="PopupSurface"]
+bg_color = Color(0.0352941, 0.0470588, 0.0666667, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="PopupTitleSurface"]
+bg_color = Color(0.0509804, 0.0666667, 0.0901961, 1)
+border_width_bottom = 1
+border_color = Color(0.117647, 0.164706, 0.223529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="GDScript" id="PopupDragScript"]
+script/source = "extends PanelContainer\nvar dragging := false\nfunc _ready():\n    var close_button = get_node_or_null(\"Margin/Row/Close\")\n    if close_button:\n        close_button.pressed.connect(func(): get_window().hide())\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
 
 [node name="Publish" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_listContainer", "_itemInfoView", "_itemNameLabel", "_itemLastUpdatedLabel", "_itemCreatedAtLabel", "_itemIconRect", "_loadingView", "_newButton", "_cancelButton", "_publishButton")]
+theme = ExtResource("99_creator_theme")
+force_native = false
+transparent = true
+borderless = true
 oversampling_override = 1.0
 title = "Publish Place"
 initial_position = 2
-size = Vector2i(700, 400)
-min_size = Vector2i(700, 400)
+size = Vector2i(900, 560)
+min_size = Vector2i(900, 560)
 transient = true
 unresizable = true
 popup_wm_hint = true
@@ -32,15 +61,60 @@ _newButton = NodePath("HBoxContainer/Panel/Control2/VBoxContainer/Button")
 _cancelButton = NodePath("HBoxContainer/Control/VBoxContainer/HBoxContainer/Cancel")
 _publishButton = NodePath("HBoxContainer/Control/VBoxContainer/HBoxContainer/Publish")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=708996311]
+[node name="PopupSurface" type="Panel" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PopupSurface")
+
+[node name="TitleBar" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 42)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 42.0
+grow_horizontal = 2
+mouse_default_cursor_shape = 13
+theme_override_styles/panel = SubResource("PopupTitleSurface")
+script = SubResource("PopupDragScript")
+
+[node name="Margin" type="MarginContainer" parent="TitleBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 8
+
+[node name="Row" type="HBoxContainer" parent="TitleBar/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TitleBar/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "Publish Experience"
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="TitleBar/Margin/Row"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+flat = true
+text = "×"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=708996311]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 46.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="HBoxContainer" unique_id=1351491859]
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ksoaw")
 
@@ -92,7 +166,7 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 0
-text = "Create New"
+text = "+  Create New Experience"
 
 [node name="Control" type="MarginContainer" parent="HBoxContainer" unique_id=175424596]
 layout_mode = 2
@@ -166,11 +240,11 @@ size_flags_vertical = 8
 alignment = 2
 
 [node name="Cancel" type="Button" parent="HBoxContainer/Control/VBoxContainer/HBoxContainer" unique_id=303088786]
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(96, 38)
 layout_mode = 2
 text = "Cancel"
 
 [node name="Publish" type="Button" parent="HBoxContainer/Control/VBoxContainer/HBoxContainer" unique_id=1009990308]
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(96, 38)
 layout_mode = 2
 text = "Publish"

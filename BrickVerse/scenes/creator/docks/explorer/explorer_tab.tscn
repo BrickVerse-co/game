@@ -9,18 +9,27 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 script = ExtResource("1_0bmvf")
 Tree = NodePath("Tree")
 _searchEdit = NodePath("SearchEdit")
 
 [node name="SearchEdit" type="LineEdit" parent="." unique_id=1407216840]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-placeholder_text = "Search..."
+placeholder_text = "Search Explorer..."
+select_all_on_focus = true
+caret_blink = true
 
 [node name="Tree" type="Tree" parent="." unique_id=861372896]
 layout_mode = 2
 size_flags_vertical = 3
 allow_rmb_select = true
+theme_override_constants/inner_item_margin_left = 7
+theme_override_constants/inner_item_margin_top = 5
+theme_override_constants/inner_item_margin_bottom = 5
 select_mode = 2
+theme_override_constants/item_margin = 17
+theme_override_constants/icon_h_separation = 9
+theme_override_constants/v_separation = 3
 script = ExtResource("1_ns4t2")

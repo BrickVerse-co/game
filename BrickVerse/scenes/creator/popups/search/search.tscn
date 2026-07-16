@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cma54623spmlg" path="res://assets/textures/ui-icons/search.svg" id="1_wvvfc"]
 [ext_resource type="PackedScene" uid="uid://de12014sipdhp" path="res://scenes/creator/popups/search/search_button.tscn" id="2_2lk4x"]
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="4_12hy2"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wvvfc"]
 bg_color = Color(0.14901961, 0.14901961, 0.14901961, 1)
@@ -23,6 +24,7 @@ bg_color = Color(0.08627451, 0.08627451, 0.08627451, 1)
 expand_margin_top = 2.0
 
 [node name="Search" type="Panel" unique_id=770064460 node_paths=PackedStringArray("searchBar", "searchResultsContainer", "loadingSpinner", "statusText")]
+theme = ExtResource("99_creator_theme")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

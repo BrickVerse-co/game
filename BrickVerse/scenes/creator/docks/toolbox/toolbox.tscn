@@ -5,54 +5,12 @@
 [ext_resource type="Texture2D" uid="uid://c60spvojllrt4" path="res://assets/textures/ui-icons/chevron-left.svg" id="3_n2m24"]
 [ext_resource type="Texture2D" uid="uid://yd5kv6j4l3hp" path="res://assets/textures/ui-icons/chevron-right.svg" id="4_q1vt0"]
 
-[sub_resource type="FontVariation" id="FontVariation_khfyn"]
-variation_opentype = {
-2003265652: 700
-}
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f05cx"]
+[sub_resource type="StyleBoxFlat" id="ToolboxSurface"]
 content_margin_left = 10.0
-content_margin_top = 5.0
+content_margin_top = 9.0
 content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.0862745, 0.0862745, 0.0862745, 1)
-
-[sub_resource type="Theme" id="Theme_khfyn"]
-resource_name = "HeaderTheme"
-Label/font_sizes/font_size = 14
-Label/fonts/font = SubResource("FontVariation_khfyn")
-PanelContainer/styles/panel = SubResource("StyleBoxFlat_f05cx")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r5bi"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.14902, 0.14902, 0.14902, 1)
-draw_center = false
-
-[sub_resource type="Theme" id="Theme_qt6xe"]
-resource_name = "ToolboxTheme"
-PanelContainer/styles/panel = SubResource("StyleBoxFlat_1r5bi")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_akuy4"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.09, 0.09, 0.09, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="Theme" id="Theme_h1wj5"]
-Panel/styles/panel = SubResource("StyleBoxFlat_akuy4")
-VBoxContainer/constants/separation = 0
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_657cn"]
-content_margin_left = 5.0
-content_margin_right = 5.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
 
 [node name="Toolbox" type="VBoxContainer" unique_id=1950152327]
 anchors_preset = 15
@@ -62,28 +20,22 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 0
 
-[node name="Header" type="MarginContainer" parent="." unique_id=808583813]
-custom_minimum_size = Vector2(0, 34)
+[node name="Header" type="Control" parent="." unique_id=808583813]
+visible = false
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("Theme_khfyn")
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Label" type="Label" parent="Header" unique_id=1871889264]
-layout_mode = 2
-size_flags_vertical = 1
+layout_mode = 1
 text = "Toolbox"
-vertical_alignment = 1
 
 [node name="Content" type="PanelContainer" parent="." unique_id=1324323428 node_paths=PackedStringArray("_typeOption", "_filterOption", "_searchEdit", "_resultsContainer", "_pagNavPrev", "_pagNavLabel", "_pagNavNext", "_loaderView", "_noResultView")]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
+theme_override_styles/panel = SubResource("ToolboxSurface")
 script = ExtResource("1_akuy4")
 _typeOption = NodePath("Container/Options/Type")
 _filterOption = NodePath("Container/Options/Filter")
@@ -98,12 +50,23 @@ _noResultView = NodePath("Container/Control/NoResultView")
 [node name="Container" type="VBoxContainer" parent="Content" unique_id=807622070]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="SectionLabel" type="Label" parent="Content/Container"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+theme_override_font_sizes/font_size = 9
+text = "ASSET MARKETPLACE"
+vertical_alignment = 1
 
 [node name="Options" type="HBoxContainer" parent="Content/Container" unique_id=195251251]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 6
 
 [node name="Type" type="OptionButton" parent="Content/Container/Options" unique_id=16203676]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 0
@@ -119,6 +82,7 @@ popup/item_3/id = 3
 
 [node name="Filter" type="OptionButton" parent="Content/Container/Options" unique_id=67359682]
 visible = false
+custom_minimum_size = Vector2(88, 30)
 layout_mode = 2
 selected = 0
 item_count = 2
@@ -128,8 +92,9 @@ popup/item_1/text = "Private"
 popup/item_1/id = 1
 
 [node name="Search" type="LineEdit" parent="Content/Container" unique_id=650306327]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-placeholder_text = "Search..."
+placeholder_text = "Search assets..."
 keep_editing_on_text_submit = true
 context_menu_enabled = false
 select_all_on_focus = true
@@ -152,10 +117,10 @@ scroll_hint_mode = 2
 [node name="MarginContainer" type="MarginContainer" parent="Content/Container/Control/ScrollContainer" unique_id=294109174]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 4
 
 [node name="Results" type="HFlowContainer" parent="Content/Container/Control/ScrollContainer/MarginContainer" unique_id=371562113]
 layout_mode = 2
@@ -163,8 +128,8 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
-alignment = 1
+theme_override_constants/v_separation = 9
+alignment = 0
 
 [node name="Loader" parent="Content/Container/Control" unique_id=116749580 instance=ExtResource("2_h1wj5")]
 visible = false
@@ -192,38 +157,42 @@ grow_vertical = 2
 
 [node name="Label" type="Label" parent="Content/Container/Control/NoResultView" unique_id=823951559]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -10.5
-offset_right = 20.0
-offset_bottom = 10.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "No results found..."
+theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+text = "No assets found"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Pagination" type="HBoxContainer" parent="Content/Container" unique_id=1363061222]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 7
 alignment = 1
 
 [node name="Previous" type="Button" parent="Content/Container/Pagination" unique_id=19097926]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
+tooltip_text = "Previous page"
 icon = ExtResource("3_n2m24")
 expand_icon = true
 
 [node name="Label" type="Label" parent="Content/Container/Pagination" unique_id=248314019]
+custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.560784, 0.623529, 0.701961, 1)
+theme_override_font_sizes/font_size = 10
 text = "Page 1 of 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Next" type="Button" parent="Content/Container/Pagination" unique_id=1326775117]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
+tooltip_text = "Next page"
 icon = ExtResource("4_q1vt0")
 expand_icon = true
