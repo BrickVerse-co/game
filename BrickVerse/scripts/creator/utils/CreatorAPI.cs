@@ -11,7 +11,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using SystemNetHttp = System.Net.Http;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -41,7 +40,6 @@ public static class CreatorAPI
 	private const string StoredTokenPath = "user://creator_auth";
 
 	private static readonly BVHttpClient _client = new();
-	private static readonly SystemNetHttp.HttpClient _uploadClient = new();
 
 	public static string UserID { get; private set; } = "0";
 	public static string Username { get; private set; } = "";
@@ -1172,7 +1170,7 @@ public static class CreatorAPI
 		long resolvedWorldId = worldId ?? 0;
 		bool isNewUniverse = resolvedUniverseId == 0;
 
-		using MultipartContent form = new("form-data", Guid.NewGuid().ToString());
+		using MultipartFormDataContent form = new(Guid.NewGuid().ToString());
 
 		form.Add(FormString("universeId", resolvedUniverseId.ToString()));
 		form.Add(FormString("worldId", resolvedWorldId.ToString()));
@@ -1210,20 +1208,7 @@ public static class CreatorAPI
 
 		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
 
-		using HttpRequestMessage request = new(HttpMethod.Post, url)
-		{
-			Content = form,
-		};
-
-		request.Headers.TryAddWithoutValidation("User-Agent", $"BrickVerse Client {Globals.AppVersion}");
-		request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + Token);
-		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Token);
-		request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-		//BV.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
-		//BV.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
-
-		using HttpResponseMessage msg = await _uploadClient.SendAsync(request);
+		using HttpResponseMessage msg = await _client.PostAsync(url, form);
 		string responseText = await msg.Content.ReadAsStringAsync();
 
 		//BV.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
