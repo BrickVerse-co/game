@@ -11,6 +11,7 @@ using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using System;
 using System.Net.Http;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -120,48 +121,106 @@ public class BVAssetProvider : IAssetProvider
 
 	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
 	{
-		using HttpRequestMessage request = new(HttpMethod.Get, url);
-		request.Headers.TryAddWithoutValidation("Accept", "application/octet-stream");
-		ApplyAssetAuthHeaders(request);
-		//BV.Print("Fetching resource buffer from URL: ", url, " for resource type: ", itemType, " Authorization: ", request.Headers.Authorization);
+		bool requiresAuthorization = url.Contains("/v3/world/", StringComparison.OrdinalIgnoreCase);
 
-		using HttpResponseMessage response = await _client.SendAsync(request);
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadAsByteArrayAsync();
+		if (requiresAuthorization)
+		{
+			await WaitForAssetAuthorizationAsync();
+		}
+
+		for (int attempt = 0; attempt < 2; attempt++)
+		{
+			using HttpRequestMessage request = CreateAssetRequest(url);
+
+			/*BV.Print(
+				"Fetching resource buffer from URL: ", url,
+				" for resource type: ", itemType,
+				" Authorization: ", request.Headers.Authorization);
+			*/
+
+			using HttpResponseMessage response = await _client.SendAsync(request);
+
+			if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && requiresAuthorization)
+			{
+				await WaitForAssetAuthorizationAsync();
+				continue;
+			}
+
+			response.EnsureSuccessStatusCode();
+			return await response.Content.ReadAsByteArrayAsync();
+		}
+
+		throw new HttpRequestException("Asset request failed after authorization retry.");
 	}
 
-	private void ApplyAssetAuthHeaders(HttpRequestMessage request)
+	private HttpRequestMessage CreateAssetRequest(string url)
 	{
-		string? token = null;
+		HttpRequestMessage request = new(HttpMethod.Get, url);
+		request.Headers.TryAddWithoutValidation("Accept", "application/octet-stream");
+		ApplyAssetAuthHeaders(request);
+		return request;
+	}
+
+	private static async Task WaitForAssetAuthorizationAsync()
+	{
+		const int maxAttempts = 30;
+		const int delayMilliseconds = 50;
+
+		for (int attempt = 0; attempt < maxAttempts; attempt++)
+		{
+			if (!string.IsNullOrWhiteSpace(GetAssetAuthorizationToken()))
+			{
+				return;
+			}
+
+			await Task.Delay(delayMilliseconds);
+		}
+	}
+
+	private static void ApplyAssetAuthHeaders(HttpRequestMessage request)
+	{
+		string? token = GetAssetAuthorizationToken();
+
+		if (!string.IsNullOrWhiteSpace(token))
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+		}
+	}
+
+	private static string? GetAssetAuthorizationToken()
+	{
+		if (BV.IsServer)
+		{
+			return NormalizeBearerToken(ServerAPI.HostToken);
+		}
+
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+		{
+			return NormalizeBearerToken(ClientAuthAPI.JoinToken);
+		}
 
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			token = CreatorAPI.Token;
+			return NormalizeBearerToken(CreatorAPI.Token);
 		}
 #endif
 
-		if (string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+		return null;
+	}
+
+	private static string? NormalizeBearerToken(string? token)
+	{
+		if (string.IsNullOrWhiteSpace(token))
 		{
-			token = ClientAuthAPI.JoinToken;
+			return null;
 		}
 
-		if (BV.IsServer)
-		{
-			string serverToken = ServerAPI.GetAuthorizationHeaderValue();
+		string normalized = token.Trim();
 
-			if (!string.IsNullOrWhiteSpace(serverToken))
-			{
-				token = serverToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-					? serverToken["Bearer ".Length..].Trim()
-					: serverToken.Trim();
-			}
-		}
-
-		if (!string.IsNullOrWhiteSpace(token))
-		{
-			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
-		}
+		return normalized.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+			? normalized["Bearer ".Length..].Trim()
+			: normalized;
 	}
 
 	public void Dispose()

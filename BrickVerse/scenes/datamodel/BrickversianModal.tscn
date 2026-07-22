@@ -765,7 +765,7 @@ bone_idx = 1
 [node name="UpperTorsoAttachment" type="Node3D" parent="Character/Poly/Skeleton3D/UpperTorso" unique_id=691398229]
 
 [node name="LowerLeg_R" type="BoneAttachment3D" parent="Character/Poly/Skeleton3D" unique_id=1149906139]
-transform = Transform3D(0.2506008, 0.67542475, 0.6935421, -0.34850308, -0.6054306, 0.7155411, 0.9031857, -0.42101672, 0.08366613, 0.01590508, -0.0041895555, 0.002322982)
+transform = Transform3D(0.40473318, 0.59808093, 0.69172996, -0.48758572, -0.4988012, 0.7165593, 0.7735961, -0.62729293, 0.08973424, 0.01590508, -0.0041895555, 0.002322982)
 bone_name = "LowerLeg_R"
 bone_idx = 10
 
@@ -789,7 +789,7 @@ bone_idx = 12
 transform = Transform3D(0.999071, 0.0227467, -0.036602557, 0.021449436, -0.9991411, -0.035452593, -0.03737755, 0.034634557, -0.99870086, 0, 0, 0)
 
 [node name="UpperLeg_L" type="BoneAttachment3D" parent="Character/Poly/Skeleton3D" unique_id=2069187913]
-transform = Transform3D(0.2506008, 0.67542475, 0.6935421, -0.34850308, -0.6054306, 0.7155411, 0.9031857, -0.42101672, 0.08366613, 0.01965143, -0.0075476714, -1.2253178e-05)
+transform = Transform3D(0.40473318, 0.59808093, 0.69172996, -0.48758572, -0.4988012, 0.7165593, 0.7735961, -0.62729293, 0.08973424, 0.01922243, -0.0069562346, -0.0011563967)
 bone_name = "UpperLeg_L"
 bone_idx = 11
 

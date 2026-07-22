@@ -26,13 +26,13 @@ namespace BrickVerse.Shared;
 
 public sealed partial class Globals : Node
 {
-#if DEBUG
+//#if DEBUG
 	public const string MainEndpoint = "http://localhost:3000";
 	public const string ApiEndpoint = "http://localhost:3001/api";
-#else
+/*#else
 public const string MainEndpoint = "https://brickverse.gg";
 public const string ApiEndpoint = "https://api.brickverse.gg/api";
-#endif
+#endif*/
 
 	public const float AlphaThreshold = 0.025f;
 	public const string TestUserIdStart = "2";

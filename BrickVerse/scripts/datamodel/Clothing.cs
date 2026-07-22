@@ -11,10 +11,33 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public partial class Clothing : Instance
 {
+	public enum ClothingType
+	{
+		TShirt,
+		Shirt,
+		Pants,
+	}
+
 	private ImageAsset? _asset;
 	private BrickversianModel? _target;
+	private ClothingType _type = ClothingType.Shirt;
 
 	internal Texture2D? ClothTexture;
+
+	[Editable, ScriptProperty]
+	public ClothingType Type
+	{
+		get => _type;
+		set
+		{
+			if (_type == value)
+				return;
+
+			_type = value;
+			NotifyCharacter();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
 	public ImageAsset? Image
@@ -22,37 +45,41 @@ public partial class Clothing : Instance
 		get => _asset;
 		set
 		{
-			if (_asset != null && _asset != value)
+			if (_asset == value)
+				return;
+
+			if (_asset != null)
 			{
 				_asset.ResourceLoaded -= OnResourceLoaded;
 				_asset.UnlinkFrom(this);
 			}
+
 			_asset = value;
 			ClothTexture = null;
+
 			if (_asset != null)
 			{
 				_asset.LinkTo(this);
 				_asset.ResourceLoaded += OnResourceLoaded;
+
 				if (_asset.IsResourceLoaded && _asset.Resource != null)
-				{
 					OnResourceLoaded(_asset.Resource);
-				}
 				else
-				{
 					_asset.QueueLoadResource();
-				}
 			}
+
+			NotifyCharacter();
 			OnPropertyChanged();
 		}
 	}
 
 	private void OnResourceLoaded(Resource resource)
 	{
-		if (resource is Texture2D txt2d)
-		{
-			ClothTexture = txt2d;
-			NotifyCharacter();
-		}
+		if (resource is not Texture2D texture)
+			return;
+
+		ClothTexture = texture;
+		NotifyCharacter();
 	}
 
 	private void NotifyCharacter()
@@ -63,9 +90,10 @@ public partial class Clothing : Instance
 	public override void EnterTree()
 	{
 		base.EnterTree();
-		if (Parent is BrickversianModel c)
+
+		if (Parent is BrickversianModel character)
 		{
-			_target = c;
+			_target = character;
 			NotifyCharacter();
 		}
 	}
@@ -78,8 +106,9 @@ public partial class Clothing : Instance
 
 	public override void ExitTree()
 	{
-		base.ExitTree();
 		NotifyCharacter();
 		_target = null;
+
+		base.ExitTree();
 	}
 }

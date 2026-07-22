@@ -258,40 +258,31 @@ public sealed partial class BrickversianModel : CharacterModel
 		);
 		Skeleton.ShowRestOnly = false;
 		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
-			"Character/Poly/Skeleton3D/RagdollBone",
 			"Character/Poly/RagdollBone"
 		);
 		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/Head",
-			"Character/Poly/Skeleton3D/head"
+			"Character/Poly/Skeleton3D/Head"
 		);
 		TorsoMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/Torso",
-			"Character/Poly/Skeleton3D/torso"
+			"Character/Poly/Skeleton3D/Torso"
 		);
 		LeftArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftArm",
-			"Character/Poly/Skeleton3D/left_arm"
+			"Character/Poly/Skeleton3D/LeftArm"
 		);
 		RightArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightArm",
-			"Character/Poly/Skeleton3D/right_arm"
+			"Character/Poly/Skeleton3D/RightArm"
 		);
 		LeftHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftHand",
-			"Character/Poly/Skeleton3D/left_hand"
+			"Character/Poly/Skeleton3D/LeftHand"
 		);
 		RightHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightHand",
-			"Character/Poly/Skeleton3D/right_hand"
+			"Character/Poly/Skeleton3D/RightHand"
 		);
 		LeftLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftLeg",
-			"Character/Poly/Skeleton3D/left_leg"
+			"Character/Poly/Skeleton3D/LeftLeg"
 		);
 		RightLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightLeg",
-			"Character/Poly/Skeleton3D/right_leg"
+			"Character/Poly/Skeleton3D/RightLeg"
 		);
 		Pivot = GetRequiredNodeCompat<Node3D>("Character/Poly");
 
@@ -318,8 +309,59 @@ public sealed partial class BrickversianModel : CharacterModel
 		AnimTree = GDNode.GetNode<AnimationTree>("AnimationTree");
 		AnimTree.Active = true;
 
+		EnsureClothing();
 		base.Init();
 		SetProcess(true);
+	}
+
+	private void EnsureClothing()
+	{
+		// Ensure we have a shirt and pants clothing, if not create default ones.
+		Clothing[] clothings = GetChildrenOfClass<Clothing>();
+
+		bool hasShirt = false;
+		bool hasPants = false;
+
+		foreach (Clothing clothing in clothings)
+		{
+			if (clothing.Name.ToLower().Contains("shirt"))
+			{
+				hasShirt = true;
+			}
+			else if (clothing.Name.ToLower().Contains("pants"))
+			{
+				hasPants = true;
+			}
+		}
+
+		// Create default clothing if missing
+		if (!hasShirt)
+		{
+			Clothing defaultShirt = New<Clothing>();
+			defaultShirt.Name = "DefaultShirt";
+			defaultShirt.Type = Clothing.ClothingType.Shirt;
+			BVImageAsset asset = New<BVImageAsset>();
+			asset.ImageID = "338444747976736768";
+			defaultShirt.Image = asset;
+			defaultShirt.Parent = this;
+		}
+
+		if (!hasPants)
+		{
+			Clothing defaultPants = New<Clothing>();
+			defaultPants.Name = "DefaultPants";
+			defaultPants.Type = Clothing.ClothingType.Pants;
+			BVImageAsset asset = New<BVImageAsset>();
+			asset.ImageID = "338444747976736768";
+			defaultPants.Image = asset;
+			defaultPants.Parent = this;
+		}
+
+		if (!hasShirt || !hasPants)
+		{
+			// Update the cloth materials after adding default clothing
+			QueueRenderCloth();
+		}
 	}
 
 	private T? GetNodeCompat<T>(params string[] paths) where T : Node
@@ -893,13 +935,6 @@ public sealed partial class BrickversianModel : CharacterModel
 				BVImageAsset face = New<BVImageAsset>();
 				face.ImageID = asset.ID.ToString();
 				FaceImage = face;
-			}
-			else if (asset.Type == "body")
-			{
-				if (_bodyOverrided) continue;
-				var body = New<BVMeshAsset>();
-				body.AssetID = asset.ID.ToString();
-				BodyMesh = body;
 			}
 			else if (asset.Type == "hat")
 			{

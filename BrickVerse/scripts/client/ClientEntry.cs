@@ -166,6 +166,7 @@ public sealed partial class ClientEntry : Node3D
 
 		BV.IsServer = runAsServer;
 		ClientAuthAPI.SetAuthToken(options.AuthToken ?? "");
+		if (BV.IsServer) ServerAPI.SetAuthToken(options.AuthToken ?? "");
 
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
@@ -467,9 +468,9 @@ public sealed partial class ClientEntry : Node3D
 			throw new InvalidOperationException("Production server launch requires an auth token.");
 		}
 
+		ServerAPI.SetAuthToken(options.AuthToken);
 		NetworkService.IsProd = true;
 		Engine.MaxFps = 30;
-		ServerAPI.SetAuthToken(options.AuthToken);
 
 		try
 		{
