@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://6hcsevjh47or"
-path="res://.godot/imported/polytoria_outer.png-4bcc8aa8b3d40b73f9f5febc969b494a.ctex"
+uid="uid://8pnjtnn5sm2"
+path="res://.godot/imported/close.png-1fbe32e6596c35c7406e8da8929f8066.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/client/ui/menu_button/pt/polytoria_outer.png"
-dest_files=["res://.godot/imported/polytoria_outer.png-4bcc8aa8b3d40b73f9f5febc969b494a.ctex"]
+source_file="res://assets/textures/client/ui/menu_button/bv/close.png"
+dest_files=["res://.godot/imported/close.png-1fbe32e6596c35c7406e8da8929f8066.ctex"]
 
 [params]
 
