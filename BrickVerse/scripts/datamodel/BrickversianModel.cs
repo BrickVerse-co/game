@@ -60,7 +60,6 @@ public sealed partial class BrickversianModel : CharacterModel
 	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
-	private MeshAsset? _bodyMesh;
 
 	private readonly ShaderMaterial _headMat = new() { Shader = _limbShader };
 	private Godot.Decal? _faceDecal;
@@ -227,38 +226,6 @@ public sealed partial class BrickversianModel : CharacterModel
 				SetFaceTexture(_defaultFace);
 			}
 
-			OnPropertyChanged();
-		}
-	}
-
-	[Editable, ScriptProperty]
-	public MeshAsset? BodyMesh
-	{
-		get => _bodyMesh;
-		set
-		{
-			if (_bodyMesh != null && _bodyMesh != value)
-			{
-				_bodyMesh.ResourceLoaded -= OnBodyLoaded;
-				_bodyMesh.UnlinkFrom(this);
-			}
-			OnBodyLoaded(null);
-			_bodyMesh = value;
-			if (_bodyMesh != null)
-			{
-				AddLoadCount();
-				_bodyOverrided = true;
-				_bodyMesh.LinkTo(this);
-				_bodyMesh.ResourceLoaded += OnBodyLoaded;
-				if (_bodyMesh.IsResourceLoaded && _bodyMesh.Resource != null)
-				{
-					OnBodyLoaded(_bodyMesh.Resource);
-				}
-				else
-				{
-					_bodyMesh.QueueLoadResource();
-				}
-			}
 			OnPropertyChanged();
 		}
 	}
@@ -1186,10 +1153,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		if (FaceImage != null && !FaceImage.IsResourceLoaded)
 		{
 			await FaceImage.ResourceLoadedInternal.Wait();
-		}
-		if (BodyMesh != null && !BodyMesh.IsResourceLoaded)
-		{
-			await BodyMesh.ResourceLoadedInternal.Wait();
 		}
 
 		Instance checkOn = this;
