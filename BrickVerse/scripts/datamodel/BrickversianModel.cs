@@ -63,6 +63,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	private MeshAsset? _bodyMesh;
 
 	private readonly ShaderMaterial _headMat = new() { Shader = _limbShader };
+	private Godot.Decal? _faceDecal;
+	private BoneAttachment3D? _faceDecalAttachment;
+
+	private static readonly Vector3 _faceDecalSize = new(1.65f, 1.65f, 0.15f);
+	private static readonly Vector3 _faceDecalOffset = new(0f, 0f, -0.51f);
 
 	private readonly ShaderMaterial _torsoMat = new() { Shader = _limbShader };
 	private readonly ShaderMaterial _leftArmMat = new() { Shader = _limbShader };
@@ -184,20 +189,25 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => _faceImage;
 		set
 		{
-			if (_faceImage != null && _faceImage != value)
+			if (_faceImage == value)
+				return;
+
+			if (_faceImage != null)
 			{
 				_faceImage.ResourceLoaded -= OnFaceLoaded;
 				_faceImage.UnlinkFrom(this);
 			}
-			_faceImage = value;
 
-			// Clear current face
-			_headMat.SetShaderParameter(_albedoTexParam, new());
+			_faceImage = value;
+			SetFaceTexture(null);
+
 			if (_faceImage != null)
 			{
 				_faceOverrided = true;
 				_faceLoaded = false;
+
 				AddLoadCount();
+
 				_faceImage.LinkTo(this);
 				_faceImage.ResourceLoaded += OnFaceLoaded;
 
@@ -212,9 +222,11 @@ public sealed partial class BrickversianModel : CharacterModel
 			}
 			else
 			{
-				// Set to default face
-				_headMat.SetShaderParameter(_albedoTexParam, _defaultFace);
+				_faceOverrided = false;
+				_faceLoaded = true;
+				SetFaceTexture(_defaultFace);
 			}
+
 			OnPropertyChanged();
 		}
 	}
@@ -325,7 +337,9 @@ public sealed partial class BrickversianModel : CharacterModel
 		AnimTree = GDNode.GetNode<AnimationTree>("AnimationTree");
 		AnimTree.Active = true;
 
+		CreateFaceDecal();
 		EnsureClothing();
+
 		base.Init();
 		SetProcess(true);
 	}
@@ -428,6 +442,15 @@ public sealed partial class BrickversianModel : CharacterModel
 		_transparentRightHandMat.Dispose();
 		_transparentLeftLegMat.Dispose();
 		_transparentRightLegMat.Dispose();
+
+		// Free face
+		if (Node.IsInstanceValid(_faceDecalAttachment))
+		{
+			_faceDecalAttachment!.QueueFree();
+		}
+
+		_faceDecal = null;
+		_faceDecalAttachment = null;
 
 		base.PreDelete();
 	}
@@ -658,10 +681,55 @@ public sealed partial class BrickversianModel : CharacterModel
 		opaqueMaterial.SetShaderParameter(_albedoTexParam, texture);
 		transparentMaterial.SetShaderParameter(_albedoTexParam, texture);
 	}
-	
-	private void OnFaceLoaded(Resource tex)
+
+	private void CreateFaceDecal()
 	{
-		_headMat.SetShaderParameter(_albedoTexParam, (Texture2D)tex);
+		_faceDecalAttachment = new BoneAttachment3D
+		{
+			Name = "FaceDecalAttachment",
+			BoneName = "Head",
+		};
+
+		Skeleton.AddChild(_faceDecalAttachment);
+
+		_faceDecal = new Godot.Decal
+		{
+			Name = "FaceDecal",
+			Size = new Vector3(1.65f, 1.65f, 0.15f),
+			CullMask = HeadMeshInstance.Layers,
+			UpperFade = 0f,
+			LowerFade = 0f,
+			DistanceFadeEnabled = false,
+		};
+
+		_faceDecalAttachment.AddChild(_faceDecal);
+
+		// Godot decals project along their local -Y axis.
+		// Rotate toward the front-facing -Z side of the head.
+		_faceDecal.RotationDegrees = new Vector3(90f, 0f, 0f);
+		_faceDecal.Position = new Vector3(0f, 0f, -0.51f);
+
+		SetFaceTexture(
+			_faceImage?.Resource as Texture2D ?? _defaultFace
+		);
+	}
+
+	private void SetFaceTexture(Texture2D? texture)
+	{
+		if (_faceDecal == null)
+			return;
+
+		_faceDecal.TextureAlbedo = texture;
+		_faceDecal.Visible = texture != null;
+	}
+
+	private void OnFaceLoaded(Resource resource)
+	{
+		if (resource is not Texture2D texture)
+			return;
+
+		SetFaceTexture(texture);
+
 		if (!_faceLoaded)
 		{
 			_faceLoaded = true;
