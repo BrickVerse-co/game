@@ -52,21 +52,19 @@ public sealed partial class BrickversianModel : CharacterModel
 	internal Skeleton3D Skeleton = null!;
 	internal AnimationTree AnimTree = null!;
 
+	private static readonly Shader _headShader = GD.Load<Shader>("res://resources/shaders/character/head.gdshader");
 	private static readonly Shader _limbShader = GD.Load<Shader>("res://resources/shaders/character/limb.gdshader");
 	private static readonly Shader _transparentLimbShader = GD.Load<Shader>("res://resources/shaders/character/limb_transparent.gdshader");
 	private static readonly Texture2D _defaultFace = GD.Load<Texture2D>("res://assets/textures/client/character/DefaultFace.png");
 	private static readonly StringName _albedoParam = "albedo";
 	private static readonly StringName _albedoTexParam = "albedo_texture";
+	private static readonly StringName _faceTexParam = "face_texture";
+	private static readonly StringName _faceEnabledParam = "face_enabled";
 	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
 
-	private readonly ShaderMaterial _headMat = new() { Shader = _limbShader };
-	private Godot.Decal? _faceDecal;
-	private BoneAttachment3D? _faceDecalAttachment;
-
-	private static readonly Vector3 _faceDecalSize = new(1.65f, 1.65f, 0.15f);
-	private static readonly Vector3 _faceDecalOffset = new(0f, 0f, -0.51f);
+	private readonly ShaderMaterial _headMat = new() { Shader = _headShader };
 
 	private readonly ShaderMaterial _torsoMat = new() { Shader = _limbShader };
 	private readonly ShaderMaterial _leftArmMat = new() { Shader = _limbShader };
@@ -106,7 +104,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => MeshGetAlbedo(HeadMeshInstance);
 		set
 		{
-			_headMat.Shader = (value.A == 1) ? _limbShader : _transparentLimbShader;
 			HeadMeshInstance.SetInstanceShaderParameter(_albedoParam, value);
 			OnPropertyChanged();
 		}
@@ -243,8 +240,6 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	public override void Init()
 	{
-		FaceImage = null;
-
 		_helper = new() { Name = "CharacterHelper", Target = this };
 		Globals.Singleton.AddChild(_helper, true);
 
@@ -304,7 +299,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		AnimTree = GDNode.GetNode<AnimationTree>("AnimationTree");
 		AnimTree.Active = true;
 
-		CreateFaceDecal();
+		FaceImage = null;
+
 		EnsureClothing();
 
 		base.Init();
@@ -409,15 +405,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		_transparentRightHandMat.Dispose();
 		_transparentLeftLegMat.Dispose();
 		_transparentRightLegMat.Dispose();
-
-		// Free face
-		if (Node.IsInstanceValid(_faceDecalAttachment))
-		{
-			_faceDecalAttachment!.QueueFree();
-		}
-
-		_faceDecal = null;
-		_faceDecalAttachment = null;
 
 		base.PreDelete();
 	}
@@ -649,45 +636,12 @@ public sealed partial class BrickversianModel : CharacterModel
 		transparentMaterial.SetShaderParameter(_albedoTexParam, texture);
 	}
 
-	private void CreateFaceDecal()
-	{
-		_faceDecalAttachment = new BoneAttachment3D
-		{
-			Name = "FaceDecalAttachment",
-			BoneName = "Head",
-		};
-
-		Skeleton.AddChild(_faceDecalAttachment);
-
-		_faceDecal = new Godot.Decal
-		{
-			Name = "FaceDecal",
-			Size = new Vector3(1.65f, 1.65f, 0.15f),
-			CullMask = HeadMeshInstance.Layers,
-			UpperFade = 0f,
-			LowerFade = 0f,
-			DistanceFadeEnabled = false,
-		};
-
-		_faceDecalAttachment.AddChild(_faceDecal);
-
-		// Godot decals project along their local -Y axis.
-		// Rotate toward the front-facing -Z side of the head.
-		_faceDecal.RotationDegrees = new Vector3(90f, 0f, 0f);
-		_faceDecal.Position = new Vector3(0f, 0f, -0.51f);
-
-		SetFaceTexture(
-			_faceImage?.Resource as Texture2D ?? _defaultFace
-		);
-	}
-
 	private void SetFaceTexture(Texture2D? texture)
 	{
-		if (_faceDecal == null)
-			return;
+		texture ??= _defaultFace;
 
-		_faceDecal.TextureAlbedo = texture;
-		_faceDecal.Visible = texture != null;
+		_headMat.SetShaderParameter(_faceTexParam, texture);
+		_headMat.SetShaderParameter(_faceEnabledParam, true);
 	}
 
 	private void OnFaceLoaded(Resource resource)
