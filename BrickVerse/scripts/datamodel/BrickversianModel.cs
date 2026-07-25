@@ -248,7 +248,7 @@ public sealed partial class BrickversianModel : CharacterModel
 		);
 		Skeleton.ShowRestOnly = false;
 		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
-			"Character/Poly/RagdollBone"
+			"Character/Poly/Skeleton3D/RagdollBone"
 		);
 		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
 			"Character/Poly/Skeleton3D/Head"
