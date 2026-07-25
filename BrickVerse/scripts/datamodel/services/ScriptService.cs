@@ -102,7 +102,7 @@ public sealed partial class ScriptService : Instance
 
 	public void Run(Script script)
 	{
-		BV.Print("Running script: ", script.LuaPath);
+		//BV.Print("Running script: ", script.LuaPath);
 
 		if (!_languageProviders.TryGetValue(script.ChosenLanguage, out var provider))
 		{
@@ -127,7 +127,7 @@ public sealed partial class ScriptService : Instance
 
 	public static void Close(Script script)
 	{
-		BV.Print("Closing script: ", script.LuaPath);
+		//BV.Print("Closing script: ", script.LuaPath);
 
 		script.LanguageProvider.Close(script);
 	}
