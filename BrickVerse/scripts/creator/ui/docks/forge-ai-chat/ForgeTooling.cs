@@ -2,17 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Creator.UI.TextEditor;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Godot;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.UI;
 
@@ -20,115 +21,193 @@ internal static class ForgeToolCatalog
 {
     public static readonly List<ForgeChatToolDefinition> Definitions =
     [
-        Create("get_creator_state", "Get the current Creator state including the active world, selection, active editor, and console snippet.", """
-		{
-		  "type": "object",
-		  "properties": {},
-		  "additionalProperties": false
-		}
-		"""),
-        Create("list_instantiable_classes", "List classes that Forge can create in the open world.", """
-		{
-		  "type": "object",
-		  "properties": {},
-		  "additionalProperties": false
-		}
-		"""),
-        Create("search_instances", "Search world instances by name, class, or path.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "query": { "type": "string" },
-		    "class_name": { "type": "string" },
-		    "under_path": { "type": "string" },
-		    "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
-		  },
-		  "additionalProperties": false
-		}
-		"""),
-        Create("inspect_instance", "Inspect a specific instance path with public properties, children, tags, script source, and editor-relevant metadata.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "path": { "type": "string" }
-		  },
-		  "required": ["path"],
-		  "additionalProperties": false
-		}
-		"""),
-        Create("select_instances", "Select one or more instance paths in Creator.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "paths": {
-		      "type": "array",
-		      "items": { "type": "string" },
-		      "minItems": 1
-		    },
-		    "mode": {
-		      "type": "string",
-		      "enum": ["replace", "add"]
-		    }
-		  },
-		  "required": ["paths"],
-		  "additionalProperties": false
-		}
-		"""),
-        Create("create_instance", "Create a new instantiable instance under a parent path and optionally set common properties.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "class_name": { "type": "string" },
-		    "parent_path": { "type": "string" },
-		    "name": { "type": "string" },
-		    "properties": {
-		      "type": "object",
-		      "additionalProperties": true
-		    }
-		  },
-		  "required": ["class_name"],
-		  "additionalProperties": false
-		}
-		"""),
-        Create("set_instance_properties", "Set writable public properties on an instance path.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "path": { "type": "string" },
-		    "properties": {
-		      "type": "object",
-		      "additionalProperties": true
-		    }
-		  },
-		  "required": ["path", "properties"],
-		  "additionalProperties": false
-		}
-		"""),
-        Create("delete_instance", "Delete an instance path from the current world.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "path": { "type": "string" }
-		  },
-		  "required": ["path"],
-		  "additionalProperties": false
-		}
-		"""),
-        Create("run_luau", "Run Luau in the current Creator world only after the user reviews and confirms the exact source. Use this for testing when execution is necessary; never claim it ran before confirmation.", """
-		{
-		  "type": "object",
-		  "properties": {
-		    "source": { "type": "string" },
-		    "compatibility": { "type": "boolean" },
-		    "reason": { "type": "string" }
-		  },
-		  "required": ["source"],
-		  "additionalProperties": false
-		}
-		"""),
+        Create(
+            "get_creator_state",
+            "Get the current Creator state including the active world, selection, active editor, and console snippet.",
+            """
+			{
+			  "type": "object",
+			  "properties": {},
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "list_instantiable_classes",
+            "List classes that Forge can create in the open world.",
+            """
+			{
+			  "type": "object",
+			  "properties": {},
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "search_instances",
+            "Search world instances by name, class, or path.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "query": { "type": "string" },
+			    "class_name": { "type": "string" },
+			    "under_path": { "type": "string" },
+			    "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+			  },
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "inspect_instance",
+            "Inspect a specific instance path with public properties, children, tags, script source, and editor-relevant metadata.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "path": { "type": "string" }
+			  },
+			  "required": ["path"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "select_instances",
+            "Select one or more instance paths in Creator.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "paths": {
+			      "type": "array",
+			      "items": { "type": "string" },
+			      "minItems": 1
+			    },
+			    "mode": {
+			      "type": "string",
+			      "enum": ["replace", "add"]
+			    }
+			  },
+			  "required": ["paths"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "create_instance",
+            "Create a new instantiable instance under a parent path and optionally set common properties.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "class_name": { "type": "string" },
+			    "parent_path": { "type": "string" },
+			    "name": { "type": "string" },
+			    "properties": {
+			      "type": "object",
+			      "additionalProperties": true
+			    }
+			  },
+			  "required": ["class_name"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "set_instance_properties",
+            "Set writable public properties on an instance path.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "path": { "type": "string" },
+			    "properties": {
+			      "type": "object",
+			      "additionalProperties": true
+			    }
+			  },
+			  "required": ["path", "properties"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "delete_instance",
+            "Delete an instance path from the current world.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "path": { "type": "string" }
+			  },
+			  "required": ["path"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "edit_script_source",
+            "Replace the source of an existing user-visible Script. Use this instead of posting a full script in chat. The change is recorded for diff and rollback.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "path": { "type": "string" },
+			    "source": { "type": "string" }
+			  },
+			  "required": ["path", "source"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "get_script_diff",
+            "Get the latest Forge diff for a script path.",
+            """
+			{
+			  "type": "object",
+			  "properties": { "path": { "type": "string" } },
+			  "required": ["path"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "rollback_last_change",
+            "Rollback the most recent Forge change in this request.",
+            """
+			{
+			  "type": "object",
+			  "properties": {},
+			  "additionalProperties": false
+			}
+			"""
+        ),
+        Create(
+            "run_luau",
+            "Run Luau in the current Creator world only after the user reviews and confirms the exact source. Use this for testing when execution is necessary; never claim it ran before confirmation.",
+            """
+			{
+			  "type": "object",
+			  "properties": {
+			    "source": { "type": "string" },
+			    "compatibility": { "type": "boolean" },
+			    "reason": { "type": "string" }
+			  },
+			  "required": ["source"],
+			  "additionalProperties": false
+			}
+			"""
+        ),
     ];
 
-    private static ForgeChatToolDefinition Create(string name, string description, string schemaJson)
+    private static ForgeChatToolDefinition Create(
+        string name,
+        string description,
+        string schemaJson
+    )
     {
         return new ForgeChatToolDefinition
         {
@@ -145,19 +224,26 @@ internal static class ForgeToolCatalog
 internal sealed class ForgeToolExecutor
 {
     private static readonly string[] _instantiableClassNames = typeof(Instance)
-        .Assembly
-        .GetTypes()
+        .Assembly.GetTypes()
         .Where(static type =>
             type.IsClass
             && !type.IsAbstract
             && typeof(Instance).IsAssignableFrom(type)
             && type.IsDefined(typeof(InstantiableAttribute), false)
-            && !type.IsDefined(typeof(InternalAttribute), false))
+            && !type.IsDefined(typeof(InternalAttribute), false)
+        )
         .Select(static type => type.Name)
         .OrderBy(static name => name, StringComparer.Ordinal)
         .ToArray();
 
     private readonly World _root;
+    private readonly Stack<Action> _rollback = new();
+    private readonly Dictionary<string, (string Before, string After)> _scriptDiffs = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+    public ForgeToolEvent? LastEvent { get; private set; }
+
+    public void ResetLastEvent() => LastEvent = null;
 
     public ForgeToolExecutor(World root)
     {
@@ -166,6 +252,7 @@ internal sealed class ForgeToolExecutor
 
     public string Execute(string toolName, string argumentsJson)
     {
+        LastEvent = null;
         return toolName switch
         {
             "get_creator_state" => GetCreatorState(),
@@ -176,6 +263,9 @@ internal sealed class ForgeToolExecutor
             "create_instance" => CreateInstance(argumentsJson),
             "set_instance_properties" => SetInstanceProperties(argumentsJson),
             "delete_instance" => DeleteInstance(argumentsJson),
+            "edit_script_source" => EditScriptSource(argumentsJson),
+            "get_script_diff" => GetScriptDiff(argumentsJson),
+            "rollback_last_change" => RollbackLastChange(),
             "run_luau" => "User confirmation is required before Luau can run.",
             _ => $"Unknown Forge tool: {toolName}",
         };
@@ -207,7 +297,8 @@ internal sealed class ForgeToolExecutor
 
     public ForgeRunLuauArgs ParseRunLuauArguments(string argumentsJson)
     {
-        ForgeRunLuauArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeRunLuauArgs)
+        ForgeRunLuauArgs args =
+            JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeRunLuauArgs)
             ?? throw new InvalidOperationException("Missing run_luau arguments.");
         if (string.IsNullOrWhiteSpace(args.Source))
             throw new InvalidOperationException("Luau source cannot be empty.");
@@ -226,36 +317,80 @@ internal sealed class ForgeToolExecutor
         return $"Ran confirmed Luau as {script.LuaPath}. The generated ClientScript remains visible and selected in Inspector for review or deletion.";
     }
 
-    private Instance GetDefaultVisibleParent()
+    private Instance GetDefaultVisibleParent(string? className = null)
     {
         Instance? selected = _root.CreatorContext.Selections.SelectedInstances.FirstOrDefault();
-        if (selected != null)
+        if (selected != null && IsUserAccessibleTarget(selected))
+            return selected;
+
+        // Scripts belong in the visible ScriptService by default. Falling back to
+        // Environment keeps normal world objects in a user-editable hierarchy.
+        if (
+            !string.IsNullOrWhiteSpace(className)
+            && className.Contains("Script", StringComparison.OrdinalIgnoreCase)
+        )
         {
-            try { EnsureVisibleCreatorTarget(selected); return selected; } catch { }
+            Instance? scriptService =
+                ResolveInstance("world.ScriptService")
+                ?? _root
+                    .GetDescendants()
+                    .FirstOrDefault(static item =>
+                        item.ClassName.Equals("ScriptService", StringComparison.OrdinalIgnoreCase)
+                    );
+            if (scriptService != null && IsUserAccessibleTarget(scriptService))
+                return scriptService;
         }
+
         return _root.Environment;
+    }
+
+    private static readonly string[] RestrictedHierarchySegments =
+    [
+        "Temporary",
+        "Hidden",
+        "Internal",
+        "Runtime",
+        "Cache",
+        "Preview",
+    ];
+
+    private static bool IsUserAccessibleTarget(Instance instance)
+    {
+        string path = instance.LuaPath ?? string.Empty;
+        string[] segments = path.Split(
+            '.',
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+        );
+        return !segments.Any(segment =>
+            RestrictedHierarchySegments.Any(blocked =>
+                segment.Equals(blocked, StringComparison.OrdinalIgnoreCase)
+                || segment.StartsWith(blocked + "_", StringComparison.OrdinalIgnoreCase)
+            )
+        );
     }
 
     private static void EnsureVisibleCreatorTarget(Instance instance)
     {
-        if (instance.IsHidden)
-            throw new InvalidOperationException($"'{instance.LuaPath}' is hidden and cannot be modified by Forge.");
-        string path = instance.LuaPath;
-        string[] blocked = ["Temporary", "Hidden", "Internal", "Runtime", "Cache", "Preview"];
-        if (blocked.Any(name => path.Contains(name, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException($"'{path}' is not a user-visible Creator hierarchy.");
+        if (!IsUserAccessibleTarget(instance))
+            throw new InvalidOperationException(
+                $"'{instance.LuaPath}' is an internal Creator hierarchy and cannot be accessed by Forge."
+            );
     }
 
     private string GetCreatorState()
     {
         StringBuilder builder = new();
         builder.AppendLine($"Active world: {_root.WorldName.Or(_root.Name)}");
-        builder.AppendLine($"Selection count: {_root.CreatorContext.Selections.SelectedInstances.Count}");
+        builder.AppendLine(
+            $"Selection count: {_root.CreatorContext.Selections.SelectedInstances.Count}"
+        );
 
         if (_root.CreatorContext.Selections.SelectedInstances.Count > 0)
         {
             builder.AppendLine("Selection:");
-            foreach (Instance selected in _root.CreatorContext.Selections.SelectedInstances.Take(10))
+            foreach (
+                Instance selected in _root.CreatorContext.Selections.SelectedInstances.Take(10)
+            )
             {
                 builder.AppendLine($"- {FormatInstanceSummary(selected)}");
             }
@@ -278,25 +413,39 @@ internal sealed class ForgeToolExecutor
 
     private string ListInstantiableClasses()
     {
-        return $"Creatable classes ({_instantiableClassNames.Length}):\n" + string.Join("\n", _instantiableClassNames.Select(static name => $"- {name}"));
+        return $"Creatable classes ({_instantiableClassNames.Length}):\n"
+            + string.Join("\n", _instantiableClassNames.Select(static name => $"- {name}"));
     }
 
     private string SearchInstances(string argumentsJson)
     {
-        ForgeSearchInstancesArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeSearchInstancesArgs) ?? new ForgeSearchInstancesArgs();
-        Instance scope = string.IsNullOrWhiteSpace(args.UnderPath) ? _root : ResolveInstance(args.UnderPath) ?? throw new InvalidOperationException($"Could not resolve path '{args.UnderPath}'.");
+        ForgeSearchInstancesArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeSearchInstancesArgs
+            ) ?? new ForgeSearchInstancesArgs();
+        Instance scope = string.IsNullOrWhiteSpace(args.UnderPath)
+            ? _root
+            : ResolveInstance(args.UnderPath)
+                ?? throw new InvalidOperationException(
+                    $"Could not resolve path '{args.UnderPath}'."
+                );
+        EnsureVisibleCreatorTarget(scope);
         int limit = Math.Clamp(args.Limit, 1, 100);
 
         string query = args.Query?.Trim() ?? string.Empty;
         string className = args.ClassName?.Trim() ?? string.Empty;
 
-        IEnumerable<Instance> candidates = scope == _root
-            ? [scope, .. scope.GetDescendants()]
-            : [scope, .. scope.GetDescendants()];
+        IEnumerable<Instance> candidates =
+            scope == _root
+                ? [scope, .. scope.GetDescendants()]
+                : [scope, .. scope.GetDescendants()];
 
         if (!string.IsNullOrWhiteSpace(className))
         {
-            candidates = candidates.Where(instance => instance.ClassName.Equals(className, StringComparison.OrdinalIgnoreCase));
+            candidates = candidates.Where(instance =>
+                instance.ClassName.Equals(className, StringComparison.OrdinalIgnoreCase)
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -304,10 +453,26 @@ internal sealed class ForgeToolExecutor
             candidates = candidates.Where(instance =>
                 instance.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
                 || instance.ClassName.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || instance.LuaPath.Contains(query, StringComparison.OrdinalIgnoreCase));
+                || instance.LuaPath.Contains(query, StringComparison.OrdinalIgnoreCase)
+            );
         }
 
-        List<Instance> results = candidates.Take(limit).ToList();
+        List<Instance> results = candidates
+            .Where(instance =>
+            {
+                try
+                {
+                    EnsureVisibleCreatorTarget(instance);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            })
+            .Take(limit)
+            .ToList();
+
         if (results.Count == 0)
         {
             return "No instances matched the query.";
@@ -325,15 +490,23 @@ internal sealed class ForgeToolExecutor
 
     private string InspectInstance(string argumentsJson)
     {
-        ForgeInspectInstanceArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeInspectInstanceArgs)
-            ?? throw new InvalidOperationException("Missing inspect_instance arguments.");
+        ForgeInspectInstanceArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeInspectInstanceArgs
+            ) ?? throw new InvalidOperationException("Missing inspect_instance arguments.");
 
-        Instance instance = ResolveInstance(args.Path) ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        Instance instance =
+            ResolveInstance(args.Path)
+            ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        EnsureVisibleCreatorTarget(instance);
 
         StringBuilder builder = new();
         builder.AppendLine(FormatInstanceSummary(instance));
         builder.AppendLine($"Children: {instance.GetChildren().Length}");
-        builder.AppendLine($"Tags: {(instance.Tags.Length == 0 ? "(none)" : string.Join(", ", instance.Tags))}");
+        builder.AppendLine(
+            $"Tags: {(instance.Tags.Length == 0 ? "(none)" : string.Join(", ", instance.Tags))}"
+        );
 
         if (instance is Dynamic dynamicInstance)
         {
@@ -343,10 +516,16 @@ internal sealed class ForgeToolExecutor
         }
 
         builder.AppendLine("Public properties:");
-        foreach (PropertyInfo property in instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                     .Where(static property => property.CanRead && property.GetIndexParameters().Length == 0)
-                     .OrderBy(static property => property.Name, StringComparer.Ordinal)
-                     .Take(80))
+        foreach (
+            PropertyInfo property in instance
+                .GetType()
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(static property =>
+                    property.CanRead && property.GetIndexParameters().Length == 0
+                )
+                .OrderBy(static property => property.Name, StringComparer.Ordinal)
+                .Take(80)
+        )
         {
             try
             {
@@ -369,7 +548,11 @@ internal sealed class ForgeToolExecutor
         if (instance is BrickVerse.Datamodel.Script script)
         {
             builder.AppendLine("Script source:");
-            builder.AppendLine(script.Source.Length <= 16000 ? script.Source : script.Source[..16000] + "\n... truncated ...");
+            builder.AppendLine(
+                script.Source.Length <= 16000
+                    ? script.Source
+                    : script.Source[..16000] + "\n... truncated ..."
+            );
         }
 
         Instance[] children = instance.GetChildren();
@@ -387,8 +570,11 @@ internal sealed class ForgeToolExecutor
 
     private string SelectInstances(string argumentsJson)
     {
-        ForgeSelectInstancesArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeSelectInstancesArgs)
-            ?? throw new InvalidOperationException("Missing select_instances arguments.");
+        ForgeSelectInstancesArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeSelectInstancesArgs
+            ) ?? throw new InvalidOperationException("Missing select_instances arguments.");
 
         if (args.Paths.Count == 0)
         {
@@ -404,56 +590,151 @@ internal sealed class ForgeToolExecutor
         List<string> selected = [];
         foreach (string path in args.Paths)
         {
-            Instance instance = ResolveInstance(path) ?? throw new InvalidOperationException($"Could not resolve path '{path}'.");
+            Instance instance =
+                ResolveInstance(path)
+                ?? throw new InvalidOperationException($"Could not resolve path '{path}'.");
+            EnsureVisibleCreatorTarget(instance);
             selections.Select(instance);
             selected.Add(instance.LuaPath);
         }
 
-        return $"Selected {selected.Count} instance(s):\n" + string.Join("\n", selected.Select(static path => $"- {path}"));
+        return $"Selected {selected.Count} instance(s):\n"
+            + string.Join("\n", selected.Select(static path => $"- {path}"));
     }
 
     private string CreateInstance(string argumentsJson)
     {
-        ForgeCreateInstanceArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeCreateInstanceArgs)
-            ?? throw new InvalidOperationException("Missing create_instance arguments.");
+        ForgeCreateInstanceArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeCreateInstanceArgs
+            ) ?? throw new InvalidOperationException("Missing create_instance arguments.");
 
-        if (string.IsNullOrWhiteSpace(args.ClassName))
+        string className = args.ClassName.Trim();
+        if (string.IsNullOrWhiteSpace(className))
         {
             throw new InvalidOperationException("class_name is required.");
         }
 
-        Instance parent = string.IsNullOrWhiteSpace(args.ParentPath)
-            ? GetDefaultVisibleParent()
-            : ResolveInstance(args.ParentPath) ?? throw new InvalidOperationException($"Could not resolve parent path '{args.ParentPath}'.");
-
-        EnsureVisibleCreatorTarget(parent);
-        Instance instance = parent.New(args.ClassName) ?? throw new InvalidOperationException($"'{args.ClassName}' could not be created here.");
-
-        if (!string.IsNullOrWhiteSpace(args.Name))
+        if (!_instantiableClassNames.Contains(className, StringComparer.OrdinalIgnoreCase))
         {
-            instance.Name = args.Name.Trim();
+            throw new InvalidOperationException(
+                $"'{className}' is not an available instantiable class."
+            );
         }
+
+        Instance instance =
+            Globals.LoadInstance<Instance>(className, _root)
+            ?? throw new InvalidOperationException(
+                $"Creator could not instantiate class '{className}'."
+            );
+
+        Instance parentTo;
+        if (!string.IsNullOrWhiteSpace(args.ParentPath))
+        {
+            parentTo =
+                ResolveInstance(args.ParentPath)
+                ?? throw new InvalidOperationException(
+                    $"Could not resolve parent path '{args.ParentPath}'."
+                );
+            EnsureVisibleCreatorTarget(parentTo);
+        }
+        else
+        {
+            parentTo = GetDefaultInsertParent(instance);
+        }
+
+        instance.Name = string.IsNullOrWhiteSpace(args.Name)
+            ? className
+            : args.Name.Trim();
+
+        instance.CreatorInserted();
+        _root.CreatorContext.History.CreateInstances([instance], parentTo);
 
         string propertyResult = ApplyProperties(instance, args.Properties);
         _root.CreatorContext.Selections.SelectOnly(instance);
 
-        StringBuilder builder = new();
-        builder.AppendLine("Created instance:");
-        builder.AppendLine($"- {FormatInstanceSummary(instance)}");
-        if (!string.IsNullOrWhiteSpace(propertyResult))
+        string createdPath = instance.LuaPath;
+        if (!IsUserAccessibleTarget(instance))
         {
-            builder.AppendLine(propertyResult);
+            throw new InvalidOperationException(
+                $"Creator inserted '{className}' at inaccessible path '{createdPath}'."
+            );
         }
 
-        return builder.ToString().TrimEnd();
+        _rollback.Push(() =>
+        {
+            Instance? created = ResolveInstance(createdPath) ?? instance;
+            created?.Delete();
+        });
+
+        LastEvent = new ForgeToolEvent
+        {
+            ToolName = "create_instance",
+            Title = $"{instance.ClassName} created",
+            Detail = createdPath,
+            InstancePath = createdPath,
+            CanRollback = true,
+        };
+
+        StringBuilder result = new();
+        result.AppendLine($"Created {instance.ClassName} at {createdPath}.");
+        result.AppendLine($"Parent: {parentTo.LuaPath}");
+        result.Append("The created instance is visible and selected in Inspector.");
+        if (!string.IsNullOrWhiteSpace(propertyResult))
+        {
+            result.AppendLine();
+            result.Append(propertyResult);
+        }
+
+        return result.ToString();
+    }
+
+    private Instance GetDefaultInsertParent(Instance instance)
+    {
+        switch (instance)
+        {
+            case Part:
+                return _root.Environment;
+
+            case Light:
+                return _root.Lighting;
+
+            case UIField when instance is not GUI:
+            {
+                GUI? existingUi = (GUI?)_root.PlayerGUI.FindChild("GUI");
+                if (existingUi != null)
+                {
+                    return existingUi;
+                }
+
+                GUI gui = _root.New<GUI>();
+                gui.Name = "GUI";
+                gui.CreatorInserted();
+                _root.CreatorContext.History.CreateInstances([gui], _root.PlayerGUI);
+                return gui;
+            }
+
+            case BrickVerse.Datamodel.Script:
+                return _root.ScriptService;
+
+            default:
+                return _root.Environment;
+        }
     }
 
     private string SetInstanceProperties(string argumentsJson)
     {
-        ForgeSetInstancePropertiesArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeSetInstancePropertiesArgs)
-            ?? throw new InvalidOperationException("Missing set_instance_properties arguments.");
+        ForgeSetInstancePropertiesArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeSetInstancePropertiesArgs
+            ) ?? throw new InvalidOperationException("Missing set_instance_properties arguments.");
 
-        Instance instance = ResolveInstance(args.Path) ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        Instance instance =
+            ResolveInstance(args.Path)
+            ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        EnsureVisibleCreatorTarget(instance);
         string result = ApplyProperties(instance, args.Properties);
         return string.IsNullOrWhiteSpace(result)
             ? $"No writable properties were changed on {instance.LuaPath}."
@@ -462,10 +743,16 @@ internal sealed class ForgeToolExecutor
 
     private string DeleteInstance(string argumentsJson)
     {
-        ForgeDeleteInstanceArgs args = JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeDeleteInstanceArgs)
-            ?? throw new InvalidOperationException("Missing delete_instance arguments.");
+        ForgeDeleteInstanceArgs args =
+            JsonSerializer.Deserialize(
+                argumentsJson,
+                ForgeJsonContext.Default.ForgeDeleteInstanceArgs
+            ) ?? throw new InvalidOperationException("Missing delete_instance arguments.");
 
-        Instance instance = ResolveInstance(args.Path) ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        Instance instance =
+            ResolveInstance(args.Path)
+            ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        EnsureVisibleCreatorTarget(instance);
         if (instance == _root)
         {
             throw new InvalidOperationException("The world root cannot be deleted.");
@@ -473,7 +760,9 @@ internal sealed class ForgeToolExecutor
 
         if (instance.GetType().IsDefined(typeof(StaticAttribute), true))
         {
-            throw new InvalidOperationException($"{instance.ClassName} is static and cannot be deleted.");
+            throw new InvalidOperationException(
+                $"{instance.ClassName} is static and cannot be deleted."
+            );
         }
 
         string path = instance.LuaPath;
@@ -481,7 +770,110 @@ internal sealed class ForgeToolExecutor
         return $"Deleted {path}.";
     }
 
-    private static void WriteTree(StringBuilder builder, Instance instance, int depth, int maxDepth, int maxNodes, ref int written)
+    private string EditScriptSource(string argumentsJson)
+    {
+        ForgeEditScriptSourceArgs args =
+            JsonSerializer.Deserialize<ForgeEditScriptSourceArgs>(argumentsJson)
+            ?? throw new InvalidOperationException("Missing edit_script_source arguments.");
+        Instance instance =
+            ResolveInstance(args.Path)
+            ?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+        EnsureVisibleCreatorTarget(instance);
+        if (instance is not BrickVerse.Datamodel.Script script)
+            throw new InvalidOperationException($"'{args.Path}' is not a Script.");
+
+        string before = script.Source;
+        string after = args.Source ?? string.Empty;
+        if (before == after)
+            return $"No script changes were needed for {script.LuaPath}.";
+        script.Source = after;
+        string path = script.LuaPath;
+        _scriptDiffs[path] = (before, after);
+        _rollback.Push(() =>
+        {
+            if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
+                current.Source = before;
+        });
+        _root.CreatorContext.Selections.SelectOnly(script);
+        LastEvent = new ForgeToolEvent
+        {
+            ToolName = "edit_script_source",
+            Title = "Script updated",
+            Detail = path,
+            InstancePath = path,
+            Diff = BuildUnifiedDiff(before, after),
+            CanRollback = true,
+        };
+        return $"Updated script source at {path}. The script is selected and a diff/rollback is available. Do not repeat the full source in chat.";
+    }
+
+    private string GetScriptDiff(string argumentsJson)
+    {
+        ForgeScriptDiffArgs args =
+            JsonSerializer.Deserialize<ForgeScriptDiffArgs>(argumentsJson)
+            ?? throw new InvalidOperationException("Missing get_script_diff arguments.");
+        if (!_scriptDiffs.TryGetValue(args.Path, out var change))
+            return $"No Forge script diff is available for {args.Path}.";
+        string diff = BuildUnifiedDiff(change.Before, change.After);
+        LastEvent = new ForgeToolEvent
+        {
+            ToolName = "get_script_diff",
+            Title = "Script diff",
+            Detail = args.Path,
+            InstancePath = args.Path,
+            Diff = diff,
+        };
+        return diff;
+    }
+
+    private string RollbackLastChange()
+    {
+        if (_rollback.Count == 0)
+            return "There are no Forge changes to roll back in this request.";
+        _rollback.Pop().Invoke();
+        LastEvent = new ForgeToolEvent
+        {
+            ToolName = "rollback_last_change",
+            Title = "Change rolled back",
+            Detail = "Restored the previous state.",
+        };
+        return "Rolled back the most recent Forge change.";
+    }
+
+    private static string BuildUnifiedDiff(string before, string after)
+    {
+        string[] oldLines = before.Replace("\r\n", "\n").Split('\n');
+        string[] newLines = after.Replace("\r\n", "\n").Split('\n');
+        StringBuilder diff = new();
+        diff.AppendLine("--- before");
+        diff.AppendLine("+++ after");
+        int count = Math.Max(oldLines.Length, newLines.Length);
+        for (int i = 0; i < count; i++)
+        {
+            string? oldLine = i < oldLines.Length ? oldLines[i] : null;
+            string? newLine = i < newLines.Length ? newLines[i] : null;
+            if (oldLine == newLine)
+            {
+                if (oldLine != null)
+                    diff.AppendLine(" " + oldLine);
+                continue;
+            }
+            if (oldLine != null)
+                diff.AppendLine("-" + oldLine);
+            if (newLine != null)
+                diff.AppendLine("+" + newLine);
+        }
+        return diff.ToString().TrimEnd();
+    }
+
+    private static void WriteTree(
+        StringBuilder builder,
+        Instance instance,
+        int depth,
+        int maxDepth,
+        int maxNodes,
+        ref int written
+    )
     {
         if (written >= maxNodes || depth > maxDepth)
         {
@@ -551,7 +943,12 @@ internal sealed class ForgeToolExecutor
 
         foreach (JsonProperty property in propertiesElement.EnumerateObject())
         {
-            PropertyInfo? targetProperty = instance.GetType().GetProperty(property.Name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            PropertyInfo? targetProperty = instance
+                .GetType()
+                .GetProperty(
+                    property.Name,
+                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase
+                );
             if (targetProperty == null || !targetProperty.CanWrite)
             {
                 failed.Add($"- {property.Name}: property not found or not writable");
@@ -626,7 +1023,10 @@ internal sealed class ForgeToolExecutor
 
         if (targetType == typeof(string[]))
         {
-            return element.EnumerateArray().Select(static item => item.GetString() ?? string.Empty).ToArray();
+            return element
+                .EnumerateArray()
+                .Select(static item => item.GetString() ?? string.Empty)
+                .ToArray();
         }
 
         if (targetType == typeof(Vector3))
@@ -648,7 +1048,11 @@ internal sealed class ForgeToolExecutor
         {
             return element.ValueKind switch
             {
-                JsonValueKind.String => Enum.Parse(targetType, element.GetString() ?? string.Empty, true),
+                JsonValueKind.String => Enum.Parse(
+                    targetType,
+                    element.GetString() ?? string.Empty,
+                    true
+                ),
                 _ => Enum.ToObject(targetType, element.GetInt32()),
             };
         }
@@ -660,7 +1064,10 @@ internal sealed class ForgeToolExecutor
     {
         if (element.ValueKind == JsonValueKind.Array)
         {
-            float[] values = element.EnumerateArray().Select(static item => item.GetSingle()).ToArray();
+            float[] values = element
+                .EnumerateArray()
+                .Select(static item => item.GetSingle())
+                .ToArray();
             if (values.Length != 3)
             {
                 throw new InvalidOperationException("Vector3 arrays must have exactly 3 numbers.");
@@ -674,7 +1081,8 @@ internal sealed class ForgeToolExecutor
             return new Vector3(
                 ReadFloat(element, "x"),
                 ReadFloat(element, "y"),
-                ReadFloat(element, "z"));
+                ReadFloat(element, "z")
+            );
         }
 
         throw new InvalidOperationException("Vector3 values must be an array or object.");
@@ -684,7 +1092,10 @@ internal sealed class ForgeToolExecutor
     {
         if (element.ValueKind == JsonValueKind.Array)
         {
-            float[] values = element.EnumerateArray().Select(static item => item.GetSingle()).ToArray();
+            float[] values = element
+                .EnumerateArray()
+                .Select(static item => item.GetSingle())
+                .ToArray();
             if (values.Length != 2)
             {
                 throw new InvalidOperationException("Vector2 arrays must have exactly 2 numbers.");
@@ -710,7 +1121,10 @@ internal sealed class ForgeToolExecutor
 
         if (element.ValueKind == JsonValueKind.Array)
         {
-            float[] values = element.EnumerateArray().Select(static item => item.GetSingle()).ToArray();
+            float[] values = element
+                .EnumerateArray()
+                .Select(static item => item.GetSingle())
+                .ToArray();
             return values.Length switch
             {
                 3 => new Color(values[0], values[1], values[2]),
@@ -725,7 +1139,8 @@ internal sealed class ForgeToolExecutor
                 ReadFloat(element, "r"),
                 ReadFloat(element, "g"),
                 ReadFloat(element, "b"),
-                TryReadFloat(element, "a") ?? 1f);
+                TryReadFloat(element, "a") ?? 1f
+            );
         }
 
         throw new InvalidOperationException("Color values must be a string, array, or object.");
@@ -743,7 +1158,9 @@ internal sealed class ForgeToolExecutor
 
     private static float? TryReadFloat(JsonElement element, string propertyName)
     {
-        return element.TryGetProperty(propertyName, out JsonElement property) ? property.GetSingle() : null;
+        return element.TryGetProperty(propertyName, out JsonElement property)
+            ? property.GetSingle()
+            : null;
     }
 }
 

@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.UI;
@@ -39,6 +41,8 @@ public partial class ForgeTab : VBoxContainer
 	private ProgressBar _progress = null!;
 	private Label _activityLabel = null!;
 	private PanelContainer? _activityCard;
+	private readonly List<Button> _rollbackButtons = [];
+	private Tween? _activityPulse;
 
 	private Window _providerWindow = null!;
 	private OptionButton _providerOption = null!;
@@ -215,9 +219,9 @@ public partial class ForgeTab : VBoxContainer
 				? "The provider completed the request but returned no text reply."
 				: result.AssistantText;
 
-			if (result.ToolEvents.Count > 0)
+			foreach (ForgeToolEvent toolEvent in result.ToolEvents)
 			{
-				reply = $"Used tools: {string.Join(", ", result.ToolEvents.Distinct())}\n\n{reply}";
+				PushToolEventCard(toolEvent, executor);
 			}
 
 			PushChatMessage("Forge", reply, isUser: false);
@@ -468,44 +472,242 @@ public partial class ForgeTab : VBoxContainer
 		PushChatMessage(isError ? "Forge Error" : "Forge", text, isUser: false, isError: isError);
 	}
 
+	private static StyleBoxFlat MakePanelStyle(Color background, Color border, int radius = 8, int borderWidth = 1)
+	{
+		StyleBoxFlat style = new()
+		{
+			BgColor = background,
+			BorderColor = border,
+			CornerRadiusTopLeft = radius,
+			CornerRadiusTopRight = radius,
+			CornerRadiusBottomLeft = radius,
+			CornerRadiusBottomRight = radius,
+			BorderWidthLeft = borderWidth,
+			BorderWidthTop = borderWidth,
+			BorderWidthRight = borderWidth,
+			BorderWidthBottom = borderWidth,
+		};
+		return style;
+	}
+
+	private static void StyleCompactButton(Button button, bool primary = false)
+	{
+		button.CustomMinimumSize = new Vector2(0, 30);
+		button.AddThemeFontSizeOverride("font_size", 12);
+		button.AddThemeStyleboxOverride("normal", MakePanelStyle(
+			primary ? new Color(0.02f, 0.42f, 0.78f, 0.95f) : new Color(0.075f, 0.095f, 0.125f, 0.95f),
+			primary ? new Color(0.05f, 0.55f, 1f, 1f) : new Color(0.17f, 0.22f, 0.29f, 1f), 6));
+		button.AddThemeStyleboxOverride("hover", MakePanelStyle(
+			primary ? new Color(0.03f, 0.5f, 0.92f, 1f) : new Color(0.11f, 0.14f, 0.19f, 1f),
+			new Color(0.05f, 0.55f, 1f, 1f), 6));
+	}
+
+	private void AnimateEntry(Control control)
+	{
+		control.Modulate = new Color(1, 1, 1, 0);
+		control.Position += new Vector2(0, 8);
+		Tween tween = CreateTween().SetParallel(true);
+		tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+		tween.TweenProperty(control, "modulate:a", 1.0f, 0.18f);
+		tween.TweenProperty(control, "position:y", control.Position.Y - 8, 0.18f);
+	}
+
 	private void PushChatMessage(string role, string text, bool isUser, bool isError = false)
 	{
+		HBoxContainer row = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		if (isUser) row.Alignment = BoxContainer.AlignmentMode.End;
+
+		PanelContainer bubble = new() { SizeFlagsHorizontal = isUser ? SizeFlags.ShrinkEnd : SizeFlags.ExpandFill };
+		bubble.CustomMinimumSize = new Vector2(isUser ? 180 : 0, 0);
+		Color background = isError
+			? new Color(0.18f, 0.055f, 0.065f, 0.96f)
+			: isUser ? new Color(0.025f, 0.19f, 0.32f, 0.96f) : new Color(0.045f, 0.06f, 0.082f, 0.98f);
+		Color border = isError
+			? new Color(0.75f, 0.2f, 0.25f, 0.75f)
+			: isUser ? new Color(0.02f, 0.48f, 0.88f, 0.8f) : new Color(0.12f, 0.16f, 0.22f, 1f);
+		bubble.AddThemeStyleboxOverride("panel", MakePanelStyle(background, border, 10));
+
+		MarginContainer margin = new();
+		margin.AddThemeConstantOverride("margin_left", 13);
+		margin.AddThemeConstantOverride("margin_right", 13);
+		margin.AddThemeConstantOverride("margin_top", 10);
+		margin.AddThemeConstantOverride("margin_bottom", 11);
 		VBoxContainer group = new();
-		group.AddThemeConstantOverride("separation", 4);
-		group.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+		group.AddThemeConstantOverride("separation", 6);
 
-		Label roleLabel = new();
-		roleLabel.Text = role;
-		roleLabel.HorizontalAlignment = isUser ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-		roleLabel.Modulate = isError
-			? new Color(0.96f, 0.37f, 0.37f)
-			: isUser
-				? new Color(0.62f, 0.74f, 0.98f)
-				: new Color(0.44f, 0.83f, 1f);
+		Label roleLabel = new() { Text = role.ToUpperInvariant() };
+		roleLabel.AddThemeFontSizeOverride("font_size", 10);
+		roleLabel.Modulate = isError ? new Color(1f, 0.45f, 0.48f) : isUser ? new Color(0.52f, 0.78f, 1f) : new Color(0.1f, 0.63f, 1f);
 
-		RichTextLabel body = new();
-		body.BbcodeEnabled = false;
-		body.FitContent = true;
-		body.ScrollActive = false;
-		body.SelectionEnabled = true;
-		body.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-		body.Text = text;
-		body.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+		RichTextLabel body = new()
+		{
+			BbcodeEnabled = true,
+			FitContent = true,
+			ScrollActive = false,
+			SelectionEnabled = true,
+			MetaUnderlined = true,
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			Text = RenderMarkdownToBbCode(text),
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+		};
+		body.AddThemeFontSizeOverride("normal_font_size", 13);
+		body.MetaClicked += meta => OS.ShellOpen(meta.AsString());
 
 		group.AddChild(roleLabel);
 		group.AddChild(body);
-		_historyContainer.AddChild(group);
+		margin.AddChild(group);
+		bubble.AddChild(margin);
+		row.AddChild(bubble);
+		_historyContainer.AddChild(row);
+		AnimateEntry(row);
 		CallDeferred(MethodName.ScrollToBottom);
+	}
+
+	private void PushToolEventCard(ForgeToolEvent toolEvent, ForgeToolExecutor executor)
+	{
+		PanelContainer card = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		card.AddThemeStyleboxOverride("panel", MakePanelStyle(new Color(0.035f, 0.05f, 0.07f, 0.98f), new Color(0.12f, 0.18f, 0.25f, 1f), 9));
+		MarginContainer margin = new();
+		margin.AddThemeConstantOverride("margin_left", 10);
+		margin.AddThemeConstantOverride("margin_right", 10);
+		margin.AddThemeConstantOverride("margin_top", 8);
+		margin.AddThemeConstantOverride("margin_bottom", 8);
+		VBoxContainer layout = new();
+		layout.AddThemeConstantOverride("separation", 5);
+		Label title = new() { Text = toolEvent.Title.Or(toolEvent.ToolName), TooltipText = toolEvent.ToolName };
+		title.AddThemeFontSizeOverride("font_size", 12);
+		layout.AddChild(title);
+		if (!string.IsNullOrWhiteSpace(toolEvent.Detail))
+		{
+			Label detail = new() { Text = toolEvent.Detail, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+			detail.Modulate = new Color(0.68f, 0.73f, 0.8f);
+			layout.AddChild(detail);
+		}
+
+		HBoxContainer actions = new();
+		actions.AddThemeConstantOverride("separation", 6);
+		if (!string.IsNullOrWhiteSpace(toolEvent.InstancePath))
+		{
+			Button reveal = new() { Text = "Open in Inspector", TooltipText = "Select this item and reveal it in Inspector" };
+			StyleCompactButton(reveal, primary: true);
+			reveal.Pressed += () =>
+			{
+				string json = JsonSerializer.Serialize(new ForgeSelectInstancesArgs { Paths = [toolEvent.InstancePath!], Mode = "replace" }, ForgeJsonContext.Default.ForgeSelectInstancesArgs);
+				executor.Execute("select_instances", json);
+				CreatorService.Interface.StatusBar?.SetStatus($"Revealed {toolEvent.InstancePath} in Inspector");
+			};
+			actions.AddChild(reveal);
+		}
+		if (!string.IsNullOrWhiteSpace(toolEvent.Diff))
+		{
+			Button diff = new() { Text = "View diff" };
+			StyleCompactButton(diff);
+			diff.Pressed += () => ShowTextDialog("Forge script diff", toolEvent.Diff!);
+			actions.AddChild(diff);
+		}
+		if (toolEvent.CanRollback)
+		{
+			foreach (Button previous in _rollbackButtons) previous.Disabled = true;
+			Button rollback = new() { Text = "Rollback", TooltipText = "Rollback the latest Forge change" };
+			StyleCompactButton(rollback);
+			_rollbackButtons.Add(rollback);
+			rollback.Pressed += () =>
+			{
+				string result = executor.Execute("rollback_last_change", "{}");
+				rollback.Disabled = true;
+				PushSystemMessage(result, isError: false);
+			};
+			actions.AddChild(rollback);
+		}
+		if (actions.GetChildCount() > 0) layout.AddChild(actions);
+		margin.AddChild(layout);
+		card.AddChild(margin);
+		_historyContainer.AddChild(card);
+		AnimateEntry(card);
+		CallDeferred(MethodName.ScrollToBottom);
+	}
+
+	private void ShowTextDialog(string title, string text)
+	{
+		AcceptDialog dialog = new() { Title = title, MinSize = new Vector2I(760, 560) };
+		TextEdit editor = new() { Text = text, Editable = false, WrapMode = TextEdit.LineWrappingMode.None };
+		dialog.AddChild(editor);
+		dialog.Confirmed += dialog.QueueFree;
+		dialog.CloseRequested += dialog.QueueFree;
+		AddChild(dialog);
+		dialog.PopupCentered();
+	}
+
+	private static string EscapeBb(string text) => text.Replace("[", "[lb]").Replace("]", "[rb]");
+
+	private static string HighlightLuauLine(string line)
+	{
+		string escaped = EscapeBb(line);
+		int comment = escaped.IndexOf("--", StringComparison.Ordinal);
+		string code = comment >= 0 ? escaped[..comment] : escaped;
+		string suffix = comment >= 0 ? escaped[comment..] : string.Empty;
+		code = Regex.Replace(code, "(&quot;|\")(.*?)(\"|&quot;)", "[color=#d7ba7d]$1$2$3[/color]");
+		code = Regex.Replace(code, @"\b(local|function|end|if|then|else|elseif|for|while|repeat|until|return|break|continue|and|or|not|in|do|true|false|nil)\b", "[color=#c586c0]$1[/color]");
+		code = Regex.Replace(code, @"\b([0-9]+(?:\.[0-9]+)?)\b", "[color=#b5cea8]$1[/color]");
+		code = Regex.Replace(code, @"\b(world|script|game|self)\b", "[color=#4fc1ff]$1[/color]");
+		if (!string.IsNullOrEmpty(suffix)) code += "[color=#6a9955]" + suffix + "[/color]";
+		return code;
+	}
+
+	private static string RenderMarkdownToBbCode(string markdown)
+	{
+		if (string.IsNullOrEmpty(markdown)) return string.Empty;
+		StringBuilder output = new();
+		string[] lines = markdown.Replace("\r\n", "\n").Split('\n');
+		bool inCode = false;
+		string language = string.Empty;
+		foreach (string raw in lines)
+		{
+			string trimmed = raw.TrimStart();
+			if (trimmed.StartsWith("```", StringComparison.Ordinal))
+			{
+				if (!inCode)
+				{
+					language = trimmed[3..].Trim().ToLowerInvariant();
+					output.AppendLine($"[bgcolor=#080d14][font_size=11][color=#6f849c]  {(string.IsNullOrWhiteSpace(language) ? "code" : EscapeBb(language))}[/color][/font_size]\n[font_size=12][font=monospace]");
+					inCode = true;
+				}
+				else
+				{
+					output.AppendLine("[/font][/font_size][/bgcolor]");
+					inCode = false;
+				}
+				continue;
+			}
+			if (inCode)
+			{
+				output.AppendLine(language is "lua" or "luau" ? HighlightLuauLine(raw) : EscapeBb(raw));
+				continue;
+			}
+
+			string line = EscapeBb(raw);
+			if (line.StartsWith("### ")) line = "[font_size=15][b]" + line[4..] + "[/b][/font_size]";
+			else if (line.StartsWith("## ")) line = "[font_size=17][b]" + line[3..] + "[/b][/font_size]";
+			else if (line.StartsWith("# ")) line = "[font_size=19][b]" + line[2..] + "[/b][/font_size]";
+			else if (Regex.IsMatch(line, @"^\s*[-*+]\s+")) line = "  • " + Regex.Replace(line, @"^\s*[-*+]\s+", string.Empty);
+			else if (line.StartsWith("&gt; ")) line = "[indent][color=#93a4b8]" + line[5..] + "[/color][/indent]";
+			line = Regex.Replace(line, @"\*\*(.+?)\*\*", "[b]$1[/b]");
+			line = Regex.Replace(line, @"__(.+?)__", "[b]$1[/b]");
+			line = Regex.Replace(line, @"(?<!\*)\*([^*\n]+)\*(?!\*)", "[i]$1[/i]");
+			line = Regex.Replace(line, @"`([^`\n]+)`", "[bgcolor=#111a25][font=monospace][color=#d6e4f0] $1 [/color][/font][/bgcolor]");
+			line = Regex.Replace(line, @"\[lb\]([^\[]+)\[rb\]\((https?://[^\s\)]+)\)", "[url=$2]$1[/url]");
+			line = Regex.Replace(line, @"~~(.+?)~~", "[s]$1[/s]");
+			output.AppendLine(line);
+		}
+		if (inCode) output.AppendLine("[/font][/font_size][/bgcolor]");
+		return output.ToString().TrimEnd();
 	}
 
 	private void BuildEnhancedHeader()
 	{
-		HBoxContainer headerRow = GetNode<HBoxContainer>("Header/Row");
-		_historyMenu = new MenuButton { Text = "History", TooltipText = "Open previous Forge chats" };
-		headerRow.AddChild(_historyMenu);
-		headerRow.MoveChild(_historyMenu, Math.Max(0, headerRow.GetChildCount() - 3));
-
-
+		// The persistent header controls live in forge_chat.tscn so the scene
+		// accurately represents the final dock instead of being rebuilt at runtime.
+		_historyMenu = GetNode<MenuButton>("Header/Row/History");
 	}
 
 	private void PopulateModelPicker()
@@ -523,9 +725,25 @@ public partial class ForgeTab : VBoxContainer
 	{
 		EnsureInlineActivityCard();
 		_activityLabel.Text = text;
-		_progress.Value = progress;
 		_progress.Visible = progress > 0;
 		if (_activityCard != null) _activityCard.Visible = progress > 0 || text != "Ready";
+
+		Tween valueTween = CreateTween();
+		valueTween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+		valueTween.TweenProperty(_progress, "value", progress, 0.28f);
+
+		_activityPulse?.Kill();
+		if (_activityCard != null && progress > 0 && progress < 100)
+		{
+			_activityPulse = CreateTween().SetLoops();
+			_activityPulse.SetEase(Tween.EaseType.InOut).SetTrans(Tween.TransitionType.Sine);
+			_activityPulse.TweenProperty(_activityCard, "modulate", new Color(1, 1, 1, 0.78f), 0.65f);
+			_activityPulse.TweenProperty(_activityCard, "modulate", Colors.White, 0.65f);
+		}
+		else if (_activityCard != null)
+		{
+			_activityCard.Modulate = Colors.White;
+		}
 		CallDeferred(MethodName.ScrollToBottom);
 	}
 
@@ -538,7 +756,18 @@ public partial class ForgeTab : VBoxContainer
 	private void EnsureInlineActivityCard()
 	{
 		if (_activityCard != null && IsInstanceValid(_activityCard)) return;
+
+		_activityCard = GetNodeOrNull<PanelContainer>("ChatScroll/ChatMargin/Messages/ActivityCard");
+		if (_activityCard != null)
+		{
+			_activityLabel = _activityCard.GetNode<Label>("Margin/Layout/ActivityRow/Text");
+			_progress = _activityCard.GetNode<ProgressBar>("Margin/Layout/Progress");
+			return;
+		}
+
+		// Fallback for older scenes that have not yet been replaced.
 		_activityCard = new PanelContainer { Name = "ForgeActivity" };
+		_activityCard.AddThemeStyleboxOverride("panel", MakePanelStyle(new Color(0.025f, 0.075f, 0.12f, 0.98f), new Color(0.02f, 0.45f, 0.82f, 0.8f), 9));
 		MarginContainer margin = new();
 		margin.AddThemeConstantOverride("margin_left", 10);
 		margin.AddThemeConstantOverride("margin_right", 10);
@@ -548,12 +777,15 @@ public partial class ForgeTab : VBoxContainer
 		layout.AddThemeConstantOverride("separation", 6);
 		_activityLabel = new Label { Text = "Thinking…" };
 		_activityLabel.AddThemeFontSizeOverride("font_size", 12);
-		_progress = new ProgressBar { MinValue = 0, MaxValue = 100, Value = 10, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 3) };
+		_progress = new ProgressBar { MinValue = 0, MaxValue = 100, Value = 10, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4) };
+		_progress.AddThemeStyleboxOverride("background", MakePanelStyle(new Color(0.02f, 0.03f, 0.045f, 1f), new Color(0.02f, 0.03f, 0.045f, 1f), 2, 0));
+		_progress.AddThemeStyleboxOverride("fill", MakePanelStyle(new Color(0.02f, 0.5f, 0.95f, 1f), new Color(0.02f, 0.5f, 0.95f, 1f), 2, 0));
 		layout.AddChild(_activityLabel);
 		layout.AddChild(_progress);
 		margin.AddChild(layout);
 		_activityCard.AddChild(margin);
 		_historyContainer.AddChild(_activityCard);
+		AnimateEntry(_activityCard);
 	}
 
 	private async Task<bool> ConfirmLuauExecutionAsync(ForgeRunLuauArgs args)

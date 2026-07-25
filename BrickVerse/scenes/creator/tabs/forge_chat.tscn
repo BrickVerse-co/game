@@ -1,0 +1,730 @@
+[gd_scene format=3 uid="uid://ddwx3b7wcb46f"]
+
+[ext_resource type="Script" uid="uid://7yfe1c8ir6fn" path="res://scripts/creator/ui/docks/forge-ai-chat/ForgeTab.cs" id="1_tlbl1"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="2_rc8ob"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_surface"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.027451, 0.039216, 0.054902, 1)
+border_width_bottom = 1
+border_color = Color(0.105882, 0.145098, 0.196078, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_history_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_history_hover"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0784314, 0.113725, 0.156863, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7dw3e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4orq"]
+content_margin_left = 9.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0.0470588, 0.0666667, 0.0901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.137255, 0.184314, 0.239216, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gtg8n"]
+content_margin_left = 9.0
+content_margin_top = 6.0
+content_margin_right = 9.0
+content_margin_bottom = 6.0
+bg_color = Color(0.00392157, 0.529412, 0.972549, 0.17)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oir00"]
+content_margin_left = 9.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0.0941176, 0.137255, 0.188235, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.235294, 0.321569, 0.415686, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g6jqh"]
+content_margin_left = 12.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0470588, 0.0666667, 0.0901961, 1)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.55)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t02xu"]
+content_margin_left = 12.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0705882, 0.109804, 0.156863, 1)
+border_width_left = 3
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.95)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_activity_surface"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.0235294, 0.0705882, 0.113725, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.72)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.24)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.0117647, 0.0235294, 0.0392157, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0fpnu"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.00392157, 0.529412, 0.972549, 0.08)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 0.35)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_composer_surface"]
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.027451, 0.039216, 0.054902, 1)
+border_width_top = 1
+border_color = Color(0.105882, 0.145098, 0.196078, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mp2nf"]
+content_margin_left = 9.0
+content_margin_top = 6.0
+content_margin_right = 9.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0431373, 0.0588235, 0.0784314, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.145098, 0.196078, 0.254902, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fxlvx"]
+content_margin_left = 9.0
+content_margin_top = 6.0
+content_margin_right = 9.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0784314, 0.113725, 0.156863, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.235294, 0.317647, 0.407843, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vlkd8"]
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0352941, 0.0509804, 0.0705882, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ac6m8"]
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0313726, 0.0431373, 0.0588235, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.145098, 0.196078, 0.254902, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i83nv"]
+content_margin_left = 13.0
+content_margin_top = 6.0
+content_margin_right = 13.0
+content_margin_bottom = 6.0
+bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2y7sd"]
+content_margin_left = 13.0
+content_margin_top = 6.0
+content_margin_right = 13.0
+content_margin_bottom = 6.0
+bg_color = Color(0, 0.396078, 0.760784, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xj1pa"]
+content_margin_left = 13.0
+content_margin_top = 6.0
+content_margin_right = 13.0
+content_margin_bottom = 6.0
+bg_color = Color(0.105882, 0.607843, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_afjgc"]
+content_margin_left = 13.0
+content_margin_top = 6.0
+content_margin_right = 13.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0862745, 0.168627, 0.239216, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Forge" type="VBoxContainer" unique_id=756313943]
+theme_override_constants/separation = 0
+script = ExtResource("1_tlbl1")
+metadata/_tab_name = "Forge"
+metadata/_tab_index = 1
+
+[node name="Header" type="PanelContainer" parent="." unique_id=808891440]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_header_surface")
+
+[node name="Row" type="HBoxContainer" parent="Header" unique_id=702812202]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleGroup" type="VBoxContainer" parent="Header/Row" unique_id=1792041981]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Header/Row/TitleGroup" unique_id=1206107516]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.905882, 0.933333, 0.968627, 1)
+theme_override_font_sizes/font_size = 15
+text = "Forge"
+
+[node name="Status" type="Label" parent="Header/Row/TitleGroup" unique_id=1194678790]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.58, 0.65, 1)
+theme_override_font_sizes/font_size = 11
+text = "Build, inspect, and edit your world"
+
+[node name="History" type="MenuButton" parent="Header/Row" unique_id=517693079]
+custom_minimum_size = Vector2(64, 30)
+layout_mode = 2
+tooltip_text = "Open previous Forge chats"
+theme_override_colors/font_color = Color(0.658824, 0.713726, 0.784314, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_history_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_history_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_history_hover")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "History"
+
+[node name="NewChat" type="Button" parent="Header/Row" unique_id=1830068549]
+custom_minimum_size = Vector2(48, 30)
+layout_mode = 2
+tooltip_text = "Start a new chat"
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_q4orq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_gtg8n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_oir00")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "New"
+
+[node name="Settings" type="Button" parent="Header/Row" unique_id=1548657225]
+custom_minimum_size = Vector2(64, 30)
+layout_mode = 2
+tooltip_text = "Provider and API key settings"
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_q4orq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_gtg8n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_oir00")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Settings"
+
+[node name="Separator" type="HSeparator" parent="." unique_id=433104165]
+layout_mode = 2
+
+[node name="ChatScroll" type="ScrollContainer" parent="." unique_id=184431201]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChatMargin" type="MarginContainer" parent="ChatScroll" unique_id=801578848]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 16
+
+[node name="Messages" type="VBoxContainer" parent="ChatScroll/ChatMargin" unique_id=2103194922]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="Welcome" type="VBoxContainer" parent="ChatScroll/ChatMargin/Messages" unique_id=1381454148]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Mark" type="Label" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=114383542]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.62, 0.96, 1)
+theme_override_font_sizes/font_size = 24
+text = "◆"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=1246676832]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Build with Forge"
+horizontal_alignment = 1
+
+[node name="Description" type="Label" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=1727603731]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.568627, 0.635294, 0.713726, 1)
+text = "Ask questions, generate Luau, edit selected objects, or diagnose Creator errors."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Suggestions" type="VBoxContainer" parent="ChatScroll/ChatMargin/Messages" unique_id=1048889660]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Script" type="Button" parent="ChatScroll/ChatMargin/Messages/Suggestions" unique_id=2134383890]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.803922, 0.858824, 0.92549, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_g6jqh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Generate  ·  Day and night cycle"
+alignment = 0
+
+[node name="Explain" type="Button" parent="ChatScroll/ChatMargin/Messages/Suggestions" unique_id=82182268]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.803922, 0.858824, 0.92549, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_g6jqh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Explain  ·  Selected script"
+alignment = 0
+
+[node name="Fix" type="Button" parent="ChatScroll/ChatMargin/Messages/Suggestions" unique_id=1558805793]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.803922, 0.858824, 0.92549, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_g6jqh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Repair  ·  Console errors"
+alignment = 0
+
+[node name="ActivityCard" type="PanelContainer" parent="ChatScroll/ChatMargin/Messages" unique_id=2098707496]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_activity_surface")
+
+[node name="Margin" type="MarginContainer" parent="ChatScroll/ChatMargin/Messages/ActivityCard" unique_id=2145028150]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="ChatScroll/ChatMargin/Messages/ActivityCard/Margin" unique_id=1168364468]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActivityRow" type="HBoxContainer" parent="ChatScroll/ChatMargin/Messages/ActivityCard/Margin/Layout" unique_id=1297148235]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Indicator" type="Label" parent="ChatScroll/ChatMargin/Messages/ActivityCard/Margin/Layout/ActivityRow" unique_id=647304604]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.00392157, 0.654902, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "●"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Text" type="Label" parent="ChatScroll/ChatMargin/Messages/ActivityCard/Margin/Layout/ActivityRow" unique_id=641424362]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85098, 0.909804, 0.968627, 1)
+theme_override_font_sizes/font_size = 12
+text = "Forge is preparing…"
+vertical_alignment = 1
+
+[node name="Progress" type="ProgressBar" parent="ChatScroll/ChatMargin/Messages/ActivityCard/Margin/Layout" unique_id=927589091]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 12.0
+show_percentage = false
+
+[node name="ProviderNotice" type="PanelContainer" parent="ChatScroll/ChatMargin/Messages" unique_id=831422106]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_0fpnu")
+
+[node name="Margin" type="MarginContainer" parent="ChatScroll/ChatMargin/Messages/ProviderNotice" unique_id=713031044]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Text" type="Label" parent="ChatScroll/ChatMargin/Messages/ProviderNotice/Margin" unique_id=1834642669]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.690196, 0.788235, 0.898039, 1)
+theme_override_font_sizes/font_size = 11
+text = "Forge can inspect your selection, scripts, full Inspector hierarchy, properties, and console. Review changes before running or publishing your world."
+autowrap_mode = 2
+
+[node name="Composer" type="PanelContainer" parent="." unique_id=1685852221]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_composer_surface")
+
+[node name="Layout" type="VBoxContainer" parent="Composer" unique_id=1731403306]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ContextRow" type="HBoxContainer" parent="Composer/Layout" unique_id=1744979157]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Model" type="OptionButton" parent="Composer/Layout/ContextRow" unique_id=695735424]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_mp2nf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_gtg8n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fxlvx")
+theme_override_styles/focus = SubResource("StyleBoxFlat_vlkd8")
+item_count = 4
+popup/item_0/text = "Select a model"
+popup/item_0/id = 0
+popup/item_1/text = "OpenAI"
+popup/item_1/id = 1
+popup/item_2/text = "xAI"
+popup/item_2/id = 2
+popup/item_3/text = "Local model"
+popup/item_3/id = 3
+
+[node name="Context" type="MenuButton" parent="Composer/Layout/ContextRow" unique_id=613506941]
+custom_minimum_size = Vector2(92, 32)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_mp2nf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_gtg8n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fxlvx")
+theme_override_styles/focus = SubResource("StyleBoxFlat_vlkd8")
+text = "Context"
+item_count = 5
+popup/item_0/text = "Current selection"
+popup/item_0/checkable = 1
+popup/item_0/checked = true
+popup/item_0/id = 0
+popup/item_1/text = "Open scripts"
+popup/item_1/checkable = 1
+popup/item_1/checked = true
+popup/item_1/id = 1
+popup/item_2/text = "Inspector"
+popup/item_2/checkable = 1
+popup/item_2/checked = true
+popup/item_2/id = 2
+popup/item_3/text = "Console"
+popup/item_3/checkable = 1
+popup/item_3/checked = true
+popup/item_3/id = 3
+popup/item_4/text = "Documentation"
+popup/item_4/checkable = 1
+popup/item_4/checked = true
+popup/item_4/id = 4
+
+[node name="Prompt" type="TextEdit" parent="Composer/Layout" unique_id=1814897280]
+custom_minimum_size = Vector2(0, 94)
+layout_mode = 2
+theme_override_colors/font_placeholder_color = Color(0.419608, 0.482353, 0.564706, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_ac6m8")
+theme_override_styles/focus = SubResource("StyleBoxFlat_vlkd8")
+theme_override_styles/read_only = SubResource("StyleBoxFlat_ac6m8")
+placeholder_text = "Describe what you want Forge to build, change, or diagnose…"
+wrap_mode = 1
+
+[node name="Actions" type="HBoxContainer" parent="Composer/Layout" unique_id=622509003]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="Composer/Layout/Actions" unique_id=1125644619]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.47, 0.5, 0.56, 1)
+theme_override_font_sizes/font_size = 10
+text = "AI can make mistakes."
+vertical_alignment = 1
+
+[node name="Send" type="Button" parent="Composer/Layout/Actions" unique_id=1321317597]
+custom_minimum_size = Vector2(72, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.439216, 0.521569, 0.603922, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_i83nv")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2y7sd")
+theme_override_styles/hover = SubResource("StyleBoxFlat_xj1pa")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_afjgc")
+theme_override_styles/focus = SubResource("StyleBoxFlat_vlkd8")
+disabled = true
+text = "Send"
+
+[node name="ProviderSettings" type="Window" parent="." unique_id=1657504674]
+transparent_bg = true
+oversampling_override = 1.0
+title = "Forge Settings"
+initial_position = 1
+size = Vector2i(540, 570)
+visible = false
+transparent = true
+min_size = Vector2i(440, 470)
+theme = ExtResource("2_rc8ob")
+
+[node name="Margin" type="MarginContainer" parent="ProviderSettings" unique_id=1628313123]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="ProviderSettings/Margin" unique_id=815024286]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=2093707305]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.905882, 0.933333, 0.968627, 1)
+theme_override_font_sizes/font_size = 19
+text = "Forge model settings"
+
+[node name="Description" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=1642024323]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.61, 0.68, 1)
+text = "Choose Forge Free with Astro Basic+, or connect your preferred provider, local model, or OpenAI-compatible endpoint."
+autowrap_mode = 2
+
+[node name="ProviderLabel" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=1504556325]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67451, 0.741176, 0.823529, 1)
+theme_override_font_sizes/font_size = 10
+text = "Provider"
+
+[node name="Provider" type="OptionButton" parent="ProviderSettings/Margin/Layout" unique_id=1669189486]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+item_count = 7
+popup/item_0/text = "Forge Free (Astro Basic+)"
+popup/item_0/id = 0
+popup/item_1/text = "OpenAI"
+popup/item_1/id = 1
+popup/item_2/text = "Anthropic"
+popup/item_2/id = 2
+popup/item_3/text = "xAI"
+popup/item_3/id = 3
+popup/item_4/text = "Google Gemini"
+popup/item_4/id = 4
+popup/item_5/text = "OpenRouter"
+popup/item_5/id = 5
+popup/item_6/text = "Local / OpenAI-compatible"
+popup/item_6/id = 6
+
+[node name="EndpointLabel" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=651370784]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67451, 0.741176, 0.823529, 1)
+theme_override_font_sizes/font_size = 10
+text = "API endpoint"
+
+[node name="Endpoint" type="LineEdit" parent="ProviderSettings/Margin/Layout" unique_id=485769517]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "https://api.openai.com/v1"
+
+[node name="KeyLabel" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=576403219]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67451, 0.741176, 0.823529, 1)
+theme_override_font_sizes/font_size = 10
+text = "API key"
+
+[node name="ApiKey" type="LineEdit" parent="ProviderSettings/Margin/Layout" unique_id=271563759]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "Enter API key"
+secret = true
+
+[node name="ModelLabel" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=1692857739]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67451, 0.741176, 0.823529, 1)
+theme_override_font_sizes/font_size = 10
+text = "Model"
+
+[node name="Model" type="LineEdit" parent="ProviderSettings/Margin/Layout" unique_id=2079375487]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "Model ID"
+
+[node name="StoreKey" type="CheckBox" parent="ProviderSettings/Margin/Layout" unique_id=329892943]
+layout_mode = 2
+button_pressed = true
+text = "Remember key on this device"
+
+[node name="Privacy" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=160876829]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.53, 0.59, 1)
+theme_override_font_sizes/font_size = 10
+text = "Forge Free requests are processed by BrickVerse. BYOK requests go directly to your selected provider and do not pass through BrickVerse servers. Remembered keys stay on this device."
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="ProviderSettings/Margin/Layout" unique_id=314743259]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="HBoxContainer" parent="ProviderSettings/Margin/Layout" unique_id=1207814208]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Test" type="Button" parent="ProviderSettings/Margin/Layout/Buttons" unique_id=1994616127]
+custom_minimum_size = Vector2(112, 34)
+layout_mode = 2
+text = "Test connection"
+
+[node name="Save" type="Button" parent="ProviderSettings/Margin/Layout/Buttons" unique_id=8938596]
+custom_minimum_size = Vector2(86, 34)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_i83nv")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2y7sd")
+theme_override_styles/hover = SubResource("StyleBoxFlat_xj1pa")
+text = "Save settings"

@@ -158,7 +158,13 @@ public sealed class ForgeChatToolDefinition { [JsonPropertyName("type")] public 
 public sealed class ForgeChatToolDefinitionFunction { [JsonPropertyName("name")] public string Name { get; set; } = string.Empty; [JsonPropertyName("description")] public string Description { get; set; } = string.Empty; [JsonPropertyName("parameters")] public JsonElement Parameters { get; set; } }
 public sealed class ForgeChatToolCall { [JsonPropertyName("id")] public string Id { get; set; } = string.Empty; [JsonPropertyName("type")] public string Type { get; set; } = "function"; [JsonPropertyName("function")] public ForgeChatToolFunctionCall Function { get; set; } = new(); public ForgeChatToolCall Clone() => new() { Id = Id, Type = Type, Function = new() { Name = Function.Name, Arguments = Function.Arguments } }; }
 public sealed class ForgeChatToolFunctionCall { [JsonPropertyName("name")] public string Name { get; set; } = string.Empty; [JsonPropertyName("arguments")] public string Arguments { get; set; } = "{}"; }
-public sealed class ForgeCompletionResult { public List<ForgeChatMessage> TranscriptDelta { get; set; } = []; public string AssistantText { get; set; } = string.Empty; public List<string> ToolEvents { get; set; } = []; }
+public sealed class ForgeCompletionResult
+{
+    public List<ForgeChatMessage> TranscriptDelta { get; set; } = [];
+    public string AssistantText { get; set; } = string.Empty;
+    public List<ForgeToolEvent> ToolEvents { get; set; } = [];
+}
+
 public sealed class ForgeSearchInstancesArgs { [JsonPropertyName("query")] public string? Query { get; set; } [JsonPropertyName("class_name")] public string? ClassName { get; set; } [JsonPropertyName("under_path")] public string? UnderPath { get; set; } [JsonPropertyName("limit")] public int Limit { get; set; } = 20; }
 public sealed class ForgeInspectInstanceArgs { [JsonPropertyName("path")] public string Path { get; set; } = string.Empty; }
 public sealed class ForgeSelectInstancesArgs { [JsonPropertyName("paths")] public List<string> Paths { get; set; } = []; [JsonPropertyName("mode")] public string Mode { get; set; } = "replace"; }
@@ -173,6 +179,7 @@ public sealed class ForgeRunLuauArgs
 }
 
 public sealed class ForgeSetInstancePropertiesArgs { [JsonPropertyName("path")] public string Path { get; set; } = string.Empty; [JsonPropertyName("properties")] public JsonElement Properties { get; set; } }
+public sealed class ForgeEditScriptSourceArgs { [JsonPropertyName("path")] public string Path { get; set; } = string.Empty; [JsonPropertyName("source")] public string Source { get; set; } = string.Empty; }
 
 [JsonSourceGenerationOptions(WriteIndented = false)]
 [JsonSerializable(typeof(ForgeProviderSettings))]
@@ -192,4 +199,5 @@ public sealed class ForgeSetInstancePropertiesArgs { [JsonPropertyName("path")] 
 [JsonSerializable(typeof(ForgeCreateInstanceArgs))]
 [JsonSerializable(typeof(ForgeSetInstancePropertiesArgs))]
 [JsonSerializable(typeof(ForgeRunLuauArgs))]
+[JsonSerializable(typeof(ForgeEditScriptSourceArgs))]
 internal partial class ForgeJsonContext : JsonSerializerContext { }

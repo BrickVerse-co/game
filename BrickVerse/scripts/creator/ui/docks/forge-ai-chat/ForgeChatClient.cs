@@ -21,13 +21,22 @@ internal sealed class ForgeChatClient
     private readonly BVHttpClient _httpClient = new();
 
     private const string SystemPrompt = """
-	You are Forge, an AI assistant inside BrickVerse Creator.
-	You can inspect and edit the currently open world by calling tools.
-	Use tools whenever the request depends on the current project state, instance paths, or world edits.
-	Do not invent instance paths or class names when the tools can verify them.
-	Before mutating the world, inspect or search when the target is ambiguous.
-	After using tools, explain the result concisely and mention any limits or follow-up needed.
-	""";
+    You are Forge, an AI coding assistant inside BrickVerse Creator.
+
+    TOOL AND SAFETY RULES:
+    - Use tools for project state, paths, scripts, and world edits. Never invent paths or classes.
+    - Only read or modify user-visible Creator hierarchy. Never target Temporary, Hidden, Internal, Runtime, Cache, Preview, or inaccessible engine staging areas.
+    - Visible Explorer services such as world.Environment, world.ScriptService, world.PlayerDefaults, and their visible descendants are valid targets even if their engine metadata uses hidden flags.
+    - For ServerScript/Script-like classes, prefer world.ScriptService when no parent is specified. For world objects, prefer the selected visible instance or world.Environment.
+    - Inspect or search before ambiguous mutations.
+    - When creating a script, create it with its final Source through create_instance. Do not paste the full source into chat afterward.
+    - When changing an existing script, use edit_script_source. Do not repeat the full source in the final response.
+    - Keep the final response concise: summarize the change, mention the affected path, and note unresolved issues.
+    - The Creator UI exposes Open/Reveal, View diff, and Rollback actions for tool changes.
+    - Tool results are authoritative. If create_instance reports a visible created path, the object was created; do not contradict it because a temporary staging path appeared during creation.
+    - Never claim a tool succeeded unless its result says it succeeded.
+    - Avoid run_luau unless execution is necessary for validation and the user can review it first.
+    """;
 
     public async Task<string> TestConnectionAsync(ForgeProviderSettings settings)
     {
@@ -91,6 +100,7 @@ internal sealed class ForgeChatClient
             foreach (ForgeChatToolCall toolCall in assistantMessage.ToolCalls)
             {
                 string toolResult;
+                toolExecutor.ResetLastEvent();
                 try
                 {
                     if (activityCallback != null) await activityCallback(GetToolActivityText(toolCall.Function.Name));
@@ -106,7 +116,13 @@ internal sealed class ForgeChatClient
                     {
                         toolResult = toolExecutor.Execute(toolCall.Function.Name, toolCall.Function.Arguments);
                     }
-                    result.ToolEvents.Add(toolCall.Function.Name);
+                    ForgeToolEvent toolEvent = toolExecutor.LastEvent ?? new ForgeToolEvent
+                    {
+                        ToolName = toolCall.Function.Name,
+                        Title = GetToolActivityText(toolCall.Function.Name).TrimEnd('…'),
+                        Detail = toolResult.Length > 220 ? toolResult[..220] + "…" : toolResult,
+                    };
+                    result.ToolEvents.Add(toolEvent);
                 }
                 catch (Exception ex)
                 {
@@ -204,6 +220,9 @@ internal sealed class ForgeChatClient
         "create_instance" => "Creating a visible object…",
         "set_instance_properties" => "Applying property changes…",
         "delete_instance" => "Deleting an object…",
+        "edit_script_source" => "Editing script…",
+        "get_script_diff" => "Preparing script diff…",
+        "rollback_last_change" => "Rolling back change…",
         "run_luau" => "Preparing Luau execution preview…",
         _ => $"Running {toolName}…",
     };
