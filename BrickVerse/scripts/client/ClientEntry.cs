@@ -186,6 +186,7 @@ public sealed partial class ClientEntry : Node3D
 		options.SoloClientCount = (soloClientCountText ?? "1").ToInt();
 		options.DebugSpawnPositionText = debugSpawnPositionText;
 		options.CreatorToken = creatorToken;
+		ClientAuthAPI.SetCreatorToken(options.CreatorToken ?? "");
 #endif
 
 		if (entryData.HasValue)

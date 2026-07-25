@@ -111,11 +111,19 @@ public class BVAssetProvider : IAssetProvider
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
+		// Check if we are in a creator studio play-test session
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
+		}
+
+		// Check if we are in creator studio
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token) && string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
 		}
 
+		// Fallback to client asset endpoint for regular clients (prod/non-creator)
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
 	}
 
@@ -194,6 +202,15 @@ public class BVAssetProvider : IAssetProvider
 			return NormalizeBearerToken(ServerAPI.HostToken);
 		}
 
+		// Prefer CreatorToken if available, otherwise fallback to JoinToken
+		// This is only set during creator studio play-test sessions
+		// therefore they won't have a real valid JoinToken, but they will have a CreatorToken for authorization
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
+		{
+			return NormalizeBearerToken(ClientAuthAPI.CreatorToken);
+		}
+
+		// Fallback to JoinToken for regular clients (prod/non-creator)
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
 			return NormalizeBearerToken(ClientAuthAPI.JoinToken);

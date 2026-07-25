@@ -6,7 +6,6 @@ using BrickVerse.Client.WebAPI.Interfaces;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Datamodel.Services;
-using System;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
@@ -16,6 +15,7 @@ public static class ClientAuthAPI
 	private static readonly object BootstrapLock = new();
 	private static bool _bootstrapped;
 	internal static string JoinToken { get; private set; } = string.Empty;
+	internal static string CreatorToken { get; private set; } = string.Empty;
 	internal static IClientConnector? ClientConnector { get; private set; }
 	internal static IServerListener? ServerListener { get; private set; }
 
@@ -53,6 +53,16 @@ public static class ClientAuthAPI
 		JoinToken = joinToken;
 		ClientConnector?.SetToken(joinToken);
 		ServerListener?.SetToken(joinToken);
+	}
+
+	public static void SetCreatorToken(string creatorToken)
+	{
+		if (string.IsNullOrWhiteSpace(creatorToken))
+		{
+			return;
+		}
+
+		CreatorToken = creatorToken;
 	}
 
 	public static Task<APIServerStatus> CheckServerStatus()
