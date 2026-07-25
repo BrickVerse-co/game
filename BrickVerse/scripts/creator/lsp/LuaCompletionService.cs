@@ -58,14 +58,14 @@ public class LuaCompletionService(CreatorSession session)
 
 		_luaLSProcess.BeginErrorReadLine();
 
-		BV.Print("LuaLS Started");
+		//BV.Print("LuaLS Started");
 
 		_client = new LspClient(_luaLSProcess.StandardOutput.BaseStream, _luaLSProcess.StandardInput.BaseStream);
 		await _client.InitializeAsync(_workspacePath);
 
 		_client.PublishDiagnostics += OnPublishDiagnostics;
 
-		BV.Print("Language server initialized at ", _workspacePath);
+		//BV.Print("Language server initialized at ", _workspacePath);
 	}
 
 	private void OnPublishDiagnostics(LspPublishDiagnosticsParams @params)

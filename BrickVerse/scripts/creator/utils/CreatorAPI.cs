@@ -399,7 +399,7 @@ public static class CreatorAPI
 		Username = username;
 		IsUserAuthenticated = true;
 
-		BV.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
+		//BV.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
 
 		UserAuthenticated?.Invoke(userInfo);
 		UpdateAuthenticatedProfile(userInfo);
@@ -667,7 +667,7 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(username))
 			throw new InvalidOperationException("CreatorAPI: OpenID session did not include a usable username.");
 
-		BV.Print($"CreatorAPI: Resolving creator identity for username '{username}'");
+		//BV.Print($"CreatorAPI: Resolving creator identity for username '{username}'");
 
 		string lookupUrl =
 			Globals.ApiEndpoint.PathJoin("/v3/users/lookup")
@@ -710,7 +710,7 @@ public static class CreatorAPI
 			throw new InvalidOperationException("CreatorAPI: user lookup did not include a valid user id or username.");
 		}
 
-		BV.Print($"CreatorAPI: Resolved creator identity '{resolvedUsername}' -> {userId}");
+		//BV.Print($"CreatorAPI: Resolved creator identity '{resolvedUsername}' -> {userId}");
 
 		return (userId, resolvedUsername);
 	}

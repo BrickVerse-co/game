@@ -241,11 +241,11 @@ public class APIReferenceGenerator
 		if (Globals.IsInGDEditor)
 		{
 			// Display enum map missing warnings
-			BV.Print("APIREF Generation Complete");
-			BV.Print("Missing enums: ", missingEnums.Count);
+			BV.Print("[APIReferenceGenerator] APIREF Generation Complete");
+			BV.Print("[APIReferenceGenerator] Missing enums: ", missingEnums.Count);
 			foreach (Type item in missingEnums)
 			{
-				BV.PrintErr("Enum Missing ", item.Name);
+				BV.PrintErr("[APIReferenceGenerator] Enum Missing ", item.Name);
 			}
 		}
 

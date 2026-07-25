@@ -235,9 +235,8 @@ public partial class CreatorInterface : Control, IScriptObject
 		// Get the OS display scale factor
 		int screenId = DisplayServer.WindowGetCurrentScreen();
 		float osScale = DisplayServer.ScreenGetScale(screenId);
-
 		float finalScale = baseUIScale * osScale;
-		BV.Print($"Final UI Scale: {finalScale}");
+		
 		GetWindow().ContentScaleFactor = finalScale;
 	}
 

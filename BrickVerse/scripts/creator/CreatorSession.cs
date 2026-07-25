@@ -114,7 +114,7 @@ public partial class CreatorSession : Node, IDisposable
 	{
 		try
 		{
-			BV.Print("Starting Luau LSP...");
+			//BV.Print("Starting Luau LSP...");
 			LuaCompletion = new(this);
 			await LuaCompletion.InitAsync();
 		}
@@ -200,19 +200,19 @@ public partial class CreatorSession : Node, IDisposable
 
 		if (!File.Exists(versionPath))
 		{
-			BV.Print("Writing version...");
+			//BV.Print("Writing version...");
 			File.WriteAllText(versionPath, "");
 		}
 
-		BV.Print("Reading version...");
+		//BV.Print("Reading version...");
 		string versionData = File.ReadAllText(versionPath);
 
 		if (versionData != Globals.AppVersion || Globals.IsInGDEditor)
 		{
-			BV.Print("Generating doc...");
+			//BV.Print("Generating doc...");
 			LuaDefinitionGenerator.GenerateDocFiles(luauPath);
 
-			BV.Print("Writing doc...");
+			//BV.Print("Writing doc...");
 			File.WriteAllText(versionPath, Globals.AppVersion);
 			File.WriteAllText(luauRcPath, LuauRCContent);
 		}
