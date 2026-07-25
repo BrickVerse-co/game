@@ -47,6 +47,7 @@
 [ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
 [ext_resource type="Script" uid="uid://7yfe1c8ir6fn" path="res://scripts/creator/ui/docks/forge-ai-chat/ForgeTab.cs" id="44_forge"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
+[ext_resource type="Script" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
 
 [sub_resource type="StyleBoxFlat" id="TopBarSurface"]
 content_margin_left = 8.0
@@ -1134,21 +1135,26 @@ scroll_following = true
 vertical_alignment = 2
 selection_enabled = true
 
-[node name="Executor" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console/VBoxContainer" unique_id=961452072]
-custom_minimum_size = Vector2(0, 20)
+[node name="Executor" type="HBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console/VBoxContainer" unique_id=961452072 node_paths=PackedStringArray("_codeField", "_executeButton")]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 theme_override_constants/separation = 8
+script = ExtResource("46_console_executor")
+_codeField = NodePath("LineEdit")
+_executeButton = NodePath("ExecBtn")
 
 [node name="LineEdit" type="LineEdit" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console/VBoxContainer/Executor" unique_id=1108758264]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 13
 placeholder_text = "Execute Luau..."
+clear_button_enabled = true
 
 [node name="ExecBtn" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console/VBoxContainer/Executor" unique_id=1899945277]
-custom_minimum_size = Vector2(28, 0)
+custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+tooltip_text = "Execute Luau"
+theme_override_font_sizes/font_size = 13
 icon = ExtResource("32_cyxfl")
 
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
@@ -1600,8 +1606,8 @@ layout_mode = 2
 theme_override_constants/separation = 2
 theme_override_icons/touch_dragger = SubResource("PlaceholderTexture2D_0tvsp")
 theme_override_icons/grabber = SubResource("PlaceholderTexture2D_0tvsp")
-split_offsets = PackedInt32Array(270)
-split_offset = 270
+split_offsets = PackedInt32Array(0)
+split_offset = 0
 
 [node name="Explorer" parent="GUI/Splitter/Right/RightTabs/Explorer/Split" unique_id=63511104 instance=ExtResource("32_4fw2t")]
 layout_mode = 2
