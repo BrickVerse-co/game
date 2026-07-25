@@ -1432,10 +1432,11 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]
+visible = false
 layout_mode = 2
 metadata/_tab_name = "Forge - AI Chat"
 
-[node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel")]
+[node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel", "_versionLabel")]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0
@@ -1446,6 +1447,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StatusSurface")
 script = ExtResource("26_xdd36")
 _titleLabel = NodePath("Labels/Status")
+_versionLabel = NodePath("../Menu/Layout/ProductName")
 
 [node name="Labels" type="HBoxContainer" parent="GUI/Footer" unique_id=1074160864]
 layout_mode = 2

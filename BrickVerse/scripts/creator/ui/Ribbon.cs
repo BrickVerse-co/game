@@ -15,11 +15,21 @@ public sealed partial class Ribbon : PanelContainer
 	[Export]
 	private ButtonGroup _ribbonGroup = null!;
 
-	private Control _container = null!;
+	private HFlowContainer _container = null!;
+
+	private Button _selectButton = null!;
+	private Button _moveButton = null!;
+	private Button _rotateButton = null!;
+	private Button _scaleButton = null!;
 
 	public override void _Ready()
 	{
-		_container = GetNode<HBoxContainer>("Buttons");
+		_container = GetNode<HFlowContainer>("Buttons");
+
+		_selectButton = _container.GetNode<Button>("Select");
+		_moveButton = _container.GetNode<Button>("Move");
+		_rotateButton = _container.GetNode<Button>("Rotate");
+		_scaleButton = _container.GetNode<Button>("Scale");
 
 		Button colorButton = _container.GetNode<Button>("Color");
 		Control paintColorView = _container.GetNode<Control>("Paint/Color");
@@ -84,22 +94,31 @@ public sealed partial class Ribbon : PanelContainer
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
+		// Input can arrive while the node is entering or leaving the tree. The
+		// cached controls are initialized in _Ready(), so ignore input until then.
+		if (!IsNodeReady())
+		{
+			base._UnhandledKeyInput(@event);
+			return;
+		}
+
 		if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolSelect, Key.Key1))
 		{
-			_container.GetNode<Button>("Select").ButtonPressed = true;
+			_selectButton.ButtonPressed = true;
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolMove, Key.Key2))
 		{
-			_container.GetNode<Button>("Move").ButtonPressed = true;
+			_moveButton.ButtonPressed = true;
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolRotate, Key.Key3))
 		{
-			_container.GetNode<Button>("Rotate").ButtonPressed = true;
+			_rotateButton.ButtonPressed = true;
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolScale, Key.Key4))
 		{
-			_container.GetNode<Button>("Scale").ButtonPressed = true;
+			_scaleButton.ButtonPressed = true;
 		}
+
 		base._UnhandledKeyInput(@event);
 	}
 
