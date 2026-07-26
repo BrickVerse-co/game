@@ -236,7 +236,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		int screenId = DisplayServer.WindowGetCurrentScreen();
 		float osScale = DisplayServer.ScreenGetScale(screenId);
 		float finalScale = baseUIScale * osScale;
-		
+
 		GetWindow().ContentScaleFactor = finalScale;
 	}
 

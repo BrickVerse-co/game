@@ -754,6 +754,7 @@ public sealed partial class ClientEntry : Node3D
 		public int MaxPlayers { get; set; } = 32; // Used by server only
 
 		public string? AuthToken { get; set; } // Auth (Client) / Host (Server) token for production server
+		public string? CreatorToken { get; set; }
 		public string? WorldEntryPath { get; set; }
 		public string? DebugAddress { get; set; }
 		public string? DebugId { get; set; }
@@ -766,7 +767,6 @@ public sealed partial class ClientEntry : Node3D
 		public string? SoloWorldPath { get; set; }
 		public int SoloClientCount { get; set; } = 1;
 		public string? DebugSpawnPositionText { get; set; }
-		public string? CreatorToken { get; set; }
 #endif
 	}
 

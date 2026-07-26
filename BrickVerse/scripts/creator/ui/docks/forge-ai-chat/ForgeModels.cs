@@ -105,8 +105,14 @@ public sealed class ForgeProviderSettings
 
 	public ForgeProviderSettings CloneForSave() => new()
 	{
-		Provider = Provider, Endpoint = Endpoint, ApiKey = StoreKey ? ApiKey : string.Empty, Model = Model,
-		StoreKey = StoreKey, StreamResponses = StreamResponses, Temperature = Temperature, MaxContextCharacters = MaxContextCharacters,
+		Provider = Provider,
+		Endpoint = Endpoint,
+		ApiKey = StoreKey ? ApiKey : string.Empty,
+		Model = Model,
+		StoreKey = StoreKey,
+		StreamResponses = StreamResponses,
+		Temperature = Temperature,
+		MaxContextCharacters = MaxContextCharacters,
 	};
 }
 
@@ -160,9 +166,9 @@ public sealed class ForgeChatToolCall { [JsonPropertyName("id")] public string I
 public sealed class ForgeChatToolFunctionCall { [JsonPropertyName("name")] public string Name { get; set; } = string.Empty; [JsonPropertyName("arguments")] public string Arguments { get; set; } = "{}"; }
 public sealed class ForgeCompletionResult
 {
-    public List<ForgeChatMessage> TranscriptDelta { get; set; } = [];
-    public string AssistantText { get; set; } = string.Empty;
-    public List<ForgeToolEvent> ToolEvents { get; set; } = [];
+	public List<ForgeChatMessage> TranscriptDelta { get; set; } = [];
+	public string AssistantText { get; set; } = string.Empty;
+	public List<ForgeToolEvent> ToolEvents { get; set; } = [];
 }
 
 public sealed class ForgeSearchInstancesArgs { [JsonPropertyName("query")] public string? Query { get; set; } [JsonPropertyName("class_name")] public string? ClassName { get; set; } [JsonPropertyName("under_path")] public string? UnderPath { get; set; } [JsonPropertyName("limit")] public int Limit { get; set; } = 20; }

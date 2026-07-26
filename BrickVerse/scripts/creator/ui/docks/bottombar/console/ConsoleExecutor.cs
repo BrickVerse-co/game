@@ -58,7 +58,7 @@ public partial class ConsoleExecutor : HBoxContainer
 		if (string.IsNullOrWhiteSpace(scriptSource))
 		{
 			BV.PrintErr("Cannot execute Luau because the input is empty.");
-            CreatorService.Interface.PopupAlert("Cannot execute Luau because the input is empty.", "Execution Error");
+			CreatorService.Interface.PopupAlert("Cannot execute Luau because the input is empty.", "Execution Error");
 			return;
 		}
 
@@ -67,7 +67,7 @@ public partial class ConsoleExecutor : HBoxContainer
 		if (world == null)
 		{
 			BV.PrintErr("Cannot execute Luau because no world is currently loaded.");
-            CreatorService.Interface.PopupAlert("Cannot execute Luau because no world is currently loaded.", "Execution Error");
+			CreatorService.Interface.PopupAlert("Cannot execute Luau because no world is currently loaded.", "Execution Error");
 			return;
 		}
 
@@ -108,7 +108,7 @@ public partial class ConsoleExecutor : HBoxContainer
 		catch (Exception exception)
 		{
 			BV.PrintErr($"Failed to execute Luau: {exception}");
-            CreatorService.Interface.PopupAlert($"Failed to execute Luau: {exception}", "Execution Error");
+			CreatorService.Interface.PopupAlert($"Failed to execute Luau: {exception}", "Execution Error");
 		}
 		finally
 		{
@@ -122,7 +122,7 @@ public partial class ConsoleExecutor : HBoxContainer
 				_codeField.GrabFocus();
 			}
 
-            CreatorService.Interface.PopupAlert("Luau code executed successfully.", "Execution Complete");
+			CreatorService.Interface.PopupAlert("Luau code executed successfully.", "Execution Complete");
 		}
 	}
 }

@@ -5,6 +5,7 @@
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Shared;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -86,6 +87,8 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		return ParseJsonValue(value);
 	}
 
+	[RequiresUnreferencedCode("Serializing datastore payloads relies on reflection-driven JSON metadata.")]
+	[RequiresDynamicCode("Serializing datastore payloads may require runtime code generation.")]
 	public async Task SetAsync(string key, object? value)
 	{
 		ThrowIfDisposed();

@@ -97,6 +97,10 @@ TestResults/
 # Deeplink plugin's prebuilt binary
 !/BrickVerse/addons/DeeplinkPlugin/bin/
 
+# Voxel terrain plugin's prebuilt binary
+!/BrickVerse/addons/zylann.voxel/bin/
+!/BrickVerse/addons/zylann.voxel/bin/**
+
 # Misc
 ers
 
