@@ -602,7 +602,7 @@ public partial class ForgeTab : VBoxContainer
 		{
 			Button diff = new() { Text = "View diff" };
 			StyleCompactButton(diff);
-			diff.Pressed += () => ShowTextDialog("Forge script diff", toolEvent.Diff!);
+			diff.Pressed += () => ShowDiffDialog("Forge script diff", toolEvent.Diff!);
 			actions.AddChild(diff);
 		}
 		if (toolEvent.CanRollback)
@@ -627,15 +627,118 @@ public partial class ForgeTab : VBoxContainer
 		CallDeferred(MethodName.ScrollToBottom);
 	}
 
-	private void ShowTextDialog(string title, string text)
+	private void ShowDiffDialog(string title, string diff)
 	{
-		AcceptDialog dialog = new() { Title = title, MinSize = new Vector2I(760, 560) };
-		TextEdit editor = new() { Text = text, Editable = false, WrapMode = TextEdit.LineWrappingMode.None };
-		dialog.AddChild(editor);
+		AcceptDialog dialog = new()
+		{
+			Title = title,
+			MinSize = new Vector2I(900, 640),
+		};
+
+		PanelContainer surface = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+		surface.AddThemeStyleboxOverride("panel", MakePanelStyle(new Color(0.035f, 0.045f, 0.06f, 1f), new Color(0.16f, 0.2f, 0.26f, 1f), 8));
+
+		ScrollContainer scroll = new()
+		{
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+			VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+		};
+
+		RichTextLabel viewer = new()
+		{
+			BbcodeEnabled = true,
+			FitContent = true,
+			ScrollActive = false,
+			SelectionEnabled = true,
+			AutowrapMode = TextServer.AutowrapMode.Off,
+			Text = RenderUnifiedDiffToBbCode(diff),
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+		};
+		viewer.AddThemeFontSizeOverride("normal_font_size", 13);
+
+		MarginContainer padding = new();
+		padding.AddThemeConstantOverride("margin_left", 8);
+		padding.AddThemeConstantOverride("margin_right", 8);
+		padding.AddThemeConstantOverride("margin_top", 8);
+		padding.AddThemeConstantOverride("margin_bottom", 8);
+		padding.AddChild(viewer);
+		scroll.AddChild(padding);
+		surface.AddChild(scroll);
+		dialog.AddChild(surface);
+
 		dialog.Confirmed += dialog.QueueFree;
 		dialog.CloseRequested += dialog.QueueFree;
 		AddChild(dialog);
 		dialog.PopupCentered();
+	}
+
+	private static string RenderUnifiedDiffToBbCode(string diff)
+	{
+		if (string.IsNullOrWhiteSpace(diff))
+		{
+			return "[color=#8b949e]No diff content was returned.[/color]";
+		}
+
+		StringBuilder output = new();
+		string[] lines = diff.Replace("\r\n", "\n").Split('\n');
+		int oldLine = 0;
+		int newLine = 0;
+
+		foreach (string raw in lines)
+		{
+			if (raw.StartsWith("@@", StringComparison.Ordinal))
+			{
+				Match hunk = Regex.Match(raw, @"@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@");
+				if (hunk.Success)
+				{
+					oldLine = int.Parse(hunk.Groups[1].Value);
+					newLine = int.Parse(hunk.Groups[3].Value);
+				}
+				output.AppendLine($"[bgcolor=#0d419d66][color=#79c0ff][font=monospace]     {EscapeBb(raw)}[/font][/color][/bgcolor]");
+				continue;
+			}
+
+			if (raw.StartsWith("diff --git", StringComparison.Ordinal) || raw.StartsWith("index ", StringComparison.Ordinal) || raw.StartsWith("--- ", StringComparison.Ordinal) || raw.StartsWith("+++ ", StringComparison.Ordinal))
+			{
+				output.AppendLine($"[bgcolor=#161b22][color=#8b949e][font=monospace]     {EscapeBb(raw)}[/font][/color][/bgcolor]");
+				continue;
+			}
+
+			if (raw.StartsWith("\\ No newline at end of file", StringComparison.Ordinal))
+			{
+				output.AppendLine($"[bgcolor=#161b22][color=#8b949e][font=monospace]     {EscapeBb(raw)}[/font][/color][/bgcolor]");
+				continue;
+			}
+
+			char marker = raw.Length > 0 ? raw[0] : ' ';
+			string source = raw.Length > 0 && marker is '+' or '-' or ' ' ? raw[1..] : raw;
+			string highlighted = HighlightLuauLine(source);
+			string oldNumber = marker == '+' ? string.Empty : oldLine.ToString();
+			string newNumber = marker == '-' ? string.Empty : newLine.ToString();
+			string gutter = $"{oldNumber,4} {newNumber,4} ";
+
+			switch (marker)
+			{
+				case '+':
+					output.AppendLine($"[bgcolor=#033a1666][color=#3fb950][font=monospace]{EscapeBb(gutter)}+[/font][/color][font=monospace]{highlighted}[/font][/bgcolor]");
+					newLine++;
+					break;
+				case '-':
+					output.AppendLine($"[bgcolor=#67060c66][color=#f85149][font=monospace]{EscapeBb(gutter)}-[/font][/color][font=monospace]{highlighted}[/font][/bgcolor]");
+					oldLine++;
+					break;
+				default:
+					output.AppendLine($"[color=#6e7681][font=monospace]{EscapeBb(gutter)} [/font][/color][font=monospace]{highlighted}[/font]");
+					oldLine++;
+					newLine++;
+					break;
+			}
+		}
+
+		return output.ToString().TrimEnd();
 	}
 
 	private static string EscapeBb(string text) => text.Replace("[", "[lb]").Replace("]", "[rb]");
