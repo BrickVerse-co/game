@@ -118,10 +118,13 @@ public class BVAssetProvider : IAssetProvider
 		}
 
 		// Check if we are in creator studio
+		
+#if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token) && string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
 		}
+#endif
 
 		// Fallback to client asset endpoint for regular clients (prod/non-creator)
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
