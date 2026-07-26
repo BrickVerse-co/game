@@ -60,10 +60,10 @@ public sealed partial class World : Instance
 
 	internal int WorldSessionID = 0;
 
-	public PTSignal Loaded { get; private set; } = new();
+	public BVSignal Loaded { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal<double> Rendered { get; private set; } = new();
+	public BVSignal<double> Rendered { get; private set; } = new();
 
 	[ScriptProperty]
 	public bool IsLocalTest => _worldID == 0;
@@ -102,6 +102,7 @@ public sealed partial class World : Instance
 	internal event Action<APIPlaceMedia[]>? WorldMediaReady;
 
 	public Environment Environment => FindChild<Environment>("Environment")!;
+	public Terrain Terrain => FindChild<Terrain>("Terrain")!;
 	public Players Players => FindChild<Players>("Players")!;
 	public Lighting Lighting => FindChild<Lighting>("Lighting")!;
 	public PlayerDefaults PlayerDefaults => FindChild<PlayerDefaults>("PlayerDefaults")!;
@@ -173,7 +174,7 @@ public sealed partial class World : Instance
 	public readonly ConcurrentDictionary<string, NetworkedObject> Objects = [];
 
 	[ScriptProperty, ScriptLegacyProperty("GameID")]
-	public long  WorldID
+	public long WorldID
 	{
 		get => _worldID;
 		internal set
@@ -187,7 +188,7 @@ public sealed partial class World : Instance
 	}
 
 	[ScriptProperty]
-	public long  UniverseID
+	public long UniverseID
 	{
 		get => _universeID;
 		internal set
@@ -199,18 +200,18 @@ public sealed partial class World : Instance
 			}
 		}
 	}
-	
-	[ScriptProperty]
-	public string WorldName {get => _worldName; internal set { _worldName = value; OnPropertyChanged(); } }
 
 	[ScriptProperty]
-	public string UniverseName {get => _universeName; internal set { _universeName = value; OnPropertyChanged(); } }
+	public string WorldName { get => _worldName; internal set { _worldName = value; OnPropertyChanged(); } }
 
 	[ScriptProperty]
-	public string UniverseDescription {get => _universeDescription; internal set { _universeDescription = value; OnPropertyChanged(); } }
+	public string UniverseName { get => _universeName; internal set { _universeName = value; OnPropertyChanged(); } }
 
 	[ScriptProperty]
-	public int ServerID { get; internal set; }
+	public string UniverseDescription { get => _universeDescription; internal set { _universeDescription = value; OnPropertyChanged(); } }
+
+	[ScriptProperty]
+	public string ServerID { get; internal set; } = string.Empty;
 
 	[ScriptProperty]
 	public decimal UpTime { get; private set; } = 0;
@@ -558,7 +559,7 @@ public sealed partial class World : Instance
 			UniverseName = WorldInfo.Value.UniverseName;
 			UniverseDescription = WorldInfo.Value.Description;
 		}
-		
+
 		WorldMedia = await BVAPI.GetWorldMedia(WorldID);
 		if (WorldMedia != null && WorldMedia.Length != 0)
 		{
@@ -573,7 +574,7 @@ public sealed partial class World : Instance
 
 	internal void DispatchClientScriptRun()
 	{
-		PT.Print("Dispatch Client run");
+		BV.Print("Dispatch Client run");
 		ClientScriptRunDispatch?.Invoke();
 	}
 
@@ -617,6 +618,13 @@ public sealed partial class World : Instance
 		{
 			environment = Globals.LoadInstance<Environment>(Root);
 			environment.NetworkParent = this;
+		}
+
+		Terrain? terrain = FindChild<Terrain>("Terrain");
+		if (terrain == null)
+		{
+			terrain = Globals.LoadInstance<Terrain>(Root);
+			terrain.NetworkParent = this;
 		}
 
 		Lighting? lighting = FindChild<Lighting>("Lighting");
@@ -854,6 +862,7 @@ public sealed partial class World : Instance
 		List<Instance> orderedChildren =
 		[
 			environment,
+			terrain,
 			lighting,
 			players,
 			scriptService,

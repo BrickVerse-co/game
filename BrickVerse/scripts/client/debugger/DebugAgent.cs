@@ -46,16 +46,16 @@ public class DebugAgent
 
 		if (debugID != null)
 		{
-			PT.Print("Reporting debug ID: ", debugID);
+			BV.Print("Reporting debug ID: ", debugID);
 			await SendMessage(new MessageClientData() { DebugID = debugID, ProcessID = procId });
 		}
 		else
 		{
-			PT.Print("No debug ID attached");
+			BV.Print("No debug ID attached");
 			await SendMessage(new MessageClientData() { ProcessID = procId });
 		}
 
-		PT.PrintV($"-- Connected to debug server --");
+		BV.PrintV($"-- Connected to debug server --");
 	}
 
 	private async Task ReceiveMessages()
@@ -71,7 +71,7 @@ public class DebugAgent
 
 				if (bytesRead == 0)
 				{
-					PT.PrintV("Debug server closed connection");
+					BV.PrintV("Debug server closed connection");
 					break;
 				}
 
@@ -83,8 +83,8 @@ public class DebugAgent
 			}
 			catch (Exception e)
 			{
-				PT.PrintErrV(e);
-				PT.PrintErrV($"Receive error: {e.Message}");
+				BV.PrintErrV(e);
+				BV.PrintErrV($"Receive error: {e.Message}");
 			}
 		}
 	}
@@ -139,7 +139,7 @@ public class DebugAgent
 					object? val = NetworkPropSync.DeserializePropValue(pc.PropertyValue, prop.PropertyType);
 
 					// Call in main thread
-					PT.CallOnMainThread(() =>
+					BV.CallOnMainThread(() =>
 					{
 						prop.SetValue(obj, val);
 					});
@@ -158,7 +158,7 @@ public class DebugAgent
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErrV(ex.Message);
+			BV.PrintErrV(ex.Message);
 		}
 	}
 

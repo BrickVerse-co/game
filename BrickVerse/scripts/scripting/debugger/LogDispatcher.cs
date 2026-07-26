@@ -61,9 +61,21 @@ public partial class LogDispatcher : NetworkedObject
 		}
 	}
 
+	public void LogWarning(Datamodel.Script from, string content)
+	{
+		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
+		DispatchLog(new()
+		{
+			ID = Guid.NewGuid().ToString(),
+			LogType = LogTypeEnum.Warning,
+			Content = content,
+			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
+		});
+	}
+
 	public void LogInfo(Datamodel.Script from, string content)
 	{
-		PT.PrintV($"[Lua] {from.NetworkPath} {content}");
+		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
 		DispatchLog(new()
 		{
 			ID = Guid.NewGuid().ToString(),
@@ -75,7 +87,7 @@ public partial class LogDispatcher : NetworkedObject
 
 	public void LogError(Datamodel.Script from, string content)
 	{
-		PT.PrintErrV($"[Lua] {from.NetworkPath} {content}");
+		BV.PrintErrV($"[Lua] {from.NetworkPath} {content}");
 		DispatchLog(new()
 		{
 			ID = Guid.NewGuid().ToString(),
@@ -93,7 +105,7 @@ public partial class LogDispatcher : NetworkedObject
 			data.LogFrom = LogFromEnum.Server;
 		}
 		data.LoggedAt = DateTime.UtcNow;
-		PT.CallOnMainThread(() =>
+		BV.CallOnMainThread(() =>
 		{
 			InvokeNewLog(data);
 			if (Root.Network.IsServer)
@@ -107,7 +119,7 @@ public partial class LogDispatcher : NetworkedObject
 					}
 				}
 			}
-			// TODO: Turn this into an event instead? Maybe dispatch it to PT
+			// TODO: Turn this into an event instead? Maybe dispatch it to BV
 #if CREATOR
 			DebugConsole.Singleton?.NewLog(data);
 #endif
@@ -171,7 +183,7 @@ public partial class LogDispatcher : NetworkedObject
 			_clientForwardDroppedCount++;
 			if (_clientForwardDroppedCount == 1 || _clientForwardDroppedCount % 10 == 0)
 			{
-				PT.PrintWarn($"[ClientLogForward] Rate limited. Dropped {_clientForwardDroppedCount} client log(s).");
+				BV.PrintWarn($"[ClientLogForward] Rate limited. Dropped {_clientForwardDroppedCount} client log(s).");
 			}
 
 			return false;
@@ -179,7 +191,7 @@ public partial class LogDispatcher : NetworkedObject
 
 		if (_clientForwardDroppedCount > 0)
 		{
-			PT.Print($"[ClientLogForward] Recovered after dropping {_clientForwardDroppedCount} client log(s).");
+			BV.Print($"[ClientLogForward] Recovered after dropping {_clientForwardDroppedCount} client log(s).");
 			_clientForwardDroppedCount = 0;
 		}
 
@@ -255,7 +267,7 @@ public partial class LogDispatcher : NetworkedObject
 			_serverForwardDroppedCounts[peerID] = dropped;
 			if (dropped == 1 || dropped % 10 == 0)
 			{
-				PT.PrintWarn($"[ClientLogForward] Server rate limit exceeded for peer {peerID}. Dropped {dropped} log(s).");
+				BV.PrintWarn($"[ClientLogForward] Server rate limit exceeded for peer {peerID}. Dropped {dropped} log(s).");
 			}
 
 			return false;
@@ -264,7 +276,7 @@ public partial class LogDispatcher : NetworkedObject
 		window.Enqueue(nowMs);
 		if (_serverForwardDroppedCounts.Remove(peerID, out int recoveredDropped) && recoveredDropped > 0)
 		{
-			PT.Print($"[ClientLogForward] Server limiter recovered for peer {peerID} after dropping {recoveredDropped} log(s).");
+			BV.Print($"[ClientLogForward] Server limiter recovered for peer {peerID} after dropping {recoveredDropped} log(s).");
 		}
 
 		return true;

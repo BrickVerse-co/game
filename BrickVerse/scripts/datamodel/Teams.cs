@@ -12,8 +12,8 @@ namespace BrickVerse.Datamodel;
 [Static("Teams")]
 public sealed partial class Teams : Instance
 {
-	public PTSignal<Team> TeamAdded { get; private set; } = new();
-	public PTSignal<Team> TeamRemoved { get; private set; } = new();
+	public BVSignal<Team> TeamAdded { get; private set; } = new();
+	public BVSignal<Team> TeamRemoved { get; private set; } = new();
 	public event Action? TeamUpdateDispatch;
 
 	public override void Init()

@@ -108,7 +108,7 @@ public partial class SettingsPropertyUI : Control
 			}
 			catch (Exception e)
 			{
-				PT.PrintErr($"Failed to initialize settings property UI for '{SettingDef.Key}': {e}");
+				BV.PrintErr($"Failed to initialize settings property UI for '{SettingDef.Key}': {e}");
 			}
 		}).CallDeferred();
 	}

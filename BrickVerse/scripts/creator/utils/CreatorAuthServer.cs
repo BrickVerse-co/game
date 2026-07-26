@@ -43,7 +43,7 @@ public static class CreatorAuthServer
 
 		_ = Task.Run(() => RunListenerAsync(_cts.Token));
 
-		//PT.Print($"CreatorAuthServer listening on {RedirectUri}");
+		//BV.Print($"CreatorAuthServer listening on {RedirectUri}");
 	}
 
 	public static void BeginAuthAttempt(string expectedState, string codeVerifier)
@@ -93,7 +93,7 @@ public static class CreatorAuthServer
 		catch (Exception ex)
 		{
 			if (_running)
-				PT.PrintErr($"CreatorAuthServer error: {ex.Message}", ex);
+				BV.PrintErr($"CreatorAuthServer error: {ex.Message}", ex);
 		}
 	}
 
@@ -179,7 +179,7 @@ public static class CreatorAuthServer
 				await CreatorAPI.LoginWithToken(token, true);
 				ClearAuthAttempt();
 
-				//PT.Print("OpenID callback handled successfully - user should be authenticated now.");
+				//BV.Print("OpenID callback handled successfully - user should be authenticated now.");
 
 				await WriteHtmlAsync(
 					ctx,
@@ -201,7 +201,7 @@ public static class CreatorAuthServer
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"OpenID callback error: {ex.Message}", ex);
+			BV.PrintErr($"OpenID callback error: {ex.Message}", ex);
 			ClearAuthAttempt();
 
 			try
@@ -238,17 +238,169 @@ public static class CreatorAuthServer
 	{
 		SetCorsHeaders(ctx.Response);
 
-		string html = $"""
+		bool isSuccess = statusCode is >= 200 and < 300;
+		string encodedTitle = WebUtility.HtmlEncode(title);
+		string encodedMessage = WebUtility.HtmlEncode(message);
+		string pageClass = isSuccess ? "success" : "error";
+		string statusLabel = isSuccess ? "Authentication complete" : "Authentication failed";
+		string icon = isSuccess
+			? """
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M20 6 9 17l-5-5" />
+				</svg>
+				"""
+			: """
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M12 8v5" />
+					<path d="M12 17h.01" />
+					<path d="M10.3 3.6 2.4 17.3A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.7L13.7 3.6a2 2 0 0 0-3.4 0Z" />
+				</svg>
+				""";
+
+		string html = $$"""
 			<!doctype html>
-			<html>
+			<html lang="en">
 				<head>
 					<meta charset="utf-8">
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<title>{WebUtility.HtmlEncode(title)}</title>
+					<meta name="color-scheme" content="dark">
+					<title>{{encodedTitle}}</title>
+					<style>
+						:root {
+							font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+							color: #f8fafc;
+							background: #07111f;
+						}
+
+						* {
+							box-sizing: border-box;
+						}
+
+						body {
+							min-height: 100vh;
+							margin: 0;
+							display: grid;
+							place-items: center;
+							padding: 24px;
+							overflow: hidden;
+						}
+
+						body::before {
+							content: "";
+							position: fixed;
+							inset: 0;
+							background:
+								radial-gradient(circle at 50% 35%, rgba(1, 135, 248, .18), transparent 38%),
+								linear-gradient(145deg, #07111f 0%, #0b1728 100%);
+							z-index: -2;
+						}
+
+						body.success::before {
+							background:
+								radial-gradient(circle at 50% 35%, rgba(34, 197, 94, .32), transparent 42%),
+								linear-gradient(145deg, #06160d 0%, #0b2a18 100%);
+						}
+
+						body.error::before {
+							background:
+								radial-gradient(circle at 50% 35%, rgba(239, 68, 68, .28), transparent 42%),
+								linear-gradient(145deg, #1a090b 0%, #2b1014 100%);
+						}
+
+						.card {
+							width: min(100%, 520px);
+							padding: 42px 38px 36px;
+							text-align: center;
+							background: rgba(10, 20, 35, .82);
+							border: 1px solid rgba(255, 255, 255, .1);
+							border-radius: 24px;
+							box-shadow: 0 24px 80px rgba(0, 0, 0, .38);
+							backdrop-filter: blur(18px);
+						}
+
+						.icon {
+							width: 78px;
+							height: 78px;
+							margin: 0 auto 24px;
+							display: grid;
+							place-items: center;
+							border-radius: 999px;
+							background: rgba(255, 255, 255, .08);
+							border: 1px solid rgba(255, 255, 255, .12);
+						}
+
+						.success .icon {
+							color: #4ade80;
+							background: rgba(34, 197, 94, .14);
+							border-color: rgba(74, 222, 128, .32);
+							box-shadow: 0 0 42px rgba(34, 197, 94, .18);
+						}
+
+						.error .icon {
+							color: #fb7185;
+							background: rgba(239, 68, 68, .14);
+							border-color: rgba(251, 113, 133, .32);
+							box-shadow: 0 0 42px rgba(239, 68, 68, .18);
+						}
+
+						.icon svg {
+							width: 38px;
+							height: 38px;
+							fill: none;
+							stroke: currentColor;
+							stroke-width: 2.2;
+							stroke-linecap: round;
+							stroke-linejoin: round;
+						}
+
+						.eyebrow {
+							margin: 0 0 10px;
+							font-size: 12px;
+							font-weight: 800;
+							letter-spacing: .14em;
+							text-transform: uppercase;
+							color: rgba(226, 232, 240, .62);
+						}
+
+						h1 {
+							margin: 0;
+							font-size: clamp(28px, 7vw, 38px);
+							line-height: 1.12;
+							letter-spacing: -.035em;
+						}
+
+						.message {
+							margin: 16px auto 0;
+							max-width: 390px;
+							color: #cbd5e1;
+							font-size: 16px;
+							line-height: 1.65;
+						}
+
+						.hint {
+							margin: 28px 0 0;
+							padding-top: 22px;
+							border-top: 1px solid rgba(255, 255, 255, .08);
+							color: rgba(203, 213, 225, .62);
+							font-size: 13px;
+						}
+
+						@media (max-width: 520px) {
+							.card {
+								padding: 34px 24px 30px;
+								border-radius: 20px;
+							}
+						}
+					</style>
 				</head>
-				<body style="font-family: system-ui, sans-serif; padding: 32px; line-height: 1.5;">
-					<h1>{WebUtility.HtmlEncode(title)}</h1>
-					<p>{WebUtility.HtmlEncode(message)}</p>
+				<body class="{{pageClass}}">
+					<main class="card" role="status" aria-live="polite">
+						<div class="icon">{{icon}}</div>
+						<p class="eyebrow">{{statusLabel}}</p>
+						<h1>{{encodedTitle}}</h1>
+						<p class="message">{{encodedMessage}}</p>
+						<p class="hint">You can safely close this browser window.</p>
+					</main>
 				</body>
 			</html>
 			""";
@@ -273,14 +425,112 @@ public static class CreatorAuthServer
 		byte[] buffer = Encoding.UTF8.GetBytes(
 			"""
 			<!doctype html>
-			<html>
+			<html lang="en">
 				<head>
 					<meta charset="utf-8">
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<title>Redirecting</title>
+					<meta name="color-scheme" content="dark">
+					<title>Signing in to BrickVerse</title>
+					<style>
+						:root {
+							font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+							color: #f8fafc;
+							background: #07111f;
+						}
+
+						* {
+							box-sizing: border-box;
+						}
+
+						body {
+							min-height: 100vh;
+							margin: 0;
+							display: grid;
+							place-items: center;
+							padding: 24px;
+							background:
+								radial-gradient(circle at 50% 35%, rgba(1, 135, 248, .28), transparent 42%),
+								linear-gradient(145deg, #07111f 0%, #0b1728 100%);
+						}
+
+						.card {
+							width: min(100%, 500px);
+							padding: 42px 36px 36px;
+							text-align: center;
+							background: rgba(10, 20, 35, .82);
+							border: 1px solid rgba(255, 255, 255, .1);
+							border-radius: 24px;
+							box-shadow: 0 24px 80px rgba(0, 0, 0, .38);
+							backdrop-filter: blur(18px);
+						}
+
+						.spinner-wrap {
+							width: 78px;
+							height: 78px;
+							margin: 0 auto 24px;
+							display: grid;
+							place-items: center;
+							border-radius: 999px;
+							background: rgba(1, 135, 248, .12);
+							border: 1px solid rgba(56, 189, 248, .25);
+							box-shadow: 0 0 44px rgba(1, 135, 248, .17);
+						}
+
+						.spinner {
+							width: 38px;
+							height: 38px;
+							border: 4px solid rgba(255, 255, 255, .18);
+							border-top-color: #38bdf8;
+							border-radius: 999px;
+							animation: spin .85s linear infinite;
+						}
+
+						.eyebrow {
+							margin: 0 0 10px;
+							font-size: 12px;
+							font-weight: 800;
+							letter-spacing: .14em;
+							text-transform: uppercase;
+							color: rgba(125, 211, 252, .82);
+						}
+
+						h1 {
+							margin: 0;
+							font-size: clamp(28px, 7vw, 38px);
+							line-height: 1.12;
+							letter-spacing: -.035em;
+						}
+
+						p:last-child {
+							margin: 16px auto 0;
+							max-width: 360px;
+							color: #cbd5e1;
+							font-size: 16px;
+							line-height: 1.65;
+						}
+
+						@keyframes spin {
+							to {
+								transform: rotate(360deg);
+							}
+						}
+
+						@media (prefers-reduced-motion: reduce) {
+							.spinner {
+								animation-duration: 1.8s;
+							}
+						}
+					</style>
 				</head>
-				<body style="font-family: system-ui, sans-serif; padding: 32px; line-height: 1.5;">
-					<p>Redirecting...</p>
+				<body>
+					<main class="card" role="status" aria-live="polite">
+						<div class="spinner-wrap">
+							<div class="spinner" aria-hidden="true"></div>
+						</div>
+						<p class="eyebrow">Secure authentication</p>
+						<h1>Signing you in</h1>
+						<p>Please keep this window open while BrickVerse finishes connecting your account.</p>
+					</main>
 				</body>
 			</html>
 			"""

@@ -288,10 +288,10 @@ public partial class Instance : NetworkedObject
 
 	public bool IsInTemporary => IsDescendantOfClass<Temporary>();
 
-	[ScriptProperty] public PTSignal<Instance> ChildAdded { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildRemoved { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildDeleting { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Instance> ChildDeleted { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildAdded { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildRemoved { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildDeleting { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Instance> ChildDeleted { get; private set; } = new();
 
 	internal void AddLegacyNameToParent()
 	{
@@ -399,7 +399,7 @@ public partial class Instance : NetworkedObject
 				await Task.Delay(TimeSpan.FromSeconds(WaitChildWarningSec), warningCts.Token);
 				if (!tcs.Task.IsCompleted)
 				{
-					PT.PrintWarn($"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s.");
+					BV.PrintWarn($"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s.");
 				}
 			}
 			catch (OperationCanceledException) { }

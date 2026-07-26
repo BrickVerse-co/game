@@ -127,8 +127,8 @@ public class InputActionButton : InputAction
 	[ScriptProperty, JsonIgnore] public bool IsPressed { get; set; }
 	[ScriptProperty, JsonIgnore] public float Weight { get; set; }
 
-	[ScriptProperty, JsonIgnore] public PTSignal Pressed { get; private set; } = new();
-	[ScriptProperty, JsonIgnore] public PTSignal Released { get; private set; } = new();
+	[ScriptProperty, JsonIgnore] public BVSignal Pressed { get; private set; } = new();
+	[ScriptProperty, JsonIgnore] public BVSignal Released { get; private set; } = new();
 }
 
 public class InputActionAxis : InputAction

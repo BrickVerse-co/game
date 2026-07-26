@@ -39,7 +39,7 @@ public partial class NetworkScriptSync : Instance
 			{
 				if (item is Datamodel.Script cs)
 				{
-					if (_useNetworkLog) { PT.Print($"[Net] [ScriptSync] Packing {cs.Name} source"); }
+					if (_useNetworkLog) { BV.Print($"[Net] [ScriptSync] Packing {cs.Name} source"); }
 					try
 					{
 						cs.TryCompile();
@@ -72,7 +72,7 @@ public partial class NetworkScriptSync : Instance
 			{
 				if (obj is Datamodel.Script s)
 				{
-					if (_useNetworkLog) { PT.Print($"[Net] [ScriptSync] Recv {s.Name} source"); }
+					if (_useNetworkLog) { BV.Print($"[Net] [ScriptSync] Recv {s.Name} source"); }
 					s.Bytecode = item.Bytecode;
 				}
 			}

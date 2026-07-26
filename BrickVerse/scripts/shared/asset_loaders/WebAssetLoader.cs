@@ -53,7 +53,7 @@ public partial class WebAssetLoader : Node
 					}
 					catch (Exception exception)
 					{
-						PT.PrintErr("Failed to load brickverse.gg resource (Type: " + item.Type + ", URL: " + item.URL + "): " + exception.Message);
+						BV.PrintErr("Failed to load brickverse.gg resource (Type: " + item.Type + ", URL: " + item.URL + "): " + exception.Message);
 					}
 				}
 			}));

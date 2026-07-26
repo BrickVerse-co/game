@@ -16,7 +16,7 @@ public sealed partial class LinkDevicePopup : PopupWindowBase
 	{
 		string? connectAddress = DeviceLinker.GetConnectAddress();
 		if (connectAddress == null) return;
-		PT.Print(connectAddress);
+		BV.Print(connectAddress);
 		byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode(connectAddress, QRCodeGenerator.ECCLevel.Q, 20);
 
 		Image image = new();

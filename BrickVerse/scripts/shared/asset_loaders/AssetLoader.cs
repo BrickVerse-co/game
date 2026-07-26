@@ -114,7 +114,7 @@ public partial class AssetLoader : Node
 		}
 		catch (Exception exception)
 		{
-			Callable.From(() => PT.PrintErr("Failed to load resource (Type: " + item.Type + ", ID: " + item.ID + "): " + exception.Message)).CallDeferred();
+			Callable.From(() => BV.PrintErr("Failed to load resource (Type: " + item.Type + ", ID: " + item.ID + "): " + exception.Message)).CallDeferred();
 		}
 	}
 }
@@ -136,7 +136,7 @@ public enum ResourceType
 	UserBodyshot,
 	UserHeadshot,
 
-	// Old PT Types
+	// Old BV Types
 	AssetThumbnail,
 	Font
 }

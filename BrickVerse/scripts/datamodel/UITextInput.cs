@@ -241,10 +241,10 @@ public partial class UITextInput : UIView
 		}
 	}
 
-	[ScriptProperty] public PTSignal<string> Submitted { get; private set; } = new();
-	[ScriptProperty] public PTSignal<string> Changed { get; private set; } = new();
-	[ScriptProperty] public PTSignal FocusEnter { get; private set; } = new();
-	[ScriptProperty] public PTSignal FocusExit { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string> Submitted { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string> Changed { get; private set; } = new();
+	[ScriptProperty] public BVSignal FocusEnter { get; private set; } = new();
+	[ScriptProperty] public BVSignal FocusExit { get; private set; } = new();
 
 	private void OnFontLoaded(Resource resource)
 	{

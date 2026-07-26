@@ -23,14 +23,13 @@ public sealed partial class Gizmos : Node
 	private readonly Dictionary<Dynamic, SelectionBox> _selectionBoxes = [];
 
 	private Camera3D _camera = null!;
-	private float _gizmoScale;
-	private bool _isMouseDragging;
 	private bool _isDraggingDyn;
 	private bool _isDragPending;
 	private bool _duplicatedOnCurrentDrag;
 	private Vector2 _dragStartPos;
-	private const float DragThreshold = 8f;
-	private Dynamic? _lastHovered;
+	private const float DragThreshold = 6f;
+	private const float MinimumScale = 0.01f;
+	private const float MinimumSnap = 0.0001f;
 	private SelectionBox _paintBox = null!;
 	private SelectionBox _hoverBox = null!;
 
@@ -116,7 +115,7 @@ public sealed partial class Gizmos : Node
 
 	private void OnResizeDragged(ResizeGizmo.ResizeGizmoAxis currentAxis, Vector3 rawMotion)
 	{
-		float moveSnap = CreatorService.Interface.MoveSnapping;
+		float moveSnap = GetSafeMoveSnap();
 		bool isAltPressed = Input.IsActionPressed("gizmo_scale_uniform");
 		bool isShiftPressed = Input.IsKeyPressed(Key.Shift);
 
@@ -133,8 +132,6 @@ public sealed partial class Gizmos : Node
 
 		Vector3 oldScaleVector = _pivotStart.Basis[column];
 		Vector3 currentAxisVector = oldScaleVector * globalDirection;
-		int localDirection = rawMotion.Dot(currentAxisVector) > 0 ? 1 : -1;
-
 		Vector3 axisDir = currentAxisVector.Normalized();
 		float snappedDelta = Mathf.Snapped(rawMotion.Dot(axisDir), moveSnap);
 		Vector3 resizeDirection = oldScaleVector.Normalized();
@@ -204,7 +201,7 @@ public sealed partial class Gizmos : Node
 	private void OnScaleDragged(Vector3 vector)
 	{
 		Vector3 scaleFactors;
-		float snapValue = CreatorService.Interface.MoveSnapping / 10.0f;
+		float snapValue = GetSafeMoveSnap() / 10.0f;
 		if (Input.IsActionPressed("gizmo_scale_uniform"))
 		{
 			float maxChange = vector.X;
@@ -216,12 +213,12 @@ public sealed partial class Gizmos : Node
 		}
 		else
 		{
-			scaleFactors = Vector3.One + vector.Snap(CreatorService.Interface.MoveSnapping / 10);
+			scaleFactors = Vector3.One + vector.Snap(snapValue);
 		}
 		Basis scaledBasis = _pivotStart.Basis.Scaled(new(
-			Mathf.Max(0.01f, scaleFactors.X),
-			Mathf.Max(0.01f, scaleFactors.Y),
-			Mathf.Max(0.01f, scaleFactors.Z)
+			Mathf.Max(MinimumScale, scaleFactors.X),
+			Mathf.Max(MinimumScale, scaleFactors.Y),
+			Mathf.Max(MinimumScale, scaleFactors.Z)
 			));
 
 		Transform3D scaledPivot = new(
@@ -280,6 +277,11 @@ public sealed partial class Gizmos : Node
 
 	private static Basis SnapBasis(Basis basis, Basis originalBasis, float deg)
 	{
+		if (deg <= MinimumSnap)
+		{
+			return basis;
+		}
+
 		float snapAngle = Mathf.DegToRad(deg);
 
 		Basis deltaBasis = basis * originalBasis.Inverse();
@@ -318,7 +320,7 @@ public sealed partial class Gizmos : Node
 
 		foreach (Dynamic item in Selected)
 		{
-			_dragStartOffsets[item] = item.Position;
+			_dragStartOffsets[item] = item.GetGlobalTransform().Origin;
 		}
 
 		_history.NewAction("Move Transform");
@@ -327,7 +329,9 @@ public sealed partial class Gizmos : Node
 
 	private void ApplyMoveMotion(Vector3 motion, bool snap)
 	{
-		Vector3 appliedMotion = snap ? motion.Snap(CreatorService.Interface.MoveSnapping) : motion;
+		Vector3 appliedMotion = snap && CreatorService.Interface.MoveSnapEnabled
+			? motion.Snap(GetSafeMoveSnap())
+			: motion;
 
 		foreach (Dynamic item in Selected)
 		{
@@ -355,27 +359,38 @@ public sealed partial class Gizmos : Node
 
 	private void RecordHistoryUndo()
 	{
-		foreach (Dynamic item in Selected)
+		RecordHistoryUndo(Selected);
+	}
+
+	private void RecordHistoryUndo(IEnumerable<Dynamic> targets)
+	{
+		foreach (Dynamic item in targets.Distinct())
 		{
-			Transform3D t = item.GetGlobalTransform();
+			Transform3D transform = item.GetGlobalTransform();
 			_history.AddUndoCallback(new((_) =>
 			{
-				item.SetGlobalTransform(t);
+				item.SetGlobalTransform(transform);
+				item.PropagateUpdateCreatorBounds();
 			}));
 		}
 	}
 
 	private void CommitHistorySelectedTransform()
 	{
-		foreach (Dynamic item in Selected)
+		CommitHistoryTransform(Selected);
+	}
+
+	private void CommitHistoryTransform(IEnumerable<Dynamic> targets)
+	{
+		foreach (Dynamic item in targets.Distinct())
 		{
-			Transform3D t = item.GetGlobalTransform();
+			Transform3D transform = item.GetGlobalTransform();
 			_history.AddDoCallback(new((_) =>
 			{
-				item.SetGlobalTransform(t);
+				item.SetGlobalTransform(transform);
+				item.PropagateUpdateCreatorBounds();
 			}));
 
-			// Call update bounds on finish
 			item.PropagateUpdateCreatorBounds();
 		}
 		_history.CommitAction();
@@ -540,7 +555,7 @@ public sealed partial class Gizmos : Node
 				if (_isDraggingDyn) RebaseActiveDirectDrag();
 			}
 
-			// Selection orientation shortcuts (Roblox-style R/T behavior).
+			// Selection orientation shortcuts
 			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.RotateSelection, Key.R))
 			{
 				RotateSelectedAround(90);
@@ -565,19 +580,17 @@ public sealed partial class Gizmos : Node
 			if (button.ButtonIndex != MouseButton.Left) { return; }
 			if (button.Pressed)
 			{
-				_isMouseDragging = true;
 				_dragStartPos = button.Position;
 				_duplicatedOnCurrentDrag = false;
 			}
 			else
 			{
-				_isMouseDragging = false;
 				_isDragPending = false;
 				if (_isDraggingDyn)
 				{
 					_isDraggingDyn = false;
 					IsTransformingSelected = false;
-					CommitHistorySelectedTransform();
+					CommitHistoryTransform(DragSelected);
 				}
 				_selectDragStartTransforms.Clear();
 				DragSelected.Clear();
@@ -700,8 +713,8 @@ public sealed partial class Gizmos : Node
 					{
 						_selectDragStartTransforms[item] = item.GetGlobalTransform();
 					}
-					_history.NewAction("Select Drag Transform");
-					RecordHistoryUndo();
+					_history.NewAction("Move Selection");
+					RecordHistoryUndo(DragSelected);
 				}
 			}
 
@@ -711,7 +724,6 @@ public sealed partial class Gizmos : Node
 			}
 		}
 
-		_lastHovered = hoveringOn;
 	}
 
 	private void RebaseActiveDirectDrag()
@@ -731,6 +743,11 @@ public sealed partial class Gizmos : Node
 
 	private void RotateSelectedAround(float angle)
 	{
+		if (Selected.Count == 0) return;
+
+		_history.NewAction("Rotate Selection");
+		RecordHistoryUndo();
+
 		Transform3D t = GetCenterPivot([.. Selected]);
 		Vector3 pivotPosition = t.Origin;
 		float rotateAngle = Mathf.DegToRad(angle);
@@ -747,10 +764,17 @@ public sealed partial class Gizmos : Node
 			if (_selectionBoxes.TryGetValue(item, out var box)) box.InvalidateBoundCache();
 			item.UpdateCurrentTransformCache();
 		}
+
+		CommitHistorySelectedTransform();
 	}
 
 	private void TiltSelectedAround(float angle)
 	{
+		if (Selected.Count == 0) return;
+
+		_history.NewAction("Tilt Selection");
+		RecordHistoryUndo();
+
 		Transform3D t = GetCenterPivot([.. Selected]);
 		Vector3 pivotPosition = t.Origin;
 		float tiltAngle = Mathf.DegToRad(angle);
@@ -779,6 +803,8 @@ public sealed partial class Gizmos : Node
 			if (_selectionBoxes.TryGetValue(item, out var box)) box.InvalidateBoundCache();
 			item.UpdateCurrentTransformCache();
 		}
+
+		CommitHistorySelectedTransform();
 	}
 
 	private void ProcessPaint(Dynamic dyn)
@@ -843,10 +869,19 @@ public sealed partial class Gizmos : Node
 		else
 		{
 			Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
-			Vector3 rayNormal = _camera.ProjectRayNormal(mousePos);
-			Plane dragPlane = new(Vector3.Up, _pivotStart.Origin);
-			Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayNormal);
-			Vector3? startIntersection = dragPlane.IntersectsRay(_camera.ProjectRayOrigin(_dragStartPos), _camera.ProjectRayNormal(_dragStartPos));
+			Vector3 rayDirection = _camera.ProjectRayNormal(mousePos);
+			Vector3 planeNormal = (_camera.GlobalPosition - _pivotStart.Origin).Normalized();
+			if (planeNormal.IsZeroApprox())
+			{
+				planeNormal = -_camera.GlobalBasis.Z;
+			}
+
+			Plane dragPlane = new(planeNormal, _pivotStart.Origin);
+			Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayDirection);
+			Vector3? startIntersection = dragPlane.IntersectsRay(
+				_camera.ProjectRayOrigin(_dragStartPos),
+				_camera.ProjectRayNormal(_dragStartPos)
+			);
 
 			if (currentIntersection == null || startIntersection == null)
 			{
@@ -858,10 +893,15 @@ public sealed partial class Gizmos : Node
 
 		if (CreatorService.Interface.MoveSnapEnabled)
 		{
-			motion = motion.Snap(CreatorService.Interface.MoveSnapping);
+			motion = motion.Snap(GetSafeMoveSnap());
 		}
 
 		ApplySelectDragMotion(motion);
+	}
+
+	private static float GetSafeMoveSnap()
+	{
+		return Mathf.Max(MinimumSnap, CreatorService.Interface.MoveSnapping);
 	}
 
 	private static Vector3 GetCombinedHalfExtents(Dynamic[] targets)

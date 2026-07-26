@@ -37,7 +37,7 @@ public partial class GradientImageAsset : ImageAsset
 			}
 			else
 			{
-				PT.PrintWarn($"Gradient Image exceeded {GradientSizeLimit} points limit, the gradient won't be rendered.");
+				BV.PrintWarn($"Gradient Image exceeded {GradientSizeLimit} points limit, the gradient won't be rendered.");
 			}
 
 			LoadResource();

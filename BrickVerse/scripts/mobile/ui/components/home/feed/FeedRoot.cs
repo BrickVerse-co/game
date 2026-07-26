@@ -35,7 +35,7 @@ public partial class FeedRoot : Node
 		}
 		catch
 		{
-			PT.PrintErr("Failed to load feed");
+			BV.PrintErr("Failed to load feed");
 		}
 	}
 }

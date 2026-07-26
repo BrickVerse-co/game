@@ -9,7 +9,32 @@ namespace BrickVerse.Providers.Datastore;
 
 public interface IDatastoreProvider : IDisposable
 {
-	void Connect(string key, Datamodel.Data.Datastore ds);
-	Task WriteData(string key, object? value);
-	Task<object?> ReadData(string key);
+	void Connect(string dataStoreName, Datamodel.Data.Datastore dataStore);
+
+	/// <summary>
+	/// GetAsync.
+	/// Returns null if the key does not exist.
+	/// </summary>
+	Task<object?> GetAsync(string key);
+
+	/// <summary>
+	/// SetAsync.
+	/// </summary>
+	Task SetAsync(string key, object? value);
+
+	// ---------------------------------------------------------------------
+	// Compatibility wrappers so existing engine code continues to compile.
+	// ---------------------------------------------------------------------
+
+	[ObsoleteAttribute("Use GetAsync instead.")]
+	Task<object?> ReadData(string key)
+	{
+		return GetAsync(key);
+	}
+
+	[ObsoleteAttribute("Use SetAsync instead.")]
+	Task WriteData(string key, object? value)
+	{
+		return SetAsync(key, value);
+	}
 }

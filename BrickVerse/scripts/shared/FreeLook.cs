@@ -110,12 +110,12 @@ public sealed partial class FreeLook : Camera3D
 				if (button.ButtonIndex == MouseButton.WheelUp)
 				{
 					_moveSpeed = Mathf.Clamp(MathF.Round(_moveSpeed * 2, 1), 2, 1024);
-					PT.Print("Camera Speed + ", _moveSpeed);
+					BV.Print("Camera Speed + ", _moveSpeed);
 				}
 				else if (button.ButtonIndex == MouseButton.WheelDown)
 				{
 					_moveSpeed = Mathf.Clamp(MathF.Round(_moveSpeed / 2), 2, 1024);
-					PT.Print("Camera Speed - ", _moveSpeed);
+					BV.Print("Camera Speed - ", _moveSpeed);
 				}
 			}
 		}

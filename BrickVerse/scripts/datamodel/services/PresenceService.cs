@@ -14,7 +14,7 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Presence"), ExplorerExclude, SaveIgnore]
 public sealed partial class PresenceService : Instance
 {
-	private const long DiscordAppID = 1500644112179789894;
+	private const long DiscordAppID = 871308379992260629;
 	private string? _state;
 	private BVImageAsset? _coverImage;
 	private ActivityManager? _activityManager;

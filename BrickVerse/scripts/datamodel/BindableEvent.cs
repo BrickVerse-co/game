@@ -10,7 +10,7 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public sealed partial class BindableEvent : Instance
 {
-	[ScriptProperty] public PTSignal Invoked { get; private set; } = new();
+	[ScriptProperty] public BVSignal Invoked { get; private set; } = new();
 
 	[ScriptMethod]
 	public void Invoke(params object?[] par)

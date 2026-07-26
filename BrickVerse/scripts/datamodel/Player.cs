@@ -91,16 +91,16 @@ public sealed partial class Player : NPC
 	internal APIUserInfo? UserInfo { get; private set; }
 
 	[ScriptProperty]
-	public PTSignal<string> Chatted { get; private set; } = new();
+	public BVSignal<string> Chatted { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal<Stat, object?> StatChanged { get; private set; } = new();
+	public BVSignal<Stat, object?> StatChanged { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal<Team?> TeamChanged { get; private set; } = new();
+	public BVSignal<Team?> TeamChanged { get; private set; } = new();
 
 	[ScriptProperty]
-	public PTSignal Respawned { get; private set; } = new();
+	public BVSignal Respawned { get; private set; } = new();
 
 	[SyncVar, ScriptProperty]
 	public string UserID
@@ -969,7 +969,7 @@ public sealed partial class Player : NPC
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Use PurchasesService.OwnsItem instead")]
-	public void OwnsItem(int assetId, PTCallback callback)
+	public void OwnsItem(int assetId, BVCallback callback)
 	{
 		Root.Purchases.OwnsItemAsync(this, assetId).ContinueWith(tsk =>
 		{

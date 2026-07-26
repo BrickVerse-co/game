@@ -16,7 +16,7 @@ namespace BrickVerse.Datamodel.Services;
 [SaveIgnore]
 public sealed partial class PreferencesService : Instance
 {
-	[ScriptProperty] public PTSignal<string, object> SettingChanged { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string, object> SettingChanged { get; private set; } = new();
 	[ScriptProperty] public float CameraSensitivity => ClientSettingsService.Instance.Get<float>(ClientSettingKeys.General.CameraSensitivity);
 	[ScriptProperty] public float UiScale => ClientSettingsService.Instance.Get<float>(ClientSettingKeys.Display.UiScale);
 

@@ -30,7 +30,7 @@ public sealed partial class CoreUIService : Instance
 
 	public CoreUIRoot CoreUI = null!;
 
-	public PTSignal CtrlLockCursorChanged { get; private set; } = new();
+	public BVSignal CtrlLockCursorChanged { get; private set; } = new();
 
 
 

@@ -38,7 +38,7 @@ public sealed partial class FilterService : Instance
 		}
 		catch (Exception err)
 		{
-			PT.PrintErr("Failed to get profanity list: ", err);
+			BV.PrintErr("Failed to get profanity list: ", err);
 		}
 	}
 

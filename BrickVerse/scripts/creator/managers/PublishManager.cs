@@ -18,11 +18,6 @@ namespace BrickVerse.Creator.Managers;
 
 public static class PublishManager
 {
-	public static async Task PublishProject(string projectPath, int universeId = 0, int worldId = 0)
-	{
-		throw new Exception("PublishProject is deprecated. Use PublishPlaceModal instead.");
-	}
-
 	public static async Task PublishModel(Instance target, long modelID = 0)
 	{
 		var loadOverlay = CreatorService.Interface.LoadOverlay;
@@ -32,7 +27,7 @@ public static class PublishManager
 
 			CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
 
-			CreatorPublishResponse publishRes = await CreatorAPI.UploadModel(packed, modelID);
+			CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(packed, modelID, "PREFAB");
 			CreatorService.Interface.LoadOverlay?.Hide();
 
 			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
@@ -42,13 +37,13 @@ public static class PublishManager
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			CreatorService.Interface.PopupAlert(ex.Message);
 			loadOverlay?.Hide();
 		}
 	}
 
-	/*public static async Task PublishAddon(ServerScript target, int placeID = 0)
+	public static async Task PublishAddon(ServerScript target, long addonID = 0)
 	{
 		CreatorService.Interface.LoadOverlay?.SetTitle("Publishing addon...");
 		CreatorService.Interface.LoadOverlay?.SetStatus("Packing addon...");
@@ -75,19 +70,19 @@ public static class PublishManager
 		}
 
 		// Extract the metadata from the ModuleScript as AddonMetadata from the source code
-		AddonMetadata metadata = AddonMetadata.FromJson(metaModule.Source);
+		AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(metaModule.Source);
 
 		byte[] packed = await PackedFormat.PackAddon(target, metadata);
 
 		CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
 
-		CreatorPublishResponse publishRes = await CreatorAPI.UploadAddon(packed, placeID);
+		CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(packed, addonID, "PLUGIN");
 		CreatorService.Interface.LoadOverlay?.Hide();
 
 		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 			OS.ShellOpen(publishRes.Link);
 		CreatorService.Interface.StatusBar?.SetStatus("Addon published");
 	}
-*/
+
 
 }

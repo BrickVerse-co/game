@@ -86,7 +86,7 @@ public sealed partial class Explorer : TabContainer
 		{
 			if (instance.Parent == null)
 			{
-				PT.Print(instance.Name, " no parent");
+				BV.Print(instance.Name, " no parent");
 				return;
 			}
 			TreeItem parentItem = _instanceToItem[instance.Parent];

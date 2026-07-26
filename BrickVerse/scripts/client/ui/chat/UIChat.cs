@@ -53,61 +53,89 @@ public partial class UIChat : Control
 
 	public override void _Ready()
 	{
+		ConnectSignals();
+		InitializeEmojiPicker();
+		ConfigureChatAccess();
+
+		ClampToViewport();
+	}
+
+	private void ConnectSignals()
+	{
 		_chatField.TextSubmitted += OnTextSubmitted;
 		_chatField.GuiInput += OnGuiInput;
 		_chatField.TextChanged += OnChatFieldTextChanged;
+
+		_sendButton.Pressed += OnSendButtonPressed;
+		_emojiButton.Pressed += OnEmojiButtonPressed;
+
+		_resizeHandle.GuiInput += OnResizeHandleInput;
+		_resizeHandle.MouseEntered += OnResizeHandleMouseEntered;
+		_resizeHandle.MouseExited += OnResizeHandleMouseExited;
+
 		Root.Chat.NewChatMessage.Connect(OnNewChatMessage);
 		Root.Chat.MessageDeclined.Connect(OnMessageDeclined);
 		Root.Chat.MessageReceived.Connect(OnMessageReceived);
-		_sendButton.Pressed += OnSendButtonPressed;
-		_resizeHandle.GuiInput += OnResizeHandleInput;
 
+		GetViewport().SizeChanged += ClampToViewport;
+	}
+
+	private void InitializeEmojiPicker()
+	{
 		_emojiPicker.Initialize();
 		_emojiPicker.EmojiPicked += OnEmojiPicked;
-		_emojiButton.Pressed += OnEmojiButtonPressed;
-		_resizeHandle.MouseEntered += OnResizeHandleMouseEntered;
-		_resizeHandle.MouseExited += OnResizeHandleMouseExited;
-		GetViewport().SizeChanged += ClampToViewport;
+	}
 
-		if (!LocalPlayer.CanChat || LocalPlayer.IsAgeRestricted)
+	private void ConfigureChatAccess()
+	{
+		if (LocalPlayer.IsAgeRestricted)
 		{
-			if (!LocalPlayer.CanChat)
-			{
-				switch (LocalPlayer.ChatRestrictionReason)
-				{
-					case "AGE_RESTRICTED":
-						_chatField.PlaceholderText = "Chat is disabled due to age restrictions";
-						break;
-					case "MUTED":
-						_chatField.PlaceholderText = "You are muted and cannot chat";
-						break;
-					case "CHAT_MODERATION":
-						_chatField.PlaceholderText = "Chat is disabled due to moderation";
-						break;
-					case "UNVERIFIED_EMAIL":
-						_chatField.PlaceholderText = "Chat is disabled until your email is verified";
-						break;
-					default:
-						_chatField.PlaceholderText = "Chat is disabled for your account";
-						break;
-				}
-			}
-			else
-			{
-				_chatField.PlaceholderText = "Chat is disabled due to account restrictions";
-			}
-		}
-		else if (LocalPlayer.IsAgeRestricted)
-		{
-			// Disable chat field entirely on age restricted accounts
 			_chatFieldPanel.Visible = false;
+			SetChatControlsEnabled(false);
+			return;
 		}
-		
-		_chatField.Editable = false;
-		_sendButton.Visible = false;
-		_emojiButton.Visible = false;
 
-		ClampToViewport();
+		_chatFieldPanel.Visible = true;
+
+		if (!LocalPlayer.CanChat)
+		{
+			_chatField.PlaceholderText = GetChatRestrictionMessage(
+				LocalPlayer.ChatRestrictionReason
+			);
+
+			SetChatControlsEnabled(false);
+			return;
+		}
+
+		SetChatControlsEnabled(true);
+	}
+
+	private void SetChatControlsEnabled(bool enabled)
+	{
+		_chatField.Editable = enabled;
+		_sendButton.Visible = enabled;
+		_emojiButton.Visible = enabled;
+	}
+
+	private static string GetChatRestrictionMessage(string? restrictionReason)
+	{
+		return restrictionReason switch
+		{
+			"AGE_RESTRICTED" =>
+				"Chat is disabled due to age restrictions",
+
+			"MUTED" =>
+				"You are muted and cannot chat",
+
+			"CHAT_MODERATION" =>
+				"Chat is disabled due to moderation restrictions",
+
+			"UNVERIFIED_EMAIL" =>
+				"Chat is disabled until your email is verified",
+
+			_ =>
+				"Chat is disabled for your account"
+		};
 	}
 
 	public override void _ExitTree()
@@ -297,7 +325,7 @@ public partial class UIChat : Control
 		bool atBottom = vScrollBar.Value + 5 >= (vScrollBar.MaxValue - vScrollBar.Page);
 		if (atBottom)
 		{
-			PT.CallDeferred(() =>
+			BV.CallDeferred(() =>
 			{
 				int scrollVal = (int)vScrollBar.MaxValue + 1000;
 				_chatScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, scrollVal);

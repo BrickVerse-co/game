@@ -72,18 +72,21 @@ public partial class BVHttpClient
 								if (item.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
 									continue;
 
-								headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
-							}
+								string value = string.Join(", ", item.Value);
 
-							headers.Add($"Content-Length: {body.Length}");
+								if (item.Key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
+									value = NormalizeMultipartContentType(value);
+
+								headers.Add($"{item.Key}: {value}");
+							}
 						}
 
-						/*PT.Print("=== BVHttpClient Request ===");
-						PT.Print($"URL: {msg.RequestUri}");
-						PT.Print($"Method: {msg.Method}");
-						PT.Print($"Body Length: {body.Length}");
+						/*BV.Print("=== BVHttpClient Request ===");
+						BV.Print($"URL: {msg.RequestUri}");
+						BV.Print($"Method: {msg.Method}");
+						BV.Print($"Body Length: {body.Length}");
 						foreach (string header in headers)
-							PT.Print(header);
+							BV.Print(header);
 
 						*/
 
@@ -134,7 +137,7 @@ public partial class BVHttpClient
 							method,
 							bodyArray
 						);
-						
+
 						if (error != Error.Ok)
 						{
 							req.QueueFree();
@@ -163,6 +166,28 @@ public partial class BVHttpClient
 			msg.Headers.TryAddWithoutValidation(key, val);
 		}
 		return _httpClient.SendAsync(msg);
+	}
+#endif
+
+#if !USE_NATIVE_HTTP
+	private static string NormalizeMultipartContentType(string value)
+	{
+		const string boundaryMarker = "boundary=\"";
+		int boundaryStart = value.IndexOf(boundaryMarker, StringComparison.OrdinalIgnoreCase);
+
+		if (boundaryStart < 0)
+			return value;
+
+		int valueStart = boundaryStart + boundaryMarker.Length;
+		int valueEnd = value.IndexOf('\"', valueStart);
+
+		if (valueEnd < 0)
+			return value;
+
+		return value[..boundaryStart]
+			+ "boundary="
+			+ value[valueStart..valueEnd]
+			+ value[(valueEnd + 1)..];
 	}
 #endif
 

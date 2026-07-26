@@ -135,7 +135,7 @@ public partial class UIGameMenu : Control
 			}
 			else
 			{
-				PT.PrintErr("Failed to load settings scene at: " + pathToLoad);
+				BV.PrintErr("Failed to load settings scene at: " + pathToLoad);
 				return;
 			}
 		}

@@ -169,7 +169,7 @@ public partial class NewProjectWizard : Control
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				CreatorService.Interface.PopupAlert(ex.Message, "Project create failed");
 			}
 
@@ -182,14 +182,14 @@ public partial class NewProjectWizard : Control
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 					CreatorService.Interface.PopupAlert(ex.Message, "Git initialization Failure");
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 			CreatorService.Interface.PopupAlert("Failed to create new project");
 		}
 		Close();

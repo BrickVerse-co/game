@@ -36,21 +36,21 @@ public sealed partial class ScriptService : Instance
 	// Dictionary of all proxies
 	public static readonly Dictionary<Type, Type> ProxyMap = new()
 	{
-		{ typeof(Vector3), typeof(PTVector3) },
-		{ typeof(Vector2), typeof(PTVector2) },
-		{ typeof(Color), typeof(PTColor) },
-		{ typeof(Quaternion), typeof(PTQuaternion) },
-		{ typeof(Aabb), typeof(PTBounds) },
+		{ typeof(Vector3), typeof(BVector3) },
+		{ typeof(Vector2), typeof(BVector2) },
+		{ typeof(Color), typeof(BVColor) },
+		{ typeof(Quaternion), typeof(BVQuaternion) },
+		{ typeof(Aabb), typeof(BVBounds) },
 	};
 
 	// Dictionary of all data type exposed to scripting
 	public static readonly Dictionary<string, Type> GlobalDataMap = new()
 	{
-		{ "Vector3", typeof(PTVector3) },
-		{ "Vector2", typeof(PTVector2) },
-		{ "Quaternion", typeof(PTQuaternion) },
-		{ "Color", typeof(PTColor) },
-		{ "Bounds", typeof(PTBounds) },
+		{ "Vector3", typeof(BVector3) },
+		{ "Vector2", typeof(BVector2) },
+		{ "Quaternion", typeof(BVQuaternion) },
+		{ "Color", typeof(BVColor) },
+		{ "Bounds", typeof(BVBounds) },
 		{ "NetMessage", typeof(NetMessage) },
 		{ "HttpRequestData", typeof(HttpRequestData) },
 		{ "HttpResponseData", typeof(HttpResponseData) },
@@ -102,7 +102,7 @@ public sealed partial class ScriptService : Instance
 
 	public void Run(Script script)
 	{
-		PT.Print("Running script: ", script.LuaPath);
+		//BV.Print("Running script: ", script.LuaPath);
 
 		if (!_languageProviders.TryGetValue(script.ChosenLanguage, out var provider))
 		{
@@ -127,7 +127,7 @@ public sealed partial class ScriptService : Instance
 
 	public static void Close(Script script)
 	{
-		PT.Print("Closing script: ", script.LuaPath);
+		//BV.Print("Closing script: ", script.LuaPath);
 
 		script.LanguageProvider.Close(script);
 	}
@@ -241,9 +241,9 @@ public sealed partial class ScriptService : Instance
 		return result;
 	}
 
-	public static void FreePTCallback(PTCallback action)
+	public static void FreeBVCallback(BVCallback action)
 	{
-		action.LangProvider?.FreePTCallback(action);
+		action.LangProvider?.FreeBVCallback(action);
 	}
 
 #pragma warning disable IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.

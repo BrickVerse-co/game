@@ -29,19 +29,18 @@ warnings/check_invalid_track_paths=false
 [application]
 
 config/name="BrickVerse"
-config/version="2.0.16"
+config/version="1.0.0"
 run/main_scene="uid://c2tql65t73ak5"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/flush_stdout_on_print=true
-boot_splash/bg_color=Color(0.09803922, 0.09803922, 0.09803922, 1)
-boot_splash/show_image=false
-boot_splash/stretch_mode=0
+boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
 boot_splash/use_filter=false
-boot_splash/image="uid://ngfx6aps7f0g"
+boot_splash/image="uid://bs34jgixa1n2r"
 config/icon="uid://bvolad7rptrsm"
+boot_splash/minimum_display_time=3000
 
 [autoload]
 

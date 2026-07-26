@@ -19,11 +19,13 @@ public struct APIServerListenResponse
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
 	[JsonPropertyName("worldId")]
-	public int WorldID { get; set; }
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public long WorldID { get; set; }
 	[JsonPropertyName("port")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
 	public int Port { get; set; }
 	[JsonPropertyName("serverId")]
-	public int ServerID { get; set; }
+	public string ServerID { get; set; }
 	[JsonPropertyName("placePath")]
 	public string? PlacePath { get; set; }
 }
@@ -43,16 +45,19 @@ public class APIClientAuthResponseMessage : APIServerStatus
 	public string IP { get; set; } = string.Empty;
 
 	[JsonPropertyName("port")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
 	public int Port { get; set; }
 
 	[JsonPropertyName("universeId")]
-	public int UniverseID { get; set; }
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public long UniverseID { get; set; }
 
 	[JsonPropertyName("worldId")]
-	public int WorldID { get; set; }
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public long WorldID { get; set; }
 
 	[JsonPropertyName("serverId")]
-	public int ServerID { get; set; }
+	public string ServerID { get; set; } = string.Empty;
 }
 
 [JsonSerializable(typeof(APIServerAuthRequestMessage))]

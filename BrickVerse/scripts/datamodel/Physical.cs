@@ -59,11 +59,11 @@ public partial class Physical : Dynamic
 	public List<CollisionShape3D> CollisionRootShapes = [];
 	private readonly HashSet<CollisionShape3D> _pendingAreaShapes = [];
 
-	[ScriptProperty] public PTSignal<Physical> Touched { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Physical> TouchEnded { get; private set; } = new();
-	[ScriptProperty] public PTSignal MouseEnter { get; private set; } = new();
-	[ScriptProperty] public PTSignal MouseExit { get; private set; } = new();
-	[ScriptProperty] public PTSignal<Player> Clicked { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Physical> Touched { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Physical> TouchEnded { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseEnter { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseExit { get; private set; } = new();
+	[ScriptProperty] public BVSignal<Player> Clicked { get; private set; } = new();
 
 	public event Action<CollisionShape3D>? CollisionShapeAdded;
 	public event Action<CollisionShape3D>? CollisionShapeRemoved;
@@ -554,7 +554,7 @@ public partial class Physical : Dynamic
 		if (!_canTouch)
 		{
 			_canTouch = true;
-			PT.CallOnMainThread(() =>
+			BV.CallOnMainThread(() =>
 			{
 				PhysicalArea?.Monitoring = true;
 			});
@@ -566,7 +566,7 @@ public partial class Physical : Dynamic
 		if (_canTouch)
 		{
 			_canTouch = false;
-			PT.CallOnMainThread(() =>
+			BV.CallOnMainThread(() =>
 			{
 				PhysicalArea?.Monitoring = false;
 			});

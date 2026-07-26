@@ -29,11 +29,11 @@ public partial class CreatorEntry : Node
 	public override void _EnterTree()
 	{
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
-		PT.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
+		//BV.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
 
 		cmdargs.TryGetValue("token", out string? launchToken);
 
-		PT.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
+		//BV.Print("CreatorEntry: Launch token: ", launchToken ?? "(none)");
 
 		CreatorAPI.AuthenticationFailed += OnClientAuthenticationFailed;
 		CreatorAPI.UserAuthenticated += OnClientAuthenticated;
@@ -57,10 +57,10 @@ public partial class CreatorEntry : Node
 		GetViewport().GuiEmbedSubwindows = true;
 
 		// Open project by world id cmd argument
-		cmdargs.TryGetValue("world", out string? worldId);
+		cmdargs.TryGetValue("worldId", out string? worldId);
 		if (worldId != null)
 		{
-			PT.Print("Attempting to open world by id: ", worldId);
+			BV.Print("Attempting to open world by id: ", worldId);
 			_pendingWorldId = worldId;
 		}
 
@@ -68,7 +68,7 @@ public partial class CreatorEntry : Node
 		cmdargs.TryGetValue("proj", out string? creatorFilePath);
 		if (creatorFilePath != null)
 		{
-			PT.Print("Attempting to open project by file path: ", creatorFilePath);
+			BV.Print("Attempting to open project by file path: ", creatorFilePath);
 			_ = CreatorService.Singleton.CreateNewSession(creatorFilePath);
 		}
 
@@ -78,7 +78,7 @@ public partial class CreatorEntry : Node
 
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
-			PT.Print("Attempting to import legacy world from ", legacyImportIn, " to ", legacyImportOut);
+			BV.Print("Attempting to import legacy world from ", legacyImportIn, " to ", legacyImportOut);
 			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.bvxw", ProjectName = new DirectoryInfo(legacyImportOut).Name });
 		}
 	}
@@ -93,7 +93,7 @@ public partial class CreatorEntry : Node
 		}
 		catch (Exception error)
 		{
-			PT.PrintErr("CreatorEntry: Auth initialization failed before startup open: ", error.Message);
+			BV.PrintErr("CreatorEntry: Auth initialization failed before startup open: ", error.Message);
 		}
 
 		if (!string.IsNullOrWhiteSpace(_pendingWorldId))
@@ -115,7 +115,7 @@ public partial class CreatorEntry : Node
 			}
 			catch (Exception error)
 			{
-				PT.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+				BV.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
 			}
 		}
 
@@ -125,17 +125,17 @@ public partial class CreatorEntry : Node
 		}
 		catch (Exception error)
 		{
-			PT.PrintErr("CreatorEntry: Auth setup failed: ", error.Message);
+			BV.PrintErr("CreatorEntry: Auth setup failed: ", error.Message);
 		}
 	}
 
 	private void OnClientAuthenticationFailed(string reason)
 	{
-		PT.PrintErr("CreatorEntry: Client authentication failed: ", reason);
+		BV.PrintErr("CreatorEntry: Client authentication failed: ", reason);
 	}
 
 	private void OnClientAuthenticated(OpenIdUserInfoResponse me)
 	{
-		PT.Print("Authenticated as ", me.PreferredUsername ?? me.Sub);
+		BV.Print("Authenticated as ", me.PreferredUsername ?? me.Sub);
 	}
 }

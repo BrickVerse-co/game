@@ -73,7 +73,7 @@ public sealed partial class InputManagerPopup : PopupWindowBase
 		{
 			if (string.IsNullOrWhiteSpace(str)) return;
 
-			PT.Print("Add new: ", str);
+			BV.Print("Add new: ", str);
 
 			InputAction newz = null!;
 

@@ -30,8 +30,6 @@ public partial class ExplorerTree : Tree
 
 	private void ApplyCompactExplorerThemeOverrides()
 	{
-		// Keep explorer rows close to Godot/Unity/Roblox Studio density.
-		// Oversized icons or inherited theme constants can otherwise force 50px+ rows.
 		AddThemeConstantOverride("icon_max_width", 18);
 		AddThemeConstantOverride("v_separation", 0);
 		AddThemeConstantOverride("h_separation", 4);
@@ -274,7 +272,7 @@ public partial class ExplorerTree : Tree
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 				CreatorService.Interface.PopupAlert(ex.Message);
 				return;
 			}

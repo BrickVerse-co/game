@@ -47,7 +47,7 @@ public partial class UserHeadshotCard : Node
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 		}
 	}
 }

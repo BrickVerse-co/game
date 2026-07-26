@@ -10155,6 +10155,118 @@
     "/api/v3/binaries/register": {
       "post": {
         "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
         "operationId": "postApiV3BinariesRegister",
         "tags": [
           "Binaries"
@@ -10166,16 +10278,11 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "commit",
                   "branch",
-                  "windows",
-                  "linux",
-                  "macos"
+                  "app",
+                  "version"
                 ],
                 "properties": {
-                  "commit": {
-                    "type": "string"
-                  },
                   "branch": {
                     "anyOf": [
                       {
@@ -10188,6 +10295,28 @@
                       }
                     ]
                   },
+                  "app": {
+                    "anyOf": [
+                      {
+                        "const": "client",
+                        "type": "string"
+                      },
+                      {
+                        "const": "creator",
+                        "type": "string"
+                      },
+                      {
+                        "const": "mobile",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "buildNumber": {
+                    "type": "number"
+                  },
                   "windows": {
                     "type": "string"
                   },
@@ -10195,6 +10324,36 @@
                     "type": "string"
                   },
                   "macos": {
+                    "type": "string"
+                  },
+                  "windowsExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "windowsManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
                     "type": "string"
                   }
                 }
@@ -10204,16 +10363,11 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "commit",
                   "branch",
-                  "windows",
-                  "linux",
-                  "macos"
+                  "app",
+                  "version"
                 ],
                 "properties": {
-                  "commit": {
-                    "type": "string"
-                  },
                   "branch": {
                     "anyOf": [
                       {
@@ -10226,6 +10380,28 @@
                       }
                     ]
                   },
+                  "app": {
+                    "anyOf": [
+                      {
+                        "const": "client",
+                        "type": "string"
+                      },
+                      {
+                        "const": "creator",
+                        "type": "string"
+                      },
+                      {
+                        "const": "mobile",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "buildNumber": {
+                    "type": "number"
+                  },
                   "windows": {
                     "type": "string"
                   },
@@ -10233,6 +10409,36 @@
                     "type": "string"
                   },
                   "macos": {
+                    "type": "string"
+                  },
+                  "windowsExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "windowsManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
                     "type": "string"
                   }
                 }
@@ -10242,16 +10448,11 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "commit",
                   "branch",
-                  "windows",
-                  "linux",
-                  "macos"
+                  "app",
+                  "version"
                 ],
                 "properties": {
-                  "commit": {
-                    "type": "string"
-                  },
                   "branch": {
                     "anyOf": [
                       {
@@ -10264,6 +10465,28 @@
                       }
                     ]
                   },
+                  "app": {
+                    "anyOf": [
+                      {
+                        "const": "client",
+                        "type": "string"
+                      },
+                      {
+                        "const": "creator",
+                        "type": "string"
+                      },
+                      {
+                        "const": "mobile",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "buildNumber": {
+                    "type": "number"
+                  },
                   "windows": {
                     "type": "string"
                   },
@@ -10272,18 +10495,45 @@
                   },
                   "macos": {
                     "type": "string"
+                  },
+                  "windowsExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosExecutableSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "windowsManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "linuxManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "macosManagedSha256": {
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "type": "string"
                   }
                 }
               }
             }
           }
-        },
-        "responses": {
-          "200": {}
         }
       }
     },
-    "/api/v3/binaries/{platform}/{branch}": {
+    "/api/v3/binaries/{platform}/{branch}/{app}": {
       "get": {
         "parameters": [
           {
@@ -10323,9 +10573,26 @@
             "in": "path",
             "name": "branch",
             "required": true
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "client",
+                  "type": "string"
+                },
+                {
+                  "const": "creator",
+                  "type": "string"
+                }
+              ]
+            },
+            "in": "path",
+            "name": "app",
+            "required": true
           }
         ],
-        "operationId": "getApiV3BinariesByPlatformByBranch",
+        "operationId": "getApiV3BinariesByPlatformByBranchByApp",
         "tags": [
           "Binaries"
         ],
@@ -13027,6 +13294,7 @@
                         "required": [
                           "id",
                           "thumbnailId",
+                          "thumbnailUrl",
                           "name",
                           "description",
                           "assetType",
@@ -13036,6 +13304,7 @@
                           "isFeatured",
                           "creatorId",
                           "creatorType",
+                          "creatorName",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -13049,6 +13318,18 @@
                             "anyOf": [
                               {
                                 "description": "ID of the thumbnail image for the asset",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "thumbnailUrl": {
+                            "nullable": true,
+                            "anyOf": [
+                              {
+                                "description": "URL of the thumbnail image for the asset",
                                 "type": "string"
                               },
                               {
@@ -13124,6 +13405,9 @@
                                 "type": "string"
                               }
                             ]
+                          },
+                          "creatorName": {
+                            "type": "string"
                           },
                           "createdAt": {
                             "anyOf": [
@@ -13200,6 +13484,7 @@
                         "required": [
                           "id",
                           "thumbnailId",
+                          "thumbnailUrl",
                           "name",
                           "description",
                           "assetType",
@@ -13209,6 +13494,7 @@
                           "isFeatured",
                           "creatorId",
                           "creatorType",
+                          "creatorName",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -13222,6 +13508,18 @@
                             "anyOf": [
                               {
                                 "description": "ID of the thumbnail image for the asset",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "thumbnailUrl": {
+                            "nullable": true,
+                            "anyOf": [
+                              {
+                                "description": "URL of the thumbnail image for the asset",
                                 "type": "string"
                               },
                               {
@@ -13297,6 +13595,9 @@
                                 "type": "string"
                               }
                             ]
+                          },
+                          "creatorName": {
+                            "type": "string"
                           },
                           "createdAt": {
                             "anyOf": [
@@ -13373,6 +13674,7 @@
                         "required": [
                           "id",
                           "thumbnailId",
+                          "thumbnailUrl",
                           "name",
                           "description",
                           "assetType",
@@ -13382,6 +13684,7 @@
                           "isFeatured",
                           "creatorId",
                           "creatorType",
+                          "creatorName",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -13395,6 +13698,18 @@
                             "anyOf": [
                               {
                                 "description": "ID of the thumbnail image for the asset",
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "thumbnailUrl": {
+                            "nullable": true,
+                            "anyOf": [
+                              {
+                                "description": "URL of the thumbnail image for the asset",
                                 "type": "string"
                               },
                               {
@@ -13470,6 +13785,9 @@
                                 "type": "string"
                               }
                             ]
+                          },
+                          "creatorName": {
+                            "type": "string"
                           },
                           "createdAt": {
                             "anyOf": [
@@ -25428,6 +25746,14 @@
             "in": "path",
             "name": "userId",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "editableOnly",
+            "required": false
           }
         ],
         "operationId": "getApiV3SocialGuildsUserByUserId",
@@ -44399,6 +44725,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44417,7 +44744,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44467,6 +44814,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44485,7 +44833,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44535,6 +44903,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44553,7 +44922,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44642,6 +45031,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44660,7 +45050,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44704,6 +45114,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44722,7 +45133,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44766,6 +45197,7 @@
                   "scopes": {
                     "type": "array",
                     "items": {
+                      "errorMessage": "Invalid scope",
                       "anyOf": [
                         {
                           "const": "OPENID",
@@ -44784,7 +45216,27 @@
                           "type": "string"
                         },
                         {
+                          "const": "ASSETS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_ASSETS",
+                          "type": "string"
+                        },
+                        {
                           "const": "GUILDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "MANAGE_GUILDS_MEMBERSHIP",
+                          "type": "string"
+                        },
+                        {
+                          "const": "PUBLISH_WORLDS",
+                          "type": "string"
+                        },
+                        {
+                          "const": "WORLDS",
                           "type": "string"
                         }
                       ]
@@ -44847,6 +45299,14 @@
         }
       }
     },
+    "/api/v3/oauth/scopes": {
+      "get": {
+        "operationId": "getApiV3OauthScopes",
+        "responses": {
+          "200": {}
+        }
+      }
+    },
     "/api/v3/oauth/authorize": {
       "get": {
         "parameters": [
@@ -44881,10 +45341,10 @@
             "required": true
           },
           {
-            "description": "Space-separated list of scopes (e.g., 'openid profile email')",
+            "description": "Space-separated or comma-separated list of scopes (e.g., 'openid profile email' or 'openid,profile,email')",
             "schema": {
               "type": "string",
-              "pattern": "^[a-zA-Z]+(\\s+[a-zA-Z]+)*$"
+              "pattern": "^[A-Za-z0-9_-]+(?:[\\s,]+[A-Za-z0-9_-]+)*$"
             },
             "in": "query",
             "name": "scope",
@@ -45333,6 +45793,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45354,6 +45838,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45375,6 +45883,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45401,6 +45933,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45422,6 +45978,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45443,6 +46023,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45469,6 +46073,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45490,6 +46118,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45511,6 +46163,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45595,6 +46271,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45616,6 +46316,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45637,6 +46361,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45663,6 +46411,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45684,6 +46456,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45705,6 +46501,30 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "knownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "requestedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unknownScopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -45746,7 +46566,8 @@
                     "type": "string"
                   },
                   "scope": {
-                    "description": "Space-separated list of scopes",
+                    "description": "Space-separated or comma-separated list of scopes (e.g., 'openid profile email' or 'openid,profile,email')",
+                    "pattern": "^[A-Za-z0-9_-]+(?:[\\s,]+[A-Za-z0-9_-]+)*$",
                     "type": "string"
                   },
                   "state": {
@@ -45801,7 +46622,8 @@
                     "type": "string"
                   },
                   "scope": {
-                    "description": "Space-separated list of scopes",
+                    "description": "Space-separated or comma-separated list of scopes (e.g., 'openid profile email' or 'openid,profile,email')",
+                    "pattern": "^[A-Za-z0-9_-]+(?:[\\s,]+[A-Za-z0-9_-]+)*$",
                     "type": "string"
                   },
                   "state": {
@@ -45856,7 +46678,8 @@
                     "type": "string"
                   },
                   "scope": {
-                    "description": "Space-separated list of scopes",
+                    "description": "Space-separated or comma-separated list of scopes (e.g., 'openid profile email' or 'openid,profile,email')",
+                    "pattern": "^[A-Za-z0-9_-]+(?:[\\s,]+[A-Za-z0-9_-]+)*$",
                     "type": "string"
                   },
                   "state": {
@@ -46895,6 +47718,26 @@
                       "description": "User profile URL (requires 'profile' scope)",
                       "type": "string"
                     },
+                    "ageBand": {
+                      "description": "User's age band (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isModerator": {
+                      "description": "User moderator status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "role": {
+                      "description": "User role (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isVerified": {
+                      "description": "User verification status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "description": "User partner status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
                     "headshotUrl": {
                       "description": "User avatar headshot (requires 'profile' scope)",
                       "type": "string"
@@ -47125,6 +47968,26 @@
                       "description": "User profile URL (requires 'profile' scope)",
                       "type": "string"
                     },
+                    "ageBand": {
+                      "description": "User's age band (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isModerator": {
+                      "description": "User moderator status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "role": {
+                      "description": "User role (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isVerified": {
+                      "description": "User verification status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "description": "User partner status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
                     "headshotUrl": {
                       "description": "User avatar headshot (requires 'profile' scope)",
                       "type": "string"
@@ -47354,6 +48217,26 @@
                     "profile": {
                       "description": "User profile URL (requires 'profile' scope)",
                       "type": "string"
+                    },
+                    "ageBand": {
+                      "description": "User's age band (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isModerator": {
+                      "description": "User moderator status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "role": {
+                      "description": "User role (requires 'profile' scope)",
+                      "type": "string"
+                    },
+                    "isVerified": {
+                      "description": "User verification status (requires 'profile' scope)",
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "description": "User partner status (requires 'profile' scope)",
+                      "type": "boolean"
                     },
                     "headshotUrl": {
                       "description": "User avatar headshot (requires 'profile' scope)",
@@ -51995,10 +52878,25 @@
     },
     "/api/v3/stripe/webhook": {
       "post": {
+        "parameters": [],
         "operationId": "postApiV3StripeWebhook",
         "tags": [
           "Stripe"
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {}
+            },
+            "multipart/form-data": {
+              "schema": {}
+            },
+            "text/plain": {
+              "schema": {}
+            }
+          }
+        },
         "responses": {
           "200": {}
         }
@@ -55229,139 +56127,18 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "description": "Whether to stream the thumbnail directly",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "stream",
+            "required": false
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "anyOf": [
-                        {
-                          "const": "USER_HEADSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "USER_BODYSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "ASSET",
-                          "type": "string"
-                        },
-                        {
-                          "const": "MARKETPLACE_ITEM",
-                          "type": "string"
-                        }
-                      ]
-                    },
-                    "url": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "id",
-                    "type",
-                    "url"
-                  ]
-                }
-              },
-              "multipart/form-data": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "anyOf": [
-                        {
-                          "const": "USER_HEADSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "USER_BODYSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "ASSET",
-                          "type": "string"
-                        },
-                        {
-                          "const": "MARKETPLACE_ITEM",
-                          "type": "string"
-                        }
-                      ]
-                    },
-                    "url": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "id",
-                    "type",
-                    "url"
-                  ]
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "anyOf": [
-                        {
-                          "const": "USER_HEADSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "USER_BODYSHOT",
-                          "type": "string"
-                        },
-                        {
-                          "const": "ASSET",
-                          "type": "string"
-                        },
-                        {
-                          "const": "MARKETPLACE_ITEM",
-                          "type": "string"
-                        }
-                      ]
-                    },
-                    "url": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "id",
-                    "type",
-                    "url"
-                  ]
-                }
-              }
-            }
-          },
           "400": {
             "content": {
               "application/json": {
@@ -55436,6 +56213,15 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "description": "Whether to stream the thumbnail directly",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "stream",
+            "required": false
           }
         ],
         "operationId": "getApiV3ThumbnailsHeadshotById",
@@ -55458,6 +56244,15 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "description": "Whether to stream the thumbnail directly",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "stream",
+            "required": false
           }
         ],
         "operationId": "getApiV3ThumbnailsBodyshotById",
@@ -64697,20 +65492,12 @@
                     },
                     "joinToken": {
                       "type": "string"
-                    },
-                    "ip": {
-                      "type": "string"
-                    },
-                    "port": {
-                      "type": "number"
                     }
                   },
                   "required": [
                     "success",
                     "message",
-                    "joinToken",
-                    "ip",
-                    "port"
+                    "joinToken"
                   ]
                 }
               },
@@ -64726,20 +65513,12 @@
                     },
                     "joinToken": {
                       "type": "string"
-                    },
-                    "ip": {
-                      "type": "string"
-                    },
-                    "port": {
-                      "type": "number"
                     }
                   },
                   "required": [
                     "success",
                     "message",
-                    "joinToken",
-                    "ip",
-                    "port"
+                    "joinToken"
                   ]
                 }
               },
@@ -64755,20 +65534,12 @@
                     },
                     "joinToken": {
                       "type": "string"
-                    },
-                    "ip": {
-                      "type": "string"
-                    },
-                    "port": {
-                      "type": "number"
                     }
                   },
                   "required": [
                     "success",
                     "message",
-                    "joinToken",
-                    "ip",
-                    "port"
+                    "joinToken"
                   ]
                 }
               }
@@ -67183,6 +67954,567 @@
         ]
       }
     },
+    "/api/v3/world/client/server/authorize-connection": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postApiV3WorldClientServerAuthorize-connection",
+        "tags": [
+          "World Client"
+        ],
+        "summary": "Authorize Server Connection",
+        "description": "Verifies the client's published version, platform, branch, and SHA-256 hashes before allowing a server connection.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Integrity"
+                ],
+                "properties": {
+                  "Integrity": {
+                    "type": "object",
+                    "required": [
+                      "Version",
+                      "Platform",
+                      "ExecutableSha256",
+                      "ManagedSha256",
+                      "BuildChannel",
+                      "TimestampUnix"
+                    ],
+                    "properties": {
+                      "Version": {
+                        "type": "string"
+                      },
+                      "Platform": {
+                        "anyOf": [
+                          {
+                            "const": "windows",
+                            "type": "string"
+                          },
+                          {
+                            "const": "linux",
+                            "type": "string"
+                          },
+                          {
+                            "const": "macos",
+                            "type": "string"
+                          },
+                          {
+                            "const": "android",
+                            "type": "string"
+                          },
+                          {
+                            "const": "ios",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "ExecutableSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "ManagedSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "BuildChannel": {
+                        "anyOf": [
+                          {
+                            "const": "prod",
+                            "type": "string"
+                          },
+                          {
+                            "const": "beta",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "TimestampUnix": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Integrity"
+                ],
+                "properties": {
+                  "Integrity": {
+                    "type": "object",
+                    "required": [
+                      "Version",
+                      "Platform",
+                      "ExecutableSha256",
+                      "ManagedSha256",
+                      "BuildChannel",
+                      "TimestampUnix"
+                    ],
+                    "properties": {
+                      "Version": {
+                        "type": "string"
+                      },
+                      "Platform": {
+                        "anyOf": [
+                          {
+                            "const": "windows",
+                            "type": "string"
+                          },
+                          {
+                            "const": "linux",
+                            "type": "string"
+                          },
+                          {
+                            "const": "macos",
+                            "type": "string"
+                          },
+                          {
+                            "const": "android",
+                            "type": "string"
+                          },
+                          {
+                            "const": "ios",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "ExecutableSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "ManagedSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "BuildChannel": {
+                        "anyOf": [
+                          {
+                            "const": "prod",
+                            "type": "string"
+                          },
+                          {
+                            "const": "beta",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "TimestampUnix": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Integrity"
+                ],
+                "properties": {
+                  "Integrity": {
+                    "type": "object",
+                    "required": [
+                      "Version",
+                      "Platform",
+                      "ExecutableSha256",
+                      "ManagedSha256",
+                      "BuildChannel",
+                      "TimestampUnix"
+                    ],
+                    "properties": {
+                      "Version": {
+                        "type": "string"
+                      },
+                      "Platform": {
+                        "anyOf": [
+                          {
+                            "const": "windows",
+                            "type": "string"
+                          },
+                          {
+                            "const": "linux",
+                            "type": "string"
+                          },
+                          {
+                            "const": "macos",
+                            "type": "string"
+                          },
+                          {
+                            "const": "android",
+                            "type": "string"
+                          },
+                          {
+                            "const": "ios",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "ExecutableSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "ManagedSha256": {
+                        "minLength": 64,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "BuildChannel": {
+                        "anyOf": [
+                          {
+                            "const": "prod",
+                            "type": "string"
+                          },
+                          {
+                            "const": "beta",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "TimestampUnix": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v3/world/client/asset/{assetId}": {
       "get": {
         "parameters": [
@@ -67672,20 +69004,1286 @@
         "description": "Internal engine endpoint for checking if a user owns a specific entitlement on the world client."
       }
     },
-    "/api/v3/world/editor/tree": {
+    "/api/v3/world/client/server/connection": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "ip": {
+                      "description": "The IP address or hostname of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "worldName": {
+                      "description": "The name of the world.",
+                      "type": "string"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "description": "The unique identifier of the universe.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status",
+                    "ip",
+                    "port",
+                    "worldName",
+                    "worldId",
+                    "universeId",
+                    "serverId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiV3WorldClientServerConnection",
+        "tags": [
+          "World Client"
+        ],
+        "summary": "Get Server Info",
+        "description": "Retrieve information about the server based on the join authorization token."
+      }
+    },
+    "/api/v3/world/client/server/status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "const": "STARTED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPED",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STARTING",
+                          "type": "string"
+                        },
+                        {
+                          "const": "STOPPING",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiV3WorldClientServerStatus",
+        "tags": [
+          "World Client"
+        ],
+        "summary": "Get Server Status",
+        "description": "Retrieve information about the server based on the join authorization token."
+      }
+    },
+    "/api/v3/world/client/user": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "userInfo": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "username",
+                        "dob",
+                        "gender",
+                        "role",
+                        "status",
+                        "isIdVerified",
+                        "isVerified",
+                        "isPartner",
+                        "isStarCreator",
+                        "membershipLevel",
+                        "chatSuspendedUntil"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "dob": {
+                          "anyOf": [
+                            {
+                              "type": "Date"
+                            },
+                            {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            {
+                              "format": "date",
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "gender": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "USER",
+                              "type": "string"
+                            },
+                            {
+                              "const": "ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "SUPER_ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "EXECUTIVE",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "isIdVerified": {
+                          "type": "boolean"
+                        },
+                        "isVerified": {
+                          "type": "boolean"
+                        },
+                        "isPartner": {
+                          "type": "boolean"
+                        },
+                        "isStarCreator": {
+                          "type": "boolean"
+                        },
+                        "membershipLevel": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "chatSuspendedUntil": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "userInfo": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "username",
+                        "dob",
+                        "gender",
+                        "role",
+                        "status",
+                        "isIdVerified",
+                        "isVerified",
+                        "isPartner",
+                        "isStarCreator",
+                        "membershipLevel",
+                        "chatSuspendedUntil"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "dob": {
+                          "anyOf": [
+                            {
+                              "type": "Date"
+                            },
+                            {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            {
+                              "format": "date",
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "gender": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "USER",
+                              "type": "string"
+                            },
+                            {
+                              "const": "ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "SUPER_ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "EXECUTIVE",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "isIdVerified": {
+                          "type": "boolean"
+                        },
+                        "isVerified": {
+                          "type": "boolean"
+                        },
+                        "isPartner": {
+                          "type": "boolean"
+                        },
+                        "isStarCreator": {
+                          "type": "boolean"
+                        },
+                        "membershipLevel": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "chatSuspendedUntil": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "userInfo": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "username",
+                        "dob",
+                        "gender",
+                        "role",
+                        "status",
+                        "isIdVerified",
+                        "isVerified",
+                        "isPartner",
+                        "isStarCreator",
+                        "membershipLevel",
+                        "chatSuspendedUntil"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "dob": {
+                          "anyOf": [
+                            {
+                              "type": "Date"
+                            },
+                            {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            {
+                              "format": "date",
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "gender": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "USER",
+                              "type": "string"
+                            },
+                            {
+                              "const": "ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "SUPER_ADMIN",
+                              "type": "string"
+                            },
+                            {
+                              "const": "EXECUTIVE",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "isIdVerified": {
+                          "type": "boolean"
+                        },
+                        "isVerified": {
+                          "type": "boolean"
+                        },
+                        "isPartner": {
+                          "type": "boolean"
+                        },
+                        "isStarCreator": {
+                          "type": "boolean"
+                        },
+                        "membershipLevel": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "chatSuspendedUntil": {
+                          "nullable": true,
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiV3WorldClientUser",
+        "tags": [
+          "World Client"
+        ],
+        "summary": "Get User Info",
+        "description": "Determine who you are based on the join authorization token."
+      }
+    },
+    "/api/v3/world/editor/asset/{assetId}": {
       "get": {
         "parameters": [
           {
-            "description": "ID of the universe",
+            "description": "ID of the asset",
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 50
             },
-            "in": "query",
-            "name": "universeId",
+            "in": "path",
+            "name": "assetId",
             "required": true
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
           },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiV3WorldEditorAssetByAssetId",
+        "tags": [
+          "World Editor"
+        ],
+        "summary": "Download Developer Asset",
+        "description": "Endpoint to download a developer asset within the BrickVerse world editor. (Scope: ASSETS)"
+      }
+    },
+    "/api/v3/world/editor/tree": {
+      "get": {
+        "parameters": [
           {
             "description": "ID of the world",
             "schema": {
@@ -67706,140 +70304,28 @@
             "in": "query",
             "name": "version",
             "required": false
+          },
+          {
+            "description": "Whether to stream the world tree instead of returning a download URL. (Not recommended for large trees)",
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "stream",
+            "required": false
           }
         ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "cdnDownload": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message",
-                    "cdnDownload"
-                  ]
-                }
-              },
-              "multipart/form-data": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "cdnDownload": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message",
-                    "cdnDownload"
-                  ]
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "cdnDownload": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message",
-                    "cdnDownload"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message"
-                  ]
-                }
-              },
-              "multipart/form-data": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message"
-                  ]
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "message"
-                  ]
-                }
-              }
-            }
-          }
-        },
         "operationId": "getApiV3WorldEditorTree",
         "tags": [
           "World Editor"
         ],
         "summary": "Get World Tree",
-        "description": "Endpoint to get the world tree within the BrickVerse world editor."
+        "description": "Endpoint to get the world tree within the BrickVerse world editor. (Scope: WORLDS)",
+        "responses": {
+          "200": {}
+        }
       },
-      "put": {
+      "post": {
         "parameters": [],
         "responses": {
           "200": {
@@ -67859,13 +70345,21 @@
                     },
                     "publishedVersion": {
                       "type": "number"
+                    },
+                    "worldId": {
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "success",
                     "message",
                     "version",
-                    "publishedVersion"
+                    "publishedVersion",
+                    "worldId",
+                    "universeId"
                   ]
                 }
               },
@@ -67884,13 +70378,21 @@
                     },
                     "publishedVersion": {
                       "type": "number"
+                    },
+                    "worldId": {
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "success",
                     "message",
                     "version",
-                    "publishedVersion"
+                    "publishedVersion",
+                    "worldId",
+                    "universeId"
                   ]
                 }
               },
@@ -67909,13 +70411,21 @@
                     },
                     "publishedVersion": {
                       "type": "number"
+                    },
+                    "worldId": {
+                      "type": "string"
+                    },
+                    "universeId": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "success",
                     "message",
                     "version",
-                    "publishedVersion"
+                    "publishedVersion",
+                    "worldId",
+                    "universeId"
                   ]
                 }
               }
@@ -67977,12 +70487,12 @@
             }
           }
         },
-        "operationId": "putApiV3WorldEditorTree",
+        "operationId": "postApiV3WorldEditorTree",
         "tags": [
           "World Editor"
         ],
         "summary": "Save World Tree",
-        "description": "Endpoint to save the world tree within the BrickVerse world editor. This automatically publishes the world.",
+        "description": "Endpoint to save the world tree within the BrickVerse world editor. This automatically publishes the world. (Scope: WORLDS)",
         "requestBody": {
           "required": true,
           "content": {
@@ -67991,23 +70501,61 @@
                 "type": "object",
                 "required": [
                   "universeId",
-                  "worldId"
+                  "worldId",
+                  "file"
                 ],
                 "properties": {
                   "publish": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "description": "Whether to publish after saving the tree.",
+                        "minLength": 1,
+                        "maxLength": 10,
+                        "type": "string"
+                      }
+                    ]
                   },
                   "universeId": {
-                    "description": "ID of the universe",
+                    "description": "ID of the universe - 0 to create a new universe and world",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
                   },
                   "worldId": {
-                    "description": "ID of the world",
+                    "description": "ID of the world - 0 to create a new world under the universe",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
+                  },
+                  "ownerId": {
+                    "description": "ID of the owner (user or guild) - required if creating a new universe and world",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "type": "string"
+                  },
+                  "ownerType": {
+                    "description": "Type of the owner (user or guild) - required if creating a new universe and world",
+                    "anyOf": [
+                      {
+                        "const": "USER",
+                        "type": "string"
+                      },
+                      {
+                        "const": "GUILD",
+                        "type": "string"
+                      },
+                      {
+                        "const": "user",
+                        "type": "string"
+                      },
+                      {
+                        "const": "guild",
+                        "type": "string"
+                      }
+                    ]
                   },
                   "file": {
                     "default": "File",
@@ -68024,23 +70572,61 @@
                 "type": "object",
                 "required": [
                   "universeId",
-                  "worldId"
+                  "worldId",
+                  "file"
                 ],
                 "properties": {
                   "publish": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "description": "Whether to publish after saving the tree.",
+                        "minLength": 1,
+                        "maxLength": 10,
+                        "type": "string"
+                      }
+                    ]
                   },
                   "universeId": {
-                    "description": "ID of the universe",
+                    "description": "ID of the universe - 0 to create a new universe and world",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
                   },
                   "worldId": {
-                    "description": "ID of the world",
+                    "description": "ID of the world - 0 to create a new world under the universe",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
+                  },
+                  "ownerId": {
+                    "description": "ID of the owner (user or guild) - required if creating a new universe and world",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "type": "string"
+                  },
+                  "ownerType": {
+                    "description": "Type of the owner (user or guild) - required if creating a new universe and world",
+                    "anyOf": [
+                      {
+                        "const": "USER",
+                        "type": "string"
+                      },
+                      {
+                        "const": "GUILD",
+                        "type": "string"
+                      },
+                      {
+                        "const": "user",
+                        "type": "string"
+                      },
+                      {
+                        "const": "guild",
+                        "type": "string"
+                      }
+                    ]
                   },
                   "file": {
                     "default": "File",
@@ -68057,23 +70643,61 @@
                 "type": "object",
                 "required": [
                   "universeId",
-                  "worldId"
+                  "worldId",
+                  "file"
                 ],
                 "properties": {
                   "publish": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "description": "Whether to publish after saving the tree.",
+                        "minLength": 1,
+                        "maxLength": 10,
+                        "type": "string"
+                      }
+                    ]
                   },
                   "universeId": {
-                    "description": "ID of the universe",
+                    "description": "ID of the universe - 0 to create a new universe and world",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
                   },
                   "worldId": {
-                    "description": "ID of the world",
+                    "description": "ID of the world - 0 to create a new world under the universe",
                     "minLength": 1,
                     "maxLength": 50,
                     "type": "string"
+                  },
+                  "ownerId": {
+                    "description": "ID of the owner (user or guild) - required if creating a new universe and world",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "type": "string"
+                  },
+                  "ownerType": {
+                    "description": "Type of the owner (user or guild) - required if creating a new universe and world",
+                    "anyOf": [
+                      {
+                        "const": "USER",
+                        "type": "string"
+                      },
+                      {
+                        "const": "GUILD",
+                        "type": "string"
+                      },
+                      {
+                        "const": "user",
+                        "type": "string"
+                      },
+                      {
+                        "const": "guild",
+                        "type": "string"
+                      }
+                    ]
                   },
                   "file": {
                     "default": "File",
@@ -68236,7 +70860,7 @@
           "World Editor"
         ],
         "summary": "Update studio session presence for a world",
-        "description": "Endpoint to update the studio session presence for a specific world within the BrickVerse world editor."
+        "description": "Endpoint to update the studio session presence for a specific world within the BrickVerse world editor. (Scope: PROFILE)"
       }
     },
     "/api/v3/world/entitlements/create": {
@@ -71310,6 +73934,293 @@
         }
       }
     },
+    "/api/v3/world/server/awaken": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "placePath": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "description": "The path to the root place file for BV Project",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "worldId",
+                    "serverId",
+                    "port",
+                    "placePath"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "placePath": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "description": "The path to the root place file for BV Project",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "worldId",
+                    "serverId",
+                    "port",
+                    "placePath"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "worldId": {
+                      "description": "The unique identifier of the world.",
+                      "type": "string"
+                    },
+                    "serverId": {
+                      "description": "The unique identifier of the server.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "description": "The port number on which the server is listening.",
+                      "type": "number"
+                    },
+                    "placePath": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "description": "The path to the root place file for BV Project",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "worldId",
+                    "serverId",
+                    "port",
+                    "placePath"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postApiV3WorldServerAwaken",
+        "tags": [
+          "World Server"
+        ],
+        "summary": "World Server Awaken",
+        "description": "Endpoint to declare server has awaken and is ready to accept connections.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Token",
+                  "Version",
+                  "Platform",
+                  "StartedAtUnix"
+                ],
+                "properties": {
+                  "Token": {
+                    "description": "The token used to awaken the server, must match the token in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Version": {
+                    "description": "The version of the world server, must match the version in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Platform": {
+                    "description": "The platform of the world server, must match the platform in the world server configuration.",
+                    "type": "string"
+                  },
+                  "StartedAtUnix": {
+                    "description": "The Unix timestamp when the world server started.",
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Token",
+                  "Version",
+                  "Platform",
+                  "StartedAtUnix"
+                ],
+                "properties": {
+                  "Token": {
+                    "description": "The token used to awaken the server, must match the token in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Version": {
+                    "description": "The version of the world server, must match the version in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Platform": {
+                    "description": "The platform of the world server, must match the platform in the world server configuration.",
+                    "type": "string"
+                  },
+                  "StartedAtUnix": {
+                    "description": "The Unix timestamp when the world server started.",
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "Token",
+                  "Version",
+                  "Platform",
+                  "StartedAtUnix"
+                ],
+                "properties": {
+                  "Token": {
+                    "description": "The token used to awaken the server, must match the token in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Version": {
+                    "description": "The version of the world server, must match the version in the world server configuration.",
+                    "type": "string"
+                  },
+                  "Platform": {
+                    "description": "The platform of the world server, must match the platform in the world server configuration.",
+                    "type": "string"
+                  },
+                  "StartedAtUnix": {
+                    "description": "The Unix timestamp when the world server started.",
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v3/world/server/logs/ingest": {
       "post": {
         "parameters": [],
@@ -71442,7 +74353,7 @@
                     "description": "The timestamp of the log in milliseconds since epoch",
                     "minimum": 0,
                     "maximum": 32503680000000,
-                    "example": 1782254143934,
+                    "example": 1783473358906,
                     "format": "date-time",
                     "validationMessage": "Timestamp must be a valid number representing milliseconds since epoch",
                     "nullable": false,
@@ -71501,7 +74412,7 @@
                     "description": "The timestamp of the log in milliseconds since epoch",
                     "minimum": 0,
                     "maximum": 32503680000000,
-                    "example": 1782254143934,
+                    "example": 1783473358906,
                     "format": "date-time",
                     "validationMessage": "Timestamp must be a valid number representing milliseconds since epoch",
                     "nullable": false,
@@ -71560,7 +74471,7 @@
                     "description": "The timestamp of the log in milliseconds since epoch",
                     "minimum": 0,
                     "maximum": 32503680000000,
-                    "example": 1782254143934,
+                    "example": 1783473358906,
                     "format": "date-time",
                     "validationMessage": "Timestamp must be a valid number representing milliseconds since epoch",
                     "nullable": false,
@@ -72509,113 +75420,151 @@
                     "message": {
                       "type": "string"
                     },
-                    "userInfo": {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "username",
-                        "dob",
-                        "gender",
-                        "role",
-                        "status",
-                        "isIdVerified",
-                        "isVerified",
-                        "isPartner",
-                        "isStarCreator",
-                        "membershipLevel",
-                        "chatSuspendedUntil"
-                      ],
-                      "properties": {
-                        "id": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "dob": {
+                      "anyOf": [
+                        {
+                          "type": "Date"
+                        },
+                        {
+                          "format": "date-time",
                           "type": "string"
                         },
-                        "username": {
+                        {
+                          "format": "date",
                           "type": "string"
                         },
-                        "dob": {
-                          "anyOf": [
-                            {
-                              "type": "Date"
-                            },
-                            {
-                              "format": "date-time",
-                              "type": "string"
-                            },
-                            {
-                              "format": "date",
-                              "type": "string"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ]
-                        },
-                        "gender": {
-                          "type": "string"
-                        },
-                        "role": {
-                          "anyOf": [
-                            {
-                              "const": "USER",
-                              "type": "string"
-                            },
-                            {
-                              "const": "ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "SUPER_ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "EXECUTIVE",
-                              "type": "string"
-                            }
-                          ]
-                        },
-                        "status": {
-                          "type": "string"
-                        },
-                        "isIdVerified": {
-                          "type": "boolean"
-                        },
-                        "isVerified": {
-                          "type": "boolean"
-                        },
-                        "isPartner": {
-                          "type": "boolean"
-                        },
-                        "isStarCreator": {
-                          "type": "boolean"
-                        },
-                        "membershipLevel": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "chatSuspendedUntil": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        {
+                          "type": "number"
                         }
-                      }
+                      ]
+                    },
+                    "gender": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "const": "USER",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "SUPER_ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "EXECUTIVE",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "membershipLevel": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "isIdVerified": {
+                      "type": "boolean"
+                    },
+                    "isVerified": {
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "type": "boolean"
+                    },
+                    "isStarCreator": {
+                      "type": "boolean"
+                    },
+                    "isStaff": {
+                      "description": "Whether the user is a platform staff member or not",
+                      "type": "boolean"
+                    },
+                    "isCreator": {
+                      "description": "Whether the user is a developer of the universe or not",
+                      "type": "boolean"
+                    },
+                    "isAgeRestricted": {
+                      "description": "Whether the user is age restricted or not",
+                      "type": "boolean"
+                    },
+                    "canChat": {
+                      "description": "Whether the user can chat or not",
+                      "type": "boolean"
+                    },
+                    "chatRestrictionReason": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "const": "UNVERIFIED_EMAIL",
+                              "type": "string"
+                            },
+                            {
+                              "const": "CHAT_MODERATION",
+                              "type": "string"
+                            },
+                            {
+                              "const": "AGE_RESTRICTED",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "chatSuspendedUntil": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "success",
-                    "message"
+                    "message",
+                    "id",
+                    "username",
+                    "dob",
+                    "gender",
+                    "role",
+                    "status",
+                    "membershipLevel",
+                    "isIdVerified",
+                    "isVerified",
+                    "isPartner",
+                    "isStarCreator",
+                    "isStaff",
+                    "isCreator",
+                    "isAgeRestricted",
+                    "canChat",
+                    "chatRestrictionReason",
+                    "chatSuspendedUntil"
                   ]
                 }
               },
@@ -72629,113 +75578,151 @@
                     "message": {
                       "type": "string"
                     },
-                    "userInfo": {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "username",
-                        "dob",
-                        "gender",
-                        "role",
-                        "status",
-                        "isIdVerified",
-                        "isVerified",
-                        "isPartner",
-                        "isStarCreator",
-                        "membershipLevel",
-                        "chatSuspendedUntil"
-                      ],
-                      "properties": {
-                        "id": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "dob": {
+                      "anyOf": [
+                        {
+                          "type": "Date"
+                        },
+                        {
+                          "format": "date-time",
                           "type": "string"
                         },
-                        "username": {
+                        {
+                          "format": "date",
                           "type": "string"
                         },
-                        "dob": {
-                          "anyOf": [
-                            {
-                              "type": "Date"
-                            },
-                            {
-                              "format": "date-time",
-                              "type": "string"
-                            },
-                            {
-                              "format": "date",
-                              "type": "string"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ]
-                        },
-                        "gender": {
-                          "type": "string"
-                        },
-                        "role": {
-                          "anyOf": [
-                            {
-                              "const": "USER",
-                              "type": "string"
-                            },
-                            {
-                              "const": "ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "SUPER_ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "EXECUTIVE",
-                              "type": "string"
-                            }
-                          ]
-                        },
-                        "status": {
-                          "type": "string"
-                        },
-                        "isIdVerified": {
-                          "type": "boolean"
-                        },
-                        "isVerified": {
-                          "type": "boolean"
-                        },
-                        "isPartner": {
-                          "type": "boolean"
-                        },
-                        "isStarCreator": {
-                          "type": "boolean"
-                        },
-                        "membershipLevel": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "chatSuspendedUntil": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        {
+                          "type": "number"
                         }
-                      }
+                      ]
+                    },
+                    "gender": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "const": "USER",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "SUPER_ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "EXECUTIVE",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "membershipLevel": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "isIdVerified": {
+                      "type": "boolean"
+                    },
+                    "isVerified": {
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "type": "boolean"
+                    },
+                    "isStarCreator": {
+                      "type": "boolean"
+                    },
+                    "isStaff": {
+                      "description": "Whether the user is a platform staff member or not",
+                      "type": "boolean"
+                    },
+                    "isCreator": {
+                      "description": "Whether the user is a developer of the universe or not",
+                      "type": "boolean"
+                    },
+                    "isAgeRestricted": {
+                      "description": "Whether the user is age restricted or not",
+                      "type": "boolean"
+                    },
+                    "canChat": {
+                      "description": "Whether the user can chat or not",
+                      "type": "boolean"
+                    },
+                    "chatRestrictionReason": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "const": "UNVERIFIED_EMAIL",
+                              "type": "string"
+                            },
+                            {
+                              "const": "CHAT_MODERATION",
+                              "type": "string"
+                            },
+                            {
+                              "const": "AGE_RESTRICTED",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "chatSuspendedUntil": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "success",
-                    "message"
+                    "message",
+                    "id",
+                    "username",
+                    "dob",
+                    "gender",
+                    "role",
+                    "status",
+                    "membershipLevel",
+                    "isIdVerified",
+                    "isVerified",
+                    "isPartner",
+                    "isStarCreator",
+                    "isStaff",
+                    "isCreator",
+                    "isAgeRestricted",
+                    "canChat",
+                    "chatRestrictionReason",
+                    "chatSuspendedUntil"
                   ]
                 }
               },
@@ -72749,113 +75736,151 @@
                     "message": {
                       "type": "string"
                     },
-                    "userInfo": {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "username",
-                        "dob",
-                        "gender",
-                        "role",
-                        "status",
-                        "isIdVerified",
-                        "isVerified",
-                        "isPartner",
-                        "isStarCreator",
-                        "membershipLevel",
-                        "chatSuspendedUntil"
-                      ],
-                      "properties": {
-                        "id": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "dob": {
+                      "anyOf": [
+                        {
+                          "type": "Date"
+                        },
+                        {
+                          "format": "date-time",
                           "type": "string"
                         },
-                        "username": {
+                        {
+                          "format": "date",
                           "type": "string"
                         },
-                        "dob": {
-                          "anyOf": [
-                            {
-                              "type": "Date"
-                            },
-                            {
-                              "format": "date-time",
-                              "type": "string"
-                            },
-                            {
-                              "format": "date",
-                              "type": "string"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ]
-                        },
-                        "gender": {
-                          "type": "string"
-                        },
-                        "role": {
-                          "anyOf": [
-                            {
-                              "const": "USER",
-                              "type": "string"
-                            },
-                            {
-                              "const": "ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "SUPER_ADMIN",
-                              "type": "string"
-                            },
-                            {
-                              "const": "EXECUTIVE",
-                              "type": "string"
-                            }
-                          ]
-                        },
-                        "status": {
-                          "type": "string"
-                        },
-                        "isIdVerified": {
-                          "type": "boolean"
-                        },
-                        "isVerified": {
-                          "type": "boolean"
-                        },
-                        "isPartner": {
-                          "type": "boolean"
-                        },
-                        "isStarCreator": {
-                          "type": "boolean"
-                        },
-                        "membershipLevel": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "chatSuspendedUntil": {
-                          "nullable": true,
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        {
+                          "type": "number"
                         }
-                      }
+                      ]
+                    },
+                    "gender": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "const": "USER",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "SUPER_ADMIN",
+                          "type": "string"
+                        },
+                        {
+                          "const": "EXECUTIVE",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "membershipLevel": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "isIdVerified": {
+                      "type": "boolean"
+                    },
+                    "isVerified": {
+                      "type": "boolean"
+                    },
+                    "isPartner": {
+                      "type": "boolean"
+                    },
+                    "isStarCreator": {
+                      "type": "boolean"
+                    },
+                    "isStaff": {
+                      "description": "Whether the user is a platform staff member or not",
+                      "type": "boolean"
+                    },
+                    "isCreator": {
+                      "description": "Whether the user is a developer of the universe or not",
+                      "type": "boolean"
+                    },
+                    "isAgeRestricted": {
+                      "description": "Whether the user is age restricted or not",
+                      "type": "boolean"
+                    },
+                    "canChat": {
+                      "description": "Whether the user can chat or not",
+                      "type": "boolean"
+                    },
+                    "chatRestrictionReason": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "const": "UNVERIFIED_EMAIL",
+                              "type": "string"
+                            },
+                            {
+                              "const": "CHAT_MODERATION",
+                              "type": "string"
+                            },
+                            {
+                              "const": "AGE_RESTRICTED",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "chatSuspendedUntil": {
+                      "nullable": true,
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "success",
-                    "message"
+                    "message",
+                    "id",
+                    "username",
+                    "dob",
+                    "gender",
+                    "role",
+                    "status",
+                    "membershipLevel",
+                    "isIdVerified",
+                    "isVerified",
+                    "isPartner",
+                    "isStarCreator",
+                    "isStaff",
+                    "isCreator",
+                    "isAgeRestricted",
+                    "canChat",
+                    "chatRestrictionReason",
+                    "chatSuspendedUntil"
                   ]
                 }
               }

@@ -273,7 +273,7 @@ public sealed partial class Text3D : Dynamic
 	private void RecomputeSize()
 	{
 		if (!UseRichText) return;
-		PT.CallDeferred(() =>
+		BV.CallDeferred(() =>
 		{
 			if (!Node.IsInstanceValid(_richLabel)) return;
 			if (!Node.IsInstanceValid(_subViewport)) return;

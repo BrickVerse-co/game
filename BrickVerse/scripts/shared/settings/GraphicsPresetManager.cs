@@ -125,7 +125,7 @@ public static class GraphicsPresetManager
 	{
 		if (!Presets.TryGetValue(preset, out var data))
 		{
-			PT.PrintErr($"GraphicsPresetManager: Unknown preset '{preset}', no changes applied.");
+			BV.PrintErr($"GraphicsPresetManager: Unknown preset '{preset}', no changes applied.");
 			return;
 		}
 

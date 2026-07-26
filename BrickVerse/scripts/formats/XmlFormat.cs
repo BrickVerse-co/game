@@ -161,7 +161,7 @@ public static class XmlFormat
 
 				if (className == null)
 				{
-					PT.Print("Empty class name: (line ", nameLine, ", column ", nameColumn, ")");
+					BV.Print("Empty class name: (line ", nameLine, ", column ", nameColumn, ")");
 					return;
 				}
 
@@ -170,7 +170,7 @@ public static class XmlFormat
 				Type? datamodel = GetDatamodelType(className);
 				if (datamodel == null)
 				{
-					PT.Print("Unknown class: ", className);
+					BV.Print("Unknown class: ", className);
 					return;
 				}
 
@@ -512,7 +512,7 @@ public static class XmlFormat
 	{
 		if (item.Class == null || item.Name == null)
 		{
-			PT.Print("bruh");
+			BV.Print("bruh");
 			return null;
 		}
 
@@ -547,7 +547,7 @@ public static class XmlFormat
 
 			if (instance == null)
 			{
-				PT.Print("Unknown class: " + className);
+				BV.Print("Unknown class: " + className);
 				return null;
 			}
 
@@ -591,7 +591,7 @@ public static class XmlFormat
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(Property.Name, " to ", Value, " set error ", ex);
+				BV.PrintErr(Property.Name, " to ", Value, " set error ", ex);
 			}
 		}
 

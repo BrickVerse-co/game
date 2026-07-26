@@ -11,7 +11,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using SystemNetHttp = System.Net.Http;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -41,7 +40,6 @@ public static class CreatorAPI
 	private const string StoredTokenPath = "user://creator_auth";
 
 	private static readonly BVHttpClient _client = new();
-	private static readonly SystemNetHttp.HttpClient _uploadClient = new();
 
 	public static string UserID { get; private set; } = "0";
 	public static string Username { get; private set; } = "";
@@ -84,21 +82,21 @@ public static class CreatorAPI
 
 		if (storedSession != null && !string.IsNullOrWhiteSpace(storedSession.AccessToken))
 		{
-			//PT.Print("CreatorAPI: Attempting to restore auth session from storage...");
+			//BV.Print("CreatorAPI: Attempting to restore auth session from storage...");
 
 			try
 			{
 				// Check if token is expired and needs refresh
 				if (IsTokenExpired(storedSession))
 				{
-					//PT.Print("CreatorAPI: Stored token is expired, attempting refresh...");
+					//BV.Print("CreatorAPI: Stored token is expired, attempting refresh...");
 
 					if (!string.IsNullOrWhiteSpace(storedSession.RefreshToken))
 					{
 						storedSession = await RefreshAccessToken(storedSession);
 						if (storedSession == null)
 						{
-							PT.PrintErr("CreatorAPI: Failed to refresh expired token, prompting login");
+							BV.PrintErr("CreatorAPI: Failed to refresh expired token, prompting login");
 							ClearAuth();
 							await PromptLogin();
 							return;
@@ -107,27 +105,27 @@ public static class CreatorAPI
 					else
 					{
 						// No refresh token and access token expired
-						PT.PrintErr("CreatorAPI: Token expired and no refresh token available, prompting login");
+						BV.PrintErr("CreatorAPI: Token expired and no refresh token available, prompting login");
 						ClearAuth();
 						await PromptLogin();
 						return;
 					}
 				}
 
-				//PT.Print("CreatorAPI: Restoring session from stored token");
+				//BV.Print("CreatorAPI: Restoring session from stored token");
 				await LoginWithOpenIdSession(storedSession, saveToken: false);
 
 				return;
 			}
 			catch (Exception error)
 			{
-				PT.PrintErr("CreatorAPI: Failed to restore auth session: ", error.Message);
+				BV.PrintErr("CreatorAPI: Failed to restore auth session: ", error.Message);
 				ClearAuth();
 			}
 		}
 		else
 		{
-			PT.Print("CreatorAPI: No stored session found or session is invalid");
+			BV.Print("CreatorAPI: No stored session found or session is invalid");
 		}
 
 		await PromptLogin();
@@ -228,7 +226,7 @@ public static class CreatorAPI
 
 			if (!msg.IsSuccessStatusCode)
 			{
-				PT.PrintErr($"CreatorAPI: Token refresh failed: {msg.StatusCode} {body}");
+				BV.PrintErr($"CreatorAPI: Token refresh failed: {msg.StatusCode} {body}");
 				return null;
 			}
 
@@ -252,7 +250,7 @@ public static class CreatorAPI
 				expiresAt = GetTokenExpirationFromIdToken(newIdToken);
 			}
 
-			//PT.Print("CreatorAPI: Token successfully refreshed");
+			//BV.Print("CreatorAPI: Token successfully refreshed");
 
 			return new OpenIdAuthSession
 			{
@@ -264,7 +262,7 @@ public static class CreatorAPI
 		}
 		catch (Exception error)
 		{
-			PT.PrintErr("CreatorAPI: Exception during token refresh: ", error.Message);
+			BV.PrintErr("CreatorAPI: Exception during token refresh: ", error.Message);
 			return null;
 		}
 	}
@@ -320,7 +318,7 @@ public static class CreatorAPI
 		}
 		else
 		{
-			PT.Print(
+			BV.Print(
 				"CreatorAPI: discovery userinfo endpoint does not match local API, using local endpoint instead: "
 				+ resolvedUserInfoEndpoint
 			);
@@ -401,7 +399,7 @@ public static class CreatorAPI
 		Username = username;
 		IsUserAuthenticated = true;
 
-		PT.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
+		//BV.Print($"CreatorAPI: User authenticated as {Username} ({UserID})");
 
 		UserAuthenticated?.Invoke(userInfo);
 		UpdateAuthenticatedProfile(userInfo);
@@ -474,7 +472,7 @@ public static class CreatorAPI
 
 		string body = await msg.Content.ReadAsStringAsync();
 
-		//PT.Print($"OpenID userinfo response: {body}");
+		//BV.Print($"OpenID userinfo response: {body}");
 
 		if (!msg.IsSuccessStatusCode)
 			throw new InvalidOperationException($"OpenID userinfo failed: {msg.StatusCode} {body}");
@@ -506,7 +504,7 @@ public static class CreatorAPI
 				{
 					SetToken(refreshedSession.AccessToken);
 					SaveStoredSession(refreshedSession);
-					//PT.Print("CreatorAPI: Token automatically refreshed before API call");
+					//BV.Print("CreatorAPI: Token automatically refreshed before API call");
 				}
 			}
 		}
@@ -605,7 +603,7 @@ public static class CreatorAPI
 		{
 			CurrentToolbarIdentity = null;
 			ToolbarIdentityUpdated?.Invoke(null);
-			PT.PrintErr("CreatorAPI: Failed to load toolbar identity: ", error.Message);
+			BV.PrintErr("CreatorAPI: Failed to load toolbar identity: ", error.Message);
 		}
 	}
 
@@ -669,7 +667,7 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(username))
 			throw new InvalidOperationException("CreatorAPI: OpenID session did not include a usable username.");
 
-		PT.Print($"CreatorAPI: Resolving creator identity for username '{username}'");
+		//BV.Print($"CreatorAPI: Resolving creator identity for username '{username}'");
 
 		string lookupUrl =
 			Globals.ApiEndpoint.PathJoin("/v3/users/lookup")
@@ -712,7 +710,7 @@ public static class CreatorAPI
 			throw new InvalidOperationException("CreatorAPI: user lookup did not include a valid user id or username.");
 		}
 
-		PT.Print($"CreatorAPI: Resolved creator identity '{resolvedUsername}' -> {userId}");
+		//BV.Print($"CreatorAPI: Resolved creator identity '{resolvedUsername}' -> {userId}");
 
 		return (userId, resolvedUsername);
 	}
@@ -876,9 +874,9 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		PT.Print($"CreatorAPI: Loading published worlds for user '{Username}' ({UserID})");
+		BV.Print($"CreatorAPI: Loading published worlds for user '{Username}' ({UserID})");
 		CreatorPlaceItem[] publishedWorlds = await GetCreatedWorldsFromCreatedWorldsEndpoint();
-		PT.Print($"CreatorAPI: Published worlds endpoint returned {publishedWorlds.Length} item(s)");
+		BV.Print($"CreatorAPI: Published worlds endpoint returned {publishedWorlds.Length} item(s)");
 		return publishedWorlds;
 	}
 
@@ -887,19 +885,79 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		PT.Print($"CreatorAPI: Loading publish-as worlds for user '{Username}' ({UserID})");
+		BV.Print($"CreatorAPI: Loading publish-as worlds for user '{Username}' ({UserID})");
 		CreatorPlaceItem[] createdWorlds = await GetCreatedWorldsFromUserGamesEndpoint();
-		PT.Print($"CreatorAPI: Publish-as user-games endpoint returned {createdWorlds.Length} world(s)");
+		BV.Print($"CreatorAPI: Publish-as user-games endpoint returned {createdWorlds.Length} world(s)");
 		if (createdWorlds.Length > 0)
 			return createdWorlds;
 
-		PT.Print("CreatorAPI: Falling back to /v3/created-worlds for publish-as targets");
+		BV.Print("CreatorAPI: Falling back to /v3/created-worlds for publish-as targets");
 		return await GetCreatedWorldsFromCreatedWorldsEndpoint();
+	}
+
+	private static CreatorAssetItem ParseCreatorAssetItem(JsonElement asset)
+	{
+		return new CreatorAssetItem
+		{
+			Id = GetLong(asset, "id"),
+			Name = GetString(asset, "name"),
+			Description = GetString(asset, "description"),
+			Type = GetString(asset, "assetType"),
+			CreatorType = GetString(asset, "creatorType"),
+			CreatedAt =
+				DateTime.TryParse(GetString(asset, "createdAt"), out DateTime createdAt)
+					? createdAt
+					: DateTime.UtcNow,
+			UpdatedAt =
+				DateTime.TryParse(GetString(asset, "updatedAt"), out DateTime updatedAt)
+					? updatedAt
+					: null,
+			IconUrl = GetString(asset, "textureUrl"),
+		};
+	}
+
+	public static async Task<CreatorAssetItem[]> GetCreatorAssets(UI.Popups.PublishPopup.PublishTypeEnum assetType, int? cursor = null)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+
+		using HttpResponseMessage msg = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/assets?limit=50&type=" + assetType.ToString().ToUpper() + (cursor.HasValue ? "&cursor=" + cursor.Value : ""))
+		);
+		string body = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException(
+				$"CreatorAPI: Failed to load created assets: {(int)msg.StatusCode} {msg.StatusCode}: {body}"
+			);
+		}
+
+		using JsonDocument doc = JsonDocument.Parse(body);
+
+		if (
+			!doc.RootElement.TryGetProperty("assets", out JsonElement assets)
+			|| assets.ValueKind != JsonValueKind.Array
+		)
+		{
+			BV.PrintErr("CreatorAPI: /v3/assets response did not include an assets array");
+			return [];
+		}
+
+		List<CreatorAssetItem> assetList = [];
+
+		foreach (JsonElement asset in assets.EnumerateArray())
+		{
+			assetList.Add(ParseCreatorAssetItem(asset));
+		}
+
+		return [.. assetList];
 	}
 
 	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromCreatedWorldsEndpoint()
 	{
-		PT.Print("CreatorAPI: Requesting /v3/created-worlds");
+		BV.Print("CreatorAPI: Requesting /v3/created-worlds");
 		using HttpResponseMessage msg = await _client.GetAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/created-worlds")
 		);
@@ -919,19 +977,16 @@ public static class CreatorAPI
 			|| universes.ValueKind != JsonValueKind.Array
 		)
 		{
-			PT.Print("CreatorAPI: /v3/created-worlds response did not include a universes array");
+			BV.PrintErr("CreatorAPI: /v3/created-worlds response did not include a universes array");
 			return [];
 		}
 
 		List<CreatorPlaceItem> worlds = [];
-		PT.Print($"CreatorAPI: /v3/created-worlds returned {universes.GetArrayLength()} universe(s)");
 
 		foreach (JsonElement universe in universes.EnumerateArray())
 		{
 			AppendWorldsFromUniverse(worlds, universe);
 		}
-
-		PT.Print($"CreatorAPI: /v3/created-worlds resolved {worlds.Count} publish target(s)");
 
 		return [.. worlds];
 	}
@@ -947,7 +1002,7 @@ public static class CreatorAPI
 		}
 
 		long universeId = GetLong(universe, "id");
-		PT.Print(
+		BV.Print(
 			$"CreatorAPI: Inspecting universe {universeId} with {worldArray.GetArrayLength()} world(s)"
 		);
 
@@ -958,7 +1013,7 @@ public static class CreatorAPI
 
 			if (universeId == 0 || worldId == 0)
 			{
-				PT.Print(
+				BV.Print(
 					$"CreatorAPI: Skipping universe/world entry because ids were invalid (universeId={universeId}, worldId={worldId}, name='{worldName}')"
 				);
 				continue;
@@ -983,7 +1038,7 @@ public static class CreatorAPI
 				}
 			);
 
-			PT.Print(
+			BV.Print(
 				$"CreatorAPI: Added published world '{worldName}' worldId={worldId} universeId={universeId}"
 			);
 		}
@@ -992,7 +1047,7 @@ public static class CreatorAPI
 	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromUserGamesEndpoint()
 	{
 		string requestUrl = Globals.ApiEndpoint.PathJoin($"/v3/worlds/user/{UserID}");
-		PT.Print($"CreatorAPI: Requesting {requestUrl}");
+		BV.Print($"CreatorAPI: Requesting {requestUrl}");
 
 		using HttpResponseMessage msg = await _client.GetAsync(requestUrl);
 		string body = await msg.Content.ReadAsStringAsync();
@@ -1011,7 +1066,7 @@ public static class CreatorAPI
 			|| games.ValueKind != JsonValueKind.Array
 		)
 		{
-			PT.Print("CreatorAPI: /v3/worlds/user/{userId} response did not include a games array");
+			BV.Print("CreatorAPI: /v3/worlds/user/{userId} response did not include a games array");
 			return [];
 		}
 
@@ -1046,11 +1101,11 @@ public static class CreatorAPI
 			catch (Exception ex)
 			{
 				skippedGames++;
-				PT.PrintErr($"CreatorAPI: Skipping world {worldId} while loading Publish As targets: {ex.Message}");
+				BV.PrintErr($"CreatorAPI: Skipping world {worldId} while loading Publish As targets: {ex.Message}");
 			}
 		}
 
-		PT.Print(
+		BV.Print(
 			$"CreatorAPI: /v3/worlds/user/{UserID} produced {worlds.Count} publish-as target(s) with {skippedGames} skipped item(s)"
 		);
 
@@ -1115,7 +1170,7 @@ public static class CreatorAPI
 		long resolvedWorldId = worldId ?? 0;
 		bool isNewUniverse = resolvedUniverseId == 0;
 
-		using MultipartContent form = new("form-data", Guid.NewGuid().ToString());
+		using MultipartFormDataContent form = new(Guid.NewGuid().ToString());
 
 		form.Add(FormString("universeId", resolvedUniverseId.ToString()));
 		form.Add(FormString("worldId", resolvedWorldId.ToString()));
@@ -1153,24 +1208,11 @@ public static class CreatorAPI
 
 		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
 
-		using HttpRequestMessage request = new(HttpMethod.Post, url)
-		{
-			Content = form,
-		};
-
-		request.Headers.TryAddWithoutValidation("User-Agent", $"BrickVerse Client {Globals.AppVersion}");
-		request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + Token);
-		request.Headers.TryAddWithoutValidation("Cookie", "auth_token=" + Token);
-		request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-		//PT.Print($"CreatorAPI UploadWorld Content-Type: {form.Headers.ContentType}");
-		//PT.Print($"CreatorAPI UploadWorld Raw File Length: {placeData.Length}");
-
-		using HttpResponseMessage msg = await _uploadClient.SendAsync(request);
+		using HttpResponseMessage msg = await _client.PostAsync(url, form);
 		string responseText = await msg.Content.ReadAsStringAsync();
 
-		//PT.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
-		//PT.Print($"CreatorAPI UploadWorld Response Body: {responseText}");
+		//BV.Print($"CreatorAPI UploadWorld Response Status: {(int)msg.StatusCode} {msg.StatusCode}");
+		//BV.Print($"CreatorAPI UploadWorld Response Body: {responseText}");
 
 		if (!msg.IsSuccessStatusCode)
 		{
@@ -1216,51 +1258,88 @@ public static class CreatorAPI
 		};
 	}
 
-	public static async Task<CreatorPublishResponse> UploadModel(byte[] modelData, long modelId = 0)
+	public static async Task<CreatorPublishResponse> UploadAsset(byte[] assetData, long assetId = 0, string assetType = "PREFAB")
 	{
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
-		using MultipartFormDataContent form = new()
+
+		// If the assetId is 0, we are creating a new asset.
+		if (assetId == 0)
+		{
+			using MultipartFormDataContent form = new()
 		{
 			{ new StringContent("studio-upload"), "captchaToken" },
 			{ new StringContent(UserID), "ownerId" },
 			{ new StringContent("USER"), "ownerType" },
-			{ new StringContent("PREFAB"), "assetType" },
-			{ new StringContent(modelId == 0 ? "Model" : "Model " + modelId), "name" },
-			{ new StringContent(""), "description" },
-			{ new StringContent("0"), "price" },
-			{ new StringContent("false"), "isForSale" },
-			{ new StringContent("Ownership"), "assetPrivacy" },
+			{ new StringContent(assetType), "assetType" },
 		};
 
-		ByteArrayContent fileContent = new(modelData);
-		fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		form.Add(fileContent, "file", "model.bvxm");
+			ByteArrayContent fileContent = new(assetData);
+			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			form.Add(fileContent, "file", "asset.bvxm");
 
-		using HttpResponseMessage msg = await _client.PostAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
-			form
-		);
+			using HttpResponseMessage msg = await _client.PostAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
+				form
+			);
 
-		msg.EnsureSuccessStatusCode();
+			msg.EnsureSuccessStatusCode();
 
-		using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+			using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
 
-		string assetId = createdDoc.RootElement.TryGetProperty(
-			"assetId",
-			out JsonElement assetIdNode
-		)
-			? assetIdNode.GetString() ?? ""
-			: "";
+			string newAssetId = createdDoc.RootElement.TryGetProperty(
+				"assetId",
+				out JsonElement assetIdNode
+			)
+				? assetIdNode.GetString() ?? ""
+				: "";
 
-		return new CreatorPublishResponse
+			return new CreatorPublishResponse
+			{
+				Link =
+					newAssetId.Length == 0
+						? Globals.MainEndpoint.PathJoin("/creator")
+						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+			};
+		}
+		else
 		{
-			Link =
-				assetId.Length == 0
-					? Globals.MainEndpoint.PathJoin("/creator")
-					: Globals.MainEndpoint.PathJoin("/asset/" + assetId),
+			// Otherwise, we are updating an existing asset
+			using MultipartFormDataContent form = new()
+		{
+			{ new StringContent(assetId.ToString()), "assetId" },
+			{ new StringContent("studio-upload"), "captchaToken" },
 		};
+
+			ByteArrayContent fileContent = new(assetData);
+			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			form.Add(fileContent, "file", "asset.bvxm");
+
+			using HttpResponseMessage msg = await _client.PostAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/asset/publish"),
+				form
+			);
+
+			msg.EnsureSuccessStatusCode();
+
+			using JsonDocument createdDoc = JsonDocument.Parse(await msg.Content.ReadAsStringAsync());
+
+			string newAssetId = createdDoc.RootElement.TryGetProperty(
+				"assetId",
+				out JsonElement assetIdNode
+			)
+				? assetIdNode.GetString() ?? ""
+				: "";
+
+			return new CreatorPublishResponse
+			{
+				Link =
+					newAssetId.Length == 0
+						? Globals.MainEndpoint.PathJoin("/creator")
+						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+			};
+		}
 	}
 
 	private static bool IsValidUserInfo(OpenIdUserInfoResponse userInfo)
@@ -1338,7 +1417,7 @@ public static class CreatorAPI
 
 		long expiresAt = GetLong(root, "expires_at");
 
-		//PT.Print($"CreatorAPI: Loaded stored session - AccessToken valid: {!string.IsNullOrWhiteSpace(accessToken)}, HasRefreshToken: {!string.IsNullOrWhiteSpace(GetString(root, "refresh_token"))}, ExpiresAt: {expiresAt}");
+		//BV.Print($"CreatorAPI: Loaded stored session - AccessToken valid: {!string.IsNullOrWhiteSpace(accessToken)}, HasRefreshToken: {!string.IsNullOrWhiteSpace(GetString(root, "refresh_token"))}, ExpiresAt: {expiresAt}");
 
 		return new OpenIdAuthSession
 		{

@@ -65,9 +65,9 @@ public class APIReferenceGenerator
 
 				if (propAttribute == null && editableAttribute == null) continue;
 
-				if (property.PropertyType == typeof(PTSignal) ||
+				if (property.PropertyType == typeof(BVSignal) ||
 					(property.PropertyType.IsGenericType &&
-					 property.PropertyType.GetGenericTypeDefinition().Name.StartsWith(nameof(PTSignal))))
+					 property.PropertyType.GetGenericTypeDefinition().Name.StartsWith(nameof(BVSignal))))
 				{
 					ScriptEvent eventDef = new()
 					{
@@ -241,11 +241,11 @@ public class APIReferenceGenerator
 		if (Globals.IsInGDEditor)
 		{
 			// Display enum map missing warnings
-			PT.Print("APIREF Generation Complete");
-			PT.Print("Missing enums: ", missingEnums.Count);
+			BV.Print("[APIReferenceGenerator] APIREF Generation Complete");
+			BV.Print("[APIReferenceGenerator] Missing enums: ", missingEnums.Count);
 			foreach (Type item in missingEnums)
 			{
-				PT.PrintErr("Enum Missing ", item.Name);
+				BV.PrintErr("[APIReferenceGenerator] Enum Missing ", item.Name);
 			}
 		}
 
@@ -390,7 +390,7 @@ public class APIReferenceGenerator
 	{
 		if (type.IsAssignableTo(typeof(IScriptGDObject)))
 		{
-			return type.Name.TrimPrefix("PT");
+			return type.Name.TrimPrefix("BV");
 		}
 		return type.Name;
 	}
@@ -466,12 +466,12 @@ public class APIReferenceGenerator
 			return "{ " + elementTypeName + " }";
 		}
 
-		if (type == typeof(PTCallback))
+		if (type == typeof(BVCallback))
 		{
 			return "() -> ()";
 		}
 
-		if (type == typeof(PTFunction))
+		if (type == typeof(BVFunction))
 		{
 			return "() -> ()";
 		}

@@ -10,7 +10,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 14
 script = ExtResource("1_gvvpc")
 _actionTypeLabel = NodePath("Layout/Metadata/ActionType")
 _actionNameLabel = NodePath("Layout/Metadata/ActionName")
@@ -26,7 +26,8 @@ size_flags_horizontal = 3
 
 [node name="ActionType" type="Label" parent="Layout/Metadata" unique_id=928229834]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.55, 0.65, 0.76, 1)
+theme_override_font_sizes/font_size = 12
 text = "Vector2 Action"
 
 [node name="ActionName" type="Label" parent="Layout/Metadata" unique_id=1163910659]
@@ -34,7 +35,7 @@ layout_mode = 2
 focus_mode = 2
 mouse_filter = 0
 mouse_default_cursor_shape = 1
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "Input Name"
 
 [node name="NameChangeEdit" type="LineEdit" parent="Layout/Metadata/ActionName" unique_id=268386058]

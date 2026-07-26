@@ -30,6 +30,13 @@ public partial class MultiSelectionBox : Control
 
 	private Tween? _tween;
 
+	private static bool CanMultiSelect(Gizmos gizmos)
+	{
+		return CreatorService.Interface.ToolMode == ToolModeEnum.Select
+			&& !gizmos.IsDraggingDynamic
+			&& !gizmos.IsTransformingSelected;
+	}
+
 	private void CalculateBox(Vector2 endPosition)
 	{
 		Vector2 topLeft = _dragStart - _pivotControl.GlobalPosition;
@@ -94,11 +101,25 @@ public partial class MultiSelectionBox : Control
 		CreatorSelections selections = Overlay.World.CreatorContext.Selections;
 		Vector2 mousePosition = GetViewport().GetMousePosition();
 
+		if (@event is InputEventMouseButton rightMouseEvent
+			&& rightMouseEvent.ButtonIndex == MouseButton.Right
+			&& rightMouseEvent.Pressed)
+		{
+			_dragging = false;
+			_panel.Visible = false;
+			_panel.Size = Vector2.Zero;
+			selections.DeselectAll();
+			return;
+		}
+
 		if (@event is InputEventMouseButton mouseEvent && mouseEvent.ButtonIndex == MouseButton.Left)
 		{
 			if (mouseEvent.Pressed)
 			{
-				if (_dragging == false && !gizmos.HoveringGizmos && selections.SelectedInstances.Count == 0)
+				if (_dragging == false
+					&& !gizmos.HoveringGizmos
+					&& selections.SelectedInstances.Count == 0
+					&& CanMultiSelect(gizmos))
 				{
 					_tween?.Stop();
 
@@ -112,7 +133,7 @@ public partial class MultiSelectionBox : Control
 			else if (_dragging)
 			{
 				_dragging = false;
-				if ((_dragStart - mousePosition).Length() > _selectSensitivity)
+				if ((_dragStart - mousePosition).Length() > _selectSensitivity && CanMultiSelect(gizmos))
 				{
 					_tween = GetTree().CreateTween();
 					_tween.TweenProperty(_panel, "modulate", new Color(1, 1, 1, 0), 0.15f);
@@ -134,6 +155,14 @@ public partial class MultiSelectionBox : Control
 
 		if (@event is InputEventMouseMotion && _dragging)
 		{
+			if (!CanMultiSelect(gizmos))
+			{
+				_dragging = false;
+				_panel.Visible = false;
+				_panel.Size = Vector2.Zero;
+				return;
+			}
+
 			Vector2 sizeProc = mousePosition - _dragStart;
 			Vector2 pos = _dragStart;
 

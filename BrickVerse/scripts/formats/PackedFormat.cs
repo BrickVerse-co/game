@@ -141,16 +141,16 @@ public static partial class PackedFormat
 		foreach ((string id, string linkedPath) in indexToFile)
 		{
 			string originPath = Path.GetFullPath(Path.Join(projectPath, linkedPath));
-			PT.Print("Exporting ", linkedPath);
+			BV.Print("Exporting ", linkedPath);
 
 			if (!File.Exists(originPath))
 			{
-				PT.PrintErr(linkedPath, " doesn't exist");
+				BV.PrintErr(linkedPath, " doesn't exist");
 				continue;
 			}
 			if (!PathUtils.IsPathInsideDirectory(originPath, projectPath))
 			{
-				PT.PrintErr(linkedPath, " is beyond project directory");
+				BV.PrintErr(linkedPath, " is beyond project directory");
 				continue;
 			}
 
@@ -247,12 +247,12 @@ public static partial class PackedFormat
 
 			if (!File.Exists(originPath))
 			{
-				PT.PrintErr(linkedPath, " doesn't exist");
+				BV.PrintErr(linkedPath, " doesn't exist");
 				continue;
 			}
 			if (!PathUtils.IsPathInsideDirectory(originPath, rootFolderPath))
 			{
-				PT.PrintErr(linkedPath, " is beyond project directory");
+				BV.PrintErr(linkedPath, " is beyond project directory");
 				continue;
 			}
 
@@ -298,7 +298,7 @@ public static partial class PackedFormat
 
 		// Pack main model data
 		byte[] modelData = PolyFormat.SaveCompressedModelAsByte(model);
-		ZipArchiveEntry entryFile = archive.CreateEntry("model.ptmodel");
+		ZipArchiveEntry entryFile = archive.CreateEntry("model.bvmodel");
 		using (Stream entryStream = entryFile.Open())
 		{
 			entryStream.Write(modelData);
@@ -496,7 +496,7 @@ public static partial class PackedFormat
 
 	private static ModelData? ReadModelDataFromArchive(ZipArchive archive)
 	{
-		ZipArchiveEntry? entryFile = archive.GetEntry("model.ptmodel");
+		ZipArchiveEntry? entryFile = archive.GetEntry("model.bvmodel");
 		if (entryFile == null) return null;
 
 		List<string> files = [.. archive.Entries

@@ -1,0 +1,334 @@
+name: Build Creator
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - beta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-creator-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7-stable
+  GODOT_TEMPLATE_VERSION: 4.7.stable.mono
+  DOTNET_VERSION: 9.0.x
+  PROJECT_DIR: BrickVerse
+  PROJECT_FILE: BrickVerse/BrickVerse.csproj
+  APP: creator
+  BUILD_DISPLAY_NAME: Creator
+  INSTALLER_REPOSITORY: BrickVerse-co/installer
+
+jobs:
+  build-creator:
+    name: Build Creator (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            export_preset: "Creator Windows"
+            export_file: "BrickVerseCreator.exe"
+            package_name: "BrickVerseCreator-Windows.zip"
+            artifact_name: "brickverse-creator-windows"
+            executable_glob: "*.exe"
+
+          - platform: linux
+            export_preset: "Creator Linux"
+            export_file: "BrickVerseCreator.x86_64"
+            package_name: "BrickVerseCreator-Linux.zip"
+            artifact_name: "brickverse-creator-linux"
+            executable_glob: "*.x86_64"
+
+          - platform: macos
+            export_preset: "Creator macOS"
+            export_file: "BrickVerseCreator-macOS.zip"
+            package_name: "BrickVerseCreator-macOS.zip"
+            artifact_name: "brickverse-creator-macos"
+            executable_glob: "*.app"
+
+    steps:
+      - name: Checkout BrickVerse
+        uses: actions/checkout@v4
+
+      - name: Download installer repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INSTALLER_ARCHIVE="${{ runner.temp }}/brickverse-installer.tar.gz"
+          INSTALLER_EXTRACT="${{ runner.temp }}/brickverse-installer"
+
+          rm -rf "$INSTALLER_EXTRACT" "${{ github.workspace }}/installer-source"
+          mkdir -p "$INSTALLER_EXTRACT" "${{ github.workspace }}/installer-source"
+
+          curl --fail --location --retry 3             "https://codeload.github.com/BrickVerse-co/installer/tar.gz/refs/heads/main"             --output "$INSTALLER_ARCHIVE"
+
+          tar -xzf "$INSTALLER_ARCHIVE"             --strip-components=1             --directory "$INSTALLER_EXTRACT"
+
+          cp -a "$INSTALLER_EXTRACT/." "${{ github.workspace }}/installer-source/"
+
+          echo "Downloaded installer repository contents:"
+          find "${{ github.workspace }}/installer-source" -maxdepth 3 -type f -print | sort
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "${{ env.DOTNET_VERSION }}"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip zip rsync jq
+
+      - name: Install Godot .NET
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          GODOT_ARCHIVE="Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip"
+          GODOT_URL="https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/${GODOT_ARCHIVE}"
+
+          wget --quiet --show-progress "$GODOT_URL"
+          unzip -q "$GODOT_ARCHIVE" -d /tmp/godot
+
+          GODOT_BINARY="$(find /tmp/godot -type f -name 'Godot_*_mono_linux.x86_64' | head -n 1)"
+          if [[ -z "$GODOT_BINARY" ]]; then
+            echo "::error::Could not locate the Godot .NET executable."
+            exit 1
+          fi
+
+          sudo mkdir -p /opt/godot
+          sudo cp -a "$(dirname "$GODOT_BINARY")/." /opt/godot/
+          sudo ln -sf "/opt/godot/$(basename "$GODOT_BINARY")" /usr/local/bin/godot
+          sudo chmod +x "/opt/godot/$(basename "$GODOT_BINARY")"
+
+          godot --version
+
+      - name: Install Godot export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TEMPLATE_ARCHIVE="Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz"
+          TEMPLATE_URL="https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/${TEMPLATE_ARCHIVE}"
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}"
+
+          wget --quiet --show-progress "$TEMPLATE_URL"
+          rm -rf /tmp/godot-templates
+          mkdir -p /tmp/godot-templates "$TEMPLATE_DIR"
+          unzip -q "$TEMPLATE_ARCHIVE" -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
+
+      - name: Build C#
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore "${{ github.workspace }}/${{ env.PROJECT_FILE }}"
+          dotnet build "${{ github.workspace }}/${{ env.PROJECT_FILE }}" \
+            --configuration Release \
+            --no-restore
+
+      - name: Import Godot assets
+        shell: bash
+        working-directory: ${{ github.workspace }}/${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          godot --headless --editor --quit
+
+      - name: Export ${{ matrix.platform }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
+          RAW_DIR="${{ github.workspace }}/dist/raw-${{ matrix.platform }}"
+          mkdir -p "$EXPORT_DIR" "$RAW_DIR"
+
+          cd "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
+
+          if [[ "${{ matrix.platform }}" == "macos" ]]; then
+            godot --headless --export-release \
+              "${{ matrix.export_preset }}" \
+              "$RAW_DIR/${{ matrix.export_file }}"
+
+            unzip -q "$RAW_DIR/${{ matrix.export_file }}" -d "$EXPORT_DIR"
+          else
+            godot --headless --export-release \
+              "${{ matrix.export_preset }}" \
+              "$EXPORT_DIR/${{ matrix.export_file }}"
+          fi
+
+      - name: Inject installer files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INSTALLER_DIR="${{ github.workspace }}/installer-source/${{ env.APP }}/${{ matrix.platform }}"
+          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
+
+          if [[ ! -d "$INSTALLER_DIR" ]]; then
+            echo "::error::Installer directory does not exist: $INSTALLER_DIR"
+            exit 1
+          fi
+
+          cp -a "$INSTALLER_DIR/." "$EXPORT_DIR/"
+
+          if [[ -f "$EXPORT_DIR/install.sh" ]]; then
+            chmod +x "$EXPORT_DIR/install.sh"
+          fi
+
+          if [[ -f "$EXPORT_DIR/install.command" ]]; then
+            chmod +x "$EXPORT_DIR/install.command"
+          fi
+
+          echo "Injected installer files:"
+          find "$INSTALLER_DIR" -mindepth 1 -maxdepth 2 -print
+
+      - name: Validate export
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
+
+          if [[ ! -d "$EXPORT_DIR" ]] || [[ -z "$(find "$EXPORT_DIR" -mindepth 1 -print -quit)" ]]; then
+            echo "::error::Export directory is empty."
+            exit 1
+          fi
+
+          echo "Export contents:"
+          find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
+          PACKAGE_PATH="${{ github.workspace }}/dist/${{ matrix.package_name }}"
+
+          rm -f "$PACKAGE_PATH"
+          cd "$EXPORT_DIR"
+          zip -r -q "$PACKAGE_PATH" .
+
+      - name: Calculate hashes
+        id: hash
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
+          PACKAGE_PATH="${{ github.workspace }}/dist/${{ matrix.package_name }}"
+
+          PACKAGE_SHA="$(sha256sum "$PACKAGE_PATH" | awk '{print $1}')"
+
+          PRIMARY_FILE="$(find "$EXPORT_DIR" -maxdepth 2 -type f \
+            \( -name "${{ matrix.executable_glob }}" -o -name "*.pck" \) \
+            | sort | head -n 1 || true)"
+
+          if [[ -n "$PRIMARY_FILE" ]]; then
+            EXECUTABLE_SHA="$(sha256sum "$PRIMARY_FILE" | awk '{print $1}')"
+          else
+            EXECUTABLE_SHA=""
+          fi
+
+          MANAGED_SHA="$(find "$EXPORT_DIR" -type f \
+            \( -name "*.dll" -o -name "*.dylib" -o -name "*.so" -o -name "*.pck" \) \
+            -print0 | sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print $1}')"
+
+          echo "package_sha=$PACKAGE_SHA" >> "$GITHUB_OUTPUT"
+          echo "executable_sha=$EXECUTABLE_SHA" >> "$GITHUB_OUTPUT"
+          echo "managed_sha=$MANAGED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to Azure Blob
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+
+            VERSION="${{ github.ref_name }}-${{ github.run_number }}"
+            BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ github.ref_name }}/$VERSION/${{ matrix.package_name }}"
+            FILE_URL="https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$BLOB_PATH"
+
+            az storage blob upload \
+              --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
+              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
+              --container-name "${{ secrets.AZURE_STORAGE_CONTAINER }}" \
+              --name "$BLOB_PATH" \
+              --file "${{ github.workspace }}/dist/${{ matrix.package_name }}" \
+              --content-type "application/zip" \
+              --overwrite true
+
+            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+            echo "FILE_URL=$FILE_URL" >> "$GITHUB_ENV"
+
+      - name: Register binary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PLATFORM="${{ matrix.platform }}"
+
+          jq -n \
+            --arg branch "${{ github.ref_name }}" \
+            --arg app "${{ env.APP }}" \
+            --arg version "${{ env.VERSION }}" \
+            --argjson buildNumber "${{ github.run_number }}" \
+            --arg platform "$PLATFORM" \
+            --arg fileUrl "${{ env.FILE_URL }}" \
+            --arg executableSha "${{ steps.hash.outputs.executable_sha }}" \
+            --arg managedSha "${{ steps.hash.outputs.managed_sha }}" \
+            --arg packageSha "${{ steps.hash.outputs.package_sha }}" \
+            '{
+              branch: $branch,
+              app: $app,
+              version: $version,
+              buildNumber: $buildNumber,
+              ($platform): $fileUrl,
+              ($platform + "ExecutableSha256"): $executableSha,
+              ($platform + "ManagedSha256"): $managedSha,
+              ($platform + "PackageSha256"): $packageSha
+            }' > registration.json
+
+          curl --fail-with-body -X POST \
+            "${{ secrets.BRICKVERSE_API_URL }}/api/v3/binaries/register" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.GH_WORKFLOW_SECRET }}" \
+            --data-binary @registration.json
+
+      - name: Notify Discord
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          jq -n \
+            --arg title "${{ matrix.platform }} ${{ env.BUILD_DISPLAY_NAME }} Released" \
+            --arg description "**Version:** `${{ env.VERSION }}`\n**Branch:** `${{ github.ref_name }}`\n**Build:** `${{ github.run_number }}`\n**Download:** ${{ env.FILE_URL }}" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $description,
+                color: 5814783
+              }]
+            }' > discord.json
+
+          curl --fail-with-body -X POST \
+            "${{ secrets.DISCORD_WEBHOOK_RELEASES }}" \
+            -H "Content-Type: application/json" \
+            --data-binary @discord.json
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ github.workspace }}/dist/${{ matrix.package_name }}
+          if-no-files-found: error
+          retention-days: 14

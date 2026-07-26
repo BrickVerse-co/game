@@ -29,7 +29,7 @@ public sealed partial class CreatorHistory : Instance
 
 		HistoryAction action = _undoStack.Pop();
 
-		foreach (PTCallback callback in action.UndoCallbacks)
+		foreach (BVCallback callback in action.UndoCallbacks)
 		{
 			callback?.Invoke();
 		}
@@ -47,7 +47,7 @@ public sealed partial class CreatorHistory : Instance
 
 		HistoryAction action = _redoStack.Pop();
 
-		foreach (PTCallback callback in action.DoCallbacks)
+		foreach (BVCallback callback in action.DoCallbacks)
 		{
 			callback?.Invoke();
 		}
@@ -63,7 +63,7 @@ public sealed partial class CreatorHistory : Instance
 	}
 
 	[ScriptMethod]
-	public void AddDoCallback(PTCallback callback)
+	public void AddDoCallback(BVCallback callback)
 	{
 		if (_currentAction == null)
 		{
@@ -77,7 +77,7 @@ public sealed partial class CreatorHistory : Instance
 	}
 
 	[ScriptMethod]
-	public void AddUndoCallback(PTCallback callback)
+	public void AddUndoCallback(BVCallback callback)
 	{
 		if (_currentAction == null)
 		{
@@ -111,7 +111,7 @@ public sealed partial class CreatorHistory : Instance
 				"Action must have at least one 'undo' callback.");
 		}
 
-		foreach (PTCallback callback in _currentAction.DoCallbacks)
+		foreach (BVCallback callback in _currentAction.DoCallbacks)
 		{
 			callback?.Invoke();
 		}
@@ -377,8 +377,8 @@ public sealed partial class CreatorHistory : Instance
 	private class HistoryAction
 	{
 		public string Title { get; set; } = "";
-		public List<PTCallback> DoCallbacks { get; set; } = [];
-		public List<PTCallback> UndoCallbacks { get; set; } = [];
+		public List<BVCallback> DoCallbacks { get; set; } = [];
+		public List<BVCallback> UndoCallbacks { get; set; } = [];
 	}
 
 	public enum GroupAsEnum

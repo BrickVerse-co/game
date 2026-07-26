@@ -189,13 +189,13 @@ public partial class UIField : Instance
 	[ScriptProperty] public Vector2 AbsolutePosition => NodeControl.GlobalPosition;
 	[ScriptProperty] public Vector2 AbsoluteSize => OverrideAbsSize ? OverrideAbsSizeTo : NodeControl.Size;
 
-	[ScriptProperty] public PTSignal MouseEnter { get; private set; } = new();
-	[ScriptProperty] public PTSignal MouseExit { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseEnter { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseExit { get; private set; } = new();
 
-	[ScriptProperty] public PTSignal MouseDown { get; private set; } = new();
-	[ScriptProperty] public PTSignal MouseUp { get; private set; } = new();
-	[ScriptProperty] public PTSignal TransformChanged { get; private set; } = new();
-	[ScriptProperty] public PTSignal VisibilityChanged { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseDown { get; private set; } = new();
+	[ScriptProperty] public BVSignal MouseUp { get; private set; } = new();
+	[ScriptProperty] public BVSignal TransformChanged { get; private set; } = new();
+	[ScriptProperty] public BVSignal VisibilityChanged { get; private set; } = new();
 
 	[ScriptProperty] public bool IsVisibleInTree => NodeControl.IsVisibleInTree();
 

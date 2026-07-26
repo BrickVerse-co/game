@@ -12,6 +12,9 @@
 bin/
 obj/
 
+bin_scripts/host_token.txt
+bin_scripts/join_token.txt
+
 # Debug symbol files
 *.pdb
 

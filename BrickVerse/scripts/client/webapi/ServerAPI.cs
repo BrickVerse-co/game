@@ -13,11 +13,13 @@ namespace BrickVerse.Client.WebAPI;
 
 public static class ServerAPI
 {
-	internal static string HostToken = "";
+	internal static string HostToken { get; private set; } = string.Empty;
 	internal static IServerInterface? ServerInterface { get; set; }
 
 	public static void SetAuthToken(string hostToken)
 	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(hostToken);
+
 		HostToken = hostToken;
 		ServerInterface?.SetToken(hostToken);
 	}
@@ -26,7 +28,7 @@ public static class ServerAPI
 	{
 		if (string.IsNullOrWhiteSpace(HostToken))
 		{
-			return "";
+			return string.Empty;
 		}
 
 		if (HostToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
@@ -37,33 +39,38 @@ public static class ServerAPI
 		return "Bearer " + HostToken;
 	}
 
-	public static Task<byte[]> DownloadWorld(int worldID)
+	private static IServerInterface GetServerInterface()
 	{
-		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.DownloadWorld(worldID);
+		return ServerInterface ?? throw new MissingComponentException("Missing server interface component");
+	}
+
+	public static Task<byte[]> DownloadWorld(long worldID)
+	{
+		if (worldID <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(worldID), "worldID must be greater than zero.");
+		}
+
+		return GetServerInterface().DownloadWorld(worldID);
 	}
 
 	public static Task<APIHeartbeatResponse> SendHeartbeat(string[] playerIDs)
 	{
-		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.Heartbeat(playerIDs);
+		return GetServerInterface().Heartbeat(playerIDs);
 	}
 
-	public static Task<APIValidateResponse> ValidatePlayer(string hostToken)
+	public static Task<APIValidateResponse> ValidatePlayer(string playerToken)
 	{
-		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.ValidatePlayer(hostToken);
+		return GetServerInterface().ValidatePlayer(playerToken);
 	}
 
 	public static Task LogServerEvent(ServerEventType eventType, Dictionary<string, string>? data = null)
 	{
-		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.LogEvent(eventType, data);
+		return GetServerInterface().LogEvent(eventType, data);
 	}
 
 	public static Task LogServerLog(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null)
 	{
-		if (ServerInterface == null) throw new MissingComponentException("Missing server interface component");
-		return ServerInterface.Log(log, source, level, timestampUnixMs);
+		return GetServerInterface().Log(log, source, level, timestampUnixMs);
 	}
 }

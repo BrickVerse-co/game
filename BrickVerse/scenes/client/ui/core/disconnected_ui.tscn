@@ -4,63 +4,79 @@
 [ext_resource type="Script" uid="uid://bafwde5ps80fc" path="res://scripts/client/ui/core/DisconnectedUI.cs" id="1_x7m1y"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s2gpv"]
-content_margin_left = 16.0
-content_margin_top = 16.0
-content_margin_right = 16.0
-content_margin_bottom = 16.0
-bg_color = Color(0.22745098, 0.22745098, 0.22745098, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_left = 36.0
+content_margin_top = 32.0
+content_margin_right = 36.0
+content_margin_bottom = 32.0
+bg_color = Color(0.08627451, 0.09019608, 0.10588235, 0.985)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.10588235)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 28
+shadow_offset = Vector2(0, 10)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oismd"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.20392157, 0.42745098, 0.9411765, 1)
 draw_center = false
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 6
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.22)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x7m1y"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.14509805, 0.31764707, 0.78431374, 1)
 draw_center = false
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 6
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b8y2m"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 10.0
-bg_color = Color(1, 1, 1, 0.14117648)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 6
-border_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.25882354, 0.49019608, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.28)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_x7m1y"]
 
@@ -117,7 +133,7 @@ tracks/3/keys = {
 
 [sub_resource type="Animation" id="Animation_0xgko"]
 resource_name = "appear"
-length = 0.2
+length = 0.22
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -137,7 +153,7 @@ tracks/1/path = NodePath("ColorRect:self_modulate")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.2),
+"times": PackedFloat32Array(0, 0.22),
 "transitions": PackedFloat32Array(0.3415101, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
@@ -149,10 +165,10 @@ tracks/2/path = NodePath("ColorRect/Pivot:scale")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.2),
+"times": PackedFloat32Array(0, 0.22),
 "transitions": PackedFloat32Array(0.3415101, 1),
 "update": 0,
-"values": [Vector2(0.8, 0.8), Vector2(1, 1)]
+"values": [Vector2(0.92, 0.92), Vector2(1, 1)]
 }
 tracks/3/type = "value"
 tracks/3/imported = false
@@ -161,7 +177,7 @@ tracks/3/path = NodePath("ColorRect/Pivot:modulate")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
-"times": PackedFloat32Array(0, 0.2),
+"times": PackedFloat32Array(0, 0.22),
 "transitions": PackedFloat32Array(0.3415101, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
@@ -189,7 +205,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.49803922)
+color = Color(0.00784314, 0.00784314, 0.01176471, 0.72)
 
 [node name="Pivot" type="Control" parent="ColorRect" unique_id=2021314211]
 layout_mode = 1
@@ -208,21 +224,22 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -270.0
-offset_top = -150.0
-offset_right = 270.0
-offset_bottom = 150.0
+offset_left = -300.0
+offset_top = -182.0
+offset_right = 300.0
+offset_bottom = 182.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_s2gpv")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ColorRect/Pivot/Panel" unique_id=1291172203]
 layout_mode = 2
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="TextureRect" type="TextureRect" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1955609594]
-modulate = Color(1, 0.37799093, 0.31005007, 1)
-custom_minimum_size = Vector2(0, 80)
+modulate = Color(1, 0.36078432, 0.28627452, 1)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 texture = ExtResource("1_0xgko")
 expand_mode = 1
@@ -230,35 +247,46 @@ stretch_mode = 5
 
 [node name="Title" type="Label" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1143981313]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 30
 text = "Connection Lost"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Reason" type="Label" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1545629109]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.70980394, 0.70980394, 0.70980394, 1)
-theme_override_font_sizes/font_size = 16
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7607843, 0.78039217, 0.827451, 1)
+theme_override_font_sizes/font_size = 17
 text = "Reason"
 horizontal_alignment = 1
+vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="DisconnectCode" type="Label" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1066318451]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.70980394, 0.70980394, 0.70980394, 1)
-theme_override_font_sizes/font_size = 16
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.5529412, 0.58431375, 0.64705884, 1)
+theme_override_font_sizes/font_size = 14
 text = "Disconnection Code:"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Spacer" type="Control" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1768637320]
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 
 [node name="QuitButton" type="Button" parent="ColorRect/Pivot/Panel/VBoxContainer" unique_id=1082126825]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(236, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_colors/font_color = Color(0.47058824, 0.44705883, 0.44705883, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(1, 1, 1, 0.45)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_oismd")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_x7m1y")

@@ -17,11 +17,6 @@ public static class BVAPI
 {
 	private static readonly BVHttpClient _client = new();
 
-	/// <summary>
-	/// BrickVerse supports auth through either Authorization: Bearer {token}
-	/// or Cookie: auth_token={token}. We send both so the client works with
-	/// endpoints implemented with either auth guard.
-	/// </summary>
 	public static void SetAuthToken(string token)
 	{
 		_client.DefaultRequestHeaders.Remove("Authorization");
@@ -374,9 +369,25 @@ public static class BVAPI
 	}
 #endif
 
+	public static string? ProfanityListCache { get; set; } = null;
+
 	public static Task<string> GetProfanityList()
 	{
-		// v3 no longer exposes a dedicated profanity list endpoint.
-		return Task.FromResult("swear\n");
+		if (ProfanityListCache != null)
+		{
+			return Task.FromResult(ProfanityListCache);
+		}
+
+		// Load profanity list resources and cache it in memory for future calls
+		string path = "res://assets/profanity.txt";
+		if (!FileAccess.FileExists(path))
+		{
+			throw new Exception("Profanity list file not found: " + path);
+		}
+
+		using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+		string data = file.GetAsText();
+		ProfanityListCache = data;
+		return Task.FromResult(data);
 	}
 }

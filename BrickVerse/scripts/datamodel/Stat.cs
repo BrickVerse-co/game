@@ -17,7 +17,7 @@ public partial class Stat : Instance
 	private string _displayName = "";
 
 	internal Dictionary<Player, object?> PlayerToStat = [];
-	public PTSignal<Player, object?> PlayerStatChanged = new();
+	public BVSignal<Player, object?> PlayerStatChanged = new();
 
 	private readonly Dictionary<string, double> _pendingDoubles = [];
 	private readonly Dictionary<string, string> _pendingStrings = [];

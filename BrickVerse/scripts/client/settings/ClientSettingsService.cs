@@ -42,7 +42,7 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 			GraphicsBenchmarker benchmarker = new();
 			AddChild(benchmarker);
 
-			PT.Print("Graphics auto-detection selected preset: " + autoPreset);
+			BV.Print("Graphics auto-detection selected preset: " + autoPreset);
 			Entry?.NetworkEssentialsReady += () => SetupBenchmark(benchmarker);
 		}
 		else
@@ -69,15 +69,15 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 			if (_values.TryGetValue(SharedSettingKeys.Graphics.RenderingMethod, out object? rawValue))
 			{
 				RenderingMethodOption renderingMethod = (RenderingMethodOption)ClientSettingsRegistry.Definitions[SharedSettingKeys.Graphics.RenderingMethod].ConvertToType(rawValue);
-				PT.Print("Current rendering method: " + renderingMethod);
+				BV.Print("Current rendering method: " + renderingMethod);
 				if (renderingMethod == RenderingMethodOption.Standard)
 				{
 					Set(SharedSettingKeys.Graphics.RenderingMethod, RenderingMethodOption.Auto);
-					PT.Print("Migrated rendering method setting to Auto");
+					BV.Print("Migrated rendering method setting to Auto");
 				}
 				else
 				{
-					PT.Print("No migration needed for rendering method");
+					BV.Print("No migration needed for rendering method");
 				}
 			}
 
@@ -86,7 +86,7 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 		}
 		catch (Exception e)
 		{
-			PT.PrintErr("Failed to migrate rendering method setting: " + e);
+			BV.PrintErr("Failed to migrate rendering method setting: " + e);
 		}
 	}
 
@@ -95,7 +95,7 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 		World? world = World.Current;
 		if (world == null)
 		{
-			PT.PrintErr("Cannot profile graphics because there is no world");
+			BV.PrintErr("Cannot profile graphics because there is no world");
 			return;
 		}
 
@@ -108,11 +108,11 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 				return;
 			}
 
-			PT.Print("Starting graphics benchmark...");
+			BV.Print("Starting graphics benchmark...");
 			benchmarker.Start();
 			benchmarker.Finished += (avgFps) =>
 			{
-				PT.Print($"Graphics benchmark finished. Average FPS: {avgFps}");
+				BV.Print($"Graphics benchmark finished. Average FPS: {avgFps}");
 				if (avgFps <= 40f)
 				{
 					GraphicsPreset lower = current switch

@@ -11,7 +11,7 @@ namespace BrickVerse.Client.WebAPI.Interfaces;
 public interface IServerInterface
 {
 	void SetToken(string token);
-	Task<byte[]> DownloadWorld(int worldID);
+	Task<byte[]> DownloadWorld(long worldID);
 	Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs);
 	Task<APIValidateResponse> ValidatePlayer(string token);
 	Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null);

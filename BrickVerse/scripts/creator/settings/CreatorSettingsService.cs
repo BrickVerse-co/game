@@ -90,7 +90,7 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		if (!FileAccess.FileExists(oldFilePath))
 			return;
 
-		PT.Print("Migrating creator settings from old format");
+		BV.Print("Migrating creator settings from old format");
 
 		try
 		{
@@ -138,11 +138,11 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 
 			DirAccess.RenameAbsolute(oldFilePath, "user://creator/creator_settings.old");
 
-			PT.Print("Migrated creator settings from old format");
+			BV.Print("Migrated creator settings from old format");
 		}
 		catch (Exception e)
 		{
-			PT.PrintErr($"Failed to migrate creator settings: {e}");
+			BV.PrintErr($"Failed to migrate creator settings: {e}");
 		}
 	}
 
@@ -158,15 +158,15 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 			if (_values.TryGetValue(SharedSettingKeys.Graphics.RenderingMethod, out object? rawValue))
 			{
 				RenderingMethodOption renderingMethod = (RenderingMethodOption)CreatorSettingsRegistry.Definitions[SharedSettingKeys.Graphics.RenderingMethod].ConvertToType(rawValue);
-				PT.Print("Current rendering method: " + renderingMethod);
+				BV.Print("Current rendering method: " + renderingMethod);
 				if (renderingMethod == RenderingMethodOption.Standard)
 				{
 					Set(SharedSettingKeys.Graphics.RenderingMethod, RenderingMethodOption.Auto);
-					PT.Print("Migrated rendering method setting to Auto");
+					BV.Print("Migrated rendering method setting to Auto");
 				}
 				else
 				{
-					PT.Print("No migration needed for rendering method");
+					BV.Print("No migration needed for rendering method");
 				}
 			}
 
@@ -175,7 +175,7 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		}
 		catch (Exception e)
 		{
-			PT.PrintErr("Failed to migrate rendering method setting: " + e);
+			BV.PrintErr("Failed to migrate rendering method setting: " + e);
 		}
 	}
 

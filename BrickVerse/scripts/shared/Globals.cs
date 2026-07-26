@@ -14,6 +14,8 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
 using Godot;
 using Mesh = Godot.Mesh;
+using BrickVerse.Utils;
+
 #if CREATOR
 using BrickVerse.Creator.Properties;
 using BrickVerse.Datamodel.Creator;
@@ -24,8 +26,14 @@ namespace BrickVerse.Shared;
 
 public sealed partial class Globals : Node
 {
-	public const string MainEndpoint = "http://localhost:3000"; // "https://brickverse.gg/";
-	public const string ApiEndpoint = "http://localhost:3001/api"; // "https://api.brickverse.gg/api";
+//#if DEBUG
+	public const string MainEndpoint = "http://localhost:3000";
+	public const string ApiEndpoint = "http://localhost:3001/api";
+/*#else
+public const string MainEndpoint = "https://brickverse.gg";
+public const string ApiEndpoint = "https://api.brickverse.gg/api";
+#endif*/
+
 	public const float AlphaThreshold = 0.025f;
 	public const string TestUserIdStart = "2";
 	public const string ToolboxFolderName = "toolbox";
@@ -167,20 +175,20 @@ public sealed partial class Globals : Node
 		AppVersion += "+dev";
 #endif
 
-		PT.Print($"BrickVerse v{AppVersion}");
-		PT.Print("https://brickverse.gg/");
-		PT.Print("-- System Info --");
-		PT.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
-		PT.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
-		PT.Print("Video adapter: ", OS.GetVideoAdapterDriverInfo().Join(", "));
-		PT.Print("----");
+		BV.Print($"BrickVerse v{AppVersion}");
+		BV.Print("https://brickverse.gg/");
+		BV.Print("-- System Info --");
+		BV.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
+		BV.Print("Architecture: ", OS.GetProcessorName(), " cores: ", OS.GetProcessorCount());
+		BV.Print("Video adapter: ", OS.GetVideoAdapterDriverInfo().Join(", "));
+		BV.Print("----");
 
 		GetTree().AutoAcceptQuit = false;
 		GetTree().QuitOnGoBack = false;
 
 		// Link with BrickVerse's Private API Components
 		// NOTE: If you wanted to implement your own, search for "MissingComponentException" to see which part requires it.
-#if PT_PRIVATE_API
+#if BV_PRIVATE_API
 		BrickVerse.Private.PrivateNode pv = new();
 		AddChild(pv);
 #endif
@@ -192,7 +200,7 @@ public sealed partial class Globals : Node
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Failure initializing native: ", ex);
+			BV.PrintErr("Failure initializing native: ", ex);
 		}
 
 #if CREATOR
@@ -622,7 +630,7 @@ public sealed partial class Globals : Node
 		}
 		catch (Exception ex)
 		{
-			PT.PrintWarn("Error present when quitting: ", ex);
+			BV.PrintWarn("Error present when quitting: ", ex);
 		}
 		Callable
 			.From(() =>
@@ -653,10 +661,6 @@ public sealed partial class Globals : Node
 		[CallerLineNumber] int line = 0
 	)
 	{
-		PT.Print(
-			$"SwitchEntry({appEntry}) called from {System.IO.Path.GetFileName(file)}:{line} ({caller})"
-		);
-
 		CurrentAppEntryNode?.QueueFree();
 		CurrentAppEntry = appEntry;
 
@@ -696,8 +700,6 @@ public sealed partial class Globals : Node
 
 			string iconPath = $"res://assets/textures/logo/{iconToLoad}/{platform}.png";
 
-			PT.Print($"LoadEntry: loading icon {iconPath}");
-
 			Image icon = Image.LoadFromFile(iconPath);
 
 			if (icon != null)
@@ -706,11 +708,10 @@ public sealed partial class Globals : Node
 			}
 			else
 			{
-				PT.PrintWarn($"LoadEntry: failed to load icon {iconPath}");
+				BV.PrintWarn($"LoadEntry: failed to load icon {iconPath}");
 			}
 		}
 
-		PT.Print(appEntry, ": Loading Entry scene");
 		Node node = CreateInstanceFromScene<Node>(sceneToLoad);
 		return node;
 	}
@@ -736,11 +737,6 @@ public sealed partial class Globals : Node
 
 		if (!OS.HasFeature("x86_64"))
 		{
-			if (IsInGDEditor)
-			{
-				PT.PrintWarn("Unsupported platform for development");
-			}
-
 			// i wasted an hour finding this damn return statement... -jeweleyed
 			if (platform == "android" || platform == "ios")
 			{

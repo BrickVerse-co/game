@@ -113,7 +113,7 @@ public partial class NetworkedObject : IScriptObject
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 				}
 
 				TreeEntered.Invoke();
@@ -233,8 +233,8 @@ public partial class NetworkedObject : IScriptObject
 	public event Action? NetPropertiesReady;
 	public event Action? Deleted;
 
-	[ScriptProperty] public PTSignal<string> PropertyChanged { get; private set; } = new();
-	[ScriptProperty] public PTSignal Renamed { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string> PropertyChanged { get; private set; } = new();
+	[ScriptProperty] public BVSignal Renamed { get; private set; } = new();
 
 	private string _networkedObjectID = "";
 	private string _objectID = "";
@@ -338,10 +338,10 @@ public partial class NetworkedObject : IScriptObject
 
 	internal Dictionary<string, NetworkedObject> UniqueNames = [];
 
-	[ScriptProperty] public PTSignal TreeEntered { get; private set; } = new();
-	[ScriptProperty] public PTSignal TreeExited { get; private set; } = new();
+	[ScriptProperty] public BVSignal TreeEntered { get; private set; } = new();
+	[ScriptProperty] public BVSignal TreeExited { get; private set; } = new();
 
-	[ScriptProperty] public PTSignal Destroying { get; private set; } = new();
+	[ScriptProperty] public BVSignal Destroying { get; private set; } = new();
 
 	public NetworkedObject()
 	{
@@ -670,7 +670,7 @@ public partial class NetworkedObject : IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 		}
 
 		try
@@ -679,7 +679,7 @@ public partial class NetworkedObject : IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr("Exception when exiting: ", ex);
+			BV.PrintErr("Exception when exiting: ", ex);
 		}
 
 		IsDeleted = true;
@@ -765,22 +765,22 @@ public partial class NetworkedObject : IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(ex);
+				BV.PrintErr(ex);
 			}
 		}
 	}
 
 	internal static void DebugPrintLeftovers(bool p = false)
 	{
-		PT.Print("_netObjToProxy: ", _netObjToProxy.Count);
-		PT.Print("_proxyToNetObj: ", _proxyToNetObj.Count);
+		BV.Print("_netObjToProxy: ", _netObjToProxy.Count);
+		BV.Print("_proxyToNetObj: ", _proxyToNetObj.Count);
 		if (p)
 		{
 			foreach (var item in _netObjToProxy)
 			{
 				try
 				{
-					PT.Print(item.Key, ": ", item.Value);
+					BV.Print(item.Key, ": ", item.Value);
 				}
 				catch { }
 			}
@@ -791,11 +791,11 @@ public partial class NetworkedObject : IScriptObject
 	{
 		foreach (PropertyInfo propInfo in GetScriptProperties())
 		{
-			if (propInfo.PropertyType == typeof(PTSignal))
+			if (propInfo.PropertyType == typeof(BVSignal))
 			{
 				// Disconnect all signals
 				object? val = propInfo.GetValue(this);
-				if (val is PTSignal signal)
+				if (val is BVSignal signal)
 				{
 					signal.DisconnectAll();
 				}
@@ -835,7 +835,7 @@ public partial class NetworkedObject : IScriptObject
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr(ex);
+			BV.PrintErr(ex);
 		}
 	}
 
@@ -1278,7 +1278,7 @@ public partial class NetworkedObject : IScriptObject
 		string className = data.ClassName;
 		int authority = data.Authority;
 		NetPropReplicateData[] props = data.Props;
-		//PT.Print(Root.Network.LocalPeerID, " ", data.nodePath, " on the way");
+		//BV.Print(Root.Network.LocalPeerID, " ", data.nodePath, " on the way");
 
 		NetworkedObject? existingObj = null;
 
@@ -1319,7 +1319,7 @@ public partial class NetworkedObject : IScriptObject
 
 		if (netobj == null)
 		{
-			PT.Print("Unknown class: " + className);
+			BV.Print("Unknown class: " + className);
 			return;
 		}
 
@@ -1434,7 +1434,7 @@ public partial class NetworkedObject : IScriptObject
 			}
 			catch (Exception ex)
 			{
-				PT.PrintErr(Name, " ", ex);
+				BV.PrintErr(Name, " ", ex);
 			}
 		}
 		if (isSyncOnce)
@@ -1752,7 +1752,7 @@ public partial class NetworkedObject : IScriptObject
 
 		if (Globals.UseLogRPC)
 		{
-			PT.Print($"RPC {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
+			BV.Print($"RPC {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
 		}
 
 		if (Root.Network.IsServer)
@@ -1846,7 +1846,7 @@ public partial class NetworkedObject : IScriptObject
 
 		if (Globals.UseLogRPC)
 		{
-			PT.Print($"RPCID {id} {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
+			BV.Print($"RPCID {id} {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
 		}
 		Root.Network.NetInstance.SendMessage(id, msg, rpcA.TransferMode, rpcA.TransferChannel);
 	}
@@ -1883,11 +1883,11 @@ public partial class NetworkedObject : IScriptObject
 
 		if (!idToMethod.TryGetValue(methodId, out var method))
 		{
-			PT.PrintErr($"Missing RPC ID {methodId} on type {type.FullName}");
+			BV.PrintErr($"Missing RPC ID {methodId} on type {type.FullName}");
 
 			foreach (var kv in idToMethod.OrderBy(x => x.Key))
 			{
-				PT.PrintErr($"  Has RPC {kv.Key}: {kv.Value.DeclaringType?.FullName}.{kv.Value.Name}");
+				BV.PrintErr($"  Has RPC {kv.Key}: {kv.Value.DeclaringType?.FullName}.{kv.Value.Name}");
 			}
 
 			throw new Exception($"No RPC method found with id '{methodId}' on type {type.FullName}");
@@ -2139,12 +2139,12 @@ public partial class NetworkedObject : IScriptObject
 
 		if (declaresProcess && !IsProcessRegistered)
 		{
-			PT.PrintWarn($"{ClassName} declares Process() but doesn't call SetProcess(true)");
+			BV.PrintWarn($"{ClassName} declares Process() but doesn't call SetProcess(true)");
 		}
 
 		if (declaresPhysics && !IsPhysicsProcessRegistered)
 		{
-			PT.PrintWarn($"{ClassName} declares PhysicsProcess() but doesn't call SetPhysicsProcess(true)");
+			BV.PrintWarn($"{ClassName} declares PhysicsProcess() but doesn't call SetPhysicsProcess(true)");
 		}
 	}
 #endif

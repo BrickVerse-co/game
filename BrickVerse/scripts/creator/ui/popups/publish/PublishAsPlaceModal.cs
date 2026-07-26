@@ -94,7 +94,7 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 	{
 		if (world == null)
 		{
-			PT.PrintErr("Cannot open PublishAsPlaceModal: world is null.");
+			BV.PrintErr("Cannot open PublishAsPlaceModal: world is null.");
 			return;
 		}
 
@@ -140,7 +140,7 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Failed to load publish-as worlds: {ex.Message}");
+			BV.PrintErr($"Failed to load publish-as worlds: {ex.Message}");
 			_resultsLabel.Text = "Failed to load";
 			_emptyLabel.Text = "Failed to load your games.";
 			emptyAndShowError(ex.Message);
@@ -220,7 +220,7 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 		}
 		catch (Exception ex)
 		{
-			PT.PrintErr($"Failed to publish world as another target: {ex.Message}");
+			BV.PrintErr($"Failed to publish world as another target: {ex.Message}");
 			CreatorService.Interface.PopupAlert(ex.Message);
 			ShowPublishError("Failed to publish: " + ex.Message);
 		}

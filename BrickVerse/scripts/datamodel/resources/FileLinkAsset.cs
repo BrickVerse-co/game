@@ -50,7 +50,7 @@ public partial class FileLinkAsset : BaseAsset
 		}
 		else
 		{
-			PT.PrintErr($"Failed to get file: LINKID: ", LinkedID);
+			BV.PrintErr($"Failed to get file: LINKID: ", LinkedID);
 		}
 		return null;
 	}

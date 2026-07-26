@@ -49,7 +49,7 @@ public sealed partial class HttpService : Instance
 		return true;
 	}
 
-	private bool LegacyRateLimit(PTCallback? callback = null)
+	private bool LegacyRateLimit(BVCallback? callback = null)
 	{
 		if (!Root.Network.IsServer)
 		{
@@ -120,7 +120,7 @@ public sealed partial class HttpService : Instance
 				}
 			}
 		}
-		msg.Headers.Add("PT-World-ID", Root.WorldID.ToString());
+		msg.Headers.Add("BV-World-ID", Root.WorldID.ToString());
 
 		using HttpResponseMessage res = await _client.SendAsync(msg);
 		Dictionary<string, string> headers = [];
@@ -252,7 +252,7 @@ public sealed partial class HttpService : Instance
 
 
 	[ScriptMethod, Attributes.Obsolete("Use GetAsync instead")]
-	public void Get(string url, PTCallback? callback = null, Dictionary<string, string>? headers = null)
+	public void Get(string url, BVCallback? callback = null, Dictionary<string, string>? headers = null)
 	{
 		ServerGuard();
 		if (LegacyRateLimit(callback))
@@ -262,7 +262,7 @@ public sealed partial class HttpService : Instance
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Use PostAsync instead")]
-	public void Post(string url, string body, PTCallback? callback = null, Dictionary<string, string>? headers = null)
+	public void Post(string url, string body, BVCallback? callback = null, Dictionary<string, string>? headers = null)
 	{
 		ServerGuard();
 		if (LegacyRateLimit(callback))
@@ -272,7 +272,7 @@ public sealed partial class HttpService : Instance
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Use PutAsync instead")]
-	public void Put(string url, string body, PTCallback? callback = null, Dictionary<string, string>? headers = null)
+	public void Put(string url, string body, BVCallback? callback = null, Dictionary<string, string>? headers = null)
 	{
 		ServerGuard();
 		if (LegacyRateLimit(callback))
@@ -282,7 +282,7 @@ public sealed partial class HttpService : Instance
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Use DeleteAsync instead")]
-	public void Delete(string url, string body, PTCallback? callback = null, Dictionary<string, string>? headers = null)
+	public void Delete(string url, string body, BVCallback? callback = null, Dictionary<string, string>? headers = null)
 	{
 		ServerGuard();
 		if (LegacyRateLimit(callback))
@@ -292,7 +292,7 @@ public sealed partial class HttpService : Instance
 	}
 
 	[ScriptMethod, Attributes.Obsolete("Use PatchAsync instead")]
-	public void Patch(string url, string body, PTCallback? callback = null, Dictionary<string, string>? headers = null)
+	public void Patch(string url, string body, BVCallback? callback = null, Dictionary<string, string>? headers = null)
 	{
 		ServerGuard();
 		if (LegacyRateLimit(callback))
@@ -301,7 +301,7 @@ public sealed partial class HttpService : Instance
 		}
 	}
 
-	private async void DoLegacyRequest(HttpMethod method, string url, string? body, PTCallback? callback, Dictionary<string, string>? headers)
+	private async void DoLegacyRequest(HttpMethod method, string url, string? body, BVCallback? callback, Dictionary<string, string>? headers)
 	{
 		try
 		{
@@ -340,7 +340,7 @@ public sealed partial class HttpService : Instance
 				}
 			}
 		}
-		msg.Headers.Add("PT-Game-ID", Root.WorldID.ToString());
+		msg.Headers.Add("BV-Game-ID", Root.WorldID.ToString());
 
 		try
 		{

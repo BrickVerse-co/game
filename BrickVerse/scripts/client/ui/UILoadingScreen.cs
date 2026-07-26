@@ -74,7 +74,7 @@ public partial class UILoadingScreen : Control
 			return;
 		}
 
-		SetStatusText("Waiting for local server...");
+		SetStatusText("Waiting for server...");
 
 		if (_entry.Root.WorldInfo.HasValue)
 			OnWorldInfoReady(_entry.Root.WorldInfo.Value);
@@ -90,7 +90,7 @@ public partial class UILoadingScreen : Control
 	private void SetStatusText(string text)
 	{
 		_statusLabel.Text = text;
-		//PT.Print($"LoadingScreen: {text}");
+		//BV.Print($"LoadingScreen: {text}");
 	}
 
 	private void SetProgress(double current, double max)

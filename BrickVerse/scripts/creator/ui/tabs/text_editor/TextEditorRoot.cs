@@ -48,6 +48,7 @@ public partial class TextEditorRoot : Node
 	private Godot.Timer _autoCompleteTimer = null!;
 	private CancellationTokenSource? _diagCts;
 	private HashSet<string>? _editorPropertySet;
+	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnosticsByLine = [];
 
 	public override void _EnterTree()
 	{
@@ -99,12 +100,21 @@ public partial class TextEditorRoot : Node
 		CodeEditor.SetGutterWidth(0, 20);
 		CodeEditor.SetGutterType(0, CodeEdit.GutterType.Icon);
 		CodeEditor.SetGutterName(0, "diagnostics");
+		CodeEditor.GutterClicked += OnDiagnosticGutterClicked;
+
+		CodeEditor.AutoBraceCompletionEnabled = true;
+		CodeEditor.AutoBraceCompletionHighlightMatching = true;
+		CodeEditor.IndentAutomatic = true;
+		CodeEditor.LineFolding = true;
+		CodeEditor.GuttersDrawFoldGutter = true;
+		CodeEditor.LineLengthGuidelines = [100, 120];
+		ApplyCompletionTheme();
 
 		CodeEditor.Root = this;
 
 		// TODO: Can be made into TextEditorRoot.GrabFocus() ?
 		// Needs to be call deferred to be the last to grab
-		PT.CallDeferred(CodeEditor.GrabFocus);
+		BV.CallDeferred(CodeEditor.GrabFocus);
 
 		if (_completion != null)
 		{
@@ -194,48 +204,149 @@ public partial class TextEditorRoot : Node
 	{
 		ClearDiagnostics();
 
-		List<string> messages = [];
+		int errors = 0;
+		int warnings = 0;
+		int information = 0;
+		int hints = 0;
 
-		foreach (LspDiagnostic diag in diagnostics)
+		foreach (LspDiagnostic diag in diagnostics.OrderBy(static item => item.Range.Start.Line).ThenBy(static item => item.Range.Start.Character))
 		{
-			int line = diag.Range.Start.Line;
-			Color setTo = diag.Severity switch
+			int line = Mathf.Clamp(diag.Range.Start.Line, 0, Math.Max(0, CodeEditor.GetLineCount() - 1));
+			int startColumn = Math.Max(0, diag.Range.Start.Character);
+			int endColumn = Math.Max(startColumn + 1, diag.Range.End.Character);
+			EditorDiagnosticSeverity severity = diag.Severity switch
 			{
-				1 => Color.FromHtml("#DD555520"), // Error
-				_ => new(0, 0, 0, 0)
+				1 => EditorDiagnosticSeverity.Error,
+				2 => EditorDiagnosticSeverity.Warning,
+				3 => EditorDiagnosticSeverity.Information,
+				_ => EditorDiagnosticSeverity.Hint,
 			};
-			Texture2D? gutterIcon = diag.Severity switch
-			{
-				1 => GD.Load<Texture2D>("res://assets/textures/creator/tabs/text_editor/error.svg"), // Error
-				_ => null
-			};
-			CodeEditor.SetLineBackgroundColor(diag.Range.Start.Line, setTo);
-			CodeEditor.SetLineGutterIcon(line, 0, gutterIcon);
 
-			if (diag.Severity == 1 && messages.Count < 5)
+			switch (severity)
 			{
-				messages.Add($"({diag.Range.Start.Line + 1}:{diag.Range.Start.Character}): {diag.Message}");
+				case EditorDiagnosticSeverity.Error: errors++; break;
+				case EditorDiagnosticSeverity.Warning: warnings++; break;
+				case EditorDiagnosticSeverity.Information: information++; break;
+				default: hints++; break;
 			}
+
+			if (!_diagnosticsByLine.TryGetValue(line, out List<EditorDiagnosticDecoration>? lineDiagnostics))
+			{
+				lineDiagnostics = [];
+				_diagnosticsByLine[line] = lineDiagnostics;
+			}
+
+			lineDiagnostics.Add(new EditorDiagnosticDecoration(line, startColumn, endColumn, diag.Message, severity));
+
+			Color background = severity switch
+			{
+				EditorDiagnosticSeverity.Error => Color.FromHtml("#F8514918"),
+				EditorDiagnosticSeverity.Warning => Color.FromHtml("#D2992214"),
+				EditorDiagnosticSeverity.Information => Color.FromHtml("#58A6FF10"),
+				_ => Color.FromHtml("#8B949E0C"),
+			};
+			CodeEditor.SetLineBackgroundColor(line, background);
+
+			Texture2D? gutterIcon = severity switch
+			{
+				EditorDiagnosticSeverity.Error => TryLoadDiagnosticIcon("error.svg"),
+				EditorDiagnosticSeverity.Warning => TryLoadDiagnosticIcon("warning.svg") ?? TryLoadDiagnosticIcon("error.svg"),
+				EditorDiagnosticSeverity.Information => TryLoadDiagnosticIcon("info.svg"),
+				_ => null,
+			};
+			CodeEditor.SetLineGutterIcon(line, 0, gutterIcon);
+			CodeEditor.SetLineGutterMetadata(line, 0, string.Join("\n", lineDiagnostics.Select(static item => item.Message)));
 		}
 
-		if (messages.Count > 0)
+		CodeEditor.SetDiagnostics(_diagnosticsByLine);
+
+		int total = errors + warnings + information + hints;
+		if (total > 0)
 		{
-			_diagLabel.Text = string.Join('\n', messages);
+			List<string> summary = [];
+			if (errors > 0) summary.Add($"{errors} error{(errors == 1 ? string.Empty : "s")}");
+			if (warnings > 0) summary.Add($"{warnings} warning{(warnings == 1 ? string.Empty : "s")}");
+			if (information > 0) summary.Add($"{information} info");
+			if (hints > 0) summary.Add($"{hints} hint{(hints == 1 ? string.Empty : "s")}");
+			_diagLabel.Text = string.Join("  •  ", summary);
+			_diagLabel.TooltipText = string.Join("\n", diagnostics.Take(20).Select(diag =>
+				$"{diag.Range.Start.Line + 1}:{diag.Range.Start.Character + 1}  {diag.Message}"));
 			_diagLabel.Visible = true;
 		}
 	}
 
+	private static Texture2D? TryLoadDiagnosticIcon(string fileName)
+	{
+		return ResourceLoader.Exists("res://assets/textures/creator/tabs/text_editor/" + fileName)
+			? GD.Load<Texture2D>("res://assets/textures/creator/tabs/text_editor/" + fileName)
+			: null;
+	}
+
+	private void OnDiagnosticGutterClicked(long line, long gutter)
+	{
+		int lineIndex = checked((int)line);
+		int gutterIndex = checked((int)gutter);
+
+		if (
+			gutterIndex != 0
+			|| !_diagnosticsByLine.TryGetValue(
+				lineIndex,
+				out List<EditorDiagnosticDecoration>? diagnostics
+			)
+			|| diagnostics.Count == 0
+		)
+		{
+			return;
+		}
+
+		CodeEditor.SetCaretLine(lineIndex);
+		CodeEditor.SetCaretColumn(
+			Math.Min(
+				diagnostics[0].StartColumn,
+				CodeEditor.GetLine(lineIndex).Length
+			)
+		);
+
+		CodeEditor.CenterViewportToCaret();
+
+		_diagLabel.Text = string.Join(
+			"\n",
+			diagnostics.Select(static item => item.Message)
+		);
+
+		_diagLabel.TooltipText = _diagLabel.Text;
+		_diagLabel.Visible = true;
+	}
+
 	private void ClearDiagnostics()
 	{
+		_diagnosticsByLine.Clear();
+		CodeEditor.ClearDiagnostics();
 		_diagLabel.Text = "";
+		_diagLabel.TooltipText = "";
 		_diagLabel.Visible = false;
-		Color to = new(0, 0, 0, 0);
+		Color transparent = new(0, 0, 0, 0);
 		for (int i = 0; i < CodeEditor.GetLineCount(); i++)
 		{
-			CodeEditor.SetLineBackgroundColor(i, to);
+			CodeEditor.SetLineBackgroundColor(i, transparent);
 			CodeEditor.SetLineGutterIcon(i, 0, null);
+			CodeEditor.SetLineGutterMetadata(i, 0, default);
 		}
 	}
+
+	private void ApplyCompletionTheme()
+	{
+		CodeEditor.AddThemeColorOverride("completion_background_color", Color.FromHtml("#161B22"));
+		CodeEditor.AddThemeColorOverride("completion_selected_color", Color.FromHtml("#264F78"));
+		CodeEditor.AddThemeColorOverride("completion_existing_color", Color.FromHtml("#8B949E"));
+		CodeEditor.AddThemeColorOverride("completion_font_color", Color.FromHtml("#E6EDF3"));
+		CodeEditor.AddThemeColorOverride("completion_scroll_color", Color.FromHtml("#30363D"));
+		CodeEditor.AddThemeColorOverride("brace_mismatch_color", Color.FromHtml("#FF7B72"));
+		CodeEditor.AddThemeColorOverride("code_folding_color", Color.FromHtml("#8B949E"));
+		CodeEditor.AddThemeConstantOverride("completion_lines", 10);
+		CodeEditor.AddThemeConstantOverride("completion_max_width", 50);
+	}
+
 
 	private async void OnCodeEditGUIInput(InputEvent @event)
 	{
@@ -275,22 +386,42 @@ public partial class TextEditorRoot : Node
 
 		if (fileType == FileTypeEnum.Lua)
 		{
-			_highlighter.FunctionColor = ColorWarn;
-			_highlighter.MemberVariableColor = ColorWhite;
-			_highlighter.NumberColor = ColorSuccess;
-			_highlighter.SymbolColor = ColorWhite;
+			_highlighter.FunctionColor = Color.FromHtml("#DCDCAA");
+			_highlighter.MemberVariableColor = Color.FromHtml("#9CDCFE");
+			_highlighter.NumberColor = Color.FromHtml("#B5CEA8");
+			_highlighter.SymbolColor = Color.FromHtml("#D4D4D4");
 
 			foreach (string item in LuaCompletionService.LuaKeywords)
 			{
-				_highlighter.AddKeywordColor(item, ColorDanger);
+				_highlighter.AddKeywordColor(item, Color.FromHtml("#C586C0"));
 			}
 
-			_highlighter.AddColorRegion("\"", "\"", ColorWarn);
-			_highlighter.AddColorRegion("'", "'", ColorWarn);
-			_highlighter.AddColorRegion("`", "`", ColorWarn);
-			_highlighter.AddColorRegion("[[", "]]", ColorWarn);
-			_highlighter.AddColorRegion("--[[", "]]", ColorGrey);
-			_highlighter.AddColorRegion("--", "", ColorGrey);
+			foreach (string builtin in new[]
+			{
+				"assert", "error", "getmetatable", "ipairs", "next", "pairs", "pcall", "print",
+				"rawequal", "rawget", "rawlen", "rawset", "require", "select", "setmetatable",
+				"tonumber", "tostring", "type", "typeof", "unpack", "warn", "xpcall",
+				"world", "script", "game", "self"
+			})
+			{
+				_highlighter.AddKeywordColor(builtin, Color.FromHtml("#4EC9B0"));
+			}
+
+			foreach (string typeName in new[]
+			{
+				"any", "boolean", "buffer", "CFrame", "Color3", "Instance", "never", "nil",
+				"number", "string", "table", "thread", "unknown", "Vector2", "Vector3"
+			})
+			{
+				_highlighter.AddKeywordColor(typeName, Color.FromHtml("#4EC9B0"));
+			}
+
+			_highlighter.AddColorRegion("\"", "\"", Color.FromHtml("#CE9178"));
+			_highlighter.AddColorRegion("'", "'", Color.FromHtml("#CE9178"));
+			_highlighter.AddColorRegion("`", "`", Color.FromHtml("#CE9178"));
+			_highlighter.AddColorRegion("[[", "]]", Color.FromHtml("#CE9178"));
+			_highlighter.AddColorRegion("--[[", "]]", Color.FromHtml("#6A9955"));
+			_highlighter.AddColorRegion("--", "", Color.FromHtml("#6A9955"));
 
 			CodeEditor.AddStringDelimiter("\"", "\"", true);
 			CodeEditor.AddStringDelimiter("'", "'", true);

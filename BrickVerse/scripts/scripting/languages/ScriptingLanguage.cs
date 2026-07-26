@@ -16,7 +16,7 @@ public interface IScriptLanguageProvider : IDisposable
 	Task CallAsync(Script script, string funcName, object?[]? args);
 	void CallUpdate(Script script, double delta);
 	void CallFixedUpdate(Script script, double delta);
-	void FreePTCallback(PTCallback callback);
+	void FreeBVCallback(BVCallback callback);
 }
 
 public enum ScriptLanguagesEnum

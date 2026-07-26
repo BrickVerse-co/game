@@ -52,18 +52,36 @@ public sealed partial class BrickversianModel : CharacterModel
 	internal Skeleton3D Skeleton = null!;
 	internal AnimationTree AnimTree = null!;
 
+	private static readonly Shader _headShader = GD.Load<Shader>("res://resources/shaders/character/head.gdshader");
 	private static readonly Shader _limbShader = GD.Load<Shader>("res://resources/shaders/character/limb.gdshader");
 	private static readonly Shader _transparentLimbShader = GD.Load<Shader>("res://resources/shaders/character/limb_transparent.gdshader");
 	private static readonly Texture2D _defaultFace = GD.Load<Texture2D>("res://assets/textures/client/character/DefaultFace.png");
 	private static readonly StringName _albedoParam = "albedo";
 	private static readonly StringName _albedoTexParam = "albedo_texture";
+	private static readonly StringName _faceTexParam = "face_texture";
+	private static readonly StringName _faceEnabledParam = "face_enabled";
 	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
-	private MeshAsset? _bodyMesh;
-	private readonly ShaderMaterial _headMat = new() { Shader = _limbShader };
-	private readonly ShaderMaterial _limbMat = new() { Shader = _limbShader };
-	private readonly ShaderMaterial _transparentLimbMat = new() { Shader = _transparentLimbShader };
+
+	private readonly ShaderMaterial _headMat = new() { Shader = _headShader };
+
+	private readonly ShaderMaterial _torsoMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _leftArmMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _rightArmMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _leftHandMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _rightHandMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _leftLegMat = new() { Shader = _limbShader };
+	private readonly ShaderMaterial _rightLegMat = new() { Shader = _limbShader };
+
+	private readonly ShaderMaterial _transparentTorsoMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentLeftArmMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentRightArmMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentLeftHandMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentRightHandMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentLeftLegMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentRightLegMat = new() { Shader = _transparentLimbShader };
+
 	private PhysicalBoneSimulator3D? _ragdollBoneSim;
 	private PhysicalBoneSimulator3D? _lastPhysicalBoneSim = null!;
 	private readonly Dictionary<string, float> _blendTargets = [];
@@ -86,7 +104,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => MeshGetAlbedo(HeadMeshInstance);
 		set
 		{
-			_headMat.Shader = (value.A == 1) ? _limbShader : _transparentLimbShader;
 			HeadMeshInstance.SetInstanceShaderParameter(_albedoParam, value);
 			OnPropertyChanged();
 		}
@@ -168,20 +185,25 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => _faceImage;
 		set
 		{
-			if (_faceImage != null && _faceImage != value)
+			if (_faceImage == value)
+				return;
+
+			if (_faceImage != null)
 			{
 				_faceImage.ResourceLoaded -= OnFaceLoaded;
 				_faceImage.UnlinkFrom(this);
 			}
-			_faceImage = value;
 
-			// Clear current face
-			_headMat.SetShaderParameter(_albedoTexParam, new());
+			_faceImage = value;
+			SetFaceTexture(null);
+
 			if (_faceImage != null)
 			{
 				_faceOverrided = true;
 				_faceLoaded = false;
+
 				AddLoadCount();
+
 				_faceImage.LinkTo(this);
 				_faceImage.ResourceLoaded += OnFaceLoaded;
 
@@ -196,41 +218,11 @@ public sealed partial class BrickversianModel : CharacterModel
 			}
 			else
 			{
-				// Set to default face
-				_headMat.SetShaderParameter(_albedoTexParam, _defaultFace);
+				_faceOverrided = false;
+				_faceLoaded = true;
+				SetFaceTexture(_defaultFace);
 			}
-			OnPropertyChanged();
-		}
-	}
 
-	[Editable, ScriptProperty]
-	public MeshAsset? BodyMesh
-	{
-		get => _bodyMesh;
-		set
-		{
-			if (_bodyMesh != null && _bodyMesh != value)
-			{
-				_bodyMesh.ResourceLoaded -= OnBodyLoaded;
-				_bodyMesh.UnlinkFrom(this);
-			}
-			OnBodyLoaded(null);
-			_bodyMesh = value;
-			if (_bodyMesh != null)
-			{
-				AddLoadCount();
-				_bodyOverrided = true;
-				_bodyMesh.LinkTo(this);
-				_bodyMesh.ResourceLoaded += OnBodyLoaded;
-				if (_bodyMesh.IsResourceLoaded && _bodyMesh.Resource != null)
-				{
-					OnBodyLoaded(_bodyMesh.Resource);
-				}
-				else
-				{
-					_bodyMesh.QueueLoadResource();
-				}
-			}
 			OnPropertyChanged();
 		}
 	}
@@ -243,13 +235,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	public bool IsAvatarLoaded { get; private set; } = false;
 	public event Action? AvatarLoaded;
 
-	[ScriptProperty] public PTSignal RagdollStarted { get; private set; } = new();
-	[ScriptProperty] public PTSignal RagdollStopped { get; private set; } = new();
+	[ScriptProperty] public BVSignal RagdollStarted { get; private set; } = new();
+	[ScriptProperty] public BVSignal RagdollStopped { get; private set; } = new();
 
 	public override void Init()
 	{
-		FaceImage = null;
-
 		_helper = new() { Name = "CharacterHelper", Target = this };
 		Globals.Singleton.AddChild(_helper, true);
 
@@ -258,40 +248,31 @@ public sealed partial class BrickversianModel : CharacterModel
 		);
 		Skeleton.ShowRestOnly = false;
 		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
-			"Character/Poly/Skeleton3D/RagdollBone",
-			"Character/Poly/RagdollBone"
+			"Character/Poly/Skeleton3D/RagdollBone"
 		);
 		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/Head",
-			"Character/Poly/Skeleton3D/head"
+			"Character/Poly/Skeleton3D/Head"
 		);
 		TorsoMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/Torso",
-			"Character/Poly/Skeleton3D/torso"
+			"Character/Poly/Skeleton3D/Torso"
 		);
 		LeftArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftArm",
-			"Character/Poly/Skeleton3D/left_arm"
+			"Character/Poly/Skeleton3D/LeftArm"
 		);
 		RightArmMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightArm",
-			"Character/Poly/Skeleton3D/right_arm"
+			"Character/Poly/Skeleton3D/RightArm"
 		);
 		LeftHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftHand",
-			"Character/Poly/Skeleton3D/left_hand"
+			"Character/Poly/Skeleton3D/LeftHand"
 		);
 		RightHandMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightHand",
-			"Character/Poly/Skeleton3D/right_hand"
+			"Character/Poly/Skeleton3D/RightHand"
 		);
 		LeftLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/LeftLeg",
-			"Character/Poly/Skeleton3D/left_leg"
+			"Character/Poly/Skeleton3D/LeftLeg"
 		);
 		RightLegMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/RightLeg",
-			"Character/Poly/Skeleton3D/right_leg"
+			"Character/Poly/Skeleton3D/RightLeg"
 		);
 		Pivot = GetRequiredNodeCompat<Node3D>("Character/Poly");
 
@@ -300,26 +281,80 @@ public sealed partial class BrickversianModel : CharacterModel
 			if (!_loggedMissingRagdollNode)
 			{
 				_loggedMissingRagdollNode = true;
-				PT.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
+				BV.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
 			}
 		}
 
 		Pivot.Scale = NodeSize;
 
 		HeadMeshInstance.MaterialOverride = _headMat;
-		TorsoMeshInstance.MaterialOverride = _limbMat;
-		LeftArmMeshInstance.MaterialOverride = _limbMat;
-		RightArmMeshInstance.MaterialOverride = _limbMat;
-		LeftHandMeshInstance.MaterialOverride = _limbMat;
-		RightHandMeshInstance.MaterialOverride = _limbMat;
-		LeftLegMeshInstance.MaterialOverride = _limbMat;
-		RightLegMeshInstance.MaterialOverride = _limbMat;
+		TorsoMeshInstance.MaterialOverride = _torsoMat;
+		LeftArmMeshInstance.MaterialOverride = _leftArmMat;
+		RightArmMeshInstance.MaterialOverride = _rightArmMat;
+		LeftHandMeshInstance.MaterialOverride = _leftHandMat;
+		RightHandMeshInstance.MaterialOverride = _rightHandMat;
+		LeftLegMeshInstance.MaterialOverride = _leftLegMat;
+		RightLegMeshInstance.MaterialOverride = _rightLegMat;
 
 		AnimTree = GDNode.GetNode<AnimationTree>("AnimationTree");
 		AnimTree.Active = true;
 
+		FaceImage = null;
+
+		EnsureClothing();
+
 		base.Init();
 		SetProcess(true);
+	}
+
+	private void EnsureClothing()
+	{
+		// Ensure we have a shirt and pants clothing, if not create default ones.
+		Clothing[] clothings = GetChildrenOfClass<Clothing>();
+
+		bool hasShirt = false;
+		bool hasPants = false;
+
+		foreach (Clothing clothing in clothings)
+		{
+			if (clothing.Name.ToLower().Contains("shirt"))
+			{
+				hasShirt = true;
+			}
+			else if (clothing.Name.ToLower().Contains("pants"))
+			{
+				hasPants = true;
+			}
+		}
+
+		// Create default clothing if missing
+		if (!hasShirt)
+		{
+			Clothing defaultShirt = New<Clothing>();
+			defaultShirt.Name = "DefaultShirt";
+			defaultShirt.Type = Clothing.ClothingType.Shirt;
+			BVImageAsset asset = New<BVImageAsset>();
+			asset.ImageID = "338444747976736768";
+			defaultShirt.Image = asset;
+			defaultShirt.Parent = this;
+		}
+
+		if (!hasPants)
+		{
+			Clothing defaultPants = New<Clothing>();
+			defaultPants.Name = "DefaultPants";
+			defaultPants.Type = Clothing.ClothingType.Pants;
+			BVImageAsset asset = New<BVImageAsset>();
+			asset.ImageID = "338444747976736768";
+			defaultPants.Image = asset;
+			defaultPants.Parent = this;
+		}
+
+		if (!hasShirt || !hasPants)
+		{
+			// Update the cloth materials after adding default clothing
+			QueueRenderCloth();
+		}
 	}
 
 	private T? GetNodeCompat<T>(params string[] paths) where T : Node
@@ -354,8 +389,22 @@ public sealed partial class BrickversianModel : CharacterModel
 
 		// Free materials
 		_headMat.Dispose();
-		_limbMat.Dispose();
-		_transparentLimbMat.Dispose();
+
+		_torsoMat.Dispose();
+		_leftArmMat.Dispose();
+		_rightArmMat.Dispose();
+		_leftHandMat.Dispose();
+		_rightHandMat.Dispose();
+		_leftLegMat.Dispose();
+		_rightLegMat.Dispose();
+
+		_transparentTorsoMat.Dispose();
+		_transparentLeftArmMat.Dispose();
+		_transparentRightArmMat.Dispose();
+		_transparentLeftHandMat.Dispose();
+		_transparentRightHandMat.Dispose();
+		_transparentLeftLegMat.Dispose();
+		_transparentRightLegMat.Dispose();
 
 		base.PreDelete();
 	}
@@ -505,40 +554,103 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	private void UpdateClothMaterials()
 	{
-		// TODO: combine the face into the composite texture
-		// currently the head gets a unique material since its face isn't baked into the texture
-
-		ImageTexture composite = null!;
 		Clothing[] clothings = GetChildrenOfClass<Clothing>();
-		if (clothings.Length != 0)
-		{
-			Image result = Image.CreateEmpty(ClothingWidth, ClothingHeight, false, ClothingFormat);
-			// the loop draws from back to front, like a painter
-			// clothing is ordered from front to back
-			clothings.Reverse();
-			foreach (Clothing clothing in clothings)
-			{
-				Texture2D? texture = clothing.ClothTexture;
-				// Skip unloaded ones
-				if (texture != null)
-				{
-					Image image = texture.GetImage();
-					// just in case the clothing isn't the correct format or size
-					// Godot will skip these if the format or size already match
-					image.Convert(ClothingFormat);
-					image.Resize(ClothingWidth, ClothingHeight);
-					result.BlendRect(image, _clothingRect, Vector2I.Zero);
-				}
-			}
-			composite = ImageTexture.CreateFromImage(result);
-		}
-		_limbMat.SetShaderParameter(_albedoTexParam, composite);
-		_transparentLimbMat.SetShaderParameter(_albedoTexParam, composite);
+
+		// Explicit layer order:
+		// Pants   = 1, bottom
+		// Shirt   = 2
+		// T-Shirt = 3, top
+		ImageTexture? pantsTexture = BuildClothingComposite(
+			clothings,
+			Clothing.ClothingType.Pants
+		);
+
+		ImageTexture? shirtTexture = BuildClothingComposite(
+			clothings,
+			Clothing.ClothingType.Shirt
+		);
+
+		ImageTexture? torsoTexture = BuildClothingComposite(
+			clothings,
+			Clothing.ClothingType.Pants,
+			Clothing.ClothingType.Shirt,
+			Clothing.ClothingType.TShirt
+		);
+
+		// T-Shirt: front torso only.
+		// Shirt: torso and arms, excluding hands.
+		// Pants: torso and legs.
+		SetClothingTexture(_torsoMat, _transparentTorsoMat, torsoTexture);
+		SetClothingTexture(_leftArmMat, _transparentLeftArmMat, shirtTexture);
+		SetClothingTexture(_rightArmMat, _transparentRightArmMat, shirtTexture);
+		SetClothingTexture(_leftLegMat, _transparentLeftLegMat, pantsTexture);
+		SetClothingTexture(_rightLegMat, _transparentRightLegMat, pantsTexture);
+
+		// Hands never receive shirt textures.
+		SetClothingTexture(_leftHandMat, _transparentLeftHandMat, null);
+		SetClothingTexture(_rightHandMat, _transparentRightHandMat, null);
 	}
 
-	private void OnFaceLoaded(Resource tex)
+	private static ImageTexture? BuildClothingComposite(
+		Clothing[] clothings,
+		params Clothing.ClothingType[] layers
+	)
 	{
-		_headMat.SetShaderParameter(_albedoTexParam, (Texture2D)tex);
+		Image result = Image.CreateEmpty(
+			ClothingWidth,
+			ClothingHeight,
+			false,
+			ClothingFormat
+		);
+
+		bool hasTexture = false;
+
+		foreach (Clothing.ClothingType layer in layers)
+		{
+			foreach (Clothing clothing in clothings)
+			{
+				if (clothing.Type != layer || clothing.ClothTexture == null)
+					continue;
+
+				Image image = clothing.ClothTexture.GetImage();
+				image.Convert(ClothingFormat);
+				image.Resize(ClothingWidth, ClothingHeight);
+
+				result.BlendRect(image, _clothingRect, Vector2I.Zero);
+				hasTexture = true;
+			}
+		}
+
+		return hasTexture
+			? ImageTexture.CreateFromImage(result)
+			: null;
+	}
+
+	private static void SetClothingTexture(
+		ShaderMaterial opaqueMaterial,
+		ShaderMaterial transparentMaterial,
+		Texture2D? texture
+	)
+	{
+		opaqueMaterial.SetShaderParameter(_albedoTexParam, texture);
+		transparentMaterial.SetShaderParameter(_albedoTexParam, texture);
+	}
+
+	private void SetFaceTexture(Texture2D? texture)
+	{
+		texture ??= _defaultFace;
+
+		_headMat.SetShaderParameter(_faceTexParam, texture);
+		_headMat.SetShaderParameter(_faceEnabledParam, true);
+	}
+
+	private void OnFaceLoaded(Resource resource)
+	{
+		if (resource is not Texture2D texture)
+			return;
+
+		SetFaceTexture(texture);
+
 		if (!_faceLoaded)
 		{
 			_faceLoaded = true;
@@ -845,7 +957,36 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	private void MeshSetAlbedo(GeometryInstance3D mesh, Color albedo)
 	{
-		mesh.MaterialOverride = (albedo.A == 1) ? _limbMat : _transparentLimbMat;
+		(ShaderMaterial opaque, ShaderMaterial transparent) = mesh switch
+		{
+			_ when mesh == TorsoMeshInstance =>
+				(_torsoMat, _transparentTorsoMat),
+
+			_ when mesh == LeftArmMeshInstance =>
+				(_leftArmMat, _transparentLeftArmMat),
+
+			_ when mesh == RightArmMeshInstance =>
+				(_rightArmMat, _transparentRightArmMat),
+
+			_ when mesh == LeftHandMeshInstance =>
+				(_leftHandMat, _transparentLeftHandMat),
+
+			_ when mesh == RightHandMeshInstance =>
+				(_rightHandMat, _transparentRightHandMat),
+
+			_ when mesh == LeftLegMeshInstance =>
+				(_leftLegMat, _transparentLeftLegMat),
+
+			_ when mesh == RightLegMeshInstance =>
+				(_rightLegMat, _transparentRightLegMat),
+
+			_ => throw new ArgumentOutOfRangeException(
+				nameof(mesh),
+				"Unknown character body mesh."
+			),
+		};
+
+		mesh.MaterialOverride = albedo.A == 1f ? opaque : transparent;
 		mesh.SetInstanceShaderParameter(_albedoParam, albedo);
 	}
 
@@ -894,13 +1035,6 @@ public sealed partial class BrickversianModel : CharacterModel
 				face.ImageID = asset.ID.ToString();
 				FaceImage = face;
 			}
-			else if (asset.Type == "body")
-			{
-				if (_bodyOverrided) continue;
-				var body = New<BVMeshAsset>();
-				body.AssetID = asset.ID.ToString();
-				BodyMesh = body;
-			}
 			else if (asset.Type == "hat")
 			{
 				try
@@ -916,7 +1050,7 @@ public sealed partial class BrickversianModel : CharacterModel
 				}
 				catch (Exception ex)
 				{
-					PT.PrintErr(ex);
+					BV.PrintErr(ex);
 				}
 			}
 			else if (asset.Type == "tool")
@@ -937,7 +1071,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 					}
 				}
 				else if (Parent is NPC npc && loadToolNpc)
@@ -957,7 +1091,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					}
 					catch (Exception ex)
 					{
-						PT.PrintErr(ex);
+						BV.PrintErr(ex);
 					}
 				}
 			}
@@ -973,10 +1107,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		if (FaceImage != null && !FaceImage.IsResourceLoaded)
 		{
 			await FaceImage.ResourceLoadedInternal.Wait();
-		}
-		if (BodyMesh != null && !BodyMesh.IsResourceLoaded)
-		{
-			await BodyMesh.ResourceLoadedInternal.Wait();
 		}
 
 		Instance checkOn = this;
