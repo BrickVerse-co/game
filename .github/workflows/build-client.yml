@@ -260,9 +260,14 @@ jobs:
 
           PACKAGE_SHA="$(sha256sum "$PACKAGE_PATH" | awk '{print $1}')"
 
-          PRIMARY_FILE="$(find "$EXPORT_DIR" -maxdepth 2 -type f \
-            \( -name "${{ matrix.executable_glob }}" -o -name "*.pck" \) \
-            | sort | head -n 1 || true)"
+          if [[ "${{ matrix.platform }}" == "macos" ]]; then
+            # macOS exports put the executable inside the .app bundle.
+            PRIMARY_FILE="$(find "$EXPORT_DIR" -type f -path "*/Contents/MacOS/*" | sort | head -n 1 || true)"
+          else
+            PRIMARY_FILE="$(find "$EXPORT_DIR" -maxdepth 2 -type f \
+              \( -name "${{ matrix.executable_glob }}" -o -name "*.pck" \) \
+              | sort | head -n 1 || true)"
+          fi
 
           if [[ -n "$PRIMARY_FILE" ]]; then
             EXECUTABLE_SHA="$(sha256sum "$PRIMARY_FILE" | awk '{print $1}')"
