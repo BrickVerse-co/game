@@ -13,17 +13,17 @@ namespace BrickVerse.Creator.UI;
 /// </summary>
 public sealed class ForgeToolEvent
 {
-    public string ToolName { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string Detail { get; set; } = string.Empty;
-    public string? InstancePath { get; set; }
-    public string? Diff { get; set; }
-    public bool CanRollback { get; set; }
+	public string ToolName { get; set; } = string.Empty;
+	public string Title { get; set; } = string.Empty;
+	public string Detail { get; set; } = string.Empty;
+	public string? InstancePath { get; set; }
+	public string? Diff { get; set; }
+	public bool CanRollback { get; set; }
 }
 
 /// <summary>Arguments accepted by the get_script_diff Forge tool.</summary>
 public sealed class ForgeScriptDiffArgs
 {
-    [JsonPropertyName("path")]
-    public string Path { get; set; } = string.Empty;
+	[JsonPropertyName("path")]
+	public string Path { get; set; } = string.Empty;
 }

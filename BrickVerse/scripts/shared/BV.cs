@@ -28,7 +28,8 @@ public static class BV
 		if (IsServer)
 		{
 			result += "[SERVER] ";
-		} else
+		}
+		else
 		{
 			result += "[CLIENT] ";
 		}
@@ -58,11 +59,12 @@ public static class BV
 		if (IsServer)
 		{
 			result += "[SERVER] ";
-		} else
+		}
+		else
 		{
 			result += "[CLIENT] ";
 		}
-		
+
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
@@ -84,11 +86,12 @@ public static class BV
 		if (IsServer)
 		{
 			result += "[SERVER] ";
-		} else
+		}
+		else
 		{
 			result += "[CLIENT] ";
 		}
-		
+
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
@@ -111,11 +114,12 @@ public static class BV
 		if (IsServer)
 		{
 			result += "[SERVER] ";
-		} else
+		}
+		else
 		{
 			result += "[CLIENT] ";
 		}
-		
+
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
@@ -143,16 +147,17 @@ public static class BV
 		if (IsServer)
 		{
 			result += "[SERVER] ";
-		} else
+		}
+		else
 		{
 			result += "[CLIENT] ";
 		}
-		
+
 		foreach (object? s in str)
 		{
 			result += s?.ToString();
 		}
-		
+
 		if (Globals.GDAvailable)
 		{
 			GD.PrintRich($"[color=red][ERROR] {result}[/color]");

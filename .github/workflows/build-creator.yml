@@ -56,6 +56,37 @@ jobs:
     steps:
       - name: Checkout BrickVerse
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Verify Git LFS assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git lfs install --local
+          git lfs pull
+
+          REQUIRED_VOXEL_FILES=(
+            "BrickVerse/addons/zylann.voxel/bin/libvoxel.linux.editor.x86_64.so"
+            "BrickVerse/addons/zylann.voxel/bin/libvoxel.windows.template_release.x86_64.dll"
+          )
+
+          missing=0
+          for file in "${REQUIRED_VOXEL_FILES[@]}"; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Required Git LFS asset is missing or empty: $file"
+              missing=1
+            else
+              echo "Found LFS asset: $file ($(stat -c%s "$file") bytes)"
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo "::error::Git LFS assets were not downloaded. Check that the voxel binaries are committed with Git LFS."
+            exit 1
+          fi
 
       - name: Download installer repository
         shell: bash

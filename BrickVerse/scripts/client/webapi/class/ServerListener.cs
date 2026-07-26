@@ -7,6 +7,7 @@ using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -28,6 +29,8 @@ internal sealed class ServerListener : IServerListener
 		_token = token ?? "";
 	}
 
+	[RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
 	public async Task<APIServerListenResponse> Listen()
 	{
 		Dictionary<string, object> body = new()
@@ -42,7 +45,7 @@ internal sealed class ServerListener : IServerListener
 
 		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/awaken"), json);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		
+
 		APIServerListenResponse result = await ReadJsonResponse(response, "server listen", BrickVerseJsonContext.Default.APIServerListenResponse);
 		return result;
 	}

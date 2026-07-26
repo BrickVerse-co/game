@@ -15,6 +15,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -83,6 +84,8 @@ public sealed partial class SocialService : Instance
 		}
 	}
 
+	[RequiresUnreferencedCode()]
+	[RequiresDynamicCode()]
 	public async Task WebSendFriendshipRequest(string senderID, string recipientID, FriendshipRequestType req)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();

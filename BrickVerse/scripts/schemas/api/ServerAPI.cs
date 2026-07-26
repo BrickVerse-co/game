@@ -19,7 +19,7 @@ public struct APIValidateResponse
 {
 	[JsonPropertyName("id")]
 	public string UserID { get; set; }
-	
+
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
 

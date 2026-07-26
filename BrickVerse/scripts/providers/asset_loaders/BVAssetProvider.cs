@@ -118,7 +118,7 @@ public class BVAssetProvider : IAssetProvider
 		}
 
 		// Check if we are in creator studio
-		
+
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token) && string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{

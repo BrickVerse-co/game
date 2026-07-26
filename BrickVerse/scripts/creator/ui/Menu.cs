@@ -673,9 +673,12 @@ public sealed partial class Menu : PanelContainer
 				{
 					if (item is MenuButtonItem btnI && btnI.RequireGameOpen)
 					{
-						try {
+						try
+						{
 							mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
-						} catch (Exception e) {
+						}
+						catch (Exception e)
+						{
 							GD.PrintErr($"Error setting menu item disabled: {e}");
 						}
 					}
