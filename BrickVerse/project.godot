@@ -30,7 +30,7 @@ warnings/check_invalid_track_paths=false
 
 config/name="BrickVerse"
 config/version="1.0.0"
-run/main_scene="uid://c2tql65t73ak5"
+run/main_scene="res://scenes/entry.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
@@ -39,14 +39,14 @@ run/flush_stdout_on_print=true
 boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
 boot_splash/use_filter=false
 boot_splash/image="uid://bs34jgixa1n2r"
-config/icon="uid://bvolad7rptrsm"
+config/icon="res://assets/textures/logo/logo.png"
 boot_splash/minimum_display_time=3000
 
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"
-AssetLoader="*uid://rdicloyxgx18"
-WebAssetLoader="*uid://0g13so6g55p0"
+AssetLoader="*res://scripts/shared/asset_loaders/AssetLoader.cs"
+WebAssetLoader="*res://scripts/shared/asset_loaders/WebAssetLoader.cs"
 AppCloseDimmer="*res://scripts/shared/AppCloseDimmer.cs"
 
 [display]
@@ -69,7 +69,7 @@ enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg")
 common/snap_controls_to_pixels=false
 common/show_focus_state_on_pointer_event=2
 theme/custom="uid://cwykhfx1ffjoj"
-theme/custom_font="uid://c4ad5x0dhckrv"
+theme/custom_font="res://assets/fonts/default.tres"
 
 [input]
 
