@@ -298,7 +298,7 @@ public static partial class PackedFormat
 
 		// Pack main model data
 		byte[] modelData = PolyFormat.SaveCompressedModelAsByte(model);
-		ZipArchiveEntry entryFile = archive.CreateEntry("model.ptmodel");
+		ZipArchiveEntry entryFile = archive.CreateEntry("model.bvmodel");
 		using (Stream entryStream = entryFile.Open())
 		{
 			entryStream.Write(modelData);
@@ -496,7 +496,7 @@ public static partial class PackedFormat
 
 	private static ModelData? ReadModelDataFromArchive(ZipArchive archive)
 	{
-		ZipArchiveEntry? entryFile = archive.GetEntry("model.ptmodel");
+		ZipArchiveEntry? entryFile = archive.GetEntry("model.bvmodel");
 		if (entryFile == null) return null;
 
 		List<string> files = [.. archive.Entries
