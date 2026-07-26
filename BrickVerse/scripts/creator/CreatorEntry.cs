@@ -57,7 +57,7 @@ public partial class CreatorEntry : Node
 		GetViewport().GuiEmbedSubwindows = true;
 
 		// Open project by world id cmd argument
-		cmdargs.TryGetValue("world", out string? worldId);
+		cmdargs.TryGetValue("worldId", out string? worldId);
 		if (worldId != null)
 		{
 			BV.Print("Attempting to open world by id: ", worldId);
