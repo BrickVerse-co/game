@@ -87,8 +87,8 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		return ParseJsonValue(value);
 	}
 
-	[RequiresUnreferencedCode()]
-	[RequiresDynamicCode()]
+	[RequiresUnreferencedCode("Serializing datastore payloads relies on reflection-driven JSON metadata.")]
+	[RequiresDynamicCode("Serializing datastore payloads may require runtime code generation.")]
 	public async Task SetAsync(string key, object? value)
 	{
 		ThrowIfDisposed();

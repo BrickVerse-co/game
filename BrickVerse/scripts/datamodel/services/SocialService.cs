@@ -84,8 +84,8 @@ public sealed partial class SocialService : Instance
 		}
 	}
 
-	[RequiresUnreferencedCode()]
-	[RequiresDynamicCode()]
+	[RequiresUnreferencedCode("Serializing friend request payloads relies on reflection-driven JSON metadata.")]
+	[RequiresDynamicCode("Serializing friend request payloads may require runtime code generation.")]
 	public async Task WebSendFriendshipRequest(string senderID, string recipientID, FriendshipRequestType req)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
