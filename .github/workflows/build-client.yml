@@ -278,27 +278,34 @@ jobs:
           echo "executable_sha=$EXECUTABLE_SHA" >> "$GITHUB_OUTPUT"
           echo "managed_sha=$MANAGED_SHA" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare release metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ github.ref_name }}-${{ github.run_number }}"
+          BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ github.ref_name }}/$VERSION/${{ matrix.package_name }}"
+          FILE_URL="https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$BLOB_PATH"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "blob_path=$BLOB_PATH" >> "$GITHUB_OUTPUT"
+          echo "file_url=$FILE_URL" >> "$GITHUB_OUTPUT"
+
       - name: Upload to Azure Blob
         uses: azure/CLI@v2
         with:
           inlineScript: |
             set -euo pipefail
 
-            VERSION="${{ github.ref_name }}-${{ github.run_number }}"
-            BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ github.ref_name }}/$VERSION/${{ matrix.package_name }}"
-            FILE_URL="https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$BLOB_PATH"
-
             az storage blob upload \
               --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
               --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
               --container-name "${{ secrets.AZURE_STORAGE_CONTAINER }}" \
-              --name "$BLOB_PATH" \
+              --name "${{ steps.metadata.outputs.blob_path }}" \
               --file "${{ github.workspace }}/dist/${{ matrix.package_name }}" \
               --content-type "application/zip" \
               --overwrite true
-
-            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-            echo "FILE_URL=$FILE_URL" >> "$GITHUB_ENV"
 
       - name: Register binary
         shell: bash
@@ -310,10 +317,10 @@ jobs:
           jq -n \
             --arg branch "${{ github.ref_name }}" \
             --arg app "${{ env.APP }}" \
-            --arg version "${{ env.VERSION }}" \
+            --arg version "${{ steps.metadata.outputs.version }}" \
             --argjson buildNumber "${{ github.run_number }}" \
             --arg platform "$PLATFORM" \
-            --arg fileUrl "${{ env.FILE_URL }}" \
+            --arg fileUrl "${{ steps.metadata.outputs.file_url }}" \
             --arg executableSha "${{ steps.hash.outputs.executable_sha }}" \
             --arg managedSha "${{ steps.hash.outputs.managed_sha }}" \
             --arg packageSha "${{ steps.hash.outputs.package_sha }}" \
@@ -342,7 +349,7 @@ jobs:
 
           jq -n \
             --arg title "${{ matrix.platform }} ${{ env.BUILD_DISPLAY_NAME }} Released" \
-            --arg description "**Version:** `${{ env.VERSION }}`\n**Branch:** `${{ github.ref_name }}`\n**Build:** `${{ github.run_number }}`\n**Download:** ${{ env.FILE_URL }}" \
+            --arg description "**Version:** `${{ steps.metadata.outputs.version }}`\n**Branch:** `${{ github.ref_name }}`\n**Build:** `${{ github.run_number }}`\n**Download:** ${{ steps.metadata.outputs.file_url }}" \
             '{
               embeds: [{
                 title: $title,
