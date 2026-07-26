@@ -67,7 +67,6 @@ public sealed partial class Tabs : Control
 	private Control _tabsClip = null!;
 	private TabBar _tabBar = null!;
 	private PanelContainer _tabsContainer = null!;
-	private PopupMenu _tabContextMenu = null!;
 	private int _tabContextIndex = -1;
 
 	private Button _leftButton = null!, _rightButton = null!;
@@ -75,10 +74,12 @@ public sealed partial class Tabs : Control
 	private int _maxScroll;
 
 	private const int _scrollSidePadding = 2;
-	private const int TabActionClose = 1;
-	private const int TabActionCloseOthers = 2;
-	private const int TabActionCloseRight = 3;
-	private const int TabActionCloseAll = 4;
+	internal const int TabActionClose = 1;
+	internal const int TabActionCloseOthers = 2;
+	internal const int TabActionCloseRight = 3;
+	internal const int TabActionCloseAll = 4;
+
+	internal int OpenTabCount => _orderedControls.Count;
 
 	public static Tabs Singleton { get; private set; } = null!;
 	public Tabs()
@@ -91,15 +92,6 @@ public sealed partial class Tabs : Control
 		_tabsClip = GetNode<Control>("Bar/TabsClip");
 		_tabBar = GetNode<TabBar>("Bar/TabsClip/TabBar");
 		_tabsContainer = GetNode<PanelContainer>("Container");
-		_tabContextMenu = new PopupMenu();
-		_tabContextMenu.Name = "TabContextMenu";
-		_tabContextMenu.AddItem("Close", TabActionClose);
-		_tabContextMenu.AddItem("Close Others", TabActionCloseOthers);
-		_tabContextMenu.AddItem("Close Tabs to the Right", TabActionCloseRight);
-		_tabContextMenu.AddSeparator();
-		_tabContextMenu.AddItem("Close All", TabActionCloseAll);
-		AddChild(_tabContextMenu);
-
 		_leftButton = GetNode<Button>("Bar/TabsClip/LeftButton");
 		_rightButton = GetNode<Button>("Bar/TabsClip/RightButton");
 
@@ -127,7 +119,6 @@ public sealed partial class Tabs : Control
 
 		_tabBar.TabClosePressed += async idx => await Remove(_orderedControls[(int)idx]);
 		_tabBar.GuiInput += OnTabBarGUIInput;
-		_tabContextMenu.IdPressed += OnTabContextActionPressed;
 
 		_leftButton.ButtonDown += () => _scrollLeft = true;
 		_leftButton.ButtonUp += () => _scrollLeft = false;
@@ -296,11 +287,7 @@ public sealed partial class Tabs : Control
 					return;
 
 				_tabContextIndex = tabIndex;
-				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseOthers), _orderedControls.Count <= 1);
-				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseRight), tabIndex >= _orderedControls.Count - 1);
-				_tabContextMenu.SetItemDisabled(_tabContextMenu.GetItemIndex(TabActionCloseAll), _orderedControls.Count == 0);
-				_tabContextMenu.Position = (Vector2I)GetViewport().GetMousePosition();
-				_tabContextMenu.Popup();
+				ShowTabContextMenu(tabIndex);
 				AcceptEvent();
 				return;
 			}
@@ -316,7 +303,19 @@ public sealed partial class Tabs : Control
 		}
 	}
 
-	private async void OnTabContextActionPressed(long id)
+	private void ShowTabContextMenu(int tabIndex)
+	{
+		TabContextMenu menu = new()
+		{
+			OwnerTabs = this,
+			TabIndex = tabIndex,
+		};
+
+		AddChild(menu);
+		menu.PopupAtCursor();
+	}
+
+	internal async void OnTabContextActionPressed(long id)
 	{
 		if (_tabContextIndex < 0 || _tabContextIndex >= _orderedControls.Count)
 			return;
@@ -461,5 +460,35 @@ public sealed partial class Tabs : Control
 	public string WorldContainerToTabTitle(WorldContainer wc)
 	{
 		return _tabBar.GetTabTitle(wc.GetIndex());
+	}
+}
+
+internal sealed partial class TabContextMenu : ContextMenu
+{
+	public required Tabs OwnerTabs { get; init; }
+	public required int TabIndex { get; init; }
+
+	public override void _Ready()
+	{
+		Name = "TabContextMenu";
+
+		AddIconItem("x", "Close", Tabs.TabActionClose);
+		AddIconItem("panel-left-close", "Close Others", Tabs.TabActionCloseOthers);
+		AddIconItem("chevrons-right", "Close Tabs to the Right", Tabs.TabActionCloseRight);
+		AddSeparator();
+		AddIconItem("trash", "Close All", Tabs.TabActionCloseAll);
+
+		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseOthers), OwnerTabs.OpenTabCount <= 1);
+		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseRight), TabIndex >= OwnerTabs.OpenTabCount - 1);
+		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseAll), OwnerTabs.OpenTabCount == 0);
+
+		IdPressed += OnActionPressed;
+		base._Ready();
+	}
+
+	private void OnActionPressed(long id)
+	{
+		OwnerTabs.OnTabContextActionPressed(id);
+		Close();
 	}
 }
