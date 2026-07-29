@@ -1,0 +1,418 @@
+[gd_scene format=3 uid="uid://dqbgs00wgoeh8"]
+
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://c7s2mkf28o70f" path="res://scripts/creator/ui/popups/UploadMeshPopup.cs" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_78327"]
+
+[sub_resource type="StyleBoxFlat" id="StyleModal"]
+bg_color = Color(0.075, 0.086, 0.105, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.21, 0.26, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StylePreview"]
+bg_color = Color(0.045, 0.052, 0.065, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.18, 0.22, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="Environment" id="PreviewEnvironment"]
+background_mode = 1
+background_color = Color(0.035, 0.041, 0.052, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.8, 0.86, 1, 1)
+ambient_light_energy = 0.55
+
+[sub_resource type="StyleBoxFlat" id="StylePanel"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.095, 0.108, 0.13, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17, 0.2, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="ButtonGroup" id="OwnerGroup"]
+
+[sub_resource type="StyleBoxFlat" id="StylePrimary"]
+bg_color = Color(0.004, 0.529, 0.973, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="UploadMeshPopup" type="Window" unique_id=867786180 node_paths=PackedStringArray("_closeButton", "_chooseFileButton", "_replaceFileButton", "_personalOwnerButton", "_guildOwnerButton", "_guildDropdown", "_nameInput", "_descriptionInput", "_uploadButton", "_cancelButton", "_fileNameLabel", "_fileTypeLabel", "_surfaceCountLabel", "_vertexCountLabel", "_triangleCountLabel", "_emptyPreviewLabel", "_errorLabel", "_busyLabel", "_previewViewport", "_previewRoot", "_previewCamera", "_fileDialog")]
+transparent_bg = true
+oversampling_override = 1.0
+title = "Upload Mesh"
+position = Vector2i(0, 34)
+size = Vector2i(900, 610)
+transient = true
+exclusive = true
+borderless = true
+transparent = true
+popup_wm_hint = true
+min_size = Vector2i(760, 540)
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+_closeButton = NodePath("Modal/Layout/Header/Row/Close")
+_chooseFileButton = NodePath("Modal/Layout/Body/Left/FileCard/Row/ChooseFile")
+_replaceFileButton = NodePath("Modal/Layout/Body/Left/FileCard/Row/ReplaceFile")
+_personalOwnerButton = NodePath("Modal/Layout/Body/Right/Form/Ownership/Personal")
+_guildOwnerButton = NodePath("Modal/Layout/Body/Right/Form/Ownership/Guild")
+_guildDropdown = NodePath("Modal/Layout/Body/Right/Form/GuildDropdown")
+_nameInput = NodePath("Modal/Layout/Body/Right/Form/Name")
+_descriptionInput = NodePath("Modal/Layout/Body/Right/Form/Description")
+_uploadButton = NodePath("Modal/Layout/Footer/Row/Upload")
+_cancelButton = NodePath("Modal/Layout/Footer/Row/Cancel")
+_fileNameLabel = NodePath("Modal/Layout/Body/Left/FileCard/Row/FileName")
+_fileTypeLabel = NodePath("Modal/Layout/Body/Left/Stats/FileType/Stack/Value")
+_surfaceCountLabel = NodePath("Modal/Layout/Body/Left/Stats/Surfaces/Stack/Value")
+_vertexCountLabel = NodePath("Modal/Layout/Body/Left/Stats/Vertices/Stack/Value")
+_triangleCountLabel = NodePath("Modal/Layout/Body/Left/Stats/Triangles/Stack/Value")
+_emptyPreviewLabel = NodePath("Modal/Layout/Body/Left/Preview/EmptyPreview")
+_errorLabel = NodePath("Modal/Layout/Body/Right/Form/Error")
+_busyLabel = NodePath("Modal/Layout/Footer/Row/Busy")
+_previewViewport = NodePath("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport")
+_previewRoot = NodePath("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/PreviewRoot")
+_previewCamera = NodePath("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/Camera3D")
+_fileDialog = NodePath("FileDialog")
+
+[node name="Modal" type="PanelContainer" parent="." unique_id=513120068]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleModal")
+
+[node name="Layout" type="VBoxContainer" parent="Modal" unique_id=191373116]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Header" type="MarginContainer" parent="Modal/Layout" unique_id=1101884450]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Header" unique_id=300095803]
+layout_mode = 2
+
+[node name="TitleStack" type="VBoxContainer" parent="Modal/Layout/Header/Row" unique_id=1988641111]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Modal/Layout/Header/Row/TitleStack" unique_id=232221467]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Upload mesh"
+
+[node name="Subtitle" type="Label" parent="Modal/Layout/Header/Row/TitleStack" unique_id=2119874739]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Import, inspect, and prepare a 3D model for publishing."
+
+[node name="Close" type="Button" parent="Modal/Layout/Header/Row" unique_id=1582825952]
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_horizontal = 8
+icon = ExtResource("3_78327")
+flat = true
+
+[node name="Separator" type="HSeparator" parent="Modal/Layout" unique_id=1873385735]
+layout_mode = 2
+
+[node name="Body" type="HBoxContainer" parent="Modal/Layout" unique_id=1707628496]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Left" type="VBoxContainer" parent="Modal/Layout/Body" unique_id=1007829298]
+custom_minimum_size = Vector2(510, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Preview" type="PanelContainer" parent="Modal/Layout/Body/Left" unique_id=660193719]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StylePreview")
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Modal/Layout/Body/Left/Preview" unique_id=1105321641]
+layout_mode = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer" unique_id=491222022]
+handle_input_locally = false
+size = Vector2i(565, 321)
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport" unique_id=318711457]
+environment = SubResource("PreviewEnvironment")
+
+[node name="PreviewRoot" type="Node3D" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport" unique_id=1432447728]
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport" unique_id=1292862681]
+transform = Transform3D(0.8480481, 0.3545852, -0.39380676, 0, 0.7431448, 0.6691306, 0.52991927, -0.56745493, 0.63022256, 0, 0, 0)
+light_energy = 1.25
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport" unique_id=383693161]
+transform = Transform3D(-0.81915206, 0.32898995, 0.46984634, 0, 0.81915206, -0.57357645, -0.57357645, -0.46984634, -0.6710101, 0, 0, 0)
+light_color = Color(0.55, 0.7, 1, 1)
+light_energy = 0.55
+
+[node name="Camera3D" type="Camera3D" parent="Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport" unique_id=582570300]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.4, 3.2)
+current = true
+fov = 42.0
+
+[node name="EmptyPreview" type="Label" parent="Modal/Layout/Body/Left/Preview" unique_id=477124993]
+layout_mode = 2
+text = "Choose an OBJ, FBX, GLB, or GLTF file
+to preview it here."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FileCard" type="PanelContainer" parent="Modal/Layout/Body/Left" unique_id=1006550864]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Body/Left/FileCard" unique_id=1995314674]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FileName" type="Label" parent="Modal/Layout/Body/Left/FileCard/Row" unique_id=1936167430]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No model selected"
+text_overrun_behavior = 3
+
+[node name="ChooseFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Row" unique_id=881854539]
+layout_mode = 2
+text = "Choose file"
+
+[node name="ReplaceFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Row" unique_id=495247565]
+visible = false
+layout_mode = 2
+text = "Replace"
+
+[node name="Stats" type="HBoxContainer" parent="Modal/Layout/Body/Left" unique_id=609667246]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FileType" type="PanelContainer" parent="Modal/Layout/Body/Left/Stats" unique_id=1419117321]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Stack" type="VBoxContainer" parent="Modal/Layout/Body/Left/Stats/FileType" unique_id=1349520982]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Modal/Layout/Body/Left/Stats/FileType/Stack" unique_id=1082838441]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "FORMAT"
+
+[node name="Value" type="Label" parent="Modal/Layout/Body/Left/Stats/FileType/Stack" unique_id=1596062290]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "—"
+
+[node name="Surfaces" type="PanelContainer" parent="Modal/Layout/Body/Left/Stats" unique_id=242221206]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Stack" type="VBoxContainer" parent="Modal/Layout/Body/Left/Stats/Surfaces" unique_id=1371073148]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Modal/Layout/Body/Left/Stats/Surfaces/Stack" unique_id=1418083521]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "SURFACES"
+
+[node name="Value" type="Label" parent="Modal/Layout/Body/Left/Stats/Surfaces/Stack" unique_id=1143091952]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "—"
+
+[node name="Vertices" type="PanelContainer" parent="Modal/Layout/Body/Left/Stats" unique_id=1150650185]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Stack" type="VBoxContainer" parent="Modal/Layout/Body/Left/Stats/Vertices" unique_id=1160675790]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Modal/Layout/Body/Left/Stats/Vertices/Stack" unique_id=1282193909]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "VERTICES"
+
+[node name="Value" type="Label" parent="Modal/Layout/Body/Left/Stats/Vertices/Stack" unique_id=157421922]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "—"
+
+[node name="Triangles" type="PanelContainer" parent="Modal/Layout/Body/Left/Stats" unique_id=1686979950]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Stack" type="VBoxContainer" parent="Modal/Layout/Body/Left/Stats/Triangles" unique_id=81818509]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Modal/Layout/Body/Left/Stats/Triangles/Stack" unique_id=1918561881]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "TRIANGLES"
+
+[node name="Value" type="Label" parent="Modal/Layout/Body/Left/Stats/Triangles/Stack" unique_id=614734062]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "—"
+
+[node name="Right" type="PanelContainer" parent="Modal/Layout/Body" unique_id=2043454317]
+custom_minimum_size = Vector2(315, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Form" type="VBoxContainer" parent="Modal/Layout/Body/Right" unique_id=1302093712]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailsTitle" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=1403526713]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Mesh details"
+
+[node name="NameLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=211213659]
+layout_mode = 2
+text = "Name"
+
+[node name="Name" type="LineEdit" parent="Modal/Layout/Body/Right/Form" unique_id=131103524]
+layout_mode = 2
+placeholder_text = "Mesh name"
+max_length = 64
+caret_blink = true
+
+[node name="DescriptionLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=186064822]
+layout_mode = 2
+text = "Description (optional)"
+
+[node name="Description" type="TextEdit" parent="Modal/Layout/Body/Right/Form" unique_id=200487358]
+custom_minimum_size = Vector2(0, 112)
+layout_mode = 2
+placeholder_text = "Describe how this mesh should be used..."
+wrap_mode = 1
+
+[node name="OwnerLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=1039868568]
+layout_mode = 2
+text = "Owner"
+
+[node name="Ownership" type="HBoxContainer" parent="Modal/Layout/Body/Right/Form" unique_id=1486584504]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Personal" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership" unique_id=1850714583]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("OwnerGroup")
+text = "Personal"
+
+[node name="Guild" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership" unique_id=1874866954]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_group = SubResource("OwnerGroup")
+text = "Guild"
+
+[node name="GuildDropdown" type="OptionButton" parent="Modal/Layout/Body/Right/Form" unique_id=1497511992]
+visible = false
+layout_mode = 2
+
+[node name="OwnerHelp" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=367725075]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Guilds are limited to those where you have upload permission."
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="Modal/Layout/Body/Right/Form" unique_id=108901780]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Error" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=806704406]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.35, 0.35, 1)
+autowrap_mode = 2
+
+[node name="FooterSeparator" type="HSeparator" parent="Modal/Layout" unique_id=49366073]
+layout_mode = 2
+
+[node name="Footer" type="MarginContainer" parent="Modal/Layout" unique_id=670756578]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Footer" unique_id=466446784]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Busy" type="Label" parent="Modal/Layout/Footer/Row" unique_id=1280528743]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Preparing upload..."
+
+[node name="Cancel" type="Button" parent="Modal/Layout/Footer/Row" unique_id=914188728]
+custom_minimum_size = Vector2(92, 36)
+layout_mode = 2
+text = "Cancel"
+
+[node name="Upload" type="Button" parent="Modal/Layout/Footer/Row" unique_id=289287665]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StylePrimary")
+disabled = true
+text = "Upload mesh"
+
+[node name="FileDialog" type="FileDialog" parent="." unique_id=1172331543]
+title = "Open a File"
+initial_position = 2
+size = Vector2i(900, 600)
+ok_button_text = "Open model"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.obj ; Wavefront OBJ", "*.fbx ; Autodesk FBX", "*.glb ; Binary glTF", "*.gltf ; glTF")
+use_native_dialog = true

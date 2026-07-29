@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
@@ -18,10 +21,8 @@ using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
+using BrickVerse.Creator.Utils;
+using Godot;
 using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
 namespace BrickVerse.Creator;
@@ -34,18 +35,25 @@ public partial class CreatorInterface : Control, IScriptObject
 	private const string GiveNamePopupPath = "res://scenes/creator/popups/give_name.tscn";
 	private const string LinkDevicePopupPath = "res://scenes/creator/popups/link_device.tscn";
 	private const string SettingsPopupPath = "res://scenes/creator/popups/settings/settings.tscn";
-	private const string InputManagerPopupPath = "res://scenes/creator/popups/input_manager/input_manager.tscn";
+	private const string InputManagerPopupPath =
+		"res://scenes/creator/popups/input_manager/input_manager.tscn";
 	private const string BindKeyPopupPath = "res://scenes/creator/popups/bind_key.tscn";
 	private const string PublishPopupPath = "res://scenes/creator/popups/publish/publish.tscn";
-	private const string WorldPublishPopupPath = "res://scenes/creator/popups/publish/publish_world.tscn";
-	private const string WorldPublishAsPopupPath = "res://scenes/creator/popups/publish/publish_as_world.tscn";
-	private const string AddonReqPermPopupPath = "res://scenes/creator/popups/addon_perm_request.tscn";
+	private const string WorldPublishPopupPath =
+		"res://scenes/creator/popups/publish/publish_world.tscn";
+	private const string WorldPublishAsPopupPath =
+		"res://scenes/creator/popups/publish/publish_as_world.tscn";
+	private const string AddonReqPermPopupPath =
+		"res://scenes/creator/popups/addon_perm_request.tscn";
 
 	private const string CreditPopupPath = "res://scenes/creator/popups/credits.tscn";
 	private const string CreatorDarkThemePath = "res://resources/themes/creator/creator.tres";
-	private const string CreatorLightThemePath = "res://resources/themes/creator/creator_light.tres";
+	private const string CreatorLightThemePath =
+		"res://resources/themes/creator/creator_light.tres";
 	private string? _pendingLegacyWorld;
-	private PackedScene _insertMenuPopupPacked = GD.Load<PackedScene>("res://scenes/creator/popups/insert/insert_menu.tscn");
+	private PackedScene _insertMenuPopupPacked = GD.Load<PackedScene>(
+		"res://scenes/creator/popups/insert/insert_menu.tscn"
+	);
 
 	private Theme _creatorTheme = null!;
 	private Theme _creatorLightTheme = null!;
@@ -55,11 +63,18 @@ public partial class CreatorInterface : Control, IScriptObject
 	public StatusBar? StatusBar { get; internal set; }
 	public LoadOverlay? LoadOverlay { get; internal set; }
 
-	[ScriptProperty] public ToolModeEnum ToolMode { get; internal set; } = ToolModeEnum.Select;
-	[ScriptProperty] public Color TargetPartColor { get; internal set; } = new(1, 1, 1);
-	[ScriptProperty] public Part.PartMaterialEnum TargetPartMaterial { get; internal set; } = Part.PartMaterialEnum.SmoothPlastic;
+	[ScriptProperty]
+	public ToolModeEnum ToolMode { get; internal set; } = ToolModeEnum.Select;
 
-	[ScriptProperty] public bool MoveSnapEnabled { get; internal set; } = true;
+	[ScriptProperty]
+	public Color TargetPartColor { get; internal set; } = new(1, 1, 1);
+
+	[ScriptProperty]
+	public Part.PartMaterialEnum TargetPartMaterial { get; internal set; } =
+		Part.PartMaterialEnum.SmoothPlastic;
+
+	[ScriptProperty]
+	public bool MoveSnapEnabled { get; internal set; } = true;
 
 	[ScriptProperty]
 	public float MoveSnapping
@@ -74,8 +89,11 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 	}
 
-	[ScriptProperty] public float UserMoveSnapping { get; internal set; } = 1;
-	[ScriptProperty] public bool RotateSnapEnabled { get; internal set; } = true;
+	[ScriptProperty]
+	public float UserMoveSnapping { get; internal set; } = 1;
+
+	[ScriptProperty]
+	public bool RotateSnapEnabled { get; internal set; } = true;
 
 	[ScriptProperty]
 	public float RotateSnapping
@@ -90,11 +108,22 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 	}
 
-	[ScriptProperty] public float UserRotateSnapping { get; internal set; } = 45;
-	[ScriptProperty] public bool SnapToPartEnabled { get; internal set; } = true;
-	[ScriptProperty] public bool DuplicateOnDragEnabled { get; internal set; } = true;
-	[ScriptProperty] public TransformOrientationEnum TransformOrientation { get; internal set; } = TransformOrientationEnum.Global;
-	[ScriptProperty] public SelectionPivotModeEnum SelectionPivotMode { get; internal set; } = SelectionPivotModeEnum.Center;
+	[ScriptProperty]
+	public float UserRotateSnapping { get; internal set; } = 45;
+
+	[ScriptProperty]
+	public bool SnapToPartEnabled { get; internal set; } = true;
+
+	[ScriptProperty]
+	public bool DuplicateOnDragEnabled { get; internal set; } = true;
+
+	[ScriptProperty]
+	public TransformOrientationEnum TransformOrientation { get; internal set; } =
+		TransformOrientationEnum.Global;
+
+	[ScriptProperty]
+	public SelectionPivotModeEnum SelectionPivotMode { get; internal set; } =
+		SelectionPivotModeEnum.Center;
 
 	public static bool TempDisableSnap => Input.IsKeyPressed(Key.Alt);
 
@@ -107,11 +136,19 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _Ready()
 	{
-		_creatorTheme = ResourceLoader.Load<Theme>(CreatorDarkThemePath, cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
+		_creatorTheme = ResourceLoader.Load<Theme>(
+			CreatorDarkThemePath,
+			cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+		);
 		_creatorLightTheme = ResourceLoader.Exists(CreatorLightThemePath)
-			? ResourceLoader.Load<Theme>(CreatorLightThemePath, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			? ResourceLoader.Load<Theme>(
+				CreatorLightThemePath,
+				cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+			)
 			: _creatorTheme;
-		LastFilePromptFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+		LastFilePromptFolder = System.Environment.GetFolderPath(
+			System.Environment.SpecialFolder.MyDocuments
+		);
 
 		Theme = _creatorTheme;
 
@@ -186,14 +223,22 @@ public partial class CreatorInterface : Control, IScriptObject
 		RotateSnapEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.RotateSnapEnabled);
 		UserRotateSnapping = settings.Get<float>(CreatorSettingKeys.Interface.RotateSnapStep);
 		SnapToPartEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.SnapToPartEnabled);
-		DuplicateOnDragEnabled = settings.Get<bool>(CreatorSettingKeys.Interface.DuplicateOnDragEnabled);
-		TransformOrientation = settings.Get<TransformOrientationEnum>(CreatorSettingKeys.Interface.TransformOrientation);
-		SelectionPivotMode = settings.Get<SelectionPivotModeEnum>(CreatorSettingKeys.Interface.SelectionPivotMode);
+		DuplicateOnDragEnabled = settings.Get<bool>(
+			CreatorSettingKeys.Interface.DuplicateOnDragEnabled
+		);
+		TransformOrientation = settings.Get<TransformOrientationEnum>(
+			CreatorSettingKeys.Interface.TransformOrientation
+		);
+		SelectionPivotMode = settings.Get<SelectionPivotModeEnum>(
+			CreatorSettingKeys.Interface.SelectionPivotMode
+		);
 	}
 
 	private void ApplyThemeMode()
 	{
-		CreatorThemeModeEnum mode = CreatorSettingsService.Instance.Get<CreatorThemeModeEnum>(CreatorSettingKeys.Interface.ThemeMode);
+		CreatorThemeModeEnum mode = CreatorSettingsService.Instance.Get<CreatorThemeModeEnum>(
+			CreatorSettingKeys.Interface.ThemeMode
+		);
 		_activeThemeMode = mode;
 		Theme = mode == CreatorThemeModeEnum.Light ? _creatorLightTheme : _creatorTheme;
 		ApplyThemeRecursively(this);
@@ -230,7 +275,9 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	private void ApplyUIScale()
 	{
-		float baseUIScale = CreatorSettingsService.Instance.Get<float>(CreatorSettingKeys.Interface.UiScale);
+		float baseUIScale = CreatorSettingsService.Instance.Get<float>(
+			CreatorSettingKeys.Interface.UiScale
+		);
 
 		// Get the OS display scale factor
 		int screenId = DisplayServer.WindowGetCurrentScreen();
@@ -248,13 +295,19 @@ public partial class CreatorInterface : Control, IScriptObject
 			return;
 		}
 
-		DisplayServer.WindowSetMode(CreatorSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen) ? DisplayServer.WindowMode.Fullscreen : DisplayServer.WindowMode.Maximized);
+		DisplayServer.WindowSetMode(
+			CreatorSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen)
+				? DisplayServer.WindowMode.Fullscreen
+				: DisplayServer.WindowMode.Maximized
+		);
 	}
 
 	private static void ApplyVSync()
 	{
 		bool useVSync = CreatorSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.VSync);
-		DisplayServer.WindowSetVsyncMode(useVSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+		DisplayServer.WindowSetVsyncMode(
+			useVSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled
+		);
 		OS.LowProcessorUsageMode = useVSync;
 	}
 
@@ -282,17 +335,22 @@ public partial class CreatorInterface : Control, IScriptObject
 
 			if (fileType == PolyFileTypeEnum.PolyXML)
 			{
-				bool yes = await PromptConfirmation("This file is in a legacy format. To edit it, you must convert it to a Polytoria project. Convert now?");
+				bool yes = await PromptConfirmation(
+					"This file is in a legacy format. To edit it, you must convert it to a Polytoria project. Convert now?"
+				);
 
 				if (yes)
 				{
 					_pendingLegacyWorld = filePath;
-					PromptFileSelect(new()
-					{
-						Title = "Choose Destination",
-						CurrentDirectory = filePath.GetBaseDir(),
-						DialogMode = DisplayServer.FileDialogMode.OpenDir
-					}, OnOpenConversion);
+					PromptFileSelect(
+						new()
+						{
+							Title = "Choose Destination",
+							CurrentDirectory = filePath.GetBaseDir(),
+							DialogMode = DisplayServer.FileDialogMode.OpenDir,
+						},
+						OnOpenConversion
+					);
 				}
 			}
 			else if (fileType == PolyFileTypeEnum.Packed)
@@ -315,7 +373,8 @@ public partial class CreatorInterface : Control, IScriptObject
 			return;
 		}
 
-		if (_pendingLegacyWorld == null) return;
+		if (_pendingLegacyWorld == null)
+			return;
 
 		string fName = _pendingLegacyWorld.GetFile().TrimExtension();
 		string createAt = Path.GetFullPath(Path.Join(path, fName));
@@ -327,13 +386,11 @@ public partial class CreatorInterface : Control, IScriptObject
 
 		try
 		{
-			await ProjectManager.ImportLegacyWorld(_pendingLegacyWorld,
-			createAt,
-			new()
-			{
-				ProjectName = fName.Capitalize(),
-				MainWorld = "main.bvxw"
-			});
+			await ProjectManager.ImportLegacyWorld(
+				_pendingLegacyWorld,
+				createAt,
+				new() { ProjectName = fName.Capitalize(), MainWorld = "main.bvxw" }
+			);
 		}
 		catch (Exception ex)
 		{
@@ -344,14 +401,18 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void PromptImportModel()
 	{
-		if (World.Current == null) return;
+		if (World.Current == null)
+			return;
 
-		PromptFileSelect(new()
-		{
-			Title = "Import model",
-			DialogMode = DisplayServer.FileDialogMode.OpenFile,
-			Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"]
-		}, OnPromptImportModelFile);
+		PromptFileSelect(
+			new()
+			{
+				Title = "Import model",
+				DialogMode = DisplayServer.FileDialogMode.OpenFile,
+				Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"],
+			},
+			OnPromptImportModelFile
+		);
 	}
 
 	private async void OnPromptImportModelFile(string[] paths)
@@ -361,14 +422,20 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public async void ImportModel(string modelImportPath)
 	{
-		if (World.Current == null) return;
-		if (CreatorService.CurrentSession == null) return;
+		if (World.Current == null)
+			return;
+		if (CreatorService.CurrentSession == null)
+			return;
 
 		CreatorSession session = CreatorService.CurrentSession;
 
 		try
 		{
-			Instance? i = await DatamodelLoader.LoadModelFile(World.Current, modelImportPath, World.Current.Environment);
+			Instance? i = await DatamodelLoader.LoadModelFile(
+				World.Current,
+				modelImportPath,
+				World.Current.Environment
+			);
 			if (i != null)
 			{
 				World.Current.CreatorContext.Selections.SelectOnly(i);
@@ -384,7 +451,8 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void ExportSelectedModel()
 	{
-		if (World.Current == null) return;
+		if (World.Current == null)
+			return;
 
 		List<Instance> instances = World.Current.CreatorContext.Selections.SelectedInstances;
 		if (instances.Count == 0)
@@ -401,43 +469,50 @@ public partial class CreatorInterface : Control, IScriptObject
 			return;
 		}
 
-		PromptFileSelect(new()
-		{
-			Title = "Export model",
-			FileName = $"{target.Name}.bvxm",
-			DialogMode = DisplayServer.FileDialogMode.SaveFile,
-			Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"]
-		}, async paths =>
-		{
-			if (paths.Length > 0)
+		PromptFileSelect(
+			new()
 			{
-				string path = paths[0];
-				if (!path.EndsWith(".bvxm") && !path.EndsWith(".bvmodel"))
+				Title = "Export model",
+				FileName = $"{target.Name}.bvxm",
+				DialogMode = DisplayServer.FileDialogMode.SaveFile,
+				Filters = ["*.bvxm;BrickVerse Model", "*.bvmodel;BrickVerse Model"],
+			},
+			async paths =>
+			{
+				if (paths.Length > 0)
 				{
-					path += ".bvxm";
-				}
+					string path = paths[0];
+					if (!path.EndsWith(".bvxm") && !path.EndsWith(".bvmodel"))
+					{
+						path += ".bvxm";
+					}
 
-				try
-				{
-					await PackedFormat.PackModelToFile(target, path);
-					CreatorService.Interface.StatusBar?.SetStatus("Exported model to " + path);
-				}
-				catch (Exception ex)
-				{
-					BV.PrintErr(ex);
-					PopupAlert(ex.Message, "Error exporting model");
+					try
+					{
+						await PackedFormat.PackModelToFile(target, path);
+						CreatorService.Interface.StatusBar?.SetStatus("Exported model to " + path);
+					}
+					catch (Exception ex)
+					{
+						BV.PrintErr(ex);
+						PopupAlert(ex.Message, "Error exporting model");
+					}
 				}
 			}
-		});
+		);
 	}
+
 	public void PromptOpenWorld()
 	{
-		PromptFileSelect(new FileSelectPromptPayload()
-		{
-			Title = "Open World",
-			DialogMode = DisplayServer.FileDialogMode.OpenFile,
-			Filters = ["*.bvxl;BrickVerse Project", "*.bvxw,*.bvworld;BrickVerse World"]
-		}, OnWorldOpen);
+		PromptFileSelect(
+			new FileSelectPromptPayload()
+			{
+				Title = "Open World",
+				DialogMode = DisplayServer.FileDialogMode.OpenFile,
+				Filters = ["*.bvxl;BrickVerse Project", "*.bvxw,*.bvworld;BrickVerse World"],
+			},
+			OnWorldOpen
+		);
 	}
 
 	private void OnWorldOpen(string[] paths)
@@ -454,7 +529,9 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void PromptCreateScript(Instance? atInstance = null, string? atPath = null)
 	{
-		CreateScriptPopup popup = Globals.CreateInstanceFromScene<CreateScriptPopup>(CreateScriptPopupPath);
+		CreateScriptPopup popup = Globals.CreateInstanceFromScene<CreateScriptPopup>(
+			CreateScriptPopupPath
+		);
 		PendingCreateScriptAt = atInstance;
 		popup.CreateAt = atPath;
 		PopupWindow(popup);
@@ -462,72 +539,88 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void PromptCreateFolder(string atPath)
 	{
-		if (CreatorService.CurrentSession == null) return;
+		if (CreatorService.CurrentSession == null)
+			return;
 		CreatorSession session = CreatorService.CurrentSession;
-		PromptGiveName("Folder name...", async name =>
-		{
-			try
+		PromptGiveName(
+			"Folder name...",
+			async name =>
 			{
-				string createAt = Path.Join(atPath, name).SanitizePath();
-				await session.CreateFolder(createAt);
-			}
-			catch (Exception ex)
-			{
-				BV.PrintErr(ex);
-				PopupAlert(ex.Message, "Error creating folder");
-			}
-		}, "Give Folder name");
+				try
+				{
+					string createAt = Path.Join(atPath, name).SanitizePath();
+					await session.CreateFolder(createAt);
+				}
+				catch (Exception ex)
+				{
+					BV.PrintErr(ex);
+					PopupAlert(ex.Message, "Error creating folder");
+				}
+			},
+			"Give Folder name"
+		);
 	}
 
 	public void PromptCreateFile(string atPath)
 	{
-		if (CreatorService.CurrentSession == null) return;
+		if (CreatorService.CurrentSession == null)
+			return;
 		CreatorSession session = CreatorService.CurrentSession;
-		PromptGiveName("File name...", async name =>
-		{
-			try
+		PromptGiveName(
+			"File name...",
+			async name =>
 			{
-				string createAt = Path.Join(atPath, name).SanitizePath();
-				await session.CreateFile(createAt);
-			}
-			catch (Exception ex)
-			{
-				BV.PrintErr(ex);
-				PopupAlert(ex.Message, "Error creating file");
-			}
-		}, "Give File name");
+				try
+				{
+					string createAt = Path.Join(atPath, name).SanitizePath();
+					await session.CreateFile(createAt);
+				}
+				catch (Exception ex)
+				{
+					BV.PrintErr(ex);
+					PopupAlert(ex.Message, "Error creating file");
+				}
+			},
+			"Give File name"
+		);
 	}
-
 
 	public void PromptCreateWorld(string atPath)
 	{
-		if (CreatorService.CurrentSession == null) return;
+		if (CreatorService.CurrentSession == null)
+			return;
 		CreatorSession session = CreatorService.CurrentSession;
-		PromptGiveName("World file name...", async name =>
-		{
-			try
+		PromptGiveName(
+			"World file name...",
+			async name =>
 			{
-				string createAt = Path.Join(atPath, name).SanitizePath();
-
-				if (!createAt.EndsWith(".bvxw"))
+				try
 				{
-					createAt += ".bvxw";
-				}
+					string createAt = Path.Join(atPath, name).SanitizePath();
 
-				await session.CreateWorld(createAt);
-			}
-			catch (Exception ex)
-			{
-				BV.PrintErr(ex);
-				PopupAlert(ex.Message, "Error creating world");
-			}
-		}, "Give World name");
+					if (!createAt.EndsWith(".bvxw"))
+					{
+						createAt += ".bvxw";
+					}
+
+					await session.CreateWorld(createAt);
+				}
+				catch (Exception ex)
+				{
+					BV.PrintErr(ex);
+					PopupAlert(ex.Message, "Error creating world");
+				}
+			},
+			"Give World name"
+		);
 	}
 
 	public async void PromptDeleteFiles(string[] files)
 	{
-		if (files.Length == 0) return;
-		if (CreatorService.CurrentSession == null) return;
+		if (files.Length == 0)
+			return;
+		if (CreatorService.CurrentSession == null)
+			return;
 		CreatorSession session = CreatorService.CurrentSession;
 		string wordToUse = $"these {files.Length} files/folders";
 
@@ -541,7 +634,14 @@ public partial class CreatorInterface : Control, IScriptObject
 			}
 		}
 
-		if (!await PromptConfirmation("Are you sure you want to delete " + wordToUse + "? You can recover this from the recycle bin.")) return;
+		if (
+			!await PromptConfirmation(
+				"Are you sure you want to delete "
+					+ wordToUse
+					+ "? You can recover this from the recycle bin."
+			)
+		)
+			return;
 		try
 		{
 			foreach (string item in files)
@@ -557,12 +657,17 @@ public partial class CreatorInterface : Control, IScriptObject
 		session.RescanFolder();
 	}
 
-	public async Task<bool> PromptConfirmation(string msg, string title = "Please Confirm", string? dismissKey = null)
+	public async Task<bool> PromptConfirmation(
+		string msg,
+		string title = "Please Confirm",
+		string? dismissKey = null
+	)
 	{
 		if (dismissKey != null)
 		{
 			bool isShown = CreatorSettingsService.Instance.Get<bool>(dismissKey);
-			if (!isShown) return true;
+			if (!isShown)
+				return true;
 		}
 
 		TaskCompletionSource<bool> tcs = new();
@@ -598,7 +703,11 @@ public partial class CreatorInterface : Control, IScriptObject
 
 		if (dismissKey != null)
 		{
-			CheckBox chk = new() { Text = "Don't show this again.", SizeFlagsHorizontal = SizeFlags.ShrinkCenter | SizeFlags.Expand };
+			CheckBox chk = new()
+			{
+				Text = "Don't show this again.",
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter | SizeFlags.Expand,
+			};
 			v.AddChild(chk);
 		}
 
@@ -609,16 +718,24 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void PromptRenameFile(string filePath)
 	{
-		if (CreatorService.CurrentSession == null) return;
-		PromptGiveName("File name...", s =>
-		{
-			CreatorService.CurrentSession.RenameFile(filePath, s);
-		}, "Rename file", filePath.GetFile());
+		if (CreatorService.CurrentSession == null)
+			return;
+		PromptGiveName(
+			"File name...",
+			s =>
+			{
+				CreatorService.CurrentSession.RenameFile(filePath, s);
+			},
+			"Rename file",
+			filePath.GetFile()
+		);
 	}
 
 	public void OpenLinkDevicePrompt()
 	{
-		LinkDevicePopup popup = Globals.CreateInstanceFromScene<LinkDevicePopup>(LinkDevicePopupPath);
+		LinkDevicePopup popup = Globals.CreateInstanceFromScene<LinkDevicePopup>(
+			LinkDevicePopupPath
+		);
 		PopupWindow(popup);
 	}
 
@@ -628,9 +745,30 @@ public partial class CreatorInterface : Control, IScriptObject
 		PopupWindow(popup);
 	}
 
+	public void OpenUploadMeshMenu()
+	{
+		UploadMeshPopup popup = Globals.CreateInstanceFromScene<UploadMeshPopup>(
+			"res://scenes/creator/popups/upload_mesh.tscn"
+		);
+		PopupWindow(popup);
+
+		popup.UploadRequested += request =>
+		{
+			byte[] meshData = request.SerializedMesh;
+
+			popup.SetBusy(true, "Uploading mesh...");
+
+			CreatorAPI.UploadMesh(meshData, request.SourceFileName, request.Name, request.Description, request.OwnerId, request.OwnerType);
+
+			popup.Close();
+		};
+	}
+
 	public void OpenWorldPublish(World? world, bool publishAs = false)
 	{
-		BV.Print($"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}");
+		BV.Print(
+			$"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}"
+		);
 		if (world == null)
 		{
 			BV.PrintErr("CreatorInterface: OpenWorldPublish called without an active world.");
@@ -639,13 +777,17 @@ public partial class CreatorInterface : Control, IScriptObject
 
 		if (publishAs)
 		{
-			PublishAsPlaceModal popup = Globals.CreateInstanceFromScene<PublishAsPlaceModal>(WorldPublishAsPopupPath);
+			PublishAsPlaceModal popup = Globals.CreateInstanceFromScene<PublishAsPlaceModal>(
+				WorldPublishAsPopupPath
+			);
 			popup.Open(world);
 			PopupWindow(popup);
 			return;
 		}
 
-		PublishPlaceModal normalPopup = Globals.CreateInstanceFromScene<PublishPlaceModal>(WorldPublishPopupPath);
+		PublishPlaceModal normalPopup = Globals.CreateInstanceFromScene<PublishPlaceModal>(
+			WorldPublishPopupPath
+		);
 		normalPopup.Open(world, false);
 		PopupWindow(normalPopup);
 	}
@@ -659,14 +801,21 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void OpenInputManager()
 	{
-		InputManagerPopup popup = Globals.CreateInstanceFromScene<InputManagerPopup>(InputManagerPopupPath);
+		InputManagerPopup popup = Globals.CreateInstanceFromScene<InputManagerPopup>(
+			InputManagerPopupPath
+		);
 		PopupWindow(popup);
 	}
 
-	public async Task<bool> PromptAddonReqPerm(AddonPermissionEnum[] perms, PackedFormat.AddonData data)
+	public async Task<bool> PromptAddonReqPerm(
+		AddonPermissionEnum[] perms,
+		PackedFormat.AddonData data
+	)
 	{
 		TaskCompletionSource<bool> tcs = new();
-		AddonPermRequestPopup popup = Globals.CreateInstanceFromScene<AddonPermRequestPopup>(AddonReqPermPopupPath);
+		AddonPermRequestPopup popup = Globals.CreateInstanceFromScene<AddonPermRequestPopup>(
+			AddonReqPermPopupPath
+		);
 		popup.RequestedPerms = perms;
 		popup.AddonData = data;
 		PopupWindow(popup);
@@ -700,7 +849,12 @@ public partial class CreatorInterface : Control, IScriptObject
 		OS.ShellShowInFileManager(ProjectSettings.GlobalizePath(AddonsManager.UserAddonFolder));
 	}
 
-	public void PromptGiveName(string placeholder, Action<string> callback, string title = "Name...", string defaultValue = "")
+	public void PromptGiveName(
+		string placeholder,
+		Action<string> callback,
+		string title = "Name...",
+		string defaultValue = ""
+	)
 	{
 		GiveNamePopup popup = Globals.CreateInstanceFromScene<GiveNamePopup>(GiveNamePopupPath);
 		popup.Placeholder = placeholder;
@@ -712,11 +866,7 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void PopupAlert(string msg, string title = "Notice")
 	{
-		AcceptDialog dialog = new()
-		{
-			DialogText = msg,
-			Title = title,
-		};
+		AcceptDialog dialog = new() { DialogText = msg, Title = title };
 
 		PopupWindow(dialog);
 	}
@@ -753,28 +903,36 @@ public partial class CreatorInterface : Control, IScriptObject
 	{
 		TaskCompletionSource<string> tcs = new();
 
-		PromptFileSelect(new()
-		{
-			Title = data.Title,
-			CurrentDirectory = data.CurrentDirectory,
-			FileName = data.FileName,
-			ShowHidden = data.ShowHidden,
-			DialogMode = DisplayServer.FileDialogMode.OpenDir,
-		}, paths =>
-		{
-			if (paths.Length == 0 || string.IsNullOrWhiteSpace(paths[0]))
+		PromptFileSelect(
+			new()
 			{
-				tcs.TrySetResult(string.Empty);
-				return;
-			}
+				Title = data.Title,
+				CurrentDirectory = data.CurrentDirectory,
+				FileName = data.FileName,
+				ShowHidden = data.ShowHidden,
+				DialogMode = DisplayServer.FileDialogMode.OpenDir,
+			},
+			paths =>
+			{
+				if (paths.Length == 0 || string.IsNullOrWhiteSpace(paths[0]))
+				{
+					tcs.TrySetResult(string.Empty);
+					return;
+				}
 
-			tcs.TrySetResult(paths[0]);
-		}, () => tcs.TrySetResult(string.Empty));
+				tcs.TrySetResult(paths[0]);
+			},
+			() => tcs.TrySetResult(string.Empty)
+		);
 
 		return await tcs.Task;
 	}
 
-	public void PromptFileSelect(FileSelectPromptPayload data, Action<string[]> callback, Action? onCancel = null)
+	public void PromptFileSelect(
+		FileSelectPromptPayload data,
+		Action<string[]> callback,
+		Action? onCancel = null
+	)
 	{
 		bool replaceCur = string.IsNullOrEmpty(data.CurrentDirectory);
 		string currentDir = replaceCur ? LastFilePromptFolder : data.CurrentDirectory;
@@ -806,24 +964,32 @@ public partial class CreatorInterface : Control, IScriptObject
 		dialog.FileSelected += path => OnPathsSelected([path]);
 		dialog.DirSelected += path => OnPathsSelected([path]);
 		dialog.FilesSelected += paths => OnPathsSelected(paths);
-		dialog.Canceled += () => { onCancel?.Invoke(); dialog.QueueFree(); };
+		dialog.Canceled += () =>
+		{
+			onCancel?.Invoke();
+			dialog.QueueFree();
+		};
 
 		dialog.PopupCentered(new Vector2I(800, 600));
 	}
 
-	private static FileDialog.FileModeEnum MapFileMode(DisplayServer.FileDialogMode mode) => mode switch
-	{
-		DisplayServer.FileDialogMode.OpenFile => FileDialog.FileModeEnum.OpenFile,
-		DisplayServer.FileDialogMode.OpenFiles => FileDialog.FileModeEnum.OpenFiles,
-		DisplayServer.FileDialogMode.OpenDir => FileDialog.FileModeEnum.OpenDir,
-		DisplayServer.FileDialogMode.SaveFile => FileDialog.FileModeEnum.SaveFile,
-		_ => FileDialog.FileModeEnum.OpenFile,
-	};
+	private static FileDialog.FileModeEnum MapFileMode(DisplayServer.FileDialogMode mode) =>
+		mode switch
+		{
+			DisplayServer.FileDialogMode.OpenFile => FileDialog.FileModeEnum.OpenFile,
+			DisplayServer.FileDialogMode.OpenFiles => FileDialog.FileModeEnum.OpenFiles,
+			DisplayServer.FileDialogMode.OpenDir => FileDialog.FileModeEnum.OpenDir,
+			DisplayServer.FileDialogMode.SaveFile => FileDialog.FileModeEnum.SaveFile,
+			_ => FileDialog.FileModeEnum.OpenFile,
+		};
 
 	public static void ToggleFullscreen()
 	{
 		var settings = CreatorSettingsService.Instance;
-		settings.Set(SharedSettingKeys.Display.Fullscreen, !settings.Get<bool>(SharedSettingKeys.Display.Fullscreen));
+		settings.Set(
+			SharedSettingKeys.Display.Fullscreen,
+			!settings.Get<bool>(SharedSettingKeys.Display.Fullscreen)
+		);
 	}
 
 	public void StartFollowCursorLabel(string text)
@@ -848,7 +1014,9 @@ public partial class CreatorInterface : Control, IScriptObject
 	/// <returns>Boolean that indicates if this app should quit</returns>
 	internal async Task<bool> OnQuitRequested()
 	{
-		return await PromptConfirmation("Are you sure you want to quit? Any unsaved changes will be lost");
+		return await PromptConfirmation(
+			"Are you sure you want to quit? Any unsaved changes will be lost"
+		);
 	}
 
 	private static int ResolveFpsCap(ISettingsContext settings)
@@ -865,7 +1033,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			FpsPreset.Smooth => 120,
 			FpsPreset.Slick => 144,
 			FpsPreset.Fluid => 240,
-			_ => 0
+			_ => 0,
 		};
 	}
 }

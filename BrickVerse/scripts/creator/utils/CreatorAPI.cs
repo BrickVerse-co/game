@@ -1154,6 +1154,40 @@ public static class CreatorAPI
 		return await msg.Content.ReadAsByteArrayAsync();
 	}
 
+	public static async Task UploadMesh(byte[] meshData, string fileName, string name, string description, string ownerId, UI.Popups.UploadMeshPopup.MeshOwnerType ownerType)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+
+		using MultipartFormDataContent form = new(Guid.NewGuid().ToString());
+
+		form.Add(FormString("assetType", "MESH"));
+		form.Add(FormString("name", name));
+		form.Add(FormString("description", description));
+		form.Add(FormString("ownerType", ownerType.ToString()));
+		form.Add(FormString("ownerId", ownerId.ToString()));
+		form.Add(FormFile("file", fileName, meshData));
+
+		string url = Globals.ApiEndpoint.PathJoin("/v3/asset/create");
+		using HttpResponseMessage msg = await _client.PostAsync(url, form);
+		string responseText = await msg.Content.ReadAsStringAsync();
+
+		if (!msg.IsSuccessStatusCode)
+		{
+			throw new HttpRequestException(
+				$"CreatorAPI: Upload mesh failed: {(int)msg.StatusCode} {msg.StatusCode}: {responseText}"
+			);
+		}
+
+		if (responseText.Contains("error", StringComparison.OrdinalIgnoreCase))
+		{
+			throw new HttpRequestException(
+				$"CreatorAPI: Upload mesh failed: {(int)msg.StatusCode} {msg.StatusCode}: {responseText}"
+			);
+		}
+	}
+
 	public static async Task<CreatorPublishResponse> UploadWorld(
 		byte[] placeData,
 		long? universeId = 0,

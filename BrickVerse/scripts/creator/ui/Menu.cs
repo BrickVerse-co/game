@@ -275,6 +275,12 @@ public sealed partial class Menu : PanelContainer
 						CreatorService.Interface.OpenInsertMenu();
 					}
 				},
+				new MenuButtonItem() {
+					Text = "Upload Mesh",
+					Pressed = () => {
+						CreatorService.Interface.OpenUploadMeshMenu();
+					}
+				},
 			]
 		);
 
