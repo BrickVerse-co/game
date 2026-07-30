@@ -8,6 +8,7 @@ using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace BrickVerse.Creator.UI;
@@ -20,6 +21,7 @@ public partial class TerrainEditor : Control
 		Remove,
 		Paint,
 		Smooth,
+		Flatten,
 		Grow,
 		Erode
 	}
@@ -35,8 +37,11 @@ public partial class TerrainEditor : Control
 	[Export] private Button _removeButton = null!;
 	[Export] private Button _paintButton = null!;
 	[Export] private Button _smoothButton = null!;
+	[Export] private Button _flattenButton = null!;
 	[Export] private Button _growButton = null!;
 	[Export] private Button _erodeButton = null!;
+	[Export] private Button _importButton = null!;
+	[Export] private Button _generateButton = null!;
 
 	[Export] private OptionButton _shapeOption = null!;
 	[Export] private OptionButton _materialOption = null!;
@@ -98,6 +103,7 @@ public partial class TerrainEditor : Control
 		_toolButtons[_removeButton] = TerrainTool.Remove;
 		_toolButtons[_paintButton] = TerrainTool.Paint;
 		_toolButtons[_smoothButton] = TerrainTool.Smooth;
+		_toolButtons[_flattenButton] = TerrainTool.Flatten;
 		_toolButtons[_growButton] = TerrainTool.Grow;
 		_toolButtons[_erodeButton] = TerrainTool.Erode;
 
@@ -110,6 +116,8 @@ public partial class TerrainEditor : Control
 		_materialOption.ItemSelected += _ => UpdateStatus();
 		_enabledCheck.Toggled += OnEnabledToggled;
 		_clearButton.Pressed += OnClearPressed;
+		_importButton.Pressed += OpenHeightmapDialog;
+		_generateButton.Pressed += OpenGenerateDialog;
 
 		BindRangeControls(_sizeSlider, _sizeSpinBox, OnBrushSettingsChanged);
 		BindRangeControls(_strengthSlider, _strengthSpinBox, OnBrushSettingsChanged);
@@ -210,10 +218,10 @@ public partial class TerrainEditor : Control
 			button.SetPressedNoSignal(mappedTool == tool);
 		}
 
-		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Paint;
+		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Paint or TerrainTool.Flatten;
 		_materialOption.Disabled = !materialEnabled;
 
-		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Grow or TerrainTool.Erode;
+		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Flatten or TerrainTool.Grow or TerrainTool.Erode;
 		_strengthSlider.Editable = strengthEnabled;
 		_strengthSpinBox.Editable = strengthEnabled;
 
@@ -421,6 +429,10 @@ public partial class TerrainEditor : Control
 					Math.Max(1, Mathf.RoundToInt(BrushStrength * 6.0f)));
 				break;
 
+			case TerrainTool.Flatten:
+				ApplyFlatten(terrain, position, size, radius, material);
+				break;
+
 			case TerrainTool.Grow:
 				terrain.GrowBall(position, radius, BrushStrength);
 				break;
@@ -428,6 +440,273 @@ public partial class TerrainEditor : Control
 			case TerrainTool.Erode:
 				terrain.ErodeBall(position, radius, BrushStrength);
 				break;
+		}
+	}
+
+	private void ApplyFlatten(
+		Terrain terrain,
+		Vector3 position,
+		float size,
+		float radius,
+		int material)
+	{
+		float strength = Mathf.Clamp(BrushStrength, 0.05f, 1.0f);
+		float verticalRange = Math.Max(2.0f, size * strength);
+		Vector3 footprint = _shape == BrushShape.Block
+			? new Vector3(size, verticalRange, size)
+			: new Vector3(radius * 1.7f, verticalRange, radius * 1.7f);
+
+		terrain.FillBlock(
+			new Vector3(position.X, position.Y - verticalRange * 0.5f, position.Z),
+			footprint,
+			material);
+		terrain.DigBlock(
+			new Vector3(position.X, position.Y + verticalRange * 0.5f, position.Z),
+			footprint);
+	}
+
+	private void OpenHeightmapDialog()
+	{
+		FileDialog dialog = new()
+		{
+			Title = "Import Terrain Heightmap",
+			Access = FileDialog.AccessEnum.Filesystem,
+			FileMode = FileDialog.FileModeEnum.OpenFile,
+			UseNativeDialog = true,
+			Filters =
+			[
+				"*.png, *.jpg, *.jpeg, *.webp, *.exr ; Heightmap Images",
+				"*.r16, *.raw ; 16-bit RAW Heightmaps",
+			],
+		};
+		dialog.FileSelected += path =>
+		{
+			try
+			{
+				ImportHeightmap(path);
+			}
+			catch (Exception error)
+			{
+				UpdateStatus("Heightmap import failed: " + error.Message);
+				BV.PrintErr("Terrain heightmap import failed: ", error);
+			}
+			dialog.QueueFree();
+		};
+		dialog.Canceled += dialog.QueueFree;
+		AddChild(dialog);
+		dialog.PopupCenteredRatio(0.72f);
+	}
+
+	private void ImportHeightmap(string path)
+	{
+		Image image;
+		string extension = Path.GetExtension(path).ToLowerInvariant();
+		if (extension is ".r16" or ".raw")
+		{
+			byte[] bytes = System.IO.File.ReadAllBytes(path);
+			int side = Mathf.RoundToInt(Mathf.Sqrt(bytes.Length / 2.0f));
+			if (side * side * 2 != bytes.Length)
+				throw new InvalidDataException("RAW heightmaps must be square, unsigned 16-bit little-endian data.");
+			image = Image.CreateEmpty(side, side, false, Image.Format.Rf);
+			for (int y = 0; y < side; y++)
+			for (int x = 0; x < side; x++)
+			{
+				int offset = (y * side + x) * 2;
+				ushort value = (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+				image.SetPixel(x, y, new Color(value / 65535.0f, 0, 0));
+			}
+		}
+		else
+		{
+			image = Image.LoadFromFile(path);
+			if (image.IsEmpty()) throw new InvalidDataException("The selected image could not be decoded.");
+		}
+
+		int largestSide = Math.Max(image.GetWidth(), image.GetHeight());
+		if (largestSide > 128)
+		{
+			float scale = 128.0f / largestSide;
+			image.Resize(
+				Math.Max(2, Mathf.RoundToInt(image.GetWidth() * scale)),
+				Math.Max(2, Mathf.RoundToInt(image.GetHeight() * scale)),
+				Image.Interpolation.Lanczos);
+		}
+		BuildTerrainFromHeightSamples(
+			image.GetWidth(),
+			image.GetHeight(),
+			(x, y) =>
+			{
+				Color pixel = image.GetPixel(x, y);
+				return pixel.R * 0.2126f + pixel.G * 0.7152f + pixel.B * 0.0722f;
+			},
+			2.0f,
+			128.0f,
+			MaterialIndex,
+			replaceExisting: true);
+		UpdateStatus($"Imported {Path.GetFileName(path)} ({image.GetWidth()}×{image.GetHeight()}).");
+	}
+
+	private void OpenGenerateDialog()
+	{
+		ConfirmationDialog dialog = new()
+		{
+			Title = "Generate Terrain",
+			OkButtonText = "Generate",
+			MinSize = new Vector2I(430, 390),
+		};
+		VBoxContainer content = new();
+		content.AddThemeConstantOverride("separation", 10);
+		dialog.AddChild(content);
+
+		OptionButton preset = AddDialogOption(content, "Terrain type", ["Rolling Hills", "Mountains", "Islands", "Canyons"]);
+		SpinBox size = AddDialogSpin(content, "World size", 64, 512, 16, 256);
+		SpinBox height = AddDialogSpin(content, "Maximum height", 8, 256, 4, 96);
+		SpinBox detail = AddDialogSpin(content, "Feature size", 8, 128, 2, 48);
+		SpinBox seed = AddDialogSpin(content, "Seed", 0, int.MaxValue, 1, Random.Shared.Next(1, int.MaxValue));
+		CheckButton replace = new() { Text = "Replace existing terrain", ButtonPressed = true };
+		content.AddChild(replace);
+		Label hint = new()
+		{
+			Text = "Generation uses the selected terrain material and is saved with the world.",
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+		};
+		content.AddChild(hint);
+
+		dialog.Confirmed += () =>
+		{
+			GenerateTerrain(
+				preset.Selected,
+				(int)size.Value,
+				(float)height.Value,
+				(float)detail.Value,
+				(int)seed.Value,
+				replace.ButtonPressed);
+			dialog.QueueFree();
+		};
+		dialog.Canceled += dialog.QueueFree;
+		AddChild(dialog);
+		dialog.PopupCentered();
+	}
+
+	private static OptionButton AddDialogOption(
+		VBoxContainer parent,
+		string label,
+		string[] items)
+	{
+		Label title = new() { Text = label };
+		parent.AddChild(title);
+		OptionButton option = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		foreach (string item in items) option.AddItem(item);
+		parent.AddChild(option);
+		return option;
+	}
+
+	private static SpinBox AddDialogSpin(
+		VBoxContainer parent,
+		string label,
+		double minimum,
+		double maximum,
+		double step,
+		double value)
+	{
+		HBoxContainer row = new();
+		row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(150, 0) });
+		SpinBox spin = new()
+		{
+			MinValue = minimum,
+			MaxValue = maximum,
+			Step = step,
+			Value = value,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+		};
+		row.AddChild(spin);
+		parent.AddChild(row);
+		return spin;
+	}
+
+	private void GenerateTerrain(
+		int preset,
+		int worldSize,
+		float maximumHeight,
+		float featureSize,
+		int seed,
+		bool replaceExisting)
+	{
+		FastNoiseLite primary = new()
+		{
+			Seed = seed,
+			Frequency = 1.0f / featureSize,
+			FractalOctaves = preset == 1 ? 6 : 4,
+			FractalGain = preset == 1 ? 0.58f : 0.5f,
+		};
+		FastNoiseLite detail = new()
+		{
+			Seed = seed ^ 0x5f3759df,
+			Frequency = 2.5f / featureSize,
+			FractalOctaves = 3,
+		};
+		int samples = Math.Clamp(worldSize / 4, 16, 128);
+		BuildTerrainFromHeightSamples(
+			samples,
+			samples,
+			(x, y) =>
+			{
+				float nx = (x / (samples - 1.0f)) * 2.0f - 1.0f;
+				float ny = (y / (samples - 1.0f)) * 2.0f - 1.0f;
+				float noise = (primary.GetNoise2D(x, y) + 1.0f) * 0.5f;
+				float fine = detail.GetNoise2D(x, y) * 0.12f;
+				return preset switch
+				{
+					1 => Mathf.Pow(Mathf.Clamp(noise + fine, 0, 1), 1.8f),
+					2 => Mathf.Clamp((noise + fine) * 1.35f - Mathf.Sqrt(nx * nx + ny * ny) * 0.7f, 0, 1),
+					3 => Mathf.Clamp(0.72f - Mathf.Abs(primary.GetNoise2D(x, y)) * 0.85f + fine, 0.05f, 1),
+					_ => Mathf.Clamp(noise * 0.7f + fine + 0.12f, 0, 1),
+				};
+			},
+			worldSize / (float)samples,
+			maximumHeight,
+			MaterialIndex,
+			replaceExisting);
+		UpdateStatus($"Generated {worldSize}×{worldSize} terrain with seed {seed}.");
+	}
+
+	private void BuildTerrainFromHeightSamples(
+		int width,
+		int height,
+		Func<int, int, float> sample,
+		float cellSize,
+		float maximumHeight,
+		int material,
+		bool replaceExisting)
+	{
+		Terrain? terrain = CurrentTerrain;
+		if (terrain == null) throw new InvalidOperationException("No terrain is loaded.");
+		FinishStroke();
+		bool oldAutoSerialise = terrain.AutoSerialise;
+		terrain.AutoSerialise = false;
+		try
+		{
+			if (replaceExisting) terrain.Clear();
+			float originX = -width * cellSize * 0.5f;
+			float originZ = -height * cellSize * 0.5f;
+			const float baseDepth = 16.0f;
+			for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++)
+			{
+				float columnHeight = Math.Max(1.0f, Mathf.Clamp(sample(x, y), 0, 1) * maximumHeight);
+				terrain.FillBlock(
+					new Vector3(
+						originX + (x + 0.5f) * cellSize,
+						(columnHeight - baseDepth) * 0.5f,
+						originZ + (y + 0.5f) * cellSize),
+					new Vector3(cellSize + 0.1f, columnHeight + baseDepth, cellSize + 0.1f),
+					material);
+			}
+			terrain.SaveTerrain();
+		}
+		finally
+		{
+			terrain.AutoSerialise = oldAutoSerialise;
 		}
 	}
 
@@ -855,6 +1134,7 @@ public partial class TerrainEditor : Control
 			TerrainTool.Remove => new Color(1.0f, 0.25f, 0.25f, 0.32f),
 			TerrainTool.Paint => new Color(1.0f, 0.72f, 0.2f, 0.32f),
 			TerrainTool.Smooth => new Color(0.7f, 0.5f, 1.0f, 0.32f),
+			TerrainTool.Flatten => new Color(0.35f, 0.85f, 0.95f, 0.32f),
 			TerrainTool.Grow => new Color(0.3f, 0.9f, 0.5f, 0.32f),
 			TerrainTool.Erode => new Color(1.0f, 0.45f, 0.35f, 0.32f),
 			_ => new Color(0.25f, 0.7f, 1.0f, 0.32f)

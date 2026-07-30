@@ -1032,7 +1032,7 @@ icon = ExtResource("32_cyxfl")
 
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
 
-[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_growButton", "_erodeButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
+[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_flattenButton", "_growButton", "_erodeButton", "_importButton", "_generateButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 clip_contents = true
@@ -1046,8 +1046,11 @@ _addButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Add")
 _removeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Remove")
 _paintButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Paint")
 _smoothButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Smooth")
+_flattenButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Flatten")
 _growButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Grow")
 _erodeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Erode")
+_importButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Import")
+_generateButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Generate")
 _shapeOption = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Shape/Option")
 _materialOption = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Material/Option")
 _sizeSlider = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Size/Slider")
@@ -1140,6 +1143,13 @@ custom_minimum_size = Vector2(154, 42)
 layout_mode = 2
 toggle_mode = true
 text = "Smooth"
+
+[node name="Flatten" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons"]
+custom_minimum_size = Vector2(154, 42)
+layout_mode = 2
+toggle_mode = true
+tooltip_text = "Level terrain to the height under the brush"
+text = "Flatten"
 
 [node name="Grow" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1911821286]
 custom_minimum_size = Vector2(154, 42)
@@ -1440,6 +1450,16 @@ text = "Surface snap"
 layout_mode = 2
 button_pressed = true
 text = "Continuous stroke"
+
+[node name="Import" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content"]
+layout_mode = 2
+tooltip_text = "Import PNG, JPEG, WebP, EXR, RAW, or R16 heightmaps"
+text = "Import Heightmap…"
+
+[node name="Generate" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content"]
+layout_mode = 2
+tooltip_text = "Generate hills, mountains, islands, or canyons"
+text = "Generate Terrain…"
 
 [node name="Clear" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=45068541]
 layout_mode = 2
