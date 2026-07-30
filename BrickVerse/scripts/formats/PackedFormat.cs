@@ -466,12 +466,16 @@ public static partial class PackedFormat
 		}
 
 		// Default to main
-		entryPath ??= metadata.MainWorld;
+		entryPath = (entryPath ?? metadata.MainWorld).SanitizePath();
 
 		// Load world
 		if (files.TryGetValue(entryPath, out byte[]? entryBytes))
 		{
 			PolyFormat.LoadWorld(root, entryBytes);
+		}
+		else
+		{
+			throw new InvalidDataException($"Packed world entry '{entryPath}' is missing.");
 		}
 
 		return new()

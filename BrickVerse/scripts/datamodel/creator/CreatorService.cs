@@ -313,11 +313,21 @@ public sealed partial class CreatorService : Node, IScriptObject
 					// Check if any of the recent projects have a matching world id
 					if (r.WorldId == parsedWorldId)
 					{
-						// Open the existing project
 						BV.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
-						keepOverlayVisible = true;
-						await CreateNewSession(r.FolderPath);
-						return;
+						try
+						{
+							// Open the existing project. If it is stale or damaged, remove
+							// the recent entry and fall back to downloading a clean copy.
+							await CreateNewSession(r.FolderPath);
+							keepOverlayVisible = true;
+							return;
+						}
+						catch (Exception ex)
+						{
+							BV.PrintWarn($"Existing project could not be opened; downloading world again: {ex.Message}");
+							await ProjectManager.RemoveFromRecents(r.FolderPath);
+							Interface.LoadOverlay?.Show();
+						}
 					}
 				}
 			}
@@ -338,31 +348,28 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 			try
 			{
-				if (fileType == PolyFileTypeEnum.PolyXML)
+				World3D world3D = new();
+				tempViewport = new()
 				{
-					World3D world3D = new();
-					tempViewport = new()
-					{
-						RenderTargetClearMode = SubViewport.ClearMode.Never,
-						RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
-						World3D = world3D
-					};
+					RenderTargetClearMode = SubViewport.ClearMode.Never,
+					RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
+					World3D = world3D
+				};
 
-					root.SessionType = World.SessionTypeEnum.Creator;
-					root.World3D = world3D;
+				root.SessionType = World.SessionTypeEnum.Creator;
+				root.World3D = world3D;
 
-					NetworkService netService = new();
-					netService.Attach(root);
-					netService.NetworkMode = NetworkService.NetworkModeEnum.Creator;
-					netService.IsServer = true;
+				NetworkService netService = new();
+				netService.Attach(root);
+				netService.NetworkMode = NetworkService.NetworkModeEnum.Creator;
+				netService.IsServer = true;
 
-					AddChild(tempViewport);
-					tempViewport.AddChild(root.GDNode);
+				AddChild(tempViewport);
+				tempViewport.AddChild(root.GDNode);
 
-					root.Root = root;
-					root.InitEntry();
-					root.Setup();
-				}
+				root.Root = root;
+				root.InitEntry();
+				root.Setup();
 
 				await DatamodelLoader.LoadWorldBytes(root, worldContent);
 				Interface.LoadOverlay?.SetProgress(2);
@@ -451,11 +458,17 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		string? targetPlace = null;
 		projectFilePath = ProjectSettings.GlobalizePath(projectFilePath);
+		if (string.IsNullOrWhiteSpace(projectFilePath)
+			|| (!File.Exists(projectFilePath) && !Directory.Exists(projectFilePath)))
+		{
+			throw new FileNotFoundException("Project path does not exist.", projectFilePath);
+		}
 
-		if (File.GetAttributes(projectFilePath) == FileAttributes.Directory || projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
+		string extension = projectFilePath.GetExtension().ToLowerInvariant();
+		if (Directory.Exists(projectFilePath) || extension == "bvxw" || extension == "bvworld")
 		{
 			string originFilePath = projectFilePath;
-			if (projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
+			if (extension == "bvxw" || extension == "bvworld")
 			{
 				projectFilePath += "/../";
 			}
@@ -466,7 +479,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				return;
 			}
 
-			if (originFilePath.GetExtension() == "bvxw" || originFilePath.GetExtension() == "bvworld")
+			if (extension == "bvxw" || extension == "bvworld")
 			{
 				targetPlace = originFilePath;
 			}
@@ -496,38 +509,36 @@ public sealed partial class CreatorService : Node, IScriptObject
 		try
 		{
 			await session.Init();
+
+			Interface.StatusBar?.SetStatus("Opening world...");
+			Interface.LoadOverlay?.SetStatus("Opening world");
+			Interface.LoadOverlay?.SetProgress(1);
+
+			World? openedWorld = targetPlace != null
+				? session.OpenWorld(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride)
+				: session.OpenMainWorld(worldOverride);
+			if (openedWorld == null)
+			{
+				throw new InvalidDataException("The project did not open a world.");
+			}
+
+			Sessions.Add(session);
+			await ProjectManager.AddToRecents(folder);
+			StartupSplash.Singleton.Close();
 		}
 		catch (Exception ex)
 		{
 			BV.PrintErr(ex);
+			Sessions.Remove(session);
+			session.Dispose();
 			Interface.PopupAlert(ex.Message, "Error opening project");
 			throw;
 		}
-
-		Interface.StatusBar?.SetStatus("Opening world...");
-		Interface.LoadOverlay?.SetStatus("Opening world");
-		Interface.LoadOverlay?.SetProgress(1);
-
-		// Open world
-		if (targetPlace != null)
+		finally
 		{
-			session.OpenWorld(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride);
+			Interface.LoadOverlay?.Hide();
+			Interface.StatusBar?.SetEmpty();
 		}
-		else
-		{
-			session.OpenMainWorld(worldOverride);
-		}
-
-		Interface.LoadOverlay?.Hide();
-
-		Sessions.Add(session);
-
-		// Add to recents
-		await ProjectManager.AddToRecents(folder);
-
-		// Close startup splash on open file
-		StartupSplash.Singleton.Close();
-		Interface.StatusBar?.SetEmpty();
 	}
 
 	public static void SaveCurrentFile(out float savingTime)

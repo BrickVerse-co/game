@@ -155,8 +155,28 @@ public static partial class PolyFormat
 
 	private static void NormalizeRootData(ref PolyRootData data)
 	{
-		data.Objects ??= [];
-		data.NonInstanceObjects ??= [];
+		data.Objects = (data.Objects ?? [])
+			.Where(obj => obj != null)
+			.ToArray();
+		data.NonInstanceObjects = (data.NonInstanceObjects ?? [])
+			.Where(obj => obj != null)
+			.ToArray();
+
+		if (data.FileType == PolyFileType.World && data.Objects.Length == 0)
+		{
+			BV.PrintWarn("[PF] World root was missing; repairing it with an empty World root.");
+			data.Objects =
+			[
+				new PolyObject
+				{
+					Name = "World",
+					ClassName = "World",
+					ID = "1",
+					Properties = [],
+					Children = []
+				}
+			];
+		}
 
 		foreach (PolyObject obj in data.Objects)
 		{
@@ -174,7 +194,9 @@ public static partial class PolyFormat
 		if (obj == null) return;
 
 		obj.Properties ??= [];
-		obj.Children ??= [];
+		obj.Children = (obj.Children ?? [])
+			.Where(child => child != null)
+			.ToArray();
 
 		foreach (PolyObject child in obj.Children)
 		{
@@ -544,7 +566,7 @@ public static partial class PolyFormat
 
 		Dictionary<string, PropertyInfo> propertyCache = GetOrCreatePropertyCache(dataModelType);
 
-		foreach (KeyValuePair<string, object?> prop in obj.Properties)
+		foreach (KeyValuePair<string, object?> prop in obj.Properties ?? [])
 		{
 			// Could be deleted mid-way
 			if (netObj.IsDeleted) continue;
