@@ -19,6 +19,13 @@ namespace BrickVerse.Creator.UI.Popups;
 /// </summary>
 public sealed partial class AnimationEditorWindow : PopupWindowBase
 {
+	private enum PoseTool
+	{
+		None,
+		Move,
+		Rotate,
+	}
+
 	private BVAnimationClip _clip = CreateDefaultClip();
 	private Tree _tracks = null!;
 	private ItemList _keys = null!;
@@ -32,8 +39,23 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	private Label _status = null!;
 	private AnimationTimeline _timeline = null!;
 	private AnimationPlayer? _previewPlayer;
+	private SubViewport? _previewViewport;
+	private Camera3D? _previewCamera;
+	private Skeleton3D? _previewSkeleton;
+	private MeshInstance3D? _boneGizmo;
+	private OptionButton _boneChoice = null!;
+	private CheckButton _autoKey = null!;
 	private HSlider _playhead = null!;
 	private Button _play = null!;
+	private Vector3 _cameraTarget = new(0, 2.6f, 0);
+	private float _cameraYaw;
+	private float _cameraPitch = -0.08f;
+	private float _cameraDistance = 8.5f;
+	private bool _orbiting;
+	private bool _panning;
+	private bool _posingBone;
+	private PoseTool _poseTool = PoseTool.Rotate;
+	private int _activeGizmoAxis = -1;
 	private int _selectedTrack = -1;
 	private int _selectedKey = -1;
 
@@ -129,6 +151,32 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		editor.AddChild(playback);
 		_play = AddButton(playback, "▶", TogglePlayback);
 		AddButton(playback, "■", StopPlayback);
+		ButtonGroup poseTools = new();
+		Button moveTool = AddButton(playback, "Move", () => SetPoseTool(PoseTool.Move));
+		moveTool.ToggleMode = true;
+		moveTool.ButtonGroup = poseTools;
+		moveTool.TooltipText = "Move the selected bone using the XYZ gizmo";
+		Button rotateTool = AddButton(playback, "Rotate", () => SetPoseTool(PoseTool.Rotate));
+		rotateTool.ToggleMode = true;
+		rotateTool.ButtonPressed = true;
+		rotateTool.ButtonGroup = poseTools;
+		rotateTool.TooltipText = "Rotate the selected bone using the XYZ gizmo";
+		_boneChoice = new OptionButton { TooltipText = "Select a Brickversian bone to pose" };
+		_boneChoice.ItemSelected += index => SelectPreviewBone((int)index);
+		playback.AddChild(_boneChoice);
+		_autoKey = new CheckButton
+		{
+			Text = "Auto Key",
+			ButtonPressed = true,
+			TooltipText = "Create or update a rotation key whenever a bone gizmo is moved",
+		};
+		playback.AddChild(_autoKey);
+		CheckButton wireframe = new() { Text = "Wireframe" };
+		wireframe.Toggled += enabled => SetPreviewWireframe(enabled);
+		playback.AddChild(wireframe);
+		AddButton(playback, "Reset Camera", ResetPreviewCamera);
+		PopulateBonePicker();
+		CreateBoneGizmo();
 		_playhead = new HSlider
 		{
 			MinValue = 0,
@@ -183,7 +231,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		inspector.AddChild(
 			new Label
 			{
-				Text = "Track paths are rig-specific NodePaths.\nNo Mixamo naming is required.",
+				Text = "Tracks target native Brickversian bones.\nCamera navigation never changes animation data.",
 				AutowrapMode = TextServer.AutowrapMode.WordSmart,
 			}
 		);
@@ -200,6 +248,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 			_timeline.Playhead = _previewPlayer.CurrentAnimationPosition;
 			_timeline.QueueRedraw();
 		}
+		UpdateBoneGizmo();
 	}
 
 	private static StyleBoxFlat SurfaceStyle(Color color) =>
@@ -220,15 +269,16 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	private void CreatePreview(Control parent)
 	{
 		SubViewportContainer container = new() { Stretch = true };
+		container.GuiInput += HandlePreviewInput;
 		parent.AddChild(container);
-		SubViewport viewport = new()
+		_previewViewport = new SubViewport
 		{
 			Size = new Vector2I(700, 360),
 			TransparentBg = false,
 			OwnWorld3D = true,
 			RenderTargetUpdateMode = SubViewport.UpdateMode.Always,
 		};
-		container.AddChild(viewport);
+		container.AddChild(_previewViewport);
 
 		WorldEnvironment environment = new()
 		{
@@ -241,22 +291,326 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 				AmbientLightEnergy = 0.85f,
 			},
 		};
-		viewport.AddChild(environment);
+		_previewViewport.AddChild(environment);
 		DirectionalLight3D light = new()
 		{
 			RotationDegrees = new Vector3(-45, -25, 0),
 			LightEnergy = 1.5f,
 			ShadowEnabled = true,
 		};
-		viewport.AddChild(light);
-		Camera3D camera = new() { Position = new Vector3(0, 3.2f, 8.5f), Current = true };
-		camera.LookAtFromPosition(camera.Position, new Vector3(0, 2.6f, 0));
-		viewport.AddChild(camera);
+		_previewViewport.AddChild(light);
+		_previewCamera = new Camera3D { Current = true };
+		_previewViewport.AddChild(_previewCamera);
+		UpdatePreviewCamera();
 
 		Node3D rig = GD.Load<PackedScene>("res://scenes/datamodel/BrickversianModal.tscn").Instantiate<Node3D>();
-		viewport.AddChild(rig);
+		_previewViewport.AddChild(rig);
 		_previewPlayer = rig.GetNodeOrNull<AnimationPlayer>("Character/AnimationPlayer");
+		_previewSkeleton = rig.GetNodeOrNull<Skeleton3D>("Character/Poly/Skeleton3D");
+		ApplyNoobPreviewColors(_previewSkeleton);
 		RefreshPreview();
+	}
+
+	private static void ApplyNoobPreviewColors(Skeleton3D? skeleton)
+	{
+		if (skeleton == null)
+			return;
+		foreach (Node child in skeleton.GetChildren())
+		{
+			if (child is not MeshInstance3D mesh || mesh.Mesh == null)
+				continue;
+			Color tint =
+				mesh.Name.ToString() switch
+				{
+					"Torso" => new Color("1d62d0"),
+					"LeftLeg" or "RightLeg" => new Color("43a047"),
+					_ => new Color("f6d54a"),
+				};
+			for (int surface = 0; surface < mesh.Mesh.GetSurfaceCount(); surface++)
+			{
+				Material? source = mesh.Mesh.SurfaceGetMaterial(surface);
+				if (source?.Duplicate() is BaseMaterial3D material)
+				{
+					// Tinting the existing material preserves the head's face texture.
+					material.AlbedoColor = tint;
+					mesh.SetSurfaceOverrideMaterial(surface, material);
+				}
+				else
+					mesh.SetSurfaceOverrideMaterial(
+						surface,
+						new StandardMaterial3D { AlbedoColor = tint, Roughness = 0.72f }
+					);
+			}
+		}
+	}
+
+	private void PopulateBonePicker()
+	{
+		if (_previewSkeleton == null || _boneChoice == null)
+			return;
+		_boneChoice.Clear();
+		for (int index = 0; index < _previewSkeleton.GetBoneCount(); index++)
+			_boneChoice.AddItem(_previewSkeleton.GetBoneName(index));
+		if (_boneChoice.ItemCount > 0)
+			_boneChoice.Select(0);
+	}
+
+	private void CreateBoneGizmo()
+	{
+		if (_previewViewport == null || _boneGizmo != null)
+			return;
+		ImmediateMesh axes = new();
+		axes.SurfaceBegin(Mesh.PrimitiveType.Lines);
+		foreach ((Color color, Vector3 endpoint) in new[]
+		{
+			(Colors.Red, Vector3.Right),
+			(Colors.LimeGreen, Vector3.Up),
+			(Colors.DodgerBlue, Vector3.Back),
+		})
+		{
+			axes.SurfaceSetColor(color);
+			axes.SurfaceAddVertex(Vector3.Zero);
+			axes.SurfaceSetColor(color);
+			axes.SurfaceAddVertex(endpoint * 0.55f);
+		}
+		axes.SurfaceEnd();
+		StandardMaterial3D material = new()
+		{
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+			VertexColorUseAsAlbedo = true,
+			NoDepthTest = true,
+		};
+		axes.SurfaceSetMaterial(0, material);
+		_boneGizmo = new MeshInstance3D { Mesh = axes, TopLevel = true };
+		_previewViewport.AddChild(_boneGizmo);
+		UpdateBoneGizmo();
+	}
+
+	private void SelectPreviewBone(int index)
+	{
+		if (_previewSkeleton == null || index < 0 || index >= _previewSkeleton.GetBoneCount())
+			return;
+		UpdateBoneGizmo();
+	}
+
+	private void UpdateBoneGizmo()
+	{
+		if (_boneGizmo == null || _previewSkeleton == null || _boneChoice == null)
+			return;
+		int bone = _boneChoice.Selected;
+		_boneGizmo.Visible = bone >= 0 && bone < _previewSkeleton.GetBoneCount();
+		if (_boneGizmo.Visible)
+			_boneGizmo.GlobalTransform =
+				_previewSkeleton.GlobalTransform * _previewSkeleton.GetBoneGlobalPose(bone);
+	}
+
+	private void SetPreviewWireframe(bool enabled)
+	{
+		if (_previewViewport != null)
+			_previewViewport.DebugDraw = enabled
+				? Viewport.DebugDrawEnum.Wireframe
+				: Viewport.DebugDrawEnum.Disabled;
+	}
+
+	private void SetPoseTool(PoseTool tool)
+	{
+		_poseTool = tool;
+		_status.Text = tool == PoseTool.Move
+			? "Move tool: drag a colored gizmo axis"
+			: "Rotate tool: drag a colored gizmo axis";
+	}
+
+	private void HandlePreviewInput(InputEvent input)
+	{
+		if (input is InputEventMouseButton button)
+		{
+			if (button.ButtonIndex == MouseButton.WheelUp && button.Pressed)
+			{
+				_cameraDistance = Math.Max(1.2f, _cameraDistance * 0.88f);
+				UpdatePreviewCamera();
+			}
+			else if (button.ButtonIndex == MouseButton.WheelDown && button.Pressed)
+			{
+				_cameraDistance = Math.Min(80, _cameraDistance * 1.12f);
+				UpdatePreviewCamera();
+			}
+			else if (button.ButtonIndex == MouseButton.Right)
+				_orbiting = button.Pressed;
+			else if (button.ButtonIndex == MouseButton.Middle)
+				_panning = button.Pressed;
+			else if (button.ButtonIndex == MouseButton.Left)
+			{
+				if (button.Pressed)
+					_posingBone =
+						_poseTool != PoseTool.None
+						&& _boneChoice.Selected >= 0
+						&& TryPickGizmoAxis(button.Position, out _activeGizmoAxis);
+				else
+				{
+					if (_posingBone && _autoKey.ButtonPressed)
+						KeySelectedBone(
+							_poseTool == PoseTool.Move ? "position" : "rotation"
+						);
+					_posingBone = false;
+					_activeGizmoAxis = -1;
+				}
+			}
+		}
+		else if (input is InputEventMouseMotion motion)
+		{
+			if (_orbiting)
+			{
+				_cameraYaw -= motion.Relative.X * 0.008f;
+				_cameraPitch = Math.Clamp(_cameraPitch - motion.Relative.Y * 0.008f, -1.35f, 1.35f);
+				UpdatePreviewCamera();
+			}
+			else if (_panning && _previewCamera != null)
+			{
+				float scale = _cameraDistance * 0.0015f;
+				_cameraTarget +=
+					_previewCamera.GlobalBasis.X * (-motion.Relative.X * scale)
+					+ _previewCamera.GlobalBasis.Y * (motion.Relative.Y * scale);
+				UpdatePreviewCamera();
+			}
+			else if (_posingBone)
+				TransformSelectedBone(motion.Relative);
+		}
+	}
+
+	private bool TryPickGizmoAxis(Vector2 pointer, out int selectedAxis)
+	{
+		selectedAxis = -1;
+		if (_previewCamera == null || _boneGizmo == null)
+			return false;
+		Vector3 origin = _boneGizmo.GlobalPosition;
+		Vector2 screenOrigin = _previewCamera.UnprojectPosition(origin);
+		float bestDistance = 14;
+		for (int axis = 0; axis < 3; axis++)
+		{
+			Vector3 direction = axis switch
+			{
+				0 => _boneGizmo.GlobalBasis.X,
+				1 => _boneGizmo.GlobalBasis.Y,
+				_ => _boneGizmo.GlobalBasis.Z,
+			};
+			Vector2 endpoint = _previewCamera.UnprojectPosition(origin + direction * 0.55f);
+			float distance = DistanceToSegment(pointer, screenOrigin, endpoint);
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				selectedAxis = axis;
+			}
+		}
+		return selectedAxis >= 0;
+	}
+
+	private static float DistanceToSegment(Vector2 point, Vector2 from, Vector2 to)
+	{
+		Vector2 segment = to - from;
+		float lengthSquared = segment.LengthSquared();
+		if (lengthSquared <= 0.0001f)
+			return point.DistanceTo(from);
+		float amount = Math.Clamp((point - from).Dot(segment) / lengthSquared, 0, 1);
+		return point.DistanceTo(from + segment * amount);
+	}
+
+	private void UpdatePreviewCamera()
+	{
+		if (_previewCamera == null)
+			return;
+		Vector3 offset = new(
+			Mathf.Sin(_cameraYaw) * Mathf.Cos(_cameraPitch),
+			Mathf.Sin(_cameraPitch),
+			Mathf.Cos(_cameraYaw) * Mathf.Cos(_cameraPitch)
+		);
+		_previewCamera.Position = _cameraTarget + offset * _cameraDistance;
+		_previewCamera.LookAt(_cameraTarget, Vector3.Up);
+	}
+
+	private void ResetPreviewCamera()
+	{
+		_cameraTarget = new Vector3(0, 2.6f, 0);
+		_cameraYaw = 0;
+		_cameraPitch = -0.08f;
+		_cameraDistance = 8.5f;
+		UpdatePreviewCamera();
+		_status.Text = "Preview camera reset";
+	}
+
+	private void TransformSelectedBone(Vector2 relative)
+	{
+		if (_previewSkeleton == null)
+			return;
+		int bone = _boneChoice.Selected;
+		if (bone < 0 || bone >= _previewSkeleton.GetBoneCount())
+			return;
+		_previewPlayer?.Pause();
+		_play.Text = "▶";
+		Vector3 axis = _activeGizmoAxis switch
+		{
+			0 => Vector3.Right,
+			1 => Vector3.Up,
+			_ => Vector3.Back,
+		};
+		float drag = (relative.X - relative.Y) * 0.01f;
+		if (_poseTool == PoseTool.Move)
+			_previewSkeleton.SetBonePosePosition(
+				bone,
+				_previewSkeleton.GetBonePosePosition(bone) + axis * drag * 0.01f
+			);
+		else
+			_previewSkeleton.SetBonePoseRotation(
+				bone,
+				(
+					new Quaternion(axis, drag)
+					* _previewSkeleton.GetBonePoseRotation(bone)
+				).Normalized()
+			);
+		UpdateBoneGizmo();
+	}
+
+	private void KeySelectedBone(string channel)
+	{
+		if (_previewSkeleton == null)
+			return;
+		int bone = _boneChoice.Selected;
+		if (bone < 0 || bone >= _previewSkeleton.GetBoneCount())
+			return;
+		string path = "Poly/Skeleton3D:" + _previewSkeleton.GetBoneName(bone);
+		int trackIndex = _clip.Tracks.FindIndex(
+			track => track.Channel == channel && track.Path == path
+		);
+		if (trackIndex < 0)
+		{
+			_clip.Tracks.Add(new BVAnimationTrack { Path = path, Channel = channel });
+			trackIndex = _clip.Tracks.Count - 1;
+		}
+		BVAnimationTrack track = _clip.Tracks[trackIndex];
+		double time = Math.Clamp(_playhead.Value, 0, _clip.Length);
+		BVAnimationKey? key = track.Keys.FirstOrDefault(
+			item => Math.Abs(item.Time - time) < 0.0005
+		);
+		if (key == null)
+		{
+			key = new BVAnimationKey { Time = time };
+			track.Keys.Add(key);
+		}
+		if (channel == "position")
+		{
+			Vector3 pose = _previewSkeleton.GetBonePosePosition(bone);
+			key.Value = [pose.X, pose.Y, pose.Z];
+		}
+		else
+		{
+			Quaternion pose = _previewSkeleton.GetBonePoseRotation(bone);
+			key.Value = [pose.X, pose.Y, pose.Z, pose.W];
+		}
+		track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
+		_selectedTrack = trackIndex;
+		_selectedKey = track.Keys.IndexOf(key);
+		RefreshAll();
+		_status.Text =
+			$"Keyed {channel} for {_previewSkeleton.GetBoneName(bone)} at {time:0.###}s";
 	}
 
 	private static Button AddButton(Control parent, string text, Action pressed)
