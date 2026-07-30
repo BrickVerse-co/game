@@ -84,6 +84,7 @@ public sealed partial class Tabs : Control
 	internal int OpenTabCount => _orderedControls.Count;
 
 	public static Tabs Singleton { get; private set; } = null!;
+	public WorldContainer? CurrentWorldContainer => CurrentControl as WorldContainer;
 	public Tabs()
 	{
 		Singleton = this;

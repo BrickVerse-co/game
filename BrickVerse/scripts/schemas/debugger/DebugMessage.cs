@@ -16,6 +16,12 @@ namespace BrickVerse.Schemas.Debugger;
 [MemoryPackUnion(5, typeof(MessageServerReady))]
 [MemoryPackUnion(6, typeof(MessageLogDispatch))]
 [MemoryPackUnion(7, typeof(MessageObjPropChange))]
+[MemoryPackUnion(8, typeof(MessageRuntimeSnapshotRequest))]
+[MemoryPackUnion(9, typeof(MessageRuntimeSnapshot))]
+[MemoryPackUnion(10, typeof(MessageRuntimePropertySet))]
+[MemoryPackUnion(11, typeof(MessageRuntimeExecute))]
+[MemoryPackUnion(12, typeof(MessageRuntimeRename))]
+[MemoryPackUnion(13, typeof(MessageRuntimeViewportRect))]
 public partial interface IDebugMessage
 {
 }
@@ -25,6 +31,8 @@ public partial class MessageClientData : IDebugMessage
 {
 	public string DebugID = "";
 	public int ProcessID = 0;
+	public bool IsServer;
+	public int ClientID;
 }
 
 [MemoryPackable]
@@ -68,4 +76,63 @@ public partial class MessageLogDispatch : IDebugMessage
 	public LogTypeEnum LogType;
 	public LogFromEnum LogFrom;
 	public string Content = "";
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeSnapshotRequest : IDebugMessage { }
+
+[MemoryPackable]
+public partial class MessageRuntimeSnapshot : IDebugMessage
+{
+	public RuntimeObjectInfo[] Objects = [];
+}
+
+[MemoryPackable]
+public partial class RuntimeObjectInfo
+{
+	public string ObjectID = "";
+	public string ParentObjectID = "";
+	public string Name = "";
+	public string ClassName = "";
+	public RuntimePropertyInfo[] Properties = [];
+}
+
+[MemoryPackable]
+public partial class RuntimePropertyInfo
+{
+	public string Name = "";
+	public string TypeName = "";
+	public string Value = "";
+	public bool CanWrite;
+}
+
+[MemoryPackable]
+public partial class MessageRuntimePropertySet : IDebugMessage
+{
+	public string ObjectID = "";
+	public string PropertyName = "";
+	public string Value = "";
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeExecute : IDebugMessage
+{
+	public string Source = "";
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeRename : IDebugMessage
+{
+	public string ObjectID = "";
+	public string Name = "";
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeViewportRect : IDebugMessage
+{
+	public int X;
+	public int Y;
+	public int Width;
+	public int Height;
+	public bool Visible = true;
 }

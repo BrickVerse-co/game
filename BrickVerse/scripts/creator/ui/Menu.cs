@@ -447,6 +447,12 @@ public sealed partial class Menu : PanelContainer
 						CreatorInterface.ToggleFullscreen();
 					}
 				},
+				new MenuButtonItem() {
+					Text = "Show Runtime Debug Windows",
+					Pressed = () => {
+						CreatorService.Singleton.ShowRuntimeDebugWindows();
+					}
+				},
 			]
 		);
 

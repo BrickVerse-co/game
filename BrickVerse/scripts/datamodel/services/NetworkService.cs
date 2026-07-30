@@ -37,7 +37,7 @@ public sealed partial class NetworkService : Instance
 {
 	private static readonly ConcurrentDictionary<(Type Type, int MethodId), RpcDispatchInfo> _rpcDispatchCache = new();
 
-	private const int PingIntervalMs = 250; // Ping interval
+	private const double PingIntervalSec = 2;
 	private const int AuthWaitTimeoutSec = 15; // Time wait before user disconnects due to auth timeout
 	private const int HeartbeatIntervalSec = 10; // Server heartbeat interval
 	private const int HeartbeatBeforeCheckPlayers = 5; // Server wait before checking players
@@ -104,6 +104,7 @@ public sealed partial class NetworkService : Instance
 	private readonly Dictionary<string, List<NetReplicateData>> _pendingReplications = [];
 	private Godot.Timer _heartbeatTimer = null!;
 	private Godot.Timer? _idleCheckTimer;
+	private Godot.Timer? _networkPingTimer;
 	private ulong _heartbeatCount = 0;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private ulong _lastActivityReportTime;
@@ -149,6 +150,12 @@ public sealed partial class NetworkService : Instance
 			_idleCheckTimer.Timeout -= CheckForIdlePeers;
 			_idleCheckTimer.QueueFree();
 			_idleCheckTimer = null;
+		}
+		if (_networkPingTimer != null)
+		{
+			_networkPingTimer.Timeout -= SendNetworkPing;
+			_networkPingTimer.QueueFree();
+			_networkPingTimer = null;
 		}
 
 		// Null all events
@@ -486,6 +493,14 @@ public sealed partial class NetworkService : Instance
 		_idleCheckTimer.Timeout += CheckForIdlePeers;
 		Globals.Singleton.AddChild(_idleCheckTimer);
 		_idleCheckTimer.Start();
+		_networkPingTimer = new Godot.Timer
+		{
+			WaitTime = PingIntervalSec,
+			OneShot = false
+		};
+		_networkPingTimer.Timeout += SendNetworkPing;
+		Globals.Singleton.AddChild(_networkPingTimer);
+		_networkPingTimer.Start();
 
 		if (Globals.IsInGDEditor)
 		{
@@ -645,6 +660,15 @@ public sealed partial class NetworkService : Instance
 			}
 		}
 	}
+
+	private void SendNetworkPing()
+	{
+		if (IsServer && NetInstance != null)
+			Rpc(nameof(NetRecvNetworkPing));
+	}
+
+	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Unreliable)]
+	private void NetRecvNetworkPing() { }
 
 	internal void NotifyLocalActivity()
 	{

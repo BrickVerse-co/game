@@ -16,6 +16,7 @@ using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Schemas.Debugger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,6 +51,11 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static Dictionary<CreatorSession, string> SessionToLocalTestID { get; private set; } = [];
 
 	internal DebugServer DebugServer { get; private set; } = null!;
+	private readonly Dictionary<int, RuntimeDebugWindow> _runtimeDebugWindows = [];
+	private int? _primaryRuntimeClientProcess;
+	private Rect2I? _lastRuntimeViewportRect;
+	private bool _lastRuntimeViewportVisible;
+	private double _runtimeViewportSyncElapsed;
 
 	public CreatorService()
 	{
@@ -77,6 +83,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Globals.BeforeQuit += OnBeforeQuit;
 		DebugServer = new();
 		DebugServer.Start();
+		DebugServer.RuntimeConnected += OnRuntimeConnected;
+		DebugServer.RuntimeDisconnected += OnRuntimeDisconnected;
+		DebugServer.RuntimeSnapshotReceived += OnRuntimeSnapshotReceived;
+		DebugServer.RuntimeLogReceived += OnRuntimeLogReceived;
 
 		DisplayServer.WindowSetDropFilesCallback(Callable.From<string[]>(OnFilesDropped));
 		base._Ready();
@@ -85,7 +95,87 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public override void _ExitTree()
 	{
 		Globals.BeforeQuit -= OnBeforeQuit;
+		DebugServer.RuntimeConnected -= OnRuntimeConnected;
+		DebugServer.RuntimeDisconnected -= OnRuntimeDisconnected;
+		DebugServer.RuntimeSnapshotReceived -= OnRuntimeSnapshotReceived;
+		DebugServer.RuntimeLogReceived -= OnRuntimeLogReceived;
 		base._ExitTree();
+	}
+
+	private void OnRuntimeConnected(int processId, bool isServer)
+	{
+		if (processId == 0 || _runtimeDebugWindows.ContainsKey(processId)) return;
+		if (!isServer)
+		{
+			if (_primaryRuntimeClientProcess.HasValue) return;
+			_primaryRuntimeClientProcess = processId;
+			_lastRuntimeViewportRect = null;
+			_runtimeViewportSyncElapsed = double.MaxValue;
+		}
+
+		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
+		_runtimeDebugWindows[processId] = window;
+		Interface.AddChild(window);
+		window.Popup();
+		PositionRuntimeDebugWindow(window);
+	}
+
+	private void PositionRuntimeDebugWindow(RuntimeDebugWindow window)
+	{
+		Vector2I mainPosition = GetWindow().Position;
+		Vector2I mainSize = GetWindow().Size;
+		Rect2I usable = DisplayServer.ScreenGetUsableRect(DisplayServer.WindowGetCurrentScreen());
+		int cascade = Math.Max(0, _runtimeDebugWindows.Count - 1) * 32;
+		Vector2I target = new(mainPosition.X + mainSize.X + 16 + cascade, mainPosition.Y + cascade);
+
+		if (target.X + window.Size.X > usable.End.X)
+			target.X = Math.Max(usable.Position.X, mainPosition.X - window.Size.X - 16 - cascade);
+		target.Y = Mathf.Clamp(target.Y, usable.Position.Y, Math.Max(usable.Position.Y, usable.End.Y - window.Size.Y));
+		window.Position = target;
+	}
+
+	public void ShowRuntimeDebugWindows()
+	{
+		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
+		{
+			if (!IsInstanceValid(window)) continue;
+			window.Show();
+			window.GrabFocus();
+		}
+	}
+
+	private void CloseRuntimeDebugWindows()
+	{
+		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
+		{
+			if (IsInstanceValid(window)) window.QueueFree();
+		}
+		_runtimeDebugWindows.Clear();
+		_primaryRuntimeClientProcess = null;
+		_lastRuntimeViewportRect = null;
+	}
+
+	private void OnRuntimeDisconnected(int processId)
+	{
+		if (_runtimeDebugWindows.Remove(processId, out RuntimeDebugWindow? window) && IsInstanceValid(window))
+			window.QueueFree();
+		if (_primaryRuntimeClientProcess == processId)
+		{
+			_primaryRuntimeClientProcess = null;
+			_lastRuntimeViewportRect = null;
+		}
+	}
+
+	private void OnRuntimeSnapshotReceived(int processId, MessageRuntimeSnapshot snapshot)
+	{
+		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
+			window.ApplySnapshot(snapshot);
+	}
+
+	private void OnRuntimeLogReceived(int processId, MessageLogDispatch log)
+	{
+		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
+			window.AppendLog(log);
 	}
 
 	private void OnBeforeQuit()
@@ -146,7 +236,52 @@ public sealed partial class CreatorService : Node, IScriptObject
 				Tabs.Singleton?.RefreshCreatorPresence();
 			}
 		}
+		SyncPrimaryClientViewport(delta);
 		base._Process(delta);
+	}
+
+	private void SyncPrimaryClientViewport(double delta)
+	{
+		if (!_primaryRuntimeClientProcess.HasValue) return;
+
+		_runtimeViewportSyncElapsed += delta;
+		if (_runtimeViewportSyncElapsed < 0.05) return;
+		_runtimeViewportSyncElapsed = 0;
+
+		Rect2I? rect = GetCurrentWorldViewportScreenRect();
+		bool visible = rect.HasValue
+			&& GetWindow().Mode != Window.ModeEnum.Minimized
+			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
+
+		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
+		if (rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
+		if (!rect.HasValue && !_lastRuntimeViewportVisible) return;
+
+		if (rect.HasValue) _lastRuntimeViewportRect = rect;
+		_lastRuntimeViewportVisible = visible;
+		if (effectiveRect.HasValue)
+		{
+			DebugServer.SetRuntimeViewportRect(_primaryRuntimeClientProcess.Value, effectiveRect.Value, visible);
+		}
+	}
+
+	private Rect2I? GetCurrentWorldViewportScreenRect()
+	{
+		WorldContainer? worldContainer = Tabs.Singleton?.CurrentWorldContainer;
+		if (worldContainer == null || !IsInstanceValid(worldContainer)) return null;
+
+		Rect2 globalRect = worldContainer.GetGlobalRect();
+		Vector2 windowPosition = GetWindow().Position;
+		float scale = GetWindow().ContentScaleFactor;
+		Vector2I position = new(
+			Mathf.RoundToInt(windowPosition.X + globalRect.Position.X * scale),
+			Mathf.RoundToInt(windowPosition.Y + globalRect.Position.Y * scale)
+		);
+		Vector2I size = new(
+			Mathf.Max(320, Mathf.RoundToInt(globalRect.Size.X * scale)),
+			Mathf.Max(240, Mathf.RoundToInt(globalRect.Size.Y * scale))
+		);
+		return new Rect2I(position, size);
 	}
 
 	public async Task CreateNewSessionByWorldId(string worldId, bool forceNew = false)
@@ -731,6 +866,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		List<string> args = ["--log-file", "user://logs/server.log", "-solo", placeFilePath, "-entry", entryPath, "-debug", $"127.0.0.1:{DebugServer.Port}", "-debug-id", debugID, "-port", port.ToString()];
 
+		Rect2I? viewportRect = GetCurrentWorldViewportScreenRect();
+		if (!isSubplace && viewportRect.HasValue)
+		{
+			Rect2I rect = viewportRect.Value;
+			args.Add($"-ltrect={rect.Position.X},{rect.Position.Y},{rect.Size.X},{rect.Size.Y}");
+		}
+
 		if (spawnPos != null)
 		{
 			args.AddRange(["-spawnpos", $"v{(int)spawnPos.Value.X},{(int)spawnPos.Value.Y},{(int)spawnPos.Value.Z}"]);
@@ -776,6 +918,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async void StopLocalTest()
 	{
+		CloseRuntimeDebugWindows();
 		if (!LocalTestActive) return;
 		foreach (int item in LocalTestProcesses)
 		{
@@ -793,6 +936,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private void CleanupLocalTest()
 	{
+		CloseRuntimeDebugWindows();
 		foreach (string item in LocalTestWorlds)
 		{
 			try
