@@ -1487,7 +1487,7 @@ public static class CreatorAPI
 				Link =
 					newAssetId.Length == 0
 						? Globals.MainEndpoint.PathJoin("/creator")
-						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+						: Globals.MainEndpoint.PathJoin("/assets/" + newAssetId),
 			};
 		}
 	}
