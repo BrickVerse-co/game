@@ -1414,7 +1414,8 @@ public static class CreatorAPI
 		string name = "",
 		string description = "",
 		string ownerId = "",
-		string ownerType = "USER"
+		string ownerType = "USER",
+		string contentType = "application/octet-stream"
 	)
 	{
 		if (!IsUserAuthenticated)
@@ -1437,7 +1438,7 @@ public static class CreatorAPI
 				form.Add(new StringContent(description), "description");
 
 			ByteArrayContent fileContent = new(assetData);
-			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+			fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 			form.Add(fileContent, "file", fileName);
 
 			using HttpResponseMessage msg = await _client.PostAsync(

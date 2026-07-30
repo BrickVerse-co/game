@@ -795,6 +795,23 @@ public partial class CreatorInterface : Control, IScriptObject
 		popup.Open();
 	}
 
+	public void OpenUploadTextureMenu()
+	{
+		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Texture);
+	}
+
+	public void OpenUploadSoundMenu()
+	{
+		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Sound);
+	}
+
+	private void OpenMediaUploadMenu(MediaUploadPopup.MediaKind kind)
+	{
+		MediaUploadPopup popup = new(kind);
+		PopupWindow(popup);
+		popup.Open();
+	}
+
 	public void OpenWorldPublish(World? world, bool publishAs = false)
 	{
 		BV.Print(
