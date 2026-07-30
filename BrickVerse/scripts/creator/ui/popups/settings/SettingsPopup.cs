@@ -20,6 +20,7 @@ public sealed partial class SettingsPopup : PopupWindowBase
 	[Export] private Control _layout = null!;
 	[Export] private LineEdit _settingsSearchEdit = null!;
 	[Export] private LineEdit _keybindSearchEdit = null!;
+	[Export] private Label _sectionTitle = null!;
 
 	private static readonly Dictionary<string, List<SettingDef>> SectionDefs =
 		CreatorSettingsRegistry.Definitions.Values
@@ -98,6 +99,7 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		}
 
 		_activeSection = sectionKey;
+		_sectionTitle.Text = SortedSections.FirstOrDefault(section => section.Key == sectionKey)?.Label ?? "Settings";
 
 		if (!_sectionUIs.TryGetValue(sectionKey, out var cachedUIs))
 		{

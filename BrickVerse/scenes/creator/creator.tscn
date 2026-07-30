@@ -272,6 +272,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Stop" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1844910087]
+visible = false
 clip_children = 2
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2

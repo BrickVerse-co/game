@@ -20,6 +20,7 @@ public partial class PlayOptionsMenu : Control
 		_playAtCamBtn.Pressed += OnPlayAtCamPressed;
 		_stopBtn.Pressed += OnStopButtonPressed;
 		_stopBtn.Disabled = true;
+		_stopBtn.Visible = false;
 
 		_playerCountOption.ItemSelected += OnPlayerCountSelected;
 		_playerCountOption.Select(0);
@@ -40,6 +41,7 @@ public partial class PlayOptionsMenu : Control
 		_playBtn.Disabled = true;
 		_playAtCamBtn.Disabled = true;
 		_stopBtn.Disabled = false;
+		_stopBtn.Visible = true;
 	}
 
 	private void OnLocalTestStopped()
@@ -47,6 +49,7 @@ public partial class PlayOptionsMenu : Control
 		_playBtn.Disabled = false;
 		_playAtCamBtn.Disabled = false;
 		_stopBtn.Disabled = true;
+		_stopBtn.Visible = false;
 	}
 
 	private void OnPlayButtonPressed()
