@@ -1144,11 +1144,11 @@ layout_mode = 2
 toggle_mode = true
 text = "Smooth"
 
-[node name="Flatten" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons"]
+[node name="Flatten" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=610351519]
 custom_minimum_size = Vector2(154, 42)
 layout_mode = 2
-toggle_mode = true
 tooltip_text = "Level terrain to the height under the brush"
+toggle_mode = true
 text = "Flatten"
 
 [node name="Grow" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1911821286]
@@ -1451,12 +1451,12 @@ layout_mode = 2
 button_pressed = true
 text = "Continuous stroke"
 
-[node name="Import" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content"]
+[node name="Import" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1952910365]
 layout_mode = 2
 tooltip_text = "Import PNG, JPEG, WebP, EXR, RAW, or R16 heightmaps"
 text = "Import Heightmap…"
 
-[node name="Generate" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content"]
+[node name="Generate" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1457739328]
 layout_mode = 2
 tooltip_text = "Generate hills, mountains, islands, or canyons"
 text = "Generate Terrain…"
@@ -1505,11 +1505,15 @@ layout_mode = 2
 theme_override_constants/separation = 2
 theme_override_icons/touch_dragger = SubResource("PlaceholderTexture2D_0tvsp")
 theme_override_icons/grabber = SubResource("PlaceholderTexture2D_0tvsp")
+split_offsets = PackedInt32Array(360)
+split_offset = 360
 
 [node name="Explorer" parent="GUI/Splitter/Right/RightTabs/Explorer/Split" unique_id=63511104 instance=ExtResource("32_4fw2t")]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Properties" parent="GUI/Splitter/Right/RightTabs/Explorer/Split" unique_id=2034223215 instance=ExtResource("34_bc04q")]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]
