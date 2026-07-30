@@ -99,7 +99,9 @@ public sealed partial class TeamCreateService : Node
 				if (_reconnectElapsed >= 10.0)
 				{
 					_reconnectElapsed = 0;
-					_ = SwitchUniverse(currentUniverse);
+					_ = _enabled
+						? RejoinCurrentSession(currentUniverse)
+						: SwitchUniverse(currentUniverse);
 				}
 			}
 			return;
@@ -341,8 +343,12 @@ public sealed partial class TeamCreateService : Node
 
 	private async Task Heartbeat()
 	{
+		string memberId = _memberId;
+		if (string.IsNullOrWhiteSpace(memberId)) return;
+		_requestActive = true;
+
 		Camera3D? camera = World.Current?.CreatorContext?.Freelook?.Camera3D;
-		JsonObject payload = new() { ["memberId"] = _memberId };
+		JsonObject payload = new() { ["memberId"] = memberId };
 		if (camera != null)
 		{
 			payload["camera"] = new JsonObject
@@ -358,8 +364,14 @@ public sealed partial class TeamCreateService : Node
 				ApiPath("/heartbeat"),
 				payload
 			);
-			if (!response.IsSuccessStatusCode) return;
-			using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+			string body = await response.Content.ReadAsStringAsync();
+			if (!response.IsSuccessStatusCode)
+			{
+				if (IsMissingMembershipResponse(response, body))
+					CallDeferred(nameof(HandleMembershipLost), memberId, body);
+				return;
+			}
+			using JsonDocument json = JsonDocument.Parse(body);
 			if (json.RootElement.TryGetProperty("session", out JsonElement session))
 				CallDeferred(nameof(ApplySessionResponse), session.GetRawText());
 		}
@@ -367,28 +379,137 @@ public sealed partial class TeamCreateService : Node
 		{
 			BV.PrintErr("Team Create heartbeat failed: ", error.Message);
 		}
+		finally
+		{
+			_requestActive = false;
+		}
 	}
 
 	private async Task FlushChanges()
 	{
+		string memberId = _memberId;
+		if (string.IsNullOrWhiteSpace(memberId)) return;
+		_requestActive = true;
+
+		KeyValuePair<string, JsonObject>[] batch = [.. _pendingChanges];
 		JsonArray changes = [];
-		foreach (JsonObject change in _pendingChanges.Values) changes.Add(change.DeepClone());
-		_pendingChanges.Clear();
-		if (changes.Count == 0) return;
+		foreach ((_, JsonObject change) in batch) changes.Add(change.DeepClone());
+		if (changes.Count == 0)
+		{
+			_requestActive = false;
+			return;
+		}
 
 		try
 		{
 			using HttpResponseMessage response = await SendJson(
 				HttpMethod.Post,
 				ApiPath("/changes"),
-				new JsonObject { ["memberId"] = _memberId, ["changes"] = changes }
+				new JsonObject { ["memberId"] = memberId, ["changes"] = changes }
 			);
+			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
-				BV.PrintErr("Team Create rejected changes: ", await response.Content.ReadAsStringAsync());
+			{
+				if (IsMissingMembershipResponse(response, body))
+					CallDeferred(nameof(HandleMembershipLost), memberId, body);
+				else
+					BV.PrintErr("Team Create rejected changes: ", body);
+				return;
+			}
+
+			// Only remove changes that were actually included in this batch.
+			// A newer edit may have replaced an entry with the same coalescing key
+			// while the request was in flight.
+			foreach ((string key, JsonObject sentChange) in batch)
+			{
+				if (_pendingChanges.TryGetValue(key, out JsonObject? current)
+					&& ReferenceEquals(current, sentChange))
+					_pendingChanges.Remove(key);
+			}
 		}
 		catch (Exception error)
 		{
 			BV.PrintErr("Team Create change upload failed: ", error.Message);
+		}
+		finally
+		{
+			_requestActive = false;
+		}
+	}
+
+	private static bool IsMissingMembershipResponse(
+		HttpResponseMessage response,
+		string body
+	) =>
+		response.StatusCode == System.Net.HttpStatusCode.NotFound
+		&& body.Contains("member not found", StringComparison.OrdinalIgnoreCase);
+
+	private void HandleMembershipLost(string rejectedMemberId, string responseBody)
+	{
+		if (string.IsNullOrWhiteSpace(rejectedMemberId)
+			|| rejectedMemberId != _memberId)
+			return;
+
+		_memberId = "";
+		_localUserId = "";
+		_members.Clear();
+		ClearCameraAvatars();
+		_window?.Refresh();
+		CreatorService.Interface.StatusBar?.SetStatus("Team Create reconnecting...");
+		BV.Print(
+			"Team Create session membership expired; reconnecting. Server response: ",
+			responseBody);
+		_ = RejoinCurrentSession(_universeId);
+	}
+
+	private async Task RejoinCurrentSession(long universeId)
+	{
+		if (_joining
+			|| universeId == 0
+			|| universeId != _universeId
+			|| !_enabled)
+			return;
+
+		_joining = true;
+		try
+		{
+			string token = await CreatorAPI.GetValidAccessTokenAsync();
+			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + token;
+
+			using HttpResponseMessage response = await SendJson(
+				HttpMethod.Post,
+				ApiPath("/join"),
+				new JsonObject()
+			);
+			string body = await response.Content.ReadAsStringAsync();
+			if (!response.IsSuccessStatusCode)
+				throw new HttpRequestException(
+					$"Team Create rejoin returned {(int)response.StatusCode}: {body}");
+
+			if (universeId != _universeId) return;
+
+			using JsonDocument json = JsonDocument.Parse(body);
+			_memberId = json.RootElement.GetProperty("memberId").GetString() ?? "";
+			if (string.IsNullOrWhiteSpace(_memberId))
+				throw new InvalidDataException(
+					"Team Create rejoin response did not include a member ID.");
+
+			ReadSession(json.RootElement.GetProperty("session"));
+			_reconnectElapsed = 0;
+			LastConnectionError = "";
+			CreatorService.Interface.StatusBar?.SetStatus("Team Create reconnected");
+			BV.Print("Team Create reconnected.");
+		}
+		catch (Exception error)
+		{
+			LastConnectionError = error.Message;
+			BV.PrintErr("Team Create rejoin failed: ", error.Message);
+			_reconnectElapsed = 0;
+		}
+		finally
+		{
+			_joining = false;
+			_window?.Refresh();
 		}
 	}
 
