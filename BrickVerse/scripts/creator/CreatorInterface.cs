@@ -13,15 +13,16 @@ using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Enums;
 using BrickVerse.Formats;
+using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using BrickVerse.Utils;
-using BrickVerse.Creator.Utils;
 using Godot;
 using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
@@ -758,7 +759,36 @@ public partial class CreatorInterface : Control, IScriptObject
 
 			popup.SetBusy(true, "Uploading mesh...");
 
-			CreatorAPI.UploadMesh(meshData, request.SourceFileName, request.Name, request.Description, request.OwnerId, request.OwnerType);
+			CreatorAPI
+				.UploadAsset(
+					meshData,
+					0,
+					"MESH",
+					request.SourceFileName,
+					request.Name,
+					request.Description,
+					request.OwnerId,
+					request.OwnerType.ToString()
+				)
+				.ContinueWith(task =>
+				{
+					if (task.IsFaulted)
+					{
+						BV.PrintErr(task.Exception);
+					}
+					else
+					{
+						CreatorPublishResponse response = task.Result;
+						BV.Print($"Mesh uploaded successfully. Asset ID: {response.Link}");
+					}
+				})
+				.ContinueWith(
+					_ =>
+					{
+						popup.SetBusy(false);
+					},
+					TaskScheduler.FromCurrentSynchronizationContext()
+				);
 
 			popup.Close();
 		};

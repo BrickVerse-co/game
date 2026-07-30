@@ -3,8 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
@@ -1296,46 +1296,6 @@ public static class CreatorAPI
 		return await msg.Content.ReadAsByteArrayAsync();
 	}
 
-	public static async Task UploadMesh(
-		byte[] meshData,
-		string fileName,
-		string name,
-		string description,
-		string ownerId,
-		UI.Popups.UploadMeshPopup.MeshOwnerType ownerType
-	)
-	{
-		if (!IsUserAuthenticated)
-			throw new AuthenticationException("User authentication required");
-
-		using MultipartFormDataContent form = new(Guid.NewGuid().ToString());
-
-		form.Add(FormString("assetType", "MESH"));
-		form.Add(FormString("name", name));
-		form.Add(FormString("description", description));
-		form.Add(FormString("ownerType", ownerType.ToString()));
-		form.Add(FormString("ownerId", ownerId.ToString()));
-		form.Add(FormFile("file", fileName, meshData));
-
-		string url = Globals.ApiEndpoint.PathJoin("/v3/asset/create");
-		using HttpResponseMessage msg = await _client.PostAsync(url, form);
-		string responseText = await msg.Content.ReadAsStringAsync();
-
-		if (!msg.IsSuccessStatusCode)
-		{
-			throw new HttpRequestException(
-				$"CreatorAPI: Upload mesh failed: {(int)msg.StatusCode} {msg.StatusCode}: {responseText}"
-			);
-		}
-
-		if (responseText.Contains("error", StringComparison.OrdinalIgnoreCase))
-		{
-			throw new HttpRequestException(
-				$"CreatorAPI: Upload mesh failed: {(int)msg.StatusCode} {msg.StatusCode}: {responseText}"
-			);
-		}
-	}
-
 	public static async Task<CreatorPublishResponse> UploadWorld(
 		byte[] placeData,
 		long? universeId = 0,
@@ -1449,7 +1409,12 @@ public static class CreatorAPI
 	public static async Task<CreatorPublishResponse> UploadAsset(
 		byte[] assetData,
 		long assetId = 0,
-		string assetType = "PREFAB"
+		string assetType = "PREFAB",
+		string fileName = "asset",
+		string name = "",
+		string description = "",
+		string ownerId = "",
+		string ownerType = "USER"
 	)
 	{
 		if (!IsUserAuthenticated)
@@ -1461,14 +1426,19 @@ public static class CreatorAPI
 			using MultipartFormDataContent form = new()
 			{
 				{ new StringContent("studio-upload"), "captchaToken" },
-				{ new StringContent(UserID), "ownerId" },
-				{ new StringContent("USER"), "ownerType" },
+				{ new StringContent(ownerId == "" ? UserID : ownerId), "ownerId" },
+				{ new StringContent(ownerType), "ownerType" },
 				{ new StringContent(assetType), "assetType" },
 			};
 
+			if (!string.IsNullOrWhiteSpace(name))
+				form.Add(new StringContent(name), "name");
+			if (!string.IsNullOrWhiteSpace(description))
+				form.Add(new StringContent(description), "description");
+
 			ByteArrayContent fileContent = new(assetData);
 			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-			form.Add(fileContent, "file", "asset.bvxm");
+			form.Add(fileContent, "file", fileName);
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
