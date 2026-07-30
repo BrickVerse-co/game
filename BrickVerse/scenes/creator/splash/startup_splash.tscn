@@ -161,7 +161,7 @@ resource_name = "LeftTabGroup"
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tokmf"]
 
-[node name="StartupSplash" type="Panel" unique_id=286100395 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_closeButton", "_versionNumber", "_banner")]
+[node name="StartupSplash" type="Panel" unique_id=286100395 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_closeButton", "_versionNumber", "_banner")]
 self_modulate = Color(1, 1, 1, 0.49803922)
 anchors_preset = 15
 anchor_right = 1.0
@@ -174,6 +174,7 @@ script = ExtResource("1_gc13l")
 _newButton = NodePath("Panel/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer/New")
 _openButton = NodePath("Panel/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer/Open")
 _recentsButton = NodePath("Panel/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer/Recents")
+_settingsButton = NodePath("Panel/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer/Settings")
 _closeButton = NodePath("Panel/VBoxContainer/Panel/Close")
 _versionNumber = NodePath("Panel/VBoxContainer/Panel/VersionLabel")
 _banner = NodePath("Panel/VBoxContainer/Panel/Splash")

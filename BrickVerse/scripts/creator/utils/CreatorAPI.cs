@@ -1399,6 +1399,7 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
+		string normalizedAssetType = assetType.Trim().ToUpperInvariant();
 		string normalizedOwnerType = ownerType.Trim().ToUpperInvariant();
 		if (normalizedOwnerType is not "USER" and not "GUILD")
 		{
@@ -1417,7 +1418,7 @@ public static class CreatorAPI
 				BVHttpClient.FormString("captchaToken", "studio-upload"),
 				BVHttpClient.FormString("ownerId", ownerId == "" ? UserID : ownerId),
 				BVHttpClient.FormString("ownerType", normalizedOwnerType),
-				BVHttpClient.FormString("assetType", assetType),
+				BVHttpClient.FormString("assetType", normalizedAssetType),
 			};
 
 			if (!string.IsNullOrWhiteSpace(name))
@@ -1447,10 +1448,11 @@ public static class CreatorAPI
 
 			return new CreatorPublishResponse
 			{
+				Success = true,
 				Link =
 					newAssetId.Length == 0
 						? Globals.MainEndpoint.PathJoin("/creator")
-						: Globals.MainEndpoint.PathJoin("/asset/" + newAssetId),
+						: Globals.MainEndpoint.PathJoin("/assets/" + newAssetId),
 			};
 		}
 		else
@@ -1462,7 +1464,8 @@ public static class CreatorAPI
 				BVHttpClient.FormString("captchaToken", "studio-upload"),
 			};
 
-			form.Add(BVHttpClient.FormFile("file", "asset.bvxm", assetData));
+			string updateFileName = normalizedAssetType == "PLUGIN" ? "addon.bvaddon" : fileName;
+			form.Add(BVHttpClient.FormFile("file", updateFileName, assetData, contentType));
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/publish"),
@@ -1484,6 +1487,7 @@ public static class CreatorAPI
 
 			return new CreatorPublishResponse
 			{
+				Success = true,
 				Link =
 					newAssetId.Length == 0
 						? Globals.MainEndpoint.PathJoin("/creator")
