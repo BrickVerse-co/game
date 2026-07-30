@@ -10,6 +10,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -58,6 +59,7 @@ public sealed partial class TeamCreateService : Node
 	public bool TeamCreateEnabled => _enabled;
 	public bool Connecting => _joining;
 	public bool ApiReachable { get; private set; }
+	public string LastConnectionError { get; private set; } = "";
 	public IReadOnlyList<TeamCreateMember> Members => _members;
 	public string FollowedMemberId => _followMemberId;
 
@@ -196,6 +198,7 @@ public sealed partial class TeamCreateService : Node
 			UnobserveAll();
 			_universeId = universeId;
 			_enabled = false;
+			LastConnectionError = "";
 			_sequence = 0;
 			_localUserId = "";
 			_members.Clear();
@@ -206,13 +209,7 @@ public sealed partial class TeamCreateService : Node
 			string token = await CreatorAPI.GetValidAccessTokenAsync();
 			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + token;
 
-			using HttpResponseMessage config = await _http.GetAsync(ApiPath(""));
-			ApiReachable = true;
-			if (!config.IsSuccessStatusCode) return;
-			using JsonDocument configJson = JsonDocument.Parse(await config.Content.ReadAsStringAsync());
-			_enabled =
-				configJson.RootElement.TryGetProperty("enabled", out JsonElement enabled)
-				&& enabled.GetBoolean();
+			_enabled = await FetchTeamCreateEnabled();
 			if (!_enabled) return;
 
 			using HttpResponseMessage response = await SendJson(
@@ -230,7 +227,9 @@ public sealed partial class TeamCreateService : Node
 		catch (Exception error)
 		{
 			BV.PrintErr("Team Create connection failed: ", error.Message);
-			ApiReachable = false;
+			LastConnectionError = error.Message;
+			if (error is HttpRequestException)
+				ApiReachable = false;
 			_enabled = false;
 			_memberId = "";
 		}
@@ -239,6 +238,41 @@ public sealed partial class TeamCreateService : Node
 			_joining = false;
 			_window?.Refresh();
 		}
+	}
+
+	private async Task<bool> FetchTeamCreateEnabled()
+	{
+		string url = ApiPath("");
+		using HttpResponseMessage response = await _http.GetAsync(url);
+		ApiReachable = true;
+		string body = await response.Content.ReadAsStringAsync();
+		if (!response.IsSuccessStatusCode)
+		{
+			LastConnectionError =
+				$"Team Create status request returned {(int)response.StatusCode} " +
+				$"({response.ReasonPhrase}).";
+			BV.PrintErr(LastConnectionError, " URL: ", url, " Body: ", body);
+			return false;
+		}
+
+		using JsonDocument json = JsonDocument.Parse(body);
+		JsonElement root = json.RootElement;
+		if (!root.TryGetProperty("success", out JsonElement success)
+			|| success.ValueKind != JsonValueKind.True)
+			throw new InvalidDataException(
+				"Team Create status response did not report success.");
+		if (!root.TryGetProperty("enabled", out JsonElement enabled)
+			|| enabled.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+			throw new InvalidDataException(
+				"Team Create status response is missing the boolean 'enabled' field.");
+
+		bool isEnabled = enabled.GetBoolean();
+		BV.Print(
+			"Team Create status for universe ",
+			_universeId,
+			": ",
+			isEnabled ? "enabled" : "disabled");
+		return isEnabled;
 	}
 
 	private async Task CheckConnectivity()

@@ -24,6 +24,7 @@ public partial class PlayOptionsMenu : Control
 	private bool _lastInternetState;
 	private bool _lastTeamCreateState;
 	private bool _lastTeamCreateConnected;
+	private string _lastTeamCreateError = "";
 	private bool _statusInitialized;
 
 	public override void _Ready()
@@ -127,16 +128,19 @@ public partial class PlayOptionsMenu : Control
 		bool internetAvailable = service?.ApiReachable == true;
 		bool teamCreateEnabled = service?.TeamCreateEnabled == true;
 		bool teamCreateConnected = service?.Connected == true;
+		string teamCreateError = service?.LastConnectionError ?? "";
 		if (_statusInitialized
 			&& internetAvailable == _lastInternetState
 			&& teamCreateEnabled == _lastTeamCreateState
-			&& teamCreateConnected == _lastTeamCreateConnected)
+			&& teamCreateConnected == _lastTeamCreateConnected
+			&& teamCreateError == _lastTeamCreateError)
 			return;
 
 		_statusInitialized = true;
 		_lastInternetState = internetAvailable;
 		_lastTeamCreateState = teamCreateEnabled;
 		_lastTeamCreateConnected = teamCreateConnected;
+		_lastTeamCreateError = teamCreateError;
 		_internetStatusIcon.SelfModulate = internetAvailable
 			? new Color("45d483")
 			: new Color("ef596f");
@@ -150,6 +154,8 @@ public partial class PlayOptionsMenu : Control
 			? teamCreateConnected
 				? "Team Create enabled and connected"
 				: "Team Create enabled; connecting"
-			: "Team Create disabled for this world";
+			: !string.IsNullOrWhiteSpace(service?.LastConnectionError)
+				? service.LastConnectionError
+				: "Team Create disabled for this world";
 	}
 }
