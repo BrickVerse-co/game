@@ -42,6 +42,8 @@ public static class CreatorAPI
 	private const string StoredTokenPath = "user://creator_auth";
 
 	private static readonly BVHttpClient _client = new();
+	private static readonly BVHttpClient _oauthClient = new();
+	private static readonly SemaphoreSlim _tokenRefreshLock = new(1, 1);
 
 	public static string UserID { get; private set; } = "0";
 	public static string Username { get; private set; } = "";
@@ -51,6 +53,8 @@ public static class CreatorAPI
 	public static AuthenticatedUserProfile? CurrentAuthenticatedProfile { get; private set; }
 	public static ToolbarIdentity? CurrentToolbarIdentity { get; private set; }
 	public static string? PendingIdToken { get; set; }
+	public static string? PendingRefreshToken { get; set; }
+	public static long PendingExpiresInSeconds { get; set; }
 
 	public static event Action<int>? LaunchPlaceRequest;
 	public static event Action<OpenIdUserInfoResponse>? UserAuthenticated;
@@ -75,6 +79,11 @@ public static class CreatorAPI
 	}
 
 	public static bool IsUserAuthenticated { get; private set; }
+
+	static CreatorAPI()
+	{
+		_client.BeforeRequestAsync = EnsureTokenValid;
+	}
 
 	public static async Task SetupAuth()
 	{
@@ -119,7 +128,7 @@ public static class CreatorAPI
 				}
 
 				//BV.Print("CreatorAPI: Restoring session from stored token");
-				await LoginWithOpenIdSession(storedSession, saveToken: false);
+				await LoginWithOpenIdSession(storedSession, saveToken: true);
 
 				return;
 			}
@@ -229,7 +238,7 @@ public static class CreatorAPI
 				}
 			);
 
-			using HttpResponseMessage msg = await _client.PostAsync(oidc.TokenEndpoint, content);
+			using HttpResponseMessage msg = await _oauthClient.PostAsync(oidc.TokenEndpoint, content);
 			string body = await msg.Content.ReadAsStringAsync();
 
 			if (!msg.IsSuccessStatusCode)
@@ -253,7 +262,12 @@ public static class CreatorAPI
 				newRefreshToken = session.RefreshToken;
 
 			long expiresAt = 0;
-			if (!string.IsNullOrWhiteSpace(newIdToken))
+			long expiresIn = GetLong(root, "expires_in");
+			if (expiresIn > 0)
+			{
+				expiresAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expiresIn;
+			}
+			else if (!string.IsNullOrWhiteSpace(newIdToken))
 			{
 				expiresAt = GetTokenExpirationFromIdToken(newIdToken);
 			}
@@ -277,7 +291,7 @@ public static class CreatorAPI
 
 	private static async Task<OpenIdConfig> GetOpenIdConfig()
 	{
-		using HttpResponseMessage msg = await _client.GetAsync(DiscoveryUrl);
+		using HttpResponseMessage msg = await _oauthClient.GetAsync(DiscoveryUrl);
 		string body = await msg.Content.ReadAsStringAsync();
 
 		if (!msg.IsSuccessStatusCode)
@@ -347,10 +361,23 @@ public static class CreatorAPI
 	public static Task LoginWithToken(string token, bool saveToken)
 	{
 		string? idToken = PendingIdToken;
+		string? refreshToken = PendingRefreshToken;
+		long expiresIn = PendingExpiresInSeconds;
 		PendingIdToken = null;
+		PendingRefreshToken = null;
+		PendingExpiresInSeconds = 0;
 
 		return LoginWithOpenIdSession(
-			new OpenIdAuthSession { AccessToken = NormalizeToken(token), IdToken = idToken ?? "" },
+			new OpenIdAuthSession
+			{
+				AccessToken = NormalizeToken(token),
+				RefreshToken = refreshToken ?? "",
+				IdToken = idToken ?? "",
+				ExpiresAt =
+					expiresIn > 0
+						? DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expiresIn
+						: 0,
+			},
 			saveToken,
 			null
 		);
@@ -486,7 +513,7 @@ public static class CreatorAPI
 
 		using HttpRequestMessage req = new(HttpMethod.Get, oidc.UserInfoEndpoint);
 		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-		using HttpResponseMessage msg = await _client.SendAsync(req);
+		using HttpResponseMessage msg = await _oauthClient.SendAsync(req);
 
 		string body = await msg.Content.ReadAsStringAsync();
 
@@ -507,24 +534,42 @@ public static class CreatorAPI
 		return new OpenIdUserInfoResponse { Sub = sub, PreferredUsername = preferredUsername };
 	}
 
-	private static async Task EnsureTokenValid()
+	private static async Task EnsureTokenValid(CancellationToken cancellationToken = default)
 	{
 		if (!IsUserAuthenticated || string.IsNullOrWhiteSpace(Token))
 			return;
 
-		OpenIdAuthSession? storedSession = LoadStoredSession();
-		if (storedSession != null && IsTokenExpired(storedSession))
+		await _tokenRefreshLock.WaitAsync(cancellationToken);
+		try
 		{
-			if (!string.IsNullOrWhiteSpace(storedSession.RefreshToken))
+			OpenIdAuthSession? storedSession = LoadStoredSession();
+			if (storedSession == null || !IsTokenExpired(storedSession))
+				return;
+
+			if (string.IsNullOrWhiteSpace(storedSession.RefreshToken))
+				throw new AuthenticationException(
+					"Creator access token expired and no refresh token is available."
+				);
+
+			OpenIdAuthSession? refreshedSession = await RefreshAccessToken(storedSession);
+			if (refreshedSession == null)
 			{
-				OpenIdAuthSession? refreshedSession = await RefreshAccessToken(storedSession);
-				if (refreshedSession != null)
-				{
-					SetToken(refreshedSession.AccessToken);
-					SaveStoredSession(refreshedSession);
-					//BV.Print("CreatorAPI: Token automatically refreshed before API call");
-				}
+				ClearAuth();
+				AuthenticationFailed?.Invoke(
+					"Your Creator session expired. Please sign in again."
+				);
+				throw new AuthenticationException(
+					"Creator OAuth refresh token is invalid or expired."
+				);
 			}
+
+			SetToken(refreshedSession.AccessToken);
+			SaveStoredSession(refreshedSession);
+			BV.Print("CreatorAPI: OAuth access token refreshed.");
+		}
+		finally
+		{
+			_tokenRefreshLock.Release();
 		}
 	}
 
@@ -807,6 +852,9 @@ public static class CreatorAPI
 		CurrentUserInfo = null;
 		CurrentAuthenticatedProfile = null;
 		CurrentToolbarIdentity = null;
+		PendingIdToken = null;
+		PendingRefreshToken = null;
+		PendingExpiresInSeconds = 0;
 		IsUserAuthenticated = false;
 
 		_client.DefaultRequestHeaders.Remove("Authorization");

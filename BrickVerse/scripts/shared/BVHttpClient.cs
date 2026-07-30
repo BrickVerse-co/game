@@ -21,6 +21,7 @@ public partial class BVHttpClient
 		Timeout = TimeSpan.FromMinutes(10),
 	};
 	public Dictionary<string, string> DefaultRequestHeaders { get; } = [];
+	public Func<CancellationToken, Task>? BeforeRequestAsync { get; set; }
 
 	public BVHttpClient()
 	{
@@ -77,6 +78,9 @@ public partial class BVHttpClient
 	{
 		if (Globals.UseNoHttp)
 			throw new HttpRequestException("Http is disabled via feature flag");
+
+		if (BeforeRequestAsync != null)
+			await BeforeRequestAsync(cancellationToken);
 
 		ApplyDefaultHeaders(msg);
 		return await _httpClient.SendAsync(
