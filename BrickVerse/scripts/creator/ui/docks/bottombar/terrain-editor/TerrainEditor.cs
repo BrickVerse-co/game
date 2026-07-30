@@ -8,6 +8,7 @@ using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Creator.UI;
 
@@ -77,6 +78,7 @@ public partial class TerrainEditor : Control
 	private bool _savedAutoSerialise;
 	private Control? _viewportClickRegion;
 	private double _lastApplyAtMs;
+	private string _materialSignature = string.Empty;
 
 	private float BrushSize => (float)_sizeSpinBox.Value;
 	private float BrushStrength => (float)_strengthSpinBox.Value;
@@ -146,6 +148,7 @@ public partial class TerrainEditor : Control
 
 	public override void _Process(double delta)
 	{
+		RefreshMaterialOptionsIfNeeded();
 		if (!IsVisibleInTree() || !IsEditingEnabled() || CurrentTerrain == null)
 		{
 			FinishStroke();
@@ -566,18 +569,22 @@ public partial class TerrainEditor : Control
 		OnShapeSelected(_shapeOption.GetItemId(shapeIndex));
 
 		int materialIndex = FindOptionIndexById(_materialOption, _defaultMaterialId);
-		_materialOption.Select(materialIndex);
+		if (_materialOption.ItemCount > 0)
+			_materialOption.Select(materialIndex);
 	}
 
 	private void PopulateMaterialOptions()
 	{
+		int selectedSlot = MaterialIndex;
 		_materialOption.Clear();
-
-		for (int index = 0; index < Terrain.MaterialPalette.Length; index++)
+		TerrainMaterial[] materials = CurrentTerrain?.GetMaterials() ?? [];
+		foreach (TerrainMaterial material in materials)
 		{
-			Part.PartMaterialEnum material = Terrain.MaterialPalette[index];
-			_materialOption.AddItem(material.ToString(), index);
+			_materialOption.AddItem(material.Name, material.Slot);
 		}
+		int selectedIndex = FindOptionIndexById(_materialOption, selectedSlot);
+		if (_materialOption.ItemCount > 0)
+			_materialOption.Select(selectedIndex);
 	}
 
 	private void PopulateMaterialIcons()
@@ -588,19 +595,43 @@ public partial class TerrainEditor : Control
 
 		for (int index = 0; index < _materialOption.ItemCount; index++)
 		{
-			string materialName = _materialOption.GetItemText(index);
-			Texture2D icon = LoadMaterialIcon(materialName);
+			int slot = _materialOption.GetItemId(index);
+			TerrainMaterial? terrainMaterial = CurrentTerrain?.GetMaterial(slot);
+			Texture2D icon = LoadMaterialIcon(terrainMaterial);
 			_materialOption.SetItemIcon(index, icon);
 			popup.SetItemIcon(index, icon);
 			popup.SetItemIconMaxWidth(index, 12);
 		}
 	}
 
-	private static Texture2D LoadMaterialIcon(string materialName)
+	private void RefreshMaterialOptionsIfNeeded()
 	{
-		if (Enum.TryParse(materialName, out Part.PartMaterialEnum materialEnum))
+		string signature = string.Join(
+			"|",
+			CurrentTerrain?.GetMaterials().Select(
+				material => $"{material.ObjectID}:{material.Slot}:{material.Name}:{material.Surface}:{material.Color}"
+			) ?? []
+		);
+		if (_materialSignature == signature)
+			return;
+		_materialSignature = signature;
+		PopulateMaterialOptions();
+		PopulateMaterialIcons();
+		UpdateStatus();
+	}
+
+	private static Texture2D LoadMaterialIcon(TerrainMaterial? terrainMaterial)
+	{
+		if (terrainMaterial != null)
 		{
-			Material material = Globals.LoadMaterial(materialEnum, 1.0f);
+			if (terrainMaterial.SurfaceType == TerrainSurfaceType.Custom &&
+				terrainMaterial.GetTexture(terrainMaterial.AlbedoTexture)
+					is Texture2D customAlbedo)
+			{
+				return FitIconTexture(customAlbedo, 12);
+			}
+
+			Material material = Globals.LoadMaterial(terrainMaterial.Surface, 1.0f);
 
 			if (material is ShaderMaterial shaderMaterial)
 			{
@@ -614,10 +645,8 @@ public partial class TerrainEditor : Control
 			}
 		}
 
-		uint hash = (uint)materialName.GetHashCode();
-		float hue = (hash % 360u) / 360.0f;
-		Image image = Image.Create(12, 12, false, Image.Format.Rgba8);
-		image.Fill(Color.FromHsv(hue, 0.38f, 0.75f));
+		Image image = Image.CreateEmpty(12, 12, false, Image.Format.Rgba8);
+		image.Fill(terrainMaterial?.Color ?? Colors.Gray);
 		return ImageTexture.CreateFromImage(image);
 	}
 
