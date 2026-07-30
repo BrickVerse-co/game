@@ -32,6 +32,7 @@ public sealed partial class TeamCreateService : Node
 	private readonly Dictionary<string, NetworkedObject> _observed = [];
 	private readonly Dictionary<string, JsonObject> _pendingChanges = [];
 	private readonly List<TeamCreateMember> _members = [];
+	private readonly Dictionary<string, Node3D> _cameraAvatars = [];
 	private long _universeId;
 	private string _memberId = "";
 	private string _localUserId = "";
@@ -47,6 +48,8 @@ public sealed partial class TeamCreateService : Node
 	private double _reconnectElapsed;
 	private TeamCreateSessionWindow? _window;
 	private string _followMemberId = "";
+	private Node3D? _cameraAvatarRoot;
+	private World? _cameraAvatarWorld;
 
 	public bool Connected => _enabled && !string.IsNullOrWhiteSpace(_memberId);
 	public IReadOnlyList<TeamCreateMember> Members => _members;
@@ -87,8 +90,9 @@ public sealed partial class TeamCreateService : Node
 			return;
 		}
 		_reconnectElapsed = 0;
-		if (_requestActive) return;
 		UpdateFollowCamera((float)delta);
+		UpdateCameraAvatarTransforms((float)delta);
+		if (_requestActive) return;
 
 		_pollElapsed += delta;
 		_flushElapsed += delta;
@@ -121,6 +125,7 @@ public sealed partial class TeamCreateService : Node
 	{
 		_ = Leave();
 		UnobserveAll();
+		ClearCameraAvatars();
 	}
 
 	public void ShowSessionWindow()
@@ -173,6 +178,7 @@ public sealed partial class TeamCreateService : Node
 			_members.Clear();
 			_followMemberId = "";
 			_pendingChanges.Clear();
+			ClearCameraAvatars();
 			if (universeId == 0 || string.IsNullOrWhiteSpace(CreatorAPI.Token)) return;
 			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + CreatorAPI.Token;
 
@@ -235,12 +241,12 @@ public sealed partial class TeamCreateService : Node
 			);
 			if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
 			{
-				CallDeferred(MethodName.DisableFromServer);
+				CallDeferred(nameof(DisableFromServer));
 				return;
 			}
 			if (!response.IsSuccessStatusCode) return;
 			string body = await response.Content.ReadAsStringAsync();
-			CallDeferred(MethodName.ApplyPollResponse, requestedUniverse, body);
+			CallDeferred(nameof(ApplyPollResponse), requestedUniverse, body);
 		}
 		catch (Exception error)
 		{
@@ -274,7 +280,7 @@ public sealed partial class TeamCreateService : Node
 			if (!response.IsSuccessStatusCode) return;
 			using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 			if (json.RootElement.TryGetProperty("session", out JsonElement session))
-				CallDeferred(MethodName.ApplySessionResponse, session.GetRawText());
+				CallDeferred(nameof(ApplySessionResponse), session.GetRawText());
 		}
 		catch (Exception error)
 		{
@@ -338,6 +344,7 @@ public sealed partial class TeamCreateService : Node
 		_pendingChanges.Clear();
 		StopFollowing();
 		UnobserveAll();
+		ClearCameraAvatars();
 		CreatorService.Interface.StatusBar?.SetStatus("Team Create was disabled");
 	}
 
@@ -364,7 +371,141 @@ public sealed partial class TeamCreateService : Node
 			_members.Add(item);
 			if (item.Id == _memberId) _localUserId = item.UserId;
 		}
+		RefreshCameraAvatars();
 		_window?.Refresh();
+	}
+
+	private void RefreshCameraAvatars()
+	{
+		World? world = World.Current;
+		if (world == null)
+		{
+			ClearCameraAvatars();
+			return;
+		}
+
+		if (_cameraAvatarRoot == null
+			|| !IsInstanceValid(_cameraAvatarRoot)
+			|| _cameraAvatarWorld != world)
+		{
+			ClearCameraAvatars();
+			_cameraAvatarWorld = world;
+			_cameraAvatarRoot = new Node3D { Name = "TeamCreateCameraAvatars" };
+			world.GDNode.AddChild(_cameraAvatarRoot, @internal: Node.InternalMode.Back);
+		}
+
+		HashSet<string> active = [];
+		foreach (TeamCreateMember member in _members)
+		{
+			if (member.Id == _memberId || member.Camera == null) continue;
+			active.Add(member.Id);
+			if (!_cameraAvatars.TryGetValue(member.Id, out Node3D? avatar)
+				|| !IsInstanceValid(avatar))
+			{
+				avatar = CreateCameraAvatar(member);
+				_cameraAvatarRoot.AddChild(avatar);
+				_cameraAvatars[member.Id] = avatar;
+			}
+
+			if (avatar.GlobalPosition == Vector3.Zero)
+			{
+				avatar.GlobalPosition = member.Camera.Position;
+				avatar.GlobalRotation = member.Camera.Rotation;
+			}
+			Label3D? label = avatar.GetNodeOrNull<Label3D>("Username");
+			if (label != null) label.Text = member.Username;
+		}
+
+		foreach ((string id, Node3D avatar) in _cameraAvatars.ToArray())
+		{
+			if (active.Contains(id)) continue;
+			if (IsInstanceValid(avatar)) avatar.QueueFree();
+			_cameraAvatars.Remove(id);
+		}
+	}
+
+	private void UpdateCameraAvatarTransforms(float delta)
+	{
+		float weight = Mathf.Clamp(delta * 9f, 0f, 1f);
+		foreach (TeamCreateMember member in _members)
+		{
+			if (member.Camera == null
+				|| !_cameraAvatars.TryGetValue(member.Id, out Node3D? avatar)
+				|| !IsInstanceValid(avatar))
+				continue;
+			avatar.GlobalPosition = avatar.GlobalPosition.Lerp(member.Camera.Position, weight);
+			avatar.GlobalRotation = avatar.GlobalRotation.Lerp(member.Camera.Rotation, weight);
+		}
+	}
+
+	private static Node3D CreateCameraAvatar(TeamCreateMember member)
+	{
+		Node3D avatar = new() { Name = "Collaborator_" + member.Id };
+		Color color = ColorFromUserId(member.UserId);
+		StandardMaterial3D material = new()
+		{
+			AlbedoColor = color,
+			EmissionEnabled = true,
+			Emission = color,
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+		};
+
+		MeshInstance3D head = new()
+		{
+			Name = "Camera",
+			Mesh = new SphereMesh
+			{
+				Radius = 0.22f,
+				Height = 0.44f,
+				Material = material,
+			},
+		};
+		avatar.AddChild(head);
+
+		MeshInstance3D direction = new()
+		{
+			Name = "FacingDirection",
+			Position = new Vector3(0, 0, -0.65f),
+			Mesh = new BoxMesh
+			{
+				Size = new Vector3(0.09f, 0.09f, 1.1f),
+				Material = material,
+			},
+		};
+		avatar.AddChild(direction);
+
+		Label3D label = new()
+		{
+			Name = "Username",
+			Text = member.Username,
+			Position = new Vector3(0, 0.48f, 0),
+			Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+			FixedSize = true,
+			FontSize = 22,
+			OutlineSize = 8,
+			Modulate = Colors.White,
+			OutlineModulate = new Color(0.04f, 0.04f, 0.06f, 0.95f),
+			NoDepthTest = true,
+		};
+		avatar.AddChild(label);
+		return avatar;
+	}
+
+	private static Color ColorFromUserId(string userId)
+	{
+		uint hash = 2166136261;
+		foreach (char character in userId)
+			hash = (hash ^ character) * 16777619;
+		return Color.FromHsv((hash % 360) / 360f, 0.68f, 1f);
+	}
+
+	private void ClearCameraAvatars()
+	{
+		if (_cameraAvatarRoot != null && IsInstanceValid(_cameraAvatarRoot))
+			_cameraAvatarRoot.QueueFree();
+		_cameraAvatarRoot = null;
+		_cameraAvatarWorld = null;
+		_cameraAvatars.Clear();
 	}
 
 	private void ObserveWorld()
