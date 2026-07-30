@@ -1252,28 +1252,6 @@ public static class CreatorAPI
 		return [.. worlds];
 	}
 
-	private static StringContent FormString(string name, string value)
-	{
-		StringContent content = new(value, Encoding.UTF8, "text/plain");
-		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
-		{
-			Name = $"\"{name}\"",
-		};
-		return content;
-	}
-
-	private static ByteArrayContent FormFile(string name, string fileName, byte[] data)
-	{
-		ByteArrayContent content = new(data);
-		content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
-		{
-			Name = $"\"{name}\"",
-			FileName = $"\"{fileName}\"",
-		};
-		return content;
-	}
-
 	public static async Task<byte[]> DownloadWorld(string worldId)
 	{
 		if (!IsUserAuthenticated)
@@ -1314,9 +1292,9 @@ public static class CreatorAPI
 
 		using MultipartFormDataContent form = new(Guid.NewGuid().ToString());
 
-		form.Add(FormString("universeId", resolvedUniverseId.ToString()));
-		form.Add(FormString("worldId", resolvedWorldId.ToString()));
-		form.Add(FormString("publish", publish ? "true" : "false"));
+		form.Add(BVHttpClient.FormString("universeId", resolvedUniverseId.ToString()));
+		form.Add(BVHttpClient.FormString("worldId", resolvedWorldId.ToString()));
+		form.Add(BVHttpClient.FormString("publish", publish ? "true" : "false"));
 
 		if (isNewUniverse)
 		{
@@ -1348,11 +1326,11 @@ public static class CreatorAPI
 				);
 			}
 
-			form.Add(FormString("ownerId", ownerId));
-			form.Add(FormString("ownerType", ownerType));
+			form.Add(BVHttpClient.FormString("ownerId", ownerId));
+			form.Add(BVHttpClient.FormString("ownerType", ownerType));
 		}
 
-		form.Add(FormFile("file", "level.packed", placeData));
+		form.Add(BVHttpClient.FormFile("file", "level.packed", placeData));
 
 		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/tree");
 
@@ -1421,25 +1399,33 @@ public static class CreatorAPI
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
+		string normalizedOwnerType = ownerType.Trim().ToUpperInvariant();
+		if (normalizedOwnerType is not "USER" and not "GUILD")
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(ownerType),
+				ownerType,
+				"Asset owner type must be USER or GUILD."
+			);
+		}
+
 		// If the assetId is 0, we are creating a new asset.
 		if (assetId == 0)
 		{
 			using MultipartFormDataContent form = new()
 			{
-				{ new StringContent("studio-upload"), "captchaToken" },
-				{ new StringContent(ownerId == "" ? UserID : ownerId), "ownerId" },
-				{ new StringContent(ownerType), "ownerType" },
-				{ new StringContent(assetType), "assetType" },
+				BVHttpClient.FormString("captchaToken", "studio-upload"),
+				BVHttpClient.FormString("ownerId", ownerId == "" ? UserID : ownerId),
+				BVHttpClient.FormString("ownerType", normalizedOwnerType),
+				BVHttpClient.FormString("assetType", assetType),
 			};
 
 			if (!string.IsNullOrWhiteSpace(name))
-				form.Add(new StringContent(name), "name");
+				form.Add(BVHttpClient.FormString("name", name));
 			if (!string.IsNullOrWhiteSpace(description))
-				form.Add(new StringContent(description), "description");
+				form.Add(BVHttpClient.FormString("description", description));
 
-			ByteArrayContent fileContent = new(assetData);
-			fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-			form.Add(fileContent, "file", fileName);
+			form.Add(BVHttpClient.FormFile("file", fileName, assetData, contentType));
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
@@ -1472,13 +1458,11 @@ public static class CreatorAPI
 			// Otherwise, we are updating an existing asset
 			using MultipartFormDataContent form = new()
 			{
-				{ new StringContent(assetId.ToString()), "assetId" },
-				{ new StringContent("studio-upload"), "captchaToken" },
+				BVHttpClient.FormString("assetId", assetId.ToString()),
+				BVHttpClient.FormString("captchaToken", "studio-upload"),
 			};
 
-			ByteArrayContent fileContent = new(assetData);
-			fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-			form.Add(fileContent, "file", "asset.bvxm");
+			form.Add(BVHttpClient.FormFile("file", "asset.bvxm", assetData));
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/publish"),

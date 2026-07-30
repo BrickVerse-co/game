@@ -4,50 +4,85 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Shared;
 
 public partial class BVHttpClient
 {
-	private static readonly System.Net.Http.HttpClient _httpClient = new();
-	public Dictionary<string, string> DefaultRequestHeaders { get; set; } = [];
+	private static readonly System.Net.Http.HttpClient _httpClient = new()
+	{
+		Timeout = TimeSpan.FromMinutes(10),
+	};
+	public Dictionary<string, string> DefaultRequestHeaders { get; } = [];
 
 	public BVHttpClient()
 	{
 		DefaultRequestHeaders["User-Agent"] = $"BrickVerse Client {Globals.AppVersion}";
 	}
 
-	public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage msg)
+	public static StringContent FormString(string name, string value)
+	{
+		StringContent content = new(value, Encoding.UTF8, "text/plain");
+		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+		{
+			Name = QuoteFormValue(name, nameof(name)),
+		};
+		return content;
+	}
+
+	public static ByteArrayContent FormFile(
+		string name,
+		string fileName,
+		byte[] data,
+		string contentType = "application/octet-stream"
+	)
+	{
+		ByteArrayContent content = new(data);
+		content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+		{
+			Name = QuoteFormValue(name, nameof(name)),
+			FileName = QuoteFormValue(
+				System.IO.Path.GetFileName(fileName),
+				nameof(fileName)
+			),
+		};
+		return content;
+	}
+
+	private static string QuoteFormValue(string value, string parameterName)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+			throw new ArgumentException("Multipart form value cannot be empty.", parameterName);
+		if (value.Contains('\r') || value.Contains('\n') || value.Contains('"'))
+			throw new ArgumentException(
+				"Multipart form value contains invalid header characters.",
+				parameterName
+			);
+
+		return $"\"{value}\"";
+	}
+
+	public async Task<HttpResponseMessage> SendAsync(
+		HttpRequestMessage msg,
+		CancellationToken cancellationToken = default
+	)
 	{
 		if (Globals.UseNoHttp)
 			throw new HttpRequestException("Http is disabled via feature flag");
 
-		if (IsMultipart(msg.Content))
-			ValidateMultipartBody(
-				msg.Content,
-				await msg.Content!.ReadAsByteArrayAsync()
-			);
-
 		ApplyDefaultHeaders(msg);
 		return await _httpClient.SendAsync(
 			msg,
-			HttpCompletionOption.ResponseHeadersRead
-		);
-	}
-
-	private static bool IsMultipart(HttpContent? content)
-	{
-		return string.Equals(
-			content?.Headers.ContentType?.MediaType,
-			"multipart/form-data",
-			StringComparison.OrdinalIgnoreCase
+			HttpCompletionOption.ResponseHeadersRead,
+			cancellationToken
 		);
 	}
 
@@ -57,42 +92,6 @@ public partial class BVHttpClient
 		{
 			if (!msg.Headers.Contains(key))
 				msg.Headers.TryAddWithoutValidation(key, val);
-		}
-	}
-
-	private static void ValidateMultipartBody(HttpContent? content, byte[] body)
-	{
-		MediaTypeHeaderValue? contentType = content?.Headers.ContentType;
-		if (
-			contentType == null
-			|| !string.Equals(
-				contentType.MediaType,
-				"multipart/form-data",
-				StringComparison.OrdinalIgnoreCase
-			)
-		)
-			return;
-
-		string? boundary = contentType.Parameters
-			.FirstOrDefault(parameter =>
-				parameter.Name.Equals("boundary", StringComparison.OrdinalIgnoreCase)
-			)
-			?.Value
-			?.Trim('"');
-
-		if (string.IsNullOrWhiteSpace(boundary))
-			throw new HttpRequestException("Multipart form is missing its boundary parameter.");
-
-		byte[] openingBoundary = Encoding.ASCII.GetBytes($"--{boundary}\r\n");
-		byte[] closingBoundary = Encoding.ASCII.GetBytes($"--{boundary}--");
-		if (
-			!body.AsSpan().StartsWith(openingBoundary)
-			|| body.AsSpan().IndexOf(closingBoundary) < 0
-		)
-		{
-			throw new HttpRequestException(
-				"Multipart form boundary does not match the serialized request body."
-			);
 		}
 	}
 
@@ -125,8 +124,16 @@ public partial class BVHttpClient
 	public async Task<HttpResponseMessage> PostAsync(string url, HttpContent content)
 	{
 		using HttpRequestMessage msg = new(HttpMethod.Post, url) { Content = content };
-
-		return await SendAsync(msg);
+		try
+		{
+			return await SendAsync(msg);
+		}
+		finally
+		{
+			// HttpClient.PostAsync does not take ownership of caller content.
+			// Match that behavior when disposing our temporary request message.
+			msg.Content = null;
+		}
 	}
 
 	public async Task<HttpResponseMessage> PostAsJsonAsync<T>(
@@ -156,7 +163,14 @@ public partial class BVHttpClient
 	public async Task<HttpResponseMessage> PutAsync(string url, HttpContent content)
 	{
 		using HttpRequestMessage msg = new(HttpMethod.Put, url) { Content = content };
-		return await SendAsync(msg);
+		try
+		{
+			return await SendAsync(msg);
+		}
+		finally
+		{
+			msg.Content = null;
+		}
 	}
 
 	public async Task<HttpResponseMessage> PutAsJsonAsync<T>(
