@@ -213,6 +213,9 @@ public partial class CreatorInterface : Control, IScriptObject
 			case CreatorSettingKeys.Interface.ThemeMode:
 				ApplyThemeMode();
 				break;
+			case CreatorSettingKeys.Creator.DetailedRichPresence:
+				Tabs.Singleton?.RefreshCreatorPresence();
+				break;
 		}
 	}
 

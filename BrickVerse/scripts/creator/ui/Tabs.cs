@@ -7,6 +7,7 @@ using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
@@ -53,6 +54,7 @@ public sealed partial class Tabs : Control
 			{
 				World.Current = tec.TargetSession.OpenedWorlds[0];
 			}
+			RefreshCreatorPresence();
 		}
 	}
 
@@ -124,6 +126,43 @@ public sealed partial class Tabs : Control
 		_leftButton.ButtonUp += () => _scrollLeft = false;
 		_rightButton.ButtonDown += () => _scrollRight = true;
 		_rightButton.ButtonUp += () => _scrollRight = false;
+	}
+
+	public void RefreshCreatorPresence()
+	{
+		if (CreatorService.Singleton?.LocalTestActive == true)
+		{
+			string testWorld = World.Current?.WorldName ?? "World";
+			PresenceService.SetCreatorActivity($"Play testing {testWorld}");
+			return;
+		}
+
+		switch (CurrentControl)
+		{
+			case TextEditorContainer editor:
+				string scriptName = CreatorService.GetScriptNameFromPath(editor.TargetFilePath);
+				string scriptType = CreatorService.GetScriptTypeFromPath(editor.TargetFilePath) switch
+				{
+					ScriptTypeEnum.Server => "Server Script",
+					ScriptTypeEnum.Client => "Client Script",
+					ScriptTypeEnum.Module => "Module Script",
+					_ => "Script",
+				};
+				PresenceService.SetCreatorActivity(
+					$"Editing {scriptName} {scriptType}",
+					$"Project: {editor.TargetSession.ProjectFilePath.GetFile().GetBaseName()}"
+				);
+				break;
+			case WorldContainer world:
+				PresenceService.SetCreatorActivity(
+					$"Building {world.World.WorldName}",
+					$"Project: {world.World.LinkedSession.ProjectFilePath.GetFile().GetBaseName()}"
+				);
+				break;
+			default:
+				PresenceService.SetCreatorActivity("Creating a world");
+				break;
+		}
 	}
 
 	public void SetTabTitle(Control c, string to)

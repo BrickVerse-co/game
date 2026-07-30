@@ -45,6 +45,18 @@ public static class CreatorSettingsRegistry
 				DefaultValue = true
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.DetailedRichPresence,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.DetailedRichPresence,
+				SectionKey = "creator",
+				Label = "Detailed Rich Presence",
+				Description = "Show the current script, world, or play-test activity in Discord Rich Presence.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = false
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>

@@ -8,6 +8,9 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
 using System;
+#if CREATOR
+using BrickVerse.Creator.Settings;
+#endif
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -22,6 +25,9 @@ public sealed partial class PresenceService : Instance
 	private bool _updateDirty = false;
 	private string? _imageURL;
 	private static bool _creatorActivityStarted = false;
+	private static PresenceService? _creatorPresence;
+	private static string _creatorDetails = "Creating a world";
+	private static string _creatorState = "";
 
 	private long _startTime = 0;
 
@@ -129,6 +135,7 @@ public sealed partial class PresenceService : Instance
 			// TODO: We need a separate global for managing creator presence
 			if (_creatorActivityStarted) return;
 			_creatorActivityStarted = true;
+			_creatorPresence = this;
 		}
 		try
 		{
@@ -145,6 +152,20 @@ public sealed partial class PresenceService : Instance
 	{
 		_updateDirty = true;
 	}
+
+#if CREATOR
+	public static void SetCreatorActivity(string detailedDetails, string? detailedState = null)
+	{
+		bool showDetails =
+			CreatorSettingsService.Instance != null
+			&& CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.Creator.DetailedRichPresence
+			);
+		_creatorDetails = showDetails ? detailedDetails : "Creating a world";
+		_creatorState = showDetails ? detailedState ?? string.Empty : string.Empty;
+		_creatorPresence?.QueueUpdatePresence();
+	}
+#endif
 
 	private void UpdateIntegrations()
 	{
@@ -194,12 +215,14 @@ public sealed partial class PresenceService : Instance
 			defaultSmallImg = "workshop";
 			defaultSmallText = "BrickVerse Workshop";
 			largeText = "Tinkering";
-			details = "Creating world";
+			details = _creatorDetails;
 		}
 
 		Discord.Activity activity = new()
 		{
-			State = _state != null ? FilterService.Filter(_state) : "",
+			State = Root.SessionType == World.SessionTypeEnum.Creator
+				? FilterService.Filter(_creatorState)
+				: _state != null ? FilterService.Filter(_state) : "",
 			Details = details,
 			Timestamps =
 			{

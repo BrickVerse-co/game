@@ -143,6 +143,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			{
 				CleanupLocalTest();
 				LocalTestStopped.Invoke();
+				Tabs.Singleton?.RefreshCreatorPresence();
 			}
 		}
 		base._Process(delta);
@@ -711,6 +712,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		DebugConsole.Singleton.Clear();
 		LocalTestStarted.Invoke();
+		Tabs.Singleton?.RefreshCreatorPresence();
 	}
 
 	public async Task StartLocalTestOnEntry(string projectPath, string entryPath, string debugID, int port, bool isSubplace, Vector3? spawnPos = null)
