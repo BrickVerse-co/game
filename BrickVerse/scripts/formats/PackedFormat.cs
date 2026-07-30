@@ -7,6 +7,8 @@ using Godot;
 using BrickVerse.Schemas.Progress;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Creator.Managers;
+using BrickVerse.Creator;
+using BrickVerse.Datamodel.Creator;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,12 +65,37 @@ public static partial class PackedFormat
 
 	public static async Task<byte[]> PackProject(string projectPath, IProgress<LoadOverlayProgress>? progress = null)
 	{
+		SaveOpenProjectWorlds(projectPath);
 		using MemoryStream stream = new();
 		using (ZipArchive archive = new(stream, ZipArchiveMode.Create, true))
 		{
 			await PackProjectToArchive(projectPath, archive, progress);
 		}
 		return stream.ToArray();
+	}
+
+	private static void SaveOpenProjectWorlds(string projectPath)
+	{
+		string normalizedProjectPath = Path.GetFullPath(projectPath)
+			.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+		foreach (CreatorSession session in CreatorService.Sessions.ToArray())
+		{
+			string sessionPath = Path.GetFullPath(session.ProjectFolderPath)
+				.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+			if (!string.Equals(
+				sessionPath,
+				normalizedProjectPath,
+				StringComparison.OrdinalIgnoreCase))
+				continue;
+
+			foreach (World world in session.OpenedWorlds.ToArray())
+			{
+				if (string.IsNullOrWhiteSpace(world.WorldFilePath)) continue;
+				string destination = session.GlobalizePath(world.WorldFilePath);
+				PolyFormat.SaveWorldToFile(world, destination);
+			}
+			session.Save();
+		}
 	}
 
 	public static async Task<byte[]> PackModel(Instance model, IProgress<LoadOverlayProgress>? progress = null)

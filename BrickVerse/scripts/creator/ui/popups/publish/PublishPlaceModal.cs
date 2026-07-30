@@ -115,6 +115,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 			try
 			{
+				CreatorService.SaveCurrentFile();
 				PackedFormat.ReadProjectMetadata(
 					File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName))
 				);

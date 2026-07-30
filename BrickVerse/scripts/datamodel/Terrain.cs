@@ -1029,17 +1029,18 @@ public sealed partial class Terrain : Instance
 		}
 
 		_isLoading = true;
+		TerrainOperation[] previousOperations = [.. _operations];
 
 		try
 		{
-			_operations.Clear();
-			CreateVoxelTerrain();
-
 			if (string.IsNullOrWhiteSpace(_serialisedTerrain))
 			{
+				_operations.Clear();
+				CreateVoxelTerrain();
 				return;
 			}
 
+			List<TerrainOperation> loadedOperations = [];
 			byte[] compressed = Convert.FromBase64String(
 				_serialisedTerrain.Trim());
 
@@ -1078,13 +1079,36 @@ public sealed partial class Terrain : Instance
 			for (int index = 0; index < operationCount; index++)
 			{
 				TerrainOperation operation = ReadOperation(reader);
-				ExecuteOperation(operation);
-				_operations.Add(operation);
+				if (!Enum.IsDefined(operation.Type))
+					throw new InvalidDataException(
+						$"Terrain operation {index} has an unknown type.");
+				loadedOperations.Add(operation);
 			}
+
+			// Do not destroy the currently rendered terrain until the complete
+			// serialized stream has passed validation.
+			CreateVoxelTerrain();
+			foreach (TerrainOperation operation in loadedOperations)
+				ExecuteOperation(operation);
+			_operations.Clear();
+			_operations.AddRange(loadedOperations);
 			_terrainDirty = false;
 		}
 		catch (Exception exception)
 		{
+			try
+			{
+				CreateVoxelTerrain();
+				foreach (TerrainOperation operation in previousOperations)
+					ExecuteOperation(operation);
+				_operations.Clear();
+				_operations.AddRange(previousOperations);
+			}
+			catch (Exception recoveryException)
+			{
+				GD.PushError(
+					$"Failed to restore terrain after a load error: {recoveryException}");
+			}
 			GD.PushError(
 				$"Failed to load serialised terrain: {exception}");
 		}
