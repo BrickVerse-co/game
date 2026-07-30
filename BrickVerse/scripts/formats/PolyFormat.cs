@@ -136,16 +136,49 @@ public static partial class PolyFormat
 	{
 		if (content.Length == 0) return new();
 
-		// Deserialize content in another thread
+		PolyRootData data;
+
 		if (content[0] == 0x7B)
 		{
 			// Uncompressed
-			return JsonSerializer.Deserialize(content, PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(content, PolyJSONGenerationContext.Default.PolyRootData);
 		}
 		else
 		{
 			// Compressed
-			return JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(content), PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(content), PolyJSONGenerationContext.Default.PolyRootData);
+		}
+
+		NormalizeRootData(ref data);
+		return data;
+	}
+
+	private static void NormalizeRootData(ref PolyRootData data)
+	{
+		data.Objects ??= [];
+		data.NonInstanceObjects ??= [];
+
+		foreach (PolyObject obj in data.Objects)
+		{
+			NormalizePolyObject(obj);
+		}
+
+		foreach (PolyObject obj in data.NonInstanceObjects)
+		{
+			NormalizePolyObject(obj);
+		}
+	}
+
+	private static void NormalizePolyObject(PolyObject? obj)
+	{
+		if (obj == null) return;
+
+		obj.Properties ??= [];
+		obj.Children ??= [];
+
+		foreach (PolyObject child in obj.Children)
+		{
+			NormalizePolyObject(child);
 		}
 	}
 
