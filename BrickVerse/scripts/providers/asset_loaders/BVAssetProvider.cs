@@ -111,16 +111,16 @@ public class BVAssetProvider : IAssetProvider
 			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id + "?stream=true");
 		}
 
-		// Runtime-specific DRM endpoints (must be runtime mode, not build feature)
-		if (BV.IsServer)
-		{
-			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
-		}
-
 		// Check if we are in a creator studio play-test session
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
+		}
+
+		// Runtime-specific DRM endpoints (must be runtime mode, not build feature)
+		if (BV.IsServer)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
 		// Check if we are in creator studio
@@ -206,17 +206,17 @@ public class BVAssetProvider : IAssetProvider
 
 	private static string? GetAssetAuthorizationToken()
 	{
-		if (BV.IsServer)
-		{
-			return NormalizeBearerToken(ServerAPI.HostToken);
-		}
-
-		// Prefer CreatorToken if available, otherwise fallback to JoinToken
-		// This is only set during creator studio play-test sessions
-		// therefore they won't have a real valid JoinToken, but they will have a CreatorToken for authorization
+		// Creator play-test servers and clients use the OAuth token passed by
+		// Creator. Check it before BV.IsServer, which otherwise has no
+		// production host token in a local test.
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
 		{
 			return NormalizeBearerToken(ClientAuthAPI.CreatorToken);
+		}
+
+		if (BV.IsServer)
+		{
+			return NormalizeBearerToken(ServerAPI.HostToken);
 		}
 
 		// Fallback to JoinToken for regular clients (prod/non-creator)

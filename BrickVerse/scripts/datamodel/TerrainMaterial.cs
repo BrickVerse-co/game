@@ -4,6 +4,7 @@
 
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
 using Godot;
 using System;
 
@@ -193,6 +194,41 @@ public sealed partial class TerrainMaterial : Instance
 	}
 
 	internal Texture2D? GetTexture(ImageAsset? asset) => asset?.Resource as Texture2D;
+
+	internal Texture2D? GetSurfaceTexture(
+		string textureParameter,
+		string enabledParameter)
+	{
+		if (_surfaceType != TerrainSurfaceType.BuiltIn ||
+			Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material)
+		{
+			return null;
+		}
+
+		Variant enabled = material.GetShaderParameter(enabledParameter);
+		if (enabled.VariantType == Variant.Type.Bool && !enabled.AsBool())
+			return null;
+
+		Variant texture = material.GetShaderParameter(textureParameter);
+		return texture.VariantType == Variant.Type.Object
+			? texture.AsGodotObject() as Texture2D
+			: null;
+	}
+
+	internal float GetSurfaceTextureScale()
+	{
+		if (_surfaceType != TerrainSurfaceType.BuiltIn ||
+			Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material)
+		{
+			return _textureScale;
+		}
+
+		Variant studsPerTile = material.GetShaderParameter("studs_per_tile");
+		float tileSize = studsPerTile.VariantType is Variant.Type.Float or Variant.Type.Int
+			? studsPerTile.AsSingle()
+			: 0;
+		return tileSize > 0.001f ? 1.0f / tileSize : _textureScale;
+	}
 
 	private void SetTexture(
 		ref ImageAsset? target,

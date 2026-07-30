@@ -699,6 +699,9 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 				|| packedMetadata.UniverseId != publishRes.UniverseId
 			)
 			{
+				// Persist the assigned cloud identity and the latest terrain
+				// stream before building the reconciliation upload.
+				CreatorService.SaveCurrentFile();
 				loadOverlay?.SetStatus("Reconciling published project identity");
 				byte[] reconciledPacked = await PackedFormat.PackProject(
 					projectPath,

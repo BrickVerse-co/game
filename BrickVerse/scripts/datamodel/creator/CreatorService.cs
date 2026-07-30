@@ -410,6 +410,57 @@ public sealed partial class CreatorService : Node, IScriptObject
 				Directory.CreateDirectory(Path.Join(scriptsPath, "client"));
 				Directory.CreateDirectory(Path.Join(scriptsPath, "modules"));
 
+				// Restore the entire fetched project before reconciling the
+				// locally editable world. Terrain material textures, scripts,
+				// models and their index entries must survive the download.
+				foreach ((string archivePath, byte[] content) in root.IO.FileStructure)
+				{
+					string relativePath = archivePath.SanitizePath().TrimStart('/');
+					if (string.IsNullOrWhiteSpace(relativePath) ||
+						Path.IsPathRooted(relativePath))
+					{
+						continue;
+					}
+
+					string destination = Path.GetFullPath(
+						Path.Join(projectFolderPath, relativePath)
+					);
+					if (!PathUtils.IsPathInsideDirectory(
+						destination,
+						projectFolderPath))
+					{
+						throw new InvalidDataException(
+							$"Downloaded project entry escapes the project folder: {archivePath}"
+						);
+					}
+
+					string? destinationDirectory = Path.GetDirectoryName(destination);
+					if (!string.IsNullOrWhiteSpace(destinationDirectory))
+						Directory.CreateDirectory(destinationDirectory);
+					File.WriteAllBytes(destination, content);
+				}
+				foreach ((string linkedId, string linkedPath) in root.IO.IndexToFile)
+				{
+					if (linkedId.StartsWith("world_", StringComparison.Ordinal))
+						continue;
+
+					string relativePath = linkedPath.SanitizePath().TrimStart('/');
+					string assetPath = Path.GetFullPath(
+						Path.Join(projectFolderPath, relativePath)
+					);
+					if (!PathUtils.IsPathInsideDirectory(
+						assetPath,
+						projectFolderPath) ||
+						!File.Exists(assetPath))
+					{
+						continue;
+					}
+					PackedFormat.WriteMetaId(
+						PackedFormat.GetMetaPath(assetPath),
+						linkedId
+					);
+				}
+
 				CreatorProjectMetadata metadata = new()
 				{
 					WorldId = parsedWorldId,
@@ -866,6 +917,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async Task StartLocalTestOnEntry(string projectPath, string entryPath, string debugID, int port, bool isSubplace, Vector3? spawnPos = null)
 	{
+		await CreatorAPI.GetValidAccessTokenAsync();
 		string tempPath = Path.GetTempPath();
 		string placeFilePath = tempPath.PathJoin("bv_test_" + new DateTimeOffset(DateTime.Now).Millisecond + ".zip");
 
@@ -925,7 +977,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 		LocalTestWorlds.Add(placeFilePath);
 
 		int procID = OS.CreateProcess(exePath, [.. args]);
-		BV.Print("Starting server with args: ", string.Join(" ", args));
+		BV.Print(
+			"Starting local play-test server",
+			" (debug ID: ", debugID,
+			", port: ", port,
+			", creator auth: ", CreatorAPI.Token.Length > 0 ? "provided" : "missing",
+			")"
+		);
 
 		LocalTestProcesses.Add(procID);
 	}

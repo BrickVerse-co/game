@@ -17,7 +17,14 @@ public partial class PlayOptionsMenu : Control
 	[Export] private Button _stopBtn = null!;
 	[Export] private Button _collaborateBtn = null!;
 	[Export] private Button _sessionBtn = null!;
+	[Export] private TextureRect _internetStatusIcon = null!;
+	[Export] private TextureRect _teamCreateStatusIcon = null!;
 	[Export] private OptionButton _playerCountOption = null!;
+	private bool _wasLocalTestActive;
+	private bool _lastInternetState;
+	private bool _lastTeamCreateState;
+	private bool _lastTeamCreateConnected;
+	private bool _statusInitialized;
 
 	public override void _Ready()
 	{
@@ -26,15 +33,22 @@ public partial class PlayOptionsMenu : Control
 		_stopBtn.Pressed += OnStopButtonPressed;
 		_collaborateBtn.Pressed += OnCollaborateButtonPressed;
 		_sessionBtn.Pressed += OnSessionButtonPressed;
-		_stopBtn.Disabled = true;
-		_stopBtn.Visible = false;
-
 		_playerCountOption.ItemSelected += OnPlayerCountSelected;
 		_playerCountOption.Select(0);
 		_playerCountOption.Text = _playerCountOption.GetItemId(0).ToString();
 
 		CreatorService.Singleton.LocalTestStarted.Connect(OnLocalTestStarted);
 		CreatorService.Singleton.LocalTestStopped.Connect(OnLocalTestStopped);
+		SetPlayTestState(CreatorService.Singleton.LocalTestActive);
+		UpdateConnectionIndicators();
+	}
+
+	public override void _Process(double delta)
+	{
+		bool active = CreatorService.Singleton.LocalTestActive;
+		if (active != _wasLocalTestActive)
+			SetPlayTestState(active);
+		UpdateConnectionIndicators();
 	}
 
 	private void OnPlayerCountSelected(long index)
@@ -45,18 +59,21 @@ public partial class PlayOptionsMenu : Control
 
 	private void OnLocalTestStarted()
 	{
-		_playBtn.Disabled = true;
-		_playAtCamBtn.Disabled = true;
-		_stopBtn.Disabled = false;
-		_stopBtn.Visible = true;
+		SetPlayTestState(true);
 	}
 
 	private void OnLocalTestStopped()
 	{
-		_playBtn.Disabled = false;
-		_playAtCamBtn.Disabled = false;
-		_stopBtn.Disabled = true;
-		_stopBtn.Visible = false;
+		SetPlayTestState(false);
+	}
+
+	private void SetPlayTestState(bool active)
+	{
+		_wasLocalTestActive = active;
+		_playBtn.Disabled = active;
+		_playAtCamBtn.Disabled = active;
+		_stopBtn.Disabled = !active;
+		_stopBtn.Visible = active;
 	}
 
 	private void OnPlayButtonPressed()
@@ -93,8 +110,46 @@ public partial class PlayOptionsMenu : Control
 		);
 	}
 
-	private static void OnSessionButtonPressed()
+	private void OnSessionButtonPressed()
 	{
-		TeamCreateService.Instance.ShowSessionWindow();
+		TeamCreateService? service = TeamCreateService.Instance;
+		if (service == null)
+		{
+			service = new TeamCreateService();
+			CreatorService.Interface.AddChild(service);
+		}
+		service.ShowSessionWindow();
+	}
+
+	private void UpdateConnectionIndicators()
+	{
+		TeamCreateService? service = TeamCreateService.Instance;
+		bool internetAvailable = service?.ApiReachable == true;
+		bool teamCreateEnabled = service?.TeamCreateEnabled == true;
+		bool teamCreateConnected = service?.Connected == true;
+		if (_statusInitialized
+			&& internetAvailable == _lastInternetState
+			&& teamCreateEnabled == _lastTeamCreateState
+			&& teamCreateConnected == _lastTeamCreateConnected)
+			return;
+
+		_statusInitialized = true;
+		_lastInternetState = internetAvailable;
+		_lastTeamCreateState = teamCreateEnabled;
+		_lastTeamCreateConnected = teamCreateConnected;
+		_internetStatusIcon.SelfModulate = internetAvailable
+			? new Color("45d483")
+			: new Color("ef596f");
+		_internetStatusIcon.TooltipText = internetAvailable
+			? "BrickVerse services are reachable"
+			: "BrickVerse services are unreachable";
+		_teamCreateStatusIcon.SelfModulate = teamCreateEnabled
+			? new Color("45d483")
+			: new Color("ef596f");
+		_teamCreateStatusIcon.TooltipText = teamCreateEnabled
+			? teamCreateConnected
+				? "Team Create enabled and connected"
+				: "Team Create enabled; connecting"
+			: "Team Create disabled for this world";
 	}
 }

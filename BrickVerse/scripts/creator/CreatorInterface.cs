@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
@@ -135,6 +136,9 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _Ready()
 	{
+		if (TeamCreateService.Instance == null)
+			AddChild(new TeamCreateService());
+
 		_creatorTheme = ResourceLoader.Load<Theme>(
 			CreatorDarkThemePath,
 			cacheMode: ResourceLoader.CacheMode.IgnoreDeep

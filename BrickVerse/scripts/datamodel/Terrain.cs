@@ -74,6 +74,10 @@ public sealed partial class Terrain : Instance
 	private string _serialisedTerrain = string.Empty;
 	private bool _autoSerialise = true;
 	private bool _generateCollisions = true;
+	private uint _collisionLayer = 1;
+	private uint _collisionMask = uint.MaxValue;
+	private int _collisionUpdateDelay;
+	private float _collisionMargin = 0.04f;
 	private float _defaultSdfStrength = 1.0f;
 	private float _defaultSdfScale = 1.0f;
 	private int _viewDistance = 512;
@@ -183,6 +187,72 @@ public sealed partial class Terrain : Instance
 				TrySet(_viewerNode, "requires_collisions", value);
 			}
 
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
+		DefaultValue(1u)]
+	public uint CollisionLayer
+	{
+		get => _collisionLayer;
+		set
+		{
+			if (_collisionLayer == value)
+				return;
+			_collisionLayer = value;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_layer", (long)value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
+		DefaultValue(uint.MaxValue)]
+	public uint CollisionMask
+	{
+		get => _collisionMask;
+		set
+		{
+			if (_collisionMask == value)
+				return;
+			_collisionMask = value;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_mask", (long)value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, SyncVar, DefaultValue(0)]
+	public int CollisionUpdateDelay
+	{
+		get => _collisionUpdateDelay;
+		set
+		{
+			int validated = Math.Clamp(value, 0, 10_000);
+			if (_collisionUpdateDelay == validated)
+				return;
+			_collisionUpdateDelay = validated;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_update_delay", validated);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, SyncVar, DefaultValue(0.04f)]
+	public float CollisionMargin
+	{
+		get => _collisionMargin;
+		set
+		{
+			float validated = float.IsFinite(value)
+				? Math.Clamp(value, 0.0f, 1.0f)
+				: 0.04f;
+			if (Mathf.IsEqualApprox(_collisionMargin, validated))
+				return;
+			_collisionMargin = validated;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_margin", validated);
 			OnPropertyChanged();
 		}
 	}
@@ -941,6 +1011,12 @@ public sealed partial class Terrain : Instance
 		return encoded;
 	}
 
+	internal void FlushTerrainSerialization()
+	{
+		if (_terrainDirty && !_isLoading && !_isUpdatingSerialisedTerrain)
+			SaveTerrain();
+	}
+
 	/// <summary>
 	/// Clears the active terrain and replays SerialisedTerrain.
 	/// </summary>
@@ -1205,6 +1281,7 @@ public sealed partial class Terrain : Instance
 
 		string[] candidateConstants =
 		[
+			"TEXTURES_MIXEL4_S4",
 			"TEXTURES_BLEND_4_OVER_16",
 			"TEXTURES_MIXEL4",
 			"TEXTURING_MIXEL4",
@@ -1272,7 +1349,7 @@ public sealed partial class Terrain : Instance
 			roughness[material.Slot] = material.Roughness;
 			metallic[material.Slot] = material.Metallic;
 			normalStrength[material.Slot] = material.NormalStrength;
-			textureScale[material.Slot] = material.TextureScale;
+			textureScale[material.Slot] = material.GetSurfaceTextureScale();
 			if (material.SurfaceType == TerrainSurfaceType.Custom)
 				customMask |= 1 << material.Slot;
 		}
@@ -1283,19 +1360,39 @@ public sealed partial class Terrain : Instance
 		_terrainMaterial.SetShaderParameter("u_texture_scale", textureScale);
 		_terrainMaterial.SetShaderParameter(
 			"u_albedo_textures",
-			BuildTextureArray(material => material.GetTexture(material.AlbedoTexture), Colors.White)
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.AlbedoTexture)
+					: material.GetSurfaceTexture("albedo", "use_albedo_texture"),
+				Colors.White
+			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_normal_textures",
-			BuildTextureArray(material => material.GetTexture(material.NormalTexture), new Color(0.5f, 0.5f, 1))
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.NormalTexture)
+					: material.GetSurfaceTexture("normal_tex", "use_normal_texture"),
+				new Color(0.5f, 0.5f, 1)
+			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_roughness_textures",
-			BuildTextureArray(material => material.GetTexture(material.RoughnessTexture), Colors.White)
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.RoughnessTexture)
+					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				Colors.White
+			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_metallic_textures",
-			BuildTextureArray(material => material.GetTexture(material.MetallicTexture), Colors.White)
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.MetallicTexture)
+					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				Colors.White
+			)
 		);
 	}
 
@@ -1321,6 +1418,8 @@ public sealed partial class Terrain : Instance
 			else
 			{
 				image = (Image)image.Duplicate();
+				if (image.IsCompressed())
+					image.Decompress();
 				image.Convert(Image.Format.Rgba8);
 				image.Resize(textureSize, textureSize, Image.Interpolation.Lanczos);
 			}
@@ -1447,15 +1546,15 @@ vec3 material_albedo(int index, vec2 uv) {
 
 float material_roughness(int index, vec2 uv) {
 	float value = u_roughness[index];
-	if (is_custom(index))
-		value *= texture(u_roughness_textures, vec3(uv, float(index))).r;
+	vec3 map = texture(u_roughness_textures, vec3(uv, float(index))).rgb;
+	value *= is_custom(index) ? map.r : map.g;
 	return value;
 }
 
 float material_metallic(int index, vec2 uv) {
 	float value = u_metallic[index];
-	if (is_custom(index))
-		value *= texture(u_metallic_textures, vec3(uv, float(index))).r;
+	vec3 map = texture(u_metallic_textures, vec3(uv, float(index))).rgb;
+	value *= is_custom(index) ? map.r : map.b;
 	return value;
 }
 
@@ -1553,6 +1652,19 @@ void fragment() {
 			_voxelTerrain!,
 			"generate_collisions",
 			GenerateCollisions);
+		TrySet(_voxelTerrain!, "collision_layer", (long)CollisionLayer);
+		TrySet(_voxelTerrain!, "collision_mask", (long)CollisionMask);
+		TrySet(
+			_voxelTerrain!,
+			"collision_update_delay",
+			CollisionUpdateDelay
+		);
+		TrySet(_voxelTerrain!, "collision_margin", CollisionMargin);
+		// Generate colliders at every active terrain LOD. This prevents
+		// characters and rigid bodies from falling through during LOD changes.
+		TrySet(_voxelTerrain!, "collision_lod_count", 0);
+		// Install completed collision meshes during the physics tick.
+		TrySet(_voxelTerrain!, "process_callback", 1);
 
 		TrySet(
 			_voxelTerrain!,
@@ -1787,24 +1899,31 @@ void fragment() {
 
 		ConfigureTexturePaintTool(operation.Material, 1.0f);
 
+		// Texture weights live on voxels surrounding the generated isosurface.
+		// Cover a one-voxel shell beyond the SDF brush so newly-added terrain
+		// receives valid Mixel4 data before its first mesh is generated.
+		const float surfaceShell = 1.5f;
 		switch (operation.Type)
 		{
 			case TerrainOperationType.FillBall:
 				_voxelTool!.Call(
 					"do_sphere",
 					operation.Position,
-					operation.Radius);
+					operation.Radius + surfaceShell);
 				break;
 
 			case TerrainOperationType.FillBlock:
-				ExecuteBox(operation.Position, operation.Size);
+				ExecuteBox(
+					operation.Position,
+					operation.Size + Vector3.One * surfaceShell * 2.0f
+				);
 				break;
 
 			case TerrainOperationType.FillCylinder:
 				ExecutePath(
 					operation.Position,
 					operation.SecondaryPosition,
-					operation.Radius);
+					operation.Radius + surfaceShell);
 				break;
 		}
 	}

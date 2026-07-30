@@ -7,6 +7,15 @@ using System.Text.Json.Serialization;
 
 namespace BrickVerse.Schemas.API;
 
+public struct APIChatFilterRequest
+{
+	[JsonPropertyName("userId")]
+	public string UserId { get; set; }
+
+	[JsonPropertyName("message")]
+	public string Message { get; set; }
+}
+
 public struct APIUserInfo
 {
 	[JsonPropertyName("id")]
@@ -1140,6 +1149,7 @@ public enum LibraryQueryTypeEnum
 	Addon
 }
 
+[JsonSerializable(typeof(APIChatFilterRequest))]
 [JsonSerializable(typeof(APIMeta))]
 [JsonSerializable(typeof(APIUserInfo))]
 [JsonSerializable(typeof(APIUserThumbnail))]

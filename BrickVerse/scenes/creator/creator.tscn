@@ -10,7 +10,9 @@
 [ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="6_0jcko"]
 [ext_resource type="Texture2D" uid="uid://b3xwnjral0p0n" path="res://assets/textures/creator/ribbon/select.svg" id="7_7a4vs"]
 [ext_resource type="Texture2D" uid="uid://bfswjptlde67c" path="res://assets/textures/parts/Brick/albedo.jpg" id="7_c5rx7"]
+[ext_resource type="Texture2D" uid="uid://cc0hd4bf85j38" path="res://assets/textures/ui-icons/team-create.svg" id="7_team_create"]
 [ext_resource type="Texture2D" uid="uid://dxlghmpirtits" path="res://assets/textures/ui-icons/stop-filled.svg" id="7_ubkni"]
+[ext_resource type="Texture2D" uid="uid://byak74ljs7hjf" path="res://assets/textures/ui-icons/wifi.svg" id="7_wifi"]
 [ext_resource type="Texture2D" uid="uid://cvfjmtrmqiov" path="res://assets/textures/creator/ribbon/move.svg" id="8_a562s"]
 [ext_resource type="Script" uid="uid://c4g1dpfwjvae5" path="res://scripts/creator/ui/ribbon/RibbonToolButton.cs" id="8_c8w7j"]
 [ext_resource type="Texture2D" uid="uid://4n14p76bkw70" path="res://assets/textures/ui-icons/camera.svg" id="8_q8usk"]
@@ -201,7 +203,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_playerCountOption")]
+[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("5_c7ht3")
@@ -209,10 +211,33 @@ _playBtn = NodePath("Layout/Play")
 _playAtCamBtn = NodePath("Layout/PlayAtCam")
 _stopBtn = NodePath("Layout/Stop")
 _collaborateBtn = NodePath("Layout/Collaborate")
+_sessionBtn = NodePath("Layout/Session")
+_internetStatusIcon = NodePath("Layout/InternetStatus")
+_teamCreateStatusIcon = NodePath("Layout/TeamCreateStatus")
 _playerCountOption = NodePath("Layout/PlayerCount")
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions" unique_id=438009992]
 layout_mode = 2
+
+[node name="TeamCreateStatus" type="TextureRect" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=313214770]
+self_modulate = Color(0.937255, 0.34902, 0.435294, 1)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+tooltip_text = "Team Create status"
+mouse_default_cursor_shape = 2
+texture = ExtResource("7_team_create")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InternetStatus" type="TextureRect" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=606682188]
+self_modulate = Color(0.937255, 0.34902, 0.435294, 1)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+tooltip_text = "Checking BrickVerse service connection"
+mouse_default_cursor_shape = 2
+texture = ExtResource("7_wifi")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Collaborate" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1348821769]
 custom_minimum_size = Vector2(88, 0)

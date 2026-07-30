@@ -809,6 +809,7 @@ public static partial class PolyFormat
 
 	public static PolyRootData SavePlace(World game)
 	{
+		game.FindChild<Terrain>("Terrain")?.FlushTerrainSerialization();
 		PolyRoot root = new() { FileType = PolyFileType.World };
 		root.Objects.Add(ToPolyObject(game, root)!);
 

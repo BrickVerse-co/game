@@ -25,8 +25,9 @@ public sealed partial class TeamCreateService : Node
 	private const double FlushInterval = 0.25;
 	private const double HeartbeatInterval = 1.0;
 	private const double RescanInterval = 1.0;
+	private const double ConnectivityInterval = 5.0;
 
-	public static TeamCreateService Instance { get; private set; } = null!;
+	public static TeamCreateService? Instance { get; private set; }
 
 	private readonly BVHttpClient _http = new();
 	private readonly Dictionary<string, NetworkedObject> _observed = [];
@@ -46,12 +47,17 @@ public sealed partial class TeamCreateService : Node
 	private double _heartbeatElapsed;
 	private double _rescanElapsed;
 	private double _reconnectElapsed;
+	private double _connectivityElapsed = ConnectivityInterval;
+	private bool _connectivityRequestActive;
 	private TeamCreateSessionWindow? _window;
 	private string _followMemberId = "";
 	private Node3D? _cameraAvatarRoot;
 	private World? _cameraAvatarWorld;
 
 	public bool Connected => _enabled && !string.IsNullOrWhiteSpace(_memberId);
+	public bool TeamCreateEnabled => _enabled;
+	public bool Connecting => _joining;
+	public bool ApiReachable { get; private set; }
 	public IReadOnlyList<TeamCreateMember> Members => _members;
 	public string FollowedMemberId => _followMemberId;
 
@@ -69,6 +75,13 @@ public sealed partial class TeamCreateService : Node
 
 	public override void _Process(double delta)
 	{
+		_connectivityElapsed += delta;
+		if (_connectivityElapsed >= ConnectivityInterval && !_connectivityRequestActive)
+		{
+			_connectivityElapsed = 0;
+			_ = CheckConnectivity();
+		}
+
 		long currentUniverse = World.Current?.UniverseID ?? 0;
 		if (currentUniverse != _universeId)
 		{
@@ -126,6 +139,7 @@ public sealed partial class TeamCreateService : Node
 		_ = Leave();
 		UnobserveAll();
 		ClearCameraAvatars();
+		if (ReferenceEquals(Instance, this)) Instance = null;
 	}
 
 	public void ShowSessionWindow()
@@ -137,6 +151,15 @@ public sealed partial class TeamCreateService : Node
 		}
 		_window.Refresh();
 		_window.PopupCentered();
+		_ = EnsureConnected();
+	}
+
+	public Task EnsureConnected()
+	{
+		long universeId = World.Current?.UniverseID ?? 0;
+		if (universeId == 0 || Connected || _joining) return Task.CompletedTask;
+		_reconnectElapsed = 0;
+		return SwitchUniverse(universeId);
 	}
 
 	public void FollowMember(string memberId)
@@ -179,10 +202,12 @@ public sealed partial class TeamCreateService : Node
 			_followMemberId = "";
 			_pendingChanges.Clear();
 			ClearCameraAvatars();
-			if (universeId == 0 || string.IsNullOrWhiteSpace(CreatorAPI.Token)) return;
-			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + CreatorAPI.Token;
+			if (universeId == 0) return;
+			string token = await CreatorAPI.GetValidAccessTokenAsync();
+			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + token;
 
 			using HttpResponseMessage config = await _http.GetAsync(ApiPath(""));
+			ApiReachable = true;
 			if (!config.IsSuccessStatusCode) return;
 			using JsonDocument configJson = JsonDocument.Parse(await config.Content.ReadAsStringAsync());
 			_enabled =
@@ -205,12 +230,34 @@ public sealed partial class TeamCreateService : Node
 		catch (Exception error)
 		{
 			BV.PrintErr("Team Create connection failed: ", error.Message);
+			ApiReachable = false;
 			_enabled = false;
 			_memberId = "";
 		}
 		finally
 		{
 			_joining = false;
+			_window?.Refresh();
+		}
+	}
+
+	private async Task CheckConnectivity()
+	{
+		_connectivityRequestActive = true;
+		try
+		{
+			using HttpResponseMessage response = await _http.GetAsync(
+				Globals.ApiEndpoint.PathJoin("/v3/health")
+			);
+			ApiReachable = response.IsSuccessStatusCode;
+		}
+		catch
+		{
+			ApiReachable = false;
+		}
+		finally
+		{
+			_connectivityRequestActive = false;
 		}
 	}
 

@@ -573,6 +573,17 @@ public static class CreatorAPI
 		}
 	}
 
+	public static async Task<string> GetValidAccessTokenAsync(
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureTokenValid(cancellationToken);
+		if (string.IsNullOrWhiteSpace(Token))
+			throw new AuthenticationException(
+				"Creator authentication is required to start a play test."
+			);
+		return Token;
+	}
+
 	private static void UpdateAuthenticatedProfile(OpenIdUserInfoResponse userInfo)
 	{
 		if (!IsValidUserInfo(userInfo))
