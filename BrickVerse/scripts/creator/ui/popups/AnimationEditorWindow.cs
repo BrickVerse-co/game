@@ -27,6 +27,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	private OptionButton _loop = null!;
 	private SpinBox _time = null!;
 	private SpinBox _transition = null!;
+	private OptionButton _interpolation = null!;
 	private SpinBox[] _values = [];
 	private Label _status = null!;
 	private AnimationTimeline _timeline = null!;
@@ -52,9 +53,16 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void BuildInterface()
 	{
+		MarginContainer margin = new();
+		margin.AddThemeConstantOverride("margin_left", 12);
+		margin.AddThemeConstantOverride("margin_top", 12);
+		margin.AddThemeConstantOverride("margin_right", 12);
+		margin.AddThemeConstantOverride("margin_bottom", 12);
+		AddChild(margin);
+		margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+
 		VBoxContainer root = new();
-		AddChild(root);
-		root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		margin.AddChild(root);
 		root.AddThemeConstantOverride("separation", 8);
 
 		HBoxContainer toolbar = new();
@@ -153,6 +161,11 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		VBoxContainer inspector = new() { CustomMinimumSize = new Vector2(280, 0) };
 		keySplit.AddChild(inspector);
 		inspector.AddChild(new Label { Text = "Keyframe" });
+		_interpolation = new OptionButton();
+		foreach (string value in new[] { "Linear", "Nearest", "Cubic" })
+			_interpolation.AddItem(value);
+		_interpolation.ItemSelected += _ => ApplyTrackInterpolation();
+		AddLabeledControl(inspector, "Interpolation", _interpolation);
 		_time = AddSpin(inspector, "Time", 0, 3600, 0.01);
 		_time.ValueChanged += _ => ApplyKeyFields();
 		_transition = AddSpin(inspector, "Transition", -8, 8, 0.05);
@@ -268,6 +281,15 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		};
 		row.AddChild(field);
 		return field;
+	}
+
+	private static void AddLabeledControl(Control parent, string label, Control control)
+	{
+		HBoxContainer row = new();
+		parent.AddChild(row);
+		row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(90, 0) });
+		control.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		row.AddChild(control);
 	}
 
 	private void NewClip()
@@ -560,12 +582,36 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		RefreshKeys(false);
 	}
 
+	private void ApplyTrackInterpolation()
+	{
+		if (_selectedTrack < 0 || _selectedTrack >= _clip.Tracks.Count)
+			return;
+		_clip.Tracks[_selectedTrack].Interpolation = _interpolation.GetItemText(
+			_interpolation.Selected
+		);
+		RefreshPreview();
+	}
+
 	private void LoadKeyFields()
 	{
 		bool active = _selectedTrack >= 0 && _selectedKey >= 0;
 		_time.Editable = active;
+		_transition.Editable = active;
+		_interpolation.Disabled = _selectedTrack < 0;
 		foreach (SpinBox field in _values)
 			field.Editable = active;
+		if (_selectedTrack >= 0 && _selectedTrack < _clip.Tracks.Count)
+		{
+			string interpolation = _clip.Tracks[_selectedTrack].Interpolation;
+			for (int index = 0; index < _interpolation.ItemCount; index++)
+			{
+				if (_interpolation.GetItemText(index).Equals(interpolation, StringComparison.OrdinalIgnoreCase))
+				{
+					_interpolation.Select(index);
+					break;
+				}
+			}
+		}
 		if (!active)
 			return;
 		BVAnimationTrack track = _clip.Tracks[_selectedTrack];
