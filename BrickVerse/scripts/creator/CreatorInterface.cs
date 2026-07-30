@@ -762,12 +762,13 @@ public partial class CreatorInterface : Control, IScriptObject
 
 			popup.Close();
 		};
+		popup.Open();
 	}
 
 	public void OpenWorldPublish(World? world, bool publishAs = false)
 	{
 		BV.Print(
-			$"CreatorInterface: OpenWorldPublish publishAs={publishAs}, world={(world?.WorldName ?? "null")}"
+			$"CreatorInterface: OpenWorldPublish publishAs={publishAs}, worldName={(world?.WorldName ?? "null")}"
 		);
 		if (world == null)
 		{
@@ -788,7 +789,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		PublishPlaceModal normalPopup = Globals.CreateInstanceFromScene<PublishPlaceModal>(
 			WorldPublishPopupPath
 		);
-		normalPopup.Open(world, false);
+		normalPopup.Open(world);
 		PopupWindow(normalPopup);
 	}
 

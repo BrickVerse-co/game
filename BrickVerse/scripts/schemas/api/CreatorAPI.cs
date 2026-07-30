@@ -31,6 +31,30 @@ public struct CreatorGuildItem
 	public bool CanEditWorlds { get; set; }
 }
 
+public sealed class CreatorGuildResponse
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("guilds")]
+	public CreatorGuildItem[] Guilds { get; set; } = [];
+
+	[JsonPropertyName("pagination")]
+	public CreatorGuildPagination? Pagination { get; set; }
+}
+
+public sealed class CreatorGuildPagination
+{
+	[JsonPropertyName("page")]
+	public int Page { get; set; }
+
+	[JsonPropertyName("pages")]
+	public int Pages { get; set; }
+
+	[JsonPropertyName("total")]
+	public int Total { get; set; }
+}
+
 public struct CreatorPlaceItem
 {
 	[JsonPropertyName("id")]
@@ -117,6 +141,10 @@ public sealed class PaginationInfo
 [JsonSerializable(typeof(CreatorPlaceItem))]
 [JsonSerializable(typeof(CreatorPlaceItem[]))]
 [JsonSerializable(typeof(CreatorAuthResponse))]
+[JsonSerializable(typeof(CreatorGuildResponse))]
+[JsonSerializable(typeof(CreatorGuildItem))]
+[JsonSerializable(typeof(CreatorGuildItem[]))]
+[JsonSerializable(typeof(CreatorGuildPagination))]
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(string))]
