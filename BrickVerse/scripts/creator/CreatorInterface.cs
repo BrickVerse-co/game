@@ -747,6 +747,11 @@ public partial class CreatorInterface : Control, IScriptObject
 		PopupWindow(popup);
 	}
 
+	public void OpenAnimationEditor()
+	{
+		PopupWindow(new AnimationEditorWindow());
+	}
+
 	public void OpenUploadMeshMenu()
 	{
 		UploadMeshPopup popup = Globals.CreateInstanceFromScene<UploadMeshPopup>(

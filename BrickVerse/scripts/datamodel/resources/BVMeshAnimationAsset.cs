@@ -33,31 +33,12 @@ public partial class BVMeshAnimationAsset : MeshAnimationAsset
 	public override void LoadResource()
 	{
 		AssetLoader.Singleton.GetResource(
-			new() { Type = ResourceType.Mesh, ID = AssetID },
-			OnMeshResourceLoaded
-		);
-	}
-
-	private void OnMeshResourceLoaded(Resource res)
-	{
-		if (res is PackedScene scene)
-		{
-			Node obj = scene.Instantiate<Node>();
-			AnimationPlayer? animPlay = obj.GetNodeOrNull<AnimationPlayer>("AnimationPlayer");
-
-			if (animPlay != null)
+			new() { Type = ResourceType.Animation, ID = AssetID },
+			resource =>
 			{
-				var libList = animPlay.GetAnimationLibraryList();
-				if (libList.Count != 0)
-				{
-					AnimationLibrary lib = animPlay.GetAnimationLibrary(libList[0]);
-					AnimationLibrary flib = (AnimationLibrary)lib.DuplicateDeep();
-					InvokeResourceLoaded(flib);
-				}
+				if (resource is AnimationLibrary library)
+					InvokeResourceLoaded((AnimationLibrary)library.DuplicateDeep());
 			}
-
-			obj.Free();
-			obj.Dispose();
-		}
+		);
 	}
 }

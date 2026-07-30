@@ -406,6 +406,10 @@ public sealed partial class Menu : PanelContainer
 					Text = "Manage Addons",
 					Pressed = CreatorInterface.PopupManageAddons
 				},
+				new MenuButtonItem() {
+					Text = "Animation Editor",
+					Pressed = CreatorService.Interface.OpenAnimationEditor
+				},
 				new MenuAddonSlotItem() {
 					Text = "Addons",
 					RequireGameOpen = true

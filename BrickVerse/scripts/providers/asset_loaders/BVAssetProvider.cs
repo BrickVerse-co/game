@@ -9,6 +9,7 @@ using BrickVerse.Creator.Utils;
 #endif
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Formats;
 using System;
 using System.Net.Http;
 using System.Net;
@@ -31,6 +32,11 @@ public class BVAssetProvider : IAssetProvider
 
 		switch (item.Type)
 		{
+			case ResourceType.Animation:
+				{
+					item.Resource = BVAnimationFormat.ToLibrary(BVAnimationFormat.Read(buffer));
+					return item;
+				}
 			case ResourceType.Mesh:
 				{
 					GltfDocument document = new();
