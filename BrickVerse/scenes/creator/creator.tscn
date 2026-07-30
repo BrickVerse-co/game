@@ -56,6 +56,9 @@
 [ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
 [ext_resource type="Script" uid="uid://dfk832jm6qtwy" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
+[ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
+[ext_resource type="Texture2D" uid="uid://d2bki8a2bbea7" path="res://assets/textures/ui-icons/tools.svg" id="48_toolbox"]
+[ext_resource type="Texture2D" uid="uid://0oxaq8x81vax" path="res://assets/textures/ui-icons/keyboard.svg" id="49_input"]
 
 [sub_resource type="StyleBoxFlat" id="TopBarSurface"]
 content_margin_left = 8.0
@@ -798,6 +801,165 @@ offset_top = -20.0
 offset_bottom = -2.0
 grow_vertical = 0
 text = "Insert"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="QuickActions" type="HBoxContainer" parent="GUI/Ribbon/Buttons" unique_id=1613083516]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Forge" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1588466449]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Open Forge AI Chat"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=103690314]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("39_5xx7o")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=287239862]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Forge AI"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Terrain" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1189380056]
+custom_minimum_size = Vector2(60, 54)
+layout_mode = 2
+tooltip_text = "Open Terrain Editor"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Terrain" unique_id=2122477053]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("31_tgxt6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Terrain" unique_id=67935228]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Terrain"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Animator" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=952649282]
+custom_minimum_size = Vector2(64, 54)
+layout_mode = 2
+tooltip_text = "Open Animation Editor"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Animator" unique_id=1453930844]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("47_animator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Animator" unique_id=280979062]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Animator"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Toolbox" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1894886004]
+custom_minimum_size = Vector2(62, 54)
+layout_mode = 2
+tooltip_text = "Open Toolbox"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Toolbox" unique_id=1190331217]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("48_toolbox")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Toolbox" unique_id=411586895]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Toolbox"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="InputManager" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=978440044]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Open Input Manager"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/InputManager" unique_id=1298478370]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("49_input")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/InputManager" unique_id=807229562]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Inputs"
 horizontal_alignment = 1
 vertical_alignment = 2
 
