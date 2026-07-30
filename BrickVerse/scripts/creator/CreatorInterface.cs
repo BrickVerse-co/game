@@ -40,8 +40,6 @@ public partial class CreatorInterface : Control, IScriptObject
 		"res://scenes/creator/popups/input_manager/input_manager.tscn";
 	private const string BindKeyPopupPath = "res://scenes/creator/popups/bind_key.tscn";
 	private const string PublishPopupPath = "res://scenes/creator/popups/publish/publish.tscn";
-	private const string WorldPublishPopupPath =
-		"res://scenes/creator/popups/publish/publish_world.tscn";
 	private const string WorldPublishAsPopupPath =
 		"res://scenes/creator/popups/publish/publish_as_world.tscn";
 	private const string AddonReqPermPopupPath =
@@ -836,11 +834,67 @@ public partial class CreatorInterface : Control, IScriptObject
 			return;
 		}
 
-		PublishPlaceModal normalPopup = Globals.CreateInstanceFromScene<PublishPlaceModal>(
-			WorldPublishPopupPath
-		);
-		normalPopup.Open(world);
-		PopupWindow(normalPopup);
+		_ = PublishWorldAsync(world);
+	}
+
+	private async Task PublishWorldAsync(World world)
+	{
+		if (world.WorldID <= 0 || world.UniverseID <= 0)
+		{
+			PopupAlert(
+				"This experience has not been published yet. Use Publish As first."
+			);
+			OpenWorldPublish(world, true);
+			return;
+		}
+
+		LoadOverlay?.SetTitle("Publishing world");
+		LoadOverlay?.SetStatus("Saving current changes");
+		LoadOverlay?.Show();
+
+		try
+		{
+			CreatorService.SaveCurrentFile();
+			CreatorSession session = world.LinkedSession;
+			session.Metadata.WorldId = world.WorldID;
+			session.Metadata.UniverseId = world.UniverseID;
+			session.SaveMetadataFile();
+			byte[] packed = await PackedFormat.PackProject(
+				session.ProjectFolderPath,
+				LoadOverlay?.CreateProgressReporter("Publishing world")
+			);
+
+			LoadOverlay?.SetStatus("Uploading current changes");
+			CreatorPublishResponse response = await CreatorAPI.UploadWorld(
+				packed,
+				world.UniverseID,
+				world.WorldID,
+				true
+			);
+			if (!response.Success || response.WorldId <= 0 || response.UniverseId <= 0)
+				throw new InvalidDataException("The server returned an invalid publish response.");
+
+			world.WorldID = response.WorldId;
+			world.UniverseID = response.UniverseId;
+			session.Metadata.WorldId = response.WorldId;
+			session.Metadata.UniverseId = response.UniverseId;
+			session.SaveMetadataFile();
+
+			StatusBar?.SetStatus("Published current changes");
+			if (CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.Creator.OpenWebAfterPublish
+			))
+				OS.ShellOpen(response.Link);
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr($"Failed to publish world: {ex}");
+			PopupAlert("Failed to publish current changes: " + ex.Message);
+		}
+		finally
+		{
+			LoadOverlay?.Hide();
+		}
 	}
 
 	public void OpenPublish(Instance target)

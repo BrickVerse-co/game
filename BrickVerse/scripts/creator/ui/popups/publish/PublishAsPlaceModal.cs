@@ -661,7 +661,8 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 		{
 			var loadOverlay = CreatorService.Interface.LoadOverlay;
 			string projectPath = _world.LinkedSession.ProjectFolderPath;
-			PackedFormat.ReadProjectMetadata(
+			CreatorService.SaveCurrentFile();
+			CreatorProjectMetadata packedMetadata = PackedFormat.ReadProjectMetadata(
 				File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName))
 			);
 			byte[] packed = await PackedFormat.PackProject(
@@ -689,10 +690,37 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 
 			_world.UniverseID = publishRes.UniverseId;
 			_world.WorldID = publishRes.WorldId;
+			_world.LinkedSession.Metadata.UniverseId = publishRes.UniverseId;
+			_world.LinkedSession.Metadata.WorldId = publishRes.WorldId;
+			_world.LinkedSession.SaveMetadataFile();
+
+			if (
+				packedMetadata.WorldId != publishRes.WorldId
+				|| packedMetadata.UniverseId != publishRes.UniverseId
+			)
+			{
+				loadOverlay?.SetStatus("Reconciling published project identity");
+				byte[] reconciledPacked = await PackedFormat.PackProject(
+					projectPath,
+					loadOverlay?.CreateProgressReporter("Finalizing publish")
+				);
+				CreatorPublishResponse reconciled = await CreatorAPI.UploadWorld(
+					reconciledPacked,
+					publishRes.UniverseId,
+					publishRes.WorldId,
+					true
+				);
+				if (!reconciled.Success)
+					throw new InvalidDataException(
+						"The project was created, but its cloud identity could not be reconciled."
+					);
+			}
+
 			CreatorService.Interface.StatusBar?.SetStatus(
 				_useNewWorld ? "World published" : "World overwritten"
 			);
 			loadOverlay?.Hide();
+			SetBusy(false);
 			CloseWindow();
 			CreatorService.Interface.PopupAlert(
 				"World "

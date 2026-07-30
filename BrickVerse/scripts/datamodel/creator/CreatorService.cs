@@ -413,6 +413,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				CreatorProjectMetadata metadata = new()
 				{
 					WorldId = parsedWorldId,
+					UniverseId = root.UniverseID,
 					ProjectName = projectName,
 					MainWorld = "main.bvxw",
 					IconID = null,

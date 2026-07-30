@@ -114,6 +114,11 @@ public partial class CreatorSession : Node, IDisposable
 			Metadata.WorldId = 0;
 			changed = true;
 		}
+		if (Metadata.UniverseId < 0)
+		{
+			Metadata.UniverseId = 0;
+			changed = true;
+		}
 
 		if (string.IsNullOrWhiteSpace(Metadata.ProjectName))
 		{
@@ -321,6 +326,7 @@ public partial class CreatorSession : Node, IDisposable
 		if (isMainWorld && Metadata.WorldId > 0)
 		{
 			root.WorldID = Metadata.WorldId;
+			root.UniverseID = Metadata.UniverseId;
 		}
 
 		_worldSessionCounter++;
@@ -408,6 +414,7 @@ public partial class CreatorSession : Node, IDisposable
 		if (isMainWorld && Metadata.WorldId > 0)
 		{
 			root.WorldID = Metadata.WorldId;
+			root.UniverseID = Metadata.UniverseId;
 		}
 
 		RescanFolder();

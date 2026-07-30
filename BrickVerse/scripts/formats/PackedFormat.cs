@@ -458,6 +458,11 @@ public static partial class PackedFormat
 			throw new Exception("Metadata not present");
 		}
 
+		if (root.WorldID == 0 && metadata.WorldId > 0)
+			root.WorldID = metadata.WorldId;
+		if (root.UniverseID == 0 && metadata.UniverseId > 0)
+			root.UniverseID = metadata.UniverseId;
+
 		// Load input
 		if (files.TryGetValue("input.json", out byte[]? inputBytes))
 		{
@@ -604,6 +609,7 @@ public static partial class PackedFormat
 public struct CreatorProjectMetadata()
 {
 	[JsonInclude] public long WorldId = 0;
+	[JsonInclude] public long UniverseId = 0;
 	[JsonInclude] public string ProjectName = "Project Name";
 	[JsonInclude] public string MainWorld = "main.bvxw";
 	[JsonInclude] public int? IconID;

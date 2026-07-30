@@ -1315,9 +1315,9 @@ public static class CreatorAPI
 			}
 
 			string ownerId = creationOwnerId.Trim();
-			string ownerType = creationOwnerType.Trim().ToLowerInvariant();
+			string ownerType = creationOwnerType.Trim().ToUpperInvariant();
 
-			if (ownerType != "user" && ownerType != "guild")
+			if (ownerType != "USER" && ownerType != "GUILD")
 			{
 				throw new ArgumentOutOfRangeException(
 					nameof(creationOwnerType),
