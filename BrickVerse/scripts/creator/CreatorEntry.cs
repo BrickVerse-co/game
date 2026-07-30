@@ -57,11 +57,12 @@ public partial class CreatorEntry : Node
 		GetViewport().GuiEmbedSubwindows = true;
 
 		// Open project by world id cmd argument
+		cmdargs.TryGetValue("world", out string? worldIdLegacy);
 		cmdargs.TryGetValue("worldId", out string? worldId);
-		if (worldId != null)
+		if (worldId != null || worldIdLegacy != null)
 		{
-			BV.Print("Attempting to open world by id: ", worldId);
-			_pendingWorldId = worldId;
+			BV.Print("Attempting to open world by id: ", worldId ?? worldIdLegacy);
+			_pendingWorldId = worldId ?? worldIdLegacy;
 		}
 
 		// Open project by file path cmd argument
