@@ -69,6 +69,22 @@ load_path = "res://.godot/imported/boot.png-28724752f4f95ee94ae7ba92c3ee1281.cte
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wlglv"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.8198105, 0.8562207, 0.9035327, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.137255, 0.180392, 0.235294, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [sub_resource type="StyleBoxFlat" id="ToolbarSurface"]
 content_margin_left = 8.0
 content_margin_top = 5.0
@@ -185,17 +201,36 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_playerCountOption")]
+[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_playerCountOption")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("5_c7ht3")
 _playBtn = NodePath("Layout/Play")
 _playAtCamBtn = NodePath("Layout/PlayAtCam")
 _stopBtn = NodePath("Layout/Stop")
+_collaborateBtn = NodePath("Layout/Collaborate")
 _playerCountOption = NodePath("Layout/PlayerCount")
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions" unique_id=438009992]
 layout_mode = 2
+
+[node name="Collaborate" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1348821769]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+tooltip_text = "Manage Team Create collaborators"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_wlglv")
+text = "Collaborate"
+
+[node name="Session" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=432594958]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+tooltip_text = "View Team Create session and collaborator cameras"
+text = "Session"
 
 [node name="Play" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1354859142]
 clip_children = 2

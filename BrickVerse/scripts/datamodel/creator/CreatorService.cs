@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Creator;
 using BrickVerse.Creator.Debugger;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Splashes;
@@ -69,6 +70,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			Service = this
 		};
 		AddChild(Interface);
+		AddChild(new TeamCreateService());
 
 		string polyFolder = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), BrickVerseFolderName);
 		if (!Directory.Exists(polyFolder))

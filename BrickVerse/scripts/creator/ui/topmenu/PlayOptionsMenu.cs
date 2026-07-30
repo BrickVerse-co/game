@@ -3,7 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Creator.TeamCreate;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.UI.Menus;
 
@@ -12,6 +15,8 @@ public partial class PlayOptionsMenu : Control
 	[Export] private Button _playBtn = null!;
 	[Export] private Button _playAtCamBtn = null!;
 	[Export] private Button _stopBtn = null!;
+	[Export] private Button _collaborateBtn = null!;
+	[Export] private Button _sessionBtn = null!;
 	[Export] private OptionButton _playerCountOption = null!;
 
 	public override void _Ready()
@@ -19,6 +24,8 @@ public partial class PlayOptionsMenu : Control
 		_playBtn.Pressed += OnPlayButtonPressed;
 		_playAtCamBtn.Pressed += OnPlayAtCamPressed;
 		_stopBtn.Pressed += OnStopButtonPressed;
+		_collaborateBtn.Pressed += OnCollaborateButtonPressed;
+		_sessionBtn.Pressed += OnSessionButtonPressed;
 		_stopBtn.Disabled = true;
 		_stopBtn.Visible = false;
 
@@ -65,5 +72,29 @@ public partial class PlayOptionsMenu : Control
 	private void OnStopButtonPressed()
 	{
 		CreatorService.Singleton.StopLocalTest();
+	}
+
+	private void OnCollaborateButtonPressed()
+	{
+		long universeId = World.Current?.UniverseID ?? 0;
+		if (universeId == 0)
+		{
+			CreatorService.Interface.PopupAlert(
+				"Publish this world before managing Team Create collaborators.",
+				"Team Create"
+			);
+			return;
+		}
+
+		OS.ShellOpen(
+			Globals.MainEndpoint.PathJoin(
+				$"/creator/worlds/edit/{universeId}?tab=collaborators"
+			)
+		);
+	}
+
+	private static void OnSessionButtonPressed()
+	{
+		TeamCreateService.Instance.ShowSessionWindow();
 	}
 }
