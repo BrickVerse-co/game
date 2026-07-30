@@ -2,26 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
-using Godot;
-#if !USE_NATIVE_HTTP
-using System;
-using System.Net;
-#endif
 
 namespace BrickVerse.Shared;
 
 public partial class BVHttpClient
 {
-	private const int DefaultDownloadChunkSize = 10000;
-#if USE_NATIVE_HTTP
-	private static readonly HttpClient _httpClient = new();
-#endif
+	private static readonly System.Net.Http.HttpClient _httpClient = new();
 	public Dictionary<string, string> DefaultRequestHeaders { get; set; } = [];
 
 	public BVHttpClient()
@@ -29,167 +24,77 @@ public partial class BVHttpClient
 		DefaultRequestHeaders["User-Agent"] = $"BrickVerse Client {Globals.AppVersion}";
 	}
 
-#if !USE_NATIVE_HTTP
-	public Task<HttpResponseMessage> SendAsync(HttpRequestMessage msg)
+	public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage msg)
 	{
 		if (Globals.UseNoHttp)
 			throw new HttpRequestException("Http is disabled via feature flag");
 
-		TaskCompletionSource<HttpResponseMessage> tcs = new();
+		if (IsMultipart(msg.Content))
+			ValidateMultipartBody(
+				msg.Content,
+				await msg.Content!.ReadAsByteArrayAsync()
+			);
 
-		Callable
-			.From(() =>
-			{
-				async void Run()
-				{
-					try
-					{
-						byte[] body =
-							msg.Content != null ? await msg.Content.ReadAsByteArrayAsync() : [];
-
-						List<string> headers = [];
-
-						foreach ((string k, string v) in DefaultRequestHeaders)
-						{
-							if (
-								k.Equals("Authorization", StringComparison.OrdinalIgnoreCase)
-								&& msg.Headers.Authorization != null
-							)
-							{
-								continue;
-							}
-
-							headers.Add($"{k}: {v}");
-						}
-
-						foreach (var item in msg.Headers)
-							headers.Add($"{item.Key}: {string.Join(", ", item.Value)}");
-
-						if (msg.Content != null)
-						{
-							foreach (var item in msg.Content.Headers)
-							{
-								if (item.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
-									continue;
-
-								string value = string.Join(", ", item.Value);
-
-								if (item.Key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
-									value = NormalizeMultipartContentType(value);
-
-								headers.Add($"{item.Key}: {value}");
-							}
-						}
-
-						/*BV.Print("=== BVHttpClient Request ===");
-						BV.Print($"URL: {msg.RequestUri}");
-						BV.Print($"Method: {msg.Method}");
-						BV.Print($"Body Length: {body.Length}");
-						foreach (string header in headers)
-							BV.Print(header);
-
-						*/
-
-						HttpRequest req = new() { DownloadChunkSize = DefaultDownloadChunkSize };
-
-						Globals.Singleton.AddChild(req);
-
-						req.RequestCompleted += (
-							result,
-							responseCode,
-							responseHeaders,
-							responseBody
-						) =>
-						{
-							HttpResponseMessage response = new((HttpStatusCode)responseCode)
-							{
-								Content = new ByteArrayContent(responseBody),
-							};
-
-							foreach (string header in responseHeaders)
-							{
-								string[] parts = header.Split(':', 2);
-
-								if (parts.Length != 2)
-									continue;
-
-								string key = parts[0].Trim();
-								string value = parts[1].Trim();
-
-								if (!response.Headers.TryAddWithoutValidation(key, value))
-									response.Content.Headers.TryAddWithoutValidation(key, value);
-							}
-
-							req.QueueFree();
-							tcs.TrySetResult(response);
-						};
-
-						Godot.HttpClient.Method method = Enum.Parse<Godot.HttpClient.Method>(
-							msg.Method.Method.ToLowerInvariant().Capitalize()
-						);
-
-						string[] headerArray = headers.ToArray();
-						byte[] bodyArray = body;
-
-						Error error = req.RequestRaw(
-							msg.RequestUri?.ToString() ?? throw new InvalidOperationException("URL is null"),
-							headerArray,
-							method,
-							bodyArray
-						);
-
-						if (error != Error.Ok)
-						{
-							req.QueueFree();
-							tcs.TrySetException(
-								new HttpRequestException($"HttpRequest failed with error: {error}")
-							);
-						}
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-
-				Run();
-			})
-			.CallDeferred();
-
-		return tcs.Task;
+		ApplyDefaultHeaders(msg);
+		return await _httpClient.SendAsync(
+			msg,
+			HttpCompletionOption.ResponseHeadersRead
+		);
 	}
-#else
-	public Task<HttpResponseMessage> SendAsync(HttpRequestMessage msg)
+
+	private static bool IsMultipart(HttpContent? content)
+	{
+		return string.Equals(
+			content?.Headers.ContentType?.MediaType,
+			"multipart/form-data",
+			StringComparison.OrdinalIgnoreCase
+		);
+	}
+
+	private void ApplyDefaultHeaders(HttpRequestMessage msg)
 	{
 		foreach ((string key, string val) in DefaultRequestHeaders)
 		{
-			msg.Headers.TryAddWithoutValidation(key, val);
+			if (!msg.Headers.Contains(key))
+				msg.Headers.TryAddWithoutValidation(key, val);
 		}
-		return _httpClient.SendAsync(msg);
 	}
-#endif
 
-#if !USE_NATIVE_HTTP
-	private static string NormalizeMultipartContentType(string value)
+	private static void ValidateMultipartBody(HttpContent? content, byte[] body)
 	{
-		const string boundaryMarker = "boundary=\"";
-		int boundaryStart = value.IndexOf(boundaryMarker, StringComparison.OrdinalIgnoreCase);
+		MediaTypeHeaderValue? contentType = content?.Headers.ContentType;
+		if (
+			contentType == null
+			|| !string.Equals(
+				contentType.MediaType,
+				"multipart/form-data",
+				StringComparison.OrdinalIgnoreCase
+			)
+		)
+			return;
 
-		if (boundaryStart < 0)
-			return value;
+		string? boundary = contentType.Parameters
+			.FirstOrDefault(parameter =>
+				parameter.Name.Equals("boundary", StringComparison.OrdinalIgnoreCase)
+			)
+			?.Value
+			?.Trim('"');
 
-		int valueStart = boundaryStart + boundaryMarker.Length;
-		int valueEnd = value.IndexOf('\"', valueStart);
+		if (string.IsNullOrWhiteSpace(boundary))
+			throw new HttpRequestException("Multipart form is missing its boundary parameter.");
 
-		if (valueEnd < 0)
-			return value;
-
-		return value[..boundaryStart]
-			+ "boundary="
-			+ value[valueStart..valueEnd]
-			+ value[(valueEnd + 1)..];
+		byte[] openingBoundary = Encoding.ASCII.GetBytes($"--{boundary}\r\n");
+		byte[] closingBoundary = Encoding.ASCII.GetBytes($"--{boundary}--");
+		if (
+			!body.AsSpan().StartsWith(openingBoundary)
+			|| body.AsSpan().IndexOf(closingBoundary) < 0
+		)
+		{
+			throw new HttpRequestException(
+				"Multipart form boundary does not match the serialized request body."
+			);
+		}
 	}
-#endif
 
 	public async Task<HttpResponseMessage> GetAsync(string url)
 	{
