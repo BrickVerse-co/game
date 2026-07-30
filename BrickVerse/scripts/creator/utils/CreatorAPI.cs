@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -816,6 +817,69 @@ public static class CreatorAPI
 		ToolbarIdentityUpdated?.Invoke(null);
 	}
 
+	public static Task<CreatorPlaceItem[]> GetUserWorlds(string userId)
+	{
+		if (string.IsNullOrWhiteSpace(userId))
+			throw new ArgumentException("A user ID is required.", nameof(userId));
+
+		return GetWorldsByOwner($"/v3/worlds/user/{Uri.EscapeDataString(userId)}");
+	}
+
+	public static Task<CreatorPlaceItem[]> GetGuildWorlds(string guildId)
+	{
+		if (string.IsNullOrWhiteSpace(guildId))
+			throw new ArgumentException("A guild ID is required.", nameof(guildId));
+
+		return GetWorldsByOwner($"/v3/worlds/guild/{Uri.EscapeDataString(guildId)}");
+	}
+
+	private static async Task<CreatorPlaceItem[]> GetWorldsByOwner(string route)
+	{
+		if (!IsUserAuthenticated)
+			throw new AuthenticationException("User authentication required");
+
+		if (Globals.UseNoHttp)
+			throw new HttpRequestException("HTTP is disabled via feature flag");
+
+		await EnsureTokenValid();
+
+		string url = Globals.ApiEndpoint.PathJoin(route);
+		using HttpResponseMessage response = await _client.GetAsync(url);
+		string body = await response.Content.ReadAsStringAsync();
+
+		if (!response.IsSuccessStatusCode)
+		{
+			throw new HttpRequestException(
+				$"Failed to retrieve worlds. Status: {(int)response.StatusCode} {response.StatusCode}. Response: {body}",
+				null,
+				response.StatusCode
+			);
+		}
+
+		CreatorWorldListResponse? result = JsonSerializer.Deserialize(
+			body,
+			CreatorAPIGenerationContext.Default.CreatorWorldListResponse
+		);
+
+		if (result is null)
+			throw new HttpRequestException("The worlds response was empty.");
+
+		if (!result.Success)
+			throw new HttpRequestException("The API failed to retrieve worlds.");
+
+		return result
+			.Games.Select(game => new CreatorPlaceItem
+			{
+				Id = game.Id,
+				WorldId = game.Id,
+				UniverseId = game.UniverseId,
+				Name = game.Name,
+				Description = game.Description,
+				IconUrl = game.ThumbnailUrl,
+			})
+			.ToArray();
+	}
+
 	public static async Task<CreatorGuildItem[]> GetUserGuilds(
 		bool limitToEditable = false,
 		CancellationToken cancellationToken = default
@@ -917,7 +981,9 @@ public static class CreatorAPI
 			page++;
 		}
 
-		BV.Print($"CreatorAPI: Retrieved {allGuilds.Count} guild(s) for user '{Username}' ({UserID})");
+		BV.Print(
+			$"CreatorAPI: Retrieved {allGuilds.Count} guild(s) for user '{Username}' ({UserID})"
+		);
 
 		return [.. allGuilds];
 	}

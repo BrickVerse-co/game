@@ -69,6 +69,9 @@ public struct CreatorPlaceItem
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
 
+	[JsonPropertyName("description")]
+	public string Description { get; set; }
+
 	[JsonPropertyName("createdAt")]
 	public DateTime CreatedAt { get; set; }
 
@@ -136,6 +139,45 @@ public sealed class PaginationInfo
 	public bool HasNextPage { get; set; }
 	public bool HasPreviousPage { get; set; }
 }
+
+public sealed class CreatorWorldListResponse
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("games")]
+	public CreatorWorldListItem[] Games { get; set; } = [];
+}
+
+public sealed class CreatorWorldListItem
+{
+	[JsonPropertyName("universeId")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public long UniverseId { get; set; }
+
+	[JsonPropertyName("id")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public long Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
+
+	[JsonPropertyName("description")]
+	public string Description { get; set; } = string.Empty;
+
+	[JsonPropertyName("thumbnailUrl")]
+	public string ThumbnailUrl { get; set; } = string.Empty;
+
+	[JsonPropertyName("visitCount")]
+	public long VisitCount { get; set; }
+
+	[JsonPropertyName("likeCount")]
+	public long LikeCount { get; set; }
+}
+
+[JsonSerializable(typeof(CreatorWorldListResponse))]
+[JsonSerializable(typeof(CreatorWorldListItem))]
+[JsonSerializable(typeof(CreatorWorldListItem[]))]
 
 [JsonSerializable(typeof(CreatorPublishResponse))]
 [JsonSerializable(typeof(CreatorPlaceItem))]

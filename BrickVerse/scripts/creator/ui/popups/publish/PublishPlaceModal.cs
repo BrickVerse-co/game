@@ -147,6 +147,10 @@ public partial class PublishPlaceModal : PopupWindowBase
 				loadOverlay?.Hide();
 				SetBusy(false);
 				Close();
+				CreatorService.Interface.PopupAlert(
+					"World published successfully! You can now share it with others using the link: "
+						+ publishRes.Link
+				);
 			}
 			catch (Exception ex)
 			{
