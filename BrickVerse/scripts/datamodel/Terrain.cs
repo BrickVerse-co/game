@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -65,6 +66,8 @@ public sealed partial class Terrain : Instance
 	private Node3D? _viewerNode;
 
 	private readonly List<TerrainOperation> _operations = [];
+	private TerrainOperation[]? _pendingReplayOperations;
+	private int _pendingReplayIndex;
 
 	private bool _initialized;
 	private bool _isLoading;
@@ -420,6 +423,12 @@ public sealed partial class Terrain : Instance
 	{
 		base.Process(delta);
 
+		if (_pendingReplayOperations != null)
+		{
+			TryReplayPendingOperations();
+			return;
+		}
+
 		Camera3D? camera =
 			Root?.Environment?.CurrentGDCamera
 			?? Root?.RootViewport?.GetCamera3D()
@@ -434,6 +443,8 @@ public sealed partial class Terrain : Instance
 	public override void PreDelete()
 	{
 		_initialized = false;
+		_pendingReplayOperations = null;
+		_pendingReplayIndex = 0;
 		ChildAdded.Disconnect(OnTerrainChildChanged);
 		ChildRemoved.Disconnect(OnTerrainChildChanged);
 		_operations.Clear();
@@ -1030,13 +1041,17 @@ public sealed partial class Terrain : Instance
 
 		_isLoading = true;
 		TerrainOperation[] previousOperations = [.. _operations];
+		bool terrainWasReplaced = false;
 
 		try
 		{
 			if (string.IsNullOrWhiteSpace(_serialisedTerrain))
 			{
+				_pendingReplayOperations = null;
+				_pendingReplayIndex = 0;
 				_operations.Clear();
 				CreateVoxelTerrain();
+				terrainWasReplaced = true;
 				return;
 			}
 
@@ -1086,28 +1101,36 @@ public sealed partial class Terrain : Instance
 			}
 
 			// Do not destroy the currently rendered terrain until the complete
-			// serialized stream has passed validation.
+			// serialized stream has passed validation. VoxelLodTerrain loads
+			// editable blocks asynchronously, so replay is queued and applied
+			// in order as each operation's region becomes editable.
 			CreateVoxelTerrain();
-			foreach (TerrainOperation operation in loadedOperations)
-				ExecuteOperation(operation);
+			terrainWasReplaced = true;
 			_operations.Clear();
 			_operations.AddRange(loadedOperations);
+			_pendingReplayOperations = [.. loadedOperations];
+			_pendingReplayIndex = 0;
 			_terrainDirty = false;
+			TryReplayPendingOperations();
 		}
 		catch (Exception exception)
 		{
-			try
+			if (terrainWasReplaced)
 			{
-				CreateVoxelTerrain();
-				foreach (TerrainOperation operation in previousOperations)
-					ExecuteOperation(operation);
-				_operations.Clear();
-				_operations.AddRange(previousOperations);
-			}
-			catch (Exception recoveryException)
-			{
-				GD.PushError(
-					$"Failed to restore terrain after a load error: {recoveryException}");
+				try
+				{
+					CreateVoxelTerrain();
+					_operations.Clear();
+					_operations.AddRange(previousOperations);
+					_pendingReplayOperations = [.. previousOperations];
+					_pendingReplayIndex = 0;
+					TryReplayPendingOperations();
+				}
+				catch (Exception recoveryException)
+				{
+					GD.PushError(
+						$"Failed to restore terrain after a load error: {recoveryException}");
+				}
 			}
 			GD.PushError(
 				$"Failed to load serialised terrain: {exception}");
@@ -1121,6 +1144,8 @@ public sealed partial class Terrain : Instance
 	[ScriptMethod]
 	public void Clear()
 	{
+		_pendingReplayOperations = null;
+		_pendingReplayIndex = 0;
 		_operations.Clear();
 		_terrainDirty = true;
 		CreateVoxelTerrain();
@@ -1790,6 +1815,14 @@ void fragment() {
 
 	private void ExecuteAndRecord(TerrainOperation operation)
 	{
+		if (_pendingReplayOperations != null)
+		{
+			TryReplayPendingOperations();
+			if (_pendingReplayOperations != null)
+				throw new InvalidOperationException(
+					"Terrain is still restoring saved voxel data.");
+		}
+
 		ExecuteOperation(operation);
 
 		if (!_isLoading)
@@ -1801,6 +1834,76 @@ void fragment() {
 		if (AutoSerialise && !_isLoading)
 		{
 			SaveTerrain();
+		}
+	}
+
+	private void TryReplayPendingOperations()
+	{
+		TerrainOperation[]? pending = _pendingReplayOperations;
+		if (pending == null) return;
+
+		const int maximumOperationsPerFrame = 256;
+		int appliedThisFrame = 0;
+		try
+		{
+			while (_pendingReplayIndex < pending.Length
+				&& appliedThisFrame < maximumOperationsPerFrame)
+			{
+				TerrainOperation operation = pending[_pendingReplayIndex];
+				(Vector3 minimum, Vector3 maximum) = GetOperationBounds(operation);
+				SetEditorViewerPosition((minimum + maximum) * 0.5f);
+				if (!IsAreaEditable(minimum, maximum))
+					return;
+
+				ExecuteOperation(operation);
+				_pendingReplayIndex++;
+				appliedThisFrame++;
+			}
+
+			if (_pendingReplayIndex >= pending.Length)
+			{
+				_pendingReplayOperations = null;
+				_pendingReplayIndex = 0;
+				BV.Print(
+					"Terrain restored ",
+					pending.Length,
+					" serialized operation(s).");
+			}
+		}
+		catch (Exception exception)
+		{
+			_pendingReplayOperations = null;
+			_pendingReplayIndex = 0;
+			GD.PushError($"Failed while replaying saved terrain: {exception}");
+		}
+	}
+
+	private static (Vector3 Minimum, Vector3 Maximum) GetOperationBounds(
+		TerrainOperation operation)
+	{
+		Vector3 padding;
+		switch (operation.Type)
+		{
+			case TerrainOperationType.FillBlock:
+			case TerrainOperationType.DigBlock:
+				padding = operation.Size.Abs() * 0.5f + Vector3.One * 2.0f;
+				return (operation.Position - padding, operation.Position + padding);
+
+			case TerrainOperationType.FillCylinder:
+			case TerrainOperationType.DigCylinder:
+				padding = Vector3.One * (operation.Radius + 2.0f);
+				return (
+					operation.Position.Min(operation.SecondaryPosition) - padding,
+					operation.Position.Max(operation.SecondaryPosition) + padding);
+
+			case TerrainOperationType.SetVoxelSdf:
+			case TerrainOperationType.SetVoxelMaterial:
+				padding = Vector3.One * 2.0f;
+				return (operation.Position - padding, operation.Position + padding);
+
+			default:
+				padding = Vector3.One * (Math.Max(operation.Radius, 1.0f) + 2.0f);
+				return (operation.Position - padding, operation.Position + padding);
 		}
 	}
 
