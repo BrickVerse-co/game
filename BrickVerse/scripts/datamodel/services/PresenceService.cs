@@ -221,7 +221,7 @@ public sealed partial class PresenceService : Instance
 		Discord.Activity activity = new()
 		{
 			State = Root.SessionType == World.SessionTypeEnum.Creator
-				? FilterService.Filter(_creatorState)
+				? _creatorState
 				: _state != null ? FilterService.Filter(_state) : "",
 			Details = details,
 			Timestamps =
