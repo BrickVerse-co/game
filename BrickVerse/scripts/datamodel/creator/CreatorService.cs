@@ -30,6 +30,7 @@ namespace BrickVerse.Datamodel.Creator;
 public sealed partial class CreatorService : Node, IScriptObject
 {
 	public const string BrickVerseFolderName = "BrickVerse/";
+	public string? PendingModelImportPath { get; set; }
 
 	private long _localTestIDCounter = 0;
 
@@ -216,6 +217,15 @@ public sealed partial class CreatorService : Node, IScriptObject
 		else if (firstFileExt == "bvxw" || firstFileExt == "bvworld")
 		{
 			Interface.OpenWorldFile(firstFile);
+		}
+		else if (firstFileExt == "bvanim")
+		{
+			Interface.OpenAnimationEditor(firstFile);
+		}
+		else if (firstFileExt == "bvaddon")
+		{
+			await AddonsManager.InstallAddonFile(firstFile);
+			Interface.PopupAlert($"Installed {Path.GetFileName(firstFile)}.", "Addon Installed");
 		}
 	}
 
@@ -577,6 +587,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 			Sessions.Add(session);
 			await ProjectManager.AddToRecents(folder);
 			StartupSplash.Singleton.Close();
+
+			if (!string.IsNullOrWhiteSpace(PendingModelImportPath))
+			{
+				string modelPath = PendingModelImportPath;
+				PendingModelImportPath = null;
+				Interface.ImportModel(modelPath);
+			}
 		}
 		catch (Exception ex)
 		{
