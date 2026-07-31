@@ -35,6 +35,15 @@ func _export_end() -> void:
 		ProjectSettings.save()
 		original_settings.clear()
 
+	var completion_marker := OS.get_environment("BV_EXPORT_COMPLETE_MARKER")
+	if not completion_marker.is_empty():
+		var marker_file := FileAccess.open(completion_marker, FileAccess.WRITE)
+		if marker_file:
+			marker_file.store_string("complete")
+			marker_file.close()
+		else:
+			push_error("Unable to write export completion marker: " + completion_marker)
+
 func _store_original(key: String) -> void:
 	if not original_settings.has(key):
 		if ProjectSettings.has_setting(key):

@@ -16,31 +16,43 @@ $templateArchive = Join-Path $env:RUNNER_TEMP "templates.tpz"
 $templateExtract = Join-Path $env:RUNNER_TEMP "godot-templates"
 $templateDirectory = Join-Path $env:APPDATA "Godot\export_templates\$TemplateVersion"
 
-Invoke-WebRequest `
-	-Uri "https://github.com/godotengine/godot/releases/download/$GodotVersion/Godot_v${GodotVersion}_mono_win64.zip" `
-	-OutFile $godotArchive
-Expand-Archive -LiteralPath $godotArchive -DestinationPath $godotDirectory -Force
-
-Invoke-WebRequest `
-	-Uri "https://github.com/godotengine/godot/releases/download/$GodotVersion/Godot_v${GodotVersion}_mono_export_templates.tpz" `
-	-OutFile $templateArchive
-New-Item -ItemType Directory -Path $templateExtract -Force | Out-Null
-tar -xf $templateArchive -C $templateExtract
-if ($LASTEXITCODE -ne 0) {
-	throw "Godot export template extraction failed with exit code $LASTEXITCODE."
-}
-New-Item -ItemType Directory -Path $templateDirectory -Force | Out-Null
-Copy-Item -Path (Join-Path $templateExtract "templates\*") -Destination $templateDirectory -Recurse -Force
-
-$godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64_console.exe" |
+$godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64_console.exe" -ErrorAction SilentlyContinue |
 	Select-Object -First 1
+if (-not $godot) {
+	curl.exe --fail --location --retry 3 --output $godotArchive `
+		"https://github.com/godotengine/godot/releases/download/$GodotVersion/Godot_v${GodotVersion}_mono_win64.zip"
+	if ($LASTEXITCODE -ne 0) { throw "Godot download failed with exit code $LASTEXITCODE." }
+	New-Item -ItemType Directory -Path $godotDirectory -Force | Out-Null
+	tar.exe -xf $godotArchive -C $godotDirectory
+	if ($LASTEXITCODE -ne 0) { throw "Godot extraction failed with exit code $LASTEXITCODE." }
+	$godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64_console.exe" |
+		Select-Object -First 1
+}
+
 if (-not $godot) {
 	throw "Could not locate the Godot .NET console executable."
 }
 
-dotnet restore $ProjectFile
+$releaseTemplate = Join-Path $templateDirectory "windows_release_x86_64.exe"
+if (-not (Test-Path -LiteralPath $releaseTemplate -PathType Leaf)) {
+	curl.exe --fail --location --retry 3 --output $templateArchive `
+		"https://github.com/godotengine/godot/releases/download/$GodotVersion/Godot_v${GodotVersion}_mono_export_templates.tpz"
+	if ($LASTEXITCODE -ne 0) { throw "Godot template download failed with exit code $LASTEXITCODE." }
+	New-Item -ItemType Directory -Path $templateExtract -Force | Out-Null
+	tar.exe -xf $templateArchive -C $templateExtract
+	if ($LASTEXITCODE -ne 0) { throw "Godot template extraction failed with exit code $LASTEXITCODE." }
+	New-Item -ItemType Directory -Path $templateDirectory -Force | Out-Null
+	Copy-Item -Path (Join-Path $templateExtract "templates\*") -Destination $templateDirectory -Recurse -Force
+}
+
+dotnet restore $ProjectFile --nologo
 if ($LASTEXITCODE -ne 0) {
 	throw "dotnet restore failed with exit code $LASTEXITCODE."
+}
+
+dotnet build $ProjectFile --configuration Release --no-restore --nologo
+if ($LASTEXITCODE -ne 0) {
+	throw "dotnet build failed with exit code $LASTEXITCODE."
 }
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
@@ -50,12 +62,50 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $exportPath = Join-Path $ExportDirectory $ExportFile
-# The Windows editor can remain alive after a successful command-line export
-# (the pack is complete, but editor shutdown stalls). Exporting is synchronous,
-# so quit after deferred import/export cleanup has had two main-loop iterations.
-& $godot.FullName --headless --quit-after 2 --path $ProjectDirectory --export-release $ExportPreset $exportPath
-if ($LASTEXITCODE -ne 0) {
-	throw "Godot export failed with exit code $LASTEXITCODE."
+$completionMarker = Join-Path $env:RUNNER_TEMP "brickverse-export-$([Guid]::NewGuid().ToString('N')).complete"
+$env:BV_EXPORT_COMPLETE_MARKER = $completionMarker
+$startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+$startInfo.FileName = $godot.FullName
+$startInfo.UseShellExecute = $false
+foreach ($argument in @(
+	"--headless",
+	"--path", $ProjectDirectory,
+	"--export-release", $ExportPreset, $exportPath
+)) {
+	[void]$startInfo.ArgumentList.Add($argument)
+}
+
+$exportProcess = [System.Diagnostics.Process]::Start($startInfo)
+$exportDeadline = [DateTime]::UtcNow.AddMinutes(8)
+$completedExport = $false
+
+try {
+	while (-not $exportProcess.HasExited) {
+		if (Test-Path -LiteralPath $completionMarker -PathType Leaf) {
+			$completedExport = $true
+			break
+		}
+		if ([DateTime]::UtcNow -ge $exportDeadline) {
+			$exportProcess.Kill($true)
+			$exportProcess.WaitForExit()
+			throw "Godot export did not complete within 8 minutes."
+		}
+		Start-Sleep -Milliseconds 250
+	}
+
+	if ($completedExport -and -not $exportProcess.WaitForExit(5000)) {
+		Write-Warning "Godot finished exporting but stalled during shutdown; terminating the editor process."
+		$exportProcess.Kill($true)
+		$exportProcess.WaitForExit()
+	}
+
+	if (-not $completedExport -and $exportProcess.ExitCode -ne 0) {
+		throw "Godot export failed with exit code $($exportProcess.ExitCode)."
+	}
+}
+finally {
+	Remove-Item -LiteralPath $completionMarker -Force -ErrorAction SilentlyContinue
+	Remove-Item Env:BV_EXPORT_COMPLETE_MARKER -ErrorAction SilentlyContinue
 }
 
 $dataDirectory = Get-ChildItem -Path $ExportDirectory -Directory -Filter "data_*_windows_x86_64" |
@@ -72,5 +122,5 @@ if (
 	throw "Windows export is incomplete; expected the executable, PCK, and managed assembly data directory."
 }
 
-Write-Host "Windows export contents:"
-Get-ChildItem -Path $ExportDirectory -Recurse | ForEach-Object { Write-Host $_.FullName }
+Write-Host "Windows export completed: $exportPath"
+Write-Host "Export size: $([Math]::Round((Get-ChildItem -Path $ExportDirectory -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 2)) MB"
