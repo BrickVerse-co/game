@@ -62,6 +62,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\BrickVerse.SourceGen\BrickVerse.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<EmbeddedResource Include="assets\profanity.txt" LogicalName="BrickVerse.Assets.profanity.txt" />
 	</ItemGroup>
 	<!-- ExportRelease configuration -->
 	<PropertyGroup Condition="'$(Configuration)' == 'ExportRelease'">

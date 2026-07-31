@@ -373,19 +373,34 @@ public static class BVAPI
 	public static Task<string> GetProfanityList()
 	{
 		if (ProfanityListCache != null)
-		{
 			return Task.FromResult(ProfanityListCache);
-		}
 
-		// Load profanity list resources and cache it in memory for future calls
 		string path = "res://assets/profanity.txt";
-		if (!FileAccess.FileExists(path))
+		string? data = null;
+
+		if (FileAccess.FileExists(path))
 		{
-			throw new Exception("Profanity list file not found: " + path);
+			using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+			data = file.GetAsText();
+		}
+		else
+		{
+			const string resourceName = "BrickVerse.Assets.profanity.txt";
+			using System.IO.Stream? stream = typeof(BVAPI).Assembly.GetManifestResourceStream(
+				resourceName
+			);
+			if (stream is not null)
+			{
+				using var reader = new System.IO.StreamReader(stream);
+				data = reader.ReadToEnd();
+			}
 		}
 
-		using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-		string data = file.GetAsText();
+		if (string.IsNullOrWhiteSpace(data))
+			throw new InvalidOperationException(
+				$"Profanity list is unavailable at {path} and was not embedded in the application."
+			);
+
 		ProfanityListCache = data;
 		return Task.FromResult(data);
 	}
