@@ -22,6 +22,7 @@ env:
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   APP: creator
   BUILD_DISPLAY_NAME: Creator
+  BV_BUILD_TARGET: CREATOR
 
 jobs:
   build-creator:
@@ -203,6 +204,7 @@ jobs:
 
       - name: Export Windows
         if: matrix.platform == 'windows'
+        timeout-minutes: 10
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `
@@ -212,8 +214,7 @@ jobs:
             -ProjectFile "${{ github.workspace }}\${{ env.PROJECT_FILE }}" `
             -ExportDirectory "${{ github.workspace }}\dist\windows" `
             -ExportPreset "${{ matrix.export_preset }}" `
-            -ExportFile "${{ matrix.export_file }}" `
-            -BuildTarget "CREATOR"
+            -ExportFile "${{ matrix.export_file }}"
 
       - name: Upload unsigned Windows export
         if: matrix.platform == 'windows'

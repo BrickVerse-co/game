@@ -428,10 +428,15 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public async void ImportModel(string modelImportPath)
 	{
-		if (World.Current == null)
+		if (World.Current == null || CreatorService.CurrentSession == null)
+		{
+			CreatorService.Singleton.PendingModelImportPath = modelImportPath;
+			PopupAlert(
+				"Open or create a project to import this model. It will be imported automatically after the project opens.",
+				"Project Required"
+			);
 			return;
-		if (CreatorService.CurrentSession == null)
-			return;
+		}
 
 		CreatorSession session = CreatorService.CurrentSession;
 
@@ -753,7 +758,12 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void OpenAnimationEditor()
 	{
-		PopupWindow(new AnimationEditorWindow());
+		OpenAnimationEditor(null);
+	}
+
+	public void OpenAnimationEditor(string? filePath)
+	{
+		PopupWindow(new AnimationEditorWindow(filePath));
 	}
 
 	public void OpenUploadMeshMenu()

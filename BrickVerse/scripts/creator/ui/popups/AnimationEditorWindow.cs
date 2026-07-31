@@ -58,9 +58,11 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	private int _activeGizmoAxis = -1;
 	private int _selectedTrack = -1;
 	private int _selectedKey = -1;
+	private readonly string? _initialFilePath;
 
-	public AnimationEditorWindow()
+	public AnimationEditorWindow(string? initialFilePath = null)
 	{
+		_initialFilePath = initialFilePath;
 		Title = "Animation Editor";
 		Size = new Vector2I(1100, 680);
 		MinSize = new Vector2I(760, 480);
@@ -71,6 +73,10 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		base._Ready();
 		BuildInterface();
 		RefreshAll();
+		if (!string.IsNullOrWhiteSpace(_initialFilePath))
+		{
+			LoadAnimationFile(_initialFilePath);
+		}
 	}
 
 	private void BuildInterface()
@@ -688,26 +694,30 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		};
 		dialog.FileSelected += path =>
 		{
-			try
-			{
-				_clip =
-					Path.GetExtension(path).Equals(".bvanim", StringComparison.OrdinalIgnoreCase)
-						? BVAnimationFormat.Read(File.ReadAllBytes(path))
-						: ImportSceneAnimation(path);
-				_selectedTrack = -1;
-				_selectedKey = -1;
-				RefreshAll();
-				_status.Text = $"Imported {Path.GetFileName(path)}";
-			}
-			catch (Exception ex)
-			{
-				_status.Text = "Import failed";
-				CreatorService.Interface.PopupAlert(ex.Message, "Animation Import Failed");
-			}
+			LoadAnimationFile(path);
 			dialog.QueueFree();
 		};
 		AddChild(dialog);
 		dialog.PopupCenteredRatio(0.75f);
+	}
+
+	private void LoadAnimationFile(string path)
+	{
+		try
+		{
+			_clip = Path.GetExtension(path).Equals(".bvanim", StringComparison.OrdinalIgnoreCase)
+				? BVAnimationFormat.Read(File.ReadAllBytes(path))
+				: ImportSceneAnimation(path);
+			_selectedTrack = -1;
+			_selectedKey = -1;
+			RefreshAll();
+			_status.Text = $"Imported {Path.GetFileName(path)}";
+		}
+		catch (Exception ex)
+		{
+			_status.Text = "Import failed";
+			CreatorService.Interface.PopupAlert(ex.Message, "Animation Import Failed");
+		}
 	}
 
 	private static BVAnimationClip ImportSceneAnimation(string path)

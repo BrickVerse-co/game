@@ -10,6 +10,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -98,6 +99,27 @@ public sealed partial class AddonsManager : Node
 		{
 			await RunAddon(addonPath, root, addonFileName);
 		}
+	}
+
+	public static async Task InstallAddonFile(string sourcePath)
+	{
+		string absoluteSourcePath = Path.GetFullPath(sourcePath);
+		if (!File.Exists(absoluteSourcePath))
+			throw new FileNotFoundException("Addon file does not exist.", absoluteSourcePath);
+
+		using (ZipArchive archive = ZipFile.OpenRead(absoluteSourcePath))
+		{
+			if (archive.GetEntry("addonmeta.json") == null || archive.GetEntry("model.bvmodel") == null)
+				throw new InvalidDataException("The file is not a valid BrickVerse addon.");
+		}
+
+		string addonFileName = Path.GetFileName(absoluteSourcePath);
+		string destinationPath = Path.GetFullPath(Path.Join(_addonsAbsolutePath, addonFileName));
+		if (!string.Equals(absoluteSourcePath, destinationPath, StringComparison.OrdinalIgnoreCase))
+			File.Copy(absoluteSourcePath, destinationPath, true);
+
+		foreach (World root in _registeredRoots.ToList())
+			await RunAddon(destinationPath, root, addonFileName);
 	}
 
 	public static async Task RunAddon(string addonPath, World root, string shortPath)

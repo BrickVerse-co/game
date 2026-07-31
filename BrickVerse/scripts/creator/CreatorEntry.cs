@@ -25,6 +25,7 @@ public partial class CreatorEntry : Node
 	public const int CreatorPort = 24220;
 	private Task _authInitializationTask = Task.CompletedTask;
 	private string? _pendingWorldId;
+	private string? _pendingFilePath;
 
 	public override void _EnterTree()
 	{
@@ -65,12 +66,13 @@ public partial class CreatorEntry : Node
 			_pendingWorldId = worldId ?? worldIdLegacy;
 		}
 
-		// Open project by file path cmd argument
+		// Open project or associated Creator file by path.
+		cmdargs.TryGetValue("file", out string? associatedFilePath);
 		cmdargs.TryGetValue("proj", out string? creatorFilePath);
-		if (creatorFilePath != null)
+		_pendingFilePath = associatedFilePath ?? creatorFilePath;
+		if (!string.IsNullOrWhiteSpace(_pendingFilePath))
 		{
-			BV.Print("Attempting to open project by file path: ", creatorFilePath);
-			_ = CreatorService.Singleton.CreateNewSession(creatorFilePath);
+			BV.Print("Attempting to open Creator file: ", _pendingFilePath);
 		}
 
 		// Import legacy world cmd arguments
@@ -101,6 +103,33 @@ public partial class CreatorEntry : Node
 		{
 			await CreatorService.Singleton.CreateNewSessionByWorldId(_pendingWorldId);
 			_pendingWorldId = null;
+		}
+
+		if (!string.IsNullOrWhiteSpace(_pendingFilePath))
+		{
+			string filePath = _pendingFilePath;
+			_pendingFilePath = null;
+			string extension = Path.GetExtension(filePath).ToLowerInvariant();
+			if (extension == ".bvanim")
+			{
+				CreatorService.Interface.OpenAnimationEditor(filePath);
+			}
+			else if (extension is ".bvxm" or ".bvmodel" or ".model")
+			{
+				CreatorService.Interface.ImportModel(filePath);
+			}
+			else if (extension == ".bvaddon")
+			{
+				await AddonsManager.InstallAddonFile(filePath);
+				CreatorService.Interface.PopupAlert(
+					$"Installed {Path.GetFileName(filePath)}.",
+					"Addon Installed"
+				);
+			}
+			else
+			{
+				await CreatorService.Singleton.CreateNewSession(filePath);
+			}
 		}
 	}
 
