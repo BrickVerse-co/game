@@ -30,6 +30,7 @@ namespace BrickVerse.Datamodel.Creator;
 public sealed partial class CreatorService : Node, IScriptObject
 {
 	public const string BrickVerseFolderName = "BrickVerse/";
+	public const string CloudWorldProjectsFolderName = "BrickVerseCreator/My Worlds";
 	public string? PendingModelImportPath { get; set; }
 
 	private long _localTestIDCounter = 0;
@@ -384,30 +385,42 @@ public sealed partial class CreatorService : Node, IScriptObject
 				await DatamodelLoader.LoadWorldBytes(root, worldContent);
 				Interface.LoadOverlay?.SetProgress(2);
 
-				string projectName = string.IsNullOrWhiteSpace(root.Name) ? $"World {parsedWorldId}" : root.Name.Trim();
-				string projectFolderName = projectName.SanitizeFileName();
+				string projectName = string.IsNullOrWhiteSpace(root.Name) ? "World" : root.Name.Trim();
+				string safeProjectName = projectName.SanitizeFileName().Trim();
+				if (string.IsNullOrWhiteSpace(safeProjectName)) safeProjectName = "World";
+				string projectFolderName = $"{safeProjectName}-{parsedWorldId}";
+				string projectsRoot = Path.Join(
+					System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments),
+					CloudWorldProjectsFolderName
+				);
+				string projectFolderPath = Path.Join(projectsRoot, projectFolderName);
 
-				// Prompt to save to a project folder
-				Interface.LoadOverlay?.SetStatus("Choosing project folder");
-				string targetPath = await CreatorService.Interface.PromptFolderSelect(new()
+				bool promptForLocation = CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Creator.PromptForWorldProjectLocation
+				);
+				if (promptForLocation)
 				{
-					Title = "Select a folder to create the project in",
-					CurrentDirectory = ProjectSettings.GlobalizePath("user://projects/"),
-				});
-
-				if (string.IsNullOrWhiteSpace(targetPath))
-				{
-					return;
-				}
-
-				string projectFolderPath = targetPath;
-				if (Directory.Exists(projectFolderPath))
-				{
-					bool hasExistingContent = Directory.GetFiles(projectFolderPath).Length != 0 || Directory.GetDirectories(projectFolderPath).Length != 0;
-					if (hasExistingContent && new DirectoryInfo(projectFolderPath).Name != projectFolderName)
+					Interface.LoadOverlay?.SetStatus("Choosing project folder");
+					Directory.CreateDirectory(projectsRoot);
+					string targetPath = await Interface.PromptFolderSelect(new()
 					{
-						projectFolderPath = Path.Join(projectFolderPath, projectFolderName);
+						Title = "Select a folder for this world project",
+						CurrentDirectory = projectsRoot,
+					});
+
+					if (string.IsNullOrWhiteSpace(targetPath)) return;
+					projectFolderPath = targetPath;
+					if (Directory.Exists(projectFolderPath))
+					{
+						bool hasExistingContent = Directory.EnumerateFileSystemEntries(projectFolderPath).Any();
+						if (hasExistingContent && new DirectoryInfo(projectFolderPath).Name != projectFolderName)
+							projectFolderPath = Path.Join(projectFolderPath, projectFolderName);
 					}
+				}
+				else
+				{
+					Interface.LoadOverlay?.SetStatus("Creating local project");
+					BV.Print("Using automatic project folder: ", projectFolderPath);
 				}
 
 				Directory.CreateDirectory(projectFolderPath);

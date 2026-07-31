@@ -10,6 +10,7 @@ public static class CreatorSettingKeys
 	{
 		public const string OpenWebAfterPublish = "creator.open_web_after_publish";
 		public const string DetailedRichPresence = "creator.detailed_rich_presence";
+		public const string PromptForWorldProjectLocation = "creator.prompt_for_world_project_location";
 	}
 
 	public static class Interface

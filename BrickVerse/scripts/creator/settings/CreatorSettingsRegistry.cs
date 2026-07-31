@@ -57,6 +57,18 @@ public static class CreatorSettingsRegistry
 				DefaultValue = false
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.PromptForWorldProjectLocation,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.PromptForWorldProjectLocation,
+				SectionKey = "creator",
+				Label = "Choose Project Folder When Opening Worlds",
+				Description = "Ask where to create a local project the first time a cloud world is opened. When disabled, Creator uses Documents/BrickVerseCreator/My Worlds automatically.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = false
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>
