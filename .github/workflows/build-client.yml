@@ -17,7 +17,7 @@ concurrency:
 env:
   GODOT_VERSION: 4.7-stable
   GODOT_TEMPLATE_VERSION: 4.7.stable.mono
-  DOTNET_VERSION: 9.0.x
+  DOTNET_VERSION: 10.0.x
   PROJECT_DIR: BrickVerse
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   APP: client
@@ -31,13 +31,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: windows
-            export_preset: "Client Windows"
-            export_file: "BrickVerse.exe"
-            package_name: "BrickVerse-Windows.zip"
-            artifact_name: "brickverse-client-windows"
-            executable_glob: "*.exe"
-
           - platform: linux
             export_preset: "Client Linux"
             export_file: "BrickVerse.x86_64"
@@ -202,17 +195,7 @@ jobs:
           echo "Export contents:"
           find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
 
-      - name: Upload unsigned Windows export for signing
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: brickverse-client-windows-unsigned
-          path: ${{ github.workspace }}/dist/windows
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Package
-        if: matrix.platform != 'windows'
         shell: bash
         run: |
           set -euo pipefail
@@ -225,7 +208,6 @@ jobs:
           zip -r -q "$PACKAGE_PATH" .
 
       - name: Calculate hashes
-        if: matrix.platform != 'windows'
         id: hash
         shell: bash
         run: |
@@ -260,7 +242,6 @@ jobs:
           echo "managed_sha=$MANAGED_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Prepare release metadata
-        if: matrix.platform != 'windows'
         id: metadata
         shell: bash
         run: |
@@ -275,7 +256,6 @@ jobs:
           echo "file_url=$FILE_URL" >> "$GITHUB_OUTPUT"
 
       - name: Upload to Azure Blob
-        if: matrix.platform != 'windows'
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -291,7 +271,6 @@ jobs:
               --overwrite true
 
       - name: Register binary
-        if: matrix.platform != 'windows'
         shell: bash
         run: |
           set -euo pipefail
@@ -326,7 +305,7 @@ jobs:
             --data-binary @registration.json
 
       - name: Notify Discord
-        if: success() && matrix.platform != 'windows'
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
@@ -348,7 +327,6 @@ jobs:
             --data-binary @discord.json
 
       - name: Upload workflow artifact
-        if: matrix.platform != 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
@@ -366,11 +344,71 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download unsigned Windows export
-        uses: actions/download-artifact@v4
+      - name: Checkout BrickVerse
+        uses: actions/checkout@v5
         with:
-          name: brickverse-client-windows-unsigned
-          path: ${{ github.workspace }}\dist\windows
+          lfs: true
+          fetch-depth: 1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "${{ env.DOTNET_VERSION }}"
+
+      - name: Install Godot .NET and export templates
+        id: godot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $godotArchive = Join-Path $env:RUNNER_TEMP "godot.zip"
+          $godotDirectory = Join-Path $env:RUNNER_TEMP "godot"
+          $templateArchive = Join-Path $env:RUNNER_TEMP "templates.tpz"
+          $templateExtract = Join-Path $env:RUNNER_TEMP "godot-templates"
+          $templateDirectory = Join-Path $env:APPDATA "Godot\export_templates\${{ env.GODOT_TEMPLATE_VERSION }}"
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_win64.zip" `
+            -OutFile $godotArchive
+          Expand-Archive -LiteralPath $godotArchive -DestinationPath $godotDirectory -Force
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz" `
+            -OutFile $templateArchive
+          New-Item -ItemType Directory -Path $templateExtract -Force | Out-Null
+          tar -xf $templateArchive -C $templateExtract
+          New-Item -ItemType Directory -Path $templateDirectory -Force | Out-Null
+          Copy-Item -Path (Join-Path $templateExtract "templates\*") -Destination $templateDirectory -Recurse -Force
+
+          $godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64.exe" |
+            Select-Object -First 1
+          if (-not $godot) {
+            throw "Could not locate the Godot .NET executable."
+          }
+
+          "path=$($godot.FullName)" >> $env:GITHUB_OUTPUT
+          & $godot.FullName --version
+
+      - name: Import and export Windows Client
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $godot = "${{ steps.godot.outputs.path }}"
+          $projectDirectory = "${{ github.workspace }}\${{ env.PROJECT_DIR }}"
+          $exportDirectory = "${{ github.workspace }}\dist\windows"
+
+          dotnet restore "${{ github.workspace }}\${{ env.PROJECT_FILE }}"
+          New-Item -ItemType Directory -Path $exportDirectory -Force | Out-Null
+          & $godot --headless --path $projectDirectory --import
+          if ($LASTEXITCODE -ne 0) { throw "Godot import failed with exit code $LASTEXITCODE." }
+          & $godot --headless --path $projectDirectory --export-release "Client Windows" "$exportDirectory\BrickVerse.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Godot export failed with exit code $LASTEXITCODE." }
+
+          $dataDirectory = Get-ChildItem -Path $exportDirectory -Directory -Filter "data_*_windows_x86_64" |
+            Select-Object -First 1
+          if (-not $dataDirectory -or -not (Test-Path -LiteralPath (Join-Path $dataDirectory.FullName "BrickVerse.dll"))) {
+            Get-ChildItem -Path $exportDirectory -Recurse | ForEach-Object { Write-Host $_.FullName }
+            throw "Windows export is missing data_*_windows_x86_64\BrickVerse.dll."
+          }
 
       - name: Azure login
         uses: azure/login@v3
