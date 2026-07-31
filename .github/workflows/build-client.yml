@@ -22,7 +22,6 @@ env:
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   APP: client
   BUILD_DISPLAY_NAME: Client
-  INSTALLER_REPOSITORY: BrickVerse-co/installer
 
 jobs:
   build-client:
@@ -55,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout BrickVerse
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true
           fetch-depth: 1
@@ -88,28 +87,8 @@ jobs:
             exit 1
           fi
 
-      - name: Download installer repository
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          INSTALLER_ARCHIVE="${{ runner.temp }}/brickverse-installer.tar.gz"
-          INSTALLER_EXTRACT="${{ runner.temp }}/brickverse-installer"
-
-          rm -rf "$INSTALLER_EXTRACT" "${{ github.workspace }}/installer-source"
-          mkdir -p "$INSTALLER_EXTRACT" "${{ github.workspace }}/installer-source"
-
-          curl --fail --location --retry 3             "https://codeload.github.com/BrickVerse-co/installer/tar.gz/refs/heads/main"             --output "$INSTALLER_ARCHIVE"
-
-          tar -xzf "$INSTALLER_ARCHIVE"             --strip-components=1             --directory "$INSTALLER_EXTRACT"
-
-          cp -a "$INSTALLER_EXTRACT/." "${{ github.workspace }}/installer-source/"
-
-          echo "Downloaded installer repository contents:"
-          find "${{ github.workspace }}/installer-source" -maxdepth 3 -type f -print | sort
-
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "${{ env.DOTNET_VERSION }}"
 
@@ -195,32 +174,6 @@ jobs:
               "${{ matrix.export_preset }}" \
               "$EXPORT_DIR/${{ matrix.export_file }}"
           fi
-
-      - name: Inject installer files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          INSTALLER_DIR="${{ github.workspace }}/installer-source/${{ env.APP }}/${{ matrix.platform }}"
-          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
-
-          if [[ ! -d "$INSTALLER_DIR" ]]; then
-            echo "::error::Installer directory does not exist: $INSTALLER_DIR"
-            exit 1
-          fi
-
-          cp -a "$INSTALLER_DIR/." "$EXPORT_DIR/"
-
-          if [[ -f "$EXPORT_DIR/install.sh" ]]; then
-            chmod +x "$EXPORT_DIR/install.sh"
-          fi
-
-          if [[ -f "$EXPORT_DIR/install.command" ]]; then
-            chmod +x "$EXPORT_DIR/install.command"
-          fi
-
-          echo "Injected installer files:"
-          find "$INSTALLER_DIR" -mindepth 1 -maxdepth 2 -print
 
       - name: Validate export
         shell: bash
