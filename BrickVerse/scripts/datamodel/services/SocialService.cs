@@ -98,17 +98,19 @@ public sealed partial class SocialService : Instance
 				turnstileToken = "world-server",
 			});
 
-			HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/social/friends/request"));
+			using HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/social/friends/request"));
 			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
-			await _client.SendAsync(msg);
+			using HttpResponseMessage response = await _client.SendAsync(msg);
+			response.EnsureSuccessStatusCode();
 			return;
 		}
 
 		if (req == FriendshipRequestType.Unfriend)
 		{
-			HttpRequestMessage msg = new(HttpMethod.Delete, Globals.ApiEndpoint.PathJoin("/v3/social/friends/" + recipientID));
+			using HttpRequestMessage msg = new(HttpMethod.Delete, Globals.ApiEndpoint.PathJoin("/v3/social/friends/" + recipientID));
 			msg.Content = new StringContent("{\"turnstileToken\":\"world-server\"}", new MediaTypeHeaderValue("application/json"));
-			await _client.SendAsync(msg);
+			using HttpResponseMessage response = await _client.SendAsync(msg);
+			response.EnsureSuccessStatusCode();
 			return;
 		}
 

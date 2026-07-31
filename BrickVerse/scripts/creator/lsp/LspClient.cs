@@ -23,6 +23,7 @@ public class LspClient : IDisposable
 	private int _requestId;
 	private readonly Task? _readerTask;
 	private readonly CancellationTokenSource _cts = new();
+	private int _disposed;
 
 	public readonly Dictionary<string, string> LspPathToFull = new(StringComparer.OrdinalIgnoreCase);
 	public readonly Dictionary<string, string> FullToLspPath = new(StringComparer.OrdinalIgnoreCase);
@@ -35,7 +36,7 @@ public class LspClient : IDisposable
 		_readerTask = Task.Run(ReadMessagesAsync);
 	}
 
-	public async Task InitializeAsync(string workspacePath)
+	public async Task InitializeAsync(string workspacePath, CancellationToken cancellationToken = default)
 	{
 		LspInitializeParams initParams = new()
 		{
@@ -76,7 +77,8 @@ public class LspClient : IDisposable
 			}
 		};
 
-		await SendRequestAsync<LspInitializeResult>("initialize", initParams);
+		await SendRequestAsync<LspInitializeResult>("initialize", initParams, cancellationToken);
+		cancellationToken.ThrowIfCancellationRequested();
 		await SendNotificationAsync("initialized", new EmptyParams());
 	}
 
@@ -163,9 +165,12 @@ public class LspClient : IDisposable
 
 	private async Task WriteMessageAsync(object message, CancellationToken cancellationToken)
 	{
-		await _writeLock.WaitAsync(cancellationToken);
+		if (Volatile.Read(ref _disposed) != 0) throw new ObjectDisposedException(nameof(LspClient));
+		using CancellationTokenSource combined = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+		await _writeLock.WaitAsync(combined.Token);
 		try
 		{
+			if (Volatile.Read(ref _disposed) != 0) throw new ObjectDisposedException(nameof(LspClient));
 			string json = JsonSerializer.Serialize(message, LspJsonContext.Default.Options);
 			byte[] content = Encoding.UTF8.GetBytes(json);
 			byte[] header = Encoding.ASCII.GetBytes($"Content-Length: {content.Length}\r\n\r\n");
@@ -211,7 +216,8 @@ public class LspClient : IDisposable
 		}
 		catch (Exception ex)
 		{
-			BV.PrintErr($"LSP Reader error: {ex.Message}");
+			if (!_cts.IsCancellationRequested)
+				BV.PrintErr($"LSP Reader error: {ex.Message}");
 		}
 	}
 
@@ -350,10 +356,12 @@ public class LspClient : IDisposable
 
 	public void Dispose()
 	{
+		if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 		_cts.Cancel();
-		_readerTask?.Wait(TimeSpan.FromSeconds(1));
-		_cts.Dispose();
-		_writeLock.Dispose();
+		foreach (TaskCompletionSource<JsonElement> pending in _pendingRequests.Values)
+		{
+			pending.TrySetCanceled(_cts.Token);
+		}
 		GC.SuppressFinalize(this);
 	}
 }

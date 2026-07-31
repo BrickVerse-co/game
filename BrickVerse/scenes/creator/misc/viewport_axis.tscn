@@ -35,7 +35,28 @@ albedo_color = Color(0.8646751, 0.86467516, 0.8646751, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_p6s2d"]
 
-[node name="ViewportAxis" type="Control" unique_id=1356262339 node_paths=PackedStringArray("_pivot", "_container")]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_background"]
+bg_color = Color(0.0352941, 0.0470588, 0.0627451, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25098, 0.305882, 0.380392, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_fill"]
+content_margin_left = 2.0
+content_margin_right = 2.0
+bg_color = Color(0.27451, 0.658824, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="ViewportAxis" type="Control" unique_id=1356262339 node_paths=PackedStringArray("_pivot", "_container", "_speedIndicator", "_speedBar")]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 3
 anchors_preset = 1
@@ -50,6 +71,26 @@ mouse_default_cursor_shape = 1
 script = ExtResource("1_mv8nn")
 _pivot = NodePath("TextureRect/SubViewport/Node3D")
 _container = NodePath("TextureRect/SubViewport")
+_speedIndicator = NodePath("CameraSpeed")
+_speedBar = NodePath("CameraSpeed")
+
+[node name="CameraSpeed" type="ProgressBar" parent="." unique_id=1874501001]
+visible = false
+custom_minimum_size = Vector2(128, 8)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -128.0
+offset_top = 128.0
+offset_bottom = 136.0
+grow_horizontal = 0
+mouse_filter = 2
+max_value = 10.0
+value = 3.0
+show_percentage = false
+theme_override_styles/background = SubResource("StyleBoxFlat_speed_background")
+theme_override_styles/fill = SubResource("StyleBoxFlat_speed_fill")
 
 [node name="TextureRect" type="SubViewportContainer" parent="." unique_id=1622363265]
 modulate = Color(1, 1, 1, 0.8627451)

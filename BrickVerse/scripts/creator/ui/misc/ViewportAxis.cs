@@ -12,6 +12,8 @@ public partial class ViewportAxis : Node
 	[Export] public WorldContainerOverlay Overlay = null!;
 	[Export] private Node3D _pivot = null!;
 	[Export] private Node _container = null!;
+	[Export] private Control _speedIndicator = null!;
+	[Export] private ProgressBar _speedBar = null!;
 
 	private BrickVerse.Datamodel.Camera? _worldCamera = null;
 	private SubViewportContainer _rect = null!;
@@ -22,7 +24,10 @@ public partial class ViewportAxis : Node
 
 	private Vector3 _tweenStart, _tweenTarget;
 	private float _tweenProgress = 1f;
+	private float _speedIndicatorTime;
 	private const float _tweenDuration = .2f;
+	private const float SpeedIndicatorDuration = 1.5f;
+	private const float SpeedIndicatorFadeDuration = .25f;
 
 	private readonly Dictionary<Key, (Vector3 noMod, Vector3 withMod)> KeyToRotation = new()
 	{
@@ -39,6 +44,7 @@ public partial class ViewportAxis : Node
 		_cube = _container.GetNode<Area3D>("Cube");
 
 		_raycast.Enabled = true;
+		_speedIndicator.Visible = false;
 	}
 
 	public override void _Process(double delta)
@@ -50,8 +56,46 @@ public partial class ViewportAxis : Node
 			_worldCamera?.Rotation = _tweenStart.Lerp(_tweenTarget, t);
 		}
 
-		_worldCamera = Overlay.World.CreatorContext.Freelook;
+		BrickVerse.Datamodel.Camera camera = Overlay.World.CreatorContext.Freelook;
+		if (_worldCamera != camera)
+		{
+			if (_worldCamera != null)
+			{
+				_worldCamera.MoveSpeedChanged -= ShowMoveSpeed;
+			}
+
+			_worldCamera = camera;
+			_worldCamera.MoveSpeedChanged += ShowMoveSpeed;
+		}
+
 		_pivot.GlobalRotation = _worldCamera.Camera3D.GlobalRotation;
+
+		if (_speedIndicatorTime > 0f)
+		{
+			_speedIndicatorTime = Mathf.Max(0f, _speedIndicatorTime - (float)delta);
+			float alpha = Mathf.Clamp(_speedIndicatorTime / SpeedIndicatorFadeDuration, 0f, 1f);
+			_speedIndicator.Modulate = new Color(1f, 1f, 1f, alpha);
+			if (_speedIndicatorTime <= 0f)
+			{
+				_speedIndicator.Visible = false;
+			}
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (_worldCamera != null)
+		{
+			_worldCamera.MoveSpeedChanged -= ShowMoveSpeed;
+		}
+	}
+
+	private void ShowMoveSpeed(float speed)
+	{
+		_speedBar.Value = 1f + Mathf.Log(speed / 2f) / Mathf.Log(2f);
+		_speedIndicator.Modulate = Colors.White;
+		_speedIndicator.Visible = true;
+		_speedIndicatorTime = SpeedIndicatorDuration + SpeedIndicatorFadeDuration;
 	}
 
 	public bool HandleInput(InputEvent @event)

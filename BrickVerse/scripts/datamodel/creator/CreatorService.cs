@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Creator;
 using BrickVerse.Creator.Debugger;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Splashes;
@@ -16,6 +17,7 @@ using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Schemas.Debugger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,6 +52,11 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static Dictionary<CreatorSession, string> SessionToLocalTestID { get; private set; } = [];
 
 	internal DebugServer DebugServer { get; private set; } = null!;
+	private readonly Dictionary<int, RuntimeDebugWindow> _runtimeDebugWindows = [];
+	private int? _primaryRuntimeClientProcess;
+	private Rect2I? _lastRuntimeViewportRect;
+	private bool _lastRuntimeViewportVisible;
+	private double _runtimeViewportSyncElapsed;
 
 	public CreatorService()
 	{
@@ -63,6 +70,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			Service = this
 		};
 		AddChild(Interface);
+		AddChild(new TeamCreateService());
 
 		string polyFolder = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), BrickVerseFolderName);
 		if (!Directory.Exists(polyFolder))
@@ -77,6 +85,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Globals.BeforeQuit += OnBeforeQuit;
 		DebugServer = new();
 		DebugServer.Start();
+		DebugServer.RuntimeConnected += OnRuntimeConnected;
+		DebugServer.RuntimeDisconnected += OnRuntimeDisconnected;
+		DebugServer.RuntimeSnapshotReceived += OnRuntimeSnapshotReceived;
+		DebugServer.RuntimeLogReceived += OnRuntimeLogReceived;
 
 		DisplayServer.WindowSetDropFilesCallback(Callable.From<string[]>(OnFilesDropped));
 		base._Ready();
@@ -85,7 +97,87 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public override void _ExitTree()
 	{
 		Globals.BeforeQuit -= OnBeforeQuit;
+		DebugServer.RuntimeConnected -= OnRuntimeConnected;
+		DebugServer.RuntimeDisconnected -= OnRuntimeDisconnected;
+		DebugServer.RuntimeSnapshotReceived -= OnRuntimeSnapshotReceived;
+		DebugServer.RuntimeLogReceived -= OnRuntimeLogReceived;
 		base._ExitTree();
+	}
+
+	private void OnRuntimeConnected(int processId, bool isServer)
+	{
+		if (processId == 0 || _runtimeDebugWindows.ContainsKey(processId)) return;
+		if (!isServer)
+		{
+			if (_primaryRuntimeClientProcess.HasValue) return;
+			_primaryRuntimeClientProcess = processId;
+			_lastRuntimeViewportRect = null;
+			_runtimeViewportSyncElapsed = double.MaxValue;
+		}
+
+		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
+		_runtimeDebugWindows[processId] = window;
+		Interface.AddChild(window);
+		window.Popup();
+		PositionRuntimeDebugWindow(window);
+	}
+
+	private void PositionRuntimeDebugWindow(RuntimeDebugWindow window)
+	{
+		Vector2I mainPosition = GetWindow().Position;
+		Vector2I mainSize = GetWindow().Size;
+		Rect2I usable = DisplayServer.ScreenGetUsableRect(DisplayServer.WindowGetCurrentScreen());
+		int cascade = Math.Max(0, _runtimeDebugWindows.Count - 1) * 32;
+		Vector2I target = new(mainPosition.X + mainSize.X + 16 + cascade, mainPosition.Y + cascade);
+
+		if (target.X + window.Size.X > usable.End.X)
+			target.X = Math.Max(usable.Position.X, mainPosition.X - window.Size.X - 16 - cascade);
+		target.Y = Mathf.Clamp(target.Y, usable.Position.Y, Math.Max(usable.Position.Y, usable.End.Y - window.Size.Y));
+		window.Position = target;
+	}
+
+	public void ShowRuntimeDebugWindows()
+	{
+		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
+		{
+			if (!IsInstanceValid(window)) continue;
+			window.Show();
+			window.GrabFocus();
+		}
+	}
+
+	private void CloseRuntimeDebugWindows()
+	{
+		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
+		{
+			if (IsInstanceValid(window)) window.QueueFree();
+		}
+		_runtimeDebugWindows.Clear();
+		_primaryRuntimeClientProcess = null;
+		_lastRuntimeViewportRect = null;
+	}
+
+	private void OnRuntimeDisconnected(int processId)
+	{
+		if (_runtimeDebugWindows.Remove(processId, out RuntimeDebugWindow? window) && IsInstanceValid(window))
+			window.QueueFree();
+		if (_primaryRuntimeClientProcess == processId)
+		{
+			_primaryRuntimeClientProcess = null;
+			_lastRuntimeViewportRect = null;
+		}
+	}
+
+	private void OnRuntimeSnapshotReceived(int processId, MessageRuntimeSnapshot snapshot)
+	{
+		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
+			window.ApplySnapshot(snapshot);
+	}
+
+	private void OnRuntimeLogReceived(int processId, MessageLogDispatch log)
+	{
+		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
+			window.AppendLog(log);
 	}
 
 	private void OnBeforeQuit()
@@ -143,9 +235,55 @@ public sealed partial class CreatorService : Node, IScriptObject
 			{
 				CleanupLocalTest();
 				LocalTestStopped.Invoke();
+				Tabs.Singleton?.RefreshCreatorPresence();
 			}
 		}
+		SyncPrimaryClientViewport(delta);
 		base._Process(delta);
+	}
+
+	private void SyncPrimaryClientViewport(double delta)
+	{
+		if (!_primaryRuntimeClientProcess.HasValue) return;
+
+		_runtimeViewportSyncElapsed += delta;
+		if (_runtimeViewportSyncElapsed < 0.05) return;
+		_runtimeViewportSyncElapsed = 0;
+
+		Rect2I? rect = GetCurrentWorldViewportScreenRect();
+		bool visible = rect.HasValue
+			&& GetWindow().Mode != Window.ModeEnum.Minimized
+			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
+
+		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
+		if (rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
+		if (!rect.HasValue && !_lastRuntimeViewportVisible) return;
+
+		if (rect.HasValue) _lastRuntimeViewportRect = rect;
+		_lastRuntimeViewportVisible = visible;
+		if (effectiveRect.HasValue)
+		{
+			DebugServer.SetRuntimeViewportRect(_primaryRuntimeClientProcess.Value, effectiveRect.Value, visible);
+		}
+	}
+
+	private Rect2I? GetCurrentWorldViewportScreenRect()
+	{
+		WorldContainer? worldContainer = Tabs.Singleton?.CurrentWorldContainer;
+		if (worldContainer == null || !IsInstanceValid(worldContainer)) return null;
+
+		Rect2 globalRect = worldContainer.GetGlobalRect();
+		Vector2 windowPosition = GetWindow().Position;
+		float scale = GetWindow().ContentScaleFactor;
+		Vector2I position = new(
+			Mathf.RoundToInt(windowPosition.X + globalRect.Position.X * scale),
+			Mathf.RoundToInt(windowPosition.Y + globalRect.Position.Y * scale)
+		);
+		Vector2I size = new(
+			Mathf.Max(320, Mathf.RoundToInt(globalRect.Size.X * scale)),
+			Mathf.Max(240, Mathf.RoundToInt(globalRect.Size.Y * scale))
+		);
+		return new Rect2I(position, size);
 	}
 
 	public async Task CreateNewSessionByWorldId(string worldId, bool forceNew = false)
@@ -175,11 +313,21 @@ public sealed partial class CreatorService : Node, IScriptObject
 					// Check if any of the recent projects have a matching world id
 					if (r.WorldId == parsedWorldId)
 					{
-						// Open the existing project
 						BV.Print("Found existing project for world id ", worldId, " at ", r.FolderPath);
-						keepOverlayVisible = true;
-						await CreateNewSession(r.FolderPath);
-						return;
+						try
+						{
+							// Open the existing project. If it is stale or damaged, remove
+							// the recent entry and fall back to downloading a clean copy.
+							await CreateNewSession(r.FolderPath);
+							keepOverlayVisible = true;
+							return;
+						}
+						catch (Exception ex)
+						{
+							BV.PrintWarn($"Existing project could not be opened; downloading world again: {ex.Message}");
+							await ProjectManager.RemoveFromRecents(r.FolderPath);
+							Interface.LoadOverlay?.Show();
+						}
 					}
 				}
 			}
@@ -200,31 +348,28 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 			try
 			{
-				if (fileType == PolyFileTypeEnum.PolyXML)
+				World3D world3D = new();
+				tempViewport = new()
 				{
-					World3D world3D = new();
-					tempViewport = new()
-					{
-						RenderTargetClearMode = SubViewport.ClearMode.Never,
-						RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
-						World3D = world3D
-					};
+					RenderTargetClearMode = SubViewport.ClearMode.Never,
+					RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
+					World3D = world3D
+				};
 
-					root.SessionType = World.SessionTypeEnum.Creator;
-					root.World3D = world3D;
+				root.SessionType = World.SessionTypeEnum.Creator;
+				root.World3D = world3D;
 
-					NetworkService netService = new();
-					netService.Attach(root);
-					netService.NetworkMode = NetworkService.NetworkModeEnum.Creator;
-					netService.IsServer = true;
+				NetworkService netService = new();
+				netService.Attach(root);
+				netService.NetworkMode = NetworkService.NetworkModeEnum.Creator;
+				netService.IsServer = true;
 
-					AddChild(tempViewport);
-					tempViewport.AddChild(root.GDNode);
+				AddChild(tempViewport);
+				tempViewport.AddChild(root.GDNode);
 
-					root.Root = root;
-					root.InitEntry();
-					root.Setup();
-				}
+				root.Root = root;
+				root.InitEntry();
+				root.Setup();
 
 				await DatamodelLoader.LoadWorldBytes(root, worldContent);
 				Interface.LoadOverlay?.SetProgress(2);
@@ -265,9 +410,61 @@ public sealed partial class CreatorService : Node, IScriptObject
 				Directory.CreateDirectory(Path.Join(scriptsPath, "client"));
 				Directory.CreateDirectory(Path.Join(scriptsPath, "modules"));
 
+				// Restore the entire fetched project before reconciling the
+				// locally editable world. Terrain material textures, scripts,
+				// models and their index entries must survive the download.
+				foreach ((string archivePath, byte[] content) in root.IO.FileStructure)
+				{
+					string relativePath = archivePath.SanitizePath().TrimStart('/');
+					if (string.IsNullOrWhiteSpace(relativePath) ||
+						Path.IsPathRooted(relativePath))
+					{
+						continue;
+					}
+
+					string destination = Path.GetFullPath(
+						Path.Join(projectFolderPath, relativePath)
+					);
+					if (!PathUtils.IsPathInsideDirectory(
+						destination,
+						projectFolderPath))
+					{
+						throw new InvalidDataException(
+							$"Downloaded project entry escapes the project folder: {archivePath}"
+						);
+					}
+
+					string? destinationDirectory = Path.GetDirectoryName(destination);
+					if (!string.IsNullOrWhiteSpace(destinationDirectory))
+						Directory.CreateDirectory(destinationDirectory);
+					File.WriteAllBytes(destination, content);
+				}
+				foreach ((string linkedId, string linkedPath) in root.IO.IndexToFile)
+				{
+					if (linkedId.StartsWith("world_", StringComparison.Ordinal))
+						continue;
+
+					string relativePath = linkedPath.SanitizePath().TrimStart('/');
+					string assetPath = Path.GetFullPath(
+						Path.Join(projectFolderPath, relativePath)
+					);
+					if (!PathUtils.IsPathInsideDirectory(
+						assetPath,
+						projectFolderPath) ||
+						!File.Exists(assetPath))
+					{
+						continue;
+					}
+					PackedFormat.WriteMetaId(
+						PackedFormat.GetMetaPath(assetPath),
+						linkedId
+					);
+				}
+
 				CreatorProjectMetadata metadata = new()
 				{
 					WorldId = parsedWorldId,
+					UniverseId = root.UniverseID,
 					ProjectName = projectName,
 					MainWorld = "main.bvxw",
 					IconID = null,
@@ -313,11 +510,17 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		string? targetPlace = null;
 		projectFilePath = ProjectSettings.GlobalizePath(projectFilePath);
+		if (string.IsNullOrWhiteSpace(projectFilePath)
+			|| (!File.Exists(projectFilePath) && !Directory.Exists(projectFilePath)))
+		{
+			throw new FileNotFoundException("Project path does not exist.", projectFilePath);
+		}
 
-		if (File.GetAttributes(projectFilePath) == FileAttributes.Directory || projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
+		string extension = projectFilePath.GetExtension().ToLowerInvariant();
+		if (Directory.Exists(projectFilePath) || extension == "bvxw" || extension == "bvworld")
 		{
 			string originFilePath = projectFilePath;
-			if (projectFilePath.GetExtension() == "bvxw" || projectFilePath.GetExtension() == "bvworld")
+			if (extension == "bvxw" || extension == "bvworld")
 			{
 				projectFilePath += "/../";
 			}
@@ -328,7 +531,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				return;
 			}
 
-			if (originFilePath.GetExtension() == "bvxw" || originFilePath.GetExtension() == "bvworld")
+			if (extension == "bvxw" || extension == "bvworld")
 			{
 				targetPlace = originFilePath;
 			}
@@ -358,38 +561,36 @@ public sealed partial class CreatorService : Node, IScriptObject
 		try
 		{
 			await session.Init();
+
+			Interface.StatusBar?.SetStatus("Opening world...");
+			Interface.LoadOverlay?.SetStatus("Opening world");
+			Interface.LoadOverlay?.SetProgress(1);
+
+			World? openedWorld = targetPlace != null
+				? session.OpenWorld(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride)
+				: session.OpenMainWorld(worldOverride);
+			if (openedWorld == null)
+			{
+				throw new InvalidDataException("The project did not open a world.");
+			}
+
+			Sessions.Add(session);
+			await ProjectManager.AddToRecents(folder);
+			StartupSplash.Singleton.Close();
 		}
 		catch (Exception ex)
 		{
 			BV.PrintErr(ex);
+			Sessions.Remove(session);
+			session.Dispose();
 			Interface.PopupAlert(ex.Message, "Error opening project");
 			throw;
 		}
-
-		Interface.StatusBar?.SetStatus("Opening world...");
-		Interface.LoadOverlay?.SetStatus("Opening world");
-		Interface.LoadOverlay?.SetProgress(1);
-
-		// Open world
-		if (targetPlace != null)
+		finally
 		{
-			session.OpenWorld(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride);
+			Interface.LoadOverlay?.Hide();
+			Interface.StatusBar?.SetEmpty();
 		}
-		else
-		{
-			session.OpenMainWorld(worldOverride);
-		}
-
-		Interface.LoadOverlay?.Hide();
-
-		Sessions.Add(session);
-
-		// Add to recents
-		await ProjectManager.AddToRecents(folder);
-
-		// Close startup splash on open file
-		StartupSplash.Singleton.Close();
-		Interface.StatusBar?.SetEmpty();
 	}
 
 	public static void SaveCurrentFile(out float savingTime)
@@ -711,10 +912,12 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		DebugConsole.Singleton.Clear();
 		LocalTestStarted.Invoke();
+		Tabs.Singleton?.RefreshCreatorPresence();
 	}
 
 	public async Task StartLocalTestOnEntry(string projectPath, string entryPath, string debugID, int port, bool isSubplace, Vector3? spawnPos = null)
 	{
+		await CreatorAPI.GetValidAccessTokenAsync();
 		string tempPath = Path.GetTempPath();
 		string placeFilePath = tempPath.PathJoin("bv_test_" + new DateTimeOffset(DateTime.Now).Millisecond + ".zip");
 
@@ -728,6 +931,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 		string exePath = OS.GetExecutablePath();
 
 		List<string> args = ["--log-file", "user://logs/server.log", "-solo", placeFilePath, "-entry", entryPath, "-debug", $"127.0.0.1:{DebugServer.Port}", "-debug-id", debugID, "-port", port.ToString()];
+
+		Rect2I? viewportRect = GetCurrentWorldViewportScreenRect();
+		if (!isSubplace && viewportRect.HasValue)
+		{
+			Rect2I rect = viewportRect.Value;
+			args.Add($"-ltrect={rect.Position.X},{rect.Position.Y},{rect.Size.X},{rect.Size.Y}");
+		}
 
 		if (spawnPos != null)
 		{
@@ -767,13 +977,20 @@ public sealed partial class CreatorService : Node, IScriptObject
 		LocalTestWorlds.Add(placeFilePath);
 
 		int procID = OS.CreateProcess(exePath, [.. args]);
-		BV.Print("Starting server with args: ", string.Join(" ", args));
+		BV.Print(
+			"Starting local play-test server",
+			" (debug ID: ", debugID,
+			", port: ", port,
+			", creator auth: ", CreatorAPI.Token.Length > 0 ? "provided" : "missing",
+			")"
+		);
 
 		LocalTestProcesses.Add(procID);
 	}
 
 	public async void StopLocalTest()
 	{
+		CloseRuntimeDebugWindows();
 		if (!LocalTestActive) return;
 		foreach (int item in LocalTestProcesses)
 		{
@@ -791,6 +1008,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private void CleanupLocalTest()
 	{
+		CloseRuntimeDebugWindows();
 		foreach (string item in LocalTestWorlds)
 		{
 			try

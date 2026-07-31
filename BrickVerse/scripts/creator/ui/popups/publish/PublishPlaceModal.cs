@@ -1,6 +1,5 @@
 // (c) 2026 Meta Games LLC. All Rights Reserved.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,6 +11,7 @@ using BrickVerse.Datamodel.Creator;
 using BrickVerse.Formats;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -20,7 +20,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 	public enum PublishOwnerType
 	{
 		User,
-		Guild
+		Guild,
 	}
 
 	public sealed class PublishGuildOption
@@ -44,17 +44,38 @@ public partial class PublishPlaceModal : PopupWindowBase
 	public event Action<PublishPlaceRequest>? PublishRequested;
 	public event Action? Closed;
 
-	[Export] private Button _closeButton = null!;
-	[Export] private LineEdit _universeNameInput = null!;
-	[Export] private LineEdit _placeNameInput = null!;
-	[Export] private TextEdit _descriptionInput = null!;
-	[Export] private Button _ownerOption = null!;
-	[Export] private Button _guildOption = null!;
-	[Export] private OptionButton _guildDropdown = null!;
-	[Export] private Button _publishButton = null!;
-	[Export] private Button _cancelButton = null!;
-	[Export] private Label _errorLabel = null!;
-	[Export] private Label? _loaderLabel;
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private LineEdit _universeNameInput = null!;
+
+	[Export]
+	private LineEdit _placeNameInput = null!;
+
+	[Export]
+	private TextEdit _descriptionInput = null!;
+
+	[Export]
+	private Button _ownerOption = null!;
+
+	[Export]
+	private Button _guildOption = null!;
+
+	[Export]
+	private OptionButton _guildDropdown = null!;
+
+	[Export]
+	private Button _publishButton = null!;
+
+	[Export]
+	private Button _cancelButton = null!;
+
+	[Export]
+	private Label _errorLabel = null!;
+
+	[Export]
+	private Label? _loaderLabel;
 
 	private World? world;
 	private readonly List<PublishGuildOption> _guilds = [];
@@ -94,8 +115,14 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 			try
 			{
-				PackedFormat.ReadProjectMetadata(File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName)));
-				var packed = await PackedFormat.PackProject(projectPath, loadOverlay.CreateProgressReporter("Publishing world"));
+				CreatorService.SaveCurrentFile();
+				PackedFormat.ReadProjectMetadata(
+					File.ReadAllText(projectPath.PathJoin(Globals.ProjectMetaFileName))
+				);
+				var packed = await PackedFormat.PackProject(
+					projectPath,
+					loadOverlay.CreateProgressReporter("Publishing world")
+				);
 
 				loadOverlay?.SetStatus("Uploading now...");
 				CreatorPublishResponse publishRes = await CreatorAPI.UploadWorld(
@@ -107,7 +134,11 @@ public partial class PublishPlaceModal : PopupWindowBase
 					request.OwnerType == PublishOwnerType.Guild ? "guild" : "user"
 				);
 
-				if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
+				if (
+					CreatorSettingsService.Instance.Get<bool>(
+						CreatorSettingKeys.Creator.OpenWebAfterPublish
+					)
+				)
 					OS.ShellOpen(publishRes.Link);
 
 				this.world.UniverseID = publishRes.UniverseId;
@@ -117,6 +148,10 @@ public partial class PublishPlaceModal : PopupWindowBase
 				loadOverlay?.Hide();
 				SetBusy(false);
 				Close();
+				CreatorService.Interface.PopupAlert(
+					"World published successfully! You can now share it with others using the link: "
+						+ publishRes.Link
+				);
 			}
 			catch (Exception ex)
 			{
@@ -128,11 +163,13 @@ public partial class PublishPlaceModal : PopupWindowBase
 		};
 	}
 
-	public async void Open(World world, bool publishAs = false)
+	public async void Open(World world)
 	{
 		if (world == null || world.WorldID == 0 || world.UniverseID == 0)
 		{
-			CreatorService.Interface.PopupAlert("This experience hasn't been published yet.\nTo publish it, first use Publish As to create a new experience or overwrite an existing one. Once it has been published, you'll be able to use Publish to save future changes.");
+			CreatorService.Interface.PopupAlert(
+				"This experience hasn't been published yet.\nTo publish it, first use Publish As to create a new experience or overwrite an existing one. Once it has been published, you'll be able to use Publish to save future changes."
+			);
 			Close();
 			return;
 		}
@@ -143,14 +180,10 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_universeNameInput.Text = world.UniverseName ?? "The Universe";
 		_descriptionInput.Text = world.UniverseDescription ?? "A description of the universe.";
 
-		CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(limitToEditable: true);
-		SetGuilds(
-			creatorGuildItems.Select(g => new PublishGuildOption
-			{
-				Id = g.Id,
-				Name = g.Name
-			})
+		CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(
+			limitToEditable: true
 		);
+		SetGuilds(creatorGuildItems);
 
 		HideError();
 		SetBusy(false);
@@ -166,19 +199,20 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 		Hide();
 		Closed?.Invoke();
+		QueueFree();
 	}
 
-	public void SetGuilds(IEnumerable<PublishGuildOption> guilds)
+	public void SetGuilds(IEnumerable<CreatorGuildItem> guilds)
 	{
 		_guilds.Clear();
 		_guildDropdown.Clear();
 
-		foreach (PublishGuildOption guild in guilds)
+		foreach (CreatorGuildItem guild in guilds)
 		{
 			if (string.IsNullOrWhiteSpace(guild.Id))
 				continue;
 
-			_guilds.Add(guild);
+			_guilds.Add(new PublishGuildOption { Id = guild.Id, Name = guild.Name });
 			_guildDropdown.AddItem(guild.Name);
 		}
 
@@ -309,17 +343,19 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 		SetBusy(true);
 
-		PublishRequested?.Invoke(new PublishPlaceRequest
-		{
-			WorldName = worldName,
-			UniverseName = universeName,
-			UniverseDescription = universeDescription,
-			OwnerType = publishToGuild ? PublishOwnerType.Guild : PublishOwnerType.User,
-			OwnerId = publishToGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID,
-			GuildId = guildId,
-			UniverseId = world?.UniverseID ?? 0,
-			WorldId = world?.WorldID ?? 0
-		});
+		PublishRequested?.Invoke(
+			new PublishPlaceRequest
+			{
+				WorldName = worldName,
+				UniverseName = universeName,
+				UniverseDescription = universeDescription,
+				OwnerType = publishToGuild ? PublishOwnerType.Guild : PublishOwnerType.User,
+				OwnerId = publishToGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID,
+				GuildId = guildId,
+				UniverseId = world?.UniverseID ?? 0,
+				WorldId = world?.WorldID ?? 0,
+			}
+		);
 	}
 
 	private void ResolveNodeReferences()

@@ -35,6 +35,11 @@ public sealed partial class Ribbon : PanelContainer
 		Control paintColorView = _container.GetNode<Control>("Paint/Color");
 		Button materialButton = _container.GetNode<Button>("Material");
 		Button insertButton = _container.GetNode<Button>("Insert");
+		Button forgeButton = _container.GetNode<Button>("QuickActions/Forge");
+		Button terrainButton = _container.GetNode<Button>("QuickActions/Terrain");
+		Button animatorButton = _container.GetNode<Button>("QuickActions/Animator");
+		Button toolboxButton = _container.GetNode<Button>("QuickActions/Toolbox");
+		Button inputManagerButton = _container.GetNode<Button>("QuickActions/InputManager");
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
@@ -88,6 +93,23 @@ public sealed partial class Ribbon : PanelContainer
 		{
 			CreatorService.Interface.OpenInsertMenu();
 		};
+
+		TabContainer leftTabs = GetNode<TabContainer>(
+			"../Splitter/Left/Split");
+		TabContainer bottomTabs = GetNode<TabContainer>(
+			"../Splitter/Center/BottomTabs/Tabs");
+		TabContainer rightTabs = GetNode<TabContainer>(
+			"../Splitter/Right/RightTabs");
+
+		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
+		terrainButton.Pressed += () =>
+		{
+			bottomTabs.CurrentTab = 1;
+			World.Current?.Container?.GrabFocus();
+		};
+		animatorButton.Pressed += CreatorService.Interface.OpenAnimationEditor;
+		toolboxButton.Pressed += () => leftTabs.CurrentTab = 0;
+		inputManagerButton.Pressed += CreatorService.Interface.OpenInputManager;
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
 	}

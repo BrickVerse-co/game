@@ -275,6 +275,24 @@ public sealed partial class Menu : PanelContainer
 						CreatorService.Interface.OpenInsertMenu();
 					}
 				},
+				new MenuButtonItem() {
+					Text = "Upload Mesh",
+					Pressed = () => {
+						CreatorService.Interface.OpenUploadMeshMenu();
+					}
+				},
+				new MenuButtonItem() {
+					Text = "Upload Texture",
+					Pressed = () => {
+						CreatorService.Interface.OpenUploadTextureMenu();
+					}
+				},
+				new MenuButtonItem() {
+					Text = "Upload Sound",
+					Pressed = () => {
+						CreatorService.Interface.OpenUploadSoundMenu();
+					}
+				},
 			]
 		);
 
@@ -388,6 +406,10 @@ public sealed partial class Menu : PanelContainer
 					Text = "Manage Addons",
 					Pressed = CreatorInterface.PopupManageAddons
 				},
+				new MenuButtonItem() {
+					Text = "Animation Editor",
+					Pressed = CreatorService.Interface.OpenAnimationEditor
+				},
 				new MenuAddonSlotItem() {
 					Text = "Addons",
 					RequireGameOpen = true
@@ -427,6 +449,12 @@ public sealed partial class Menu : PanelContainer
 					},
 					Pressed = () => {
 						CreatorInterface.ToggleFullscreen();
+					}
+				},
+				new MenuButtonItem() {
+					Text = "Show Runtime Debug Windows",
+					Pressed = () => {
+						CreatorService.Singleton.ShowRuntimeDebugWindows();
 					}
 				},
 			]

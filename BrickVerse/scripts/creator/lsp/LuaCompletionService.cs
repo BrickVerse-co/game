@@ -20,6 +20,8 @@ public class LuaCompletionService(CreatorSession session)
 	private Process _luaLSProcess = null!;
 	private LspClient _client = null!;
 	private readonly Dictionary<string, int> _versions = [];
+	private readonly CancellationTokenSource _shutdown = new();
+	private bool _isShutdown;
 
 	public event Action<string, List<LspDiagnostic>>? PublishDiagnostics;
 
@@ -61,7 +63,8 @@ public class LuaCompletionService(CreatorSession session)
 		//BV.Print("LuaLS Started");
 
 		_client = new LspClient(_luaLSProcess.StandardOutput.BaseStream, _luaLSProcess.StandardInput.BaseStream);
-		await _client.InitializeAsync(_workspacePath);
+		await _client.InitializeAsync(_workspacePath, _shutdown.Token);
+		if (_isShutdown) return;
 
 		_client.PublishDiagnostics += OnPublishDiagnostics;
 
@@ -83,6 +86,9 @@ public class LuaCompletionService(CreatorSession session)
 
 	public void Shutdown()
 	{
+		if (_isShutdown) return;
+		_isShutdown = true;
+		_shutdown.Cancel();
 		_client?.Dispose();
 		if (_luaLSProcess != null && !_luaLSProcess.HasExited)
 		{

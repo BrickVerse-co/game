@@ -23,65 +23,93 @@ public static class PublishManager
 		var loadOverlay = CreatorService.Interface.LoadOverlay;
 		try
 		{
+			loadOverlay?.SetTitle("Publishing model...");
+			loadOverlay?.Show();
 			byte[] packed = await PackedFormat.PackModel(target, loadOverlay.CreateProgressReporter("Publishing model"));
 
-			CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
+			loadOverlay?.SetStatus("Uploading now...");
 
-			CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(packed, modelID, "PREFAB");
-			CreatorService.Interface.LoadOverlay?.Hide();
+			CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(
+				packed,
+				modelID,
+				"PREFAB",
+				"model.bvxm",
+				target.Name
+			);
 
 			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
 				OS.ShellOpen(publishRes.Link);
 			CreatorService.Interface.StatusBar?.SetStatus("Model published");
-			loadOverlay?.Hide();
 		}
 		catch (Exception ex)
 		{
 			BV.PrintErr(ex);
 			CreatorService.Interface.PopupAlert(ex.Message);
+		}
+		finally
+		{
 			loadOverlay?.Hide();
 		}
 	}
 
 	public static async Task PublishAddon(ServerScript target, long addonID = 0)
 	{
-		CreatorService.Interface.LoadOverlay?.SetTitle("Publishing addon...");
-		CreatorService.Interface.LoadOverlay?.SetStatus("Packing addon...");
-		CreatorService.Interface.LoadOverlay?.Show();
-
-		// Check ServerScript has a ModuleScript as a child named "AddonMetadata"
-		ModuleScript? metaModule = target.FindChild<ModuleScript>("AddonMetadata");
-		if (metaModule == null)
+		var loadOverlay = CreatorService.Interface.LoadOverlay;
+		try
 		{
-			// Create one 
-			metaModule = new ModuleScript();
-			metaModule.Name = "AddonMetadata";
+			loadOverlay?.SetTitle("Publishing addon...");
+			loadOverlay?.SetStatus("Packing addon...");
+			loadOverlay?.Show();
 
-			// Set the source code to a default template
-			metaModule.Source = @"{
+			ModuleScript? metaModule = target.FindChild<ModuleScript>("AddonMetadata");
+			if (metaModule == null)
+			{
+				metaModule = new ModuleScript
+				{
+					Name = "AddonMetadata",
+					Source = @"{
 	""Name"": """ + target.Name + @""",
 	""Version"": ""1.0.0"",
 	""Description"": ""A new addon"",
-	""Author"": ""Your Name"",
-	}";
+	""Author"": ""Your Name""
+}"
+				};
+				metaModule.Parent = target;
+			}
 
-			// Add it as a child of the ServerScript
-			metaModule.Parent = target;
+			AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(metaModule.Source);
+			if (string.IsNullOrWhiteSpace(metadata.Name) || string.IsNullOrWhiteSpace(metadata.Version))
+				throw new InvalidOperationException("Addon metadata must include a name and version.");
+
+			byte[] packed = await PackedFormat.PackAddon(
+				target,
+				metadata,
+				loadOverlay.CreateProgressReporter("Publishing addon")
+			);
+
+			loadOverlay?.SetStatus("Uploading now...");
+			CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(
+				packed,
+				addonID,
+				"PLUGIN",
+				"addon.bvaddon",
+				metadata.Name,
+				metadata.Description
+			);
+
+			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
+				OS.ShellOpen(publishRes.Link);
+			CreatorService.Interface.StatusBar?.SetStatus("Addon published");
 		}
-
-		// Extract the metadata from the ModuleScript as AddonMetadata from the source code
-		AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(metaModule.Source);
-
-		byte[] packed = await PackedFormat.PackAddon(target, metadata);
-
-		CreatorService.Interface.LoadOverlay?.SetStatus("Uploading now...");
-
-		CreatorPublishResponse publishRes = await CreatorAPI.UploadAsset(packed, addonID, "PLUGIN");
-		CreatorService.Interface.LoadOverlay?.Hide();
-
-		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
-			OS.ShellOpen(publishRes.Link);
-		CreatorService.Interface.StatusBar?.SetStatus("Addon published");
+		catch (Exception ex)
+		{
+			BV.PrintErr(ex);
+			CreatorService.Interface.PopupAlert(ex.Message);
+		}
+		finally
+		{
+			loadOverlay?.Hide();
+		}
 	}
 
 

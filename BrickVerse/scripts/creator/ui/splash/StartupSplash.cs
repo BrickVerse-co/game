@@ -17,6 +17,7 @@ public partial class StartupSplash : Control
 	[Export] private Button _newButton = null!;
 	[Export] private Button _openButton = null!;
 	[Export] private Button _recentsButton = null!;
+	[Export] private Button _settingsButton = null!;
 	[Export] private Button _closeButton = null!;
 	[Export] private Label _versionNumber = null!;
 	[Export] private TextureRect _banner = null!;
@@ -32,6 +33,7 @@ public partial class StartupSplash : Control
 	{
 		_newButton.Pressed += OnNew;
 		_openButton.Pressed += CreatorService.Interface.PromptOpenWorld;
+		_settingsButton.Pressed += CreatorService.Interface.OpenSettings;
 		_closeButton.Pressed += Close;
 		_versionNumber.Text = Globals.AppVersion;
 

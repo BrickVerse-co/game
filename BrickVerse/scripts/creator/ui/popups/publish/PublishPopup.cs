@@ -161,6 +161,7 @@ public partial class PublishPopup : PopupWindowBase
 	public enum PublishTypeEnum
 	{
 		Prefab,
-		Plugin
+		Plugin,
+		Animation
 	}
 }

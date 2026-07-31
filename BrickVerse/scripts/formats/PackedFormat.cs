@@ -7,6 +7,8 @@ using Godot;
 using BrickVerse.Schemas.Progress;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Creator.Managers;
+using BrickVerse.Creator;
+using BrickVerse.Datamodel.Creator;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,12 +65,37 @@ public static partial class PackedFormat
 
 	public static async Task<byte[]> PackProject(string projectPath, IProgress<LoadOverlayProgress>? progress = null)
 	{
+		SaveOpenProjectWorlds(projectPath);
 		using MemoryStream stream = new();
 		using (ZipArchive archive = new(stream, ZipArchiveMode.Create, true))
 		{
 			await PackProjectToArchive(projectPath, archive, progress);
 		}
 		return stream.ToArray();
+	}
+
+	private static void SaveOpenProjectWorlds(string projectPath)
+	{
+		string normalizedProjectPath = Path.GetFullPath(projectPath)
+			.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+		foreach (CreatorSession session in CreatorService.Sessions.ToArray())
+		{
+			string sessionPath = Path.GetFullPath(session.ProjectFolderPath)
+				.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+			if (!string.Equals(
+				sessionPath,
+				normalizedProjectPath,
+				StringComparison.OrdinalIgnoreCase))
+				continue;
+
+			foreach (World world in session.OpenedWorlds.ToArray())
+			{
+				if (string.IsNullOrWhiteSpace(world.WorldFilePath)) continue;
+				string destination = session.GlobalizePath(world.WorldFilePath);
+				PolyFormat.SaveWorldToFile(world, destination);
+			}
+			session.Save();
+		}
 	}
 
 	public static async Task<byte[]> PackModel(Instance model, IProgress<LoadOverlayProgress>? progress = null)
@@ -458,6 +485,11 @@ public static partial class PackedFormat
 			throw new Exception("Metadata not present");
 		}
 
+		if (root.WorldID == 0 && metadata.WorldId > 0)
+			root.WorldID = metadata.WorldId;
+		if (root.UniverseID == 0 && metadata.UniverseId > 0)
+			root.UniverseID = metadata.UniverseId;
+
 		// Load input
 		if (files.TryGetValue("input.json", out byte[]? inputBytes))
 		{
@@ -466,12 +498,16 @@ public static partial class PackedFormat
 		}
 
 		// Default to main
-		entryPath ??= metadata.MainWorld;
+		entryPath = (entryPath ?? metadata.MainWorld).SanitizePath();
 
 		// Load world
 		if (files.TryGetValue(entryPath, out byte[]? entryBytes))
 		{
 			PolyFormat.LoadWorld(root, entryBytes);
+		}
+		else
+		{
+			throw new InvalidDataException($"Packed world entry '{entryPath}' is missing.");
 		}
 
 		return new()
@@ -600,6 +636,7 @@ public static partial class PackedFormat
 public struct CreatorProjectMetadata()
 {
 	[JsonInclude] public long WorldId = 0;
+	[JsonInclude] public long UniverseId = 0;
 	[JsonInclude] public string ProjectName = "Project Name";
 	[JsonInclude] public string MainWorld = "main.bvxw";
 	[JsonInclude] public int? IconID;

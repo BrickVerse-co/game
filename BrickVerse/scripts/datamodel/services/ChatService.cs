@@ -247,12 +247,12 @@ public sealed partial class ChatService : Instance
 		{
 			await _client.PostAsJsonAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/world/server/chat/filter"),
-				new
+				new APIChatFilterRequest
 				{
-					userId = userID,
-					message,
+					UserId = userID,
+					Message = message,
 				},
-				APIGenerationContext.Default.Object
+				APIGenerationContext.Default.APIChatFilterRequest
 			);
 		}
 		catch (Exception ex)

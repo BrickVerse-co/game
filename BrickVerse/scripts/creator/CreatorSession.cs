@@ -50,6 +50,7 @@ public partial class CreatorSession : Node, IDisposable
 	private bool _fileScanQueued = false;
 
 	private bool _cleanupQueued = false;
+	private bool _disposed = false;
 
 	public string ProjectFolderPath = "";
 	public string ProjectFilePath = "";
@@ -76,15 +77,19 @@ public partial class CreatorSession : Node, IDisposable
 		string projectData = File.ReadAllText(ProjectFilePath);
 
 		// Migrate main place to main world
-		projectData = projectData.Replace("\"MainPlace\":", "\"MainWorld\":");
-
-		File.WriteAllText(ProjectFilePath, projectData);
+		string migratedProjectData = projectData.Replace("\"MainPlace\":", "\"MainWorld\":");
+		if (migratedProjectData != projectData)
+		{
+			projectData = migratedProjectData;
+			File.WriteAllText(ProjectFilePath, projectData);
+		}
 
 		Metadata = PackedFormat.ReadProjectMetadata(projectData);
-		FileBrowserTab = FileBrowser.Singleton.Insert(this);
 		OldIndexFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectIndexName));
 		InputMapFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectInputMapName));
 		BVProjectFolderPath = Path.GetFullPath(ProjectFolderPath.PathJoin(".bvproject"));
+		ReconcileProjectMetadata();
+		FileBrowserTab = FileBrowser.Singleton.Insert(this);
 
 		await SetupFolders();
 
@@ -98,6 +103,70 @@ public partial class CreatorSession : Node, IDisposable
 		Globals.Singleton.AddChild(_backupTimer);
 		StartBackupTimer();
 		StartLuauLSP();
+	}
+
+	private void ReconcileProjectMetadata()
+	{
+		bool changed = false;
+
+		if (Metadata.WorldId < 0)
+		{
+			Metadata.WorldId = 0;
+			changed = true;
+		}
+		if (Metadata.UniverseId < 0)
+		{
+			Metadata.UniverseId = 0;
+			changed = true;
+		}
+
+		if (string.IsNullOrWhiteSpace(Metadata.ProjectName))
+		{
+			Metadata.ProjectName = new DirectoryInfo(ProjectFolderPath).Name;
+			changed = true;
+		}
+
+		string mainWorld = string.IsNullOrWhiteSpace(Metadata.MainWorld)
+			? "main.bvxw"
+			: Metadata.MainWorld.SanitizePath();
+		string mainWorldPath = GlobalizePath(mainWorld);
+
+		if (!File.Exists(mainWorldPath))
+		{
+			string[] candidates = Directory
+				.EnumerateFiles(ProjectFolderPath, "*", SearchOption.AllDirectories)
+				.Where(path =>
+					!path.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)
+					&& (path.EndsWith(".bvxw", StringComparison.OrdinalIgnoreCase)
+						|| path.EndsWith(".bvworld", StringComparison.OrdinalIgnoreCase)))
+				.OrderByDescending(path =>
+					Path.GetFileName(path).Equals("main.bvxw", StringComparison.OrdinalIgnoreCase))
+				.ThenBy(path => path, StringComparer.OrdinalIgnoreCase)
+				.ToArray();
+
+			if (candidates.Length == 0)
+			{
+				throw new FileNotFoundException(
+					$"Project main world '{mainWorld}' is missing and no world files could be recovered.",
+					mainWorldPath
+				);
+			}
+
+			mainWorld = Path.GetRelativePath(ProjectFolderPath, candidates[0]).SanitizePath();
+			BV.PrintWarn($"Project main world was missing; recovered '{mainWorld}'.");
+			changed = true;
+		}
+
+		if (Metadata.MainWorld != mainWorld)
+		{
+			Metadata.MainWorld = mainWorld;
+			changed = true;
+		}
+
+		if (changed)
+		{
+			SaveMetadataFile();
+		}
 	}
 
 	public override void _Process(double delta)
@@ -120,7 +189,8 @@ public partial class CreatorSession : Node, IDisposable
 		}
 		catch (Exception ex)
 		{
-			BV.PrintErr(ex);
+			if (ex is not OperationCanceledException || !_disposed)
+				BV.PrintErr(ex);
 			LuaCompletion = null;
 		}
 	}
@@ -246,8 +316,18 @@ public partial class CreatorSession : Node, IDisposable
 		byte[] worldData = File.ReadAllBytes(placePath);
 
 		World root = worldOverride ?? Globals.LoadInstance<World>();
+		bool isMainWorld = string.Equals(
+			filePath,
+			Metadata.MainWorld.SanitizePath(),
+			StringComparison.OrdinalIgnoreCase
+		);
 
 		root.SessionType = World.SessionTypeEnum.Creator;
+		if (isMainWorld && Metadata.WorldId > 0)
+		{
+			root.WorldID = Metadata.WorldId;
+			root.UniverseID = Metadata.UniverseId;
+		}
 
 		_worldSessionCounter++;
 		root.WorldSessionID = _worldSessionCounter;
@@ -322,12 +402,19 @@ public partial class CreatorSession : Node, IDisposable
 			catch (Exception ex)
 			{
 				BV.PrintErr(ex);
-				CreatorService.Interface.PopupAlert(ex.Message, "World load failure");
+				root.ForceDelete();
+				throw new InvalidDataException($"Failed to load world '{filePath}'.", ex);
 			}
 		}
 		else
 		{
 			root.InvokeReady();
+		}
+
+		if (isMainWorld && Metadata.WorldId > 0)
+		{
+			root.WorldID = Metadata.WorldId;
+			root.UniverseID = Metadata.UniverseId;
 		}
 
 		RescanFolder();
@@ -1013,6 +1100,10 @@ return module";
 
 	public new void Dispose()
 	{
+		if (_disposed) return;
+		_disposed = true;
+		_cleanupQueued = false;
+
 		LuaCompletion?.Shutdown();
 
 		Tabs.Singleton.CloseTabsOfSession(this);

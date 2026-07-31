@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.Debugger;
@@ -24,9 +26,15 @@ public class DebugServer
 
 	private readonly List<TcpClient> _tcpClients = [];
 	private readonly Dictionary<TcpClient, ClientData> _clientToData = [];
+	private readonly Dictionary<TcpClient, SemaphoreSlim> _clientSendLocks = [];
 	private readonly Dictionary<string, TcpClient> _idToClient = [];
 
 	private readonly Dictionary<string, TaskCompletionSource> _pendingServerInstance = [];
+
+	public event Action<int, bool>? RuntimeConnected;
+	public event Action<int>? RuntimeDisconnected;
+	public event Action<int, MessageRuntimeSnapshot>? RuntimeSnapshotReceived;
+	public event Action<int, MessageLogDispatch>? RuntimeLogReceived;
 
 	public void Start()
 	{
@@ -53,19 +61,14 @@ public class DebugServer
 	private async Task HandleClient(TcpClient client)
 	{
 		_tcpClients.Add(client);
+		_clientSendLocks[client] = new SemaphoreSlim(1, 1);
 		try
 		{
 			NetworkStream stream = client.GetStream();
-			byte[] buffer = new byte[1024];
-
 			while (ServerStarted)
 			{
-				int bytesRead = await stream.ReadAsync(buffer);
-
-				if (bytesRead == 0)
-				{
-					break; // Client disconnected gracefully
-				}
+				byte[]? buffer = await ReadFrameAsync(stream);
+				if (buffer == null) break;
 
 				IDebugMessage? msg = SerializeUtils.Deserialize<IDebugMessage>(buffer);
 				if (msg != null)
@@ -89,8 +92,10 @@ public class DebugServer
 			{
 				// Cleanup local test process
 				CreatorService.Singleton.LocalTestProcesses.Remove(data.ProcessID);
+				BV.CallOnMainThread(() => RuntimeDisconnected?.Invoke(data.ProcessID));
 			}
 			_tcpClients.Remove(client);
+			if (_clientSendLocks.Remove(client, out SemaphoreSlim? sendLock)) sendLock.Dispose();
 			foreach ((string id, TcpClient c) in _idToClient)
 			{
 				if (c == client)
@@ -110,16 +115,29 @@ public class DebugServer
 			{
 				DebugID = data.DebugID,
 				ProcessID = data.ProcessID,
+				IsServer = data.IsServer,
 			});
 
 			if (data.ProcessID != 0)
 			{
 				CreatorService.Singleton.LocalTestProcesses.Add(data.ProcessID);
 			}
+			BV.CallOnMainThread(() => RuntimeConnected?.Invoke(data.ProcessID, data.IsServer));
 		}
 		else if (msg is MessageLogDispatch log)
 		{
 			BV.DispatchLog(new() { Content = log.Content, LogFrom = log.LogFrom, LogType = log.LogType });
+			if (_clientToData.TryGetValue(from, out ClientData logClient))
+			{
+				BV.CallOnMainThread(() => RuntimeLogReceived?.Invoke(logClient.ProcessID, log));
+			}
+		}
+		else if (msg is MessageRuntimeSnapshot snapshot)
+		{
+			if (_clientToData.TryGetValue(from, out ClientData runtime))
+			{
+				BV.CallOnMainThread(() => RuntimeSnapshotReceived?.Invoke(runtime.ProcessID, snapshot));
+			}
 		}
 		else if (msg is MessageNewServerRequest req)
 		{
@@ -176,21 +194,95 @@ public class DebugServer
 		}
 	}
 
-	public async void BroadcastMessage(IDebugMessage msg)
+	public void BroadcastMessage(IDebugMessage msg)
 	{
-		byte[] data = SerializeUtils.Serialize(msg);
 		foreach (TcpClient client in _tcpClients)
 		{
-			NetworkStream stream = client.GetStream();
-			await stream.WriteAsync(data);
+			SendMessage(client, msg);
 		}
 	}
 
-	private static async void SendMessage(TcpClient client, IDebugMessage msg)
+	private async void SendMessage(TcpClient client, IDebugMessage msg)
 	{
 		byte[] data = SerializeUtils.Serialize(msg);
 		NetworkStream stream = client.GetStream();
-		await stream.WriteAsync(data);
+		if (!_clientSendLocks.TryGetValue(client, out SemaphoreSlim? sendLock)) return;
+		await sendLock.WaitAsync();
+		try
+		{
+			await WriteFrameAsync(stream, data);
+		}
+		finally
+		{
+			sendLock.Release();
+		}
+	}
+
+	public void RequestRuntimeSnapshot(int processId) =>
+		SendToProcess(processId, new MessageRuntimeSnapshotRequest());
+
+	public void SetRuntimeProperty(int processId, string objectId, string propertyName, string value) =>
+		SendToProcess(processId, new MessageRuntimePropertySet
+		{
+			ObjectID = objectId,
+			PropertyName = propertyName,
+			Value = value
+		});
+
+	public void ExecuteRuntimeLuau(int processId, string source) =>
+		SendToProcess(processId, new MessageRuntimeExecute { Source = source });
+
+	public void RenameRuntimeObject(int processId, string objectId, string name) =>
+		SendToProcess(processId, new MessageRuntimeRename { ObjectID = objectId, Name = name });
+
+	public void SetRuntimeViewportRect(int processId, Rect2I rect, bool visible) =>
+		SendToProcess(processId, new MessageRuntimeViewportRect
+		{
+			X = rect.Position.X,
+			Y = rect.Position.Y,
+			Width = rect.Size.X,
+			Height = rect.Size.Y,
+			Visible = visible
+		});
+
+	private void SendToProcess(int processId, IDebugMessage message)
+	{
+		foreach ((TcpClient client, ClientData data) in _clientToData)
+		{
+			if (data.ProcessID == processId)
+			{
+				SendMessage(client, message);
+				return;
+			}
+		}
+	}
+
+	private static async Task<byte[]?> ReadFrameAsync(NetworkStream stream)
+	{
+		byte[] lengthBytes = new byte[sizeof(int)];
+		if (!await ReadExactlyAsync(stream, lengthBytes)) return null;
+		int length = BitConverter.ToInt32(lengthBytes);
+		if (length <= 0 || length > 64 * 1024 * 1024) throw new InvalidDataException("Invalid debugger frame length.");
+		byte[] payload = new byte[length];
+		return await ReadExactlyAsync(stream, payload) ? payload : null;
+	}
+
+	private static async Task<bool> ReadExactlyAsync(NetworkStream stream, byte[] buffer)
+	{
+		int offset = 0;
+		while (offset < buffer.Length)
+		{
+			int read = await stream.ReadAsync(buffer.AsMemory(offset));
+			if (read == 0) return false;
+			offset += read;
+		}
+		return true;
+	}
+
+	private static async Task WriteFrameAsync(NetworkStream stream, byte[] payload)
+	{
+		await stream.WriteAsync(BitConverter.GetBytes(payload.Length));
+		await stream.WriteAsync(payload);
 	}
 
 	public void SendTerminateProgram()
@@ -202,5 +294,6 @@ public class DebugServer
 	{
 		public string DebugID;
 		public int ProcessID;
+		public bool IsServer;
 	}
 }

@@ -115,8 +115,20 @@ public sealed partial class Toolbox : Control
 		_pagNavNext.Disabled = true;
 		_pagNavPrev.Disabled = true;
 
-		APILibraryResponse res = await BVAPI.GetLibrary(QueryType, CurrentPage, SearchQuery);
-		MaxPage = res.Meta.LastPage;
+		APILibraryResponse res;
+		try
+		{
+			res = await BVAPI.GetLibrary(QueryType, CurrentPage, SearchQuery);
+		}
+		catch (System.Exception ex)
+		{
+			BV.PrintErr("Toolbox failed to list ", QueryType, " assets: ", ex);
+			_loaderView.Visible = false;
+			_noResultView.Visible = true;
+			_pagNavLabel.Text = "Unable to load assets";
+			return;
+		}
+		MaxPage = System.Math.Max(1, res.Meta.LastPage);
 
 		_pagNavPrev.Disabled = CurrentPage == 1;
 		_pagNavNext.Disabled = CurrentPage >= MaxPage;

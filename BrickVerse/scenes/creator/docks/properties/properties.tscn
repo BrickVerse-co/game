@@ -34,6 +34,7 @@ ScrollContainer/styles/panel = SubResource("DockContent")
 TabContainer/styles/panel = SubResource("DockContent")
 
 [node name="Properties" type="VBoxContainer" unique_id=2034223215]
+size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 0
 

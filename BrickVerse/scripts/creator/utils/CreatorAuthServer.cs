@@ -112,6 +112,8 @@ public static class CreatorAuthServer
 
 			string? code = ctx.Request.QueryString["code"];
 			string? token = ctx.Request.QueryString["token"];
+			string? refreshToken = ctx.Request.QueryString["refresh_token"];
+			string? expiresIn = ctx.Request.QueryString["expires_in"];
 			string? idToken = ctx.Request.QueryString["id_token"];
 			string? state = ctx.Request.QueryString["state"];
 			string? error = ctx.Request.QueryString["error"];
@@ -176,6 +178,11 @@ public static class CreatorAuthServer
 			if (!string.IsNullOrWhiteSpace(token))
 			{
 				CreatorAPI.PendingIdToken = idToken;
+				CreatorAPI.PendingRefreshToken = refreshToken;
+				CreatorAPI.PendingExpiresInSeconds =
+					long.TryParse(expiresIn, out long parsedExpiresIn) && parsedExpiresIn > 0
+						? parsedExpiresIn
+						: 0;
 				await CreatorAPI.LoginWithToken(token, true);
 				ClearAuthAttempt();
 

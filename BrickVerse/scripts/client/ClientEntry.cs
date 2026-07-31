@@ -14,6 +14,7 @@ using BrickVerse.Client.WebAPI;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Schemas.API;
+using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
@@ -80,6 +81,7 @@ public sealed partial class ClientEntry : Node3D
 			ClientLaunchOptions launchOptions = BuildLaunchOptions(entryData);
 
 			IsFocused = !IsContained;
+			ApplyLocalTestViewport(launchOptions);
 
 			ClientAuthAPI.Initialize(launchOptions.IsServer);
 
@@ -149,6 +151,7 @@ public sealed partial class ClientEntry : Node3D
 		args.TryGetValue("token", out string? authToken);
 		args.TryGetValue("debug", out string? debugAddress);
 		args.TryGetValue("debug-id", out string? debugId);
+		args.TryGetValue("ltrect", out string? localTestViewportRect);
 
 		bool runAsServer = string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
 			|| (string.IsNullOrWhiteSpace(networkMode) && Globals.IsServerBuild);
@@ -162,6 +165,7 @@ public sealed partial class ClientEntry : Node3D
 			AuthToken = authToken,
 			DebugAddress = debugAddress,
 			DebugId = debugId,
+			LocalTestViewportRect = localTestViewportRect,
 		};
 
 		BV.IsServer = runAsServer;
@@ -415,7 +419,12 @@ public sealed partial class ClientEntry : Node3D
 
 		for (int i = 1; i <= options.SoloClientCount; i++)
 		{
-			LocalTestStartClient(options.LocalPort);
+			LocalTestStartClient(
+				options.LocalPort,
+				i == 1 ? options.LocalTestViewportRect : null,
+				options.DebugId,
+				options.CreatorToken
+			);
 		}
 
 		TestModeReady = true;
@@ -547,13 +556,10 @@ public sealed partial class ClientEntry : Node3D
 			await StartProductionClientAsync(options.AuthToken);
 			return;
 		}
-		else
-		{
-			BV.PrintErr("No auth token provided, cannot start production client.");
-		}
-
 #if ALLOW_SELFHOST
 		NetworkService.CreateClient(options.LocalAddress, options.LocalPort);
+#else
+		BV.PrintErr("No auth token provided, cannot start production client.");
 #endif
 	}
 
@@ -691,7 +697,7 @@ public sealed partial class ClientEntry : Node3D
 		LeaveGameRequested?.Invoke();
 	}
 
-	public void LocalTestStartClient(int port = DefaultLocalPort)
+	public void LocalTestStartClient(int port = DefaultLocalPort, string? viewportRect = null, string? debugId = null, string? creatorToken = null)
 	{
 		TestClientCount++;
 
@@ -716,6 +722,19 @@ public sealed partial class ClientEntry : Node3D
 			"-port", port.ToString(),
 		];
 
+		if (!string.IsNullOrWhiteSpace(viewportRect))
+		{
+			args.Add($"-ltrect={viewportRect}");
+		}
+		if (!string.IsNullOrWhiteSpace(debugId))
+		{
+			args.AddRange(["-debug-id", debugId]);
+		}
+		if (!string.IsNullOrWhiteSpace(creatorToken))
+		{
+			args.AddRange(["-ctoken", creatorToken]);
+		}
+
 		if (Globals.IsInGDEditor)
 		{
 			args.AddRange(["--remote-debug", "tcp://127.0.0.1:6007"]);
@@ -733,6 +752,45 @@ public sealed partial class ClientEntry : Node3D
 		_localTestClientProcessIds.Add(processId);
 
 		BV.Print($"Started new client process with ID {processId}");
+	}
+
+	private static void ApplyLocalTestViewport(ClientLaunchOptions options)
+	{
+		if (options.IsServer || string.IsNullOrWhiteSpace(options.LocalTestViewportRect))
+			return;
+
+		string[] values = options.LocalTestViewportRect.Split(',');
+		if (values.Length != 4
+			|| !int.TryParse(values[0], out int x)
+			|| !int.TryParse(values[1], out int y)
+			|| !int.TryParse(values[2], out int width)
+			|| !int.TryParse(values[3], out int height))
+		{
+			BV.PrintErr($"Invalid local-test viewport rectangle: {options.LocalTestViewportRect}");
+			return;
+		}
+
+		ApplyLocalTestViewport(new MessageRuntimeViewportRect
+		{
+			X = x,
+			Y = y,
+			Width = width,
+			Height = height
+		});
+	}
+
+	internal static void ApplyLocalTestViewport(MessageRuntimeViewportRect rect)
+	{
+		if (!rect.Visible)
+		{
+			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Minimized);
+			return;
+		}
+
+		DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, true);
+		DisplayServer.WindowSetPosition(new Vector2I(rect.X, rect.Y));
+		DisplayServer.WindowSetSize(new Vector2I(Math.Max(320, rect.Width), Math.Max(240, rect.Height)));
 	}
 
 	public override void _ExitTree()
@@ -758,6 +816,7 @@ public sealed partial class ClientEntry : Node3D
 		public string? WorldEntryPath { get; set; }
 		public string? DebugAddress { get; set; }
 		public string? DebugId { get; set; }
+		public string? LocalTestViewportRect { get; set; }
 
 #if ALLOW_SELFHOST
 		public string LocalAddress { get; set; } = DefaultLocalAddress;

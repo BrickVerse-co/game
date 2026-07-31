@@ -37,11 +37,14 @@ public sealed partial class NetworkService : Instance
 {
 	private static readonly ConcurrentDictionary<(Type Type, int MethodId), RpcDispatchInfo> _rpcDispatchCache = new();
 
-	private const int PingIntervalMs = 250; // Ping interval
+	private const double PingIntervalSec = 2;
 	private const int AuthWaitTimeoutSec = 15; // Time wait before user disconnects due to auth timeout
 	private const int HeartbeatIntervalSec = 10; // Server heartbeat interval
 	private const int HeartbeatBeforeCheckPlayers = 5; // Server wait before checking players
 	private const float ConnectTimeoutSec = 90; // Timeout kick if player is not ready
+	private const ulong IdleTimeoutMs = 10 * 60 * 1000;
+	private const double IdleCheckIntervalSec = 30;
+	private const ulong ActivityReportIntervalMs = 15 * 1000;
 
 	// TODO: Narrow this down
 	private const int MaxBroadcastPacketPerSec = 100;
@@ -100,7 +103,11 @@ public sealed partial class NetworkService : Instance
 	private ulong placeReplicationStartTime = 0;
 	private readonly Dictionary<string, List<NetReplicateData>> _pendingReplications = [];
 	private Godot.Timer _heartbeatTimer = null!;
+	private Godot.Timer? _idleCheckTimer;
+	private Godot.Timer? _networkPingTimer;
 	private ulong _heartbeatCount = 0;
+	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
+	private ulong _lastActivityReportTime;
 	public ClientEntry Entry = null!;
 
 	/// <summary>
@@ -138,6 +145,18 @@ public sealed partial class NetworkService : Instance
 	public override void PreDelete()
 	{
 		Globals.BeforeQuit -= BeforeQuitHandler;
+		if (_idleCheckTimer != null)
+		{
+			_idleCheckTimer.Timeout -= CheckForIdlePeers;
+			_idleCheckTimer.QueueFree();
+			_idleCheckTimer = null;
+		}
+		if (_networkPingTimer != null)
+		{
+			_networkPingTimer.Timeout -= SendNetworkPing;
+			_networkPingTimer.QueueFree();
+			_networkPingTimer = null;
+		}
 
 		// Null all events
 		ServerStarted = null;
@@ -287,6 +306,11 @@ public sealed partial class NetworkService : Instance
 			int originFromPeer = (fromPeer == 1 && netMsg.OriginSender != 0)
 				? netMsg.OriginSender
 				: fromPeer;
+
+			if (IsServer && originFromPeer != LocalPeerID)
+			{
+				_peerLastActivity[originFromPeer] = Time.GetTicksMsec();
+			}
 
 			NetworkedObject? netObj;
 
@@ -461,6 +485,22 @@ public sealed partial class NetworkService : Instance
 		LocalPeerID = 1;
 		ActivePeerIDs.Add(1);
 		IsServer = true;
+		_idleCheckTimer = new Godot.Timer
+		{
+			WaitTime = IdleCheckIntervalSec,
+			OneShot = false
+		};
+		_idleCheckTimer.Timeout += CheckForIdlePeers;
+		Globals.Singleton.AddChild(_idleCheckTimer);
+		_idleCheckTimer.Start();
+		_networkPingTimer = new Godot.Timer
+		{
+			WaitTime = PingIntervalSec,
+			OneShot = false
+		};
+		_networkPingTimer.Timeout += SendNetworkPing;
+		Globals.Singleton.AddChild(_networkPingTimer);
+		_networkPingTimer.Start();
 
 		if (Globals.IsInGDEditor)
 		{
@@ -562,6 +602,8 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerConnected(int peerID)
 	{
+		_peerLastActivity[peerID] = Time.GetTicksMsec();
+
 		lock (_rateLimiterLock)
 		{
 			_peerRateLimiters.Add(peerID, new());
@@ -580,6 +622,7 @@ public sealed partial class NetworkService : Instance
 	private void OnPeerDisconnected(int peerID)
 	{
 		ActivePeerIDs.Remove(peerID);
+		_peerLastActivity.TryRemove(peerID, out _);
 		lock (_rateLimiterLock)
 		{
 			_peerRateLimiters.Remove(peerID);
@@ -593,6 +636,57 @@ public sealed partial class NetworkService : Instance
 
 			_players.InvokePlayerRemoved(plr);
 			plr.ForceDelete();
+		}
+	}
+
+	private void CheckForIdlePeers()
+	{
+		if (!IsServer || NetInstance == null) return;
+
+		ulong now = Time.GetTicksMsec();
+		foreach ((int peerID, ulong lastActivity) in _peerLastActivity)
+		{
+			if (now - lastActivity < IdleTimeoutMs) continue;
+
+			// Remove first so the timer cannot schedule duplicate disconnects while
+			// DisconnectPeer gives the client time to receive the reason.
+			if (_peerLastActivity.TryRemove(peerID, out _))
+			{
+				DisconnectPeer(
+					peerID,
+					"Disconnected for being idle for 10 minutes.",
+					DisconnectionCodeEnum.AFK
+				);
+			}
+		}
+	}
+
+	private void SendNetworkPing()
+	{
+		if (IsServer && NetInstance != null)
+			Rpc(nameof(NetRecvNetworkPing));
+	}
+
+	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Unreliable)]
+	private void NetRecvNetworkPing() { }
+
+	internal void NotifyLocalActivity()
+	{
+		if (IsServer || !ClientConnected || IsDisconnected) return;
+
+		ulong now = Time.GetTicksMsec();
+		if (now - _lastActivityReportTime < ActivityReportIntervalMs) return;
+
+		_lastActivityReportTime = now;
+		RpcId(1, nameof(NetReportActivity));
+	}
+
+	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Unreliable)]
+	private void NetReportActivity()
+	{
+		if (IsServer && RemoteSenderId != LocalPeerID)
+		{
+			_peerLastActivity[RemoteSenderId] = Time.GetTicksMsec();
 		}
 	}
 

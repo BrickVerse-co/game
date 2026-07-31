@@ -4,10 +4,12 @@
 
 using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
@@ -64,14 +66,21 @@ public sealed partial class Terrain : Instance
 	private Node3D? _viewerNode;
 
 	private readonly List<TerrainOperation> _operations = [];
+	private TerrainOperation[]? _pendingReplayOperations;
+	private int _pendingReplayIndex;
 
 	private bool _initialized;
 	private bool _isLoading;
 	private bool _isUpdatingSerialisedTerrain;
+	private bool _terrainDirty;
 
 	private string _serialisedTerrain = string.Empty;
 	private bool _autoSerialise = true;
 	private bool _generateCollisions = true;
+	private uint _collisionLayer = 1;
+	private uint _collisionMask = uint.MaxValue;
+	private int _collisionUpdateDelay;
+	private float _collisionMargin = 0.04f;
 	private float _defaultSdfStrength = 1.0f;
 	private float _defaultSdfScale = 1.0f;
 	private int _viewDistance = 512;
@@ -84,16 +93,16 @@ public sealed partial class Terrain : Instance
 	private Color _concreteColor = new(0.74f, 0.74f, 0.72f, 1.0f);
 	private Color _brickColor = new(0.70f, 0.32f, 0.27f, 1.0f);
 
-	public static readonly Part.PartMaterialEnum[] MaterialPalette =
+	private static readonly (string Name, Part.PartMaterialEnum Surface, Color Color)[] DefaultMaterials =
 	[
-		Part.PartMaterialEnum.SmoothPlastic,
-		Part.PartMaterialEnum.Grass,
-		Part.PartMaterialEnum.Stone,
-		Part.PartMaterialEnum.Sand,
-		Part.PartMaterialEnum.Dirt,
-		Part.PartMaterialEnum.Snow,
-		Part.PartMaterialEnum.Concrete,
-		Part.PartMaterialEnum.Brick,
+		("Base", Part.PartMaterialEnum.SmoothPlastic, new Color(0.92f, 0.92f, 0.92f, 1.0f)),
+		("Grass", Part.PartMaterialEnum.Grass, new Color(0.55f, 0.78f, 0.42f, 1.0f)),
+		("Stone", Part.PartMaterialEnum.Stone, new Color(0.70f, 0.72f, 0.74f, 1.0f)),
+		("Sand", Part.PartMaterialEnum.Sand, new Color(0.90f, 0.82f, 0.60f, 1.0f)),
+		("Dirt", Part.PartMaterialEnum.Dirt, new Color(0.52f, 0.40f, 0.30f, 1.0f)),
+		("Snow", Part.PartMaterialEnum.Snow, new Color(0.96f, 0.98f, 1.00f, 1.0f)),
+		("Concrete", Part.PartMaterialEnum.Concrete, new Color(0.74f, 0.74f, 0.72f, 1.0f)),
+		("Brick", Part.PartMaterialEnum.Brick, new Color(0.70f, 0.32f, 0.27f, 1.0f)),
 	];
 
 	/// <summary>
@@ -102,10 +111,15 @@ public sealed partial class Terrain : Instance
 	/// Assigning this value after initialization rebuilds the terrain
 	/// immediately. Save this property with the rest of the world data.
 	/// </summary>
-	[Editable, ScriptProperty, DefaultValue("")]
+	[Editable, ScriptProperty, SyncVar, DefaultValue("")]
 	public string SerialisedTerrain
 	{
-		get => _serialisedTerrain;
+		get
+		{
+			if (_terrainDirty && !_isLoading && !_isUpdatingSerialisedTerrain)
+				SaveTerrain();
+			return _serialisedTerrain;
+		}
 		set
 		{
 			value ??= string.Empty;
@@ -116,6 +130,7 @@ public sealed partial class Terrain : Instance
 			}
 
 			_serialisedTerrain = value;
+			_terrainDirty = false;
 			OnPropertyChanged();
 
 			if (_initialized && !_isUpdatingSerialisedTerrain)
@@ -175,6 +190,72 @@ public sealed partial class Terrain : Instance
 				TrySet(_viewerNode, "requires_collisions", value);
 			}
 
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
+		DefaultValue(1u)]
+	public uint CollisionLayer
+	{
+		get => _collisionLayer;
+		set
+		{
+			if (_collisionLayer == value)
+				return;
+			_collisionLayer = value;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_layer", (long)value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
+		DefaultValue(uint.MaxValue)]
+	public uint CollisionMask
+	{
+		get => _collisionMask;
+		set
+		{
+			if (_collisionMask == value)
+				return;
+			_collisionMask = value;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_mask", (long)value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, SyncVar, DefaultValue(0)]
+	public int CollisionUpdateDelay
+	{
+		get => _collisionUpdateDelay;
+		set
+		{
+			int validated = Math.Clamp(value, 0, 10_000);
+			if (_collisionUpdateDelay == validated)
+				return;
+			_collisionUpdateDelay = validated;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_update_delay", validated);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, SyncVar, DefaultValue(0.04f)]
+	public float CollisionMargin
+	{
+		get => _collisionMargin;
+		set
+		{
+			float validated = float.IsFinite(value)
+				? Math.Clamp(value, 0.0f, 1.0f)
+				: 0.04f;
+			if (Mathf.IsEqualApprox(_collisionMargin, validated))
+				return;
+			_collisionMargin = validated;
+			if (_voxelTerrain != null)
+				TrySet(_voxelTerrain, "collision_margin", validated);
 			OnPropertyChanged();
 		}
 	}
@@ -254,56 +335,56 @@ public sealed partial class Terrain : Instance
 		}
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color BaseColor
 	{
 		get => _baseColor;
 		set => SetMaterialTint(ref _baseColor, value, nameof(BaseColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color GrassColor
 	{
 		get => _grassColor;
 		set => SetMaterialTint(ref _grassColor, value, nameof(GrassColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color StoneColor
 	{
 		get => _stoneColor;
 		set => SetMaterialTint(ref _stoneColor, value, nameof(StoneColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color SandColor
 	{
 		get => _sandColor;
 		set => SetMaterialTint(ref _sandColor, value, nameof(SandColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color DirtColor
 	{
 		get => _dirtColor;
 		set => SetMaterialTint(ref _dirtColor, value, nameof(DirtColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color SnowColor
 	{
 		get => _snowColor;
 		set => SetMaterialTint(ref _snowColor, value, nameof(SnowColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color ConcreteColor
 	{
 		get => _concreteColor;
 		set => SetMaterialTint(ref _concreteColor, value, nameof(ConcreteColor));
 	}
 
-	[Editable, ScriptProperty]
+	[ScriptProperty, NoSync, Attributes.Obsolete("Use TerrainMaterial children")]
 	public Color BrickColor
 	{
 		get => _brickColor;
@@ -326,9 +407,27 @@ public sealed partial class Terrain : Instance
 		base.Init();
 	}
 
+	public override void Ready()
+	{
+		base.Ready();
+		ChildAdded.Connect(OnTerrainChildChanged);
+		ChildRemoved.Connect(OnTerrainChildChanged);
+
+		if (Root.Network == null || Root.Network.IsServer)
+			EnsureDefaultMaterials();
+		else
+			NotifyMaterialChanged();
+	}
+
 	public override void Process(double delta)
 	{
 		base.Process(delta);
+
+		if (_pendingReplayOperations != null)
+		{
+			TryReplayPendingOperations();
+			return;
+		}
 
 		Camera3D? camera =
 			Root?.Environment?.CurrentGDCamera
@@ -344,9 +443,91 @@ public sealed partial class Terrain : Instance
 	public override void PreDelete()
 	{
 		_initialized = false;
+		_pendingReplayOperations = null;
+		_pendingReplayIndex = 0;
+		ChildAdded.Disconnect(OnTerrainChildChanged);
+		ChildRemoved.Disconnect(OnTerrainChildChanged);
 		_operations.Clear();
 		DestroyVoxelTerrain();
 		base.PreDelete();
+	}
+
+	[ScriptMethod]
+	public TerrainMaterial[] GetMaterials()
+	{
+		return GetChildrenOfClass<TerrainMaterial>()
+			.OrderBy(material => material.Slot)
+			.ThenBy(material => material.Name, StringComparer.Ordinal)
+			.ToArray();
+	}
+
+	public TerrainMaterial? GetMaterial(int slot)
+	{
+		return GetChildrenOfClass<TerrainMaterial>()
+			.FirstOrDefault(material => material.Slot == slot);
+	}
+
+	internal int FindAvailableMaterialSlot(TerrainMaterial? except = null)
+	{
+		HashSet<int> occupied = GetChildrenOfClass<TerrainMaterial>()
+			.Where(material => material != except)
+			.Select(material => material.Slot)
+			.ToHashSet();
+		for (int slot = 0; slot < TerrainMaterial.MaximumSlots; slot++)
+		{
+			if (!occupied.Contains(slot))
+				return slot;
+		}
+		return -1;
+	}
+
+	internal bool IsMaterialSlotAvailable(int slot, TerrainMaterial except)
+	{
+		return !GetChildrenOfClass<TerrainMaterial>().Any(
+			material => material != except && material.Slot == slot
+		);
+	}
+
+	internal void NotifyMaterialChanged()
+	{
+		UpdateTerrainMaterialParameters();
+	}
+
+	private void OnTerrainChildChanged(Instance child)
+	{
+		if (child is TerrainMaterial)
+			NotifyMaterialChanged();
+	}
+
+	private void EnsureDefaultMaterials()
+	{
+		if (GetChildrenOfClass<TerrainMaterial>().Length > 0)
+		{
+			NotifyMaterialChanged();
+			return;
+		}
+
+		Color[] migratedColors =
+		[
+			_baseColor,
+			_grassColor,
+			_stoneColor,
+			_sandColor,
+			_dirtColor,
+			_snowColor,
+			_concreteColor,
+			_brickColor,
+		];
+		for (int slot = 0; slot < DefaultMaterials.Length; slot++)
+		{
+			var definition = DefaultMaterials[slot];
+			TerrainMaterial material = New<TerrainMaterial>(this);
+			material.Name = definition.Name;
+			material.Slot = slot;
+			material.Surface = definition.Surface;
+			material.Color = migratedColors[slot];
+		}
+		NotifyMaterialChanged();
 	}
 
 	#region Public shape API
@@ -647,7 +828,7 @@ public sealed partial class Terrain : Instance
 		return Math.Clamp(
 			bestMaterial,
 			0,
-			MaterialPalette.Length - 1);
+			TerrainMaterial.MaximumSlots - 1);
 	}
 
 	[ScriptMethod]
@@ -830,6 +1011,7 @@ public sealed partial class Terrain : Instance
 		try
 		{
 			_serialisedTerrain = encoded;
+			_terrainDirty = false;
 			OnPropertyChanged(nameof(SerialisedTerrain));
 		}
 		finally
@@ -838,6 +1020,12 @@ public sealed partial class Terrain : Instance
 		}
 
 		return encoded;
+	}
+
+	internal void FlushTerrainSerialization()
+	{
+		if (_terrainDirty && !_isLoading && !_isUpdatingSerialisedTerrain)
+			SaveTerrain();
 	}
 
 	/// <summary>
@@ -852,17 +1040,22 @@ public sealed partial class Terrain : Instance
 		}
 
 		_isLoading = true;
+		TerrainOperation[] previousOperations = [.. _operations];
+		bool terrainWasReplaced = false;
 
 		try
 		{
-			_operations.Clear();
-			CreateVoxelTerrain();
-
 			if (string.IsNullOrWhiteSpace(_serialisedTerrain))
 			{
+				_pendingReplayOperations = null;
+				_pendingReplayIndex = 0;
+				_operations.Clear();
+				CreateVoxelTerrain();
+				terrainWasReplaced = true;
 				return;
 			}
 
+			List<TerrainOperation> loadedOperations = [];
 			byte[] compressed = Convert.FromBase64String(
 				_serialisedTerrain.Trim());
 
@@ -901,12 +1094,44 @@ public sealed partial class Terrain : Instance
 			for (int index = 0; index < operationCount; index++)
 			{
 				TerrainOperation operation = ReadOperation(reader);
-				ExecuteOperation(operation);
-				_operations.Add(operation);
+				if (!Enum.IsDefined(operation.Type))
+					throw new InvalidDataException(
+						$"Terrain operation {index} has an unknown type.");
+				loadedOperations.Add(operation);
 			}
+
+			// Do not destroy the currently rendered terrain until the complete
+			// serialized stream has passed validation. VoxelLodTerrain loads
+			// editable blocks asynchronously, so replay is queued and applied
+			// in order as each operation's region becomes editable.
+			CreateVoxelTerrain();
+			terrainWasReplaced = true;
+			_operations.Clear();
+			_operations.AddRange(loadedOperations);
+			_pendingReplayOperations = [.. loadedOperations];
+			_pendingReplayIndex = 0;
+			_terrainDirty = false;
+			TryReplayPendingOperations();
 		}
 		catch (Exception exception)
 		{
+			if (terrainWasReplaced)
+			{
+				try
+				{
+					CreateVoxelTerrain();
+					_operations.Clear();
+					_operations.AddRange(previousOperations);
+					_pendingReplayOperations = [.. previousOperations];
+					_pendingReplayIndex = 0;
+					TryReplayPendingOperations();
+				}
+				catch (Exception recoveryException)
+				{
+					GD.PushError(
+						$"Failed to restore terrain after a load error: {recoveryException}");
+				}
+			}
 			GD.PushError(
 				$"Failed to load serialised terrain: {exception}");
 		}
@@ -919,7 +1144,10 @@ public sealed partial class Terrain : Instance
 	[ScriptMethod]
 	public void Clear()
 	{
+		_pendingReplayOperations = null;
+		_pendingReplayIndex = 0;
 		_operations.Clear();
+		_terrainDirty = true;
 		CreateVoxelTerrain();
 
 		if (AutoSerialise)
@@ -933,6 +1161,7 @@ public sealed partial class Terrain : Instance
 			try
 			{
 				_serialisedTerrain = string.Empty;
+				_terrainDirty = false;
 				OnPropertyChanged(nameof(SerialisedTerrain));
 			}
 			finally
@@ -1101,6 +1330,7 @@ public sealed partial class Terrain : Instance
 
 		string[] candidateConstants =
 		[
+			"TEXTURES_MIXEL4_S4",
 			"TEXTURES_BLEND_4_OVER_16",
 			"TEXTURES_MIXEL4",
 			"TEXTURING_MIXEL4",
@@ -1147,14 +1377,108 @@ public sealed partial class Terrain : Instance
 			return;
 		}
 
-		_terrainMaterial.SetShaderParameter("u_color_0", _baseColor);
-		_terrainMaterial.SetShaderParameter("u_color_1", _grassColor);
-		_terrainMaterial.SetShaderParameter("u_color_2", _stoneColor);
-		_terrainMaterial.SetShaderParameter("u_color_3", _sandColor);
-		_terrainMaterial.SetShaderParameter("u_color_4", _dirtColor);
-		_terrainMaterial.SetShaderParameter("u_color_5", _snowColor);
-		_terrainMaterial.SetShaderParameter("u_color_6", _concreteColor);
-		_terrainMaterial.SetShaderParameter("u_color_7", _brickColor);
+		float[] roughness = new float[TerrainMaterial.MaximumSlots];
+		float[] metallic = new float[TerrainMaterial.MaximumSlots];
+		float[] normalStrength = new float[TerrainMaterial.MaximumSlots];
+		float[] textureScale = new float[TerrainMaterial.MaximumSlots];
+		int customMask = 0;
+		for (int slot = 0; slot < TerrainMaterial.MaximumSlots; slot++)
+		{
+			_terrainMaterial.SetShaderParameter($"u_color_{slot}", _baseColor);
+			roughness[slot] = 0.92f;
+			normalStrength[slot] = 1.0f;
+			textureScale[slot] = 0.1f;
+		}
+		foreach (TerrainMaterial material in GetMaterials())
+		{
+			_terrainMaterial.SetShaderParameter(
+				$"u_color_{material.Slot}",
+				material.Color
+			);
+			roughness[material.Slot] = material.Roughness;
+			metallic[material.Slot] = material.Metallic;
+			normalStrength[material.Slot] = material.NormalStrength;
+			textureScale[material.Slot] = material.GetSurfaceTextureScale();
+			if (material.SurfaceType == TerrainSurfaceType.Custom)
+				customMask |= 1 << material.Slot;
+		}
+		_terrainMaterial.SetShaderParameter("u_custom_mask", customMask);
+		_terrainMaterial.SetShaderParameter("u_roughness", roughness);
+		_terrainMaterial.SetShaderParameter("u_metallic", metallic);
+		_terrainMaterial.SetShaderParameter("u_normal_strength", normalStrength);
+		_terrainMaterial.SetShaderParameter("u_texture_scale", textureScale);
+		_terrainMaterial.SetShaderParameter(
+			"u_albedo_textures",
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.AlbedoTexture)
+					: material.GetSurfaceTexture("albedo", "use_albedo_texture"),
+				Colors.White
+			)
+		);
+		_terrainMaterial.SetShaderParameter(
+			"u_normal_textures",
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.NormalTexture)
+					: material.GetSurfaceTexture("normal_tex", "use_normal_texture"),
+				new Color(0.5f, 0.5f, 1)
+			)
+		);
+		_terrainMaterial.SetShaderParameter(
+			"u_roughness_textures",
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.RoughnessTexture)
+					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				Colors.White
+			)
+		);
+		_terrainMaterial.SetShaderParameter(
+			"u_metallic_textures",
+			BuildTextureArray(
+				material => material.SurfaceType == TerrainSurfaceType.Custom
+					? material.GetTexture(material.MetallicTexture)
+					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				Colors.White
+			)
+		);
+	}
+
+	private Texture2DArray BuildTextureArray(
+		Func<TerrainMaterial, Texture2D?> selector,
+		Color fallback)
+	{
+		const int textureSize = 256;
+		Godot.Collections.Array<Image> images = [];
+		for (int slot = 0; slot < TerrainMaterial.MaximumSlots; slot++)
+		{
+			Texture2D? texture = GetMaterial(slot) is TerrainMaterial material
+				? selector(material)
+				: null;
+			Image image = texture?.GetImage() ?? Image.CreateEmpty(
+				textureSize,
+				textureSize,
+				false,
+				Image.Format.Rgba8
+			);
+			if (texture == null)
+				image.Fill(fallback);
+			else
+			{
+				image = (Image)image.Duplicate();
+				if (image.IsCompressed())
+					image.Decompress();
+				image.Convert(Image.Format.Rgba8);
+				image.Resize(textureSize, textureSize, Image.Interpolation.Lanczos);
+			}
+			if (!image.HasMipmaps())
+				image.GenerateMipmaps();
+			images.Add(image);
+		}
+		Texture2DArray array = new();
+		array.CreateFromImages(images);
+		return array;
 	}
 
 	private static string GetTerrainShaderCode()
@@ -1173,10 +1497,28 @@ uniform vec4 u_color_4 : source_color = vec4(0.52, 0.40, 0.30, 1.0);
 uniform vec4 u_color_5 : source_color = vec4(0.96, 0.98, 1.00, 1.0);
 uniform vec4 u_color_6 : source_color = vec4(0.74, 0.74, 0.72, 1.0);
 uniform vec4 u_color_7 : source_color = vec4(0.70, 0.32, 0.27, 1.0);
+uniform vec4 u_color_8 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_9 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_10 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_11 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_12 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_13 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_14 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform vec4 u_color_15 : source_color = vec4(0.92, 0.92, 0.92, 1.0);
+uniform int u_custom_mask = 0;
+uniform float u_roughness[16];
+uniform float u_metallic[16];
+uniform float u_normal_strength[16];
+uniform float u_texture_scale[16];
+uniform sampler2DArray u_albedo_textures : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray u_normal_textures : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray u_roughness_textures : hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray u_metallic_textures : hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
 
 varying vec4 v_indices;
 varying vec4 v_weights;
 varying vec3 v_world_normal;
+varying vec3 v_world_position;
 
 vec4 decode_8bit_vec4(float value) {
 	uint packed = floatBitsToUint(value);
@@ -1222,8 +1564,47 @@ vec3 palette_color(int index) {
 		case 5: return u_color_5.rgb;
 		case 6: return u_color_6.rgb;
 		case 7: return u_color_7.rgb;
+		case 8: return u_color_8.rgb;
+		case 9: return u_color_9.rgb;
+		case 10: return u_color_10.rgb;
+		case 11: return u_color_11.rgb;
+		case 12: return u_color_12.rgb;
+		case 13: return u_color_13.rgb;
+		case 14: return u_color_14.rgb;
+		case 15: return u_color_15.rgb;
 		default: return u_color_0.rgb;
 	}
+}
+
+bool is_custom(int index) {
+	return (u_custom_mask & (1 << index)) != 0;
+}
+
+vec2 triplanar_uv(vec3 position, vec3 normal, float scale) {
+	vec3 axis = abs(normal);
+	if (axis.y >= axis.x && axis.y >= axis.z) return position.xz * scale;
+	if (axis.x >= axis.z) return position.zy * scale;
+	return position.xy * scale;
+}
+
+vec3 material_albedo(int index, vec2 uv) {
+	vec3 tint = palette_color(index);
+	if (!is_custom(index)) return tint;
+	return tint * texture(u_albedo_textures, vec3(uv, float(index))).rgb;
+}
+
+float material_roughness(int index, vec2 uv) {
+	float value = u_roughness[index];
+	vec3 map = texture(u_roughness_textures, vec3(uv, float(index))).rgb;
+	value *= is_custom(index) ? map.r : map.g;
+	return value;
+}
+
+float material_metallic(int index, vec2 uv) {
+	float value = u_metallic[index];
+	vec3 map = texture(u_metallic_textures, vec3(uv, float(index))).rgb;
+	value *= is_custom(index) ? map.r : map.b;
+	return value;
 }
 
 void vertex() {
@@ -1231,6 +1612,7 @@ void vertex() {
 	v_indices = decode_8bit_vec4(CUSTOM1.x);
 	v_weights = decode_8bit_vec4(CUSTOM1.y) / 255.0;
 	v_world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
+	v_world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 void fragment() {
@@ -1247,18 +1629,48 @@ void fragment() {
 		weights /= total;
 	}
 
+	int i0 = int(v_indices.x + 0.5);
+	int i1 = int(v_indices.y + 0.5);
+	int i2 = int(v_indices.z + 0.5);
+	int i3 = int(v_indices.w + 0.5);
+	vec2 uv0 = triplanar_uv(v_world_position, v_world_normal, u_texture_scale[i0]);
+	vec2 uv1 = triplanar_uv(v_world_position, v_world_normal, u_texture_scale[i1]);
+	vec2 uv2 = triplanar_uv(v_world_position, v_world_normal, u_texture_scale[i2]);
+	vec2 uv3 = triplanar_uv(v_world_position, v_world_normal, u_texture_scale[i3]);
 	vec3 color =
-		palette_color(int(v_indices.x + 0.5)) * weights.x +
-		palette_color(int(v_indices.y + 0.5)) * weights.y +
-		palette_color(int(v_indices.z + 0.5)) * weights.z +
-		palette_color(int(v_indices.w + 0.5)) * weights.w;
+		material_albedo(i0, uv0) * weights.x +
+		material_albedo(i1, uv1) * weights.y +
+		material_albedo(i2, uv2) * weights.z +
+		material_albedo(i3, uv3) * weights.w;
+	float roughness =
+		material_roughness(i0, uv0) * weights.x +
+		material_roughness(i1, uv1) * weights.y +
+		material_roughness(i2, uv2) * weights.z +
+		material_roughness(i3, uv3) * weights.w;
+	float metallic =
+		material_metallic(i0, uv0) * weights.x +
+		material_metallic(i1, uv1) * weights.y +
+		material_metallic(i2, uv2) * weights.z +
+		material_metallic(i3, uv3) * weights.w;
+	vec3 normal_map =
+		texture(u_normal_textures, vec3(uv0, float(i0))).rgb * weights.x +
+		texture(u_normal_textures, vec3(uv1, float(i1))).rgb * weights.y +
+		texture(u_normal_textures, vec3(uv2, float(i2))).rgb * weights.z +
+		texture(u_normal_textures, vec3(uv3, float(i3))).rgb * weights.w;
+	float normal_strength =
+		u_normal_strength[i0] * weights.x +
+		u_normal_strength[i1] * weights.y +
+		u_normal_strength[i2] * weights.z +
+		u_normal_strength[i3] * weights.w;
 
 	float up = clamp(v_world_normal.y * 0.5 + 0.5, 0.0, 1.0);
 	color *= mix(0.78, 1.05, up);
 
 	ALBEDO = color;
-	ROUGHNESS = 0.92;
-	METALLIC = 0.0;
+	ROUGHNESS = clamp(roughness, 0.0, 1.0);
+	METALLIC = clamp(metallic, 0.0, 1.0);
+	NORMAL_MAP = normal_map;
+	NORMAL_MAP_DEPTH = normal_strength;
 }
 """;
 	}
@@ -1289,6 +1701,19 @@ void fragment() {
 			_voxelTerrain!,
 			"generate_collisions",
 			GenerateCollisions);
+		TrySet(_voxelTerrain!, "collision_layer", (long)CollisionLayer);
+		TrySet(_voxelTerrain!, "collision_mask", (long)CollisionMask);
+		TrySet(
+			_voxelTerrain!,
+			"collision_update_delay",
+			CollisionUpdateDelay
+		);
+		TrySet(_voxelTerrain!, "collision_margin", CollisionMargin);
+		// Generate colliders at every active terrain LOD. This prevents
+		// characters and rigid bodies from falling through during LOD changes.
+		TrySet(_voxelTerrain!, "collision_lod_count", 0);
+		// Install completed collision meshes during the physics tick.
+		TrySet(_voxelTerrain!, "process_callback", 1);
 
 		TrySet(
 			_voxelTerrain!,
@@ -1390,16 +1815,95 @@ void fragment() {
 
 	private void ExecuteAndRecord(TerrainOperation operation)
 	{
+		if (_pendingReplayOperations != null)
+		{
+			TryReplayPendingOperations();
+			if (_pendingReplayOperations != null)
+				throw new InvalidOperationException(
+					"Terrain is still restoring saved voxel data.");
+		}
+
 		ExecuteOperation(operation);
 
 		if (!_isLoading)
 		{
 			_operations.Add(operation);
+			_terrainDirty = true;
 		}
 
 		if (AutoSerialise && !_isLoading)
 		{
 			SaveTerrain();
+		}
+	}
+
+	private void TryReplayPendingOperations()
+	{
+		TerrainOperation[]? pending = _pendingReplayOperations;
+		if (pending == null) return;
+
+		const int maximumOperationsPerFrame = 256;
+		int appliedThisFrame = 0;
+		try
+		{
+			while (_pendingReplayIndex < pending.Length
+				&& appliedThisFrame < maximumOperationsPerFrame)
+			{
+				TerrainOperation operation = pending[_pendingReplayIndex];
+				(Vector3 minimum, Vector3 maximum) = GetOperationBounds(operation);
+				SetEditorViewerPosition((minimum + maximum) * 0.5f);
+				if (!IsAreaEditable(minimum, maximum))
+					return;
+
+				ExecuteOperation(operation);
+				_pendingReplayIndex++;
+				appliedThisFrame++;
+			}
+
+			if (_pendingReplayIndex >= pending.Length)
+			{
+				_pendingReplayOperations = null;
+				_pendingReplayIndex = 0;
+				BV.Print(
+					"Terrain restored ",
+					pending.Length,
+					" serialized operation(s).");
+			}
+		}
+		catch (Exception exception)
+		{
+			_pendingReplayOperations = null;
+			_pendingReplayIndex = 0;
+			GD.PushError($"Failed while replaying saved terrain: {exception}");
+		}
+	}
+
+	private static (Vector3 Minimum, Vector3 Maximum) GetOperationBounds(
+		TerrainOperation operation)
+	{
+		Vector3 padding;
+		switch (operation.Type)
+		{
+			case TerrainOperationType.FillBlock:
+			case TerrainOperationType.DigBlock:
+				padding = operation.Size.Abs() * 0.5f + Vector3.One * 2.0f;
+				return (operation.Position - padding, operation.Position + padding);
+
+			case TerrainOperationType.FillCylinder:
+			case TerrainOperationType.DigCylinder:
+				padding = Vector3.One * (operation.Radius + 2.0f);
+				return (
+					operation.Position.Min(operation.SecondaryPosition) - padding,
+					operation.Position.Max(operation.SecondaryPosition) + padding);
+
+			case TerrainOperationType.SetVoxelSdf:
+			case TerrainOperationType.SetVoxelMaterial:
+				padding = Vector3.One * 2.0f;
+				return (operation.Position - padding, operation.Position + padding);
+
+			default:
+				padding = Vector3.One * (Math.Max(operation.Radius, 1.0f) + 2.0f);
+				return (operation.Position - padding, operation.Position + padding);
 		}
 	}
 
@@ -1522,24 +2026,31 @@ void fragment() {
 
 		ConfigureTexturePaintTool(operation.Material, 1.0f);
 
+		// Texture weights live on voxels surrounding the generated isosurface.
+		// Cover a one-voxel shell beyond the SDF brush so newly-added terrain
+		// receives valid Mixel4 data before its first mesh is generated.
+		const float surfaceShell = 1.5f;
 		switch (operation.Type)
 		{
 			case TerrainOperationType.FillBall:
 				_voxelTool!.Call(
 					"do_sphere",
 					operation.Position,
-					operation.Radius);
+					operation.Radius + surfaceShell);
 				break;
 
 			case TerrainOperationType.FillBlock:
-				ExecuteBox(operation.Position, operation.Size);
+				ExecuteBox(
+					operation.Position,
+					operation.Size + Vector3.One * surfaceShell * 2.0f
+				);
 				break;
 
 			case TerrainOperationType.FillCylinder:
 				ExecutePath(
 					operation.Position,
 					operation.SecondaryPosition,
-					operation.Radius);
+					operation.Radius + surfaceShell);
 				break;
 		}
 	}
@@ -1779,14 +2290,17 @@ void fragment() {
 		}
 	}
 
-	private static void ValidateMaterial(int material)
+	private void ValidateMaterial(int material)
 	{
-		if (material < 0 || material >= MaterialPalette.Length)
+		if (material < 0 || material >= TerrainMaterial.MaximumSlots)
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(material),
-				$"Material index must be between 0 and {MaterialPalette.Length - 1}.");
+				$"Material slot must be between 0 and {TerrainMaterial.MaximumSlots - 1}.");
 		}
+		if (!_isLoading && GetMaterial(material) == null)
+			throw new InvalidOperationException(
+				$"Terrain material slot {material} does not exist under Terrain.");
 	}
 
 	private static void ValidateStrength(float strength)

@@ -449,6 +449,10 @@ public sealed partial class InputService : Instance
 	public void OnInput(Godot.InputEvent @event)
 	{
 		if (@event.IsEcho()) return;
+		if (IsWindowFocused && IsUserActivity(@event))
+		{
+			Root.Network?.NotifyLocalActivity();
+		}
 		if (IsGameFocused)
 		{
 			GodotInputEvent?.Invoke(@event);
@@ -551,6 +555,21 @@ public sealed partial class InputService : Instance
 				_mouseScrollDelta = -mouseBtn.Factor;
 			}
 		}
+	}
+
+	private static bool IsUserActivity(Godot.InputEvent @event)
+	{
+		return @event switch
+		{
+			InputEventMouseMotion mouseMotion => !mouseMotion.Relative.IsZeroApprox(),
+			InputEventJoypadMotion joypadMotion => Math.Abs(joypadMotion.AxisValue) > 0.1f,
+			InputEventKey => true,
+			InputEventMouseButton => true,
+			InputEventJoypadButton => true,
+			InputEventScreenTouch => true,
+			InputEventScreenDrag => true,
+			_ => false
+		};
 	}
 
 	public static KeyCodeEnum? InputEventToKeyCode(InputEvent @event)

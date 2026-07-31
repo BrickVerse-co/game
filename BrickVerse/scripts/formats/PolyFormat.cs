@@ -136,16 +136,71 @@ public static partial class PolyFormat
 	{
 		if (content.Length == 0) return new();
 
-		// Deserialize content in another thread
+		PolyRootData data;
+
 		if (content[0] == 0x7B)
 		{
 			// Uncompressed
-			return JsonSerializer.Deserialize(content, PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(content, PolyJSONGenerationContext.Default.PolyRootData);
 		}
 		else
 		{
 			// Compressed
-			return JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(content), PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(content), PolyJSONGenerationContext.Default.PolyRootData);
+		}
+
+		NormalizeRootData(ref data);
+		return data;
+	}
+
+	private static void NormalizeRootData(ref PolyRootData data)
+	{
+		data.Objects = (data.Objects ?? [])
+			.Where(obj => obj != null)
+			.ToArray();
+		data.NonInstanceObjects = (data.NonInstanceObjects ?? [])
+			.Where(obj => obj != null)
+			.ToArray();
+
+		if (data.FileType == PolyFileType.World && data.Objects.Length == 0)
+		{
+			BV.PrintWarn("[PF] World root was missing; repairing it with an empty World root.");
+			data.Objects =
+			[
+				new PolyObject
+				{
+					Name = "World",
+					ClassName = "World",
+					ID = "1",
+					Properties = [],
+					Children = []
+				}
+			];
+		}
+
+		foreach (PolyObject obj in data.Objects)
+		{
+			NormalizePolyObject(obj);
+		}
+
+		foreach (PolyObject obj in data.NonInstanceObjects)
+		{
+			NormalizePolyObject(obj);
+		}
+	}
+
+	private static void NormalizePolyObject(PolyObject? obj)
+	{
+		if (obj == null) return;
+
+		obj.Properties ??= [];
+		obj.Children = (obj.Children ?? [])
+			.Where(child => child != null)
+			.ToArray();
+
+		foreach (PolyObject child in obj.Children)
+		{
+			NormalizePolyObject(child);
 		}
 	}
 
@@ -511,7 +566,7 @@ public static partial class PolyFormat
 
 		Dictionary<string, PropertyInfo> propertyCache = GetOrCreatePropertyCache(dataModelType);
 
-		foreach (KeyValuePair<string, object?> prop in obj.Properties)
+		foreach (KeyValuePair<string, object?> prop in obj.Properties ?? [])
 		{
 			// Could be deleted mid-way
 			if (netObj.IsDeleted) continue;
@@ -754,6 +809,7 @@ public static partial class PolyFormat
 
 	public static PolyRootData SavePlace(World game)
 	{
+		game.FindChild<Terrain>("Terrain")?.FlushTerrainSerialization();
 		PolyRoot root = new() { FileType = PolyFileType.World };
 		root.Objects.Add(ToPolyObject(game, root)!);
 

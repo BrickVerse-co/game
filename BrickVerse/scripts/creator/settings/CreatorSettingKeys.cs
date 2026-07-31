@@ -9,6 +9,7 @@ public static class CreatorSettingKeys
 	public static class Creator
 	{
 		public const string OpenWebAfterPublish = "creator.open_web_after_publish";
+		public const string DetailedRichPresence = "creator.detailed_rich_presence";
 	}
 
 	public static class Interface

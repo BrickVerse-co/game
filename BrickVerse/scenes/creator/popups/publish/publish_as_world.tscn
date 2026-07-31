@@ -1,101 +1,17 @@
 [gd_scene format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1"]
-[ext_resource type="FontFile" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="3"]
-[ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/PublishAsPlaceModal.cs" id="4"]
-[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
+[ext_resource type="FontFile" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2"]
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/PublishAsPlaceModal.cs" id="3"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="4"]
 
-[sub_resource type="StyleBoxFlat" id="1"]
-bg_color = Color(0.0392157, 0.0509804, 0.0705882, 1)
+[sub_resource type="StyleBoxFlat" id="Window"]
+bg_color = Color(0.0353, 0.0471, 0.0667, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.105882, 0.145098, 0.2, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="2"]
-content_margin_left = 10.0
-content_margin_top = 7.0
-content_margin_right = 10.0
-content_margin_bottom = 7.0
-bg_color = Color(0.025, 0.033, 0.047, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.121569, 0.172549, 0.239216, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="3"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.0627451, 0.0823529, 0.113725, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.117647, 0.164706, 0.223529, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="4"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 3
-border_color = Color(0, 0.45, 0.78, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="5"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.0627451, 0.0823529, 0.113725, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="6"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
-border_width_bottom = 4
-border_color = Color(0, 0.47, 0.8, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="PopupSurface"]
-bg_color = Color(0.0352941, 0.0470588, 0.0666667, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.117647, 0.164706, 0.223529, 1)
+border_color = Color(0.1176, 0.1647, 0.2235, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -103,18 +19,75 @@ corner_radius_bottom_left = 10
 shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 18
 
-[sub_resource type="StyleBoxFlat" id="PopupTitleSurface"]
-bg_color = Color(0.0509804, 0.0666667, 0.0901961, 1)
+[sub_resource type="StyleBoxFlat" id="TitleBar"]
+bg_color = Color(0.051, 0.0667, 0.0902, 1)
 border_width_bottom = 1
-border_color = Color(0.117647, 0.164706, 0.223529, 1)
+border_color = Color(0.1176, 0.1647, 0.2235, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 
-[sub_resource type="GDScript" id="PopupDragScript"]
-script/source = "extends PanelContainer\nvar dragging := false\nfunc _ready():\n    var close_button = get_node_or_null(\"Margin/Row/Close\")\n    if close_button:\n        close_button.pressed.connect(func(): get_window().hide())\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.0392, 0.051, 0.0706, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1059, 0.1451, 0.2, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Input"]
+content_margin_left = 11.0
+content_margin_top = 7.0
+content_margin_right = 11.0
+content_margin_bottom = 7.0
+bg_color = Color(0.025, 0.033, 0.047, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1216, 0.1725, 0.2392, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SecondaryButton"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0627, 0.0824, 0.1137, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1176, 0.1647, 0.2235, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="PrimaryButton"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0039, 0.5294, 0.9725, 1)
+border_width_bottom = 3
+border_color = Color(0, 0.45, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="GDScript" id="Drag"]
+script/source = "extends PanelContainer\nvar dragging := false\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
 
 [node name="PublishAsPlaceModal" type="Window"]
-theme = ExtResource("99_creator_theme")
+theme = ExtResource("4")
 force_native = false
 transparent = true
 title = "Publish As"
@@ -122,9 +95,9 @@ exclusive = true
 unresizable = true
 borderless = true
 popup_window = true
-min_size = Vector2i(900, 620)
-size = Vector2i(1080, 700)
-script = ExtResource("4")
+min_size = Vector2i(980, 650)
+size = Vector2i(1120, 720)
+script = ExtResource("3")
 
 [node name="PopupSurface" type="Panel" parent="."]
 anchors_preset = 15
@@ -133,7 +106,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("PopupSurface")
+theme_override_styles/panel = SubResource("Window")
 
 [node name="TitleBar" type="PanelContainer" parent="."]
 custom_minimum_size = Vector2(0, 42)
@@ -142,8 +115,8 @@ anchor_right = 1.0
 offset_bottom = 42.0
 grow_horizontal = 2
 mouse_default_cursor_shape = 13
-theme_override_styles/panel = SubResource("PopupTitleSurface")
-script = SubResource("PopupDragScript")
+theme_override_styles/panel = SubResource("TitleBar")
+script = SubResource("Drag")
 
 [node name="Margin" type="MarginContainer" parent="TitleBar"]
 layout_mode = 2
@@ -156,9 +129,10 @@ layout_mode = 2
 [node name="Title" type="Label" parent="TitleBar/Margin/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1")
 theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
 theme_override_font_sizes/font_size = 13
-text = "Publish As New Experience"
+text = "Publish As"
 vertical_alignment = 1
 
 [node name="Close" type="Button" parent="TitleBar/Margin/Row"]
@@ -174,7 +148,7 @@ anchor_bottom = 1.0
 offset_top = 42.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("1")
+theme_override_styles/panel = SubResource("Panel")
 
 [node name="ContentMargin" type="MarginContainer" parent="Modal"]
 anchors_preset = 15
@@ -182,204 +156,214 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 22
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
 
 [node name="ContentRoot" type="VBoxContainer" parent="Modal/ContentMargin"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 16
-
-[node name="TopBar" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
-visible = false
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="Title" type="Label" parent="Modal/ContentMargin/ContentRoot/TopBar"]
-size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("1")
-theme_override_font_sizes/font_size = 20
-text = "Publish As"
-horizontal_alignment = 0
-
-[node name="SpacerLeft" type="Control" parent="Modal/ContentMargin/ContentRoot/TopBar"]
-custom_minimum_size = Vector2(8, 8)
-size_flags_horizontal = 3
-
-[node name="Close" type="Button" parent="Modal/ContentMargin/ContentRoot/TopBar"]
-custom_minimum_size = Vector2(22, 22)
-text = "×"
-flat = true
+layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="LeadGroup" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
-size_flags_horizontal = 3
+layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="LeadTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+layout_mode = 2
 theme_override_fonts/font = ExtResource("1")
-theme_override_font_sizes/font_size = 14
-text = "Choose an experience to overwrite"
+theme_override_font_sizes/font_size = 16
+text = "Choose where to publish"
 
 [node name="LeadBody" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.74, 0.82, 1)
 theme_override_font_sizes/font_size = 11
-autowrap_mode = 3
-text = "Pick a destination, preview it on the right, and publish over the top or create a fresh experience."
+text = "Select one of your universes, then choose the world that should be overwritten."
 
 [node name="CurrentProject" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
-theme_override_fonts/font = ExtResource("3")
-theme_override_font_sizes/font_size = 11
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2")
+theme_override_colors/font_color = Color(0.5, 0.68, 0.87, 1)
+theme_override_font_sizes/font_size = 10
 text = "Current project"
 
-[node name="Split" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+[node name="Toolbar" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Owner" type="OptionButton" parent="Modal/ContentMargin/ContentRoot/Toolbar"]
+custom_minimum_size = Vector2(230, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Input")
+
+[node name="Search" type="LineEdit" parent="Modal/ContentMargin/ContentRoot/Toolbar"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("Input")
+placeholder_text = "Search universes by name"
+
+[node name="Split" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
 [node name="ListPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 3
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("1")
+theme_override_styles/panel = SubResource("Panel")
 
 [node name="ListMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
 
 [node name="ListColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
+layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="HeaderRow" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
-size_flags_horizontal = 3
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="HeaderTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+[node name="Back" type="Button" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+visible = false
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+theme_override_styles/normal = SubResource("SecondaryButton")
+text = "‹"
+
+[node name="Title" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1")
 theme_override_font_sizes/font_size = 14
-text = "Your experiences"
+text = "Universes"
+vertical_alignment = 1
 
 [node name="Results" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
-theme_override_fonts/font = ExtResource("3")
-theme_override_font_sizes/font_size = 11
-text = "0 experiences"
-
-[node name="Search" type="LineEdit" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
-custom_minimum_size = Vector2(0, 34)
-size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("2")
-theme_override_font_sizes/font_size = 12
-placeholder_text = "Search your experiences"
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2")
+theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
+theme_override_font_sizes/font_size = 10
+text = "0 universes"
+vertical_alignment = 1
 
 [node name="Loading" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
 visible = false
-theme_override_font_sizes/font_size = 11
-text = "Loading your experiences..."
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
+text = "Loading publish destinations..."
 
 [node name="Empty" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
 visible = false
-theme_override_font_sizes/font_size = 11
-text = "No experiences found."
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
+autowrap_mode = 3
+text = "No universes found."
 
-[node name="ListScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
-size_flags_horizontal = 3
+[node name="UniverseScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="ListList" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/ListScroll"]
+[node name="UniverseGrid" type="GridContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/UniverseScroll"]
+layout_mode = 2
 size_flags_horizontal = 3
+columns = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+
+[node name="WorldScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+visible = false
+layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 12
+horizontal_scroll_mode = 0
+
+[node name="WorldList" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/WorldScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
 
 [node name="DetailPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
-custom_minimum_size = Vector2(310, 0)
-size_flags_horizontal = 0
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("1")
+theme_override_styles/panel = SubResource("Panel")
 
 [node name="DetailMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel"]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 0
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
 
 [node name="DetailColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin"]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 0
 theme_override_constants/separation = 10
 
 [node name="DetailBadge" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
-theme_override_fonts/font = ExtResource("3")
-theme_override_font_sizes/font_size = 11
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2")
+theme_override_colors/font_color = Color(0.0039, 0.5294, 0.9725, 1)
+theme_override_font_sizes/font_size = 10
 text = "NEW EXPERIENCE"
 
 [node name="DetailPreviewPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
-custom_minimum_size = Vector2(0, 190)
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("1")
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Panel")
 
 [node name="DetailPreview" type="TextureRect" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn/DetailPreviewPanel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 texture_filter = 1
 
 [node name="DetailTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+layout_mode = 2
 theme_override_fonts/font = ExtResource("1")
-theme_override_font_sizes/font_size = 16
-text = "Create a new experience"
-clip_text = true
+theme_override_font_sizes/font_size = 15
+text = "Create a new universe"
 text_overrun_behavior = 3
 
 [node name="DetailMeta" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
-theme_override_font_sizes/font_size = 11
-text = "Creates a brand-new world entry with the current project."
-clip_text = true
-text_overrun_behavior = 3
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
+theme_override_font_sizes/font_size = 10
+autowrap_mode = 3
+text = "The current project will be published as a new experience."
 
 [node name="DetailBody" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
-size_flags_vertical = 0
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.77, 0.84, 1)
 theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
-clip_text = true
-text = "Use this when you want the publish flow to create a new destination instead of replacing an existing one."
+text = "Use this when the project should not replace an existing world."
+
+[node name="DetailSpacer" type="Control" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Footer" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+layout_mode = 2
 alignment = 2
 theme_override_constants/separation = 8
 
 [node name="Cancel" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
-custom_minimum_size = Vector2(88, 32)
-theme_override_styles/normal = SubResource("5")
+custom_minimum_size = Vector2(88, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("SecondaryButton")
 text = "Cancel"
 
 [node name="Publish" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
-custom_minimum_size = Vector2(124, 32)
+custom_minimum_size = Vector2(150, 34)
+layout_mode = 2
 theme_override_fonts/font = ExtResource("1")
-theme_override_styles/normal = SubResource("6")
+theme_override_styles/normal = SubResource("PrimaryButton")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Create New Experience"

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -98,7 +99,7 @@ internal static class ForgeToolCatalog
 		),
 		Create(
 			"create_instance",
-			"Create a new instantiable instance under a parent path and optionally set common properties.",
+			"Create a new instantiable instance under a parent path and optionally set common properties. Script instances are automatically created as project .luau files and linked so they can be opened and edited.",
 			"""
 			{
 			  "type": "object",
@@ -314,9 +315,10 @@ internal sealed class ForgeToolExecutor
 		script.Source = args.Source;
 		script.Compatibility = args.Compatibility;
 		script.IsEnabled = false;
+		string linkedFile = CreateAndLinkScriptFile(script);
 		_root.CreatorContext.Selections.SelectOnly(script);
 		_root.ScriptService.Run(script);
-		return $"Ran confirmed Luau as {script.LuaPath}. The generated ClientScript remains visible and selected in Inspector for review or deletion.";
+		return $"Ran confirmed Luau as {script.LuaPath}. The generated ClientScript is linked to {linkedFile} and remains visible and selected for review or deletion.";
 	}
 
 	private Instance GetDefaultVisibleParent(string? className = null)
@@ -654,6 +656,9 @@ internal sealed class ForgeToolExecutor
 		_root.CreatorContext.History.CreateInstances([instance], parentTo);
 
 		string propertyResult = ApplyProperties(instance, args.Properties);
+		string? createdScriptFile = instance is BrickVerse.Datamodel.Script script
+			? CreateAndLinkScriptFile(script)
+			: null;
 		_root.CreatorContext.Selections.SelectOnly(instance);
 
 		string createdPath = instance.LuaPath;
@@ -668,6 +673,14 @@ internal sealed class ForgeToolExecutor
 		{
 			Instance? created = ResolveInstance(createdPath) ?? instance;
 			created?.Delete();
+			if (
+				createdScriptFile != null
+				&& _root.LinkedSession != null
+				&& File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile))
+			)
+			{
+				_root.LinkedSession.RemoveFile(createdScriptFile);
+			}
 		});
 
 		LastEvent = new ForgeToolEvent
@@ -682,6 +695,10 @@ internal sealed class ForgeToolExecutor
 		StringBuilder result = new();
 		result.AppendLine($"Created {instance.ClassName} at {createdPath}.");
 		result.AppendLine($"Parent: {parentTo.LuaPath}");
+		if (createdScriptFile != null)
+		{
+			result.AppendLine($"Linked project file: {createdScriptFile}");
+		}
 		result.Append("The created instance is visible and selected in Inspector.");
 		if (!string.IsNullOrWhiteSpace(propertyResult))
 		{
@@ -690,6 +707,57 @@ internal sealed class ForgeToolExecutor
 		}
 
 		return result.ToString();
+	}
+
+	private string CreateAndLinkScriptFile(BrickVerse.Datamodel.Script script)
+	{
+		if (_root.LinkedSession == null)
+		{
+			throw new InvalidOperationException(
+				"Cannot create a filesystem-backed script without an open Creator project."
+			);
+		}
+
+		string folder;
+		string suffix;
+		switch (script)
+		{
+			case ServerScript:
+				folder = "server";
+				suffix = ".server";
+				break;
+			case ClientScript:
+				folder = "client";
+				suffix = ".client";
+				break;
+			default:
+				folder = "modules";
+				suffix = string.Empty;
+				break;
+		}
+
+		string safeName = SanitizeFileName(script.Name);
+		string relativePath = $"{folder}/{safeName}{suffix}.luau";
+		int copyNumber = 2;
+		while (File.Exists(_root.LinkedSession.GlobalizePath(relativePath)))
+		{
+			relativePath = $"{folder}/{safeName}{copyNumber}{suffix}.luau";
+			copyNumber++;
+		}
+
+		string source = script.Source;
+		_root.IO.WriteTextToPath(relativePath, source);
+		script.LinkedScript = _root.Assets.GetFileLinkByPath(relativePath);
+		return relativePath;
+	}
+
+	private static string SanitizeFileName(string name)
+	{
+		char[] invalid = Path.GetInvalidFileNameChars();
+		string safeName = new(
+			name.Trim().Select(character => invalid.Contains(character) ? '_' : character).ToArray()
+		);
+		return string.IsNullOrWhiteSpace(safeName) ? "ForgeScript" : safeName;
 	}
 
 	private Instance GetDefaultInsertParent(Instance instance)
@@ -790,13 +858,13 @@ internal sealed class ForgeToolExecutor
 		string after = args.Source ?? string.Empty;
 		if (before == after)
 			return $"No script changes were needed for {script.LuaPath}.";
-		script.Source = after;
+		WriteScriptSource(script, after);
 		string path = script.LuaPath;
 		_scriptDiffs[path] = (before, after);
 		_rollback.Push(() =>
 		{
 			if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
-				current.Source = before;
+				WriteScriptSource(current, before);
 		});
 		_root.CreatorContext.Selections.SelectOnly(script);
 		LastEvent = new ForgeToolEvent
@@ -808,7 +876,21 @@ internal sealed class ForgeToolExecutor
 			Diff = BuildUnifiedDiff(before, after),
 			CanRollback = true,
 		};
-		return $"Updated script source at {path}. The script is selected and a diff/rollback is available. Do not repeat the full source in chat.";
+		string fileDetail = script.LinkedScript?.LinkedPath is string linkedPath
+			? $" Wrote project file {linkedPath}."
+			: string.Empty;
+		return $"Updated script source at {path}.{fileDetail} The script is selected and a diff/rollback is available. Do not repeat the full source in chat.";
+	}
+
+	private void WriteScriptSource(BrickVerse.Datamodel.Script script, string source)
+	{
+		if (script.LinkedScript?.LinkedPath is string linkedPath)
+		{
+			_root.IO.WriteTextToPath(linkedPath, source);
+			return;
+		}
+
+		script.Source = source;
 	}
 
 	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]

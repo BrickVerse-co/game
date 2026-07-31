@@ -29,6 +29,7 @@ warnings/check_invalid_track_paths=false
 [application]
 
 config/name="BrickVerse"
+config/description="Official brickverse.gg application."
 config/version="1.0.0"
 run/main_scene="res://scenes/entry.tscn"
 config/use_custom_user_dir=true
@@ -39,7 +40,9 @@ run/flush_stdout_on_print=true
 boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
 boot_splash/use_filter=false
 boot_splash/image="uid://bs34jgixa1n2r"
-config/icon="res://assets/textures/logo/logo.png"
+config/icon="uid://y1tgfxo86kip"
+config/macos_native_icon="res://assets/textures/logo/logo.icns"
+config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
 [autoload]
@@ -49,11 +52,16 @@ AssetLoader="*res://scripts/shared/asset_loaders/AssetLoader.cs"
 WebAssetLoader="*res://scripts/shared/asset_loaders/WebAssetLoader.cs"
 AppCloseDimmer="*res://scripts/shared/AppCloseDimmer.cs"
 
+[debug]
+
+file_logging/log_path="user://logs/brickverseapp.log"
+
 [display]
 
 window/subwindows/embed_subwindows=false
 window/handheld/orientation=1
 window/vsync/vsync_mode=0
+mouse_cursor/custom_image="uid://d2k5mfxblvr3l"
 
 [dotnet]
 

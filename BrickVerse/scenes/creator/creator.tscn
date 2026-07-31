@@ -10,7 +10,9 @@
 [ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="6_0jcko"]
 [ext_resource type="Texture2D" uid="uid://b3xwnjral0p0n" path="res://assets/textures/creator/ribbon/select.svg" id="7_7a4vs"]
 [ext_resource type="Texture2D" uid="uid://bfswjptlde67c" path="res://assets/textures/parts/Brick/albedo.jpg" id="7_c5rx7"]
+[ext_resource type="Texture2D" uid="uid://cc0hd4bf85j38" path="res://assets/textures/ui-icons/team-create.svg" id="7_team_create"]
 [ext_resource type="Texture2D" uid="uid://dxlghmpirtits" path="res://assets/textures/ui-icons/stop-filled.svg" id="7_ubkni"]
+[ext_resource type="Texture2D" uid="uid://byak74ljs7hjf" path="res://assets/textures/ui-icons/wifi.svg" id="7_wifi"]
 [ext_resource type="Texture2D" uid="uid://cvfjmtrmqiov" path="res://assets/textures/creator/ribbon/move.svg" id="8_a562s"]
 [ext_resource type="Script" uid="uid://c4g1dpfwjvae5" path="res://scripts/creator/ui/ribbon/RibbonToolButton.cs" id="8_c8w7j"]
 [ext_resource type="Texture2D" uid="uid://4n14p76bkw70" path="res://assets/textures/ui-icons/camera.svg" id="8_q8usk"]
@@ -54,6 +56,9 @@
 [ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
 [ext_resource type="Script" uid="uid://dfk832jm6qtwy" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
+[ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
+[ext_resource type="Texture2D" uid="uid://d2bki8a2bbea7" path="res://assets/textures/ui-icons/tools.svg" id="48_toolbox"]
+[ext_resource type="Texture2D" uid="uid://0oxaq8x81vax" path="res://assets/textures/ui-icons/keyboard.svg" id="49_input"]
 
 [sub_resource type="StyleBoxFlat" id="TopBarSurface"]
 content_margin_left = 8.0
@@ -68,6 +73,22 @@ border_color = Color(0.12549, 0.164706, 0.211765, 1)
 load_path = "res://.godot/imported/boot.png-28724752f4f95ee94ae7ba92c3ee1281.ctex"
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2qwc1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wlglv"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.8198105, 0.8562207, 0.9035327, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.137255, 0.180392, 0.235294, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="ToolbarSurface"]
 content_margin_left = 8.0
@@ -185,17 +206,59 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_playerCountOption")]
+[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("5_c7ht3")
 _playBtn = NodePath("Layout/Play")
 _playAtCamBtn = NodePath("Layout/PlayAtCam")
 _stopBtn = NodePath("Layout/Stop")
+_collaborateBtn = NodePath("Layout/Collaborate")
+_sessionBtn = NodePath("Layout/Session")
+_internetStatusIcon = NodePath("Layout/InternetStatus")
+_teamCreateStatusIcon = NodePath("Layout/TeamCreateStatus")
 _playerCountOption = NodePath("Layout/PlayerCount")
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions" unique_id=438009992]
 layout_mode = 2
+
+[node name="TeamCreateStatus" type="TextureRect" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=313214770]
+self_modulate = Color(0.937255, 0.34902, 0.435294, 1)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+tooltip_text = "Team Create status"
+mouse_default_cursor_shape = 2
+texture = ExtResource("7_team_create")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InternetStatus" type="TextureRect" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=606682188]
+self_modulate = Color(0.937255, 0.34902, 0.435294, 1)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+tooltip_text = "Checking BrickVerse service connection"
+mouse_default_cursor_shape = 2
+texture = ExtResource("7_wifi")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Collaborate" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1348821769]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+tooltip_text = "Manage Team Create collaborators"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_wlglv")
+text = "Collaborate"
+
+[node name="Session" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=432594958]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+tooltip_text = "View Team Create session and collaborator cameras"
+text = "Session"
 
 [node name="Play" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1354859142]
 clip_children = 2
@@ -272,6 +335,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Stop" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1844910087]
+visible = false
 clip_children = 2
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
@@ -740,6 +804,165 @@ text = "Insert"
 horizontal_alignment = 1
 vertical_alignment = 2
 
+[node name="QuickActions" type="HBoxContainer" parent="GUI/Ribbon/Buttons" unique_id=1613083516]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Forge" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1588466449]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Open Forge AI Chat"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=103690314]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("39_5xx7o")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=287239862]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Forge AI"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Terrain" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1189380056]
+custom_minimum_size = Vector2(60, 54)
+layout_mode = 2
+tooltip_text = "Open Terrain Editor"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Terrain" unique_id=2122477053]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("31_tgxt6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Terrain" unique_id=67935228]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Terrain"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Animator" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=952649282]
+custom_minimum_size = Vector2(64, 54)
+layout_mode = 2
+tooltip_text = "Open Animation Editor"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Animator" unique_id=1453930844]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("47_animator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Animator" unique_id=280979062]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Animator"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Toolbox" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1894886004]
+custom_minimum_size = Vector2(62, 54)
+layout_mode = 2
+tooltip_text = "Open Toolbox"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Toolbox" unique_id=1190331217]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("48_toolbox")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Toolbox" unique_id=411586895]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Toolbox"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="InputManager" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=978440044]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Open Input Manager"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/InputManager" unique_id=1298478370]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("49_input")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/InputManager" unique_id=807229562]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Inputs"
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="WorkspaceBackground" type="ColorRect" parent="GUI" unique_id=1864683286]
 layout_mode = 1
 anchors_preset = -1
@@ -971,7 +1194,7 @@ icon = ExtResource("32_cyxfl")
 
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
 
-[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_growButton", "_erodeButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
+[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_flattenButton", "_growButton", "_erodeButton", "_importButton", "_generateButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 clip_contents = true
@@ -985,8 +1208,11 @@ _addButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Add")
 _removeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Remove")
 _paintButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Paint")
 _smoothButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Smooth")
+_flattenButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Flatten")
 _growButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Grow")
 _erodeButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Erode")
+_importButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Import")
+_generateButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Generate")
 _shapeOption = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Shape/Option")
 _materialOption = NodePath("Layout/Scroll/Top/Material/Card/Margin/Content/Material/Option")
 _sizeSlider = NodePath("Layout/Scroll/Top/Brush/Card/Margin/Content/Size/Slider")
@@ -1079,6 +1305,13 @@ custom_minimum_size = Vector2(154, 42)
 layout_mode = 2
 toggle_mode = true
 text = "Smooth"
+
+[node name="Flatten" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=610351519]
+custom_minimum_size = Vector2(154, 42)
+layout_mode = 2
+tooltip_text = "Level terrain to the height under the brush"
+toggle_mode = true
+text = "Flatten"
 
 [node name="Grow" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1911821286]
 custom_minimum_size = Vector2(154, 42)
@@ -1380,6 +1613,16 @@ layout_mode = 2
 button_pressed = true
 text = "Continuous stroke"
 
+[node name="Import" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1952910365]
+layout_mode = 2
+tooltip_text = "Import PNG, JPEG, WebP, EXR, RAW, or R16 heightmaps"
+text = "Import Heightmap…"
+
+[node name="Generate" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=1457739328]
+layout_mode = 2
+tooltip_text = "Generate hills, mountains, islands, or canyons"
+text = "Generate Terrain…"
+
 [node name="Clear" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Options/Card/Margin/Content" unique_id=45068541]
 layout_mode = 2
 size_flags_vertical = 3
@@ -1424,11 +1667,15 @@ layout_mode = 2
 theme_override_constants/separation = 2
 theme_override_icons/touch_dragger = SubResource("PlaceholderTexture2D_0tvsp")
 theme_override_icons/grabber = SubResource("PlaceholderTexture2D_0tvsp")
+split_offsets = PackedInt32Array(360)
+split_offset = 360
 
 [node name="Explorer" parent="GUI/Splitter/Right/RightTabs/Explorer/Split" unique_id=63511104 instance=ExtResource("32_4fw2t")]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Properties" parent="GUI/Splitter/Right/RightTabs/Explorer/Split" unique_id=2034223215 instance=ExtResource("34_bc04q")]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]

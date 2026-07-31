@@ -342,9 +342,8 @@ public static class BVAPI
 			{
 				ID = item.Id ?? "0",
 				Name = item.Name,
-				ThumbnailUrl = item.ThumbnailId != null
-					? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.ThumbnailId)
-					: item.ThumbnailUrl ?? "",
+				ThumbnailUrl = item.ThumbnailUrl
+					?? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.Id),
 				CreatorID = item.CreatorId ?? "0",
 				CreatorType = item.CreatorType ?? "",
 				CreatorName = item.CreatorName ?? item.CreatorId ?? "Unknown Creator",

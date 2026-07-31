@@ -16,7 +16,7 @@ public sealed partial class Explorer : TabContainer
 {
 	private const string ExplorerTabPath = "res://scenes/creator/docks/explorer/explorer_tab.tscn";
 	private const int ExplorerIconMaxWidth = 18;
-	private const int ExplorerRowHeight = 24;
+	private const int ExplorerRowHeight = 27;
 
 	public static Explorer Singleton { get; private set; } = null!;
 	public Explorer()

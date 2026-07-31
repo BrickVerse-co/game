@@ -24,27 +24,39 @@ border_color = Color(0.117647, 0.164706, 0.223529, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 
+[sub_resource type="StyleBoxFlat" id="SidebarSurface"]
+bg_color = Color(0.0431373, 0.0588235, 0.0784314, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.105882, 0.145098, 0.196078, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="GDScript" id="PopupDragScript"]
 script/source = "extends PanelContainer\nvar dragging := false\nfunc _ready():\n    var close_button = get_node_or_null(\"Margin/Row/Close\")\n    if close_button:\n        close_button.pressed.connect(func(): get_window().hide())\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
 
-[node name="Settings" type="Window" unique_id=439088174 node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit")]
+[node name="Settings" type="Window" node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit", "_sectionTitle")]
 theme = ExtResource("99_creator_theme")
-force_native = false
 transparent = true
 borderless = true
 oversampling_override = 1.0
 title = "Creator Settings"
 initial_position = 2
-size = Vector2i(860, 560)
+size = Vector2i(920, 620)
 transient = true
 unresizable = true
 minimize_disabled = true
 maximize_disabled = true
 script = ExtResource("1_ycuph")
-_categoryTree = NodePath("HBoxContainer/Control/Tree")
-_layout = NodePath("HBoxContainer/Control2/Control3/VBoxContainer")
-_settingsSearchEdit = NodePath("HBoxContainer/Control/SectionSearch")
-_keybindSearchEdit = NodePath("HBoxContainer/Control/KeybindSearch")
+_categoryTree = NodePath("Body/Sidebar/Margin/Layout/Tree")
+_layout = NodePath("Body/Page/Scroll/PageMargin/Settings")
+_settingsSearchEdit = NodePath("Body/Sidebar/Margin/Layout/SectionSearch")
+_keybindSearchEdit = NodePath("Body/Page/Header/KeybindSearch")
+_sectionTitle = NodePath("Body/Page/Header/SectionTitle")
 
 [node name="PopupSurface" type="Panel" parent="."]
 anchors_preset = 15
@@ -56,10 +68,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("PopupSurface")
 
 [node name="TitleBar" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(0, 42)
+custom_minimum_size = Vector2(0, 44)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 42.0
+offset_bottom = 44.0
 grow_horizontal = 2
 mouse_default_cursor_shape = 13
 theme_override_styles/panel = SubResource("PopupTitleSurface")
@@ -67,7 +79,7 @@ script = SubResource("PopupDragScript")
 
 [node name="Margin" type="MarginContainer" parent="TitleBar"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 8
 
 [node name="Row" type="HBoxContainer" parent="TitleBar/Margin"]
@@ -77,66 +89,95 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "Creator Settings"
 vertical_alignment = 1
 
 [node name="Close" type="Button" parent="TitleBar/Margin/Row"]
-custom_minimum_size = Vector2(32, 28)
+custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
 flat = true
 text = "×"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=2045179328]
+[node name="Body" type="HBoxContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 46.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_left = 14.0
+offset_top = 58.0
+offset_right = -14.0
+offset_bottom = -14.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 1
+theme_override_constants/separation = 18
 
-[node name="Control" type="VBoxContainer" parent="HBoxContainer" unique_id=1206845253]
-custom_minimum_size = Vector2(250, 0)
+[node name="Sidebar" type="PanelContainer" parent="Body"]
+custom_minimum_size = Vector2(224, 0)
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_styles/panel = SubResource("SidebarSurface")
 
-[node name="SectionSearch" type="LineEdit" parent="HBoxContainer/Control"]
+[node name="Margin" type="MarginContainer" parent="Body/Sidebar"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Body/Sidebar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SectionSearch" type="LineEdit" parent="Body/Sidebar/Margin/Layout"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
 placeholder_text = "Search settings…"
 
-[node name="KeybindSearch" type="LineEdit" parent="HBoxContainer/Control"]
-visible = false
-layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
-placeholder_text = "Search keybinds…"
-
-[node name="Tree" type="Tree" parent="HBoxContainer/Control" unique_id=1138019809]
+[node name="Tree" type="Tree" parent="Body/Sidebar/Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/item_margin = 0
+theme_override_constants/item_margin = 4
 enable_drag_unfolding = false
 hide_root = true
 auto_tooltip = false
 
-[node name="Control2" type="ScrollContainer" parent="HBoxContainer" unique_id=140610928]
+[node name="Page" type="VBoxContainer" parent="Body"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 12
 
-[node name="Control3" type="MarginContainer" parent="HBoxContainer/Control2" unique_id=743032969]
+[node name="Header" type="HBoxContainer" parent="Body/Page"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SectionTitle" type="Label" parent="Body/Page/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+text = "Settings"
+vertical_alignment = 1
+
+[node name="KeybindSearch" type="LineEdit" parent="Body/Page/Header"]
+visible = false
+custom_minimum_size = Vector2(270, 38)
+layout_mode = 2
+placeholder_text = "Search keybinds…"
+
+[node name="Scroll" type="ScrollContainer" parent="Body/Page"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PageMargin" type="MarginContainer" parent="Body/Page/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 22
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 18
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Control2/Control3" unique_id=81830020]
+[node name="Settings" type="VBoxContainer" parent="Body/Page/Scroll/PageMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10

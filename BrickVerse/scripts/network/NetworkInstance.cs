@@ -309,7 +309,7 @@ public class NetworkInstance
 	private void CheckSilence()
 	{
 		// Only check silence in client
-		if (IsServer) return;
+		if (IsServer || IdToPeer.IsEmpty) return;
 
 		long lastTicks = Interlocked.Read(ref _lastMessageTicks);
 		double elapsedSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - lastTicks).TotalSeconds;

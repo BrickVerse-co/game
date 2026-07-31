@@ -54,6 +54,9 @@ public sealed partial class Camera : Dynamic
 	private readonly float _rotateSpeed = 0.005f;
 	private Dynamic? _target = null!;
 
+	internal float MoveSpeed => _moveSpeed;
+	internal event Action<float>? MoveSpeedChanged;
+
 	private bool _isMouseCaptured;
 	private Vector2I _lastMousePosition;
 
@@ -847,7 +850,7 @@ public sealed partial class Camera : Dynamic
 				{
 					if (_isMouseCaptured)
 					{
-						_moveSpeed = Mathf.Clamp(MathF.Round(_moveSpeed * 2, 1), 2, 1024);
+						SetMoveSpeed(Mathf.Clamp(MathF.Round(_moveSpeed * 2, 1), 2, 1024));
 					}
 					else
 					{
@@ -858,7 +861,7 @@ public sealed partial class Camera : Dynamic
 				{
 					if (_isMouseCaptured)
 					{
-						_moveSpeed = Mathf.Clamp(MathF.Round(_moveSpeed / 2), 2, 1024);
+						SetMoveSpeed(Mathf.Clamp(MathF.Round(_moveSpeed / 2), 2, 1024));
 					}
 					else
 					{
@@ -890,6 +893,13 @@ public sealed partial class Camera : Dynamic
 			MoveToSelected();
 		}
 #endif
+	}
+
+	private void SetMoveSpeed(float speed)
+	{
+		if (Mathf.IsEqualApprox(_moveSpeed, speed)) return;
+		_moveSpeed = speed;
+		MoveSpeedChanged?.Invoke(_moveSpeed);
 	}
 
 	private void SnapForward()
