@@ -8,6 +8,7 @@ public sealed partial class TeamCreateSessionWindow : Window
 	private readonly TeamCreateService _service;
 	private readonly VBoxContainer _memberList = new();
 	private readonly Label _status = new();
+	private readonly CheckButton _showCameras = new() { Text = "Show collaborator cameras" };
 
 	public TeamCreateSessionWindow(TeamCreateService service)
 	{
@@ -33,13 +34,25 @@ public sealed partial class TeamCreateSessionWindow : Window
 		title.AddThemeFontSizeOverride("font_size", 20);
 		layout.AddChild(title);
 		layout.AddChild(_status);
+		HBoxContainer controls = new();
+		controls.AddThemeConstantOverride("separation", 8);
 		Button stopFollowing = new()
 		{
 			Text = "Detach Camera",
 			TooltipText = "Stop following a collaborator camera",
 		};
 		stopFollowing.Pressed += _service.StopFollowing;
-		layout.AddChild(stopFollowing);
+		controls.AddChild(stopFollowing);
+		Button reconnect = new() { Text = "Reconnect", TooltipText = "Leave and rejoin this Team Create session" };
+		reconnect.Pressed += _service.Reconnect;
+		controls.AddChild(reconnect);
+		Button disconnect = new() { Text = "Disconnect", TooltipText = "Disconnect until you reconnect manually" };
+		disconnect.Pressed += _service.Disconnect;
+		controls.AddChild(disconnect);
+		layout.AddChild(controls);
+
+		_showCameras.Toggled += _service.SetCameraAvatarsVisible;
+		layout.AddChild(_showCameras);
 
 		PanelContainer warning = new();
 		MarginContainer warningMargin = new();
@@ -67,6 +80,7 @@ public sealed partial class TeamCreateSessionWindow : Window
 
 	public void Refresh()
 	{
+		_showCameras.SetPressedNoSignal(_service.ShowCameraAvatars);
 		_status.Text = _service.Connected
 			? $"Connected via private relay • {_service.Members.Count} user(s)"
 			: "Team Create is off or not connected for this universe.";
@@ -74,6 +88,7 @@ public sealed partial class TeamCreateSessionWindow : Window
 
 		foreach (TeamCreateMember member in _service.Members)
 		{
+			bool isLocalMember = member.UserId == _service.LocalUserId;
 			HBoxContainer row = new();
 			row.AddThemeConstantOverride("separation", 8);
 			Label name = new()
@@ -81,11 +96,12 @@ public sealed partial class TeamCreateSessionWindow : Window
 				Text = "●  " + member.Username,
 				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			};
+			if (isLocalMember) name.Text += " (You)";
 			row.AddChild(name);
 			Button follow = new()
 			{
 				Text = _service.FollowedMemberId == member.Id ? "Following" : "View Camera",
-				Disabled = member.Camera == null,
+				Disabled = member.Camera == null || isLocalMember,
 				TooltipText = "Attach the Creator camera to this collaborator's latest camera",
 			};
 			string memberId = member.Id;
