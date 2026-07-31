@@ -150,7 +150,19 @@ jobs:
         working-directory: ${{ github.workspace }}/${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          godot --headless --editor --quit
+          godot --headless --editor --import
+
+          REQUIRED_FONT_IMPORTS=(
+            ".godot/imported/Montserrat-Medium.ttf-9322cac81db17d2f033bd26b2a37967f.fontdata"
+            ".godot/imported/twemoji.ttf-e987c3f384c81516f8c0a0290492f368.fontdata"
+          )
+
+          for file in "${REQUIRED_FONT_IMPORTS[@]}"; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Godot did not generate required font import: $file"
+              exit 1
+            fi
+          done
 
       - name: Export ${{ matrix.platform }}
         shell: bash
