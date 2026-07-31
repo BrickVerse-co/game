@@ -11,6 +11,7 @@ using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Formats;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net;
 using System.Net.Http.Headers;
@@ -26,7 +27,15 @@ public class BVAssetProvider : IAssetProvider
 	public async Task<CacheItem> LoadResource(CacheItem item)
 	{
 		string url = GetAssetServeURL(item.ID, item.Type);
-		byte[] buffer = await GetResourceBuffer(url, item.Type);
+		byte[] buffer;
+		try
+		{
+			buffer = await GetResourceBuffer(url, item.Type);
+		}
+		catch (Exception exception) when (item.Type == ResourceType.Mesh)
+		{
+			return await UseUnavailableMesh(item, url, exception);
+		}
 		item.SizeBytes = buffer.LongLength;
 		item.DirectURL = url;
 
@@ -39,31 +48,14 @@ public class BVAssetProvider : IAssetProvider
 				}
 			case ResourceType.Mesh:
 				{
-					GltfDocument document = new();
-					GltfState state = new() { CreateAnimations = true };
-
-					document.AppendFromBuffer(buffer, null, state);
-
-					Node3D scene = (Node3D)document.GenerateScene(state);
-
-					// Remove arbitrary nodes that may come with the GLTF (eg. Rigidbodies)
-					RemoveNonMeshNodes(scene);
-
-					// Set mipmap texture filter for meshes
-					SetMipmapTextureFilter(scene);
-
-					TaskCompletionSource<PackedScene> callback = new();
-
-					Callable.From(() =>
+					try
 					{
-						PackedScene mesh = new();
-						mesh.Pack(scene);
-						scene.Free();
-
-						callback.SetResult(mesh);
-					}).CallDeferred();
-
-					item.Resource = await callback.Task;
+						item.Resource = await LoadGlb(buffer, item.ID);
+					}
+					catch (Exception exception)
+					{
+						return await UseUnavailableMesh(item, url, exception);
+					}
 
 					return item;
 				}
@@ -97,6 +89,158 @@ public class BVAssetProvider : IAssetProvider
 				}
 			default: throw new NotImplementedException();
 		}
+	}
+
+	private static async Task<CacheItem> UseUnavailableMesh(
+		CacheItem item,
+		string url,
+		Exception exception
+	)
+	{
+		BV.PrintWarn(
+			"Mesh asset ", item.ID,
+			" could not be loaded; using the missing-mesh placeholder. ",
+			exception.Message
+		);
+		item.DirectURL = url;
+		item.SizeBytes = 0;
+		item.Resource = await CreateUnavailableMesh();
+		return item;
+	}
+
+	private static Task<PackedScene> CreateUnavailableMesh()
+	{
+		TaskCompletionSource<PackedScene> completion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+
+		Callable.From(() =>
+		{
+			Node3D placeholderRoot = new()
+			{
+				Name = "UnavailableMeshRoot",
+			};
+
+			try
+			{
+				Image checkerImage = Image.CreateEmpty(8, 8, false, Image.Format.Rgba8);
+				Color missingColor = Color.FromHtml("#ff00ff");
+				for (int y = 0; y < checkerImage.GetHeight(); y++)
+				{
+					for (int x = 0; x < checkerImage.GetWidth(); x++)
+					{
+						checkerImage.SetPixel(
+							x,
+							y,
+							((x / 2) + (y / 2)) % 2 == 0 ? missingColor : Colors.Black
+						);
+					}
+				}
+
+				StandardMaterial3D missingMaterial = new()
+				{
+					AlbedoTexture = ImageTexture.CreateFromImage(checkerImage),
+					TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+					Roughness = 1.0f,
+				};
+				BoxMesh boxMesh = new()
+				{
+					Size = Vector3.One,
+					Material = missingMaterial,
+				};
+				MeshInstance3D placeholderMesh = new()
+				{
+					Name = "UnavailableMesh",
+					Mesh = boxMesh,
+				};
+				placeholderRoot.AddChild(placeholderMesh);
+				placeholderMesh.Owner = placeholderRoot;
+
+				PackedScene packedScene = new();
+				Error packError = packedScene.Pack(placeholderRoot);
+				if (packError != Error.Ok)
+				{
+					throw new InvalidOperationException(
+						$"Could not create unavailable mesh placeholder: {packError}."
+					);
+				}
+				completion.SetResult(packedScene);
+			}
+			catch (Exception error)
+			{
+				completion.SetException(error);
+			}
+			finally
+			{
+				placeholderRoot.Free();
+			}
+		}).CallDeferred();
+
+		return completion.Task;
+	}
+
+	private static Task<PackedScene> LoadGlb(byte[] buffer, string assetId)
+	{
+		TaskCompletionSource<PackedScene> completion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+
+		Callable.From(() =>
+		{
+			Node3D? scene = null;
+			try
+			{
+				if (buffer.Length < 12
+					|| buffer[0] != (byte)'g'
+					|| buffer[1] != (byte)'l'
+					|| buffer[2] != (byte)'T'
+					|| buffer[3] != (byte)'F')
+				{
+					throw new InvalidDataException(
+						$"Mesh asset {assetId} is not a valid binary GLB file."
+					);
+				}
+
+				GltfDocument document = new();
+				GltfState state = new() { CreateAnimations = true };
+				Error importError = document.AppendFromBuffer(buffer, "res://", state);
+				if (importError != Error.Ok)
+				{
+					throw new InvalidDataException(
+						$"Godot could not import GLB mesh asset {assetId}: {importError}."
+					);
+				}
+
+				scene = document.GenerateScene(state) as Node3D
+					?? throw new InvalidDataException(
+						$"GLB mesh asset {assetId} did not contain a 3D scene."
+					);
+
+				RemoveNonMeshNodes(scene);
+				SetMipmapTextureFilter(scene);
+
+				PackedScene packedScene = new();
+				Error packError = packedScene.Pack(scene);
+				if (packError != Error.Ok)
+				{
+					throw new InvalidDataException(
+						$"Could not pack GLB mesh asset {assetId}: {packError}."
+					);
+				}
+
+				completion.SetResult(packedScene);
+			}
+			catch (Exception exception)
+			{
+				completion.SetException(exception);
+			}
+			finally
+			{
+				scene?.Free();
+			}
+		}).CallDeferred();
+
+		return completion.Task;
 	}
 
 	public string GetAssetServeURL(string id, ResourceType itemType)

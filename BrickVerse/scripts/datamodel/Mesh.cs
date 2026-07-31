@@ -307,7 +307,9 @@ public sealed partial class Mesh : Entity
 					for (int i = 0; i < surfaceCount; i++)
 					{
 						// Duplicate material, same as above
-						Material mat = (Material)m3d.Mesh.SurfaceGetMaterial(i).Duplicate();
+						Material? sourceMaterial = m3d.Mesh.SurfaceGetMaterial(i);
+						if (sourceMaterial == null) continue;
+						Material mat = (Material)sourceMaterial.Duplicate();
 						m3d.Mesh.SurfaceSetMaterial(i, mat);
 						_materials.Add(mat);
 						if (mat is StandardMaterial3D sm3d)
