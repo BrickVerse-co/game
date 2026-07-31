@@ -59,6 +59,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private Rect2I? _lastRuntimeViewportRect;
 	private bool _lastRuntimeViewportVisible;
 	private double _runtimeViewportSyncElapsed;
+	private double _popupStackSyncElapsed;
+	private bool _creatorPromotedForPopup;
 
 	public CreatorService()
 	{
@@ -250,7 +252,40 @@ public sealed partial class CreatorService : Node, IScriptObject
 			}
 		}
 		SyncPrimaryClientViewport(delta);
+		SyncEditorPopupStack(delta);
 		base._Process(delta);
+	}
+
+	private void SyncEditorPopupStack(double delta)
+	{
+		if (!_primaryRuntimeClientProcess.HasValue && !_creatorPromotedForPopup) return;
+		_popupStackSyncElapsed += delta;
+		if (_popupStackSyncElapsed < 0.03) return;
+		_popupStackSyncElapsed = 0;
+
+		bool embeddedPopupVisible = HasVisibleEmbeddedPopup(Interface);
+		if (embeddedPopupVisible == _creatorPromotedForPopup) return;
+		_creatorPromotedForPopup = embeddedPopupVisible;
+		DisplayServer.WindowSetFlag(
+			DisplayServer.WindowFlags.AlwaysOnTop,
+			embeddedPopupVisible,
+			GetWindow().GetWindowId()
+		);
+		if (embeddedPopupVisible) GetWindow().GrabFocus();
+	}
+
+	private static bool HasVisibleEmbeddedPopup(Node node)
+	{
+		foreach (Node child in node.GetChildren())
+		{
+			if (child is Window window
+				&& window.Visible
+				&& window.IsEmbedded()
+				&& window is not RuntimeDebugWindow)
+				return true;
+			if (HasVisibleEmbeddedPopup(child)) return true;
+		}
+		return false;
 	}
 
 	private void SyncPrimaryClientViewport(double delta)

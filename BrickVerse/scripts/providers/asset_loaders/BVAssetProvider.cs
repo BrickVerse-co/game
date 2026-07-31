@@ -111,7 +111,13 @@ public class BVAssetProvider : IAssetProvider
 			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id + "?stream=true");
 		}
 
-		// Check if we are in a creator studio play-test session
+		// An authenticated play-test client must use its world join token. The
+		// Creator OAuth token is only for the editor/local server loading source assets.
+		if (!BV.IsServer && !string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
+		}
+
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
@@ -142,24 +148,23 @@ public class BVAssetProvider : IAssetProvider
 
 		if (requiresAuthorization)
 		{
-			await WaitForAssetAuthorizationAsync();
+			await WaitForAssetAuthorizationAsync(url);
 		}
 
 		for (int attempt = 0; attempt < 2; attempt++)
 		{
 			using HttpRequestMessage request = CreateAssetRequest(url);
 
-			/*BV.Print(
-				"Fetching resource buffer from URL: ", url,
-				" for resource type: ", itemType,
-				" Authorization: ", request.Headers.Authorization);
-			*/
+			// BV.Print(
+			// 	"Fetching resource buffer from URL: ", url,
+			// 	" for resource type: ", itemType,
+			// 	" Authorization: ", request.Headers.Authorization);
 
 			using HttpResponseMessage response = await _client.SendAsync(request);
 
 			if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && requiresAuthorization)
 			{
-				await WaitForAssetAuthorizationAsync();
+				await WaitForAssetAuthorizationAsync(url);
 				continue;
 			}
 
@@ -178,14 +183,14 @@ public class BVAssetProvider : IAssetProvider
 		return request;
 	}
 
-	private static async Task WaitForAssetAuthorizationAsync()
+	private static async Task WaitForAssetAuthorizationAsync(string url)
 	{
 		const int maxAttempts = 30;
 		const int delayMilliseconds = 50;
 
 		for (int attempt = 0; attempt < maxAttempts; attempt++)
 		{
-			if (!string.IsNullOrWhiteSpace(GetAssetAuthorizationToken()))
+			if (!string.IsNullOrWhiteSpace(GetAssetAuthorizationToken(url)))
 			{
 				return;
 			}
@@ -196,7 +201,7 @@ public class BVAssetProvider : IAssetProvider
 
 	private static void ApplyAssetAuthHeaders(HttpRequestMessage request)
 	{
-		string? token = GetAssetAuthorizationToken();
+		string? token = GetAssetAuthorizationToken(request.RequestUri?.AbsolutePath);
 
 		if (!string.IsNullOrWhiteSpace(token))
 		{
@@ -204,8 +209,18 @@ public class BVAssetProvider : IAssetProvider
 		}
 	}
 
-	private static string? GetAssetAuthorizationToken()
+	private static string? GetAssetAuthorizationToken(string? requestPath = null)
 	{
+		if (requestPath?.Contains("/world/client/", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			return NormalizeBearerToken(ClientAuthAPI.JoinToken);
+		}
+
+		if (requestPath?.Contains("/world/server/", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			return NormalizeBearerToken(ServerAPI.HostToken);
+		}
+
 		// Creator play-test servers and clients use the OAuth token passed by
 		// Creator. Check it before BV.IsServer, which otherwise has no
 		// production host token in a local test.

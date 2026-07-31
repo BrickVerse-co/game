@@ -63,6 +63,12 @@ public sealed partial class BrickversianModel : CharacterModel
 	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
+	private Color _headColor = _defaultBodyColor;
+	private Color _torsoColor = _defaultBodyColor;
+	private Color _leftArmColor = _defaultBodyColor;
+	private Color _rightArmColor = _defaultBodyColor;
+	private Color _leftLegColor = _defaultBodyColor;
+	private Color _rightLegColor = _defaultBodyColor;
 
 	private readonly ShaderMaterial _headMat = new() { Shader = _headShader };
 
@@ -100,10 +106,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, Export, SyncVar]
 	public Color HeadColor
 	{
-		get => MeshGetAlbedo(HeadMeshInstance);
+		get => _headColor;
 		set
 		{
-			HeadMeshInstance.SetInstanceShaderParameter(_albedoParam, value);
+			_headColor = value;
+			HeadMeshInstance?.SetInstanceShaderParameter(_albedoParam, value);
 			OnPropertyChanged();
 		}
 	}
@@ -111,10 +118,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, SyncVar]
 	public Color TorsoColor
 	{
-		get => MeshGetAlbedo(TorsoMeshInstance);
+		get => _torsoColor;
 		set
 		{
-			MeshSetAlbedo(TorsoMeshInstance, value);
+			_torsoColor = value;
+			if (TorsoMeshInstance != null) MeshSetAlbedo(TorsoMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -122,11 +130,12 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, SyncVar]
 	public Color LeftArmColor
 	{
-		get => MeshGetAlbedo(LeftArmMeshInstance);
+		get => _leftArmColor;
 		set
 		{
-			MeshSetAlbedo(LeftArmMeshInstance, value);
-			MeshSetAlbedo(LeftHandMeshInstance, value);
+			_leftArmColor = value;
+			if (LeftArmMeshInstance != null) MeshSetAlbedo(LeftArmMeshInstance, value);
+			if (LeftHandMeshInstance != null) MeshSetAlbedo(LeftHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -134,11 +143,12 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, SyncVar]
 	public Color RightArmColor
 	{
-		get => MeshGetAlbedo(RightArmMeshInstance);
+		get => _rightArmColor;
 		set
 		{
-			MeshSetAlbedo(RightArmMeshInstance, value);
-			MeshSetAlbedo(RightHandMeshInstance, value);
+			_rightArmColor = value;
+			if (RightArmMeshInstance != null) MeshSetAlbedo(RightArmMeshInstance, value);
+			if (RightHandMeshInstance != null) MeshSetAlbedo(RightHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -146,10 +156,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, SyncVar]
 	public Color LeftLegColor
 	{
-		get => MeshGetAlbedo(LeftLegMeshInstance);
+		get => _leftLegColor;
 		set
 		{
-			MeshSetAlbedo(LeftLegMeshInstance, value);
+			_leftLegColor = value;
+			if (LeftLegMeshInstance != null) MeshSetAlbedo(LeftLegMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -157,10 +168,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	[Editable, ScriptProperty, SyncVar]
 	public Color RightLegColor
 	{
-		get => MeshGetAlbedo(RightLegMeshInstance);
+		get => _rightLegColor;
 		set
 		{
-			MeshSetAlbedo(RightLegMeshInstance, value);
+			_rightLegColor = value;
+			if (RightLegMeshInstance != null) MeshSetAlbedo(RightLegMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -171,7 +183,7 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => (_faceImage is BVImageAsset polyImg) ? polyImg.ImageID : "0";
 		set
 		{
-			if (value == "0") { FaceImage = null; return; }
+			if (value == "0") { FaceImage = New<BVImageAsset>(); return; }
 			BVImageAsset imgAsset = new();
 			FaceImage = imgAsset;
 			imgAsset.ImageID = value.ToString();
@@ -187,7 +199,14 @@ public sealed partial class BrickversianModel : CharacterModel
 			if (_faceImage == value)
 				return;
 
-			if (_faceImage != null)
+			if (_faceImage is BVImageAsset { ImageID.Length: 0 })
+			{
+				_faceOverrided = false;
+				_faceLoaded = true;
+				_faceImage.LinkTo(this);
+				SetFaceTexture(_defaultFace);
+			}
+			else if (_faceImage != null)
 			{
 				_faceImage.ResourceLoaded -= OnFaceLoaded;
 				_faceImage.UnlinkFrom(this);
@@ -298,7 +317,14 @@ public sealed partial class BrickversianModel : CharacterModel
 		AnimTree = GDNode.GetNode<AnimationTree>("AnimationTree");
 		AnimTree.Active = true;
 
-		FaceImage = null;
+		FaceImage = New<BVImageAsset>();
+
+		HeadColor = _headColor;
+		TorsoColor = _torsoColor;
+		LeftArmColor = _leftArmColor;
+		RightArmColor = _rightArmColor;
+		LeftLegColor = _leftLegColor;
+		RightLegColor = _rightLegColor;
 
 		EnsureClothing();
 
@@ -942,7 +968,7 @@ public sealed partial class BrickversianModel : CharacterModel
 		RightArmColor = _defaultBodyColor;
 		LeftLegColor = _defaultBodyColor;
 		RightLegColor = _defaultBodyColor;
-		FaceImage = null;
+		FaceImage = New<BVImageAsset>();
 		_faceOverrided = false;
 
 		foreach (Instance item in GetChildren())

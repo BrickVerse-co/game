@@ -350,7 +350,12 @@ public partial class TextEditorRoot : Node
 
 	private async void OnCodeEditGUIInput(InputEvent @event)
 	{
-		if (@event.IsActionPressed("save"))
+		if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.F })
+		{
+			CodeEditor.AcceptEvent();
+			FormatDocument();
+		}
+		else if (@event.IsActionPressed("save"))
 		{
 			CodeEditor.AcceptEvent();
 			Save();
@@ -377,6 +382,61 @@ public partial class TextEditorRoot : Node
 		{
 			UpdateStatusBar();
 		}
+	}
+
+	public void FormatDocument() => FormatLines(0, CodeEditor.GetLineCount() - 1);
+
+	public void FormatSelection()
+	{
+		if (!CodeEditor.HasSelection()) return;
+		FormatLines(CodeEditor.GetSelectionFromLine(), CodeEditor.GetSelectionToLine());
+	}
+
+	private void FormatLines(int fromLine, int toLine)
+	{
+		fromLine = Math.Max(0, fromLine);
+		toLine = Math.Min(CodeEditor.GetLineCount() - 1, toLine);
+		int indent = fromLine > 0 ? CountLeadingIndent(CodeEditor.GetLine(fromLine - 1)) : 0;
+		for (int line = fromLine; line <= toLine; line++)
+		{
+			string trimmed = CodeEditor.GetLine(line).Trim();
+			if (trimmed.Length == 0)
+			{
+				CodeEditor.SetLine(line, "");
+				continue;
+			}
+
+			if (Container.CodeCompletion == FileTypeEnum.Lua && ClosesLuauBlock(trimmed))
+				indent = Math.Max(0, indent - 1);
+			CodeEditor.SetLine(line, new string('\t', indent) + trimmed);
+			if (Container.CodeCompletion == FileTypeEnum.Lua && OpensLuauBlock(trimmed))
+				indent++;
+		}
+		CreatorService.Interface.StatusBar?.SetStatus("Formatted " + (fromLine == 0 && toLine == CodeEditor.GetLineCount() - 1 ? "document" : "selection"));
+	}
+
+	private static int CountLeadingIndent(string line)
+	{
+		int count = 0;
+		foreach (char character in line)
+		{
+			if (character == '\t') count++;
+			else if (character != ' ') break;
+		}
+		return count;
+	}
+
+	private static bool ClosesLuauBlock(string line) =>
+		line == "end" || line.StartsWith("end ") || line == "until"
+		|| line.StartsWith("until ") || line == "else" || line.StartsWith("elseif ");
+
+	private static bool OpensLuauBlock(string line)
+	{
+		string code = line.Split("--", 2)[0].TrimEnd();
+		return code == "do" || code == "repeat" || code == "else"
+			|| code.EndsWith(" then") || code.EndsWith(" do")
+			|| code.StartsWith("function ") || code.Contains(" function(")
+			|| code.Contains(" function (");
 	}
 
 	private void InitSyntaxHighlighter(FileTypeEnum fileType)

@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.UI;
@@ -18,8 +18,12 @@ namespace BrickVerse.Creator.UI;
 public partial class InsertMenuPopup : PopupPanel
 {
 	private Vector2I _popupSize = new(250, 350);
-	private PackedScene _categoryTitlePacked = GD.Load<PackedScene>("res://scenes/creator/popups/insert/components/category_title.tscn");
-	private PackedScene _itemPacked = GD.Load<PackedScene>("res://scenes/creator/popups/insert/components/item.tscn");
+	private PackedScene _categoryTitlePacked = GD.Load<PackedScene>(
+		"res://scenes/creator/popups/insert/components/category_title.tscn"
+	);
+	private PackedScene _itemPacked = GD.Load<PackedScene>(
+		"res://scenes/creator/popups/insert/components/item.tscn"
+	);
 	public Instance? InsertTo;
 
 	private sealed class ItemKey
@@ -28,9 +32,7 @@ public partial class InsertMenuPopup : PopupPanel
 		public Type[] RecommendOn = [];
 	}
 
-	private sealed class SubItems : List<string>
-	{
-	}
+	private sealed class SubItems : List<string> { }
 
 	private readonly Dictionary<ItemKey, SubItems> insertItems = new()
 	{
@@ -39,6 +41,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"Part",
 			"Truss",
 			"Mesh",
+			"EditableMesh",
 			"Seat",
 			"Model",
 			"Folder",
@@ -46,18 +49,11 @@ public partial class InsertMenuPopup : PopupPanel
 			"Image3D",
 			"Decal",
 			"Camera",
+			"TerrainMaterial",
 		},
-		[new() { Title = "Lighting" }] = new()
-		{
-			"PointLight",
-			"SpotLight"
-		},
-		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] = new()
-		{
-			"InteractionPrompt",
-			"NetworkEvent",
-			"BindableEvent",
-		},
+		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
+		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
+			new() { "InteractionPrompt", "NetworkEvent", "BindableEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -69,16 +65,10 @@ public partial class InsertMenuPopup : PopupPanel
 			"Vector3Value",
 			"QuaternionValue",
 			"ColorValue",
-			"InstanceValue"
+			"InstanceValue",
 		},
-		[new() { Title = "Effects" }] = new()
-		{
-			"Particles",
-		},
-		[new() { Title = "Audio" }] = new()
-		{
-			"Sound",
-		},
+		[new() { Title = "Effects" }] = new() { "Particles" },
+		[new() { Title = "Audio" }] = new() { "Sound" },
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
 			"Accessory",
@@ -98,7 +88,13 @@ public partial class InsertMenuPopup : PopupPanel
 		{
 			"ColorAdjustModifier",
 		},
-		[new() { Title = "UI", RecommendOn = [typeof(UIField), typeof(GUI), typeof(GUI3D), typeof(PlayerGUI)] }] = new()
+		[
+			new()
+			{
+				Title = "UI",
+				RecommendOn = [typeof(UIField), typeof(GUI), typeof(GUI3D), typeof(PlayerGUI)],
+			}
+		] = new()
 		{
 			"GUI",
 			"GUI3D",
@@ -119,19 +115,13 @@ public partial class InsertMenuPopup : PopupPanel
 			"UIShadow",
 			"UIAspectRatioRestraint",
 		},
-		[new() { Title = "Teams", RecommendOn = [typeof(Teams)] }] = new()
-		{
-			"Team",
-		},
-		[new() { Title = "Stats", RecommendOn = [typeof(Stats)] }] = new()
-		{
-			"Stat",
-		},
+		[new() { Title = "Teams", RecommendOn = [typeof(Teams)] }] = new() { "Team" },
+		[new() { Title = "Stats", RecommendOn = [typeof(Stats)] }] = new() { "Stat" },
 		[new() { Title = "Skies", RecommendOn = [typeof(Lighting)] }] = new()
 		{
 			"ImageSky",
 			"GradientSky",
-			"ProceduralSky"
+			"ProceduralSky",
 		},
 		[new() { Title = "Physics" }] = new()
 		{
@@ -141,19 +131,18 @@ public partial class InsertMenuPopup : PopupPanel
 			"Grabbable",
 			"Weld",
 		},
-		[new() { Title = "Gizmos" }] = new()
-		{
-			"Marker3D",
-			"VoiceBox",
-		},
+		[new() { Title = "Gizmos" }] = new() { "Marker3D", "VoiceBox" },
 	};
 
-	[Export] public LineEdit SearchBox = null!;
+	[Export]
+	public LineEdit SearchBox = null!;
 
-	[Export] public Control ItemContainer = null!;
+	[Export]
+	public Control ItemContainer = null!;
 	private Button? _bottomFix;
 
 	private Control? _dummyFocus;
+
 	public override void _Ready()
 	{
 		SearchBox.TextChanged += OnSearchTextChanged;
@@ -194,7 +183,6 @@ public partial class InsertMenuPopup : PopupPanel
 		}
 	}
 
-
 	private void PopulateItems(string? search = null)
 	{
 		Clear();
@@ -204,10 +192,7 @@ public partial class InsertMenuPopup : PopupPanel
 		InsertPopupItem? firstItem = null;
 
 		_bottomFix?.QueueFree();
-		_bottomFix = new()
-		{
-			Visible = false
-		};
+		_bottomFix = new() { Visible = false };
 		ItemContainer.AddChild(_bottomFix);
 
 		List<(ItemKey cat, List<string> filtered)> toProcess = [];
@@ -219,9 +204,12 @@ public partial class InsertMenuPopup : PopupPanel
 			SubItems subItems = kv.Value;
 
 			// filter subitems based on search
-			List<string> filtered = query == null
-				? subItems
-				: subItems.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+			List<string> filtered =
+				query == null
+					? subItems
+					: subItems
+						.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase))
+						.ToList();
 
 			// If none matched, skip this category
 			if (filtered.Count == 0)
@@ -311,17 +299,17 @@ public partial class InsertMenuPopup : PopupPanel
 					parentTo = World.Current.Lighting;
 					break;
 				case UIField when instance is not GUI:
+				{
+					GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
+					if (existingUI == null)
 					{
-						GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
-						if (existingUI == null)
-						{
-							existingUI = World.Current.New<GUI>();
-							existingUI.Parent = World.Current.PlayerGUI;
-						}
-
-						parentTo = existingUI;
-						break;
+						existingUI = World.Current.New<GUI>();
+						existingUI.Parent = World.Current.PlayerGUI;
 					}
+
+					parentTo = existingUI;
+					break;
+				}
 				case Script:
 					parentTo = World.Current.ScriptService;
 					break;
@@ -339,7 +327,8 @@ public partial class InsertMenuPopup : PopupPanel
 
 		if (instance is Dynamic dyn)
 		{
-			Datamodel.Environment.RayResult? hit = World.Current.CreatorContext.Freelook.GetPlacementRay();
+			Datamodel.Environment.RayResult? hit =
+				World.Current.CreatorContext.Freelook.GetPlacementRay();
 			if (hit != null)
 			{
 				Vector3 surfacePoint = hit.Value.Position;

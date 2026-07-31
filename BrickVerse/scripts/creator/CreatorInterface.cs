@@ -999,6 +999,8 @@ public partial class CreatorInterface : Control, IScriptObject
 	{
 		window.Visible = false;
 		window.ForceNative = true;
+		window.Transient = true;
+		window.AlwaysOnTop = true;
 		window.Theme = Theme;
 
 		float uiScale = GetWindow().ContentScaleFactor;
@@ -1070,6 +1072,8 @@ public partial class CreatorInterface : Control, IScriptObject
 			FileMode = MapFileMode(data.DialogMode),
 			Access = FileDialog.AccessEnum.Filesystem,
 			UseNativeDialog = true,
+			Transient = true,
+			AlwaysOnTop = true,
 		};
 
 		if (data.Filters is { Length: > 0 })
