@@ -51,6 +51,7 @@ jobs:
         with:
           lfs: true
           fetch-depth: 1
+          submodules: recursive
 
       - name: Verify Git LFS assets
         shell: bash

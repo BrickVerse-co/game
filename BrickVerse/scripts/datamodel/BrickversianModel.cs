@@ -90,7 +90,6 @@ public sealed partial class BrickversianModel : CharacterModel
 	private float _lastLookBlendX = 0;
 	private float _lastLookBlendY = 0;
 	private bool _faceOverrided = false;
-	private bool _bodyOverrided = false;
 	private CharacterAnimHelper _helper = null!;
 	private readonly Dictionary<CharacterAttachmentEnum, Dynamic> _attachmentEnumToDyn = [];
 	private PackedScene? _bodyPkScene;
@@ -632,8 +631,9 @@ public sealed partial class BrickversianModel : CharacterModel
 		Texture2D? texture
 	)
 	{
-		opaqueMaterial.SetShaderParameter(_albedoTexParam, texture);
-		transparentMaterial.SetShaderParameter(_albedoTexParam, texture);
+		Variant textureValue = texture == null ? default : Variant.From(texture);
+		opaqueMaterial.SetShaderParameter(_albedoTexParam, textureValue);
+		transparentMaterial.SetShaderParameter(_albedoTexParam, textureValue);
 	}
 
 	private void SetFaceTexture(Texture2D? texture)
@@ -944,7 +944,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		RightLegColor = _defaultBodyColor;
 		FaceImage = null;
 		_faceOverrided = false;
-		_bodyOverrided = false;
 
 		foreach (Instance item in GetChildren())
 		{

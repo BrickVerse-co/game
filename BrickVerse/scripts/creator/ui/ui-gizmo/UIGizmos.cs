@@ -17,12 +17,13 @@ public partial class UIGizmos : CanvasLayer
 
 	private GuidelineDrawer? _guidelineDrawer;
 
-	private void EnsureGuidelineDrawer()
+	private GuidelineDrawer EnsureGuidelineDrawer()
 	{
-		if (_guidelineDrawer != null) return;
+		if (_guidelineDrawer != null) return _guidelineDrawer;
 		_guidelineDrawer = new GuidelineDrawer();
 		AddChild(_guidelineDrawer);
 		_guidelineDrawer.SyncSize();
+		return _guidelineDrawer;
 	}
 
 	public UIGizmoBox? AddBox(UIField ui)
@@ -58,8 +59,7 @@ public partial class UIGizmos : CanvasLayer
 
 	internal void ShowGuidelines(IReadOnlyList<SnapGuide> guides)
 	{
-		EnsureGuidelineDrawer();
-		_guidelineDrawer.SetGuides(guides);
+		EnsureGuidelineDrawer().SetGuides(guides);
 	}
 
 	internal void HideGuidelines()
@@ -69,8 +69,7 @@ public partial class UIGizmos : CanvasLayer
 
 	internal void ShowMeasurements(IReadOnlyList<MeasureGuide> measures)
 	{
-		EnsureGuidelineDrawer();
-		_guidelineDrawer.SetMeasures(measures);
+		EnsureGuidelineDrawer().SetMeasures(measures);
 	}
 
 	internal void HideMeasurements()

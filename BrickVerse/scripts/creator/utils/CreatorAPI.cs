@@ -56,7 +56,6 @@ public static class CreatorAPI
 	public static string? PendingRefreshToken { get; set; }
 	public static long PendingExpiresInSeconds { get; set; }
 
-	public static event Action<int>? LaunchPlaceRequest;
 	public static event Action<OpenIdUserInfoResponse>? UserAuthenticated;
 	public static event Action<AuthenticatedUserProfile?>? AuthenticatedProfileUpdated;
 	public static event Action<ToolbarIdentity?>? ToolbarIdentityUpdated;

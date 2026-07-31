@@ -380,7 +380,10 @@ public static class XmlFormat
 							value = ParseInt(value2);
 						}
 
-						SetProperty(item, property, value);
+						if (value != null)
+						{
+							SetProperty(item, property, value);
+						}
 					}
 
 					_propName = null;

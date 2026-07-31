@@ -401,7 +401,7 @@ public partial class NetworkTransformSync : Instance
 
 	private struct PendingTransform()
 	{
-		public TransformPayloadDto Transform;
+		public TransformPayloadDto Transform = null!;
 		public int FromPeer;
 		public int ToPeer = -1;
 	}

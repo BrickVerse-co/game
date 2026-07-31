@@ -11,7 +11,7 @@ namespace BrickVerse.Datamodel.Resources;
 [Instantiable]
 public partial class BVMeshAnimationAsset : MeshAnimationAsset
 {
-	private string _assetID;
+	private string _assetID = string.Empty;
 
 	[Editable, ScriptProperty]
 	public string AssetID

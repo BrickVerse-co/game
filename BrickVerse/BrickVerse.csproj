@@ -2,7 +2,6 @@
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
-		<PublishAot>true</PublishAot>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -10,6 +9,7 @@
 	</PropertyGroup>
 	<!-- NativeAOT Configuration for Android and iOS -->
 	<PropertyGroup Condition=" '$(GodotTargetPlatform)' == 'android' Or '$(GodotTargetPlatform)' == 'ios' ">
+		<PublishAot>true</PublishAot>
 		<DisableUnsupportedError>true</DisableUnsupportedError>
 		<PublishAotUsingRuntimePack>true</PublishAotUsingRuntimePack>
 		<IsCreator>false</IsCreator>

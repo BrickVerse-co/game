@@ -101,7 +101,7 @@ public partial class Stat : Instance
 			InternalSet(plr, dval);
 			_pendingDoubles.Remove(plr.UserID.ToString());
 		}
-		if (_pendingStrings.TryGetValue(plr.UserID.ToString(), out string sval))
+		if (_pendingStrings.TryGetValue(plr.UserID.ToString(), out string? sval) && sval != null)
 		{
 			InternalSet(plr, sval);
 			_pendingStrings.Remove(plr.UserID.ToString());

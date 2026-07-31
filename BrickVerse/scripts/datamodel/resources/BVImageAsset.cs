@@ -11,7 +11,7 @@ namespace BrickVerse.Datamodel.Resources;
 [Instantiable]
 public partial class BVImageAsset : ImageAsset
 {
-	private string _imageID;
+	private string _imageID = string.Empty;
 	private ImageTypeEnum _imageType;
 
 	[Editable, ScriptProperty]

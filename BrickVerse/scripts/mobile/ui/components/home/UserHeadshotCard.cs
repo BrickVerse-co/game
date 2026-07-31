@@ -13,7 +13,7 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class UserHeadshotCard : Node
 {
-	[Export] public string UserID;
+	[Export] public string UserID = string.Empty;
 
 	[Export] private TextureRect _imageRect = null!;
 	[Export] private Label _usernameLabel = null!;

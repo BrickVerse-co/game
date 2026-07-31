@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 public partial class Search : Panel
 {
-	[Export] public LineEdit? searchBar;
-	[Export] public PackedScene? searchResult;
-	[Export] public VBoxContainer? searchResultsContainer;
-	[Export] public Control? loadingSpinner;
+	[Export] public LineEdit searchBar = null!;
+	[Export] public PackedScene searchResult = null!;
+	[Export] public VBoxContainer searchResultsContainer = null!;
+	[Export] public Control loadingSpinner = null!;
 
-	[Export] public Label? statusText;
+	[Export] public Label statusText = null!;
 
 	private int searchResultIndex = 0;
 
@@ -40,7 +40,7 @@ public partial class Search : Panel
 		set
 		{
 			_loading = value;
-			loadingSpinner?.Visible = _loading;
+			loadingSpinner.Visible = _loading;
 		}
 	}
 
@@ -86,8 +86,8 @@ public partial class Search : Panel
 			}
 			if (searchResults.Count == 0 && searchBar.Text.Length > 0)
 			{
-				statusText?.Text = "No Results Found";
-				statusText?.Visible = true;
+				statusText.Text = "No Results Found";
+				statusText.Visible = true;
 			}
 		};
 	}
@@ -201,7 +201,7 @@ public partial class Search : Panel
 				{
 					continue; // mainly to avoid .git and .bvproject dirs
 				}
-				NavigateDirectory(rootPath, dir, maxSize);
+				_ = NavigateDirectory(rootPath, dir, maxSize);
 			}
 		});
 		Loading = false;
@@ -221,7 +221,7 @@ public partial class Search : Panel
 		{ // skip loading file assets
 			return;
 		}
-		NavigateDirectory(path, path, 1048576); // 1mb
+		_ = NavigateDirectory(path, path, 1048576); // 1mb
 	}
 	private void ProcessSearch()
 	{
