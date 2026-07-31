@@ -509,12 +509,12 @@ public partial class TerrainEditor : Control
 				throw new InvalidDataException("RAW heightmaps must be square, unsigned 16-bit little-endian data.");
 			image = Image.CreateEmpty(side, side, false, Image.Format.Rf);
 			for (int y = 0; y < side; y++)
-			for (int x = 0; x < side; x++)
-			{
-				int offset = (y * side + x) * 2;
-				ushort value = (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
-				image.SetPixel(x, y, new Color(value / 65535.0f, 0, 0));
-			}
+				for (int x = 0; x < side; x++)
+				{
+					int offset = (y * side + x) * 2;
+					ushort value = (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+					image.SetPixel(x, y, new Color(value / 65535.0f, 0, 0));
+				}
 		}
 		else
 		{
@@ -691,17 +691,17 @@ public partial class TerrainEditor : Control
 			float originZ = -height * cellSize * 0.5f;
 			const float baseDepth = 16.0f;
 			for (int y = 0; y < height; y++)
-			for (int x = 0; x < width; x++)
-			{
-				float columnHeight = Math.Max(1.0f, Mathf.Clamp(sample(x, y), 0, 1) * maximumHeight);
-				terrain.FillBlock(
-					new Vector3(
-						originX + (x + 0.5f) * cellSize,
-						(columnHeight - baseDepth) * 0.5f,
-						originZ + (y + 0.5f) * cellSize),
-					new Vector3(cellSize + 0.1f, columnHeight + baseDepth, cellSize + 0.1f),
-					material);
-			}
+				for (int x = 0; x < width; x++)
+				{
+					float columnHeight = Math.Max(1.0f, Mathf.Clamp(sample(x, y), 0, 1) * maximumHeight);
+					terrain.FillBlock(
+						new Vector3(
+							originX + (x + 0.5f) * cellSize,
+							(columnHeight - baseDepth) * 0.5f,
+							originZ + (y + 0.5f) * cellSize),
+						new Vector3(cellSize + 0.1f, columnHeight + baseDepth, cellSize + 0.1f),
+						material);
+				}
 			terrain.SaveTerrain();
 		}
 		finally

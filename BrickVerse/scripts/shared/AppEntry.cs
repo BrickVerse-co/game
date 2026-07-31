@@ -48,7 +48,7 @@ public partial class AppEntry : Node
 			AddChild(dt);
 			try
 			{
-				dt.Entry();
+				await dt.Entry();
 			}
 			catch (Exception ex)
 			{
