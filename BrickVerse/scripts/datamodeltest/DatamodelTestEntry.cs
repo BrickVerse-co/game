@@ -8,6 +8,7 @@ using BrickVerse.Formats;
 using BrickVerse.Shared;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BrickVerse.DatamodelTest;
 
@@ -23,7 +24,7 @@ public partial class DatamodelTestEntry : Node3D
 		Root = Globals.LoadInstance<World>();
 	}
 
-	public async void Entry()
+	public async Task Entry()
 	{
 		// Fallsafe so test doesn't last forever
 		BV.CallDeferred(async () =>
