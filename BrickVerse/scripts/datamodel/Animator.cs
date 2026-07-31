@@ -27,6 +27,7 @@ public partial class Animator : Instance
 	private const string DynBlendPath = "parameters/DynBlend/blend_amount";
 	private float _targetDynBlendValue = 0f;
 	private bool _isPlaying = false;
+	[ScriptProperty] public bool IsPlaying => _isPlaying;
 	public HashSet<string> AnimationList = [];
 	public Dictionary<string, MeshAnimationAsset> AnimationAssetList = [];
 

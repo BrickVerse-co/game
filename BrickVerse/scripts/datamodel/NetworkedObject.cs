@@ -1749,19 +1749,21 @@ public partial class NetworkedObject : IScriptObject
 		}
 
 		byte[] msg = netmsg.Serialize();
+		var network = Root.Network!;
+		var netInstance = network.NetInstance!;
 
 		if (Globals.UseLogRPC)
 		{
 			BV.Print($"RPC {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
 		}
 
-		if (Root.Network.IsServer)
+		if (network.IsServer)
 		{
-			Root.Network.NetInstance.BroadcastMessage(msg, rpcA.TransferMode, rpcA.TransferChannel);
+			netInstance.BroadcastMessage(msg, rpcA.TransferMode, rpcA.TransferChannel);
 		}
 		else
 		{
-			Root.Network.NetInstance.SendMessage(1, msg, rpcA.TransferMode, rpcA.TransferChannel);
+			netInstance.SendMessage(1, msg, rpcA.TransferMode, rpcA.TransferChannel);
 		}
 	}
 
@@ -1835,12 +1837,15 @@ public partial class NetworkedObject : IScriptObject
 			return;
 		}
 
-		if (rpcA.CallLocal && id == Root.Network.LocalPeerID)
+		var network = Root.Network!;
+		var netInstance = network.NetInstance!;
+
+		if (rpcA.CallLocal && id == network.LocalPeerID)
 		{
 			md.Invoke(this, args);
 		}
 
-		if (id == 1 && Root.Network.IsServer) return;
+		if (id == 1 && network.IsServer) return;
 
 		byte[] msg = netmsg.Serialize();
 
@@ -1848,7 +1853,7 @@ public partial class NetworkedObject : IScriptObject
 		{
 			BV.Print($"RPCID {id} {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
 		}
-		Root.Network.NetInstance.SendMessage(id, msg, rpcA.TransferMode, rpcA.TransferChannel);
+		netInstance.SendMessage(id, msg, rpcA.TransferMode, rpcA.TransferChannel);
 	}
 
 	internal MethodInfo GetRpcMethod(string methodName)

@@ -39,7 +39,6 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	private static readonly Dictionary<BVCallbackData, IntPtr> _callbackToPtr = [];
 	private static readonly Dictionary<IntPtr, object> _ptrToObject = [];
 	private const string WeakUserdataCache = "__UDCACHE";
-	private static readonly int ThreadDataKey = 0x1247;
 
 	private static readonly ConditionalWeakTable<object, string> _objectIDS = new();
 	private static long _nextObjectID;
@@ -993,7 +992,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 		else
 		{
-			string errorMessage = thread.ToString(-1);
+			string errorMessage = thread.ToString(-1) ?? "Unknown Luau error";
 			lua.PushBoolean(false);
 			lua.PushString(errorMessage);
 
@@ -1059,7 +1058,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 		else
 		{
-			return lua.Error(thread.ToString(-1));
+			return lua.Error(thread.ToString(-1) ?? "Unknown Luau error");
 		}
 	}
 
@@ -1886,8 +1885,4 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		public TaskCompletionSource<int> TaskSource { get; set; }
 	}
 
-	private struct ScriptThreadData
-	{
-		public Script Script;
-	}
 }

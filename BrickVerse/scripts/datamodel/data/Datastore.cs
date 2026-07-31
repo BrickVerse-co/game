@@ -36,19 +36,19 @@ public partial class Datastore : IScriptObject
 	[ScriptMethod]
 	public async Task<object?> GetAsync(string key)
 	{
-		return await Provider.ReadData(key);
+		return await Provider.GetAsync(key);
 	}
 
 	[ScriptMethod]
 	public async Task SetAsync(string key, object value)
 	{
-		await Provider.WriteData(key, value);
+		await Provider.SetAsync(key, value);
 	}
 
 	[ScriptMethod]
 	public async Task RemoveAsync(string key)
 	{
-		await Provider.WriteData(key, null);
+		await Provider.SetAsync(key, null);
 	}
 
 	[ScriptLegacyMethod(nameof(Get))]

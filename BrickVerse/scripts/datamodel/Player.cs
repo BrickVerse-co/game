@@ -47,7 +47,7 @@ public sealed partial class Player : NPC
 	private float _staminaRegen = 1.2f;
 	private float _staminaBurn = 1.2f;
 	private bool _useHeadTurning = false;
-	private string _userID;
+	private string _userID = string.Empty;
 	private bool _useBubbleChat = true;
 	private bool _autoLoadAppearance = true;
 	private bool _allowAnimationWhileMoving = false;

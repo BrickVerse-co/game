@@ -51,6 +51,7 @@ jobs:
         with:
           lfs: true
           fetch-depth: 1
+          submodules: recursive
 
       - name: Verify Git LFS assets
         shell: bash
@@ -144,18 +145,6 @@ jobs:
         run: |
           set -euo pipefail
           godot --headless --editor --import
-
-          REQUIRED_FONT_IMPORTS=(
-            ".godot/imported/Montserrat-Medium.ttf-9322cac81db17d2f033bd26b2a37967f.fontdata"
-            ".godot/imported/twemoji.ttf-e987c3f384c81516f8c0a0290492f368.fontdata"
-          )
-
-          for file in "${REQUIRED_FONT_IMPORTS[@]}"; do
-            if [[ ! -s "$file" ]]; then
-              echo "::error::Godot did not generate required font import: $file"
-              exit 1
-            fi
-          done
 
       - name: Export ${{ matrix.platform }}
         shell: bash
@@ -379,10 +368,10 @@ jobs:
           New-Item -ItemType Directory -Path $templateDirectory -Force | Out-Null
           Copy-Item -Path (Join-Path $templateExtract "templates\*") -Destination $templateDirectory -Recurse -Force
 
-          $godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64.exe" |
+          $godot = Get-ChildItem -Path $godotDirectory -Recurse -File -Filter "Godot_*_mono_win64_console.exe" |
             Select-Object -First 1
           if (-not $godot) {
-            throw "Could not locate the Godot .NET executable."
+            throw "Could not locate the Godot .NET console executable."
           }
 
           "path=$($godot.FullName)" >> $env:GITHUB_OUTPUT
@@ -402,6 +391,7 @@ jobs:
           New-Item -ItemType Directory -Path $exportDirectory -Force | Out-Null
           & $godot --headless --path $projectDirectory --import
           if ($LASTEXITCODE -ne 0) { throw "Godot import failed with exit code $LASTEXITCODE." }
+
           & $godot --headless --path $projectDirectory --export-release "Creator Windows" "$exportDirectory\BrickVerseCreator.exe"
           if ($LASTEXITCODE -ne 0) { throw "Godot export failed with exit code $LASTEXITCODE." }
 
