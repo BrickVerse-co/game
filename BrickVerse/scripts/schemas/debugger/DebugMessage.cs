@@ -76,6 +76,7 @@ public partial class MessageLogDispatch : IDebugMessage
 	public LogTypeEnum LogType;
 	public LogFromEnum LogFrom;
 	public string Content = "";
+	public string Source = "";
 }
 
 [MemoryPackable]

@@ -153,7 +153,12 @@ public partial class DebugConsoleTab : Control
 
 		sb.Append('[')
 			.Append(item.LoggedAt.ToLongTimeString())
-			.Append("] ")
+			.Append("] ");
+
+		if (!string.IsNullOrWhiteSpace(item.Source))
+			sb.Append('[').Append(item.Source).Append("] ");
+
+		sb
 			.Append(item.Content);
 
 		if (item.LogType == LogTypeEnum.Error || item.LogType == LogTypeEnum.Warning)

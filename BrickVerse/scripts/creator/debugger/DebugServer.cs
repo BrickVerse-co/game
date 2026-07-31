@@ -126,7 +126,7 @@ public class DebugServer
 		}
 		else if (msg is MessageLogDispatch log)
 		{
-			BV.DispatchLog(new() { Content = log.Content, LogFrom = log.LogFrom, LogType = log.LogType });
+			BV.DispatchLog(new() { Content = log.Content, Source = log.Source, LogFrom = log.LogFrom, LogType = log.LogType });
 			if (_clientToData.TryGetValue(from, out ClientData logClient))
 			{
 				BV.CallOnMainThread(() => RuntimeLogReceived?.Invoke(logClient.ProcessID, log));

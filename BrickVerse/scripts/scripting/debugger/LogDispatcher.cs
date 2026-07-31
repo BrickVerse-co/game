@@ -68,6 +68,7 @@ public partial class LogDispatcher : NetworkedObject
 		{
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Warning,
+			Source = ResolveScriptSource(from),
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
@@ -80,6 +81,7 @@ public partial class LogDispatcher : NetworkedObject
 		{
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Info,
+			Source = ResolveScriptSource(from),
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
@@ -92,9 +94,16 @@ public partial class LogDispatcher : NetworkedObject
 		{
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Error,
+			Source = ResolveScriptSource(from),
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
+	}
+
+	private static string ResolveScriptSource(Datamodel.Script script)
+	{
+		string? linkedPath = script.LinkedScript?.LinkedPath;
+		return string.IsNullOrWhiteSpace(linkedPath) ? script.LuaPath : linkedPath;
 	}
 
 	internal async void DispatchLog(LogData data, bool preserveSource = false)
@@ -164,6 +173,7 @@ public partial class LogDispatcher : NetworkedObject
 			LogType = data.LogType,
 			LogFrom = LogFromEnum.Client,
 			Content = TruncateForForward(data.Content),
+			Source = data.Source,
 			LoggedAt = data.LoggedAt
 		};
 
@@ -344,6 +354,7 @@ public partial class LogDispatcher : NetworkedObject
 		public LogFromEnum LogFrom = LogFromEnum.None;
 		public string ID = "";
 		public string Content = "";
+		public string Source = "";
 		public DateTime LoggedAt;
 
 		public override int GetHashCode()

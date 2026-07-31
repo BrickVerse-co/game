@@ -102,7 +102,8 @@ public sealed partial class RuntimeDebugWindow : Window
 
 	public void AppendLog(MessageLogDispatch log)
 	{
-		_console.AppendText($"[{log.LogFrom}] {log.Content}\n");
+		string source = string.IsNullOrWhiteSpace(log.Source) ? "" : $" [{log.Source}]";
+		_console.AppendText($"[{log.LogFrom}]{source} {log.Content}\n");
 	}
 
 	private void ShowSelectedProperties()

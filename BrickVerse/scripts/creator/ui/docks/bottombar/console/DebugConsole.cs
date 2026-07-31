@@ -298,7 +298,8 @@ public partial class DebugConsole : Control
 				return true;
 			}
 
-			return (l.Content.Find(SearchQuery, caseSensitive: false) != -1);
+			return l.Content.Find(SearchQuery, caseSensitive: false) != -1
+				|| l.Source.Find(SearchQuery, caseSensitive: false) != -1;
 
 		});
 
@@ -344,7 +345,12 @@ public partial class DebugConsole : Control
 
 		sb.Append('[')
 			.Append(item.LoggedAt.ToLongTimeString())
-			.Append("] ")
+			.Append("] ");
+
+		if (!string.IsNullOrWhiteSpace(item.Source))
+			sb.Append('[').Append(item.Source).Append("] ");
+
+		sb
 			.Append(item.Content);
 
 		if (item.LogType != LogTypeEnum.Info)
