@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Networking;
@@ -11,9 +14,7 @@ using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Misc;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -52,10 +53,18 @@ public sealed partial class BrickversianModel : CharacterModel
 	internal Skeleton3D Skeleton = null!;
 	internal AnimationTree AnimTree = null!;
 
-	private static readonly Shader _headShader = GD.Load<Shader>("res://resources/shaders/character/head.gdshader");
-	private static readonly Shader _limbShader = GD.Load<Shader>("res://resources/shaders/character/limb.gdshader");
-	private static readonly Shader _transparentLimbShader = GD.Load<Shader>("res://resources/shaders/character/limb_transparent.gdshader");
-	private static readonly Texture2D _defaultFace = GD.Load<Texture2D>("res://assets/textures/client/character/DefaultFace.png");
+	private static readonly Shader _headShader = GD.Load<Shader>(
+		"res://resources/shaders/character/head.gdshader"
+	);
+	private static readonly Shader _limbShader = GD.Load<Shader>(
+		"res://resources/shaders/character/limb.gdshader"
+	);
+	private static readonly Shader _transparentLimbShader = GD.Load<Shader>(
+		"res://resources/shaders/character/limb_transparent.gdshader"
+	);
+	private static readonly Texture2D _defaultFace = GD.Load<Texture2D>(
+		"res://assets/textures/client/character/DefaultFace.png"
+	);
 	private static readonly StringName _albedoParam = "albedo";
 	private static readonly StringName _albedoTexParam = "albedo_texture";
 	private static readonly StringName _faceTexParam = "face_texture";
@@ -80,13 +89,34 @@ public sealed partial class BrickversianModel : CharacterModel
 	private readonly ShaderMaterial _leftLegMat = new() { Shader = _limbShader };
 	private readonly ShaderMaterial _rightLegMat = new() { Shader = _limbShader };
 
-	private readonly ShaderMaterial _transparentTorsoMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentLeftArmMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentRightArmMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentLeftHandMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentRightHandMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentLeftLegMat = new() { Shader = _transparentLimbShader };
-	private readonly ShaderMaterial _transparentRightLegMat = new() { Shader = _transparentLimbShader };
+	private readonly ShaderMaterial _transparentTorsoMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentLeftArmMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentRightArmMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentLeftHandMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentRightHandMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentLeftLegMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
+	private readonly ShaderMaterial _transparentRightLegMat = new()
+	{
+		Shader = _transparentLimbShader,
+	};
 
 	private PhysicalBoneSimulator3D? _ragdollBoneSim;
 	private PhysicalBoneSimulator3D? _lastPhysicalBoneSim = null!;
@@ -98,7 +128,6 @@ public sealed partial class BrickversianModel : CharacterModel
 	private bool _faceOverrided = false;
 	private CharacterAnimHelper _helper = null!;
 	private readonly Dictionary<CharacterAttachmentEnum, Dynamic> _attachmentEnumToDyn = [];
-	private PackedScene? _bodyPkScene;
 	private bool _updateClothDirty = false;
 
 	public PhysicalBone3D? VelocityPhysicalBone;
@@ -122,7 +151,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		set
 		{
 			_torsoColor = value;
-			if (TorsoMeshInstance != null) MeshSetAlbedo(TorsoMeshInstance, value);
+			if (TorsoMeshInstance != null)
+				MeshSetAlbedo(TorsoMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -134,8 +164,10 @@ public sealed partial class BrickversianModel : CharacterModel
 		set
 		{
 			_leftArmColor = value;
-			if (LeftArmMeshInstance != null) MeshSetAlbedo(LeftArmMeshInstance, value);
-			if (LeftHandMeshInstance != null) MeshSetAlbedo(LeftHandMeshInstance, value);
+			if (LeftArmMeshInstance != null)
+				MeshSetAlbedo(LeftArmMeshInstance, value);
+			if (LeftHandMeshInstance != null)
+				MeshSetAlbedo(LeftHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -147,8 +179,10 @@ public sealed partial class BrickversianModel : CharacterModel
 		set
 		{
 			_rightArmColor = value;
-			if (RightArmMeshInstance != null) MeshSetAlbedo(RightArmMeshInstance, value);
-			if (RightHandMeshInstance != null) MeshSetAlbedo(RightHandMeshInstance, value);
+			if (RightArmMeshInstance != null)
+				MeshSetAlbedo(RightArmMeshInstance, value);
+			if (RightHandMeshInstance != null)
+				MeshSetAlbedo(RightHandMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -160,7 +194,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		set
 		{
 			_leftLegColor = value;
-			if (LeftLegMeshInstance != null) MeshSetAlbedo(LeftLegMeshInstance, value);
+			if (LeftLegMeshInstance != null)
+				MeshSetAlbedo(LeftLegMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -172,7 +207,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		set
 		{
 			_rightLegColor = value;
-			if (RightLegMeshInstance != null) MeshSetAlbedo(RightLegMeshInstance, value);
+			if (RightLegMeshInstance != null)
+				MeshSetAlbedo(RightLegMeshInstance, value);
 			OnPropertyChanged();
 		}
 	}
@@ -183,7 +219,11 @@ public sealed partial class BrickversianModel : CharacterModel
 		get => (_faceImage is BVImageAsset polyImg) ? polyImg.ImageID : "0";
 		set
 		{
-			if (value == "0") { FaceImage = New<BVImageAsset>(); return; }
+			if (value == "0")
+			{
+				FaceImage = New<BVImageAsset>();
+				return;
+			}
 			BVImageAsset imgAsset = new();
 			FaceImage = imgAsset;
 			imgAsset.ImageID = value.ToString();
@@ -245,32 +285,40 @@ public sealed partial class BrickversianModel : CharacterModel
 		}
 	}
 
-	[ScriptProperty] public bool Ragdolling { get; private set; } = false;
-	[ScriptProperty] public Vector3 RagdollPosition => VelocityPhysicalBone == null ? Vector3.Zero : VelocityPhysicalBone.GlobalPosition;
-	[ScriptProperty] public Vector3 RagdollRotation => VelocityPhysicalBone == null ? Vector3.Zero : VelocityPhysicalBone.GlobalRotationDegrees.FlipEuler();
+	[ScriptProperty]
+	public bool Ragdolling { get; private set; } = false;
+
+	[ScriptProperty]
+	public Vector3 RagdollPosition =>
+		VelocityPhysicalBone == null ? Vector3.Zero : VelocityPhysicalBone.GlobalPosition;
+
+	[ScriptProperty]
+	public Vector3 RagdollRotation =>
+		VelocityPhysicalBone == null
+			? Vector3.Zero
+			: VelocityPhysicalBone.GlobalRotationDegrees.FlipEuler();
 
 	// These two's not reliable yet, as it doesn't wait for mesh to load. TODO: Come back and fix
 	public bool IsAvatarLoaded { get; private set; } = false;
 	public event Action? AvatarLoaded;
 
-	[ScriptProperty] public BVSignal RagdollStarted { get; private set; } = new();
-	[ScriptProperty] public BVSignal RagdollStopped { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal RagdollStarted { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal RagdollStopped { get; private set; } = new();
 
 	public override void Init()
 	{
 		_helper = new() { Name = "CharacterHelper", Target = this };
 		Globals.Singleton.AddChild(_helper, true);
 
-		Skeleton = GetRequiredNodeCompat<Skeleton3D>(
-			"Character/Poly/Skeleton3D"
-		);
+		Skeleton = GetRequiredNodeCompat<Skeleton3D>("Character/Poly/Skeleton3D");
 		Skeleton.ShowRestOnly = false;
 		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
 			"Character/Poly/Skeleton3D/RagdollBone"
 		);
-		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
-			"Character/Poly/Skeleton3D/Head"
-		);
+		HeadMeshInstance = GetRequiredNodeCompat<MeshInstance3D>("Character/Poly/Skeleton3D/Head");
 		TorsoMeshInstance = GetRequiredNodeCompat<MeshInstance3D>(
 			"Character/Poly/Skeleton3D/Torso"
 		);
@@ -299,7 +347,9 @@ public sealed partial class BrickversianModel : CharacterModel
 			if (!_loggedMissingRagdollNode)
 			{
 				_loggedMissingRagdollNode = true;
-				BV.PrintErr("Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene.");
+				BV.PrintErr(
+					"Ragdoll simulator node not found. Ragdoll features will be unavailable for this model scene."
+				);
 			}
 		}
 
@@ -382,7 +432,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		}
 	}
 
-	private T? GetNodeCompat<T>(params string[] paths) where T : Node
+	private T? GetNodeCompat<T>(params string[] paths)
+		where T : Node
 	{
 		foreach (string path in paths)
 		{
@@ -396,7 +447,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		return null;
 	}
 
-	private T GetRequiredNodeCompat<T>(params string[] paths) where T : Node
+	private T GetRequiredNodeCompat<T>(params string[] paths)
+		where T : Node
 	{
 		T? node = GetNodeCompat<T>(paths);
 		if (node != null)
@@ -404,7 +456,9 @@ public sealed partial class BrickversianModel : CharacterModel
 			return node;
 		}
 
-		throw new InvalidOperationException($"Missing required node {typeof(T).Name}. Tried paths: {string.Join(", ", paths)}");
+		throw new InvalidOperationException(
+			$"Missing required node {typeof(T).Name}. Tried paths: {string.Join(", ", paths)}"
+		);
 	}
 
 	public override void PreDelete()
@@ -456,14 +510,8 @@ public sealed partial class BrickversianModel : CharacterModel
 			_oldPhyParent = phy;
 
 			// Configure default collision shape for BrickversianModel
-			CollisionPivot = new()
-			{
-				Scale = NodeSize
-			};
-			CollisionShape = new()
-			{
-				Shape = _collisionBox
-			};
+			CollisionPivot = new() { Scale = NodeSize };
+			CollisionShape = new() { Shape = _collisionBox };
 			Physical.SetRemoteLinkOffset(CollisionShape, new(0, 3f - 0.1f, 0));
 			Physical.SetRemoteLinkTarget(CollisionShape, CollisionPivot);
 			GDNode.AddChild(CollisionPivot);
@@ -504,7 +552,8 @@ public sealed partial class BrickversianModel : CharacterModel
 
 		Animator = await WaitChild<Animator>("Animator", 5);
 
-		if (Animator == null) return;
+		if (Animator == null)
+			return;
 
 		AnimTree.AdvanceExpressionBaseNode = _helper.GetPath();
 
@@ -566,7 +615,11 @@ public sealed partial class BrickversianModel : CharacterModel
 			{
 				targetBlendSpeed = LookBlendSpeed;
 
-				newValue = Mathf.Lerp(current, target, MathUtils.ExpDecay((float)delta, targetBlendSpeed));
+				newValue = Mathf.Lerp(
+					current,
+					target,
+					MathUtils.ExpDecay((float)delta, targetBlendSpeed)
+				);
 			}
 			else
 			{
@@ -585,15 +638,9 @@ public sealed partial class BrickversianModel : CharacterModel
 		// Pants   = 1, bottom
 		// Shirt   = 2
 		// T-Shirt = 3, top
-		ImageTexture? pantsTexture = BuildClothingComposite(
-			clothings,
-			Clothing.ClothingType.Pants
-		);
+		ImageTexture? pantsTexture = BuildClothingComposite(clothings, Clothing.ClothingType.Pants);
 
-		ImageTexture? shirtTexture = BuildClothingComposite(
-			clothings,
-			Clothing.ClothingType.Shirt
-		);
+		ImageTexture? shirtTexture = BuildClothingComposite(clothings, Clothing.ClothingType.Shirt);
 
 		ImageTexture? torsoTexture = BuildClothingComposite(
 			clothings,
@@ -621,12 +668,7 @@ public sealed partial class BrickversianModel : CharacterModel
 		params Clothing.ClothingType[] layers
 	)
 	{
-		Image result = Image.CreateEmpty(
-			ClothingWidth,
-			ClothingHeight,
-			false,
-			ClothingFormat
-		);
+		Image result = Image.CreateEmpty(ClothingWidth, ClothingHeight, false, ClothingFormat);
 
 		bool hasTexture = false;
 
@@ -646,9 +688,7 @@ public sealed partial class BrickversianModel : CharacterModel
 			}
 		}
 
-		return hasTexture
-			? ImageTexture.CreateFromImage(result)
-			: null;
+		return hasTexture ? ImageTexture.CreateFromImage(result) : null;
 	}
 
 	private static void SetClothingTexture(
@@ -704,53 +744,6 @@ public sealed partial class BrickversianModel : CharacterModel
 		}
 	}
 
-	private void OnBodyLoaded(Resource? resource)
-	{
-		if (resource is PackedScene scene)
-		{
-			if (_bodyPkScene == scene) return;
-			_bodyPkScene = scene;
-
-			Node n = scene.Instantiate();
-
-			ApplyBodyPart(n, HeadMeshInstance, "Head");
-			ApplyBodyPart(n, LeftArmMeshInstance, "LeftArm");
-			ApplyBodyPart(n, RightArmMeshInstance, "RightArm");
-			ApplyBodyPart(n, LeftLegMeshInstance, "LeftLeg");
-			ApplyBodyPart(n, RightLegMeshInstance, "RightLeg");
-			ApplyBodyPart(n, TorsoMeshInstance, "Torso");
-
-			n.QueueFree();
-		}
-		else if (resource == null)
-		{
-			_bodyPkScene = null;
-			ApplyDefaultBodyPart(HeadMeshInstance, "Head");
-			ApplyDefaultBodyPart(LeftArmMeshInstance, "LeftArm");
-			ApplyDefaultBodyPart(RightArmMeshInstance, "RightArm");
-			ApplyDefaultBodyPart(LeftLegMeshInstance, "LeftLeg");
-			ApplyDefaultBodyPart(RightLegMeshInstance, "RightLeg");
-			ApplyDefaultBodyPart(TorsoMeshInstance, "Torso");
-		}
-	}
-
-	private static void ApplyDefaultBodyPart(MeshInstance3D m3d, string k)
-	{
-		m3d.Mesh = GD.Load<Godot.Mesh>($"res://assets/models/bodyparts/default/{k}.tres");
-	}
-
-	private static void ApplyBodyPart(Node source, MeshInstance3D target, string sourceName)
-	{
-		if (source.GetNodeOrNull($"Poly/Skeleton3D/{sourceName}") is MeshInstance3D m3d)
-		{
-			target.Mesh = m3d.Mesh;
-		}
-		else
-		{
-			throw new Exception("Invalid Body Mesh");
-		}
-	}
-
 	[ScriptMethod]
 	public void StartRagdoll(Vector3? force = null)
 	{
@@ -767,9 +760,11 @@ public sealed partial class BrickversianModel : CharacterModel
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
 	private async void NetStartRagdoll(Vector3 force)
 	{
-		if (_ragdollBoneSim == null) return;
+		if (_ragdollBoneSim == null)
+			return;
 
-		if (_lastPhysicalBoneSim != null) return;
+		if (_lastPhysicalBoneSim != null)
+			return;
 
 		// need duplicates cuz godot won't adapt dynamically to bones
 		PhysicalBoneSimulator3D s = (PhysicalBoneSimulator3D)_ragdollBoneSim.Duplicate();
@@ -791,7 +786,8 @@ public sealed partial class BrickversianModel : CharacterModel
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
 	private void NetStopRagdoll()
 	{
-		if (_lastPhysicalBoneSim == null) return;
+		if (_lastPhysicalBoneSim == null)
+			return;
 
 		_lastPhysicalBoneSim.PhysicalBonesStopSimulation();
 		_lastPhysicalBoneSim.Active = false;
@@ -908,7 +904,8 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	public override void RecvSpeedValue(float speedValue)
 	{
-		if (AnimTree == null) return;
+		if (AnimTree == null)
+			return;
 		AnimTree.Set("parameters/TimeScale/scale", speedValue);
 	}
 
@@ -956,7 +953,23 @@ public sealed partial class BrickversianModel : CharacterModel
 	public void LoadAppearance(string userID, bool loadTool = true)
 	{
 		ClearAppearance();
-		_ = InternalLoadAppearance(userID, loadTool);
+		_ = LoadAppearanceSafe(userID, loadTool);
+	}
+
+	private async Task LoadAppearanceSafe(string userID, bool loadTool)
+	{
+		try
+		{
+			await InternalLoadAppearance(userID, loadTool);
+		}
+		catch (OperationCanceledException)
+		{
+			// A newer appearance request superseded this one.
+		}
+		catch (Exception exception)
+		{
+			BV.PrintErr("Failed to load appearance for user ", userID, ": ", exception);
+		}
 	}
 
 	[ScriptMethod]
@@ -984,26 +997,19 @@ public sealed partial class BrickversianModel : CharacterModel
 	{
 		(ShaderMaterial opaque, ShaderMaterial transparent) = mesh switch
 		{
-			_ when mesh == TorsoMeshInstance =>
-				(_torsoMat, _transparentTorsoMat),
+			_ when mesh == TorsoMeshInstance => (_torsoMat, _transparentTorsoMat),
 
-			_ when mesh == LeftArmMeshInstance =>
-				(_leftArmMat, _transparentLeftArmMat),
+			_ when mesh == LeftArmMeshInstance => (_leftArmMat, _transparentLeftArmMat),
 
-			_ when mesh == RightArmMeshInstance =>
-				(_rightArmMat, _transparentRightArmMat),
+			_ when mesh == RightArmMeshInstance => (_rightArmMat, _transparentRightArmMat),
 
-			_ when mesh == LeftHandMeshInstance =>
-				(_leftHandMat, _transparentLeftHandMat),
+			_ when mesh == LeftHandMeshInstance => (_leftHandMat, _transparentLeftHandMat),
 
-			_ when mesh == RightHandMeshInstance =>
-				(_rightHandMat, _transparentRightHandMat),
+			_ when mesh == RightHandMeshInstance => (_rightHandMat, _transparentRightHandMat),
 
-			_ when mesh == LeftLegMeshInstance =>
-				(_leftLegMat, _transparentLeftLegMat),
+			_ when mesh == LeftLegMeshInstance => (_leftLegMat, _transparentLeftLegMat),
 
-			_ when mesh == RightLegMeshInstance =>
-				(_rightLegMat, _transparentRightLegMat),
+			_ when mesh == RightLegMeshInstance => (_rightLegMat, _transparentRightLegMat),
 
 			_ => throw new ArgumentOutOfRangeException(
 				nameof(mesh),
@@ -1015,9 +1021,14 @@ public sealed partial class BrickversianModel : CharacterModel
 		mesh.SetInstanceShaderParameter(_albedoParam, albedo);
 	}
 
-	private static Color MeshGetAlbedo(GeometryInstance3D mesh) => (Color)mesh.GetInstanceShaderParameter(_albedoParam);
+	private static Color MeshGetAlbedo(GeometryInstance3D mesh) =>
+		(Color)mesh.GetInstanceShaderParameter(_albedoParam);
 
-	internal async Task<AvatarLoadResponse> InternalLoadAppearance(string userID, bool loadTool = false, bool loadToolNpc = false)
+	internal async Task<AvatarLoadResponse> InternalLoadAppearance(
+		string userID,
+		bool loadTool = false,
+		bool loadToolNpc = false
+	)
 	{
 		_loadAppearanceCount++;
 
@@ -1025,7 +1036,15 @@ public sealed partial class BrickversianModel : CharacterModel
 		int myCount = _loadAppearanceCount;
 
 		APIAvatarResponse avatarData = await BVAPI.GetUserAvatarFromID(userID);
-		if (myCount != _loadAppearanceCount) throw new OperationCanceledException("The avatar is cancelled");
+		BV.Print(
+			$"Loading avatar for user {userID}: {JsonSerializer.Serialize(avatarData, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    })}"
+		);
+
+		if (myCount != _loadAppearanceCount)
+			throw new OperationCanceledException("The avatar is cancelled");
 
 		if (IsDeleted)
 		{
@@ -1042,30 +1061,54 @@ public sealed partial class BrickversianModel : CharacterModel
 
 		bool hasTool = false;
 
+		// Load assets
 		foreach (APIAvatarAsset asset in avatarData.Assets)
 		{
-			if (asset.Type == "clothing")
+			if (asset.Type is "shirt" or "pants")
 			{
+				if (string.IsNullOrWhiteSpace(asset.TextureID))
+					continue;
 				BVImageAsset txt = New<BVImageAsset>();
-				txt.ImageID = asset.ID.ToString();
+				txt.ImageID = asset.TextureID;
 				Clothing c = New<Clothing>();
 				c.Name = asset.Name;
+				c.Type =
+					asset.Type == "pants"
+						? Clothing.ClothingType.Pants
+						: Clothing.ClothingType.Shirt;
 				c.Image = txt;
 				c.Parent = this;
 			}
-			else if (asset.Type == "face")
+			else if (asset.Type is "face" or "facemakeup")
 			{
-				if (_faceOverrided) continue;
+				if (_faceOverrided)
+					continue;
+				if (string.IsNullOrWhiteSpace(asset.TextureID))
+					continue;
 				BVImageAsset face = New<BVImageAsset>();
-				face.ImageID = asset.ID.ToString();
+				face.ImageID = asset.TextureID;
 				FaceImage = face;
 			}
-			else if (asset.Type == "hat")
+			else if (
+				asset.Type
+				is "hat"
+					or "hair"
+					or "faceaccessory"
+					or "neckaccessory"
+					or "frontaccessory"
+					or "backaccessory"
+					or "waistaccessory"
+					or "gear"
+			)
 			{
 				try
 				{
 					Accessory? accessory = await Root.Insert.AccessoryAsync(asset.ID);
-					if (myCount != _loadAppearanceCount) { accessory?.Delete(); throw new OperationCanceledException("The avatar is cancelled"); }
+					if (myCount != _loadAppearanceCount)
+					{
+						accessory?.Delete();
+						throw new OperationCanceledException("The avatar is cancelled");
+					}
 					if (IsDeleted)
 					{
 						accessory?.Delete();
@@ -1086,7 +1129,11 @@ public sealed partial class BrickversianModel : CharacterModel
 					try
 					{
 						Tool? tool = await Root.Insert.ToolAsync(asset.ID);
-						if (myCount != _loadAppearanceCount) { tool?.Delete(); throw new OperationCanceledException("The avatar is cancelled"); }
+						if (myCount != _loadAppearanceCount)
+						{
+							tool?.Delete();
+							throw new OperationCanceledException("The avatar is cancelled");
+						}
 						if (IsDeleted)
 						{
 							tool?.Delete();
@@ -1105,7 +1152,11 @@ public sealed partial class BrickversianModel : CharacterModel
 					try
 					{
 						Tool? tool = await Root.Insert.ToolAsync(asset.ID);
-						if (myCount != _loadAppearanceCount) { tool?.Delete(); throw new OperationCanceledException("The avatar is cancelled"); }
+						if (myCount != _loadAppearanceCount)
+						{
+							tool?.Delete();
+							throw new OperationCanceledException("The avatar is cancelled");
+						}
 						if (IsDeleted)
 						{
 							tool?.Delete();

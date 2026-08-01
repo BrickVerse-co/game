@@ -131,40 +131,54 @@ public sealed partial class InsertService : Instance
 	[ScriptMethod]
 	public async Task<Accessory?> AccessoryAsync(string id)
 	{
-		APIStoreItem storeItem = await GetStoreItemCachedAsync(id);
+		APIMarketplace3DResponse response = await BVAPI.GetMarketplace3D(id);
+		if (!response.Success || string.IsNullOrWhiteSpace(response.Item.MeshId))
+			return null;
+		APIMarketplace3DItem item = response.Item;
 
 		BVMeshAsset meshAsset = New<BVMeshAsset>();
-		meshAsset.AssetID = id;
+		meshAsset.AssetID = item.MeshId;
 
 		Accessory accessory = New<Accessory>(this);
 		Mesh mesh = New<Mesh>();
 		mesh.Size = Vector3.One;
 		mesh.Parent = accessory;
 		mesh.Asset = meshAsset;
+		if (!string.IsNullOrWhiteSpace(item.TextureId))
+		{
+			BVImageAsset texture = New<BVImageAsset>();
+			texture.ImageID = item.TextureId;
+			mesh.Texture = texture;
+		}
 
 		accessory.LocalRotation = Vector3.Zero;
 		mesh.LocalRotation = Vector3.Zero;
-		accessory.Size = new Vector3(0.5f, 0.5f, 0.5f);
+		accessory.Size = Vector3.One;
 
-		mesh.IncludeOffset = true;
+		mesh.IncludeOffset = false;
 		mesh.Name = "Mesh";
 		mesh.CanCollide = false;
 		mesh.Anchored = true;
-		accessory.Name = string.IsNullOrWhiteSpace(storeItem.Name) ? $"Accessory_{id}" : storeItem.Name;
+		accessory.Name = string.IsNullOrWhiteSpace(item.Name) ? $"Accessory_{id}" : item.Name;
 
-		mesh.LocalPosition = new Vector3(0, -10.7f, 0);
+		APIPosition3 position = item.MeshPosition ?? new APIPosition3();
+		mesh.LocalPosition = new Vector3(position.X, position.Y, position.Z);
 
-		string? accessoryType = storeItem.AccessoryType;
+		string accessoryType = item.Type ?? "";
 
-		if (accessoryType == "backAccessory" || accessoryType == "frontAccessory" || accessoryType == "waistAccessory")
+		if (accessoryType.Equals("BackAccessory", StringComparison.OrdinalIgnoreCase)
+			|| accessoryType.Equals("FrontAccessory", StringComparison.OrdinalIgnoreCase)
+			|| accessoryType.Equals("NeckAccessory", StringComparison.OrdinalIgnoreCase))
 		{
-			mesh.LocalPosition = new Vector3(0, -6.8f, 0);
+			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.UpperTorso;
+		}
+		else if (accessoryType.Equals("WaistAccessory", StringComparison.OrdinalIgnoreCase))
+		{
 			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.LowerTorso;
 		}
-		else if (accessoryType == "neckAccessory" || accessoryType == "shoulderAccessory")
+		else if (accessoryType.Equals("Gear", StringComparison.OrdinalIgnoreCase))
 		{
-			mesh.LocalPosition = new Vector3(0, -8.8f, 0);
-			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.UpperTorso;
+			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.HandRight;
 		}
 		else
 		{

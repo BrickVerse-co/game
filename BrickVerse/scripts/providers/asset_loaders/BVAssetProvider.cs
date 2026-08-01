@@ -304,19 +304,61 @@ public class BVAssetProvider : IAssetProvider
 			// 	" for resource type: ", itemType,
 			// 	" Authorization: ", request.Headers.Authorization);
 
-			using HttpResponseMessage response = await _client.SendAsync(request);
-
-			if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && requiresAuthorization)
+			HttpResponseMessage response;
+			try
 			{
-				await WaitForAssetAuthorizationAsync(url);
-				continue;
+				response = await _client.SendAsync(request);
+			}
+			catch (Exception exception)
+			{
+				throw CreateAssetRequestException(request, null, exception);
 			}
 
-			response.EnsureSuccessStatusCode();
-			return await response.Content.ReadAsByteArrayAsync();
+			using (response)
+			{
+				if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && requiresAuthorization)
+				{
+					await WaitForAssetAuthorizationAsync(url);
+					continue;
+				}
+
+				if (!response.IsSuccessStatusCode)
+					throw CreateAssetRequestException(request, response.StatusCode);
+
+				return await response.Content.ReadAsByteArrayAsync();
+			}
 		}
 
 		throw new HttpRequestException("Asset request failed after authorization retry.");
+	}
+
+	private static HttpRequestException CreateAssetRequestException(
+		HttpRequestMessage request,
+		HttpStatusCode? statusCode,
+		Exception? innerException = null
+	)
+	{
+		string path = request.RequestUri?.AbsolutePath ?? "";
+		string route = path.Contains("/world/editor/", StringComparison.OrdinalIgnoreCase)
+			? "Editor"
+			: path.Contains("/world/client/", StringComparison.OrdinalIgnoreCase)
+				? "Client"
+				: path.Contains("/world/server/", StringComparison.OrdinalIgnoreCase)
+					? "Server"
+					: "Public";
+		string? bearer = request.Headers.Authorization?.Parameter;
+		string bearerPrefix = string.IsNullOrWhiteSpace(bearer)
+			? "<missing>"
+			: bearer[..Math.Min(6, bearer.Length)] + "…";
+		string status = statusCode.HasValue
+			? $"{(int)statusCode.Value} ({statusCode.Value})"
+			: "request failed before a response";
+
+		return new HttpRequestException(
+			$"Asset request failed. Route: {route}; Bearer prefix: {bearerPrefix}; Status: {status}.",
+			innerException,
+			statusCode
+		);
 	}
 
 	private HttpRequestMessage CreateAssetRequest(string url)

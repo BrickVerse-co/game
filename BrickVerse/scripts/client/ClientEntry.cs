@@ -6,7 +6,12 @@
 #define ALLOW_SELFHOST
 #endif
 
-using Godot;
+#if CREATOR
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using BrickVerse.Client.Debugger;
 using BrickVerse.Client.Settings;
 using BrickVerse.Client.Settings.Appliers;
@@ -18,14 +23,9 @@ using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
-#if CREATOR
+using Godot;
 using BrickVerse.Creator.Utils;
 #endif
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 
 namespace BrickVerse.Client;
 
@@ -89,7 +89,11 @@ public sealed partial class ClientEntry : Node3D
 			ApplySelfHostedLaunchOptions(launchOptions);
 #endif
 
-			await ConnectDebugAgentAsync(launchOptions.DebugAddress, launchOptions.DebugId, stopwatch);
+			await ConnectDebugAgentAsync(
+				launchOptions.DebugAddress,
+				launchOptions.DebugId,
+				stopwatch
+			);
 			ApplyMobileWindowSettings();
 			CreateCoreServices(launchOptions.IsServer);
 			InitializeWorld(stopwatch);
@@ -125,7 +129,8 @@ public sealed partial class ClientEntry : Node3D
 
 	private static string FormatLaunchOptions(ClientLaunchOptions options)
 	{
-		return string.Join(", ",
+		return string.Join(
+			", ",
 			typeof(ClientLaunchOptions)
 				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 				.Select(p =>
@@ -133,13 +138,18 @@ public sealed partial class ClientEntry : Node3D
 					object? value = p.GetValue(options);
 
 					// Hide secrets
-					if (p.Name is nameof(ClientLaunchOptions.AuthToken) or nameof(ClientLaunchOptions.CreatorToken))
+					if (
+						p.Name
+						is nameof(ClientLaunchOptions.AuthToken)
+							or nameof(ClientLaunchOptions.CreatorToken)
+					)
 					{
 						value = string.IsNullOrWhiteSpace(value?.ToString()) ? "<null>" : "***";
 					}
 
 					return $"{p.Name}={value ?? "<null>"}";
-				}));
+				})
+		);
 	}
 
 	private static ClientLaunchOptions BuildLaunchOptions(ClientEntryData? entryData)
@@ -153,7 +163,8 @@ public sealed partial class ClientEntry : Node3D
 		args.TryGetValue("debug-id", out string? debugId);
 		args.TryGetValue("ltrect", out string? localTestViewportRect);
 
-		bool runAsServer = string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
+		bool runAsServer =
+			string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
 			|| (string.IsNullOrWhiteSpace(networkMode) && Globals.IsServerBuild);
 
 		ClientLaunchOptions options = new()
@@ -170,7 +181,8 @@ public sealed partial class ClientEntry : Node3D
 
 		BV.IsServer = runAsServer;
 		ClientAuthAPI.SetAuthToken(options.AuthToken ?? "");
-		if (BV.IsServer) ServerAPI.SetAuthToken(options.AuthToken ?? "");
+		if (BV.IsServer)
+			ServerAPI.SetAuthToken(options.AuthToken ?? "");
 
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
@@ -185,7 +197,9 @@ public sealed partial class ClientEntry : Node3D
 		options.LocalAddress = localAddress ?? DefaultLocalAddress;
 		options.LocalPort = (localPortText ?? DefaultLocalPort.ToString()).ToInt();
 		options.LocalWorldPath = localWorldPath;
-		options.TestUserId = string.IsNullOrWhiteSpace(testUserId) ? Globals.TestUserIdStart : testUserId;
+		options.TestUserId = string.IsNullOrWhiteSpace(testUserId)
+			? Globals.TestUserIdStart
+			: testUserId;
 		options.SoloWorldPath = soloWorldPath;
 		options.SoloClientCount = (soloClientCountText ?? "1").ToInt();
 		options.DebugSpawnPositionText = debugSpawnPositionText;
@@ -211,7 +225,10 @@ public sealed partial class ClientEntry : Node3D
 		return options;
 	}
 
-	private static void ApplyEntryDataOverrides(ClientLaunchOptions options, ClientEntryData entryData)
+	private static void ApplyEntryDataOverrides(
+		ClientLaunchOptions options,
+		ClientEntryData entryData
+	)
 	{
 		if (entryData.TestIsServer.HasValue)
 		{
@@ -233,7 +250,9 @@ public sealed partial class ClientEntry : Node3D
 #if ALLOW_SELFHOST
 	private void ApplySelfHostedLaunchOptions(ClientLaunchOptions options)
 	{
-		TestUserID = string.IsNullOrWhiteSpace(options.TestUserId) ? Globals.TestUserIdStart : options.TestUserId;
+		TestUserID = string.IsNullOrWhiteSpace(options.TestUserId)
+			? Globals.TestUserIdStart
+			: options.TestUserId;
 
 		if (!string.IsNullOrWhiteSpace(options.DebugSpawnPositionText))
 		{
@@ -262,7 +281,11 @@ public sealed partial class ClientEntry : Node3D
 	}
 #endif
 
-	private async System.Threading.Tasks.Task ConnectDebugAgentAsync(string? debugAddress, string? debugId, Stopwatch stopwatch)
+	private async System.Threading.Tasks.Task ConnectDebugAgentAsync(
+		string? debugAddress,
+		string? debugId,
+		Stopwatch stopwatch
+	)
 	{
 		if (string.IsNullOrWhiteSpace(debugAddress))
 		{
@@ -302,20 +325,34 @@ public sealed partial class ClientEntry : Node3D
 
 	private void CreateCoreServices(bool isServer)
 	{
-		ClientSettingsService settings = new()
-		{
-			Name = "ClientSettings",
-			Entry = this,
-		};
+		ClientSettingsService settings = new() { Name = "ClientSettings", Entry = this };
 
 		AddChild(settings, true, InternalMode.Front);
 		settings.Init();
 
-		AssetLoader.Singleton.MaxConcurrentRequests = ClientSettingsService.Instance.Get<int>(SharedSettingKeys.Advanced.AssetQueue);
+		AssetLoader.Singleton.MaxConcurrentRequests = ClientSettingsService.Instance.Get<int>(
+			SharedSettingKeys.Advanced.AssetQueue
+		);
 
-		settings.AddChild(new DisplaySettingsApplier { Name = "DisplaySettingsApplier" }, true, InternalMode.Front);
-		settings.AddChild(new AudioSettingsApplier { Name = "AudioSettingsApplier" }, true, InternalMode.Front);
-		settings.AddChild(new GraphicsSettingsApplier { Name = GraphicsSettingsApplier.NodeName, Settings = settings }, true, InternalMode.Front);
+		settings.AddChild(
+			new DisplaySettingsApplier { Name = "DisplaySettingsApplier" },
+			true,
+			InternalMode.Front
+		);
+		settings.AddChild(
+			new AudioSettingsApplier { Name = "AudioSettingsApplier" },
+			true,
+			InternalMode.Front
+		);
+		settings.AddChild(
+			new GraphicsSettingsApplier
+			{
+				Name = GraphicsSettingsApplier.NodeName,
+				Settings = settings,
+			},
+			true,
+			InternalMode.Front
+		);
 
 		DatamodelBridge = new DatamodelBridge { Name = "DatamodelBridge" };
 		AddChild(DatamodelBridge, true);
@@ -362,7 +399,10 @@ public sealed partial class ClientEntry : Node3D
 #endif
 
 #if ALLOW_SELFHOST
-	private async System.Threading.Tasks.Task LoadSelfHostedWorldIfNeededAsync(ClientLaunchOptions options, Stopwatch stopwatch)
+	private async System.Threading.Tasks.Task LoadSelfHostedWorldIfNeededAsync(
+		ClientLaunchOptions options,
+		Stopwatch stopwatch
+	)
 	{
 		if (!options.IsServer)
 		{
@@ -392,7 +432,10 @@ public sealed partial class ClientEntry : Node3D
 		return freeLook;
 	}
 
-	private async System.Threading.Tasks.Task LoadLocalWorldFileAsync(string worldPath, string? worldEntryPath)
+	private async System.Threading.Tasks.Task LoadLocalWorldFileAsync(
+		string worldPath,
+		string? worldEntryPath
+	)
 	{
 		string absoluteWorldPath = ProjectSettings.GlobalizePath(worldPath);
 		BV.Print("Loading world with entry: ", worldEntryPath);
@@ -470,7 +513,9 @@ public sealed partial class ClientEntry : Node3D
 #endif
 	}
 
-	private async System.Threading.Tasks.Task StartProductionServerAsync(ClientLaunchOptions options)
+	private async System.Threading.Tasks.Task StartProductionServerAsync(
+		ClientLaunchOptions options
+	)
 	{
 		BV.Print("Starting production server...");
 		if (string.IsNullOrWhiteSpace(options.AuthToken))
@@ -494,17 +539,22 @@ public sealed partial class ClientEntry : Node3D
 			Root.ServerID = listenResponse.ServerID;
 
 			BV.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
-			BV.Print("Downloading world...");
 
-			stopwatch.Restart();
-			byte[] worldContent = await ServerAPI.DownloadWorld(listenResponse.WorldID);
-			BV.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
-			BV.Print("World bytes: ", worldContent.Length);
+			// Only download world if local world path as it's already loaded
+			if (string.IsNullOrWhiteSpace(options.LocalWorldPath))
+			{
+				BV.Print("Downloading world...");
 
-			stopwatch.Restart();
-			BV.Print("Constructing...");
-			await DatamodelLoader.LoadWorldBytes(Root, worldContent, listenResponse.PlacePath);
-			BV.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
+				stopwatch.Restart();
+				byte[] worldContent = await ServerAPI.DownloadWorld(listenResponse.WorldID);
+				BV.Print("World downloaded in ", stopwatch.ElapsedMilliseconds, "ms");
+				BV.Print("World bytes: ", worldContent.Length);
+
+				stopwatch.Restart();
+				BV.Print("Constructing...");
+				await DatamodelLoader.LoadWorldBytes(Root, worldContent, listenResponse.PlacePath);
+				BV.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
+			}
 
 			int serverPort = listenResponse.Port;
 			NetworkService.CreateServer(serverPort, options.MaxPlayers);
@@ -582,7 +632,10 @@ public sealed partial class ClientEntry : Node3D
 		catch (Exception ex)
 		{
 			BV.PrintErr(ex);
-			NetworkService.DisconnectSelf(ex.Message, NetworkService.DisconnectionCodeEnum.ConnectionFailure);
+			NetworkService.DisconnectSelf(
+				ex.Message,
+				NetworkService.DisconnectionCodeEnum.ConnectionFailure
+			);
 		}
 	}
 
@@ -620,7 +673,10 @@ public sealed partial class ClientEntry : Node3D
 
 			if (status.Status == "STOPPED" || status.Status == "STOPPING")
 			{
-				NetworkService.DisconnectSelf($"Server {status.Status.ToLower()} by universe developer.", NetworkService.DisconnectionCodeEnum.ConnectionFailure);
+				NetworkService.DisconnectSelf(
+					$"Server {status.Status.ToLower()} by universe developer.",
+					NetworkService.DisconnectionCodeEnum.ConnectionFailure
+				);
 				_serverStatusPollTimer.QueueFree();
 				_serverStatusPollTimer = null;
 				return;
@@ -647,7 +703,9 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (@event.IsActionPressed("toggle_fullscreen"))
 		{
-			bool fullscreen = ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen);
+			bool fullscreen = ClientSettingsService.Instance.Get<bool>(
+				SharedSettingKeys.Display.Fullscreen
+			);
 			ClientSettingsService.Instance.Set(SharedSettingKeys.Display.Fullscreen, !fullscreen);
 		}
 
@@ -697,7 +755,12 @@ public sealed partial class ClientEntry : Node3D
 		LeaveGameRequested?.Invoke();
 	}
 
-	public void LocalTestStartClient(int port = DefaultLocalPort, string? viewportRect = null, string? debugId = null, string? creatorToken = null)
+	public void LocalTestStartClient(
+		int port = DefaultLocalPort,
+		string? viewportRect = null,
+		string? debugId = null,
+		string? creatorToken = null
+	)
 	{
 		TestClientCount++;
 
@@ -715,11 +778,15 @@ public sealed partial class ClientEntry : Node3D
 		List<string> args =
 		[
 			"--windowed",
-			"--log-file", logFilePath,
-			"-network", "client",
-			"-id", testClientId.ToString(),
+			"--log-file",
+			logFilePath,
+			"-network",
+			"client",
+			"-id",
+			testClientId.ToString(),
 			"-ltchild",
-			"-port", port.ToString(),
+			"-port",
+			port.ToString(),
 		];
 
 		if (!string.IsNullOrWhiteSpace(viewportRect))
@@ -760,23 +827,27 @@ public sealed partial class ClientEntry : Node3D
 			return;
 
 		string[] values = options.LocalTestViewportRect.Split(',');
-		if (values.Length != 4
+		if (
+			values.Length != 4
 			|| !int.TryParse(values[0], out int x)
 			|| !int.TryParse(values[1], out int y)
 			|| !int.TryParse(values[2], out int width)
-			|| !int.TryParse(values[3], out int height))
+			|| !int.TryParse(values[3], out int height)
+		)
 		{
 			BV.PrintErr($"Invalid local-test viewport rectangle: {options.LocalTestViewportRect}");
 			return;
 		}
 
-		ApplyLocalTestViewport(new MessageRuntimeViewportRect
-		{
-			X = x,
-			Y = y,
-			Width = width,
-			Height = height
-		});
+		ApplyLocalTestViewport(
+			new MessageRuntimeViewportRect
+			{
+				X = x,
+				Y = y,
+				Width = width,
+				Height = height,
+			}
+		);
 	}
 
 	internal static void ApplyLocalTestViewport(MessageRuntimeViewportRect rect)
@@ -791,7 +862,9 @@ public sealed partial class ClientEntry : Node3D
 		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, true);
 		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true);
 		DisplayServer.WindowSetPosition(new Vector2I(rect.X, rect.Y));
-		DisplayServer.WindowSetSize(new Vector2I(Math.Max(320, rect.Width), Math.Max(240, rect.Height)));
+		DisplayServer.WindowSetSize(
+			new Vector2I(Math.Max(320, rect.Width), Math.Max(240, rect.Height))
+		);
 	}
 
 	public override void _ExitTree()
