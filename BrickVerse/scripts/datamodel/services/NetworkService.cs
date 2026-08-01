@@ -106,6 +106,7 @@ public sealed partial class NetworkService : Instance
 	private Godot.Timer? _idleCheckTimer;
 	private Godot.Timer? _networkPingTimer;
 	private ulong _heartbeatCount = 0;
+	private bool _heartbeatInFlight;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private ulong _lastActivityReportTime;
 	public ClientEntry Entry = null!;
@@ -156,6 +157,12 @@ public sealed partial class NetworkService : Instance
 			_networkPingTimer.Timeout -= SendNetworkPing;
 			_networkPingTimer.QueueFree();
 			_networkPingTimer = null;
+		}
+		if (GodotObject.IsInstanceValid(_heartbeatTimer))
+		{
+			_heartbeatTimer.Timeout -= ServerSendHeartbeat;
+			_heartbeatTimer.Stop();
+			_heartbeatTimer.QueueFree();
 		}
 
 		// Null all events
@@ -511,6 +518,7 @@ public sealed partial class NetworkService : Instance
 		if (IsProd)
 		{
 			_heartbeatTimer = new();
+			_heartbeatTimer.OneShot = true;
 			Globals.Singleton.AddChild(_heartbeatTimer);
 			_heartbeatTimer.Timeout += ServerSendHeartbeat;
 			_heartbeatTimer.Start(HeartbeatIntervalSec);
@@ -543,31 +551,63 @@ public sealed partial class NetworkService : Instance
 
 	private async void ServerSendHeartbeat()
 	{
-		_heartbeatCount++;
-		APIHeartbeatResponse res = await ServerAPI.SendHeartbeat(World.Current!.Players.GetPlayerIDArray());
-		if (res.Remove.Count > 0)
+		if (_heartbeatInFlight || !IsServer || IsShuttingDown)
 		{
-			foreach (string r in res.Remove)
-			{
-				Player? player = Root.Players.GetPlayerByID(r);
-				if (player != null)
-				{
-					DisconnectPeer(player.PeerID, TerminationMessage, DisconnectionCodeEnum.UserTerminated);
-				}
-			}
+			return;
 		}
 
-		// Check for players in the server
-		if (_heartbeatCount > HeartbeatBeforeCheckPlayers)
+		_heartbeatInFlight = true;
+		try
 		{
-			if (World.Current.Players.AbsolutePlayersCount <= 0)
+			_heartbeatCount++;
+			APIHeartbeatResponse res = await ServerAPI.SendHeartbeat(
+				Root.Players.GetPlayerIDArray()
+			);
+			if (res.Remove is { Count: > 0 })
+			{
+				foreach (string playerId in res.Remove)
+				{
+					Player? player = Root.Players.GetPlayerByID(playerId);
+					if (player != null)
+					{
+						DisconnectPeer(
+							player.PeerID,
+							TerminationMessage,
+							DisconnectionCodeEnum.UserTerminated
+						);
+					}
+				}
+			}
+
+			if (res.ShouldShutdown)
+			{
+				BV.Print("Backend requested server shutdown");
+				ShutdownServer();
+				return;
+			}
+
+			// Check for players in the server
+			if (
+				_heartbeatCount > HeartbeatBeforeCheckPlayers
+				&& Root.Players.AbsolutePlayersCount <= 0
+			)
 			{
 				BV.Print("No players, shutting down");
 				ShutdownServer();
 			}
 		}
-
-		_heartbeatTimer.Start(HeartbeatIntervalSec);
+		catch (Exception exception)
+		{
+			BV.PrintErr("Server heartbeat failed: ", exception);
+		}
+		finally
+		{
+			_heartbeatInFlight = false;
+			if (IsServer && !IsShuttingDown && GodotObject.IsInstanceValid(_heartbeatTimer))
+			{
+				_heartbeatTimer.Start(HeartbeatIntervalSec);
+			}
+		}
 	}
 
 	private void OnPlayerAdded(Player player)
