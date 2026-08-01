@@ -97,6 +97,9 @@ public sealed partial class ClientEntry : Node3D
 			ApplyMobileWindowSettings();
 			CreateCoreServices(launchOptions.IsServer);
 			InitializeWorld(stopwatch);
+			// Let the loading UI present the constructed-world state before world IO,
+			// replication, authentication, and asset initialization continue.
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 #if CREATOR
 			ApplyCreatorTestToken(launchOptions.CreatorToken);

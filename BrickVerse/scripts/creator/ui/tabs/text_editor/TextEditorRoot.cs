@@ -29,6 +29,15 @@ public partial class TextEditorRoot : Node
 
 	public event Action<bool>? SavedChanged;
 
+	public void GoToLine(int oneBasedLine)
+	{
+		int line = Mathf.Clamp(oneBasedLine - 1, 0, Mathf.Max(0, CodeEditor.GetLineCount() - 1));
+		CodeEditor.SetCaretLine(line);
+		CodeEditor.SetCaretColumn(0);
+		CodeEditor.CenterViewportToCaret();
+		CodeEditor.GrabFocus();
+	}
+
 	[Export] private TextEditorFind _finder = null!;
 	[Export] private Label _diagLabel = null!;
 	[Export] private Label _statusBar = null!;

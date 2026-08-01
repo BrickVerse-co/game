@@ -69,6 +69,18 @@ public static class CreatorSettingsRegistry
 				DefaultValue = false
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.ShowInteractiveTutorial,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.ShowInteractiveTutorial,
+				SectionKey = "creator",
+				Label = "Interactive Getting Started Tutorial",
+				Description = "Show the optional, skippable Creator walkthrough for new installations.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>
@@ -588,6 +600,30 @@ public static class CreatorSettingsRegistry
 				SectionKey = "popups",
 				Label = "Close Tab Warning",
 				Description = "Show warning when closing a modified tab.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Popups.ExecutorConfirmation,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Popups.ExecutorConfirmation,
+				SectionKey = "popups",
+				Label = "Executor Confirmation",
+				Description = "Ask for confirmation before running Luau from the Creator Output executor.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Popups.ExecutorSuccess,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Popups.ExecutorSuccess,
+				SectionKey = "popups",
+				Label = "Executor Success Message",
+				Description = "Show a completion popup after Luau finishes successfully.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true

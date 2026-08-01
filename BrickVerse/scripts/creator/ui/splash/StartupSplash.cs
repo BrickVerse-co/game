@@ -19,6 +19,7 @@ public partial class StartupSplash : Control
 	[Export] private Button _openButton = null!;
 	[Export] private Button _recentsButton = null!;
 	[Export] private Button _settingsButton = null!;
+	[Export] private Button _tutorialButton = null!;
 	[Export] private Button _closeButton = null!;
 	[Export] private Label _versionNumber = null!;
 	[Export] private TextureRect _banner = null!;
@@ -35,6 +36,7 @@ public partial class StartupSplash : Control
 		_newButton.Pressed += OnNew;
 		_openButton.Pressed += CreatorService.Interface.PromptOpenWorld;
 		_settingsButton.Pressed += CreatorService.Interface.OpenSettings;
+		_tutorialButton.Pressed += OnTutorial;
 		_closeButton.Pressed += Close;
 		_versionNumber.Text = Globals.AppVersion;
 
@@ -42,6 +44,12 @@ public partial class StartupSplash : Control
 		string pathTo = BannersLocation.PathJoin(randomized);
 		_banner.Texture = GD.Load<Texture2D>(pathTo);
 		base._Ready();
+	}
+
+	private void OnTutorial()
+	{
+		Close();
+		IntroductionWizard.Singleton.Open();
 	}
 
 	private void OnNew()

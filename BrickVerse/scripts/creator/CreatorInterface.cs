@@ -155,7 +155,10 @@ public partial class CreatorInterface : Control, IScriptObject
 
 		Theme = _creatorTheme;
 
-		if (!Godot.FileAccess.FileExists(IntroRanFile))
+		if (
+			!Godot.FileAccess.FileExists(IntroRanFile)
+			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ShowInteractiveTutorial)
+		)
 		{
 			IntroductionWizard.Singleton.Open();
 		}

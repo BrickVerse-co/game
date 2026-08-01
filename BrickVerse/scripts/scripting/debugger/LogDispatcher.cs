@@ -61,7 +61,7 @@ public partial class LogDispatcher : NetworkedObject
 		}
 	}
 
-	public void LogWarning(Datamodel.Script from, string content)
+	public void LogWarning(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
 		DispatchLog(new()
@@ -69,12 +69,13 @@ public partial class LogDispatcher : NetworkedObject
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Warning,
 			Source = ResolveScriptSource(from),
+			SourceLine = sourceLine,
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
 	}
 
-	public void LogInfo(Datamodel.Script from, string content)
+	public void LogInfo(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
 		DispatchLog(new()
@@ -82,12 +83,13 @@ public partial class LogDispatcher : NetworkedObject
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Info,
 			Source = ResolveScriptSource(from),
+			SourceLine = sourceLine,
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
 	}
 
-	public void LogError(Datamodel.Script from, string content)
+	public void LogError(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintErrV($"[Lua] {from.NetworkPath} {content}");
 		DispatchLog(new()
@@ -95,6 +97,7 @@ public partial class LogDispatcher : NetworkedObject
 			ID = Guid.NewGuid().ToString(),
 			LogType = LogTypeEnum.Error,
 			Source = ResolveScriptSource(from),
+			SourceLine = sourceLine,
 			Content = content,
 			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
 		});
@@ -174,6 +177,7 @@ public partial class LogDispatcher : NetworkedObject
 			LogFrom = LogFromEnum.Client,
 			Content = TruncateForForward(data.Content),
 			Source = data.Source,
+			SourceLine = data.SourceLine,
 			LoggedAt = data.LoggedAt
 		};
 
@@ -355,6 +359,7 @@ public partial class LogDispatcher : NetworkedObject
 		public string ID = "";
 		public string Content = "";
 		public string Source = "";
+		public int SourceLine;
 		public DateTime LoggedAt;
 
 		public override int GetHashCode()

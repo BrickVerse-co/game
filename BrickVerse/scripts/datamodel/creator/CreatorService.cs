@@ -11,6 +11,7 @@ using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Formats;
 using BrickVerse.Scripting;
@@ -59,6 +60,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private Rect2I? _lastRuntimeViewportRect;
 	private bool _lastRuntimeViewportVisible;
 	private double _runtimeViewportSyncElapsed;
+	private double _runtimeViewportForceSyncElapsed;
 	private double _popupStackSyncElapsed;
 	private bool _creatorPromotedForPopup;
 
@@ -182,6 +184,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
 			window.AppendLog(log);
+
+		DebugConsole.Singleton?.NewLog(new LogDispatcher.LogData
+		{
+			ID = Guid.NewGuid().ToString(),
+			LogType = log.LogType,
+			LogFrom = log.LogFrom,
+			Content = log.Content,
+			Source = log.Source,
+			SourceLine = log.SourceLine,
+		});
 	}
 
 	private void OnBeforeQuit()
@@ -293,8 +305,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (!_primaryRuntimeClientProcess.HasValue) return;
 
 		_runtimeViewportSyncElapsed += delta;
+		_runtimeViewportForceSyncElapsed += delta;
 		if (_runtimeViewportSyncElapsed < 0.05) return;
 		_runtimeViewportSyncElapsed = 0;
+		bool forceSync = _runtimeViewportForceSyncElapsed >= 0.5;
 
 		Rect2I? rect = GetCurrentWorldViewportScreenRect();
 		bool visible = rect.HasValue
@@ -302,7 +316,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
 
 		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
-		if (rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
+		if (!forceSync && rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
 		if (!rect.HasValue && !_lastRuntimeViewportVisible) return;
 
 		if (rect.HasValue) _lastRuntimeViewportRect = rect;
@@ -310,6 +324,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (effectiveRect.HasValue)
 		{
 			DebugServer.SetRuntimeViewportRect(_primaryRuntimeClientProcess.Value, effectiveRect.Value, visible);
+			_runtimeViewportForceSyncElapsed = 0;
 		}
 	}
 
@@ -319,7 +334,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (worldContainer == null || !IsInstanceValid(worldContainer)) return null;
 
 		Rect2 globalRect = worldContainer.GetGlobalRect();
-		Vector2 windowPosition = GetWindow().Position;
+		Vector2 windowPosition = DisplayServer.WindowGetPosition(GetWindow().GetWindowId());
 		float scale = GetWindow().ContentScaleFactor;
 		Vector2I position = new(
 			Mathf.RoundToInt(windowPosition.X + globalRect.Position.X * scale),
@@ -782,7 +797,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 	}
 
-	public static async void OpenFile(string path)
+	public static async void OpenFile(string path, int lineNumber = 0)
 	{
 		if (CurrentSession == null) return;
 		string pathRelative = path;
@@ -824,6 +839,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 				CodeCompletion = codeCompletion,
 				Title = pathRelative.GetFile()
 			});
+			if (lineNumber > 0)
+			{
+				await Interface.ToSignal(Interface.GetTree(), SceneTree.SignalName.ProcessFrame);
+				await Interface.ToSignal(Interface.GetTree(), SceneTree.SignalName.ProcessFrame);
+				if (Tabs.Singleton.CurrentControl is TextEditorContainer editor)
+					editor.EditorRoot.GoToLine(lineNumber);
+			}
 			return;
 		}
 		else if (userPref == PreferredEditorEnum.VSCode)

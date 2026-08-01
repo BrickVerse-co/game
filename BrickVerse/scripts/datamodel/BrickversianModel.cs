@@ -953,7 +953,24 @@ public sealed partial class BrickversianModel : CharacterModel
 	public void LoadAppearance(string userID, bool loadTool = true)
 	{
 		ClearAppearance();
+		if (userID == "1")
+		{
+			ApplyClassicNoobAppearance();
+			return;
+		}
 		_ = LoadAppearanceSafe(userID, loadTool);
+	}
+
+	internal void ApplyClassicNoobAppearance()
+	{
+		ClearAppearance();
+		Color yellow = Color.FromHtml("F5CD30");
+		HeadColor = yellow;
+		LeftArmColor = yellow;
+		RightArmColor = yellow;
+		TorsoColor = Color.FromHtml("0D69AC");
+		LeftLegColor = Color.FromHtml("4B974B");
+		RightLegColor = Color.FromHtml("4B974B");
 	}
 
 	private async Task LoadAppearanceSafe(string userID, bool loadTool)

@@ -86,7 +86,7 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxEmpty" id="Empty"]
 
-[node name="StartupSplash" type="Panel" node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_closeButton", "_versionNumber", "_banner")]
+[node name="StartupSplash" type="Panel" node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_tutorialButton", "_closeButton", "_versionNumber", "_banner")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -99,6 +99,7 @@ _newButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/New")
 _openButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/Open")
 _recentsButton = NodePath("Page/Layout/SectionHeader/RecentIcon")
 _settingsButton = NodePath("Page/Layout/Header/Settings")
+_tutorialButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/Tutorial")
 _closeButton = NodePath("Page/Layout/Header/Close")
 _versionNumber = NodePath("Page/Layout/Header/Version")
 _banner = NodePath("Page/Layout/Hero/Banner")
@@ -223,6 +224,14 @@ theme_override_styles/hover = SubResource("SecondaryHover")
 theme_override_styles/pressed = SubResource("SecondaryHover")
 text = "Open project"
 icon = ExtResource("5")
+
+[node name="Tutorial" type="Button" parent="Page/Layout/Hero/HeroMargin/HeroContent/Actions"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("Secondary")
+theme_override_styles/hover = SubResource("SecondaryHover")
+theme_override_styles/pressed = SubResource("SecondaryHover")
+text = "Tutorial"
+icon = ExtResource("7")
 
 [node name="SectionHeader" type="HBoxContainer" parent="Page/Layout"]
 layout_mode = 2

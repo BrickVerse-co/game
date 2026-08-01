@@ -1089,9 +1089,9 @@ public sealed partial class Player : NPC
 		ClearAppearance();
 		if (AutoLoadAppearance)
 		{
-			if (Root.Entry != null && Root.Entry.IsSoloTest)
+			if (Root.Entry != null && Root.Entry.IsSoloTest && Character is BrickversianModel model)
 			{
-				LoadAppearance("1");
+				model.ApplyClassicNoobAppearance();
 			}
 			else
 			{

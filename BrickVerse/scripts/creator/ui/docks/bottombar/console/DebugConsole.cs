@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BrickVerse.Datamodel.Creator;
 using static BrickVerse.Scripting.LogDispatcher;
 
 namespace BrickVerse.Creator.UI;
@@ -67,6 +68,10 @@ public partial class DebugConsole : Control
 		_clearBtn.Pressed += Clear;
 		_searchEdit.TextChanged += _ => OnSearch();
 		_richLabel.Text = "";
+		_richLabel.MetaClicked += OnTraceClicked;
+		VScrollBar scrollBar = _richLabel.GetVScrollBar();
+		scrollBar.CustomMinimumSize = new Vector2(12, 0);
+		scrollBar.Modulate = new Color(0.72f, 0.78f, 0.88f, 1);
 
 		// ConsoleFilters is a direct child of this Console node
 		_consoleFilters = GetNode<ConsoleFilters>("ConsoleFilters");
@@ -94,14 +99,7 @@ public partial class DebugConsole : Control
 			return;
 		}
 
-		_consoleFilters.Show();
-
-		Vector2 pos = _filterBtn.GlobalPosition;
-
-		_consoleFilters.Position = new Vector2I(
-			(int)pos.X,
-			(int)(pos.Y - _consoleFilters.Size.Y - 8)
-		);
+		_consoleFilters.OpenAt(_filterBtn.GlobalPosition);
 	}
 
 	public override void _Process(double delta)
@@ -116,6 +114,11 @@ public partial class DebugConsole : Control
 			FullRebuild();
 		else if (_hasPendingAppend)
 			AppendPendingLogs();
+
+		VScrollBar scrollBar = _richLabel.GetVScrollBar();
+		// RichTextLabel auto-hides its internal bar aggressively when content or
+		// dock size changes. Keep the Output affordance visible like an editor.
+		scrollBar.Show();
 
 		base._Process(delta);
 	}
@@ -315,7 +318,7 @@ public partial class DebugConsole : Control
 		_hasPendingAppend = false;
 	}
 
-	private static void BuildLogLine(StringBuilder sb, LogData item)
+	private void BuildLogLine(StringBuilder sb, LogData item)
 	{
 		var dotColor = item.LogFrom switch
 		{
@@ -347,15 +350,47 @@ public partial class DebugConsole : Control
 			.Append(item.LoggedAt.ToLongTimeString())
 			.Append("] ");
 
-		if (!string.IsNullOrWhiteSpace(item.Source))
-			sb.Append('[').Append(item.Source).Append("] ");
-
-		sb
-			.Append(item.Content);
+		sb.Append(EscapeBb(item.Content));
 
 		if (item.LogType != LogTypeEnum.Info)
 			sb.Append("[/color]");
 
 		sb.Append('\n');
+
+		if (!string.IsNullOrWhiteSpace(item.Source))
+		{
+			string location = EscapeBb(item.Source) + (item.SourceLine > 0 ? $":{item.SourceLine}" : "");
+			sb.Append("[color=#718096]    -> ");
+			if (item.SourceLine > 0 && CanOpenSource(item.Source))
+			{
+				sb.Append("[url=trace:").Append(item.ID).Append(']')
+					.Append(location).Append("[/url]");
+			}
+			else
+			{
+				sb.Append(location);
+			}
+			sb.Append("[/color]\n");
+		}
+	}
+
+	private static string EscapeBb(string text) =>
+		(text ?? string.Empty).Replace("[", "[lb]").Replace("]", "[rb]");
+
+	private static bool CanOpenSource(string source)
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		if (session == null || string.IsNullOrWhiteSpace(source)) return false;
+		return System.IO.File.Exists(session.GlobalizePath(source));
+	}
+
+	private void OnTraceClicked(Variant metadata)
+	{
+		string value = metadata.AsString();
+		if (!value.StartsWith("trace:", StringComparison.Ordinal)) return;
+		string id = value["trace:".Length..];
+		LogData? item = _logs.FirstOrDefault(log => log.ID == id);
+		if (item == null || item.SourceLine <= 0 || !CanOpenSource(item.Source)) return;
+		CreatorService.OpenFile(item.Source, item.SourceLine);
 	}
 }
