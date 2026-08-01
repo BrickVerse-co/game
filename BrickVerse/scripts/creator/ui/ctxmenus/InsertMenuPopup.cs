@@ -299,17 +299,17 @@ public partial class InsertMenuPopup : PopupPanel
 					parentTo = World.Current.Lighting;
 					break;
 				case UIField when instance is not GUI:
-				{
-					GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
-					if (existingUI == null)
 					{
-						existingUI = World.Current.New<GUI>();
-						existingUI.Parent = World.Current.PlayerGUI;
-					}
+						GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
+						if (existingUI == null)
+						{
+							existingUI = World.Current.New<GUI>();
+							existingUI.Parent = World.Current.PlayerGUI;
+						}
 
-					parentTo = existingUI;
-					break;
-				}
+						parentTo = existingUI;
+						break;
+					}
 				case Script:
 					parentTo = World.Current.ScriptService;
 					break;

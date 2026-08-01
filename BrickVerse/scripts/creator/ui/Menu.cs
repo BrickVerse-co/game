@@ -836,15 +836,15 @@ public sealed partial class Menu : PanelContainer
 		switch (idx)
 		{
 			case 0: // About BrickVerse
-			{
-				CreatorService.Interface.PopupCredits();
-				break;
-			}
+				{
+					CreatorService.Interface.PopupCredits();
+					break;
+				}
 			case 1: // Startup splash
-			{
-				StartupSplash.Singleton.Show();
-				break;
-			}
+				{
+					StartupSplash.Singleton.Show();
+					break;
+				}
 		}
 	}
 }
