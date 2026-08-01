@@ -90,6 +90,12 @@ public struct APIAvatarAsset
 {
 	[JsonPropertyName("id")]
 	public string ID { get; set; }
+	[JsonPropertyName("textureId")]
+	public string TextureID { get; set; }
+	[JsonPropertyName("meshId")]
+	public string MeshID { get; set; }
+	[JsonPropertyName("meshPos")]
+	public APIPosition3? MeshPosition { get; set; }
 	[JsonPropertyName("type")]
 	public string Type { get; set; }
 	[JsonPropertyName("accessoryType")]
@@ -1074,6 +1080,51 @@ public struct APIStoreItemCreator
 	public string Thumbnail { get; set; }
 }
 
+public struct APIMarketplace3DResponse
+{
+	[JsonPropertyName("success")]
+	public bool Success { get; set; }
+
+	[JsonPropertyName("message")]
+	public string Message { get; set; }
+
+	[JsonPropertyName("item")]
+	public APIMarketplace3DItem Item { get; set; }
+}
+
+public struct APIMarketplace3DItem
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; }
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; }
+
+	[JsonPropertyName("type")]
+	public string Type { get; set; }
+
+	[JsonPropertyName("meshId")]
+	public string? MeshId { get; set; }
+
+	[JsonPropertyName("textureId")]
+	public string? TextureId { get; set; }
+
+	[JsonPropertyName("meshPos")]
+	public APIPosition3? MeshPosition { get; set; }
+}
+
+public struct APIPosition3
+{
+	[JsonPropertyName("x")]
+	public float X { get; set; }
+
+	[JsonPropertyName("y")]
+	public float Y { get; set; }
+
+	[JsonPropertyName("z")]
+	public float Z { get; set; }
+}
+
 public struct APIStoreItem
 {
 	[JsonPropertyName("id")]
@@ -1193,6 +1244,9 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(APIWorldsData))]
 [JsonSerializable(typeof(APIStoreItem))]
 [JsonSerializable(typeof(APIStoreItemCreator))]
+[JsonSerializable(typeof(APIMarketplace3DResponse))]
+[JsonSerializable(typeof(APIMarketplace3DItem))]
+[JsonSerializable(typeof(APIPosition3))]
 [JsonSerializable(typeof(APIOwnsItem))]
 [JsonSerializable(typeof(APIPlaceMedia))]
 [JsonSerializable(typeof(APIGuildCreator))]

@@ -1,71 +1,70 @@
 [gd_scene format=3 uid="uid://b306dsoxhcwu8"]
 
-[ext_resource type="Script" uid="uid://brpfu8sqisffh" path="res://scripts/creator/ui/splash/components/RecentPlaceCard.cs" id="1_6mc4u"]
-[ext_resource type="StyleBox" uid="uid://bwksp3bsrvcf6" path="res://resources/styles/card_rounded.tres" id="1_ps8s1"]
-[ext_resource type="Texture2D" uid="uid://dagfk2fit4xsa" path="res://assets/textures/client/placeholder/place_icon.png" id="2_6mc4u"]
-[ext_resource type="Texture2D" uid="uid://dct2640djcyfv" path="res://assets/textures/ui-icons/clock.svg" id="3_i2ssb"]
-[ext_resource type="Texture2D" uid="uid://caw4cwjypfmg2" path="res://assets/textures/ui-icons/dots.svg" id="4_l6vnv"]
+[ext_resource type="Script" uid="uid://brpfu8sqisffh" path="res://scripts/creator/ui/splash/components/RecentPlaceCard.cs" id="1"]
+[ext_resource type="Texture2D" uid="uid://dagfk2fit4xsa" path="res://assets/textures/client/placeholder/place_icon.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://dct2640djcyfv" path="res://assets/textures/ui-icons/clock.svg" id="3"]
+[ext_resource type="Texture2D" uid="uid://caw4cwjypfmg2" path="res://assets/textures/ui-icons/dots.svg" id="4"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntijg"]
-bg_color = Color(1, 1, 1, 1)
-draw_center = false
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="Normal"]
+bg_color = Color(0.0431373, 0.054902, 0.0745098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12549, 0.160784, 0.211765, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ce354"]
-bg_color = Color(0, 0, 0, 0.15686275)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="Hover"]
+bg_color = Color(0.0588235, 0.0745098, 0.101961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.592157, 1, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_raaus"]
-bg_color = Color(1, 1, 1, 0.15686275)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxEmpty" id="Empty"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6mc4u"]
+[node name="RecentPlaceCard" type="Button" node_paths=PackedStringArray("_placeTitleLabel", "_recentOpenLabel", "_pathLabel", "_thumbnail", "_menuLabel")]
+custom_minimum_size = Vector2(300, 220)
+theme_override_styles/normal = SubResource("Normal")
+theme_override_styles/hover = SubResource("Hover")
+theme_override_styles/pressed = SubResource("Hover")
+theme_override_styles/focus = SubResource("Empty")
+script = ExtResource("1")
+_placeTitleLabel = NodePath("Card/Info/Body/TitleRow/Title")
+_recentOpenLabel = NodePath("Card/Info/Body/Opened/Time")
+_pathLabel = NodePath("Card/Info/Body/Path")
+_thumbnail = NodePath("Card/Preview/Thumbnail")
+_menuLabel = NodePath("Card/Preview/Menu")
 
-[node name="RecentPlaceCard" type="Button" unique_id=1793532866 node_paths=PackedStringArray("_placeTitleLabel", "_recentOpenLabel", "_menuLabel")]
-custom_minimum_size = Vector2(0, 80)
-anchors_preset = 10
-anchor_right = 1.0
-grow_horizontal = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_ntijg")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ce354")
-theme_override_styles/hover = SubResource("StyleBoxFlat_raaus")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_6mc4u")
-script = ExtResource("1_6mc4u")
-_placeTitleLabel = NodePath("HBoxContainer/VBoxContainer/Label")
-_recentOpenLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer/Label2")
-_menuLabel = NodePath("HBoxContainer/MenuButton")
-
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=173810860]
+[node name="Card" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = -1.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+mouse_filter = 2
+theme_override_constants/separation = 0
 
-[node name="Panel" type="Panel" parent="HBoxContainer" unique_id=527839025]
+[node name="Preview" type="Control" parent="Card"]
 clip_children = 1
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(0, 142)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("1_ps8s1")
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/Panel" unique_id=56982895]
-custom_minimum_size = Vector2(50, 0)
+[node name="Thumbnail" type="TextureRect" parent="Card/Preview"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -73,42 +72,87 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_6mc4u")
+texture = ExtResource("2")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer" unique_id=1428662402]
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="Shade" type="ColorRect" parent="Card/Preview"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -46.0
+grow_horizontal = 2
+grow_vertical = 0
 mouse_filter = 2
-alignment = 1
+color = Color(0, 0, 0, 0.42)
 
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer" unique_id=1914692787]
-layout_mode = 2
-text = "Place Title"
-
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer" unique_id=2139061594]
-modulate = Color(0.69965345, 0.69965345, 0.69965345, 1)
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=59182540]
-custom_minimum_size = Vector2(16, 0)
-layout_mode = 2
-texture = ExtResource("3_i2ssb")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Label2" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=788429547]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "2 hours ago"
-
-[node name="MenuButton" type="MenuButton" parent="HBoxContainer" unique_id=2006751142]
-custom_minimum_size = Vector2(24, 0)
-layout_mode = 2
-icon = ExtResource("4_l6vnv")
-expand_icon = true
+[node name="Menu" type="MenuButton" parent="Card/Preview"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -42.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 42.0
+grow_horizontal = 0
+icon = ExtResource("4")
+flat = true
 item_count = 1
 popup/item_0/text = "Remove from Recents"
 popup/item_0/id = 91
+
+[node name="Info" type="MarginContainer" parent="Card"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="Body" type="VBoxContainer" parent="Card/Info"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="TitleRow" type="HBoxContainer" parent="Card/Info/Body"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Card/Info/Body/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.929412, 0.94902, 0.980392, 1)
+theme_override_font_sizes/font_size = 15
+text = "World title"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Opened" type="HBoxContainer" parent="Card/Info/Body"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="TextureRect" parent="Card/Info/Body/Opened"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Time" type="Label" parent="Card/Info/Body/Opened"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.513726, 0.580392, 0.67451, 1)
+theme_override_font_sizes/font_size = 12
+text = "2 hours ago"
+
+[node name="Path" type="Label" parent="Card/Info/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.356863, 0.419608, 0.509804, 1)
+theme_override_font_sizes/font_size = 11
+text = "C:/Projects/World"
+clip_text = true
+text_overrun_behavior = 3

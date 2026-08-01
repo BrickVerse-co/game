@@ -15,6 +15,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -515,6 +516,15 @@ public sealed partial class ScriptService : Instance
 		// Handle common numeric conversions
 		if (value is double doubleValue)
 		{
+			if (underlayingType == typeof(string))
+			{
+				return double.IsFinite(doubleValue)
+					&& doubleValue == Math.Truncate(doubleValue)
+					&& doubleValue >= long.MinValue
+					&& doubleValue <= long.MaxValue
+					? ((long)doubleValue).ToString(CultureInfo.InvariantCulture)
+					: doubleValue.ToString("R", CultureInfo.InvariantCulture);
+			}
 			if (underlayingType == typeof(float))
 				return (float)doubleValue;
 			if (underlayingType == typeof(int))

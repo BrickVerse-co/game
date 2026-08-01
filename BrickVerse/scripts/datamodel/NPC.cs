@@ -10,6 +10,7 @@ using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using System;
 
 namespace BrickVerse.Datamodel;
 
@@ -38,6 +39,8 @@ public partial class NPC : Physical
 	private string _displayName = "";
 	protected RayCast3D FootFwdRaycast = null!;
 	private Sound? _jumpSound;
+	private AudioStreamPlayer3D? _footstepPlayer;
+	private float _footstepElapsed;
 	private bool _lastOnFloorState = false;
 	private float _timeSinceGrounded = 0f;
 	private bool _coyoteUsed = false;
@@ -451,6 +454,16 @@ public partial class NPC : Physical
 		FootFwdRaycast.Position = new Vector3(0, -3, 0);
 		FootFwdRaycast.TargetPosition = new Vector3(0, 0, ForwardRaycastRange);
 
+		_footstepPlayer = new AudioStreamPlayer3D
+		{
+			Name = "Footsteps",
+			Stream = CreateFootstepStream(),
+			VolumeDb = -10f,
+			MaxDistance = 45f,
+			UnitSize = 4f,
+		};
+		GDNode3D.AddChild(_footstepPlayer, false, Node.InternalMode.Front);
+
 		ChildAdded.Connect(OnChildAdded);
 		ChildRemoved.Connect(OnChildRemoved);
 
@@ -618,6 +631,7 @@ public partial class NPC : Physical
 		if (CharBody3D != null)
 		{
 			bool isOnFloor = CharBody3D.IsOnFloor();
+			UpdateFootsteps(delta, isOnFloor);
 
 			if (isOnFloor)
 			{
@@ -715,6 +729,62 @@ public partial class NPC : Physical
 				}
 			}
 		}
+	}
+
+	private void UpdateFootsteps(double delta, bool isOnFloor)
+	{
+		if (_footstepPlayer == null) return;
+		Vector2 horizontalVelocity = new(CharacterVelocity.X, CharacterVelocity.Z);
+		float speed = horizontalVelocity.Length();
+		if (!isOnFloor || IsSitting || this is Player { IsClimbing: true } || speed < 1.25f)
+		{
+			_footstepElapsed = 0;
+			return;
+		}
+
+		_footstepElapsed += (float)delta;
+		float interval = Mathf.Clamp(5.2f / Math.Max(speed, 1f), 0.22f, 0.52f);
+		if (_footstepElapsed < interval) return;
+		_footstepElapsed %= interval;
+
+		float surfacePitch = 1f;
+		for (int index = 0; index < CharBody3D.GetSlideCollisionCount(); index++)
+		{
+			KinematicCollision3D collision = CharBody3D.GetSlideCollision(index);
+			if (collision.GetNormal().Y < 0.55f) continue;
+			if (GetNetObjFromProxy((Node)collision.GetCollider()) is Part part)
+				surfacePitch = 0.9f + ((int)part.Material % 7) * 0.025f;
+			break;
+		}
+
+		_footstepPlayer.PitchScale = surfacePitch * (float)GD.RandRange(0.94, 1.06);
+		_footstepPlayer.Play();
+	}
+
+	private static AudioStreamWav CreateFootstepStream()
+	{
+		const int mixRate = 22050;
+		const int samples = 1500;
+		byte[] data = new byte[samples * 2];
+		Random random = new(0x4256);
+		float filteredNoise = 0;
+		for (int sample = 0; sample < samples; sample++)
+		{
+			float time = sample / (float)mixRate;
+			float envelope = MathF.Exp(-time * 42f);
+			filteredNoise = filteredNoise * 0.72f + ((float)random.NextDouble() * 2f - 1f) * 0.28f;
+			float thump = MathF.Sin(time * MathF.Tau * 92f) * MathF.Exp(-time * 55f);
+			short value = (short)Mathf.Clamp((filteredNoise * 0.55f + thump * 0.8f) * envelope * short.MaxValue, short.MinValue, short.MaxValue);
+			data[sample * 2] = (byte)(value & 0xff);
+			data[sample * 2 + 1] = (byte)((value >> 8) & 0xff);
+		}
+		return new AudioStreamWav
+		{
+			Format = AudioStreamWav.FormatEnum.Format16Bits,
+			MixRate = mixRate,
+			Stereo = false,
+			Data = data,
+		};
 	}
 
 	[ScriptMethod]

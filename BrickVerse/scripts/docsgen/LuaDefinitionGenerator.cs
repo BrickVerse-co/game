@@ -86,6 +86,19 @@ public class LuaDefinitionGenerator
 			builder.AppendLine(GenerateClass(item));
 		}
 
+		// Static datamodel aliases are runtime globals, not merely class names.
+		// Emit aliases whose spelling differs from their type (for example
+		// `world: World`) and the legacy `game` alias registered by LuauProvider.
+		foreach (ScriptClass item in refer.Classes.Where(item =>
+			item.IsStatic
+			&& !string.IsNullOrWhiteSpace(item.StaticAlias)
+			&& item.StaticAlias != item.Name))
+		{
+			builder.AppendLine($"declare {item.StaticAlias}: {item.Name}");
+		}
+		builder.AppendLine("declare game: World");
+		builder.AppendLine("declare function warn(...: any): ()");
+
 		File.WriteAllText(atFolder.PathJoin("def.d.luau"), builder.ToString());
 	}
 

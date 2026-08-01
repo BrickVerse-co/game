@@ -126,6 +126,7 @@ public sealed partial class World : Instance
 	public CaptureService Capture => FindChild<CaptureService>("Capture")!;
 	public PresenceService Presence => FindChild<PresenceService>("Presence")!;
 	public PreferencesService Preferences => FindChild<PreferencesService>("Preferences")!;
+	public StreamingService Streaming => FindChild<StreamingService>("Streaming")!;
 	public IOService IO => FindChild<IOService>("IO")!;
 	public WorldsService Worlds => FindChild<WorldsService>("Worlds")!;
 	public SocialService Social => FindChild<SocialService>("Social")!;
@@ -807,6 +808,14 @@ public sealed partial class World : Instance
 			preferencesService = Globals.LoadInstance<PreferencesService>(Root);
 			preferencesService.NameOverride = "Preferences";
 			preferencesService.NetworkParent = this;
+		}
+
+		StreamingService? streamingService = FindChild<StreamingService>("Streaming");
+		if (streamingService == null)
+		{
+			streamingService = Globals.LoadInstance<StreamingService>(Root);
+			streamingService.NameOverride = "Streaming";
+			streamingService.NetworkParent = this;
 		}
 
 		IOService? ioService = FindChild<IOService>("IO");

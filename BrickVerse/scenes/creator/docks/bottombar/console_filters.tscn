@@ -84,19 +84,19 @@ text = "SOURCE"
 [node name="NoneCheckBox" type="CheckBox" parent="MainHBox/SourceColumn" unique_id=1335539117]
 layout_mode = 2
 button_pressed = true
-text = "System"
+text = "Studio Output"
 
 [node name="ClientCheckBox" type="CheckBox" parent="MainHBox/SourceColumn" unique_id=559919689]
 layout_mode = 2
 button_pressed = true
-text = "Client"
+text = "Lua Client"
 
 [node name="ServerCheckBox" type="CheckBox" parent="MainHBox/SourceColumn" unique_id=853569225]
 layout_mode = 2
 button_pressed = true
-text = "Server"
+text = "Lua Server"
 
 [node name="AddonCheckBox" type="CheckBox" parent="MainHBox/SourceColumn" unique_id=2108218429]
 layout_mode = 2
 button_pressed = true
-text = "Addons"
+text = "Studio Addons"

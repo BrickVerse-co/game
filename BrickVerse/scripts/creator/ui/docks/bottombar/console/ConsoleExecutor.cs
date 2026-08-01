@@ -9,6 +9,7 @@ using BrickVerse.Shared;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Scripting;
+using BrickVerse.Creator.Settings;
 
 namespace BrickVerse.Creator.UI.Docks.BottomBar.Console;
 
@@ -71,10 +72,14 @@ public partial class ConsoleExecutor : HBoxContainer
 			return;
 		}
 
-		bool confirmed = await CreatorService.Interface.PromptConfirmation(
-			"Are you sure you want to execute this Luau code? This action may have unintended consequences.",
-			"Execute Luau Code"
-		);
+		bool confirmed = true;
+		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Popups.ExecutorConfirmation))
+		{
+			confirmed = await CreatorService.Interface.PromptConfirmation(
+				"Are you sure you want to execute this Luau code? This action may have unintended consequences.",
+				"Execute Luau Code"
+			);
+		}
 
 		if (!confirmed || !IsInsideTree())
 			return;
@@ -84,6 +89,7 @@ public partial class ConsoleExecutor : HBoxContainer
 		_codeField.Editable = false;
 
 		Datamodel.ClientScript? script = null;
+		bool succeeded = false;
 
 		try
 		{
@@ -96,6 +102,7 @@ public partial class ConsoleExecutor : HBoxContainer
 			script.Compatibility = false;
 
 			script.Run();
+			succeeded = true;
 
 			_codeField.Clear();
 
@@ -122,7 +129,13 @@ public partial class ConsoleExecutor : HBoxContainer
 				_codeField.GrabFocus();
 			}
 
-			CreatorService.Interface.PopupAlert("Luau code executed successfully.", "Execution Complete");
+			if (
+				succeeded
+				&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Popups.ExecutorSuccess)
+			)
+			{
+				CreatorService.Interface.PopupAlert("Luau code executed successfully.", "Execution Complete");
+			}
 		}
 	}
 }

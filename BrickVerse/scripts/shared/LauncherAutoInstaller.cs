@@ -49,7 +49,7 @@ public partial class BrickVerseLauncherInstaller : Node
 
 	[ExportGroup("Asset Matching")]
 	[Export]
-	public string WindowsAssetContains { get; set; } = "setup";
+	public string WindowsAssetContains { get; set; } = "BrickVerse-Launcher";
 
 	[Export]
 	public string MacAssetContains { get; set; } = "mac";
@@ -69,6 +69,9 @@ public partial class BrickVerseLauncherInstaller : Node
 
 	[Export]
 	public bool VerifyProtocolAfterInstall { get; set; } = true;
+
+	[Export]
+	public bool LaunchAfterInstall { get; set; } = true;
 
 	[Export]
 	public int DownloadTimeoutSeconds { get; set; } = 300;
@@ -133,6 +136,11 @@ public partial class BrickVerseLauncherInstaller : Node
 
 				if (!installed)
 					return Fail("The launcher installer returned an error.");
+
+				// Starting the packaged Electron app performs first-run protocol
+				// registration. Electron includes its own Node.js runtime.
+				if (LaunchAfterInstall || VerifyProtocolAfterInstall)
+					await LaunchInstalledLauncherAsync(cancellationToken);
 
 				if (VerifyProtocolAfterInstall)
 					await WaitForProtocolRegistrationAsync(cancellationToken);
@@ -263,15 +271,23 @@ public partial class BrickVerseLauncherInstaller : Node
 
 	private ReleaseAsset? SelectPlatformAsset(IReadOnlyCollection<ReleaseAsset> assets)
 	{
+		string architecture = RuntimeInformation.ProcessArchitecture switch
+		{
+			Architecture.Arm64 => "arm64",
+			Architecture.X64 => "x64",
+			_ => string.Empty,
+		};
+
 		return OS.GetName() switch
 		{
-			"Windows" => FindAsset(assets, WindowsAssetContains, new[] { ".exe" }),
+			"Windows" => FindAsset(assets, WindowsAssetContains, architecture, new[] { ".exe" }),
 
-			"macOS" => FindAsset(assets, MacAssetContains, new[] { ".pkg", ".dmg", ".zip" }),
+			"macOS" => FindAsset(assets, MacAssetContains, architecture, new[] { ".zip", ".dmg", ".pkg" }),
 
 			"Linux" => FindAsset(
 				assets,
 				LinuxAssetContains,
+				architecture,
 				new[] { ".AppImage", ".appimage", ".deb" }
 			),
 
@@ -282,14 +298,25 @@ public partial class BrickVerseLauncherInstaller : Node
 	private static ReleaseAsset? FindAsset(
 		IEnumerable<ReleaseAsset> assets,
 		string preferredText,
+		string architecture,
 		IReadOnlyList<string> extensions
 	)
 	{
-		IEnumerable<ReleaseAsset> platformAssets = assets.Where(asset =>
+		List<ReleaseAsset> platformAssets = assets.Where(asset =>
 			extensions.Any(extension =>
 				asset.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
 			)
-		);
+		).ToList();
+
+		if (!string.IsNullOrEmpty(architecture))
+		{
+			List<ReleaseAsset> architectureAssets = platformAssets.Where(asset =>
+				asset.Name.Contains(architecture, StringComparison.OrdinalIgnoreCase)
+			).ToList();
+
+			if (architectureAssets.Count > 0)
+				platformAssets = architectureAssets;
+		}
 
 		if (!string.IsNullOrWhiteSpace(preferredText))
 		{
@@ -301,7 +328,17 @@ public partial class BrickVerseLauncherInstaller : Node
 				return preferredAsset;
 		}
 
-		return platformAssets.FirstOrDefault();
+		foreach (string extension in extensions)
+		{
+			ReleaseAsset? asset = platformAssets.FirstOrDefault(candidate =>
+				candidate.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
+			);
+
+			if (asset is not null)
+				return asset;
+		}
+
+		return null;
 	}
 
 	private async Task<string> DownloadAssetAsync(
@@ -432,6 +469,42 @@ public partial class BrickVerseLauncherInstaller : Node
 	)
 	{
 		string extension = Path.GetExtension(installerPath);
+		if (extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
+		{
+			string installRoot = Path.Combine(
+				Path.GetDirectoryName(installerPath) ?? Path.GetTempPath(),
+				"mac-install"
+			);
+			if (Directory.Exists(installRoot))
+				Directory.Delete(installRoot, recursive: true);
+			Directory.CreateDirectory(installRoot);
+
+			var extract = new ProcessStartInfo { FileName = "/usr/bin/ditto", UseShellExecute = false };
+			extract.ArgumentList.Add("-x");
+			extract.ArgumentList.Add("-k");
+			extract.ArgumentList.Add(installerPath);
+			extract.ArgumentList.Add(installRoot);
+			if (!await RunProcessAsync(extract, cancellationToken))
+				return false;
+
+			string? appBundle = Directory
+				.EnumerateDirectories(installRoot, "BrickVerse Launcher.app", SearchOption.AllDirectories)
+				.FirstOrDefault();
+			if (appBundle is null)
+				throw new InvalidDataException("The launcher ZIP did not contain BrickVerse Launcher.app.");
+
+			string applicationsDirectory = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+				"Applications"
+			);
+			Directory.CreateDirectory(applicationsDirectory);
+			string installedBundle = Path.Combine(applicationsDirectory, "BrickVerse Launcher.app");
+
+			var install = new ProcessStartInfo { FileName = "/usr/bin/ditto", UseShellExecute = false };
+			install.ArgumentList.Add(appBundle);
+			install.ArgumentList.Add(installedBundle);
+			return await RunProcessAsync(install, cancellationToken);
+		}
 
 		if (extension.Equals(".pkg", StringComparison.OrdinalIgnoreCase))
 		{
@@ -452,10 +525,7 @@ public partial class BrickVerseLauncherInstaller : Node
 			return await RunProcessAsync(startInfo, cancellationToken, waitForExit: false);
 		}
 
-		if (
-			extension.Equals(".dmg", StringComparison.OrdinalIgnoreCase)
-			|| extension.Equals(".zip", StringComparison.OrdinalIgnoreCase)
-		)
+		if (extension.Equals(".dmg", StringComparison.OrdinalIgnoreCase))
 		{
 			var startInfo = new ProcessStartInfo
 			{
@@ -512,6 +582,23 @@ public partial class BrickVerseLauncherInstaller : Node
 		if (!await RunProcessAsync(chmod, cancellationToken))
 			return false;
 
+		string applicationsDirectory = Path.Combine(homeDirectory, ".local", "share", "applications");
+		Directory.CreateDirectory(applicationsDirectory);
+		string desktopFile = Path.Combine(applicationsDirectory, "brickverse-launcher.desktop");
+		string escapedExecutable = installedPath.Replace("\\", "\\\\").Replace("\"", "\\\"");
+		await File.WriteAllTextAsync(
+			desktopFile,
+			$"[Desktop Entry]\nType=Application\nName=BrickVerse Launcher\nExec=\"{escapedExecutable}\" %u\nTerminal=false\nMimeType=x-scheme-handler/brickverse;\nCategories=Game;\n",
+			cancellationToken
+		);
+
+		var registerMime = new ProcessStartInfo { FileName = "xdg-mime", UseShellExecute = false };
+		registerMime.ArgumentList.Add("default");
+		registerMime.ArgumentList.Add("brickverse-launcher.desktop");
+		registerMime.ArgumentList.Add("x-scheme-handler/brickverse");
+		if (!await RunProcessAsync(registerMime, cancellationToken))
+			return false;
+
 		/*
 		 * Start it once so Electron can register brickverse://.
 		 *
@@ -549,6 +636,77 @@ public partial class BrickVerseLauncherInstaller : Node
 			"The launcher finished installing, but the brickverse:// "
 				+ "protocol was not registered."
 		);
+	}
+
+	private static async Task LaunchInstalledLauncherAsync(CancellationToken cancellationToken)
+	{
+		string? launcherPath = FindInstalledLauncherPath();
+		if (launcherPath is null)
+			throw new FileNotFoundException("The installed BrickVerse Launcher executable could not be found.");
+
+		ProcessStartInfo startInfo;
+		if (OperatingSystem.IsMacOS())
+		{
+			startInfo = new ProcessStartInfo
+			{
+				FileName = "/usr/bin/open",
+				UseShellExecute = false,
+			};
+			startInfo.ArgumentList.Add("-a");
+			startInfo.ArgumentList.Add(launcherPath);
+		}
+		else
+		{
+			startInfo = new ProcessStartInfo
+			{
+				FileName = launcherPath,
+				UseShellExecute = true,
+			};
+		}
+
+		if (!await RunProcessAsync(startInfo, cancellationToken, waitForExit: false))
+			throw new InvalidOperationException("The BrickVerse Launcher could not be started.");
+	}
+
+	private static string? FindInstalledLauncherPath()
+	{
+		string homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+		if (OperatingSystem.IsWindows())
+		{
+			string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			string[] candidates =
+			{
+				Path.Combine(localAppData, "Programs", "BrickVerse Launcher", "BrickVerse Launcher.exe"),
+				Path.Combine(localAppData, "BrickVerse Launcher", "BrickVerse Launcher.exe"),
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "BrickVerse Launcher", "BrickVerse Launcher.exe"),
+			};
+			return candidates.FirstOrDefault(File.Exists);
+		}
+
+		if (OperatingSystem.IsMacOS())
+		{
+			string[] candidates =
+			{
+				"/Applications/BrickVerse Launcher.app",
+				Path.Combine(homeDirectory, "Applications", "BrickVerse Launcher.app"),
+			};
+			return candidates.FirstOrDefault(Directory.Exists);
+		}
+
+		if (OperatingSystem.IsLinux())
+		{
+			string[] candidates =
+			{
+				Path.Combine(homeDirectory, ".local", "bin", "brickverse-launcher.AppImage"),
+				Path.Combine(homeDirectory, ".local", "bin", "brickverse-launcher"),
+				"/usr/bin/brickverse-launcher",
+				"/usr/local/bin/brickverse-launcher",
+			};
+			return candidates.FirstOrDefault(File.Exists);
+		}
+
+		return null;
 	}
 
 	[SupportedOSPlatform("windows")]

@@ -34,6 +34,8 @@ public sealed partial class TextEditorField : CodeEdit
 
 	private int _currentFontSize = 16;
 	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnostics = [];
+	private const int FormatDocumentMenuId = 10001;
+	private const int FormatSelectionMenuId = 10002;
 
 	public override void _Ready()
 	{
@@ -43,6 +45,13 @@ public sealed partial class TextEditorField : CodeEdit
 		CaretChanged += QueueRedraw;
 		GetVScrollBar().ValueChanged += _ => QueueRedraw();
 		GetHScrollBar().ValueChanged += _ => QueueRedraw();
+		PopupMenu menu = GetMenu();
+		menu.AddSeparator();
+		menu.AddItem("Format Document", FormatDocumentMenuId);
+		menu.AddItem("Format Selection", FormatSelectionMenuId);
+		menu.IdPressed += OnEditorMenuPressed;
+		menu.AboutToPopup += () =>
+			menu.SetItemDisabled(menu.GetItemIndex(FormatSelectionMenuId), !HasSelection());
 		base._Ready();
 	}
 
@@ -65,6 +74,12 @@ public sealed partial class TextEditorField : CodeEdit
 		}
 
 		base._GuiInput(@event);
+	}
+
+	private void OnEditorMenuPressed(long id)
+	{
+		if (id == FormatDocumentMenuId) Root.FormatDocument();
+		else if (id == FormatSelectionMenuId) Root.FormatSelection();
 	}
 
 	public void SetDiagnostics(IReadOnlyDictionary<int, List<EditorDiagnosticDecoration>> diagnostics)

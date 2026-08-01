@@ -22,16 +22,18 @@ namespace BrickVerse.Creator.TeamCreate;
 
 public sealed partial class TeamCreateService : Node
 {
-	private const double PollInterval = 0.5;
-	private const double FlushInterval = 0.25;
+	private const double PollInterval = 0.15;
+	private const double FlushInterval = 0.1;
 	private const double HeartbeatInterval = 1.0;
 	private const double RescanInterval = 1.0;
 	private const double ConnectivityInterval = 5.0;
+	private const int MaxChangesPerBatch = 100;
+	private const int MaxChangeBatchBytes = 240 * 1024;
 
 	public static TeamCreateService? Instance { get; private set; }
 
 	private readonly BVHttpClient _http = new();
-	private readonly Dictionary<string, NetworkedObject> _observed = [];
+	private readonly Dictionary<string, Observation> _observed = [];
 	private readonly Dictionary<string, JsonObject> _pendingChanges = [];
 	private readonly List<TeamCreateMember> _members = [];
 	private readonly Dictionary<string, Node3D> _cameraAvatars = [];
@@ -43,6 +45,7 @@ public sealed partial class TeamCreateService : Node
 	private bool _joining;
 	private bool _requestActive;
 	private bool _applyingRemote;
+	private bool _initialObservationComplete;
 	private double _pollElapsed;
 	private double _flushElapsed;
 	private double _heartbeatElapsed;
@@ -50,6 +53,8 @@ public sealed partial class TeamCreateService : Node
 	private double _reconnectElapsed;
 	private double _connectivityElapsed = ConnectivityInterval;
 	private bool _connectivityRequestActive;
+	private bool _manualDisconnect;
+	private bool _showCameraAvatars = true;
 	private TeamCreateSessionWindow? _window;
 	private string _followMemberId = "";
 	private Node3D? _cameraAvatarRoot;
@@ -62,6 +67,8 @@ public sealed partial class TeamCreateService : Node
 	public string LastConnectionError { get; private set; } = "";
 	public IReadOnlyList<TeamCreateMember> Members => _members;
 	public string FollowedMemberId => _followMemberId;
+	public string LocalUserId => _localUserId;
+	public bool ShowCameraAvatars => _showCameraAvatars;
 
 	public TeamCreateService()
 	{
@@ -93,7 +100,7 @@ public sealed partial class TeamCreateService : Node
 
 		if (!Connected)
 		{
-			if (currentUniverse != 0)
+			if (currentUniverse != 0 && !_manualDisconnect)
 			{
 				_reconnectElapsed += delta;
 				if (_reconnectElapsed >= 10.0)
@@ -138,6 +145,15 @@ public sealed partial class TeamCreateService : Node
 		}
 	}
 
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		if (string.IsNullOrWhiteSpace(_followMemberId)) return;
+		if (@event is InputEventMouseMotion
+			or InputEventMouseButton { Pressed: true }
+			or InputEventKey { Pressed: true })
+			StopFollowing();
+	}
+
 	public override void _ExitTree()
 	{
 		_ = Leave();
@@ -162,12 +178,15 @@ public sealed partial class TeamCreateService : Node
 	{
 		long universeId = World.Current?.UniverseID ?? 0;
 		if (universeId == 0 || Connected || _joining) return Task.CompletedTask;
+		_manualDisconnect = false;
 		_reconnectElapsed = 0;
 		return SwitchUniverse(universeId);
 	}
 
 	public void FollowMember(string memberId)
 	{
+		TeamCreateMember? member = _members.FirstOrDefault(item => item.Id == memberId);
+		if (member == null || member.UserId == _localUserId) return;
 		_followMemberId = memberId;
 		UpdateFollowCamera(1f);
 		_window?.Refresh();
@@ -179,12 +198,59 @@ public sealed partial class TeamCreateService : Node
 		_window?.Refresh();
 	}
 
+	public void SetCameraAvatarsVisible(bool visible)
+	{
+		_showCameraAvatars = visible;
+		if (_cameraAvatarRoot != null && IsInstanceValid(_cameraAvatarRoot))
+			_cameraAvatarRoot.Visible = visible;
+		_window?.Refresh();
+	}
+
+	public void Reconnect()
+	{
+		_manualDisconnect = false;
+		_ = ReconnectInternal();
+	}
+
+	public void Disconnect()
+	{
+		_manualDisconnect = true;
+		_ = DisconnectInternal();
+	}
+
+	private async Task ReconnectInternal()
+	{
+		await Leave();
+		_memberId = "";
+		_localUserId = "";
+		_members.Clear();
+		ClearCameraAvatars();
+		await RejoinCurrentSession(_universeId);
+	}
+
+	private async Task DisconnectInternal()
+	{
+		await Leave();
+		_localUserId = "";
+		_members.Clear();
+		_pendingChanges.Clear();
+		StopFollowing();
+		UnobserveAll();
+		ClearCameraAvatars();
+		CreatorService.Interface.StatusBar?.SetStatus("Team Create disconnected");
+		_window?.Refresh();
+	}
+
 	private void UpdateFollowCamera(float delta)
 	{
 		if (string.IsNullOrWhiteSpace(_followMemberId)) return;
 		TeamCreateMember? member = _members.FirstOrDefault(item => item.Id == _followMemberId);
 		Camera3D? camera = World.Current?.CreatorContext?.Freelook?.Camera3D;
-		if (member?.Camera == null || camera == null) return;
+		if (member?.Camera == null || member.UserId == _localUserId || camera == null)
+		{
+			StopFollowing();
+			return;
+		}
 		float weight = Mathf.Clamp(delta * 10f, 0f, 1f);
 		camera.GlobalPosition = camera.GlobalPosition.Lerp(member.Camera.Position, weight);
 		camera.GlobalRotation = camera.GlobalRotation.Lerp(member.Camera.Rotation, weight);
@@ -206,6 +272,8 @@ public sealed partial class TeamCreateService : Node
 			_members.Clear();
 			_followMemberId = "";
 			_pendingChanges.Clear();
+			_initialObservationComplete = false;
+			_manualDisconnect = false;
 			ClearCameraAvatars();
 			if (universeId == 0) return;
 			string token = await CreatorAPI.GetValidAccessTokenAsync();
@@ -391,9 +459,19 @@ public sealed partial class TeamCreateService : Node
 		if (string.IsNullOrWhiteSpace(memberId)) return;
 		_requestActive = true;
 
-		KeyValuePair<string, JsonObject>[] batch = [.. _pendingChanges];
+		List<KeyValuePair<string, JsonObject>> batch = [];
 		JsonArray changes = [];
-		foreach ((_, JsonObject change) in batch) changes.Add(change.DeepClone());
+		int batchBytes = 2;
+		foreach (KeyValuePair<string, JsonObject> entry in _pendingChanges)
+		{
+			int changeBytes = Encoding.UTF8.GetByteCount(entry.Value.ToJsonString()) + 1;
+			if (batch.Count > 0
+				&& (batch.Count >= MaxChangesPerBatch || batchBytes + changeBytes > MaxChangeBatchBytes))
+				break;
+			batch.Add(entry);
+			changes.Add(entry.Value.DeepClone());
+			batchBytes += changeBytes;
+		}
 		if (changes.Count == 0)
 		{
 			_requestActive = false;
@@ -593,6 +671,7 @@ public sealed partial class TeamCreateService : Node
 			ClearCameraAvatars();
 			_cameraAvatarWorld = world;
 			_cameraAvatarRoot = new Node3D { Name = "TeamCreateCameraAvatars" };
+			_cameraAvatarRoot.Visible = _showCameraAvatars;
 			world.GDNode.AddChild(_cameraAvatarRoot, @internal: Node.InternalMode.Back);
 		}
 
@@ -615,7 +694,7 @@ public sealed partial class TeamCreateService : Node
 				avatar.GlobalRotation = member.Camera.Rotation;
 			}
 			Label3D? label = avatar.GetNodeOrNull<Label3D>("Username");
-			if (label != null) label.Text = member.Username;
+			if (label != null) label.Text = DisplayUsername(member.Username);
 		}
 
 		foreach ((string id, Node3D avatar) in _cameraAvatars.ToArray())
@@ -679,12 +758,13 @@ public sealed partial class TeamCreateService : Node
 		Label3D label = new()
 		{
 			Name = "Username",
-			Text = member.Username,
+			Text = DisplayUsername(member.Username),
 			Position = new Vector3(0, 0.48f, 0),
 			Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-			FixedSize = true,
-			FontSize = 22,
-			OutlineSize = 8,
+			FixedSize = false,
+			PixelSize = 0.004f,
+			FontSize = 20,
+			OutlineSize = 6,
 			Modulate = Colors.White,
 			OutlineModulate = new Color(0.04f, 0.04f, 0.06f, 0.95f),
 			NoDepthTest = true,
@@ -692,6 +772,9 @@ public sealed partial class TeamCreateService : Node
 		avatar.AddChild(label);
 		return avatar;
 	}
+
+	private static string DisplayUsername(string username) =>
+		username.Length <= 24 ? username : username[..21] + "...";
 
 	private static Color ColorFromUserId(string userId)
 	{
@@ -714,17 +797,23 @@ public sealed partial class TeamCreateService : Node
 	{
 		World? world = World.Current;
 		if (world == null) return;
+		bool queueDiscoveredObjects = _initialObservationComplete;
 		Observe(world);
-		foreach (NetworkedObject item in world.NetworkObjects.Values.ToArray()) Observe(item);
+		foreach (NetworkedObject item in world.NetworkObjects.Values.ToArray())
+		{
+			bool newlyObserved = Observe(item);
+			if (queueDiscoveredObjects && newlyObserved && item is Instance instance)
+				QueueCreate(instance);
+		}
+		_initialObservationComplete = true;
 	}
 
-	private void Observe(NetworkedObject item)
+	private bool Observe(NetworkedObject item)
 	{
 		string id = item.NetworkedObjectID;
-		if (string.IsNullOrWhiteSpace(id) || _observed.ContainsKey(id)) return;
-		_observed[id] = item;
-		item.PropertyChanged.Connect(property => OnPropertyChanged(item, property?.ToString() ?? ""));
-		item.Deleted += () =>
+		if (string.IsNullOrWhiteSpace(id) || _observed.ContainsKey(id)) return false;
+		Action<string> propertyHandler = property => OnPropertyChanged(item, property ?? "");
+		Action deletedHandler = () =>
 		{
 			if (_applyingRemote || !Connected) return;
 			QueueChange(
@@ -732,16 +821,25 @@ public sealed partial class TeamCreateService : Node
 				new JsonObject { ["kind"] = "delete", ["id"] = id }
 			);
 		};
+		Action<Instance>? childAddedHandler = null;
 		if (item is Instance instance)
-			instance.ChildAdded.Connect(child =>
+		{
+			childAddedHandler = child =>
 			{
 				if (child is Instance instanceChild) OnChildAdded(instance, instanceChild);
-			});
+			};
+			instance.ChildAdded.Connect(childAddedHandler);
+		}
+		item.PropertyChanged.Connect(propertyHandler);
+		item.Deleted += deletedHandler;
+		_observed[id] = new(item, propertyHandler, deletedHandler, childAddedHandler);
+		return true;
 	}
 
 	private void OnChildAdded(Instance parent, Instance child)
 	{
 		if (_applyingRemote || !Connected || child.Root != World.Current) return;
+		EnsureCollaborativeIds(child);
 		bool wasObserved = _observed.ContainsKey(child.NetworkedObjectID);
 		Observe(child);
 		if (wasObserved)
@@ -757,13 +855,56 @@ public sealed partial class TeamCreateService : Node
 			);
 			return;
 		}
+		QueueCreate(child);
+		foreach (Instance descendant in child.GetDescendants())
+		{
+			Observe(descendant);
+			QueueCreate(descendant);
+		}
+	}
+
+	private static void EnsureCollaborativeIds(Instance root)
+	{
+		if (string.IsNullOrWhiteSpace(root.NetworkedObjectID))
+			root.NetworkedObjectID = "tc-" + Guid.NewGuid().ToString("N");
+		foreach (Instance item in root.GetDescendants())
+		{
+			if (string.IsNullOrWhiteSpace(item.NetworkedObjectID))
+				item.NetworkedObjectID = "tc-" + Guid.NewGuid().ToString("N");
+		}
+	}
+
+	private void QueueCreate(Instance child)
+	{
+		if (string.IsNullOrWhiteSpace(child.NetworkedObjectID)
+			|| child.Parent == null
+			|| string.IsNullOrWhiteSpace(child.Parent.NetworkedObjectID))
+			return;
+
+		JsonObject properties = [];
+		foreach (System.Reflection.PropertyInfo property in child.GetEditableProperties())
+		{
+			if (!property.CanRead || !property.CanWrite || property.Name == nameof(NetworkedObject.Name))
+				continue;
+			try
+			{
+				JsonNode? value = EncodeValue(property.GetValue(child));
+				if (value is not null) properties[property.Name] = value;
+			}
+			catch (Exception error)
+			{
+				BV.PrintWarn("Could not snapshot Team Create property ", property.Name, ": ", error.Message);
+			}
+		}
+
 		JsonObject change = new()
 		{
 			["kind"] = "create",
 			["id"] = child.NetworkedObjectID,
-			["parentId"] = parent.NetworkedObjectID,
+			["parentId"] = child.Parent.NetworkedObjectID,
 			["className"] = child.ClassName,
 			["name"] = child.Name,
+			["properties"] = properties,
 		};
 		if (child is Dynamic dynamic) change["transform"] = Transform(dynamic.GetLocalTransform());
 		QueueChange("create:" + child.NetworkedObjectID, change);
@@ -831,6 +972,18 @@ public sealed partial class TeamCreateService : Node
 				created.Name = change.GetProperty("name").GetString() ?? className;
 				if (created is Dynamic dynamic && change.TryGetProperty("transform", out JsonElement transform))
 					dynamic.SetLocalTransform(ReadTransform(transform));
+				if (change.TryGetProperty("properties", out JsonElement properties)
+					&& properties.ValueKind == JsonValueKind.Object)
+				{
+					foreach (JsonProperty property in properties.EnumerateObject())
+					{
+						System.Reflection.PropertyInfo? info = created.GetType().GetProperty(property.Name);
+						if (info?.CanWrite != true) continue;
+						object? value = DecodeValue(property.Value, info.PropertyType);
+						if (value != null || !info.PropertyType.IsValueType)
+							info.SetValue(created, value);
+					}
+				}
 				created.Parent = parent;
 				created.CreatorInserted();
 				Observe(created);
@@ -874,6 +1027,13 @@ public sealed partial class TeamCreateService : Node
 
 	private void UnobserveAll()
 	{
+		foreach (Observation observation in _observed.Values)
+		{
+			observation.Item.PropertyChanged.Disconnect(observation.PropertyHandler);
+			observation.Item.Deleted -= observation.DeletedHandler;
+			if (observation.ChildAddedHandler is not null && observation.Item is Instance instance)
+				instance.ChildAdded.Disconnect(observation.ChildAddedHandler);
+		}
 		_observed.Clear();
 	}
 
@@ -934,11 +1094,17 @@ public sealed partial class TeamCreateService : Node
 	{
 		null => JsonValue.Create((string?)null),
 		string text => JsonValue.Create(text),
+		StringName text => new JsonObject { ["$type"] = "stringName", ["value"] = text.ToString() },
+		NodePath path => new JsonObject { ["$type"] = "nodePath", ["value"] = path.ToString() },
 		bool flag => JsonValue.Create(flag),
+		sbyte number => JsonValue.Create(number),
 		byte number => JsonValue.Create(number),
 		short number => JsonValue.Create(number),
+		ushort number => JsonValue.Create(number),
 		int number => JsonValue.Create(number),
+		uint number => JsonValue.Create(number),
 		long number => JsonValue.Create(number),
+		ulong number => JsonValue.Create(number),
 		float number => JsonValue.Create(number),
 		double number => JsonValue.Create(number),
 		Enum enumValue => new JsonObject
@@ -952,23 +1118,47 @@ public sealed partial class TeamCreateService : Node
 			["value"] = new JsonArray(vector.X, vector.Y),
 		},
 		Vector3 vector => new JsonObject { ["$type"] = "vector3", ["value"] = Vector(vector) },
+		Vector2I vector => new JsonObject { ["$type"] = "vector2i", ["value"] = new JsonArray(vector.X, vector.Y) },
+		Vector3I vector => new JsonObject { ["$type"] = "vector3i", ["value"] = new JsonArray(vector.X, vector.Y, vector.Z) },
+		Vector4 vector => new JsonObject { ["$type"] = "vector4", ["value"] = new JsonArray(vector.X, vector.Y, vector.Z, vector.W) },
+		Quaternion quaternion => new JsonObject { ["$type"] = "quaternion", ["value"] = new JsonArray(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W) },
+		Transform3D transform => new JsonObject { ["$type"] = "transform3d", ["value"] = Transform(transform) },
 		Color color => new JsonObject
 		{
 			["$type"] = "color",
 			["value"] = new JsonArray(color.R, color.G, color.B, color.A),
 		},
+		NetworkedObject reference when !string.IsNullOrWhiteSpace(reference.NetworkedObjectID) =>
+			new JsonObject { ["$type"] = "reference", ["id"] = reference.NetworkedObjectID },
+		Array array => EncodeArray(array),
 		_ => null,
 	};
 
-	private static object? DecodeValue(JsonElement value, Type type)
+	private static JsonObject EncodeArray(Array values)
+	{
+		JsonArray encoded = [];
+		foreach (object? value in values)
+			encoded.Add(EncodeValue(value));
+		return new JsonObject { ["$type"] = "array", ["value"] = encoded };
+	}
+
+	private object? DecodeValue(JsonElement value, Type type)
 	{
 		if (value.ValueKind == JsonValueKind.Null) return null;
+		Type? nullableType = Nullable.GetUnderlyingType(type);
+		if (nullableType != null) return DecodeValue(value, nullableType);
 		if (type == typeof(string)) return value.GetString();
+		if (type == typeof(StringName)) return new StringName(value.GetProperty("value").GetString() ?? "");
+		if (type == typeof(NodePath)) return new NodePath(value.GetProperty("value").GetString() ?? "");
 		if (type == typeof(bool)) return value.GetBoolean();
+		if (type == typeof(sbyte)) return value.GetSByte();
 		if (type == typeof(byte)) return value.GetByte();
 		if (type == typeof(short)) return value.GetInt16();
+		if (type == typeof(ushort)) return value.GetUInt16();
 		if (type == typeof(int)) return value.GetInt32();
+		if (type == typeof(uint)) return value.GetUInt32();
 		if (type == typeof(long)) return value.GetInt64();
+		if (type == typeof(ulong)) return value.GetUInt64();
 		if (type == typeof(float)) return value.GetSingle();
 		if (type == typeof(double)) return value.GetDouble();
 		if (type.IsEnum)
@@ -979,13 +1169,53 @@ public sealed partial class TeamCreateService : Node
 			return new Vector2(values[0], values[1]);
 		}
 		if (type == typeof(Vector3)) return ReadVector3(value.GetProperty("value"));
+		if (type == typeof(Vector2I))
+		{
+			int[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetInt32()).ToArray();
+			return new Vector2I(values[0], values[1]);
+		}
+		if (type == typeof(Vector3I))
+		{
+			int[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetInt32()).ToArray();
+			return new Vector3I(values[0], values[1], values[2]);
+		}
+		if (type == typeof(Vector4))
+		{
+			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			return new Vector4(values[0], values[1], values[2], values[3]);
+		}
+		if (type == typeof(Quaternion))
+		{
+			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			return new Quaternion(values[0], values[1], values[2], values[3]);
+		}
+		if (type == typeof(Transform3D)) return ReadTransform(value.GetProperty("value"));
 		if (type == typeof(Color))
 		{
 			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
 			return new Color(values[0], values[1], values[2], values[3]);
 		}
+		if (typeof(NetworkedObject).IsAssignableFrom(type))
+			return World.Current?.GetNetObjectFromID(value.GetProperty("id").GetString() ?? "");
+		if (type.IsArray)
+		{
+			JsonElement encodedValues = value.GetProperty("value");
+			Type elementType = type.GetElementType()!;
+			Array result = Array.CreateInstance(elementType, encodedValues.GetArrayLength());
+			int index = 0;
+			foreach (JsonElement encodedValue in encodedValues.EnumerateArray())
+				result.SetValue(DecodeValue(encodedValue, elementType), index++);
+			return result;
+		}
 		return null;
 	}
+
+	private sealed record Observation(
+		NetworkedObject Item,
+		Action<string> PropertyHandler,
+		Action DeletedHandler,
+		Action<Instance>? ChildAddedHandler
+	);
 }
 
 public sealed class TeamCreateMember

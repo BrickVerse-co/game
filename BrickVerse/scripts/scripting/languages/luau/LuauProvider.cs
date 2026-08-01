@@ -25,6 +25,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Text.RegularExpressions;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Scripting.Luau;
@@ -157,7 +158,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 		catch (Exception e)
 		{
-			script.Root.ScriptService.Logger.LogError(script, e.Message);
+			script.Root.ScriptService.Logger.LogError(script, e.Message, GetTraceLine(e.Message));
 			return;
 		}
 
@@ -175,7 +176,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		}
 		catch (Exception e)
 		{
-			script.Root.ScriptService.Logger.LogError(script, e.Message);
+			script.Root.ScriptService.Logger.LogError(script, e.Message, GetTraceLine(e.Message));
 		}
 	}
 
@@ -582,7 +583,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 					errContent = errContent + "\nstacktrace:\n" + traceback;
 				}
 
-				logger.LogError(script, errContent);
+				logger.LogError(script, errContent, GetTraceLine(traceback));
 			}
 		}
 		finally
@@ -630,27 +631,34 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 	private static int LuaLog(
 		IntPtr L,
-		Action<LogDispatcher, Script, string> logAction)
+		Action<LogDispatcher, Script, string, int> logAction)
 	{
 		LuaState lua = LuaState.FromIntPtr(L);
 		Script script = GetScriptInstance(lua);
 		LogDispatcher logger = GetLogger(lua);
 
-		logAction(logger, script, BuildLuaLogMessage(lua));
+		logAction(logger, script, BuildLuaLogMessage(lua), GetTraceLine(lua.DebugTrace()));
 		return 0;
 	}
 
+	private static int GetTraceLine(string? trace)
+	{
+		if (string.IsNullOrWhiteSpace(trace)) return 0;
+		Match match = Regex.Match(trace, @":(?<line>\d+)(?:\D|$)");
+		return match.Success && int.TryParse(match.Groups["line"].Value, out int line) ? line : 0;
+	}
+
 	public static int LuaPrint(IntPtr L) =>
-		LuaLog(L, static (logger, script, message) =>
-			logger.LogInfo(script, message));
+		LuaLog(L, static (logger, script, message, line) =>
+			logger.LogInfo(script, message, line));
 
 	public static int LuaWarn(IntPtr L) =>
-		LuaLog(L, static (logger, script, message) =>
-			logger.LogWarning(script, message));
+		LuaLog(L, static (logger, script, message, line) =>
+			logger.LogWarning(script, message, line));
 
 	public static int LuaError(IntPtr L) =>
-		LuaLog(L, static (logger, script, message) =>
-			logger.LogError(script, message));
+		LuaLog(L, static (logger, script, message, line) =>
+			logger.LogError(script, message, line));
 
 	public int LuaWait(IntPtr L)
 	{

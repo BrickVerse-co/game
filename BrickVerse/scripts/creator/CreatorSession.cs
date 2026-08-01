@@ -259,6 +259,8 @@ public partial class CreatorSession : Node, IDisposable
 
 	private void SetupLuaDocs()
 	{
+		const string definitionSchemaVersion = "2";
+		string expectedDefinitionVersion = $"{Globals.AppVersion}:luau-{definitionSchemaVersion}";
 		string luauRcPath = ProjectFolderPath.PathJoin(".luaurc");
 		string luauPath = BVProjectFolderPath.PathJoin("luau");
 		if (!Directory.Exists(luauPath))
@@ -277,13 +279,13 @@ public partial class CreatorSession : Node, IDisposable
 		//BV.Print("Reading version...");
 		string versionData = File.ReadAllText(versionPath);
 
-		if (versionData != Globals.AppVersion || Globals.IsInGDEditor)
+		if (versionData != expectedDefinitionVersion || Globals.IsInGDEditor)
 		{
 			//BV.Print("Generating doc...");
 			LuaDefinitionGenerator.GenerateDocFiles(luauPath);
 
 			//BV.Print("Writing doc...");
-			File.WriteAllText(versionPath, Globals.AppVersion);
+			File.WriteAllText(versionPath, expectedDefinitionVersion);
 			File.WriteAllText(luauRcPath, LuauRCContent);
 		}
 	}

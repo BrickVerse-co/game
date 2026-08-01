@@ -7,6 +7,7 @@ using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -127,34 +128,71 @@ public static class BVAPI
 		);
 
 		APIV3CharacterAppearance appearance = response.Appearance;
-		List<APIAvatarAsset> assets = [];
-		foreach (APIV3CharacterAccessory item in appearance.Accessories ?? [])
-		{
-			assets.Add(new APIAvatarAsset
+		APIV3CharacterAccessory[] appearanceAccessories = appearance.Accessories ?? [];
+		Task<APIAvatarAsset>[] accessoryTasks = appearanceAccessories.Select(
+			async item =>
 			{
-				ID = item.Id ?? "0",
-				Type = (item.Type ?? string.Empty).ToLowerInvariant(),
-				AccessoryType = item.Type ?? "",
-				Name = item.Name ?? "",
-				Thumbnail = item.ThumbnailUrl ?? "",
-				Path = "",
-			});
-		}
+				string marketplaceId = item.Id ?? "0";
+				APIMarketplace3DItem metadata = new()
+				{
+					Id = marketplaceId,
+					Name = item.Name ?? "",
+					Type = item.Type ?? "",
+				};
+				try
+				{
+					APIMarketplace3DResponse metadataResponse = await GetMarketplace3D(marketplaceId);
+					if (metadataResponse.Success) metadata = metadataResponse.Item;
+				}
+				catch (Exception exception)
+				{
+					BV.PrintWarn(
+						"Could not resolve avatar marketplace item ", marketplaceId,
+						": ", exception.Message
+					);
+				}
+
+				return new APIAvatarAsset
+				{
+					ID = marketplaceId,
+					TextureID = metadata.TextureId ?? "",
+					MeshID = metadata.MeshId ?? "",
+					MeshPosition = metadata.MeshPosition,
+					Type = FirstNotEmpty(item.Type, metadata.Type).ToLowerInvariant(),
+					AccessoryType = FirstNotEmpty(item.Type, metadata.Type),
+					Name = FirstNotEmpty(item.Name, metadata.Name),
+					Thumbnail = item.ThumbnailUrl ?? "",
+					Path = "",
+				};
+			}
+		).ToArray();
+		APIAvatarAsset[] assets = await Task.WhenAll(accessoryTasks);
 
 		return new APIAvatarResponse
 		{
 			Colors = new APIAvatarBodyColors
 			{
-				Head = appearance.HeadColor,
-				Torso = appearance.TorsoColor,
-				LeftArm = appearance.LeftArmColor,
-				RightArm = appearance.RightArmColor,
-				LeftLeg = appearance.LeftLegColor,
-				RightLeg = appearance.RightLegColor,
+				Head = NormalizeAppearanceColor(appearance.HeadColor),
+				Torso = NormalizeAppearanceColor(appearance.TorsoColor),
+				LeftArm = NormalizeAppearanceColor(appearance.LeftArmColor),
+				RightArm = NormalizeAppearanceColor(appearance.RightArmColor),
+				LeftLeg = NormalizeAppearanceColor(appearance.LeftLegColor),
+				RightLeg = NormalizeAppearanceColor(appearance.RightLegColor),
 			},
-			Assets = [.. assets],
+			Assets = assets,
 			IsDefault = !response.Success,
 		};
+	}
+
+	private static string FirstNotEmpty(string? preferred, string? fallback) =>
+		!string.IsNullOrWhiteSpace(preferred) ? preferred : fallback ?? "";
+
+	private static string NormalizeAppearanceColor(string? color)
+	{
+		if (string.IsNullOrWhiteSpace(color)) return "#ffffff";
+		string normalized = color.Trim();
+		if (!normalized.StartsWith('#')) normalized = "#" + normalized;
+		return normalized;
 	}
 
 	public static async Task<APIPlaceInfo> GetWorldFromID(long placeID)
@@ -258,6 +296,14 @@ public static class BVAPI
 
 	public static Task<APIStoreItem> GetStoreItem(string id)
 		=> GetAssetStoreItem(id);
+
+	public static Task<APIMarketplace3DResponse> GetMarketplace3D(string id)
+	{
+		return _client.GetFromJsonAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/marketplace/" + id + "/3d"),
+			APIGenerationContext.Default.APIMarketplace3DResponse
+		);
+	}
 
 	private static async Task<APIStoreItem> GetAssetStoreItem(string id)
 	{
@@ -373,19 +419,34 @@ public static class BVAPI
 	public static Task<string> GetProfanityList()
 	{
 		if (ProfanityListCache != null)
-		{
 			return Task.FromResult(ProfanityListCache);
-		}
 
-		// Load profanity list resources and cache it in memory for future calls
 		string path = "res://assets/profanity.txt";
-		if (!FileAccess.FileExists(path))
+		string? data = null;
+
+		if (FileAccess.FileExists(path))
 		{
-			throw new Exception("Profanity list file not found: " + path);
+			using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+			data = file.GetAsText();
+		}
+		else
+		{
+			const string resourceName = "BrickVerse.Assets.profanity.txt";
+			using System.IO.Stream? stream = typeof(BVAPI).Assembly.GetManifestResourceStream(
+				resourceName
+			);
+			if (stream is not null)
+			{
+				using var reader = new System.IO.StreamReader(stream);
+				data = reader.ReadToEnd();
+			}
 		}
 
-		using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-		string data = file.GetAsText();
+		if (string.IsNullOrWhiteSpace(data))
+			throw new InvalidOperationException(
+				$"Profanity list is unavailable at {path} and was not embedded in the application."
+			);
+
 		ProfanityListCache = data;
 		return Task.FromResult(data);
 	}

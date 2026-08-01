@@ -11,6 +11,7 @@ using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Formats;
 using BrickVerse.Scripting;
@@ -30,6 +31,7 @@ namespace BrickVerse.Datamodel.Creator;
 public sealed partial class CreatorService : Node, IScriptObject
 {
 	public const string BrickVerseFolderName = "BrickVerse/";
+	public const string CloudWorldProjectsFolderName = "BrickVerseCreator/My Worlds";
 	public string? PendingModelImportPath { get; set; }
 
 	private long _localTestIDCounter = 0;
@@ -58,6 +60,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private Rect2I? _lastRuntimeViewportRect;
 	private bool _lastRuntimeViewportVisible;
 	private double _runtimeViewportSyncElapsed;
+	private double _runtimeViewportForceSyncElapsed;
+	private double _popupStackSyncElapsed;
+	private bool _creatorPromotedForPopup;
 
 	public CreatorService()
 	{
@@ -179,6 +184,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		if (_runtimeDebugWindows.TryGetValue(processId, out RuntimeDebugWindow? window))
 			window.AppendLog(log);
+
+		DebugConsole.Singleton?.NewLog(new LogDispatcher.LogData
+		{
+			ID = Guid.NewGuid().ToString(),
+			LogType = log.LogType,
+			LogFrom = log.LogFrom,
+			Content = log.Content,
+			Source = log.Source,
+			SourceLine = log.SourceLine,
+		});
 	}
 
 	private void OnBeforeQuit()
@@ -249,7 +264,40 @@ public sealed partial class CreatorService : Node, IScriptObject
 			}
 		}
 		SyncPrimaryClientViewport(delta);
+		SyncEditorPopupStack(delta);
 		base._Process(delta);
+	}
+
+	private void SyncEditorPopupStack(double delta)
+	{
+		if (!_primaryRuntimeClientProcess.HasValue && !_creatorPromotedForPopup) return;
+		_popupStackSyncElapsed += delta;
+		if (_popupStackSyncElapsed < 0.03) return;
+		_popupStackSyncElapsed = 0;
+
+		bool embeddedPopupVisible = HasVisibleEmbeddedPopup(Interface);
+		if (embeddedPopupVisible == _creatorPromotedForPopup) return;
+		_creatorPromotedForPopup = embeddedPopupVisible;
+		DisplayServer.WindowSetFlag(
+			DisplayServer.WindowFlags.AlwaysOnTop,
+			embeddedPopupVisible,
+			GetWindow().GetWindowId()
+		);
+		if (embeddedPopupVisible) GetWindow().GrabFocus();
+	}
+
+	private static bool HasVisibleEmbeddedPopup(Node node)
+	{
+		foreach (Node child in node.GetChildren())
+		{
+			if (child is Window window
+				&& window.Visible
+				&& window.IsEmbedded()
+				&& window is not RuntimeDebugWindow)
+				return true;
+			if (HasVisibleEmbeddedPopup(child)) return true;
+		}
+		return false;
 	}
 
 	private void SyncPrimaryClientViewport(double delta)
@@ -257,8 +305,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (!_primaryRuntimeClientProcess.HasValue) return;
 
 		_runtimeViewportSyncElapsed += delta;
+		_runtimeViewportForceSyncElapsed += delta;
 		if (_runtimeViewportSyncElapsed < 0.05) return;
 		_runtimeViewportSyncElapsed = 0;
+		bool forceSync = _runtimeViewportForceSyncElapsed >= 0.5;
 
 		Rect2I? rect = GetCurrentWorldViewportScreenRect();
 		bool visible = rect.HasValue
@@ -266,7 +316,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
 
 		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
-		if (rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
+		if (!forceSync && rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
 		if (!rect.HasValue && !_lastRuntimeViewportVisible) return;
 
 		if (rect.HasValue) _lastRuntimeViewportRect = rect;
@@ -274,6 +324,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (effectiveRect.HasValue)
 		{
 			DebugServer.SetRuntimeViewportRect(_primaryRuntimeClientProcess.Value, effectiveRect.Value, visible);
+			_runtimeViewportForceSyncElapsed = 0;
 		}
 	}
 
@@ -283,7 +334,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (worldContainer == null || !IsInstanceValid(worldContainer)) return null;
 
 		Rect2 globalRect = worldContainer.GetGlobalRect();
-		Vector2 windowPosition = GetWindow().Position;
+		Vector2 windowPosition = DisplayServer.WindowGetPosition(GetWindow().GetWindowId());
 		float scale = GetWindow().ContentScaleFactor;
 		Vector2I position = new(
 			Mathf.RoundToInt(windowPosition.X + globalRect.Position.X * scale),
@@ -384,30 +435,42 @@ public sealed partial class CreatorService : Node, IScriptObject
 				await DatamodelLoader.LoadWorldBytes(root, worldContent);
 				Interface.LoadOverlay?.SetProgress(2);
 
-				string projectName = string.IsNullOrWhiteSpace(root.Name) ? $"World {parsedWorldId}" : root.Name.Trim();
-				string projectFolderName = projectName.SanitizeFileName();
+				string projectName = string.IsNullOrWhiteSpace(root.Name) ? "World" : root.Name.Trim();
+				string safeProjectName = projectName.SanitizeFileName().Trim();
+				if (string.IsNullOrWhiteSpace(safeProjectName)) safeProjectName = "World";
+				string projectFolderName = $"{safeProjectName}-{parsedWorldId}";
+				string projectsRoot = Path.Join(
+					System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments),
+					CloudWorldProjectsFolderName
+				);
+				string projectFolderPath = Path.Join(projectsRoot, projectFolderName);
 
-				// Prompt to save to a project folder
-				Interface.LoadOverlay?.SetStatus("Choosing project folder");
-				string targetPath = await CreatorService.Interface.PromptFolderSelect(new()
+				bool promptForLocation = CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Creator.PromptForWorldProjectLocation
+				);
+				if (promptForLocation)
 				{
-					Title = "Select a folder to create the project in",
-					CurrentDirectory = ProjectSettings.GlobalizePath("user://projects/"),
-				});
-
-				if (string.IsNullOrWhiteSpace(targetPath))
-				{
-					return;
-				}
-
-				string projectFolderPath = targetPath;
-				if (Directory.Exists(projectFolderPath))
-				{
-					bool hasExistingContent = Directory.GetFiles(projectFolderPath).Length != 0 || Directory.GetDirectories(projectFolderPath).Length != 0;
-					if (hasExistingContent && new DirectoryInfo(projectFolderPath).Name != projectFolderName)
+					Interface.LoadOverlay?.SetStatus("Choosing project folder");
+					Directory.CreateDirectory(projectsRoot);
+					string targetPath = await Interface.PromptFolderSelect(new()
 					{
-						projectFolderPath = Path.Join(projectFolderPath, projectFolderName);
+						Title = "Select a folder for this world project",
+						CurrentDirectory = projectsRoot,
+					});
+
+					if (string.IsNullOrWhiteSpace(targetPath)) return;
+					projectFolderPath = targetPath;
+					if (Directory.Exists(projectFolderPath))
+					{
+						bool hasExistingContent = Directory.EnumerateFileSystemEntries(projectFolderPath).Any();
+						if (hasExistingContent && new DirectoryInfo(projectFolderPath).Name != projectFolderName)
+							projectFolderPath = Path.Join(projectFolderPath, projectFolderName);
 					}
+				}
+				else
+				{
+					Interface.LoadOverlay?.SetStatus("Creating local project");
+					BV.Print("Using automatic project folder: ", projectFolderPath);
 				}
 
 				Directory.CreateDirectory(projectFolderPath);
@@ -518,6 +581,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async Task CreateNewSession(string projectFilePath = "", World? worldOverride = null)
 	{
+		bool openedSuccessfully = false;
 		string? targetPlace = null;
 		projectFilePath = ProjectSettings.GlobalizePath(projectFilePath);
 		if (string.IsNullOrWhiteSpace(projectFilePath)
@@ -566,7 +630,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Interface.LoadOverlay?.SetTitle("Opening project");
 		Interface.LoadOverlay?.SetStatus("Initializing");
 		Interface.LoadOverlay?.SetMaxProgress(2);
+		StartupSplash.Singleton.Close();
 		Interface.LoadOverlay?.Show();
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 		try
 		{
@@ -585,8 +651,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 			}
 
 			Sessions.Add(session);
+			openedSuccessfully = true;
 			await ProjectManager.AddToRecents(folder);
-			StartupSplash.Singleton.Close();
 
 			if (!string.IsNullOrWhiteSpace(PendingModelImportPath))
 			{
@@ -607,6 +673,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			Interface.LoadOverlay?.Hide();
 			Interface.StatusBar?.SetEmpty();
+			if (!openedSuccessfully && Sessions.Count == 0)
+			{
+				StartupSplash.Singleton.Open();
+			}
 		}
 	}
 
@@ -727,7 +797,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 	}
 
-	public static async void OpenFile(string path)
+	public static async void OpenFile(string path, int lineNumber = 0)
 	{
 		if (CurrentSession == null) return;
 		string pathRelative = path;
@@ -769,6 +839,13 @@ public sealed partial class CreatorService : Node, IScriptObject
 				CodeCompletion = codeCompletion,
 				Title = pathRelative.GetFile()
 			});
+			if (lineNumber > 0)
+			{
+				await Interface.ToSignal(Interface.GetTree(), SceneTree.SignalName.ProcessFrame);
+				await Interface.ToSignal(Interface.GetTree(), SceneTree.SignalName.ProcessFrame);
+				if (Tabs.Singleton.CurrentControl is TextEditorContainer editor)
+					editor.EditorRoot.GoToLine(lineNumber);
+			}
 			return;
 		}
 		else if (userPref == PreferredEditorEnum.VSCode)

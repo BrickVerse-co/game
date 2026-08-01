@@ -2,24 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
 namespace BrickVerse.Creator.UI;
 
 public sealed partial class Menu : PanelContainer
 {
-	private sealed class MenuAddonSlotItem : MenuButtonItem
-	{
-
-	}
+	private sealed class MenuAddonSlotItem : MenuButtonItem { }
 
 	private class MenuButtonItem : MenuItem
 	{
@@ -37,10 +34,7 @@ public sealed partial class Menu : PanelContainer
 		public string? Text = null;
 	}
 
-	private abstract class MenuItem
-	{
-
-	}
+	private abstract class MenuItem { }
 
 	private sealed class MenuButtonMenus
 	{
@@ -84,429 +78,512 @@ public sealed partial class Menu : PanelContainer
 	public override void _Ready()
 	{
 		_menus.Add(
-			new()
-			{
-				Title = "File",
-			},
+			new() { Title = "File" },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "New",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.N }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.N }],
 					},
-					Pressed = CreatorInterface.CreateNewWorld
+					Pressed = CreatorInterface.CreateNewWorld,
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Open",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.O }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.O }],
 					},
-					Pressed = CreatorService.Interface.PromptOpenWorld
+					Pressed = CreatorService.Interface.PromptOpenWorld,
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Save",
 					RequireGameOpen = true,
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.S }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.S }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.SaveCurrentFile();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Save As...",
 					RequireGameOpen = true,
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.S }
-						]
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.S,
+							},
+						],
 					},
-					Pressed = CreatorService.SaveCurrentFileAs
+					Pressed = CreatorService.SaveCurrentFileAs,
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Publish",
 					RequireGameOpen = true,
-					Pressed = async () => {
+					Pressed = async () =>
+					{
 						if (World.Current != null)
 						{
 							CreatorService.Interface.OpenWorldPublish(World.Current);
-						} else {
-							CreatorService.Interface.PopupAlert("No world is currently open to publish.");
 						}
-					}
+						else
+						{
+							CreatorService.Interface.PopupAlert(
+								"No world is currently open to publish."
+							);
+						}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Publish As...",
 					RequireGameOpen = true,
-					Pressed = async () => {
+					Pressed = async () =>
+					{
 						if (World.Current != null)
 						{
 							CreatorService.Interface.OpenWorldPublish(World.Current, true);
-						} else {
-							CreatorService.Interface.PopupAlert("No world is currently open to publish.");
 						}
-					}
+						else
+						{
+							CreatorService.Interface.PopupAlert(
+								"No world is currently open to publish."
+							);
+						}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
+					Text = "Edit Universe Details",
+					RequireGameOpen = true,
+					Pressed = async () =>
+					{
+						if (World.Current != null)
+						{
+							OS.ShellOpen("https://brickverse.gg/creator/worlds/edit/" + World.Current.UniverseID);
+						}
+						else
+						{
+							CreatorService.Interface.PopupAlert(
+								"You must open a world before you can open it in the browser."
+							);
+						}
+					},
+				},
+				new MenuButtonItem()
+				{
+					Text = "Open in Browser",
+					RequireGameOpen = true,
+					Pressed = async () =>
+					{
+						if (World.Current != null)
+						{
+							OS.ShellOpen("https://brickverse.gg/worlds/" + World.Current.WorldID);
+						}
+						else
+						{
+							CreatorService.Interface.PopupAlert(
+								"You must open a world before you can open it in the browser."
+							);
+						}
+					},
+				},
+				new MenuButtonItem()
+				{
 					Text = "Exit",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						Globals.Singleton.Quit();
-					}
+					},
 				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Edit",
-				RequireGameOpen = true,
-			},
+			new() { Title = "Edit", RequireGameOpen = true },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Undo",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.Z }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.Z }],
 					},
-					Pressed = CreatorService.Undo
+					Pressed = CreatorService.Undo,
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Redo",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.Z }
-						]
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.Z,
+							},
+						],
 					},
-					Pressed = CreatorService.Redo
+					Pressed = CreatorService.Redo,
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Delete",
 					KeyShortcut = new()
 					{
-						Events = [
+						Events =
+						[
 							new InputEventKey() { Keycode = Key.Delete },
-							new InputEventKey() { Keycode = Key.Backspace }
-						]
+							new InputEventKey() { Keycode = Key.Backspace },
+						],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						World.Current?.CreatorContext.Selections.DeleteSelected();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Duplicate",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.D }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.D }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						World.Current?.CreatorContext.Selections.DuplicateSelected();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Toggle Locked",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.L }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.L }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						World.Current?.CreatorContext.Selections.ToggleLockSelected();
-					}
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Select All",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.A }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.A }],
 					},
-					Pressed = () => {
-						if (World.Current == null) return;
-						World.Current.CreatorContext.Selections.SelectChild(World.Current.Environment);
-					}
+					Pressed = () =>
+					{
+						if (World.Current == null)
+							return;
+						World.Current.CreatorContext.Selections.SelectChild(
+							World.Current.Environment
+						);
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Input Manager",
-					Pressed = CreatorService.Interface.OpenInputManager
+					Pressed = CreatorService.Interface.OpenInputManager,
 				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Insert",
-				RequireGameOpen = true,
-			},
+			new() { Title = "Insert", RequireGameOpen = true },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "New Instance",
 					KeyShortcut = new()
 					{
-						Events = [
+						Events =
+						[
 							new InputEventKey() { ShiftPressed = true, Keycode = Key.Space },
 							new InputEventKey() { CtrlPressed = true, Keycode = Key.I },
-						]
+						],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.OpenInsertMenu();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Upload Mesh",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.OpenUploadMeshMenu();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Upload Texture",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.OpenUploadTextureMenu();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Upload Sound",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.OpenUploadSoundMenu();
-					}
+					},
 				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Model",
-				RequireGameOpen = true,
-			},
+			new() { Title = "Model", RequireGameOpen = true },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Group",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.G }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.G }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						World.Current?.CreatorContext.Selections.GroupSelected();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Ungroup",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.U }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.U }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						World.Current?.CreatorContext.Selections.UngroupSelected();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Group Folder",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, AltPressed = true, Keycode = Key.G }
-						]
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								AltPressed = true,
+								Keycode = Key.G,
+							},
+						],
 					},
-					Pressed = () => {
-						World.Current?.CreatorContext.Selections.GroupSelected(Datamodel.Creator.CreatorHistory.GroupAsEnum.Folder);
-					}
+					Pressed = () =>
+					{
+						World.Current?.CreatorContext.Selections.GroupSelected(
+							Datamodel.Creator.CreatorHistory.GroupAsEnum.Folder
+						);
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Group RigidBody",
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.G }
-						]
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.G,
+							},
+						],
 					},
-					Pressed = () => {
-						World.Current?.CreatorContext.Selections.GroupSelected(Datamodel.Creator.CreatorHistory.GroupAsEnum.RigidBody);
-					}
+					Pressed = () =>
+					{
+						World.Current?.CreatorContext.Selections.GroupSelected(
+							Datamodel.Creator.CreatorHistory.GroupAsEnum.RigidBody
+						);
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Import",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.PromptImportModel();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Export",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.ExportSelectedModel();
-					}
-				}
+					},
+				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Tools",
-			},
+			new() { Title = "Tools" },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Play Test",
 					Icon = "play",
 					RequireGameOpen = true,
-					KeyShortcut = new()
+					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F5 }] },
+					Pressed = () =>
 					{
-						Events = [
-							new InputEventKey() { Keycode = Key.F5 }
-						]
-					},
-					Pressed = () => {
 						CreatorService.Singleton.StartLocalTest();
-					}
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Play Test Here",
 					Icon = "camera",
 					RequireGameOpen = true,
 					KeyShortcut = new()
 					{
-						Events = [
-							new InputEventKey() { CtrlPressed = true, Keycode = Key.F5 }
-						]
+						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.F5 }],
 					},
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Singleton.StartLocalTest(true);
-					}
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Manage Addons",
-					Pressed = CreatorInterface.PopupManageAddons
+					Pressed = CreatorInterface.PopupManageAddons,
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Animation Editor",
-					Pressed = CreatorService.Interface.OpenAnimationEditor
+					Pressed = CreatorService.Interface.OpenAnimationEditor,
 				},
-				new MenuAddonSlotItem() {
-					Text = "Addons",
-					RequireGameOpen = true
-				},
+				new MenuAddonSlotItem() { Text = "Addons", RequireGameOpen = true },
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Migrate Coordinates",
 					RequireGameOpen = true,
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.MigrateCoordinates(World.Current!);
-					}
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Settings",
 					Icon = "settings",
-					Pressed = () => {
-						CreatorService.Interface.OpenSettings();
-					}
-				},
-			]
-		);
-
-		_menus.Add(
-			new()
-			{
-				Title = "View",
-			},
-			[
-				new MenuButtonItem() {
-					Text = "Toggle Fullscreen",
-					KeyShortcut = new()
+					Pressed = () =>
 					{
-						Events = [
-							new InputEventKey() { Keycode = Key.F11 }
-						]
+						CreatorService.Interface.OpenSettings();
 					},
-					Pressed = () => {
-						CreatorInterface.ToggleFullscreen();
-					}
-				},
-				new MenuButtonItem() {
-					Text = "Show Runtime Debug Windows",
-					Pressed = () => {
-						CreatorService.Singleton.ShowRuntimeDebugWindows();
-					}
 				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Help",
-			},
+			new() { Title = "View" },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
+					Text = "Toggle Fullscreen",
+					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F11 }] },
+					Pressed = () =>
+					{
+						CreatorInterface.ToggleFullscreen();
+					},
+				},
+				new MenuButtonItem()
+				{
+					Text = "Show Runtime Debug Windows",
+					Pressed = () =>
+					{
+						CreatorService.Singleton.ShowRuntimeDebugWindows();
+					},
+				},
+			]
+		);
+
+		_menus.Add(
+			new() { Title = "Help" },
+			[
+				new MenuButtonItem()
+				{
 					Text = "Copy System Info",
 					Icon = "copy",
-					Pressed = () => {
-						DisplayServer.ClipboardSet($"System Name: {OS.GetName() + " " + OS.GetVersionAlias()}\nCPU: {OS.GetProcessorName()} cores: {OS.GetProcessorCount()}\nVideo Adapter: {OS.GetVideoAdapterDriverInfo().Join(", ")}");
-					}
+					Pressed = () =>
+					{
+						DisplayServer.ClipboardSet(
+							$"System Name: {OS.GetName() + " " + OS.GetVersionAlias()}\nCPU: {OS.GetProcessorName()} cores: {OS.GetProcessorCount()}\nVideo Adapter: {OS.GetVideoAdapterDriverInfo().Join(", ")}"
+						);
+					},
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Open Documentation",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						OS.ShellOpen("https://developers.brickverse.gg/");
-					}
+					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Report a Bug",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						OS.ShellOpen("https://brickverse.gg/forum");
-					}
+					},
 				},
 			]
 		);
 
 		_menus.Add(
-			new()
-			{
-				Title = "Dev",
-				DevOnly = true
-			},
+			new() { Title = "Dev", DevOnly = true },
 			[
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Pack Current Project",
 					RequireGameOpen = true,
-					Pressed = CreatorService.PackCurrentProject
+					Pressed = CreatorService.PackCurrentProject,
 				},
-				new MenuButtonItem() {
+				new MenuButtonItem()
+				{
 					Text = "Link Device",
-					Pressed = () => {
+					Pressed = () =>
+					{
 						CreatorService.Interface.OpenLinkDevicePrompt();
-					}
-				}
+					},
+				},
 			]
 		);
 
@@ -521,7 +598,8 @@ public sealed partial class Menu : PanelContainer
 
 		foreach ((MenuButtonMenus mbtn, MenuItem[] items) in _menus)
 		{
-			if (mbtn.DevOnly && !Globals.IsInGDEditor) continue;
+			if (mbtn.DevOnly && !Globals.IsInGDEditor)
+				continue;
 			MenuButton btnRoot = new()
 			{
 				Text = mbtn.Title,
@@ -628,7 +706,6 @@ public sealed partial class Menu : PanelContainer
 
 	private void UpdateAddonMenuInUI(AddonObject obj, AddonMenuData data)
 	{
-
 		if (!data.Visible)
 		{
 			// Create new addon item
@@ -665,8 +742,10 @@ public sealed partial class Menu : PanelContainer
 
 	public void RemoveAddonMenu(AddonObject obj)
 	{
-		if (_addonDataByRoot.TryGetValue(obj.Root, out var rootAddons) &&
-			rootAddons.TryGetValue(obj.Identifier, out AddonMenuData? data))
+		if (
+			_addonDataByRoot.TryGetValue(obj.Root, out var rootAddons)
+			&& rootAddons.TryGetValue(obj.Identifier, out AddonMenuData? data)
+		)
 		{
 			// Remove from UI if it's currently displayed
 			if (obj.Root == _currentRoot && data.Visible)
@@ -692,7 +771,8 @@ public sealed partial class Menu : PanelContainer
 		{
 			foreach ((MenuButtonMenus mbtn, MenuItem[] items) in _menus)
 			{
-				if (mbtn.DevOnly) continue;
+				if (mbtn.DevOnly)
+					continue;
 				if (mbtn.RequireGameOpen)
 				{
 					mbtn.Button.Disabled = disabled;
@@ -725,7 +805,10 @@ public sealed partial class Menu : PanelContainer
 	private void SwitchAddonRoot(World? newRoot)
 	{
 		// Remove all current addon menus from UI
-		if (_currentRoot != null && _addonDataByRoot.TryGetValue(_currentRoot, out var currentAddons))
+		if (
+			_currentRoot != null
+			&& _addonDataByRoot.TryGetValue(_currentRoot, out var currentAddons)
+		)
 		{
 			foreach (var data in currentAddons.Values)
 			{
@@ -753,15 +836,15 @@ public sealed partial class Menu : PanelContainer
 		switch (idx)
 		{
 			case 0: // About BrickVerse
-				{
-					CreatorService.Interface.PopupCredits();
-					break;
-				}
+			{
+				CreatorService.Interface.PopupCredits();
+				break;
+			}
 			case 1: // Startup splash
-				{
-					StartupSplash.Singleton.Show();
-					break;
-				}
+			{
+				StartupSplash.Singleton.Show();
+				break;
+			}
 		}
 	}
 }

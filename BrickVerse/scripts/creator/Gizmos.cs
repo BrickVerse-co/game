@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Spatial;
+using BrickVerse.Creator.UI;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Utils;
@@ -27,6 +28,8 @@ public sealed partial class Gizmos : Node
 	private bool _isDragPending;
 	private bool _duplicatedOnCurrentDrag;
 	private Vector2 _dragStartPos;
+	private Vector2 _rightClickStart;
+	private bool _rightClickPending;
 	private const float DragThreshold = 6f;
 	private const float MinimumScale = 0.01f;
 	private const float MinimumSnap = 0.0001f;
@@ -577,6 +580,20 @@ public sealed partial class Gizmos : Node
 		if (@event is InputEventMouseButton button)
 		{
 			if (HoveringGizmos || HoveringUIGizmo) { return; }
+			if (button.ButtonIndex == MouseButton.Right)
+			{
+				if (button.Pressed)
+				{
+					_rightClickStart = button.Position;
+					_rightClickPending = true;
+				}
+				else if (_rightClickPending && button.Position.DistanceTo(_rightClickStart) < DragThreshold)
+				{
+					ShowViewportContextMenu(selectInstance);
+					_rightClickPending = false;
+				}
+				return;
+			}
 			if (button.ButtonIndex != MouseButton.Left) { return; }
 			if (button.Pressed)
 			{
@@ -677,6 +694,8 @@ public sealed partial class Gizmos : Node
 		}
 		else if (@event is InputEventMouseMotion motion)
 		{
+			if (_rightClickPending && motion.Position.DistanceTo(_rightClickStart) >= DragThreshold)
+				_rightClickPending = false;
 			if (_isDragPending && !_isDraggingDyn)
 			{
 				float distance = motion.Position.DistanceTo(_dragStartPos);
@@ -724,6 +743,41 @@ public sealed partial class Gizmos : Node
 			}
 		}
 
+	}
+
+	private void ShowViewportContextMenu(Instance? clicked)
+	{
+		if (clicked != null && !Root.CreatorContext.Selections.HasSelected(clicked))
+			Root.CreatorContext.Selections.SelectOnly(clicked);
+
+		List<Instance> selectedInstances = [.. Root.CreatorContext.Selections.SelectedInstances];
+		if (selectedInstances.Count > 0)
+		{
+			ExplorerItemContextMenu instanceMenu = new() { Targets = selectedInstances };
+			CreatorService.Interface.AddChild(instanceMenu);
+			instanceMenu.PopupAtCursor();
+			return;
+		}
+
+		PopupMenu menu = new();
+		menu.AddItem("Insert Instance...", 1);
+		menu.AddItem("Paste", 2);
+		menu.IdPressed += id =>
+		{
+			switch (id)
+			{
+				case 1:
+					CreatorService.Interface.OpenInsertMenu(clicked);
+					break;
+				case 2:
+					_ = CreatorService.Clipboard.PasteClipboard(true);
+					break;
+			}
+			menu.QueueFree();
+		};
+		menu.PopupHide += menu.QueueFree;
+		CreatorService.Interface.AddChild(menu);
+		menu.Popup(new Rect2I((Vector2I)_camera.GetViewport().GetMousePosition(), Vector2I.Zero));
 	}
 
 	private void RebaseActiveDirectDrag()

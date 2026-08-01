@@ -318,7 +318,9 @@ public class DebugAgent
 		{
 			LogType = data.LogType,
 			LogFrom = data.LogFrom,
-			Content = data.Content
+			Content = data.Content,
+			Source = data.Source,
+			SourceLine = data.SourceLine
 		});
 	}
 

@@ -51,21 +51,16 @@ public partial class ConsoleFilters : PopupPanel
 		_addonCheckBox.ButtonPressed = _debugConsole.IsSourceFilterEnabled(LogFromEnum.Addon);
 	}
 
-	private void ShowAtPosition(Vector2 screenPos)
+	public void OpenAt(Vector2 screenPos)
 	{
-		if (Visible)
-		{
-			Hide();
-			return;
-		}
-
 		SyncCheckboxes();
 		ResetSize();
-
-		Popup(new Rect2I(
-			(Vector2I)screenPos,
-			(Vector2I)Size
-		));
+		Vector2I popupSize = Size == Vector2I.Zero ? new Vector2I(310, 170) : Size;
+		Vector2I position = new(
+			Mathf.RoundToInt(screenPos.X),
+			Mathf.RoundToInt(screenPos.Y - popupSize.Y - 8)
+		);
+		Popup(new Rect2I(position, popupSize));
 	}
 
 }

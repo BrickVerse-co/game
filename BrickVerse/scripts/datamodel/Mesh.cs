@@ -16,7 +16,10 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public sealed partial class Mesh : Entity
 {
+	public const float ImportedAssetScale = 6.75f;
+
 	private MeshAsset? _asset;
+	private ImageAsset? _texture;
 
 	private int _assetID = 0;
 	private bool _includeOffset;
@@ -67,6 +70,33 @@ public sealed partial class Mesh : Entity
 				{
 					_asset.QueueLoadResource();
 				}
+			}
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public ImageAsset? Texture
+	{
+		get => _texture;
+		set
+		{
+			if (_texture == value) return;
+			if (_texture != null)
+			{
+				_texture.ResourceLoaded -= OnTextureLoaded;
+				_texture.UnlinkFrom(this);
+			}
+
+			_texture = value;
+			if (_texture != null)
+			{
+				_texture.LinkTo(this);
+				_texture.ResourceLoaded += OnTextureLoaded;
+				if (_texture.IsResourceLoaded && _texture.Resource is Texture2D texture)
+					ApplyTexture(texture);
+				else
+					_texture.QueueLoadResource();
 			}
 			OnPropertyChanged();
 		}
@@ -307,7 +337,9 @@ public sealed partial class Mesh : Entity
 					for (int i = 0; i < surfaceCount; i++)
 					{
 						// Duplicate material, same as above
-						Material mat = (Material)m3d.Mesh.SurfaceGetMaterial(i).Duplicate();
+						Material? sourceMaterial = m3d.Mesh.SurfaceGetMaterial(i);
+						if (sourceMaterial == null) continue;
+						Material mat = (Material)sourceMaterial.Duplicate();
 						m3d.Mesh.SurfaceSetMaterial(i, mat);
 						_materials.Add(mat);
 						if (mat is StandardMaterial3D sm3d)
@@ -320,6 +352,7 @@ public sealed partial class Mesh : Entity
 			}
 
 			UpdateColor();
+			if (_texture?.Resource is Texture2D texture) ApplyTexture(texture);
 			UpdateShadows();
 			UpdateTextureFilter();
 
@@ -338,6 +371,20 @@ public sealed partial class Mesh : Entity
 
 			Loading = false;
 			Loaded.Invoke();
+		}
+	}
+
+	private void OnTextureLoaded(Resource resource)
+	{
+		if (resource is Texture2D texture) ApplyTexture(texture);
+	}
+
+	private void ApplyTexture(Texture2D texture)
+	{
+		foreach (Material material in _materials)
+		{
+			if (material is BaseMaterial3D baseMaterial)
+				baseMaterial.AlbedoTexture = texture;
 		}
 	}
 
