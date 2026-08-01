@@ -94,6 +94,8 @@ public struct APIAvatarAsset
 	public string TextureID { get; set; }
 	[JsonPropertyName("meshId")]
 	public string MeshID { get; set; }
+	[JsonPropertyName("meshPos")]
+	public APIPosition3? MeshPosition { get; set; }
 	[JsonPropertyName("type")]
 	public string Type { get; set; }
 	[JsonPropertyName("accessoryType")]

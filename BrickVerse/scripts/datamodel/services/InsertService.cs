@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Datamodel.Resources;
@@ -10,10 +13,7 @@ using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
@@ -24,19 +24,25 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Insert"), ExplorerExclude, SaveIgnore]
 public sealed partial class InsertService : Instance
 {
+	// CharacterPreview.tsx centers ClassicPose.obj using these vertical bounds.
+	private const float MarketplaceCharacterBoundsMinY = -0.4980669915676117f;
+	private const float MarketplaceCharacterBoundsMaxY = 0.421999990940094f;
+	private const float MarketplaceRigOffsetY = 0.5f;
+
 	private readonly BVHttpClient _httpClient = new();
 	private static readonly Dictionary<string, APIStoreItem> _storeItemCache = [];
 
 	[ScriptMethod, Attributes.Obsolete("Use ModelAsync instead")]
 	public void Model(string id, BVCallback? callback = null)
 	{
-		_ = ModelAsync(id).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = ModelAsync(id)
+			.ContinueWith(tsk =>
 			{
-				callback?.Invoke(tsk.Result);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					callback?.Invoke(tsk.Result);
+				}
+			});
 	}
 
 	[ScriptMethod]
@@ -102,7 +108,11 @@ public sealed partial class InsertService : Instance
 		ApplyAssetAuthHeaders();
 		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
 		byte[] modelBytes = await msg.Content.ReadAsByteArrayAsync();
-		Instance? model = await DatamodelLoader.LoadModelBytes(Root, modelBytes, Root.TemporaryContainer);
+		Instance? model = await DatamodelLoader.LoadModelBytes(
+			Root,
+			modelBytes,
+			Root.TemporaryContainer
+		);
 		return model;
 	}
 
@@ -117,13 +127,27 @@ public sealed partial class InsertService : Instance
 		{
 			string importFolderName = await DatamodelLoader.GetImportFolderName(modelBytes);
 
-			if (Root.LinkedSession.FileExists(Globals.ToolboxFolderName + "/" + importFolderName + "/"))
+			if (
+				Root.LinkedSession.FileExists(
+					Globals.ToolboxFolderName + "/" + importFolderName + "/"
+				)
+			)
 			{
-				if (!await CreatorService.Interface.PromptConfirmation(importFolderName + " already exists, do you want to update it?")) return null;
+				if (
+					!await CreatorService.Interface.PromptConfirmation(
+						importFolderName + " already exists, do you want to update it?"
+					)
+				)
+					return null;
 			}
 		}
 
-		Instance? model = await DatamodelLoader.LoadModelBytes(Root, modelBytes, Root.TemporaryContainer, optionalName);
+		Instance? model = await DatamodelLoader.LoadModelBytes(
+			Root,
+			modelBytes,
+			Root.TemporaryContainer,
+			optionalName
+		);
 		return model;
 	}
 #endif
@@ -132,22 +156,46 @@ public sealed partial class InsertService : Instance
 	public async Task<Accessory?> AccessoryAsync(string id)
 	{
 		APIMarketplace3DResponse response = await BVAPI.GetMarketplace3D(id);
-		if (!response.Success || string.IsNullOrWhiteSpace(response.Item.MeshId))
+		if (!response.Success)
 			return null;
 		APIMarketplace3DItem item = response.Item;
+		return CreateAccessory(
+			id,
+			item.MeshId,
+			item.TextureId,
+			item.Type,
+			item.Name,
+			item.MeshPosition
+		);
+	}
+
+	internal Accessory? CreateAccessory(
+		string marketplaceId,
+		string? meshId,
+		string? textureId,
+		string? accessoryType,
+		string? name,
+		APIPosition3? meshPosition
+	)
+	{
+		if (string.IsNullOrWhiteSpace(meshId))
+			return null;
 
 		BVMeshAsset meshAsset = New<BVMeshAsset>();
-		meshAsset.AssetID = item.MeshId;
+		meshAsset.AssetID = meshId;
 
 		Accessory accessory = New<Accessory>(this);
 		Mesh mesh = New<Mesh>();
-		mesh.Size = Vector3.One;
+
+		Vector3 size = Vector3.One;
+		mesh.Size = size;
 		mesh.Parent = accessory;
 		mesh.Asset = meshAsset;
-		if (!string.IsNullOrWhiteSpace(item.TextureId))
+
+		if (!string.IsNullOrWhiteSpace(textureId))
 		{
 			BVImageAsset texture = New<BVImageAsset>();
-			texture.ImageID = item.TextureId;
+			texture.ImageID = textureId;
 			mesh.Texture = texture;
 		}
 
@@ -155,35 +203,24 @@ public sealed partial class InsertService : Instance
 		mesh.LocalRotation = Vector3.Zero;
 		accessory.Size = Vector3.One;
 
-		mesh.IncludeOffset = false;
+		// CharacterPreview.tsx retains the GLB's authored origin: its position.set()
+		// replaces the earlier centering adjustment. Match that behavior here.
+		mesh.IncludeOffset = true;
 		mesh.Name = "Mesh";
 		mesh.CanCollide = false;
 		mesh.Anchored = true;
-		accessory.Name = string.IsNullOrWhiteSpace(item.Name) ? $"Accessory_{id}" : item.Name;
+		accessory.Name = string.IsNullOrWhiteSpace(name) ? $"Accessory_{marketplaceId}" : name;
 
-		APIPosition3 position = item.MeshPosition ?? new APIPosition3();
-		mesh.LocalPosition = new Vector3(position.X, position.Y, position.Z);
+		// Convert the legacy marketplace coordinates to the engine mesh scale
+		APIPosition3 position = meshPosition ?? new APIPosition3();
+		float frontendCharacterCenterY =
+			(MarketplaceCharacterBoundsMinY + MarketplaceCharacterBoundsMaxY) * 0.5f;
+		mesh.LocalPosition =
+			new Vector3(position.X, position.Y - frontendCharacterCenterY, position.Z)
+				* Mesh.ImportedAssetScale
+			+ Vector3.Up * MarketplaceRigOffsetY;
 
-		string accessoryType = item.Type ?? "";
-
-		if (accessoryType.Equals("BackAccessory", StringComparison.OrdinalIgnoreCase)
-			|| accessoryType.Equals("FrontAccessory", StringComparison.OrdinalIgnoreCase)
-			|| accessoryType.Equals("NeckAccessory", StringComparison.OrdinalIgnoreCase))
-		{
-			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.UpperTorso;
-		}
-		else if (accessoryType.Equals("WaistAccessory", StringComparison.OrdinalIgnoreCase))
-		{
-			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.LowerTorso;
-		}
-		else if (accessoryType.Equals("Gear", StringComparison.OrdinalIgnoreCase))
-		{
-			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.HandRight;
-		}
-		else
-		{
-			accessory.TargetAttachment = BrickversianModel.CharacterAttachmentEnum.Head;
-		}
+		mesh.LocalPosition += Vector3.Up * 0.17f;
 
 		return accessory;
 	}
@@ -240,7 +277,9 @@ public sealed partial class InsertService : Instance
 		catch (HttpRequestException ex) when (IsRecoverableStoreLookupError(ex))
 		{
 			storeItem = CreateFallbackStoreItem(id, $"Asset_{id}");
-			BV.PrintErr($"Store metadata unavailable for asset {id} ({ex.StatusCode?.ToString() ?? "UnknownStatus"}). Using fallback metadata.");
+			BV.PrintErr(
+				$"Store metadata unavailable for asset {id} ({ex.StatusCode?.ToString() ?? "UnknownStatus"}). Using fallback metadata."
+			);
 		}
 
 		_storeItemCache[id] = storeItem;
@@ -270,7 +309,7 @@ public sealed partial class InsertService : Instance
 				Type = "",
 				Id = 0,
 				Name = "",
-				Thumbnail = ""
+				Thumbnail = "",
 			},
 			Thumbnail = "",
 			Version = 0,
@@ -306,7 +345,9 @@ public sealed partial class InsertService : Instance
 		{
 			if (!string.IsNullOrWhiteSpace(ServerAPI.HostToken))
 			{
-				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ServerAPI.HostToken);
+				_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(
+					ServerAPI.HostToken
+				);
 			}
 			return;
 		}
@@ -314,12 +355,15 @@ public sealed partial class InsertService : Instance
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			_httpClient.DefaultRequestHeaders["Cookie"] = "auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
+			_httpClient.DefaultRequestHeaders["Cookie"] =
+				"auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
 		}
 #else
 		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
-			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(ClientAuthAPI.JoinToken);
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(
+				ClientAuthAPI.JoinToken
+			);
 		}
 #endif
 	}

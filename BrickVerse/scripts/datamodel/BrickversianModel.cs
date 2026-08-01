@@ -1036,12 +1036,12 @@ public sealed partial class BrickversianModel : CharacterModel
 		int myCount = _loadAppearanceCount;
 
 		APIAvatarResponse avatarData = await BVAPI.GetUserAvatarFromID(userID);
-		BV.Print(
+		/*BV.Print(
 			$"Loading avatar for user {userID}: {JsonSerializer.Serialize(avatarData, new JsonSerializerOptions
-    {
-        WriteIndented = true
-    })}"
-		);
+			{
+				WriteIndented = true
+			})}"
+		);*/
 
 		if (myCount != _loadAppearanceCount)
 			throw new OperationCanceledException("The avatar is cancelled");
@@ -1098,12 +1098,18 @@ public sealed partial class BrickversianModel : CharacterModel
 					or "frontaccessory"
 					or "backaccessory"
 					or "waistaccessory"
-					or "gear"
 			)
 			{
 				try
 				{
-					Accessory? accessory = await Root.Insert.AccessoryAsync(asset.ID);
+					Accessory? accessory = Root.Insert.CreateAccessory(
+						asset.ID,
+						asset.MeshID,
+						asset.TextureID,
+						asset.AccessoryType,
+						asset.Name,
+						asset.MeshPosition
+					);
 					if (myCount != _loadAppearanceCount)
 					{
 						accessory?.Delete();

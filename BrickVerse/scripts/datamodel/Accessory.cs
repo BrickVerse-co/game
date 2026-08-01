@@ -10,52 +10,32 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public partial class Accessory : Dynamic
 {
-	private CharacterModel? _targetCharacter;
 	private BrickversianModel.CharacterAttachmentEnum _targetAttachment;
-	private RemoteTransform3D? remoteTransform;
 
-	[Editable, ScriptProperty]
+	// Retained for backwards-compatible loading of existing models. Accessories now
+	// use character-local coordinates and no longer follow per-bone attachments.
+	[ScriptProperty]
 	public BrickversianModel.CharacterAttachmentEnum TargetAttachment
 	{
 		get => _targetAttachment;
 		set
 		{
 			_targetAttachment = value;
-			RefreshAttachment();
 			OnPropertyChanged();
 		}
 	}
 
-	private void RefreshAttachment()
+	public override void PostReparent()
 	{
-		if (_targetCharacter == null || !GDNode.IsInsideTree()) { return; }
-		remoteTransform?.QueueFree();
-		Dynamic attachment = _targetCharacter.GetAttachment(TargetAttachment);
-		remoteTransform = new()
-		{
-			UseGlobalCoordinates = true,
-			UpdatePosition = true,
-			UpdateRotation = true,
-			UpdateScale = false
-		};
-		attachment.GDNode.AddChild(remoteTransform, @internal: Node.InternalMode.Back);
-		remoteTransform.RemotePath = remoteTransform.GetPathTo(GDNode);
-	}
+		base.PostReparent();
 
-	public override void EnterTree()
-	{
-		base.EnterTree();
-		if (Parent is CharacterModel c)
+		if (Parent is CharacterModel)
 		{
-			_targetCharacter = c;
+			// Godot reparents Node3D instances while preserving their global transform.
+			// Marketplace accessories instead need their root to be character-local.
+			// Do not assign size here; imported and user-authored scale must be preserved.
+			LocalPosition = Vector3.Zero;
+			LocalRotation = Vector3.Zero;
 		}
-		RefreshAttachment();
-	}
-
-	public override void ExitTree()
-	{
-		base.ExitTree();
-		_targetCharacter = null;
-		remoteTransform?.QueueFree();
 	}
 }

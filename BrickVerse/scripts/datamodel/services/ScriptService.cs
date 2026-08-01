@@ -518,8 +518,11 @@ public sealed partial class ScriptService : Instance
 		{
 			if (underlayingType == typeof(string))
 			{
-				return double.IsFinite(doubleValue) && doubleValue == Math.Truncate(doubleValue)
-					? doubleValue.ToString("0", CultureInfo.InvariantCulture)
+				return double.IsFinite(doubleValue)
+					&& doubleValue == Math.Truncate(doubleValue)
+					&& doubleValue >= long.MinValue
+					&& doubleValue <= long.MaxValue
+					? ((long)doubleValue).ToString(CultureInfo.InvariantCulture)
 					: doubleValue.ToString("R", CultureInfo.InvariantCulture);
 			}
 			if (underlayingType == typeof(float))

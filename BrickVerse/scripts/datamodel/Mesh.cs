@@ -16,6 +16,8 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public sealed partial class Mesh : Entity
 {
+	public const float ImportedAssetScale = 6.75f;
+
 	private MeshAsset? _asset;
 	private ImageAsset? _texture;
 

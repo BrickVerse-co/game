@@ -157,6 +157,7 @@ public static class BVAPI
 					ID = marketplaceId,
 					TextureID = metadata.TextureId ?? "",
 					MeshID = metadata.MeshId ?? "",
+					MeshPosition = metadata.MeshPosition,
 					Type = FirstNotEmpty(item.Type, metadata.Type).ToLowerInvariant(),
 					AccessoryType = FirstNotEmpty(item.Type, metadata.Type),
 					Name = FirstNotEmpty(item.Name, metadata.Name),

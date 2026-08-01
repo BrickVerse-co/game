@@ -2,21 +2,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Client.WebAPI;
-#if CREATOR
-using BrickVerse.Creator.Utils;
-#endif
-using BrickVerse.Shared;
-using BrickVerse.Shared.AssetLoaders;
-using BrickVerse.Formats;
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using Godot;
+#if CREATOR
+using BrickVerse.Creator.Utils;
+#endif
+
 
 namespace BrickVerse.Providers.AssetLoaders;
 
@@ -80,14 +81,19 @@ public class BVAssetProvider : IAssetProvider
 
 					if (item.Resize != null)
 					{
-						image.Resize(item.Resize.Value.X, item.Resize.Value.Y, Image.Interpolation.Lanczos);
+						image.Resize(
+							item.Resize.Value.X,
+							item.Resize.Value.Y,
+							Image.Interpolation.Lanczos
+						);
 					}
 
 					item.Resource = ImageTexture.CreateFromImage(image);
 
 					return item;
 				}
-			default: throw new NotImplementedException();
+			default:
+				throw new NotImplementedException();
 		}
 	}
 
@@ -98,7 +104,8 @@ public class BVAssetProvider : IAssetProvider
 	)
 	{
 		BV.PrintWarn(
-			"Mesh asset ", item.ID,
+			"Mesh asset ",
+			item.ID,
 			" could not be loaded; using the missing-mesh placeholder. ",
 			exception.Message
 		);
@@ -114,67 +121,62 @@ public class BVAssetProvider : IAssetProvider
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
 
-		Callable.From(() =>
-		{
-			Node3D placeholderRoot = new()
+		Callable
+			.From(() =>
 			{
-				Name = "UnavailableMeshRoot",
-			};
+				Node3D placeholderRoot = new() { Name = "UnavailableMeshRoot" };
 
-			try
-			{
-				Image checkerImage = Image.CreateEmpty(8, 8, false, Image.Format.Rgba8);
-				Color missingColor = Color.FromHtml("#ff00ff");
-				for (int y = 0; y < checkerImage.GetHeight(); y++)
+				try
 				{
-					for (int x = 0; x < checkerImage.GetWidth(); x++)
+					Image checkerImage = Image.CreateEmpty(8, 8, false, Image.Format.Rgba8);
+					Color missingColor = Color.FromHtml("#ff00ff");
+					for (int y = 0; y < checkerImage.GetHeight(); y++)
 					{
-						checkerImage.SetPixel(
-							x,
-							y,
-							((x / 2) + (y / 2)) % 2 == 0 ? missingColor : Colors.Black
+						for (int x = 0; x < checkerImage.GetWidth(); x++)
+						{
+							checkerImage.SetPixel(
+								x,
+								y,
+								((x / 2) + (y / 2)) % 2 == 0 ? missingColor : Colors.Black
+							);
+						}
+					}
+
+					StandardMaterial3D missingMaterial = new()
+					{
+						AlbedoTexture = ImageTexture.CreateFromImage(checkerImage),
+						TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+						Roughness = 1.0f,
+					};
+					BoxMesh boxMesh = new() { Size = Vector3.One, Material = missingMaterial };
+					MeshInstance3D placeholderMesh = new()
+					{
+						Name = "UnavailableMesh",
+						Mesh = boxMesh,
+					};
+					placeholderRoot.AddChild(placeholderMesh);
+					placeholderMesh.Owner = placeholderRoot;
+
+					PackedScene packedScene = new();
+					Error packError = packedScene.Pack(placeholderRoot);
+					if (packError != Error.Ok)
+					{
+						throw new InvalidOperationException(
+							$"Could not create unavailable mesh placeholder: {packError}."
 						);
 					}
+					completion.SetResult(packedScene);
 				}
-
-				StandardMaterial3D missingMaterial = new()
+				catch (Exception error)
 				{
-					AlbedoTexture = ImageTexture.CreateFromImage(checkerImage),
-					TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
-					Roughness = 1.0f,
-				};
-				BoxMesh boxMesh = new()
-				{
-					Size = Vector3.One,
-					Material = missingMaterial,
-				};
-				MeshInstance3D placeholderMesh = new()
-				{
-					Name = "UnavailableMesh",
-					Mesh = boxMesh,
-				};
-				placeholderRoot.AddChild(placeholderMesh);
-				placeholderMesh.Owner = placeholderRoot;
-
-				PackedScene packedScene = new();
-				Error packError = packedScene.Pack(placeholderRoot);
-				if (packError != Error.Ok)
-				{
-					throw new InvalidOperationException(
-						$"Could not create unavailable mesh placeholder: {packError}."
-					);
+					completion.SetException(error);
 				}
-				completion.SetResult(packedScene);
-			}
-			catch (Exception error)
-			{
-				completion.SetException(error);
-			}
-			finally
-			{
-				placeholderRoot.Free();
-			}
-		}).CallDeferred();
+				finally
+				{
+					placeholderRoot.Free();
+				}
+			})
+			.CallDeferred();
 
 		return completion.Task;
 	}
@@ -185,74 +187,194 @@ public class BVAssetProvider : IAssetProvider
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
 
-		Callable.From(() =>
-		{
-			Node3D? scene = null;
-			try
+		Callable
+			.From(() =>
 			{
-				if (buffer.Length < 12
-					|| buffer[0] != (byte)'g'
-					|| buffer[1] != (byte)'l'
-					|| buffer[2] != (byte)'T'
-					|| buffer[3] != (byte)'F')
+				Node3D? scene = null;
+
+				try
 				{
-					throw new InvalidDataException(
-						$"Mesh asset {assetId} is not a valid binary GLB file."
-					);
-				}
+					if (buffer == null || buffer.Length == 0)
+					{
+						throw new InvalidDataException(
+							$"Mesh asset {assetId} contained no glTF data."
+						);
+					}
 
-				GltfDocument document = new();
-				GltfState state = new() { CreateAnimations = true };
-				Error importError = document.AppendFromBuffer(buffer, "res://", state);
-				if (importError != Error.Ok)
+					bool isGlb =
+						buffer.Length >= 12
+						&& buffer[0] == (byte)'g'
+						&& buffer[1] == (byte)'l'
+						&& buffer[2] == (byte)'T'
+						&& buffer[3] == (byte)'F';
+
+					bool isGltfJson = IsGltfJson(buffer);
+
+					if (!isGlb && !isGltfJson)
+					{
+						throw new InvalidDataException(
+							$"Mesh asset {assetId} is not a valid GLB or glTF file."
+						);
+					}
+
+					GltfDocument document = new();
+
+					GltfState state = new()
+					{
+						CreateAnimations = true,
+
+						// Empty is correct for GLB files and self-contained glTF files.
+						// External .bin or image references require a real directory.
+						BasePath = string.Empty,
+					};
+
+					Error importError = document.AppendFromBuffer(buffer, state.BasePath, state);
+
+					if (importError != Error.Ok)
+					{
+						throw new InvalidDataException(
+							$"Godot could not import mesh asset {assetId}: {importError}."
+						);
+					}
+
+					scene =
+						document.GenerateScene(state) as Node3D
+						?? throw new InvalidDataException(
+							$"Mesh asset {assetId} did not contain a 3D scene."
+						);
+
+					/*
+					 * Do not strip all non-mesh nodes here.
+					 *
+					 * Skeleton3D, BoneAttachment3D, AnimationPlayer and ordinary
+					 * Node3D hierarchy nodes may be necessary for the mesh to render
+					 * or animate correctly.
+					 *
+					 * Only remove specific unwanted node types, such as imported
+					 * cameras and lights.
+					 */
+					RemoveImportedCamerasAndLights(scene);
+
+					// Applies filtering without replacing the imported PBR materials.
+					SetMipmapTextureFilter(scene);
+
+					// Artifically scale up the mesh to match the expected size of a BrickVerse avatar.
+					// this is a temporary solution that end's up being permanent..
+					scene.Scale = Vector3.One * BrickVerse.Datamodel.Mesh.ImportedAssetScale;
+
+					PackedScene packedScene = new();
+					Error packError = packedScene.Pack(scene);
+
+					if (packError != Error.Ok)
+					{
+						throw new InvalidDataException(
+							$"Could not pack mesh asset {assetId}: {packError}."
+						);
+					}
+
+					completion.TrySetResult(packedScene);
+				}
+				catch (Exception exception)
 				{
-					throw new InvalidDataException(
-						$"Godot could not import GLB mesh asset {assetId}: {importError}."
-					);
+					completion.TrySetException(exception);
 				}
-
-				scene = document.GenerateScene(state) as Node3D
-					?? throw new InvalidDataException(
-						$"GLB mesh asset {assetId} did not contain a 3D scene."
-					);
-
-				RemoveNonMeshNodes(scene);
-				SetMipmapTextureFilter(scene);
-
-				PackedScene packedScene = new();
-				Error packError = packedScene.Pack(scene);
-				if (packError != Error.Ok)
+				finally
 				{
-					throw new InvalidDataException(
-						$"Could not pack GLB mesh asset {assetId}: {packError}."
-					);
+					scene?.Free();
 				}
-
-				completion.SetResult(packedScene);
-			}
-			catch (Exception exception)
-			{
-				completion.SetException(exception);
-			}
-			finally
-			{
-				scene?.Free();
-			}
-		}).CallDeferred();
+			})
+			.CallDeferred();
 
 		return completion.Task;
+	}
+
+	private static bool IsGltfJson(byte[] buffer)
+	{
+		int index = 0;
+
+		// Skip UTF-8 BOM.
+		if (buffer.Length >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
+		{
+			index = 3;
+		}
+
+		// Skip leading JSON whitespace.
+		while (index < buffer.Length)
+		{
+			byte value = buffer[index];
+
+			if (
+				value != (byte)' '
+				&& value != (byte)'\t'
+				&& value != (byte)'\r'
+				&& value != (byte)'\n'
+			)
+			{
+				break;
+			}
+
+			index++;
+		}
+
+		return index < buffer.Length && buffer[index] == (byte)'{';
+	}
+
+	private static void RemoveImportedCamerasAndLights(Node node)
+	{
+		for (int index = node.GetChildCount() - 1; index >= 0; index--)
+		{
+			Node child = node.GetChild(index);
+
+			if (child is Camera3D or Light3D)
+			{
+				node.RemoveChild(child);
+				child.Free();
+				continue;
+			}
+
+			RemoveImportedCamerasAndLights(child);
+		}
 	}
 
 	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
 		if (itemType is ResourceType.UserBodyshot or ResourceType.UserHeadshot)
 		{
-			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/" + (itemType is ResourceType.UserBodyshot ? "bodyshot" : "headshot") + "/" + id + "?stream=true");
+			return Globals.ApiEndpoint.PathJoin(
+				"/v3/thumbnails/"
+					+ (itemType is ResourceType.UserBodyshot ? "bodyshot" : "headshot")
+					+ "/"
+					+ id
+					+ "?stream=true"
+			);
 		}
 
 		if (itemType is ResourceType.GuildIcon or ResourceType.GuildBanner) // or ResourceType.Texture or ResourceType.AssetThumbnail)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + id + "?stream=true");
+		}
+
+		// Check if we are in creator studio
+#if CREATOR
+		if (
+			!string.IsNullOrWhiteSpace(CreatorAPI.Token)
+			&& string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken)
+		)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
+		}
+#endif
+
+		// Server launches populate both ClientAuthAPI.JoinToken and
+		// ServerAPI.HostToken from -token. Prefer the authoritative host token;
+		// BV.IsServer may not yet reflect the initialized NetworkService here.
+		if (
+			BrickVerse.Datamodel.World.Current?.Network?.IsServer == true
+			|| BV.IsServer
+			|| !string.IsNullOrWhiteSpace(ServerAPI.HostToken)
+		)
+		{
+			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
 		// An authenticated play-test client must use its world join token. The
@@ -262,25 +384,17 @@ public class BVAssetProvider : IAssetProvider
 			return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
 		}
 
-		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
-		{
-			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
-		}
-
 		// Runtime-specific DRM endpoints (must be runtime mode, not build feature)
 		if (BV.IsServer)
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/server/asset/" + id);
 		}
 
-		// Check if we are in creator studio
-
-#if CREATOR
-		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token) && string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
+		// Check if we are in creator studio if we have a creator token, use the editor endpoint for asset loading
+		if (!string.IsNullOrWhiteSpace(ClientAuthAPI.CreatorToken))
 		{
 			return Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + id);
 		}
-#endif
 
 		// Fallback to client asset endpoint for regular clients (prod/non-creator)
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
@@ -316,7 +430,11 @@ public class BVAssetProvider : IAssetProvider
 
 			using (response)
 			{
-				if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0 && requiresAuthorization)
+				if (
+					response.StatusCode == HttpStatusCode.Unauthorized
+					&& attempt == 0
+					&& requiresAuthorization
+				)
 				{
 					await WaitForAssetAuthorizationAsync(url);
 					continue;
@@ -339,13 +457,11 @@ public class BVAssetProvider : IAssetProvider
 	)
 	{
 		string path = request.RequestUri?.AbsolutePath ?? "";
-		string route = path.Contains("/world/editor/", StringComparison.OrdinalIgnoreCase)
-			? "Editor"
-			: path.Contains("/world/client/", StringComparison.OrdinalIgnoreCase)
-				? "Client"
-				: path.Contains("/world/server/", StringComparison.OrdinalIgnoreCase)
-					? "Server"
-					: "Public";
+		string route =
+			path.Contains("/world/editor/", StringComparison.OrdinalIgnoreCase) ? "Editor"
+			: path.Contains("/world/client/", StringComparison.OrdinalIgnoreCase) ? "Client"
+			: path.Contains("/world/server/", StringComparison.OrdinalIgnoreCase) ? "Server"
+			: "Public";
 		string? bearer = request.Headers.Authorization?.Parameter;
 		string bearerPrefix = string.IsNullOrWhiteSpace(bearer)
 			? "<missing>"
@@ -404,7 +520,11 @@ public class BVAssetProvider : IAssetProvider
 
 		if (requestPath?.Contains("/world/server/", StringComparison.OrdinalIgnoreCase) == true)
 		{
-			return NormalizeBearerToken(ServerAPI.HostToken);
+			return NormalizeBearerToken(
+				!string.IsNullOrWhiteSpace(ServerAPI.HostToken)
+					? ServerAPI.HostToken
+					: ClientAuthAPI.JoinToken
+			);
 		}
 
 		// Creator play-test servers and clients use the OAuth token passed by
