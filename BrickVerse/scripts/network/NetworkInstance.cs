@@ -66,7 +66,7 @@ public class NetworkInstance
 
 		if (e != Error.Ok)
 		{
-			BV.PrintErr("Couldn't create host: ", e);
+			throw new InvalidOperationException($"Couldn't bind ENet server to UDP port {port}: {e}");
 		}
 
 		IsServer = true;
