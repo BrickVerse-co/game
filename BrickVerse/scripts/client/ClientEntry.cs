@@ -6,7 +6,6 @@
 #define ALLOW_SELFHOST
 #endif
 
-#if CREATOR
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +23,7 @@ using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
 using Godot;
+#if CREATOR
 using BrickVerse.Creator.Utils;
 #endif
 
@@ -894,12 +894,12 @@ public sealed partial class ClientEntry : Node3D
 		public string? DebugAddress { get; set; }
 		public string? DebugId { get; set; }
 		public string? LocalTestViewportRect { get; set; }
+		public string? LocalWorldPath { get; set; }
 
 #if ALLOW_SELFHOST
 		public string LocalAddress { get; set; } = DefaultLocalAddress;
 		public int LocalPort { get; set; } = DefaultLocalPort;
 		public string TestUserId { get; set; } = Globals.TestUserIdStart;
-		public string? LocalWorldPath { get; set; }
 		public string? SoloWorldPath { get; set; }
 		public int SoloClientCount { get; set; } = 1;
 		public string? DebugSpawnPositionText { get; set; }
