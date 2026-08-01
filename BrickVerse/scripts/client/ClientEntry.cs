@@ -166,6 +166,7 @@ public sealed partial class ClientEntry : Node3D
 		args.TryGetValue("debug", out string? debugAddress);
 		args.TryGetValue("debug-id", out string? debugId);
 		args.TryGetValue("ltrect", out string? localTestViewportRect);
+		args.TryGetValue("port", out string? serverPortText);
 
 		bool runAsServer =
 			string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
@@ -181,12 +182,12 @@ public sealed partial class ClientEntry : Node3D
 			DebugAddress = debugAddress,
 			DebugId = debugId,
 			LocalTestViewportRect = localTestViewportRect,
+			ServerPort = int.TryParse(serverPortText, out int serverPort) ? serverPort : null,
 		};
 
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
 		args.TryGetValue("world", out string? localWorldPath);
-		args.TryGetValue("port", out string? localPortText);
 		args.TryGetValue("id", out string? testUserId);
 		args.TryGetValue("solo", out string? soloWorldPath);
 		args.TryGetValue("nplr", out string? soloClientCountText);
@@ -194,7 +195,7 @@ public sealed partial class ClientEntry : Node3D
 		args.TryGetValue("ctoken", out string? creatorToken);
 
 		options.LocalAddress = localAddress ?? DefaultLocalAddress;
-		options.LocalPort = (localPortText ?? DefaultLocalPort.ToString()).ToInt();
+		options.LocalPort = options.ServerPort ?? DefaultLocalPort;
 		options.LocalWorldPath = localWorldPath;
 		options.TestUserId = string.IsNullOrWhiteSpace(testUserId)
 			? Globals.TestUserIdStart
@@ -590,7 +591,12 @@ public sealed partial class ClientEntry : Node3D
 				BV.Print("Construction finished in ", stopwatch.ElapsedMilliseconds, "ms");
 			}
 
-			int serverPort = listenResponse.Port;
+			// Production containers receive their internal bind port explicitly. Do
+			// not accidentally bind the public Docker host port returned by an older
+			// backend while Docker forwards traffic to the internal port.
+			int serverPort = options.ServerPort ?? listenResponse.Port;
+			if (serverPort is < 1 or > 65535)
+				throw new InvalidOperationException($"Invalid ENet server port: {serverPort}");
 			NetworkService.CreateServer(serverPort, options.MaxPlayers);
 		}
 		catch (Exception ex)
@@ -919,6 +925,7 @@ public sealed partial class ClientEntry : Node3D
 		public bool IsServer { get; set; }
 		public bool IsSubWorld { get; set; }
 		public int MaxPlayers { get; set; } = 32; // Used by server only
+		public int? ServerPort { get; set; }
 
 		public string? AuthToken { get; set; } // Auth (Client) / Host (Server) token for production server
 		public string? CreatorToken { get; set; }
