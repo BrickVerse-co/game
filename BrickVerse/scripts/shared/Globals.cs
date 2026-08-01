@@ -541,7 +541,10 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	public static Dictionary<string, string> ReadCmdArgs()
 	{
 		Dictionary<string, string> result = [];
-		string[] args = OS.GetCmdlineArgs();
+		// Godot reserves arguments after `--` for the running project. CLI tools
+		// such as docs-gen use that standard form, while existing launcher paths
+		// may still put BrickVerse arguments in the regular command line list.
+		string[] args = [.. OS.GetCmdlineArgs(), .. OS.GetCmdlineUserArgs()];
 
 		for (int i = 0; i < args.Length; i++)
 		{
