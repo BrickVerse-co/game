@@ -68,6 +68,7 @@ public sealed partial class ClientEntry : Node3D
 
 	public ClientEntry()
 	{
+		BootstrapRuntimeIdentityFromCommandLine();
 		Root = Globals.LoadInstance<World>();
 	}
 
@@ -83,11 +84,11 @@ public sealed partial class ClientEntry : Node3D
 			IsFocused = !IsContained;
 			ApplyLocalTestViewport(launchOptions);
 
-			ClientAuthAPI.Initialize(launchOptions.IsServer);
-
 #if ALLOW_SELFHOST
 			ApplySelfHostedLaunchOptions(launchOptions);
 #endif
+			ApplyRuntimeIdentity(launchOptions);
+			ClientAuthAPI.Initialize(launchOptions.IsServer);
 
 			await ConnectDebugAgentAsync(
 				launchOptions.DebugAddress,
@@ -182,11 +183,6 @@ public sealed partial class ClientEntry : Node3D
 			LocalTestViewportRect = localTestViewportRect,
 		};
 
-		BV.IsServer = runAsServer;
-		ClientAuthAPI.SetAuthToken(options.AuthToken ?? "");
-		if (BV.IsServer)
-			ServerAPI.SetAuthToken(options.AuthToken ?? "");
-
 #if ALLOW_SELFHOST
 		args.TryGetValue("address", out string? localAddress);
 		args.TryGetValue("world", out string? localWorldPath);
@@ -215,8 +211,6 @@ public sealed partial class ClientEntry : Node3D
 			ApplyEntryDataOverrides(options, entryData.Value);
 		}
 
-		BV.IsServer = options.IsServer;
-
 		/*BV.Print(
 			"Launch args: " +
 			string.Join(", ", args.Select(x => $"--{x.Key}={x.Value}"))
@@ -226,6 +220,43 @@ public sealed partial class ClientEntry : Node3D
 		*/
 
 		return options;
+	}
+
+	private static void BootstrapRuntimeIdentityFromCommandLine()
+	{
+		Dictionary<string, string> args = Globals.ReadCmdArgs();
+		args.TryGetValue("network", out string? networkMode);
+		args.TryGetValue("token", out string? token);
+		bool isServer =
+			string.Equals(networkMode, "server", StringComparison.OrdinalIgnoreCase)
+			|| (string.IsNullOrWhiteSpace(networkMode) && Globals.IsServerBuild);
+
+		BV.IsServer = isServer;
+		if (string.IsNullOrWhiteSpace(token))
+		{
+			return;
+		}
+
+		ClientAuthAPI.SetAuthToken(token);
+		if (isServer)
+		{
+			ServerAPI.SetAuthToken(token);
+		}
+	}
+
+	private static void ApplyRuntimeIdentity(ClientLaunchOptions options)
+	{
+		BV.IsServer = options.IsServer;
+		if (string.IsNullOrWhiteSpace(options.AuthToken))
+		{
+			return;
+		}
+
+		ClientAuthAPI.SetAuthToken(options.AuthToken);
+		if (options.IsServer)
+		{
+			ServerAPI.SetAuthToken(options.AuthToken);
+		}
 	}
 
 	private static void ApplyEntryDataOverrides(
@@ -687,6 +718,7 @@ public sealed partial class ClientEntry : Node3D
 
 			if (status.Status == "STARTED")
 			{
+				BV.Print("Server is ready, connecting to ", _clientConnectionInfo.IP, ":", _clientConnectionInfo.Port);
 				TargetServerReady?.Invoke();
 				NetworkService.CreateClient(_clientConnectionInfo.IP, _clientConnectionInfo.Port);
 				_serverStatusPollTimer.QueueFree();
