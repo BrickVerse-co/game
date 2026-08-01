@@ -6,6 +6,8 @@ using Godot;
 using Humanizer;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
 
 namespace BrickVerse.Creator.UI.Splashes.Components;
 
@@ -16,12 +18,28 @@ public partial class RecentPlaceCard : Button
 
 	[Export] private Label _placeTitleLabel = null!;
 	[Export] private Label _recentOpenLabel = null!;
+	[Export] private Label _pathLabel = null!;
+	[Export] private TextureRect _thumbnail = null!;
 	[Export] private MenuButton _menuLabel = null!;
 
 	public override void _Ready()
 	{
 		_placeTitleLabel.Text = Data.PlaceName;
 		_recentOpenLabel.Text = Data.LastOpened.Humanize();
+		_pathLabel.Text = Data.FolderPath;
+		_pathLabel.TooltipText = Data.FolderPath;
+
+		if (Data.IconID is > 0)
+		{
+			string thumbnailUrl = Globals.ApiEndpoint.PathJoin(
+				"/v3/thumbnails/asset/" + Data.IconID.Value
+			);
+			WebAssetLoader.Singleton.GetResource(new() { URL = thumbnailUrl }, resource =>
+			{
+				if (IsInstanceValid(_thumbnail) && resource is Texture2D texture)
+					_thumbnail.Texture = texture;
+			});
+		}
 
 		PopupMenu menu = _menuLabel.GetPopup();
 		menu.IdPressed += OnMenu;
@@ -41,9 +59,21 @@ public partial class RecentPlaceCard : Button
 		}
 	}
 
-	public override void _Pressed()
+	public override async void _Pressed()
 	{
-		_ = CreatorService.Singleton.CreateNewSession(Data.FolderPath);
+		Disabled = true;
+		try
+		{
+			await CreatorService.Singleton.CreateNewSession(Data.FolderPath);
+		}
+		catch
+		{
+			// CreateNewSession reports the detailed error and restores the landing page.
+		}
+		finally
+		{
+			if (IsInstanceValid(this)) Disabled = false;
+		}
 		base._Pressed();
 	}
 }

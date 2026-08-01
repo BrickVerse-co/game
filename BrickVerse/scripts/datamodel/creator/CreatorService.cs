@@ -566,6 +566,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public async Task CreateNewSession(string projectFilePath = "", World? worldOverride = null)
 	{
+		bool openedSuccessfully = false;
 		string? targetPlace = null;
 		projectFilePath = ProjectSettings.GlobalizePath(projectFilePath);
 		if (string.IsNullOrWhiteSpace(projectFilePath)
@@ -614,7 +615,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Interface.LoadOverlay?.SetTitle("Opening project");
 		Interface.LoadOverlay?.SetStatus("Initializing");
 		Interface.LoadOverlay?.SetMaxProgress(2);
+		StartupSplash.Singleton.Close();
 		Interface.LoadOverlay?.Show();
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 		try
 		{
@@ -633,8 +636,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 			}
 
 			Sessions.Add(session);
+			openedSuccessfully = true;
 			await ProjectManager.AddToRecents(folder);
-			StartupSplash.Singleton.Close();
 
 			if (!string.IsNullOrWhiteSpace(PendingModelImportPath))
 			{
@@ -655,6 +658,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			Interface.LoadOverlay?.Hide();
 			Interface.StatusBar?.SetEmpty();
+			if (!openedSuccessfully && Sessions.Count == 0)
+			{
+				StartupSplash.Singleton.Open();
+			}
 		}
 	}
 

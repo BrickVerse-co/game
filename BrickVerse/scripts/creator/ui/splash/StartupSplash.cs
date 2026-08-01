@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -52,6 +53,7 @@ public partial class StartupSplash : Control
 
 	public void Open()
 	{
+		_closeButton.Visible = World.Current != null;
 		Visible = true;
 	}
 

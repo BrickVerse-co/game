@@ -329,43 +329,71 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public async void OpenWorldFile(string filePath)
 	{
-		string fileName = filePath.GetFile();
+		StartupSplash.Singleton.Close();
+		LoadOverlay?.SetTitle("Opening project");
+		LoadOverlay?.SetStatus("Inspecting project files");
+		LoadOverlay?.SetMaxProgress(2);
+		LoadOverlay?.Show();
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-		if (fileName == Globals.ProjectMetaFileName)
+		try
 		{
-			await CreatorService.Singleton.CreateNewSession(filePath);
-		}
-		else
-		{
-			PolyFileTypeEnum fileType = await DatamodelLoader.DetermineFileType(filePath);
+			string fileName = filePath.GetFile();
 
-			if (fileType == PolyFileTypeEnum.PolyXML)
-			{
-				bool yes = await PromptConfirmation(
-					"This file is in a legacy format. To edit it, you must convert it to a Polytoria project. Convert now?"
-				);
-
-				if (yes)
-				{
-					_pendingLegacyWorld = filePath;
-					PromptFileSelect(
-						new()
-						{
-							Title = "Choose Destination",
-							CurrentDirectory = filePath.GetBaseDir(),
-							DialogMode = DisplayServer.FileDialogMode.OpenDir,
-						},
-						OnOpenConversion
-					);
-				}
-			}
-			else if (fileType == PolyFileTypeEnum.Packed)
+			if (fileName == Globals.ProjectMetaFileName)
 			{
 				await CreatorService.Singleton.CreateNewSession(filePath);
 			}
 			else
 			{
-				PopupAlert("Unknown file format");
+				PolyFileTypeEnum fileType = await DatamodelLoader.DetermineFileType(filePath);
+
+				if (fileType == PolyFileTypeEnum.PolyXML)
+				{
+					LoadOverlay?.Hide();
+					bool yes = await PromptConfirmation(
+						"This file is in a legacy format. To edit it, you must convert it to a Polytoria project. Convert now?"
+					);
+
+					if (yes)
+					{
+						_pendingLegacyWorld = filePath;
+						PromptFileSelect(
+							new()
+							{
+								Title = "Choose Destination",
+								CurrentDirectory = filePath.GetBaseDir(),
+								DialogMode = DisplayServer.FileDialogMode.OpenDir,
+							},
+							OnOpenConversion,
+							() => StartupSplash.Singleton.Open()
+						);
+					}
+					else if (CreatorService.Sessions.Count == 0)
+					{
+						StartupSplash.Singleton.Open();
+					}
+				}
+				else if (fileType == PolyFileTypeEnum.Packed)
+				{
+					await CreatorService.Singleton.CreateNewSession(filePath);
+				}
+				else
+				{
+					LoadOverlay?.Hide();
+					if (CreatorService.Sessions.Count == 0)
+						StartupSplash.Singleton.Open();
+					PopupAlert("Unknown file format");
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr(ex);
+			LoadOverlay?.Hide();
+			if (CreatorService.Sessions.Count == 0)
+			{
+				StartupSplash.Singleton.Open();
 			}
 		}
 	}
@@ -402,6 +430,8 @@ public partial class CreatorInterface : Control, IScriptObject
 		{
 			BV.PrintErr(ex);
 			PopupAlert(ex.Message);
+			if (CreatorService.Sessions.Count == 0)
+				StartupSplash.Singleton.Open();
 		}
 	}
 

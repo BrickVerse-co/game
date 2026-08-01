@@ -860,7 +860,7 @@ public sealed partial class ClientEntry : Node3D
 
 		DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
 		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, true);
-		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true);
+		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, false);
 		DisplayServer.WindowSetPosition(new Vector2I(rect.X, rect.Y));
 		DisplayServer.WindowSetSize(
 			new Vector2I(Math.Max(320, rect.Width), Math.Max(240, rect.Height))
