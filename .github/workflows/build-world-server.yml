@@ -21,7 +21,8 @@ env:
   PROJECT_DIR: BrickVerse
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   EXPORT_PRESET: Server Linux
-  ACR_NAME: brickverse-gshnc4bufnhxgvdu
+  # Azure resource name. The login server includes an Azure-generated DNS hash.
+  ACR_NAME: brickverse
   ACR_SERVER: brickverse-gshnc4bufnhxgvdu.azurecr.io
   IMAGE_NAME: world-server
 
