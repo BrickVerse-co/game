@@ -130,6 +130,11 @@ jobs:
             echo "::error::BrickVerse.dll is missing from the Godot Mono data directory."
             exit 1
           fi
+          LUAU_VM="$(find "$DATA_DIR" -type f -name 'Luau.VM.so' -print -quit)"
+          if [[ -z "$LUAU_VM" ]]; then
+            echo "::error::Luau.VM.so is missing from the Godot Mono data directory."
+            exit 1
+          fi
 
       - name: Login to container registry
         uses: docker/login-action@v3
