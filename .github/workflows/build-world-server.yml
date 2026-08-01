@@ -114,10 +114,15 @@ jobs:
         run: |
           set -euo pipefail
           EXPORT_DIR="${{ github.workspace }}/dist/world-server"
-          test -x "$EXPORT_DIR/BrickVerseServer.x86_64" || chmod +x "$EXPORT_DIR/BrickVerseServer.x86_64"
-          DATA_DIR="$(find "$EXPORT_DIR" -maxdepth 1 -type d -name 'data_*_linux_x86_64' -print -quit)"
+          SERVER_BINARY="$EXPORT_DIR/BrickVerseServer.x86_64"
+          if [[ ! -f "$SERVER_BINARY" ]]; then
+            echo "::error::Godot server executable is missing: $SERVER_BINARY"
+            exit 1
+          fi
+          chmod +x "$SERVER_BINARY"
+          DATA_DIR="$(find "$EXPORT_DIR" -maxdepth 1 -type d -name 'data_*_linuxbsd_x86_64' -print -quit)"
           if [[ -z "$DATA_DIR" ]]; then
-            echo "::error::Godot Mono data directory data_*_linux_x86_64 is missing."
+            echo "::error::Godot Mono data directory data_*_linuxbsd_x86_64 is missing."
             find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
             exit 1
           fi
@@ -161,5 +166,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker buildx imagetools inspect \
-            "${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.run_number }}"
+          IMAGE="${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.run_number }}"
+          docker buildx imagetools inspect "$IMAGE"
+          docker pull "$IMAGE"
+          docker run --rm "$IMAGE" --version
