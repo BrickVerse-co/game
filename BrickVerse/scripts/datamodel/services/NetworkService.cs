@@ -453,6 +453,7 @@ public sealed partial class NetworkService : Instance
 		}
 		catch (Exception ex)
 		{
+			_ = ex;
 #if DEBUG
 			if (OS.IsDebugBuild())
 			{
