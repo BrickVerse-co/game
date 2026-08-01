@@ -1,0 +1,174 @@
+name: Build World Server Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - beta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-world-server-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7-stable
+  GODOT_TEMPLATE_VERSION: 4.7.stable.mono
+  DOTNET_VERSION: 10.0.x
+  PROJECT_DIR: BrickVerse
+  PROJECT_FILE: BrickVerse/BrickVerse.csproj
+  EXPORT_PRESET: Server Linux
+  ACR_NAME: brickverse-gshnc4bufnhxgvdu
+  ACR_SERVER: brickverse-gshnc4bufnhxgvdu.azurecr.io
+  IMAGE_NAME: world-server
+
+jobs:
+  build-and-push:
+    name: Export and publish Linux world server
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout BrickVerse
+        uses: actions/checkout@v5
+        with:
+          lfs: true
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet and Godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ runner.temp }}/godot-editor
+            ~/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
+          key: world-server-${{ runner.os }}-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/**/*.csproj', 'BrickVerse.SourceGen/**/*.csproj') }}
+          restore-keys: world-server-${{ runner.os }}-${{ env.GODOT_VERSION }}-
+
+      - name: Install Godot .NET and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT_DIR="${{ runner.temp }}/godot-editor"
+          GODOT_BINARY="$(find "$GODOT_DIR" -type f -name 'Godot_*_mono_linux.x86_64' -print -quit 2>/dev/null || true)"
+          if [[ -z "$GODOT_BINARY" ]]; then
+            ARCHIVE="${{ runner.temp }}/godot.zip"
+            rm -rf "$GODOT_DIR"
+            mkdir -p "$GODOT_DIR"
+            curl --fail --location --retry 3 \
+              --output "$ARCHIVE" \
+              "https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip"
+            unzip -q "$ARCHIVE" -d "$GODOT_DIR"
+            GODOT_BINARY="$(find "$GODOT_DIR" -type f -name 'Godot_*_mono_linux.x86_64' -print -quit)"
+          fi
+          chmod +x "$GODOT_BINARY"
+          ln -sf "$GODOT_BINARY" "${{ runner.temp }}/godot"
+          echo "${{ runner.temp }}" >> "$GITHUB_PATH"
+
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}"
+          if [[ ! -f "$TEMPLATE_DIR/linux_release.x86_64" ]]; then
+            TEMPLATE_ARCHIVE="${{ runner.temp }}/godot-templates.tpz"
+            TEMPLATE_EXTRACT="${{ runner.temp }}/godot-templates"
+            rm -rf "$TEMPLATE_EXTRACT"
+            mkdir -p "$TEMPLATE_EXTRACT" "$TEMPLATE_DIR"
+            curl --fail --location --retry 3 \
+              --output "$TEMPLATE_ARCHIVE" \
+              "https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz"
+            unzip -q "$TEMPLATE_ARCHIVE" -d "$TEMPLATE_EXTRACT"
+            cp -a "$TEMPLATE_EXTRACT/templates/." "$TEMPLATE_DIR/"
+          fi
+
+      - name: Build and import project
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore "${{ env.PROJECT_FILE }}"
+          dotnet build "${{ env.PROJECT_FILE }}" --configuration Release --no-restore
+          cd "${{ env.PROJECT_DIR }}"
+          godot --headless --editor --import
+
+      - name: Export Linux world server
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPORT_DIR="${{ github.workspace }}/dist/world-server"
+          rm -rf "$EXPORT_DIR"
+          mkdir -p "$EXPORT_DIR"
+          cd "${{ env.PROJECT_DIR }}"
+          godot --headless --export-release \
+            "${{ env.EXPORT_PRESET }}" \
+            "$EXPORT_DIR/BrickVerseServer.x86_64"
+
+      - name: Validate server export
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPORT_DIR="${{ github.workspace }}/dist/world-server"
+          test -x "$EXPORT_DIR/BrickVerseServer.x86_64" || chmod +x "$EXPORT_DIR/BrickVerseServer.x86_64"
+          DATA_DIR="$(find "$EXPORT_DIR" -maxdepth 1 -type d -name 'data_*_linux_x86_64' -print -quit)"
+          if [[ -z "$DATA_DIR" ]]; then
+            echo "::error::Godot Mono data directory data_*_linux_x86_64 is missing."
+            find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
+            exit 1
+          fi
+          if ! find "$DATA_DIR" -type f -name 'BrickVerse.dll' -print -quit | grep -q .; then
+            echo "::error::BrickVerse.dll is missing from the Godot Mono data directory."
+            exit 1
+          fi
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        shell: bash
+        run: az acr login --name "${{ env.ACR_NAME }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate image tags
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=beta,enable=${{ github.ref == 'refs/heads/beta' }}
+            type=raw,value=${{ github.ref_name }}-${{ github.run_number }}
+
+      - name: Build and push world server image
+        uses: docker/build-push-action@v6
+        with:
+          context: dist/world-server
+          file: docker/world-server/Dockerfile
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha,scope=world-server
+          cache-to: type=gha,mode=max,scope=world-server
+
+      - name: Verify image was published
+        shell: bash
+        run: |
+          set -euo pipefail
+          az acr repository show-tags \
+            --name "${{ env.ACR_NAME }}" \
+            --repository "${{ env.IMAGE_NAME }}" \
+            --query "[?@=='${{ github.ref_name }}-${{ github.run_number }}']" \
+            --output tsv | grep -q .
