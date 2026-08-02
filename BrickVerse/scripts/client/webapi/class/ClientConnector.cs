@@ -59,7 +59,12 @@ internal sealed class ClientConnector : IClientConnector
 			string responseBody = await response.Content.ReadAsStringAsync();
 			if (!ShouldRetryClientConnect(response, responseBody) || attempt == 6)
 			{
-				throw new HttpRequestException($"BrickVerse client connect failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}");
+				string reason = ReadErrorMessage(responseBody)
+					?? response.ReasonPhrase
+					?? "The server rejected this client.";
+				throw new HttpRequestException(
+					$"Unable to join this BrickVerse server: {reason} (HTTP {(int)response.StatusCode})"
+				);
 			}
 
 			BV.Print($"Client connect retry {attempt}/6: waiting for server awaken...");
@@ -67,6 +72,21 @@ internal sealed class ClientConnector : IClientConnector
 		}
 
 		throw new InvalidOperationException("BrickVerse client connect retry loop exhausted.");
+	}
+
+	private static string? ReadErrorMessage(string responseBody)
+	{
+		try
+		{
+			using JsonDocument document = JsonDocument.Parse(responseBody);
+			return document.RootElement.TryGetProperty("message", out JsonElement message)
+				? message.GetString()
+				: null;
+		}
+		catch (JsonException)
+		{
+			return null;
+		}
 	}
 
 	private static bool ShouldRetryClientConnect(HttpResponseMessage response, string responseBody)

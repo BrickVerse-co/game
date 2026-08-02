@@ -51,7 +51,7 @@ public sealed partial class NetworkService : Instance
 
 	public const string TerminationMessage = "Your BrickVerse account has been terminated, please visit the website for more info.";
 	public const string AuthFailureMessage = "Authentication failure, Please try again.";
-	public const string IntegrityFailureMessage = "Integrity failure, please update your client.";
+	public const string IntegrityFailureMessage = "BrickVerse could not verify this client build. Your installation may be outdated, incomplete, or incompatible with this server. Update or reinstall BrickVerse, then try joining again. Beta clients are supported on production worlds.";
 	public const string NetworkModeMismatchMessage = "Network mode mismatch.";
 	public const string MultipleDeviceMessage = "Another device is already playing using this account, please leave the game first then try again.";
 	public const string ConnectTimeoutMessage = "Connection timeout";

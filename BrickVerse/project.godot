@@ -45,6 +45,11 @@ config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
+[brickverse]
+
+build/channel=""
+build/version=""
+
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"
