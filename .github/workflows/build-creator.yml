@@ -22,6 +22,8 @@ env:
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   APP: creator
   BUILD_DISPLAY_NAME: Creator
+  RELEASE_CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'prod' }}
+  REGISTRATION_BRANCH: ${{ github.ref_name == 'beta' && 'beta' || 'main' }}
   BV_BUILD_TARGET: CREATOR
 
 jobs:
@@ -311,8 +313,8 @@ jobs:
           } | Set-Content -LiteralPath $managedManifest -Encoding utf8NoBOM
           $managedSha = (Get-FileHash -LiteralPath $managedManifest -Algorithm SHA256).Hash.ToLowerInvariant()
 
-          $version = "${{ github.ref_name }}-${{ github.run_number }}"
-          $blobPath = "binaries/${{ env.APP }}/windows/${{ github.ref_name }}/$version/BrickVerseCreator-Windows.zip"
+          $version = "${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
+          $blobPath = "binaries/${{ env.APP }}/windows/${{ env.RELEASE_CHANNEL }}/$version/BrickVerseCreator-Windows.zip"
           $fileUrl = "https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$blobPath"
           "package_sha=$packageSha" >> $env:GITHUB_OUTPUT
           "executable_sha=$executableSha" >> $env:GITHUB_OUTPUT
@@ -340,7 +342,7 @@ jobs:
         shell: pwsh
         run: |
           $payload = [ordered]@{
-            branch = "${{ github.ref_name }}"
+            branch = "${{ env.REGISTRATION_BRANCH }}"
             app = "${{ env.APP }}"
             version = "${{ steps.release.outputs.version }}"
             buildNumber = [int]"${{ github.run_number }}"
@@ -362,7 +364,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.release.outputs.version }}"
-          $branch = "${{ github.ref_name }}"
+          $branch = "${{ env.RELEASE_CHANNEL }}"
           $build = "${{ github.run_number }}"
           $download = "${{ steps.release.outputs.file_url }}"
           $description = "**Version:** ``$version``" + "`n" +
@@ -439,8 +441,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          VERSION="${{ github.ref_name }}-${{ github.run_number }}"
-          BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ github.ref_name }}/$VERSION/${{ matrix.package_name }}"
+          VERSION="${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
+          BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ env.RELEASE_CHANNEL }}/$VERSION/${{ matrix.package_name }}"
           FILE_URL="https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$BLOB_PATH"
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -472,7 +474,7 @@ jobs:
           PLATFORM="${{ matrix.platform }}"
 
           jq -n \
-            --arg branch "${{ github.ref_name }}" \
+            --arg branch "${{ env.REGISTRATION_BRANCH }}" \
             --arg app "${{ env.APP }}" \
             --arg version "${{ steps.metadata.outputs.version }}" \
             --argjson buildNumber "${{ github.run_number }}" \
@@ -507,7 +509,7 @@ jobs:
           jq -n \
             --arg title "${{ matrix.platform }} ${{ env.BUILD_DISPLAY_NAME }} Released" \
             --arg version "${{ steps.metadata.outputs.version }}" \
-            --arg branch "${{ github.ref_name }}" \
+            --arg branch "${{ env.RELEASE_CHANNEL }}" \
             --arg build "${{ github.run_number }}" \
             --arg download "${{ steps.metadata.outputs.file_url }}" \
             '{
