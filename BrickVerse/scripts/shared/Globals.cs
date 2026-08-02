@@ -171,9 +171,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 
 		AppVersion = (string)ProjectSettings.GetSetting("application/config/version");
 
-#if !PRODUCTION
-		AppVersion += "+dev";
-#endif
+		if (OS.IsDebugBuild()) AppVersion += "+dev";
 
 		BV.Print($"BrickVerse v{AppVersion}");
 		BV.Print("https://brickverse.gg/");

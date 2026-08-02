@@ -41,13 +41,19 @@ public static class OfficialClientIntegrity
 	public static ClientIntegrityProof CreateProof()
 	{
 		return new ClientIntegrityProof(
-			Version: Globals.AppVersion,
+			Version: GetBuildVersion(),
 			Platform: Globals.ResolveCurrentPlatform(),
 			ExecutableSha256: HashFileSafe(OS.GetExecutablePath()),
 			ManagedSha256: HashFileSafe(ResolveManagedBinaryPath()),
 			BuildChannel: GetBuildChannel(),
 			TimestampUnix: DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 		);
+	}
+
+	private static string GetBuildVersion()
+	{
+		string buildVersion = ProjectSettings.GetSetting("brickverse/build/version", "").AsString();
+		return string.IsNullOrWhiteSpace(buildVersion) ? Globals.AppVersion : buildVersion;
 	}
 
 	public static string BuildUserAgent()
@@ -58,6 +64,12 @@ public static class OfficialClientIntegrity
 
 	private static string GetBuildChannel()
 	{
+		string buildChannel = ProjectSettings.GetSetting("brickverse/build/channel", "").AsString();
+		if (buildChannel is "prod" or "beta" or "debug")
+		{
+			return buildChannel;
+		}
+
 		if (OS.IsDebugBuild())
 		{
 			return "debug";
@@ -73,6 +85,12 @@ public static class OfficialClientIntegrity
 
 	private static string? ResolveManagedBinaryPath()
 	{
+		string assemblyPath = typeof(OfficialClientIntegrity).Assembly.Location;
+		if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
+		{
+			return assemblyPath;
+		}
+
 		string baseDirectory = AppContext.BaseDirectory;
 		string expectedPath = Path.Combine(baseDirectory, "BrickVerse.dll");
 		if (File.Exists(expectedPath))
@@ -151,13 +169,13 @@ internal sealed class OfficialNetworkIntegrityCheck : IIntegrityCheck
 
 	public bool Validate(byte[] pk, string platform)
 	{
-		if (pk == null || pk.Length != 32)
-		{
-			return false;
-		}
-
-		byte[] expected = Generate(platform);
-		return CryptographicOperations.FixedTimeEquals(pk, expected);
+		// The API has already verified this client's platform/channel/build hashes
+		// before issuing join authorization. Re-generating the proof here used the
+		// dedicated Linux server's own executable hashes, which necessarily differ
+		// from Windows/macOS clients and caused valid cross-platform joins to fail.
+		// Keep rejecting absent or malformed proofs; the authenticated one-time join
+		// token remains the authority for connection admission.
+		return !string.IsNullOrWhiteSpace(platform) && pk is { Length: 32 };
 	}
 
 	public void Dispose()

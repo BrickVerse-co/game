@@ -22,6 +22,7 @@ env:
   PROJECT_FILE: BrickVerse/BrickVerse.csproj
   APP: client
   BUILD_DISPLAY_NAME: Client
+  RELEASE_CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'prod' }}
 
 jobs:
   build-client:
@@ -96,6 +97,18 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "${{ env.DOTNET_VERSION }}"
+
+      - name: Stamp client build metadata
+        shell: pwsh
+        run: |
+          $projectSettings = "${{ github.workspace }}\${{ env.PROJECT_DIR }}\project.godot"
+          $channel = "${{ env.RELEASE_CHANNEL }}"
+          $version = "$channel-${{ github.run_number }}"
+          $content = Get-Content -LiteralPath $projectSettings -Raw
+          $content = $content -replace '(?m)^build/channel="[^"]*"$', "build/channel=`"$channel`""
+          $content = $content -replace '(?m)^build/version="[^"]*"$', "build/version=`"$version`""
+          Set-Content -LiteralPath $projectSettings -Value $content -Encoding utf8NoBOM
+          Write-Host "Stamped BrickVerse client $version ($channel)"
 
       - name: Restore NuGet cache
         uses: actions/cache@v4
@@ -300,18 +313,13 @@ jobs:
 
           $packageSha = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $executableSha = (Get-FileHash -LiteralPath "$exportDirectory\BrickVerse.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          $managedFiles = Get-ChildItem -LiteralPath $exportDirectory -Recurse -File |
-            Where-Object { $_.Extension -in '.dll', '.pck' } |
-            Sort-Object FullName
-          $managedManifest = Join-Path $env:RUNNER_TEMP 'managed-hashes.txt'
-          $managedFiles | ForEach-Object {
-            $fileHash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$fileHash  $($_.FullName)"
-          } | Set-Content -LiteralPath $managedManifest -Encoding utf8NoBOM
-          $managedSha = (Get-FileHash -LiteralPath $managedManifest -Algorithm SHA256).Hash.ToLowerInvariant()
+          $managedFile = Get-ChildItem -LiteralPath $exportDirectory -Recurse -File -Filter 'BrickVerse.dll' |
+            Select-Object -First 1
+          if (-not $managedFile) { throw "Exported BrickVerse.dll was not found." }
+          $managedSha = (Get-FileHash -LiteralPath $managedFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 
-          $version = "${{ github.ref_name }}-${{ github.run_number }}"
-          $blobPath = "binaries/${{ env.APP }}/windows/${{ github.ref_name }}/$version/BrickVerse-Windows.zip"
+          $version = "${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
+          $blobPath = "binaries/${{ env.APP }}/windows/${{ env.RELEASE_CHANNEL }}/$version/BrickVerse-Windows.zip"
           $fileUrl = "https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$blobPath"
           "package_sha=$packageSha" >> $env:GITHUB_OUTPUT
           "executable_sha=$executableSha" >> $env:GITHUB_OUTPUT
@@ -339,7 +347,7 @@ jobs:
         shell: pwsh
         run: |
           $payload = [ordered]@{
-            branch = "${{ github.ref_name }}"
+            branch = "${{ env.RELEASE_CHANNEL }}"
             app = "${{ env.APP }}"
             version = "${{ steps.release.outputs.version }}"
             buildNumber = [int]"${{ github.run_number }}"
@@ -361,7 +369,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.release.outputs.version }}"
-          $branch = "${{ github.ref_name }}"
+          $branch = "${{ env.RELEASE_CHANNEL }}"
           $build = "${{ github.run_number }}"
           $download = "${{ steps.release.outputs.file_url }}"
           $description = "**Version:** ``$version``" + "`n" +
@@ -423,9 +431,12 @@ jobs:
             EXECUTABLE_SHA=""
           fi
 
-          MANAGED_SHA="$(find "$EXPORT_DIR" -type f \
-            \( -name "*.dll" -o -name "*.dylib" -o -name "*.so" -o -name "*.pck" \) \
-            -print0 | sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print $1}')"
+          MANAGED_FILE="$(find "$EXPORT_DIR" -type f -name 'BrickVerse.dll' -print -quit)"
+          if [[ -z "$MANAGED_FILE" ]]; then
+            echo "::error::Exported BrickVerse.dll was not found."
+            exit 1
+          fi
+          MANAGED_SHA="$(sha256sum "$MANAGED_FILE" | awk '{print $1}')"
 
           echo "package_sha=$PACKAGE_SHA" >> "$GITHUB_OUTPUT"
           echo "executable_sha=$EXECUTABLE_SHA" >> "$GITHUB_OUTPUT"
@@ -438,8 +449,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          VERSION="${{ github.ref_name }}-${{ github.run_number }}"
-          BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ github.ref_name }}/$VERSION/${{ matrix.package_name }}"
+          VERSION="${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
+          BLOB_PATH="binaries/${{ env.APP }}/${{ matrix.platform }}/${{ env.RELEASE_CHANNEL }}/$VERSION/${{ matrix.package_name }}"
           FILE_URL="https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}/$BLOB_PATH"
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -471,7 +482,7 @@ jobs:
           PLATFORM="${{ matrix.platform }}"
 
           jq -n \
-            --arg branch "${{ github.ref_name }}" \
+            --arg branch "${{ env.RELEASE_CHANNEL }}" \
             --arg app "${{ env.APP }}" \
             --arg version "${{ steps.metadata.outputs.version }}" \
             --argjson buildNumber "${{ github.run_number }}" \
@@ -506,7 +517,7 @@ jobs:
           jq -n \
             --arg title "${{ matrix.platform }} ${{ env.BUILD_DISPLAY_NAME }} Released" \
             --arg version "${{ steps.metadata.outputs.version }}" \
-            --arg branch "${{ github.ref_name }}" \
+            --arg branch "${{ env.RELEASE_CHANNEL }}" \
             --arg build "${{ github.run_number }}" \
             --arg download "${{ steps.metadata.outputs.file_url }}" \
             '{
