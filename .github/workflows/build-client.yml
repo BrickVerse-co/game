@@ -23,6 +23,7 @@ env:
   APP: client
   BUILD_DISPLAY_NAME: Client
   RELEASE_CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'prod' }}
+  REGISTRATION_BRANCH: ${{ github.ref_name == 'beta' && 'beta' || 'main' }}
 
 jobs:
   build-client:
@@ -347,7 +348,7 @@ jobs:
         shell: pwsh
         run: |
           $payload = [ordered]@{
-            branch = "${{ env.RELEASE_CHANNEL }}"
+            branch = "${{ env.REGISTRATION_BRANCH }}"
             app = "${{ env.APP }}"
             version = "${{ steps.release.outputs.version }}"
             buildNumber = [int]"${{ github.run_number }}"
@@ -482,7 +483,7 @@ jobs:
           PLATFORM="${{ matrix.platform }}"
 
           jq -n \
-            --arg branch "${{ env.RELEASE_CHANNEL }}" \
+            --arg branch "${{ env.REGISTRATION_BRANCH }}" \
             --arg app "${{ env.APP }}" \
             --arg version "${{ steps.metadata.outputs.version }}" \
             --argjson buildNumber "${{ github.run_number }}" \
