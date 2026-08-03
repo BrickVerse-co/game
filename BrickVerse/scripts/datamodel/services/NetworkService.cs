@@ -108,6 +108,7 @@ public sealed partial class NetworkService : Instance
 	private ulong _heartbeatCount = 0;
 	private bool _heartbeatInFlight;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
+	private readonly ConcurrentDictionary<int, string> _peerJoinTokens = new();
 	private ulong _lastActivityReportTime;
 	public ClientEntry Entry = null!;
 
@@ -660,7 +661,7 @@ public sealed partial class NetworkService : Instance
 		}
 	}
 
-	private void OnPeerDisconnected(int peerID)
+	private async void OnPeerDisconnected(int peerID)
 	{
 		ActivePeerIDs.Remove(peerID);
 		_peerLastActivity.TryRemove(peerID, out _);
@@ -668,6 +669,7 @@ public sealed partial class NetworkService : Instance
 		{
 			_peerRateLimiters.Remove(peerID);
 		}
+		_peerJoinTokens.TryRemove(peerID, out string? joinToken);
 
 		Player? plr = _players.GetPlayerFromPeerID(peerID);
 		if (plr != null)
@@ -677,6 +679,20 @@ public sealed partial class NetworkService : Instance
 
 			_players.InvokePlayerRemoved(plr);
 			plr.ForceDelete();
+		}
+
+		// Remove the player locally before awaiting HTTP so a slow backend never
+		// leaves a disconnected user visible in the game-server player list.
+		if (!string.IsNullOrWhiteSpace(joinToken) && IsProd)
+		{
+			try
+			{
+				await ServerAPI.DisconnectPlayer(joinToken);
+			}
+			catch (Exception exception)
+			{
+				BV.PrintErr($"Failed to release join authorization for peer {peerID}: {exception.Message}");
+			}
 		}
 	}
 
@@ -877,6 +893,7 @@ public sealed partial class NetworkService : Instance
 			else
 			{
 				validateRes = await AuthenticatePlayer(userToken);
+				_peerJoinTokens[peerID] = userToken;
 				userData = await BVAPI.GetUserFromID(validateRes.UserID);
 			}
 		}

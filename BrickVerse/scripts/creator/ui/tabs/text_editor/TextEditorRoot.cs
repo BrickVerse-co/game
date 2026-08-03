@@ -52,12 +52,19 @@ public partial class TextEditorRoot : Node
 
 	private string _oldText = "";
 	private CodeHighlighter _highlighter = null!;
+	private EditorPalette _palette;
 	private LuaCompletionService? _completion = null!;
 
 	private Godot.Timer _autoCompleteTimer = null!;
 	private CancellationTokenSource? _diagCts;
 	private HashSet<string>? _editorPropertySet;
 	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnosticsByLine = [];
+
+	private readonly record struct EditorPalette(
+		string Background, string Foreground, string Keyword, string Builtin,
+		string String, string Comment, string Number, string Function,
+		string Member, string Symbol, string Selection, string CurrentLine
+	);
 
 	public override void _EnterTree()
 	{
@@ -149,10 +156,14 @@ public partial class TextEditorRoot : Node
 			|| e.Key == CreatorSettingKeys.CodeEditor.CursorBlink
 			|| e.Key == CreatorSettingKeys.CodeEditor.CursorBlinkSpeed
 			|| e.Key == CreatorSettingKeys.CodeEditor.CursorWidth
+			|| e.Key == CreatorSettingKeys.CodeEditor.FontSize
 		)
 		{
 			ApplyEditorViewSettings();
 		}
+
+		if (e.Key == CreatorSettingKeys.CodeEditor.ColorTheme)
+			InitSyntaxHighlighter(Container.CodeCompletion);
 	}
 
 	private void ApplyIndentSettings()
@@ -175,6 +186,7 @@ public partial class TextEditorRoot : Node
 		TrySetEditorProperty("caret_blink", settings.Get<bool>(CreatorSettingKeys.CodeEditor.CursorBlink));
 		TrySetEditorProperty("caret_blink_interval", settings.Get<float>(CreatorSettingKeys.CodeEditor.CursorBlinkSpeed));
 		CodeEditor.AddThemeConstantOverride("caret_width", settings.Get<int>(CreatorSettingKeys.CodeEditor.CursorWidth));
+		CodeEditor.AddThemeFontSizeOverride("font_size", settings.Get<int>(CreatorSettingKeys.CodeEditor.FontSize));
 
 		bool wrap = settings.Get<bool>(CreatorSettingKeys.CodeEditor.WordWrap);
 		// TextEdit line wrapping mode: 0 = None, 1 = Boundary.
@@ -450,19 +462,26 @@ public partial class TextEditorRoot : Node
 
 	private void InitSyntaxHighlighter(FileTypeEnum fileType)
 	{
+		_palette = GetEditorPalette(CreatorSettingsService.Instance.Get<CodeEditorColorThemeEnum>(CreatorSettingKeys.CodeEditor.ColorTheme));
+		CodeEditor.ClearStringDelimiters();
 		_highlighter = new();
 		CodeEditor.SyntaxHighlighter = _highlighter;
+		_highlighter.FunctionColor = Color.FromHtml(_palette.Function);
+		_highlighter.MemberVariableColor = Color.FromHtml(_palette.Member);
+		_highlighter.NumberColor = Color.FromHtml(_palette.Number);
+		_highlighter.SymbolColor = Color.FromHtml(_palette.Symbol);
+		CodeEditor.AddThemeColorOverride("font_color", Color.FromHtml(_palette.Foreground));
+		CodeEditor.AddThemeColorOverride("font_selected_color", Color.FromHtml(_palette.Foreground));
+		CodeEditor.AddThemeColorOverride("selection_color", Color.FromHtml(_palette.Selection));
+		CodeEditor.AddThemeColorOverride("current_line_color", Color.FromHtml(_palette.CurrentLine));
+		StyleBoxFlat editorBackground = new() { BgColor = Color.FromHtml(_palette.Background) };
+		CodeEditor.AddThemeStyleboxOverride("normal", editorBackground);
 
 		if (fileType == FileTypeEnum.Lua)
 		{
-			_highlighter.FunctionColor = Color.FromHtml("#DCDCAA");
-			_highlighter.MemberVariableColor = Color.FromHtml("#9CDCFE");
-			_highlighter.NumberColor = Color.FromHtml("#B5CEA8");
-			_highlighter.SymbolColor = Color.FromHtml("#D4D4D4");
-
 			foreach (string item in LuaCompletionService.LuaKeywords)
 			{
-				_highlighter.AddKeywordColor(item, Color.FromHtml("#C586C0"));
+				_highlighter.AddKeywordColor(item, Color.FromHtml(_palette.Keyword));
 			}
 
 			foreach (string builtin in new[]
@@ -473,7 +492,7 @@ public partial class TextEditorRoot : Node
 				"world", "script", "game", "self"
 			})
 			{
-				_highlighter.AddKeywordColor(builtin, Color.FromHtml("#4EC9B0"));
+				_highlighter.AddKeywordColor(builtin, Color.FromHtml(_palette.Builtin));
 			}
 
 			foreach (string typeName in new[]
@@ -482,28 +501,165 @@ public partial class TextEditorRoot : Node
 				"number", "string", "table", "thread", "unknown", "Vector2", "Vector3"
 			})
 			{
-				_highlighter.AddKeywordColor(typeName, Color.FromHtml("#4EC9B0"));
+				_highlighter.AddKeywordColor(typeName, Color.FromHtml(_palette.Builtin));
 			}
 
-			_highlighter.AddColorRegion("\"", "\"", Color.FromHtml("#CE9178"));
-			_highlighter.AddColorRegion("'", "'", Color.FromHtml("#CE9178"));
-			_highlighter.AddColorRegion("`", "`", Color.FromHtml("#CE9178"));
-			_highlighter.AddColorRegion("[[", "]]", Color.FromHtml("#CE9178"));
-			_highlighter.AddColorRegion("--[[", "]]", Color.FromHtml("#6A9955"));
-			_highlighter.AddColorRegion("--", "", Color.FromHtml("#6A9955"));
+			_highlighter.AddColorRegion("\"", "\"", Color.FromHtml(_palette.String));
+			_highlighter.AddColorRegion("'", "'", Color.FromHtml(_palette.String));
+			_highlighter.AddColorRegion("`", "`", Color.FromHtml(_palette.String));
+			_highlighter.AddColorRegion("[[", "]]", Color.FromHtml(_palette.String));
+			_highlighter.AddColorRegion("--[[", "]]", Color.FromHtml(_palette.Comment));
+			_highlighter.AddColorRegion("--", "", Color.FromHtml(_palette.Comment));
 
 			CodeEditor.AddStringDelimiter("\"", "\"", true);
 			CodeEditor.AddStringDelimiter("'", "'", true);
 			CodeEditor.AddStringDelimiter("[[", "]]", false);
+			return;
 		}
-		else
+
+		string extension = Path.GetExtension(Container.TargetFilePathAbsolute).ToLowerInvariant();
+		switch (extension)
 		{
-			_highlighter.FunctionColor = ColorWhite;
-			_highlighter.MemberVariableColor = ColorWhite;
-			_highlighter.NumberColor = ColorWhite;
-			_highlighter.SymbolColor = ColorWhite;
+			case ".json":
+			case ".jsonc":
+			case ".bvxw":
+			case ".bvxl":
+			case ".bvproject":
+			case ".bvanim":
+			case ".bvmodel":
+			case ".bvxm":
+				AddKeywords(["true", "false", "null"], _palette.Keyword);
+				AddStrings();
+				if (extension == ".jsonc") AddCStyleComments();
+				break;
+			case ".yaml":
+			case ".yml":
+				AddKeywords(["true", "false", "null", "yes", "no", "on", "off", "~"], _palette.Keyword);
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
+				break;
+			case ".toml":
+			case ".ini":
+			case ".cfg":
+			case ".env":
+				AddKeywords(["true", "false", "null"], _palette.Keyword);
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
+				_highlighter.AddColorRegion(";", "", Color.FromHtml(_palette.Comment));
+				break;
+			case ".cs":
+				AddKeywords([
+					"abstract", "as", "async", "await", "base", "bool", "break", "byte", "case",
+					"catch", "char", "class", "const", "continue", "decimal", "default", "delegate",
+					"do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally",
+					"fixed", "float", "for", "foreach", "if", "implicit", "in", "int", "interface",
+					"internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator",
+					"out", "override", "params", "private", "protected", "public", "readonly", "record",
+					"ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static",
+					"string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint",
+					"ulong", "unchecked", "unsafe", "ushort", "using", "var", "virtual", "void",
+					"volatile", "when", "where", "while", "yield"
+				], _palette.Keyword);
+				AddStrings(includeBackticks: false);
+				AddCStyleComments();
+				break;
+			case ".js":
+			case ".jsx":
+			case ".ts":
+			case ".tsx":
+				AddKeywords([
+					"async", "await", "break", "case", "catch", "class", "const", "continue", "debugger",
+					"default", "delete", "do", "else", "enum", "export", "extends", "false", "finally",
+					"for", "from", "function", "if", "implements", "import", "in", "instanceof",
+					"interface", "let", "new", "null", "of", "private", "protected", "public", "return",
+					"static", "super", "switch", "this", "throw", "true", "try", "type", "typeof",
+					"undefined", "var", "void", "while", "with", "yield"
+				], _palette.Keyword);
+				AddStrings();
+				AddCStyleComments();
+				break;
+			case ".py":
+				AddKeywords([
+					"and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
+					"elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import",
+					"in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return",
+					"True", "try", "while", "with", "yield"
+				], _palette.Keyword);
+				AddStrings(includeBackticks: false);
+				_highlighter.AddColorRegion("\"\"\"", "\"\"\"", Color.FromHtml(_palette.String));
+				_highlighter.AddColorRegion("'''", "'''", Color.FromHtml(_palette.String));
+				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
+				break;
+			case ".xml":
+			case ".html":
+			case ".htm":
+			case ".svg":
+				AddStrings(includeBackticks: false);
+				_highlighter.AddColorRegion("<!--", "-->", Color.FromHtml(_palette.Comment));
+				break;
+			case ".css":
+			case ".scss":
+				AddKeywords(["@import", "@media", "@keyframes", "important"], _palette.Keyword);
+				AddStrings(includeBackticks: false);
+				AddCStyleComments();
+				break;
+			case ".md":
+			case ".markdown":
+				_highlighter.AddColorRegion("`", "`", Color.FromHtml(_palette.String));
+				_highlighter.AddColorRegion("<!--", "-->", Color.FromHtml(_palette.Comment));
+				break;
+			case ".sh":
+			case ".bash":
+			case ".ps1":
+				AddKeywords(["break", "case", "continue", "do", "done", "else", "elseif", "esac", "fi", "for", "foreach", "function", "if", "in", "return", "switch", "then", "until", "while"], _palette.Keyword);
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
+				break;
+			default:
+				_highlighter.FunctionColor = ColorWhite;
+				_highlighter.MemberVariableColor = ColorWhite;
+				_highlighter.NumberColor = ColorWhite;
+				_highlighter.SymbolColor = ColorWhite;
+				break;
 		}
 	}
+
+	private void AddKeywords(IEnumerable<string> keywords, string color)
+	{
+		Color keywordColor = Color.FromHtml(color);
+		foreach (string keyword in keywords)
+			_highlighter.AddKeywordColor(keyword, keywordColor);
+	}
+
+	private void AddStrings(bool includeBackticks = true)
+	{
+		Color stringColor = Color.FromHtml(_palette.String);
+		_highlighter.AddColorRegion("\"", "\"", stringColor);
+		_highlighter.AddColorRegion("'", "'", stringColor);
+		CodeEditor.AddStringDelimiter("\"", "\"", true);
+		CodeEditor.AddStringDelimiter("'", "'", true);
+		if (includeBackticks)
+		{
+			_highlighter.AddColorRegion("`", "`", stringColor);
+			CodeEditor.AddStringDelimiter("`", "`", true);
+		}
+	}
+
+	private void AddCStyleComments()
+	{
+		Color commentColor = Color.FromHtml(_palette.Comment);
+		_highlighter.AddColorRegion("//", "", commentColor);
+		_highlighter.AddColorRegion("/*", "*/", commentColor);
+	}
+
+	private static EditorPalette GetEditorPalette(CodeEditorColorThemeEnum theme) => theme switch
+	{
+		CodeEditorColorThemeEnum.VisualStudioDark => new("#1E1E1E", "#D4D4D4", "#C586C0", "#4EC9B0", "#CE9178", "#6A9955", "#B5CEA8", "#DCDCAA", "#9CDCFE", "#D4D4D4", "#264F78", "#252526"),
+		CodeEditorColorThemeEnum.Dracula => new("#282A36", "#F8F8F2", "#FF79C6", "#8BE9FD", "#F1FA8C", "#6272A4", "#BD93F9", "#50FA7B", "#8BE9FD", "#F8F8F2", "#44475A", "#30323F"),
+		CodeEditorColorThemeEnum.Light => new("#FAFAFA", "#24292F", "#CF222E", "#0550AE", "#0A3069", "#6E7781", "#0550AE", "#8250DF", "#953800", "#24292F", "#B6D7FF", "#EEF3F8"),
+		CodeEditorColorThemeEnum.HighContrast => new("#000000", "#FFFFFF", "#FFFF00", "#00FFFF", "#FFB000", "#7CFC00", "#00FF00", "#00FFFF", "#FFFFFF", "#FFFFFF", "#005A9C", "#191919"),
+		_ => new("#0D1117", "#E6EDF3", "#FF7B72", "#79C0FF", "#A5D6FF", "#8B949E", "#D2A8FF", "#D2A8FF", "#79C0FF", "#C9D1D9", "#1F6FEB66", "#161B22")
+	};
 
 	public void Save()
 	{
@@ -599,7 +755,11 @@ public partial class TextEditorRoot : Node
 	{
 		int lineIndex = CodeEditor.GetCaretLine() + 1;
 		int column = CodeEditor.GetCaretColumn() + 1;
-		_statusBar.Text = $"{Container.OriginTabName}: ({lineIndex}:{column})";
+		string language = Container.CodeCompletion == FileTypeEnum.Lua
+			? "Luau"
+			: Path.GetExtension(Container.TargetFilePathAbsolute).TrimStart('.').ToUpperInvariant();
+		if (string.IsNullOrWhiteSpace(language)) language = "Plain Text";
+		_statusBar.Text = $"{language}  •  Ln {lineIndex}, Col {column}  •  {Container.OriginTabName}";
 	}
 
 	public string GetWordBeforeCaret()

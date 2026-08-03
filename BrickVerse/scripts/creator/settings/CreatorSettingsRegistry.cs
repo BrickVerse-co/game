@@ -81,6 +81,18 @@ public static class CreatorSettingsRegistry
 				DefaultValue = true
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.ShowWhatsNew,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.ShowWhatsNew,
+				SectionKey = "creator",
+				Label = "Show What's New",
+				Description = "Automatically show release highlights after Creator updates. They remain available from the Help menu.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>
@@ -355,6 +367,41 @@ public static class CreatorSettingsRegistry
 			});
 
 		// Code Editor
+		defs.Add(CreatorSettingKeys.CodeEditor.ColorTheme,
+			new SettingDef<CodeEditorColorThemeEnum>
+			{
+				Key = CreatorSettingKeys.CodeEditor.ColorTheme,
+				SectionKey = "code_editor",
+				Label = "Color Theme",
+				Description = "Choose the built-in editor palette for code backgrounds, text, comments, strings, keywords and symbols.",
+				ValueKind = SettingValueKind.Enum,
+				ControlKind = SettingControlKind.Dropdown,
+				DefaultValue = CodeEditorColorThemeEnum.BrickVerse,
+				Options =
+				[
+					new() { Value = CodeEditorColorThemeEnum.BrickVerse, Label = "BrickVerse Dark" },
+					new() { Value = CodeEditorColorThemeEnum.VisualStudioDark, Label = "Visual Studio Dark" },
+					new() { Value = CodeEditorColorThemeEnum.Dracula, Label = "Dracula" },
+					new() { Value = CodeEditorColorThemeEnum.Light, Label = "Light" },
+					new() { Value = CodeEditorColorThemeEnum.HighContrast, Label = "High Contrast" },
+				]
+			});
+
+		defs.Add(CreatorSettingKeys.CodeEditor.FontSize,
+			new SettingDef<int>
+			{
+				Key = CreatorSettingKeys.CodeEditor.FontSize,
+				SectionKey = "code_editor",
+				Label = "Editor Font Size",
+				Description = "Text size used by the built-in code editor.",
+				ValueKind = SettingValueKind.Int,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 14,
+				MinValue = 10,
+				MaxValue = 28,
+				Step = 1
+			});
+
 		defs.Add(CreatorSettingKeys.CodeEditor.PreferredEditor,
 			new SettingDef<PreferredEditorEnum>
 			{

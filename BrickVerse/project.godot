@@ -45,17 +45,17 @@ config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
-[brickverse]
-
-build/channel=""
-build/version=""
-
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"
 AssetLoader="*res://scripts/shared/asset_loaders/AssetLoader.cs"
 WebAssetLoader="*res://scripts/shared/asset_loaders/WebAssetLoader.cs"
 AppCloseDimmer="*res://scripts/shared/AppCloseDimmer.cs"
+
+[brickverse]
+
+build/channel=""
+build/version=""
 
 [debug]
 

@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Formats;
 
@@ -320,6 +321,57 @@ public static partial class PolyFormat
 		InternalLoadWorld(root, data, forceMigrateCords);
 	}
 
+	public static async Task LoadWorldAsync(World root, byte[] rawdata, bool forceMigrateCords = false)
+	{
+		if (rawdata.Length == 0) return;
+
+		// Deserializing the format does not touch Godot state and is safe off the
+		// render thread. Instance creation stays on the main thread, but is divided
+		// into frame-sized top-level batches so a large world does not present as a
+		// frozen application while it is being constructed.
+		PolyRootData data = await Task.Run(() => ReadRootDataBytes(rawdata));
+		PolyLoadContext context = new() { RootData = data, Root = root, ForceCordMigration = forceMigrateCords };
+		if (data.Objects == null || data.Objects.Length == 0 || data.FileType != PolyFileType.World) return;
+
+		PolyObject rootObj = data.Objects[0];
+		LoadProperties(rootObj, root, context);
+		foreach (PolyObject item in data.NonInstanceObjects)
+			FromPolyObject(item, context);
+
+		const int ObjectsPerFrame = 64;
+		Stack<(PolyObject? Object, NetworkedObject Parent, NetworkedObject? ReadyObject)> pending = new();
+		for (int index = rootObj.Children.Length - 1; index >= 0; index--)
+			pending.Push((rootObj.Children[index], root, null));
+
+		int loadedThisFrame = 0;
+		while (pending.Count > 0)
+		{
+			(PolyObject? obj, NetworkedObject parent, NetworkedObject? readyObject) = pending.Pop();
+			if (readyObject != null)
+			{
+				readyObject.InvokePropReady();
+				continue;
+			}
+			if (obj == null) continue;
+
+			NetworkedObject? created = FromPolyObject(obj, context, parent, deferChildren: true, deferReady: true);
+			if (created == null) continue;
+			pending.Push((null, created, created));
+			if (obj.LinkedModel == null && context.InsertChild)
+			{
+				for (int childIndex = obj.Children.Length - 1; childIndex >= 0; childIndex--)
+					pending.Push((obj.Children[childIndex], created, null));
+			}
+
+			loadedThisFrame++;
+			if (loadedThisFrame >= ObjectsPerFrame && root.GDNode.GetTree() != null)
+			{
+				loadedThisFrame = 0;
+				await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+		}
+	}
+
 	private static void InternalLoadWorld(World root, PolyRootData data, bool forceMigrateCords = false)
 	{
 		Stopwatch sw = new();
@@ -344,7 +396,13 @@ public static partial class PolyFormat
 		}
 	}
 
-	public static NetworkedObject? FromPolyObject(PolyObject obj, PolyLoadContext loadContext, NetworkedObject? parent = null)
+	public static NetworkedObject? FromPolyObject(
+		PolyObject obj,
+		PolyLoadContext loadContext,
+		NetworkedObject? parent = null,
+		bool deferChildren = false,
+		bool deferReady = false
+	)
 	{
 		string className = ConvertClassName(obj.ClassName);
 
@@ -460,7 +518,7 @@ public static partial class PolyFormat
 		LoadProperties(obj, netObj, loadContext);
 		ResolvePendingRef(obj.ID, netObj, loadContext);
 
-		if (loadContext.InsertChild && !skipChildren)
+		if (loadContext.InsertChild && !skipChildren && !deferChildren)
 		{
 			// Load child
 			foreach (PolyObject child in obj.Children)
@@ -474,7 +532,7 @@ public static partial class PolyFormat
 			loadContext.ModelRoot = null;
 		}
 
-		if (hasParent && !isModelRoot)
+		if (hasParent && !isModelRoot && !deferReady)
 		{
 			netObj.InvokePropReady();
 		}

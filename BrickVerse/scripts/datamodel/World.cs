@@ -559,6 +559,7 @@ public sealed partial class World : Instance
 			WorldName = WorldInfo.Value.Name;
 			UniverseName = WorldInfo.Value.UniverseName;
 			UniverseDescription = WorldInfo.Value.Description;
+			Players.SetMaxPlayers(WorldInfo.Value.MaxPlayers);
 		}
 
 		WorldMedia = await BVAPI.GetWorldMedia(WorldID);

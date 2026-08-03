@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="7"]
 [ext_resource type="Script" uid="uid://5ta4sgcddjrk" path="res://scripts/creator/ui/splash/components/RecentPlaceList.cs" id="8"]
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="9"]
+[ext_resource type="Texture2D" path="res://icon.svg" id="10_brand"]
 
 [sub_resource type="StyleBoxFlat" id="Background"]
 bg_color = Color(0.027451, 0.0352941, 0.0470588, 1)
@@ -125,22 +126,33 @@ custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Brand" type="VBoxContainer" parent="Page/Layout/Header"]
+[node name="Brand" type="HBoxContainer" parent="Page/Layout/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Logo" type="TextureRect" parent="Page/Layout/Header/Brand"]
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+texture = ExtResource("10_brand")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Product" type="VBoxContainer" parent="Page/Layout/Header/Brand"]
+layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="Title" type="Label" parent="Page/Layout/Header/Brand"]
+[node name="Title" type="Label" parent="Page/Layout/Header/Brand/Product"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.941176, 0.960784, 0.992157, 1)
 theme_override_font_sizes/font_size = 22
-text = "BrickVerse Creator"
+text = "Creator"
 
-[node name="Subtitle" type="Label" parent="Page/Layout/Header/Brand"]
+[node name="Subtitle" type="Label" parent="Page/Layout/Header/Brand/Product"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.482353, 0.552941, 0.65098, 1)
 theme_override_font_sizes/font_size = 12
-text = "Build, test, and publish your worlds"
+text = "BRICKVERSE DEVELOPMENT ENVIRONMENT"
 
 [node name="Version" type="Label" parent="Page/Layout/Header"]
 layout_mode = 2

@@ -11,7 +11,6 @@ using BrickVerse.Creator;
 using BrickVerse.Datamodel.Creator;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 using Script = BrickVerse.Datamodel.Script;
 using static BrickVerse.Creator.Managers.AddonsManager;
 #endif
@@ -26,6 +25,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Formats;
 
@@ -433,6 +433,55 @@ public static partial class PackedFormat
 		using MemoryStream stream = new(data);
 		using ZipArchive archive = new(stream, ZipArchiveMode.Read);
 		return LoadPackedWorldFromArchive(root, archive, entryPath);
+	}
+
+	public static async Task<WorldData> LoadPackedWorldAsync(World root, byte[] data, string? entryPath = null)
+	{
+		Dictionary<string, byte[]> files = await Task.Run(() =>
+		{
+			using MemoryStream stream = new(data);
+			using ZipArchive archive = new(stream, ZipArchiveMode.Read);
+			Dictionary<string, byte[]> extracted = [];
+			foreach (ZipArchiveEntry entry in archive.Entries)
+			{
+				if (entry.FullName.EndsWith('/')) continue;
+				using Stream entryStream = entry.Open();
+				using MemoryStream contents = new();
+				entryStream.CopyTo(contents);
+				extracted[entry.FullName.SanitizePath()] = contents.ToArray();
+			}
+			return extracted;
+		});
+
+		root.IO.FileStructure = files;
+		if (files.TryGetValue("index.json", out byte[]? indexBytes))
+		{
+			Dictionary<string, string>? indexToFile = JsonSerializer.Deserialize(
+				System.Text.Encoding.UTF8.GetString(indexBytes),
+				ProjectJSONGenerationContext.Default.DictionaryStringString
+			);
+			if (indexToFile != null)
+			{
+				root.IO.IndexToFile = indexToFile;
+				root.IO.FileToIndex.Clear();
+				foreach (KeyValuePair<string, string> item in indexToFile)
+					root.IO.FileToIndex[item.Value] = item.Key;
+			}
+		}
+
+		if (!files.TryGetValue("meta.json", out byte[]? metadataBytes))
+			throw new InvalidDataException("Metadata not present");
+		CreatorProjectMetadata metadata = ReadProjectMetadata(System.Text.Encoding.UTF8.GetString(metadataBytes));
+		if (root.WorldID == 0 && metadata.WorldId > 0) root.WorldID = metadata.WorldId;
+		if (root.UniverseID == 0 && metadata.UniverseId > 0) root.UniverseID = metadata.UniverseId;
+		if (files.TryGetValue("input.json", out byte[]? inputBytes))
+			root.Input.MapData = InputMapData.LoadFromString(System.Text.Encoding.UTF8.GetString(inputBytes));
+
+		entryPath = (entryPath ?? metadata.MainWorld).SanitizePath();
+		if (!files.TryGetValue(entryPath, out byte[]? entryBytes))
+			throw new InvalidDataException($"Packed world entry '{entryPath}' is missing.");
+		await PolyFormat.LoadWorldAsync(root, entryBytes);
+		return new() { Metadata = metadata };
 	}
 
 	private static WorldData LoadPackedWorldFromArchive(World root, ZipArchive archive, string? entryPath = null)

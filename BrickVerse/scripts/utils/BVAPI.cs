@@ -340,7 +340,14 @@ public static class BVAPI
 	}
 
 #if CREATOR
-	public static async Task<APILibraryResponse> GetLibrary(LibraryQueryTypeEnum type, int page = 1, string searchQuery = "")
+	public static async Task<APILibraryResponse> GetLibrary(
+		LibraryQueryTypeEnum type,
+		int page = 1,
+		string searchQuery = "",
+		string creatorSearch = "",
+		string topCategory = "",
+		string sortBy = "newlyCreated"
+	)
 	{
 		string queryType = type switch
 		{
@@ -363,6 +370,12 @@ public static class BVAPI
 			{
 				query += "&search=" + Uri.EscapeDataString(searchQuery);
 			}
+			if (!string.IsNullOrWhiteSpace(creatorSearch))
+				query += "&creatorSearch=" + Uri.EscapeDataString(creatorSearch);
+			if (!string.IsNullOrWhiteSpace(topCategory))
+				query += "&topCategory=" + Uri.EscapeDataString(topCategory);
+			if (!string.IsNullOrWhiteSpace(sortBy))
+				query += "&sortBy=" + Uri.EscapeDataString(sortBy);
 			if (!string.IsNullOrWhiteSpace(cursor))
 			{
 				query += "&cursor=" + Uri.EscapeDataString(cursor);

@@ -28,6 +28,8 @@ public struct APIServerListenResponse
 	public string ServerID { get; set; }
 	[JsonPropertyName("placePath")]
 	public string? PlacePath { get; set; }
+	[JsonPropertyName("maxPlayers")]
+	public int MaxPlayers { get; set; }
 }
 
 public class APIServerStatus

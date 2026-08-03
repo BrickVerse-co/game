@@ -53,7 +53,8 @@ public sealed class HttpServerInterface : IServerInterface
 
 	public async Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs)
 	{
-		HeartbeatRequest body = new(playerIDs?.Length ?? 0);
+		playerIDs ??= [];
+		HeartbeatRequest body = new(playerIDs.Length, playerIDs);
 		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/heartbeat"), body, BrickVerseJsonContext.Default.HeartbeatRequest);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		return await ReadJsonResponse(response, "server heartbeat", BrickVerseJsonContext.Default.APIHeartbeatResponse);
@@ -65,6 +66,25 @@ public sealed class HttpServerInterface : IServerInterface
 		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath($"/v3/world/server/user?joinToken={escapedToken}"));
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		return await ReadJsonResponse(response, "player validate", BrickVerseJsonContext.Default.APIValidateResponse);
+	}
+
+	public async Task DisconnectPlayer(string token)
+	{
+		DisconnectPlayerRequest body = new(token);
+		using HttpRequestMessage request = CreateJsonRequest(
+			HttpMethod.Delete,
+			ApiPath("/v3/world/server/disconnect"),
+			body,
+			BrickVerseJsonContext.Default.DisconnectPlayerRequest
+		);
+		using HttpResponseMessage response = await _httpClient.SendAsync(request);
+		if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.BadRequest)
+		{
+			string responseBody = await response.Content.ReadAsStringAsync();
+			throw new HttpRequestException(
+				$"BrickVerse player disconnect failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}"
+			);
+		}
 	}
 
 	public async Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null)
@@ -215,11 +235,16 @@ public sealed class HttpServerInterface : IServerInterface
 }
 
 internal sealed record HeartbeatRequest(
-	[property: JsonPropertyName("connectedClients")] int ConnectedClients
+	[property: JsonPropertyName("connectedClients")] int ConnectedClients,
+	[property: JsonPropertyName("playerIds")] string[] PlayerIds
 );
 
 internal sealed record ValidatePlayerRequest(
 	[property: JsonPropertyName("Token")] string Token
+);
+
+internal sealed record DisconnectPlayerRequest(
+	[property: JsonPropertyName("joinToken")] string JoinToken
 );
 
 internal sealed record LogIngestRequest(

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -59,6 +60,7 @@ public sealed partial class Menu : PanelContainer
 
 	private Control _menuButtons = null!;
 	private HBoxContainer _topRightLayout = null!;
+	private Label _worldIdentity = null!;
 
 	private readonly Dictionary<MenuButtonMenus, MenuItem[]> _menus = [];
 
@@ -80,6 +82,12 @@ public sealed partial class Menu : PanelContainer
 		_menus.Add(
 			new() { Title = "File" },
 			[
+				new MenuButtonItem()
+				{
+					Text = "What's New",
+					Pressed = WhatsNewPopup.ShowLatest,
+				},
+				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
 					Text = "New",
@@ -589,6 +597,16 @@ public sealed partial class Menu : PanelContainer
 
 		_menuButtons = GetNode<Control>("Layout/MenuButtons");
 		_topRightLayout = GetNode<HBoxContainer>("Layout/Margin/Layout");
+		_worldIdentity = new Label
+		{
+			Text = "No world open",
+			VerticalAlignment = VerticalAlignment.Center,
+			CustomMinimumSize = new Vector2(260, 32),
+			HorizontalAlignment = HorizontalAlignment.Right,
+		};
+		_worldIdentity.AddThemeColorOverride("font_color", Color.FromHtml("#AEB7C2"));
+		_worldIdentity.AddThemeFontSizeOverride("font_size", 12);
+		_topRightLayout.AddChild(_worldIdentity);
 		_topRightLayout.AddChild(new CreatorToolbarUserChip());
 
 		_bvButton = _menuButtons.GetNode<MenuButton>("BV");
@@ -766,6 +784,15 @@ public sealed partial class Menu : PanelContainer
 	public void SwitchTo(World? game)
 	{
 		bool disabled = game == null;
+		if (IsInstanceValid(_worldIdentity))
+		{
+			_worldIdentity.Text = game == null
+				? "No world open"
+				: $"{game.Name}";
+			_worldIdentity.TooltipText = game == null
+				? "Open a world to begin editing"
+				: $"Currently editing {game.Name}";
+		}
 
 		try
 		{

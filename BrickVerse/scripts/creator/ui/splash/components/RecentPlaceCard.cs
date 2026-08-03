@@ -64,11 +64,17 @@ public partial class RecentPlaceCard : Button
 		Disabled = true;
 		try
 		{
+			StartupSplash.Singleton.Close();
+			CreatorService.Interface.LoadOverlay?.SetTitle("Opening " + Data.PlaceName);
+			CreatorService.Interface.LoadOverlay?.SetStatus("Preparing project...");
+			CreatorService.Interface.LoadOverlay?.Show();
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			await CreatorService.Singleton.CreateNewSession(Data.FolderPath);
 		}
 		catch
 		{
 			// CreateNewSession reports the detailed error and restores the landing page.
+			StartupSplash.Singleton.Open();
 		}
 		finally
 		{

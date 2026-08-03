@@ -1,0 +1,22 @@
+{
+  "id": "creator-2026-08-02",
+  "title": "What’s new in BrickVerse Creator",
+  "subtitle": "A faster, more capable world-building workflow.",
+  "date": "August 2, 2026",
+  "sections": [
+    {
+      "title": "Code editor improvements",
+      "body": "Creator now recognizes and colors many more file formats.",
+      "items": ["JSON and JSONC", "YAML and TOML", "C#, JavaScript, TypeScript and Python", "XML, SVG, HTML, CSS, Markdown and shell scripts"]
+    },
+    {
+      "title": "Creator tooling",
+      "body": "Recent releases include expanded terrain, animation, Team Create and play-test debugging workflows.",
+      "items": ["Improved runtime debugging tools", "More complete terrain editing", "Animation rig preview and publishing", "Team Create presence and replication improvements"]
+    }
+  ],
+  "links": [
+    { "label": "Read the documentation", "url": "https://developers.brickverse.gg/" },
+    { "label": "Share feedback", "url": "https://brickverse.gg/forum" }
+  ]
+}

@@ -12,6 +12,7 @@ namespace BrickVerse.Client.WebAPI;
 [JsonSerializable(typeof(ClientConnectRequest))]
 [JsonSerializable(typeof(HeartbeatRequest))]
 [JsonSerializable(typeof(ValidatePlayerRequest))]
+[JsonSerializable(typeof(DisconnectPlayerRequest))]
 [JsonSerializable(typeof(LogIngestRequest))]
 [JsonSerializable(typeof(ClientIntegrityProof))]
 [JsonSerializable(typeof(APIServerStatus))]
