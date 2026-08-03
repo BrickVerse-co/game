@@ -12,6 +12,7 @@ public static class CreatorSettingKeys
 		public const string DetailedRichPresence = "creator.detailed_rich_presence";
 		public const string PromptForWorldProjectLocation = "creator.prompt_for_world_project_location";
 		public const string ShowInteractiveTutorial = "creator.show_interactive_tutorial";
+		public const string ShowWhatsNew = "creator.show_whats_new";
 	}
 
 	public static class Interface
@@ -59,6 +60,8 @@ public static class CreatorSettingKeys
 		public const string CursorBlink = "code_editor.cursor_blink";
 		public const string CursorBlinkSpeed = "code_editor.cursor_blink_speed";
 		public const string CursorWidth = "code_editor.cursor_width";
+		public const string ColorTheme = "code_editor.color_theme";
+		public const string FontSize = "code_editor.font_size";
 	}
 
 	public static class Popups

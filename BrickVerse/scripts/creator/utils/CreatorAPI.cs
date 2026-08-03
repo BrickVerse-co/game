@@ -1451,7 +1451,8 @@ public static class CreatorAPI
 		string description = "",
 		string ownerId = "",
 		string ownerType = "USER",
-		string contentType = "application/octet-stream"
+		string contentType = "application/octet-stream",
+		byte[]? previewData = null
 	)
 	{
 		if (!IsUserAuthenticated)
@@ -1485,6 +1486,8 @@ public static class CreatorAPI
 				form.Add(BVHttpClient.FormString("description", description));
 
 			form.Add(BVHttpClient.FormFile("file", fileName, assetData, contentType));
+			if (previewData is { Length: > 0 })
+				form.Add(BVHttpClient.FormFile("preview", "preview.png", previewData, "image/png"));
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/create"),
@@ -1524,6 +1527,8 @@ public static class CreatorAPI
 
 			string updateFileName = normalizedAssetType == "PLUGIN" ? "addon.bvaddon" : fileName;
 			form.Add(BVHttpClient.FormFile("file", updateFileName, assetData, contentType));
+			if (previewData is { Length: > 0 })
+				form.Add(BVHttpClient.FormFile("preview", "preview.png", previewData, "image/png"));
 
 			using HttpResponseMessage msg = await _client.PostAsync(
 				Globals.ApiEndpoint.PathJoin("/v3/asset/publish"),

@@ -1755,5 +1755,7 @@ visible = false
 
 [node name="LoadOverlay" parent="." unique_id=777211887 instance=ExtResource("25_b5k6b")]
 visible = false
+z_index = 200
+z_as_relative = false
 offset_top = -52.0
 offset_bottom = 52.0

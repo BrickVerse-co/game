@@ -807,15 +807,13 @@ public partial class CreatorInterface : Control, IScriptObject
 		);
 		PopupWindow(popup);
 
-		popup.UploadRequested += request =>
+		popup.UploadRequested += async request =>
 		{
-			byte[] meshData = request.SerializedMesh;
-
 			popup.SetBusy(true, "Uploading mesh...");
-
-			CreatorAPI
-				.UploadAsset(
-					meshData,
+			try
+			{
+				CreatorPublishResponse response = await CreatorAPI.UploadAsset(
+					request.SerializedMesh,
 					0,
 					"MESH",
 					request.SourceFileName,
@@ -823,28 +821,17 @@ public partial class CreatorInterface : Control, IScriptObject
 					request.Description,
 					request.OwnerId,
 					request.OwnerType.ToString()
-				)
-				.ContinueWith(task =>
-				{
-					if (task.IsFaulted)
-					{
-						BV.PrintErr(task.Exception);
-					}
-					else
-					{
-						CreatorPublishResponse response = task.Result;
-						BV.Print($"Mesh uploaded successfully. Asset ID: {response.Link}");
-					}
-				})
-				.ContinueWith(
-					_ =>
-					{
-						popup.SetBusy(false);
-					},
-					TaskScheduler.FromCurrentSynchronizationContext()
 				);
-
-			popup.Close();
+				BV.Print($"Mesh uploaded successfully. Asset ID: {response.Link}");
+				popup.SetBusy(false);
+				popup.Close();
+			}
+			catch (Exception error)
+			{
+				BV.PrintErr("Mesh upload failed: ", error);
+				popup.SetBusy(false);
+				PopupAlert(error.Message, "Mesh Upload Failed");
+			}
 		};
 		popup.Open();
 	}

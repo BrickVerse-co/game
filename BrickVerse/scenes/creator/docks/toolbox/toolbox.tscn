@@ -31,7 +31,7 @@ mouse_filter = 2
 layout_mode = 1
 text = "Toolbox"
 
-[node name="Content" type="PanelContainer" parent="." unique_id=1324323428 node_paths=PackedStringArray("_typeOption", "_filterOption", "_searchEdit", "_resultsContainer", "_pagNavPrev", "_pagNavLabel", "_pagNavNext", "_loaderView", "_noResultView")]
+[node name="Content" type="PanelContainer" parent="." unique_id=1324323428 node_paths=PackedStringArray("_typeOption", "_filterOption", "_categoryOption", "_searchEdit", "_authorEdit", "_resultsContainer", "_pagNavPrev", "_pagNavLabel", "_pagNavNext", "_loaderView", "_noResultView")]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
@@ -39,7 +39,9 @@ theme_override_styles/panel = SubResource("ToolboxSurface")
 script = ExtResource("1_akuy4")
 _typeOption = NodePath("Container/Options/Type")
 _filterOption = NodePath("Container/Options/Filter")
+_categoryOption = NodePath("Container/Category")
 _searchEdit = NodePath("Container/Search")
+_authorEdit = NodePath("Container/Author")
 _resultsContainer = NodePath("Container/Control/ScrollContainer/MarginContainer/Results")
 _pagNavPrev = NodePath("Container/Pagination/Previous")
 _pagNavLabel = NodePath("Container/Pagination/Label")
@@ -70,7 +72,7 @@ custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 0
-item_count = 4
+item_count = 5
 popup/item_0/text = "Models"
 popup/item_0/id = 0
 popup/item_1/text = "Images"
@@ -79,22 +81,58 @@ popup/item_2/text = "Audio"
 popup/item_2/id = 2
 popup/item_3/text = "Meshes"
 popup/item_3/id = 3
+popup/item_4/text = "Plugins"
+popup/item_4/id = 4
 
 [node name="Filter" type="OptionButton" parent="Content/Container/Options" unique_id=67359682]
-visible = false
 custom_minimum_size = Vector2(88, 30)
 layout_mode = 2
 selected = 0
-item_count = 2
-popup/item_0/text = "Public"
+item_count = 6
+popup/item_0/text = "Newest"
 popup/item_0/id = 0
-popup/item_1/text = "Private"
+popup/item_1/text = "Updated"
 popup/item_1/id = 1
+popup/item_2/text = "Featured"
+popup/item_2/id = 2
+popup/item_3/text = "Sponsored"
+popup/item_3/id = 3
+popup/item_4/text = "Price: Low"
+popup/item_4/id = 4
+popup/item_5/text = "Price: High"
+popup/item_5/id = 5
+
+[node name="Category" type="OptionButton" parent="Content/Container"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+selected = 0
+item_count = 12
+popup/item_0/text = "All categories"
+popup/item_1/text = "Characters & Creatures"
+popup/item_2/text = "Nature & Plants"
+popup/item_3/text = "Buildings & Architecture"
+popup/item_4/text = "Weapons & Combat"
+popup/item_5/text = "Vehicles"
+popup/item_6/text = "Environments"
+popup/item_7/text = "Sci-Fi"
+popup/item_8/text = "Animations"
+popup/item_9/text = "Gameplay Features"
+popup/item_10/text = "Engine Tools"
+popup/item_11/text = "Materials"
 
 [node name="Search" type="LineEdit" parent="Content/Container" unique_id=650306327]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 placeholder_text = "Search assets..."
+keep_editing_on_text_submit = true
+context_menu_enabled = false
+select_all_on_focus = true
+caret_blink = true
+
+[node name="Author" type="LineEdit" parent="Content/Container"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+placeholder_text = "Filter by author name or ID..."
 keep_editing_on_text_submit = true
 context_menu_enabled = false
 select_all_on_focus = true

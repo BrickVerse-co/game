@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Shared;
 using Godot;
 using Godot.Collections;
@@ -17,7 +17,7 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 	private const string FeedUrl = "https://raw.githubusercontent.com/BrickVerse-co/game/main/BrickVerse/assets/creator/whats-new.json";
 	private const string LocalFeedPath = "res://assets/creator/whats-new.json";
 	private const string SeenIdPath = "user://creator/whats-new-seen.txt";
-	private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
+	private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
 	private readonly Dictionary _feed;
 
@@ -32,6 +32,7 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 
 	public static async void CheckForUpdates()
 	{
+		if (!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ShowWhatsNew)) return;
 		await Task.Delay(1400);
 		await ShowLatestAsync(false);
 	}
@@ -127,7 +128,20 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 			{
 				if (sectionValue.VariantType != Variant.Type.Dictionary) continue;
 				Dictionary section = sectionValue.AsGodotDictionary();
-				RichTextLabel card = new() { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(0, 90) };
+				PanelContainer cardPanel = new();
+				StyleBoxFlat cardStyle = new()
+				{
+					BgColor = Color.FromHtml("#111820"),
+					BorderColor = Color.FromHtml("#263442"),
+					BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
+					CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10,
+					CornerRadiusBottomLeft = 10, CornerRadiusBottomRight = 10,
+					ContentMarginLeft = 16, ContentMarginTop = 14,
+					ContentMarginRight = 16, ContentMarginBottom = 14
+				};
+				cardPanel.AddThemeStyleboxOverride("panel", cardStyle);
+				RichTextLabel card = new() { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(0, 100) };
+				card.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
 				string heading = EscapeBbcode(ReadString(section, "title", "Update"));
 				string body = EscapeBbcode(ReadString(section, "body"));
 				string text = $"[font_size=19][color=#FFFFFF][b]{heading}[/b][/color][/font_size]\n[color=#B8C0CB]{body}[/color]";
@@ -137,13 +151,21 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 						text += $"\n[color=#0097FF]•[/color]  {EscapeBbcode(item.AsString())}";
 				}
 				card.Text = text;
-				content.AddChild(card);
+				cardPanel.AddChild(card);
+				content.AddChild(cardPanel);
 			}
 		}
 
-		HBoxContainer footer = new() { Alignment = BoxContainer.AlignmentMode.End };
+		HBoxContainer footer = new() { Alignment = BoxContainer.AlignmentMode.End, CustomMinimumSize = new Vector2(0, 48) };
 		footer.AddThemeConstantOverride("separation", 8);
 		layout.AddChild(footer);
+		CheckBox doNotShow = new() { Text = "Don't show this again", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+		doNotShow.Toggled += disabled =>
+		{
+			if (disabled)
+				CreatorSettingsService.Instance.Set(CreatorSettingKeys.Creator.ShowWhatsNew, false);
+		};
+		footer.AddChild(doNotShow);
 		if (_feed.TryGetValue("links", out Variant linksValue) && linksValue.VariantType == Variant.Type.Array)
 		{
 			foreach (Variant linkValue in linksValue.AsGodotArray())
@@ -151,19 +173,45 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 				if (linkValue.VariantType != Variant.Type.Dictionary) continue;
 				Dictionary link = linkValue.AsGodotDictionary();
 				string url = ReadString(link, "url");
-				Button button = new() { Text = ReadString(link, "label", "Learn more") };
+				Button button = CreateActionButton(ReadString(link, "label", "Learn more"), false);
 				button.Pressed += () => OS.ShellOpen(url);
 				footer.AddChild(button);
 			}
 		}
-		Button done = new() { Text = "Got it" };
-		done.Pressed += QueueFree;
+		Button done = CreateActionButton("Got it", true);
+		done.Pressed += () =>
+		{
+			if (doNotShow.ButtonPressed)
+				CreatorSettingsService.Instance.Set(CreatorSettingKeys.Creator.ShowWhatsNew, false);
+			QueueFree();
+		};
 		footer.AddChild(done);
 
 		base._Ready();
 	}
 
 	private static string EscapeBbcode(string value) => value.Replace("[", "[lb]");
+
+	private static Button CreateActionButton(string text, bool primary)
+	{
+		Button button = new() { Text = text, CustomMinimumSize = new Vector2(148, 40) };
+		StyleBoxFlat style = new()
+		{
+			BgColor = Color.FromHtml(primary ? "#0097FF" : "#172331"),
+			BorderColor = Color.FromHtml(primary ? "#36ACFF" : "#30445A"),
+			BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
+			CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+			CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+			ContentMarginLeft = 16, ContentMarginRight = 16,
+			ContentMarginTop = 9, ContentMarginBottom = 9
+		};
+		button.AddThemeStyleboxOverride("normal", style);
+		StyleBoxFlat hover = (StyleBoxFlat)style.Duplicate();
+		hover.BgColor = Color.FromHtml(primary ? "#23A6FF" : "#213247");
+		button.AddThemeStyleboxOverride("hover", hover);
+		button.AddThemeStyleboxOverride("pressed", hover);
+		return button;
+	}
 
 	private static string ReadString(Dictionary dictionary, string key, string fallback = "") =>
 		dictionary.TryGetValue(key, out Variant value) ? value.AsString() : fallback;

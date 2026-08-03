@@ -22,6 +22,16 @@ public enum IndentationModeEnum
 	Spaces
 }
 
+[ScriptEnum("CodeEditorColorTheme", IsCreatorOnly = true)]
+public enum CodeEditorColorThemeEnum
+{
+	BrickVerse,
+	VisualStudioDark,
+	Dracula,
+	Light,
+	HighContrast
+}
+
 [ScriptEnum("CreatorThemeMode", IsCreatorOnly = true)]
 public enum CreatorThemeModeEnum
 {
