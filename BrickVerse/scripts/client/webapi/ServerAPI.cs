@@ -64,6 +64,11 @@ public static class ServerAPI
 		return GetServerInterface().ValidatePlayer(playerToken);
 	}
 
+	public static Task DisconnectPlayer(string playerToken)
+	{
+		return GetServerInterface().DisconnectPlayer(playerToken);
+	}
+
 	public static Task LogServerEvent(ServerEventType eventType, Dictionary<string, string>? data = null)
 	{
 		return GetServerInterface().LogEvent(eventType, data);

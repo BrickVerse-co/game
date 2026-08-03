@@ -41,7 +41,7 @@ public static class DatamodelLoader
 		else if (fileType == PolyFileTypeEnum.Packed)
 		{
 			// Poly Format
-			PackedFormat.LoadPackedWorld(root, data, entryPath);
+			await PackedFormat.LoadPackedWorldAsync(root, data, entryPath);
 		}
 	}
 

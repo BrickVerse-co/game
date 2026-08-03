@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://pajd03mvemjv" path="res://scripts/creator/ui/tabs/text_editor/TextEditorRoot.cs" id="2_07fmf"]
 [ext_resource type="Script" uid="uid://do7oij3iu8c1a" path="res://scripts/creator/ui/tabs/text_editor/TextEditorField.cs" id="3_07fmf"]
 [ext_resource type="PackedScene" uid="uid://bimokjkrp24ow" path="res://scenes/creator/tabs/text_editor/finder.tscn" id="3_ypnaf"]
+[ext_resource type="FontFile" path="res://assets/fonts/creator/0xProto-Regular.ttf" id="4_0xproto"]
 
 [node name="TextEditor" type="Control" unique_id=1712163761 node_paths=PackedStringArray("CodeEditor", "_finder", "_diagLabel", "_statusBar")]
 layout_mode = 3
@@ -29,6 +30,7 @@ theme_override_constants/separation = 0
 [node name="CodeEdit" type="CodeEdit" parent="VBoxContainer" unique_id=279845131]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("4_0xproto")
 text = "print(\"hi\")"
 minimap_draw = true
 caret_blink = true
