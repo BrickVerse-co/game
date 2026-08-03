@@ -597,7 +597,10 @@ public sealed partial class ClientEntry : Node3D
 			int serverPort = options.ServerPort ?? listenResponse.Port;
 			if (serverPort is < 1 or > 65535)
 				throw new InvalidOperationException($"Invalid ENet server port: {serverPort}");
-			NetworkService.CreateServer(serverPort, options.MaxPlayers);
+			int maxPlayers = listenResponse.MaxPlayers > 0
+				? listenResponse.MaxPlayers
+				: options.MaxPlayers;
+			NetworkService.CreateServer(serverPort, maxPlayers);
 		}
 		catch (Exception ex)
 		{
@@ -613,6 +616,7 @@ public sealed partial class ClientEntry : Node3D
 		BV.Print("World ID: ", listenResponse.WorldID);
 		BV.Print("Port: ", listenResponse.Port);
 		BV.Print("Place path: ", listenResponse.PlacePath);
+		BV.Print("Max players: ", listenResponse.MaxPlayers);
 		BV.Print("Started at: ", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
 		BV.Print("--------------------------");
 	}

@@ -7,6 +7,7 @@ using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
+using BrickVerse.Schemas.API;
 using System;
 #if CREATOR
 using BrickVerse.Creator.Settings;
@@ -86,6 +87,8 @@ public sealed partial class PresenceService : Instance
 	public override void PreDelete()
 	{
 		Globals.BeforeQuit -= BeforeQuit;
+		Root.WorldInfoReady -= OnWorldInfoReady;
+		Root.WorldMediaReady -= OnWorldMediaReady;
 		base.PreDelete();
 	}
 
@@ -102,6 +105,20 @@ public sealed partial class PresenceService : Instance
 
 		Root.Players.PlayerAdded.Connect((_) => { QueueUpdatePresence(); });
 		Root.Players.PlayerRemoved.Connect((_) => { QueueUpdatePresence(); });
+		Root.WorldInfoReady += OnWorldInfoReady;
+		Root.WorldMediaReady += OnWorldMediaReady;
+	}
+
+	private void OnWorldInfoReady(APIPlaceInfo _)
+	{
+		QueueUpdatePresence();
+	}
+
+	private void OnWorldMediaReady(APIPlaceMedia[] media)
+	{
+		if (CoverImage == null)
+			_imageURL = media.Length > 0 ? media[0].Url : null;
+		QueueUpdatePresence();
 	}
 
 	private void OnCoverImageLoaded(Resource _)
@@ -181,6 +198,18 @@ public sealed partial class PresenceService : Instance
 		if (!OS.HasFeature("discord-rpc")) return;
 		_discord = new(DiscordAppID, (ulong)CreateFlags.NoRequireDiscord);
 		_activityManager = _discord.GetActivityManager();
+		_activityManager.OnActivityJoin += OnDiscordActivityJoin;
+	}
+
+	private void OnDiscordActivityJoin(string secret)
+	{
+		string[] values = secret.Split(':', 2);
+		if (values.Length == 0 || !long.TryParse(values[0], out long worldId)) return;
+
+		string url = Globals.MainEndpoint.PathJoin($"/worlds/{worldId}");
+		if (values.Length == 2 && !string.IsNullOrWhiteSpace(values[1]))
+			url += "?serverId=" + Uri.EscapeDataString(values[1]);
+		OS.ShellOpen(url);
 	}
 
 	private void DisposeDiscord()
@@ -218,6 +247,12 @@ public sealed partial class PresenceService : Instance
 			details = _creatorDetails;
 		}
 
+		bool canJoin = Root.SessionType != World.SessionTypeEnum.Creator
+			&& Root.WorldID > 0
+			&& !string.IsNullOrWhiteSpace(Root.ServerID)
+			&& Root.Players.MaxPlayers > Root.Players.PlayersCount;
+		string partyId = canJoin ? $"{Root.WorldID}:{Root.ServerID}" : "";
+
 		Discord.Activity activity = new()
 		{
 			State = Root.SessionType == World.SessionTypeEnum.Creator
@@ -237,12 +272,17 @@ public sealed partial class PresenceService : Instance
 			},
 			Party =
 			{
-				Id = Guid.NewGuid().ToString(),
+				Id = partyId,
 				Size =
 				{
 					CurrentSize = Root.Players.PlayersCount,
 					MaxSize = Root.Players.MaxPlayers,
 				},
+				Privacy = ActivityPartyPrivacy.Public,
+			},
+			Secrets =
+			{
+				Join = canJoin ? partyId : "",
 			},
 			Instance = true
 		};
