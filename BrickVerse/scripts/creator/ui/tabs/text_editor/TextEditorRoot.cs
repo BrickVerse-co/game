@@ -452,14 +452,13 @@ public partial class TextEditorRoot : Node
 	{
 		_highlighter = new();
 		CodeEditor.SyntaxHighlighter = _highlighter;
+		_highlighter.FunctionColor = Color.FromHtml("#DCDCAA");
+		_highlighter.MemberVariableColor = Color.FromHtml("#9CDCFE");
+		_highlighter.NumberColor = Color.FromHtml("#B5CEA8");
+		_highlighter.SymbolColor = Color.FromHtml("#D4D4D4");
 
 		if (fileType == FileTypeEnum.Lua)
 		{
-			_highlighter.FunctionColor = Color.FromHtml("#DCDCAA");
-			_highlighter.MemberVariableColor = Color.FromHtml("#9CDCFE");
-			_highlighter.NumberColor = Color.FromHtml("#B5CEA8");
-			_highlighter.SymbolColor = Color.FromHtml("#D4D4D4");
-
 			foreach (string item in LuaCompletionService.LuaKeywords)
 			{
 				_highlighter.AddKeywordColor(item, Color.FromHtml("#C586C0"));
@@ -495,14 +494,142 @@ public partial class TextEditorRoot : Node
 			CodeEditor.AddStringDelimiter("\"", "\"", true);
 			CodeEditor.AddStringDelimiter("'", "'", true);
 			CodeEditor.AddStringDelimiter("[[", "]]", false);
+			return;
 		}
-		else
+
+		string extension = Path.GetExtension(Container.TargetFilePathAbsolute).ToLowerInvariant();
+		switch (extension)
 		{
-			_highlighter.FunctionColor = ColorWhite;
-			_highlighter.MemberVariableColor = ColorWhite;
-			_highlighter.NumberColor = ColorWhite;
-			_highlighter.SymbolColor = ColorWhite;
+			case ".json":
+			case ".jsonc":
+			case ".bvxw":
+			case ".bvxl":
+			case ".bvproject":
+			case ".bvanim":
+			case ".bvmodel":
+			case ".bvxm":
+				AddKeywords(["true", "false", "null"], "#569CD6");
+				AddStrings();
+				if (extension == ".jsonc") AddCStyleComments();
+				break;
+			case ".yaml":
+			case ".yml":
+				AddKeywords(["true", "false", "null", "yes", "no", "on", "off", "~"], "#569CD6");
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml("#6A9955"));
+				break;
+			case ".toml":
+			case ".ini":
+			case ".cfg":
+			case ".env":
+				AddKeywords(["true", "false", "null"], "#569CD6");
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml("#6A9955"));
+				_highlighter.AddColorRegion(";", "", Color.FromHtml("#6A9955"));
+				break;
+			case ".cs":
+				AddKeywords([
+					"abstract", "as", "async", "await", "base", "bool", "break", "byte", "case",
+					"catch", "char", "class", "const", "continue", "decimal", "default", "delegate",
+					"do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally",
+					"fixed", "float", "for", "foreach", "if", "implicit", "in", "int", "interface",
+					"internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator",
+					"out", "override", "params", "private", "protected", "public", "readonly", "record",
+					"ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static",
+					"string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint",
+					"ulong", "unchecked", "unsafe", "ushort", "using", "var", "virtual", "void",
+					"volatile", "when", "where", "while", "yield"
+				], "#C586C0");
+				AddStrings(includeBackticks: false);
+				AddCStyleComments();
+				break;
+			case ".js":
+			case ".jsx":
+			case ".ts":
+			case ".tsx":
+				AddKeywords([
+					"async", "await", "break", "case", "catch", "class", "const", "continue", "debugger",
+					"default", "delete", "do", "else", "enum", "export", "extends", "false", "finally",
+					"for", "from", "function", "if", "implements", "import", "in", "instanceof",
+					"interface", "let", "new", "null", "of", "private", "protected", "public", "return",
+					"static", "super", "switch", "this", "throw", "true", "try", "type", "typeof",
+					"undefined", "var", "void", "while", "with", "yield"
+				], "#C586C0");
+				AddStrings();
+				AddCStyleComments();
+				break;
+			case ".py":
+				AddKeywords([
+					"and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
+					"elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import",
+					"in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return",
+					"True", "try", "while", "with", "yield"
+				], "#C586C0");
+				AddStrings(includeBackticks: false);
+				_highlighter.AddColorRegion("\"\"\"", "\"\"\"", Color.FromHtml("#CE9178"));
+				_highlighter.AddColorRegion("'''", "'''", Color.FromHtml("#CE9178"));
+				_highlighter.AddColorRegion("#", "", Color.FromHtml("#6A9955"));
+				break;
+			case ".xml":
+			case ".html":
+			case ".htm":
+			case ".svg":
+				AddStrings(includeBackticks: false);
+				_highlighter.AddColorRegion("<!--", "-->", Color.FromHtml("#6A9955"));
+				break;
+			case ".css":
+			case ".scss":
+				AddKeywords(["@import", "@media", "@keyframes", "important"], "#C586C0");
+				AddStrings(includeBackticks: false);
+				AddCStyleComments();
+				break;
+			case ".md":
+			case ".markdown":
+				_highlighter.AddColorRegion("`", "`", Color.FromHtml("#CE9178"));
+				_highlighter.AddColorRegion("<!--", "-->", Color.FromHtml("#6A9955"));
+				break;
+			case ".sh":
+			case ".bash":
+			case ".ps1":
+				AddKeywords(["break", "case", "continue", "do", "done", "else", "elseif", "esac", "fi", "for", "foreach", "function", "if", "in", "return", "switch", "then", "until", "while"], "#C586C0");
+				AddStrings();
+				_highlighter.AddColorRegion("#", "", Color.FromHtml("#6A9955"));
+				break;
+			default:
+				_highlighter.FunctionColor = ColorWhite;
+				_highlighter.MemberVariableColor = ColorWhite;
+				_highlighter.NumberColor = ColorWhite;
+				_highlighter.SymbolColor = ColorWhite;
+				break;
 		}
+	}
+
+	private void AddKeywords(IEnumerable<string> keywords, string color)
+	{
+		Color keywordColor = Color.FromHtml(color);
+		foreach (string keyword in keywords)
+			_highlighter.AddKeywordColor(keyword, keywordColor);
+	}
+
+	private void AddStrings(bool includeBackticks = true)
+	{
+		Color stringColor = Color.FromHtml("#CE9178");
+		_highlighter.AddColorRegion("\"", "\"", stringColor);
+		_highlighter.AddColorRegion("'", "'", stringColor);
+		CodeEditor.AddStringDelimiter("\"", "\"", true);
+		CodeEditor.AddStringDelimiter("'", "'", true);
+		if (includeBackticks)
+		{
+			_highlighter.AddColorRegion("`", "`", stringColor);
+			CodeEditor.AddStringDelimiter("`", "`", true);
+		}
+	}
+
+	private void AddCStyleComments()
+	{
+		Color commentColor = Color.FromHtml("#6A9955");
+		_highlighter.AddColorRegion("//", "", commentColor);
+		_highlighter.AddColorRegion("/*", "*/", commentColor);
 	}
 
 	public void Save()

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -80,6 +81,12 @@ public sealed partial class Menu : PanelContainer
 		_menus.Add(
 			new() { Title = "File" },
 			[
+				new MenuButtonItem()
+				{
+					Text = "What's New",
+					Pressed = WhatsNewPopup.ShowLatest,
+				},
+				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
 					Text = "New",

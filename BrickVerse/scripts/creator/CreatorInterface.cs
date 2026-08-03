@@ -175,6 +175,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		ApplyFullscreen();
 		ApplyVSync();
 		ApplyFpsCap();
+		WhatsNewPopup.CheckForUpdates();
 
 		base._Ready();
 	}
