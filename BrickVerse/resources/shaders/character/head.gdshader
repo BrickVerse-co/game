@@ -18,14 +18,15 @@ uniform bool face_enabled = true;
 uniform vec2 face_center = vec2(0.0, 0.02568);
 uniform vec2 face_size = vec2(0.0115, 0.0115);
 uniform float front_threshold : hint_range(-1.0, 1.0) = 0.15;
+uniform mat4 face_pose_correction = mat4(1.0);
 
 varying vec3 mesh_position;
 varying vec3 mesh_normal;
 
 void vertex()
 {
-	mesh_position = VERTEX;
-	mesh_normal = NORMAL;
+	mesh_position = (face_pose_correction * vec4(VERTEX, 1.0)).xyz;
+	mesh_normal = normalize((face_pose_correction * vec4(NORMAL, 0.0)).xyz);
 }
 
 void fragment()

@@ -231,7 +231,7 @@ public partial class NPC : Physical
 		}
 	}
 
-	[Editable, ScriptProperty]
+	[Editable, ScriptProperty, SyncVar]
 	public float Health
 	{
 		get => _health;
@@ -247,7 +247,7 @@ public partial class NPC : Physical
 		}
 	}
 
-	[Editable, ScriptProperty]
+	[Editable, ScriptProperty, SyncVar]
 	public float MaxHealth
 	{
 		get => _maxHealth;
@@ -799,8 +799,10 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public void Kill()
 	{
-		Health = 0;
-		RpcId(1, nameof(NetKill));
+		if (Root.Network.IsServer)
+			Health = 0;
+		else
+			RpcId(1, nameof(NetKill));
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
@@ -822,7 +824,7 @@ public partial class NPC : Physical
 		Character?.Animator?.StopAnimation();
 		Character?.Animator?.StopOneShotAnimation();
 
-		if (Character is BrickversianModel ptmodel)
+		if (Root.Network.IsServer && Character is BrickversianModel ptmodel)
 		{
 			ptmodel.StartRagdoll(Velocity);
 		}
@@ -1186,6 +1188,7 @@ public partial class NPC : Physical
 		{
 			ptmodel.StopRagdoll();
 		}
+		Character?.PlayIdle();
 		CharacterVelocity = Vector3.Zero;
 
 		OverrideCanCollide = false;

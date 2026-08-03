@@ -110,6 +110,8 @@ public sealed partial class NetworkService : Instance
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private readonly ConcurrentDictionary<int, string> _peerJoinTokens = new();
 	private ulong _lastActivityReportTime;
+	private bool _localPlayerReady;
+	private bool _localPlayerRequestInFlight;
 	public ClientEntry Entry = null!;
 
 	/// <summary>
@@ -1148,7 +1150,7 @@ public sealed partial class NetworkService : Instance
 		// Request for Localplayer
 		if (_players != null)
 		{
-			_players.ReqLocalPlayer();
+			_ = RequestLocalPlayerUntilReadyAsync();
 		}
 		else
 		{
@@ -1171,12 +1173,49 @@ public sealed partial class NetworkService : Instance
 	// Emit when localplayer is ready
 	public void OnLocalPlayerReady()
 	{
+		if (_localPlayerReady)
+			return;
+		_localPlayerReady = true;
+		_localPlayerRequestInFlight = false;
+
 		if (Globals.IsInGDEditor)
 		{
 			DisplayServer.WindowSetTitle($"BrickVerse - Client [{LocalPeerID}]");
 		}
 
 		Rpc(nameof(NetPlayerReportReady));
+	}
+
+	private async Task RequestLocalPlayerUntilReadyAsync()
+	{
+		if (_localPlayerReady || _localPlayerRequestInFlight || IsServer)
+			return;
+
+		_localPlayerRequestInFlight = true;
+		try
+		{
+			const int maximumAttempts = 30;
+			for (int attempt = 1; attempt <= maximumAttempts; attempt++)
+			{
+				if (_localPlayerReady || IsDisconnected || IsShuttingDown)
+					return;
+
+				_players.ReqLocalPlayer();
+				if (attempt > 1)
+					BV.Print($"[Client] Retrying local player handshake ({attempt}/{maximumAttempts})");
+				await Globals.Singleton.WaitAsync(1f);
+			}
+
+			if (!_localPlayerReady && !IsDisconnected)
+				DisconnectSelf(
+					"The server did not finish creating your player. Please rejoin.",
+					DisconnectionCodeEnum.PlayerNotFound
+				);
+		}
+		finally
+		{
+			_localPlayerRequestInFlight = false;
+		}
 	}
 
 	// Emit when player reports itself as ready

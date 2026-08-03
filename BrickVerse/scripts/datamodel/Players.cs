@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -190,13 +191,17 @@ public sealed partial class Players : Instance
 		}
 		else
 		{
-			Root.Network.DisconnectPeer(peerID, "INTERNAL BUG: Player not found on server, please rejoin", NetworkService.DisconnectionCodeEnum.PlayerNotFound);
+			// Player creation and the final replication acknowledgement can cross on
+			// separate reliable channels. The client retries this bounded handshake.
+			BV.PrintWarn($"Player for peer {peerID} is not ready yet; waiting for retry.");
 		}
 	}
 
 	[NetRpc(AuthorityMode.Server, CallLocal = false, TransferMode = TransferMode.Reliable)]
 	private void NetRecvLocalPlayer(string plrName)
 	{
+		if (LocalPlayer?.IsLocal == true)
+			return;
 		LocalPlayer = FindChild<Player>(plrName)!;
 		if (LocalPlayer == null)
 		{
