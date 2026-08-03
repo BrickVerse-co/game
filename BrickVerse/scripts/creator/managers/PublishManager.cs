@@ -181,34 +181,34 @@ public static class PublishManager
 	)
 	{
 		for (int x = 0; x <= 1; x++)
-		for (int y = 0; y <= 1; y++)
-		for (int z = 0; z <= 1; z++)
-		{
-			Vector3 point = transform * (bounds.Position + new Vector3(
-				bounds.Size.X * x,
-				bounds.Size.Y * y,
-				bounds.Size.Z * z
-			));
-			if (!hasBounds)
-			{
-				boundsMin = point;
-				boundsMax = point;
-				hasBounds = true;
-			}
-			else
-			{
-				boundsMin = new Vector3(
-					Mathf.Min(boundsMin.X, point.X),
-					Mathf.Min(boundsMin.Y, point.Y),
-					Mathf.Min(boundsMin.Z, point.Z)
-				);
-				boundsMax = new Vector3(
-					Mathf.Max(boundsMax.X, point.X),
-					Mathf.Max(boundsMax.Y, point.Y),
-					Mathf.Max(boundsMax.Z, point.Z)
-				);
-			}
-		}
+			for (int y = 0; y <= 1; y++)
+				for (int z = 0; z <= 1; z++)
+				{
+					Vector3 point = transform * (bounds.Position + new Vector3(
+						bounds.Size.X * x,
+						bounds.Size.Y * y,
+						bounds.Size.Z * z
+					));
+					if (!hasBounds)
+					{
+						boundsMin = point;
+						boundsMax = point;
+						hasBounds = true;
+					}
+					else
+					{
+						boundsMin = new Vector3(
+							Mathf.Min(boundsMin.X, point.X),
+							Mathf.Min(boundsMin.Y, point.Y),
+							Mathf.Min(boundsMin.Z, point.Z)
+						);
+						boundsMax = new Vector3(
+							Mathf.Max(boundsMax.X, point.X),
+							Mathf.Max(boundsMax.Y, point.Y),
+							Mathf.Max(boundsMax.Z, point.Z)
+						);
+					}
+				}
 	}
 
 	public static async Task PublishAddon(ServerScript target, long addonID = 0)
