@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using BrickVerse.Attributes;
@@ -69,6 +70,7 @@ public sealed partial class BrickversianModel : CharacterModel
 	private static readonly StringName _albedoTexParam = "albedo_texture";
 	private static readonly StringName _faceTexParam = "face_texture";
 	private static readonly StringName _faceEnabledParam = "face_enabled";
+	private static readonly StringName _facePoseCorrectionParam = "face_pose_correction";
 	private static bool _loggedMissingRagdollNode = false;
 
 	private ImageAsset? _faceImage;
@@ -128,6 +130,8 @@ public sealed partial class BrickversianModel : CharacterModel
 	private bool _faceOverrided = false;
 	private CharacterAnimHelper _helper = null!;
 	private readonly Dictionary<CharacterAttachmentEnum, Dynamic> _attachmentEnumToDyn = [];
+	private int _headBoneIndex = -1;
+	private Transform3D _headRestTransform = Transform3D.Identity;
 	private bool _updateClothDirty = false;
 
 	public PhysicalBone3D? VelocityPhysicalBone;
@@ -315,6 +319,9 @@ public sealed partial class BrickversianModel : CharacterModel
 
 		Skeleton = GetRequiredNodeCompat<Skeleton3D>("Character/Poly/Skeleton3D");
 		Skeleton.ShowRestOnly = false;
+		_headBoneIndex = Skeleton.FindBone("Head_2");
+		if (_headBoneIndex >= 0)
+			_headRestTransform = Skeleton.GetBoneGlobalRest(_headBoneIndex);
 		_ragdollBoneSim = GetNodeCompat<PhysicalBoneSimulator3D>(
 			"Character/Poly/Skeleton3D/RagdollBone"
 		);
@@ -384,52 +391,63 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	private void EnsureClothing()
 	{
-		// Ensure we have a shirt and pants clothing, if not create default ones.
-		Clothing[] clothings = GetChildrenOfClass<Clothing>();
+		ReconcileDefaultClothing();
+	}
 
-		bool hasShirt = false;
-		bool hasPants = false;
+	private Clothing[] ReconcileDefaultClothing()
+	{
+		Clothing[] clothings = GetChildrenOfClass<Clothing>()
+			.Where(clothing => !clothing.IsDeleted)
+			.ToArray();
 
-		foreach (Clothing clothing in clothings)
+		ReconcileDefaultClothingType(
+			clothings,
+			Clothing.ClothingType.Shirt,
+			"DefaultShirt"
+		);
+		ReconcileDefaultClothingType(
+			clothings,
+			Clothing.ClothingType.Pants,
+			"DefaultPants"
+		);
+
+		return GetChildrenOfClass<Clothing>()
+			.Where(clothing => !clothing.IsDeleted)
+			.ToArray();
+	}
+
+	private void ReconcileDefaultClothingType(
+		Clothing[] clothings,
+		Clothing.ClothingType type,
+		string defaultName
+	)
+	{
+		Clothing[] defaults = clothings
+			.Where(clothing => clothing.Type == type && clothing.Name == defaultName)
+			.ToArray();
+		bool hasCustomClothing = clothings.Any(
+			clothing => clothing.Type == type && clothing.Name != defaultName
+		);
+
+		if (hasCustomClothing)
 		{
-			if (clothing.Name.ToLower().Contains("shirt"))
+			foreach (Clothing defaultClothing in defaults)
 			{
-				hasShirt = true;
+				defaultClothing.Delete();
 			}
-			else if (clothing.Name.ToLower().Contains("pants"))
-			{
-				hasPants = true;
-			}
+			return;
 		}
 
-		// Create default clothing if missing
-		if (!hasShirt)
-		{
-			Clothing defaultShirt = New<Clothing>();
-			defaultShirt.Name = "DefaultShirt";
-			defaultShirt.Type = Clothing.ClothingType.Shirt;
-			BVImageAsset asset = New<BVImageAsset>();
-			asset.ImageID = "338444747976736768";
-			defaultShirt.Image = asset;
-			defaultShirt.Parent = this;
-		}
+		if (defaults.Length > 0)
+			return;
 
-		if (!hasPants)
-		{
-			Clothing defaultPants = New<Clothing>();
-			defaultPants.Name = "DefaultPants";
-			defaultPants.Type = Clothing.ClothingType.Pants;
-			BVImageAsset asset = New<BVImageAsset>();
-			asset.ImageID = "338444747976736768";
-			defaultPants.Image = asset;
-			defaultPants.Parent = this;
-		}
-
-		if (!hasShirt || !hasPants)
-		{
-			// Update the cloth materials after adding default clothing
-			QueueRenderCloth();
-		}
+		Clothing fallback = New<Clothing>();
+		fallback.Name = defaultName;
+		fallback.Type = type;
+		BVImageAsset asset = New<BVImageAsset>();
+		asset.ImageID = "338444747976736768";
+		fallback.Image = asset;
+		fallback.Parent = this;
 	}
 
 	private T? GetNodeCompat<T>(params string[] paths)
@@ -595,6 +613,7 @@ public sealed partial class BrickversianModel : CharacterModel
 	public override void Process(double delta)
 	{
 		base.Process(delta);
+		UpdateFacePoseCorrection();
 
 		if (_updateClothDirty)
 		{
@@ -630,9 +649,23 @@ public sealed partial class BrickversianModel : CharacterModel
 		}
 	}
 
+	private void UpdateFacePoseCorrection()
+	{
+		if (_headBoneIndex < 0 || !GodotObject.IsInstanceValid(Skeleton))
+			return;
+
+		Transform3D currentPose = Skeleton.GetBoneGlobalPose(_headBoneIndex);
+		_headMat.SetShaderParameter(
+			_facePoseCorrectionParam,
+			_headRestTransform * currentPose.AffineInverse()
+		);
+	}
+
 	private void UpdateClothMaterials()
 	{
-		Clothing[] clothings = GetChildrenOfClass<Clothing>();
+		// Serialized/networked clothing is parented after the character initializes.
+		// Reconcile here so a real shirt or pants always replaces its temporary fallback.
+		Clothing[] clothings = ReconcileDefaultClothing();
 
 		// Explicit layer order:
 		// Pants   = 1, bottom
@@ -758,7 +791,7 @@ public sealed partial class BrickversianModel : CharacterModel
 	}
 
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
-	private async void NetStartRagdoll(Vector3 force)
+	private void NetStartRagdoll(Vector3 force)
 	{
 		if (_ragdollBoneSim == null)
 			return;
@@ -766,20 +799,25 @@ public sealed partial class BrickversianModel : CharacterModel
 		if (_lastPhysicalBoneSim != null)
 			return;
 
-		// need duplicates cuz godot won't adapt dynamically to bones
+		// Mark the transition before creating physics nodes so duplicate network
+		// delivery cannot create multiple simulators in the same frame.
+		Ragdolling = true;
+
+		// Need duplicates because Godot won't adapt the authored simulator dynamically.
 		PhysicalBoneSimulator3D s = (PhysicalBoneSimulator3D)_ragdollBoneSim.Duplicate();
-
-		VelocityPhysicalBone = s.GetNode<PhysicalBone3D>("Physical Bone UpperTorso");
-
 		Skeleton.AddChild(s);
+		_lastPhysicalBoneSim = s;
+		VelocityPhysicalBone = s.GetNodeOrNull<PhysicalBone3D>("Physical Bone UpperTorso");
 
+		AnimTree.Active = false;
 		s.Active = true;
 		s.PhysicalBonesStartSimulation();
 
-		_lastPhysicalBoneSim = s;
-
-		VelocityPhysicalBone.LinearVelocity = force / VelocityPhysicalBone.GravityScale;
-		Ragdolling = true;
+		if (VelocityPhysicalBone != null)
+		{
+			float gravityScale = Mathf.Max(Mathf.Abs(VelocityPhysicalBone.GravityScale), 0.001f);
+			VelocityPhysicalBone.LinearVelocity = force / gravityScale;
+		}
 		RagdollStarted.Invoke();
 	}
 
@@ -793,6 +831,9 @@ public sealed partial class BrickversianModel : CharacterModel
 		_lastPhysicalBoneSim.Active = false;
 		_lastPhysicalBoneSim.QueueFree();
 		_lastPhysicalBoneSim = null;
+		VelocityPhysicalBone = null;
+		Skeleton.ResetBonePoses();
+		AnimTree.Active = true;
 
 		Ragdolling = false;
 		RagdollStopped.Invoke();

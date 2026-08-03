@@ -210,6 +210,7 @@ public sealed partial class InsertService : Instance
 		mesh.CanCollide = false;
 		mesh.Anchored = true;
 		accessory.Name = string.IsNullOrWhiteSpace(name) ? $"Accessory_{marketplaceId}" : name;
+		accessory.TargetAttachment = GetAccessoryAttachment(accessoryType);
 
 		// Convert the legacy marketplace coordinates to the engine mesh scale
 		APIPosition3 position = meshPosition ?? new APIPosition3();
@@ -223,6 +224,23 @@ public sealed partial class InsertService : Instance
 		mesh.LocalPosition += Vector3.Up * 0.17f;
 
 		return accessory;
+	}
+
+	private static BrickversianModel.CharacterAttachmentEnum GetAccessoryAttachment(string? accessoryType)
+	{
+		string normalized = (accessoryType ?? "")
+			.Replace("_", "", StringComparison.Ordinal)
+			.Replace("-", "", StringComparison.Ordinal)
+			.Replace(" ", "", StringComparison.Ordinal)
+			.ToLowerInvariant();
+
+		return normalized switch
+		{
+			"neckaccessory" or "frontaccessory" or "backaccessory" or "shoulderaccessory" =>
+				BrickversianModel.CharacterAttachmentEnum.UpperTorso,
+			"waistaccessory" => BrickversianModel.CharacterAttachmentEnum.LowerTorso,
+			_ => BrickversianModel.CharacterAttachmentEnum.Head,
+		};
 	}
 
 	[ScriptMethod]

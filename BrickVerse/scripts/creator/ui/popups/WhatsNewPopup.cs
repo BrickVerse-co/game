@@ -133,11 +133,18 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 				{
 					BgColor = Color.FromHtml("#111820"),
 					BorderColor = Color.FromHtml("#263442"),
-					BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-					CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10,
-					CornerRadiusBottomLeft = 10, CornerRadiusBottomRight = 10,
-					ContentMarginLeft = 16, ContentMarginTop = 14,
-					ContentMarginRight = 16, ContentMarginBottom = 14
+					BorderWidthLeft = 1,
+					BorderWidthTop = 1,
+					BorderWidthRight = 1,
+					BorderWidthBottom = 1,
+					CornerRadiusTopLeft = 10,
+					CornerRadiusTopRight = 10,
+					CornerRadiusBottomLeft = 10,
+					CornerRadiusBottomRight = 10,
+					ContentMarginLeft = 16,
+					ContentMarginTop = 14,
+					ContentMarginRight = 16,
+					ContentMarginBottom = 14
 				};
 				cardPanel.AddThemeStyleboxOverride("panel", cardStyle);
 				RichTextLabel card = new() { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(0, 100) };
@@ -199,11 +206,18 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		{
 			BgColor = Color.FromHtml(primary ? "#0097FF" : "#172331"),
 			BorderColor = Color.FromHtml(primary ? "#36ACFF" : "#30445A"),
-			BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-			CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-			CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
-			ContentMarginLeft = 16, ContentMarginRight = 16,
-			ContentMarginTop = 9, ContentMarginBottom = 9
+			BorderWidthLeft = 1,
+			BorderWidthTop = 1,
+			BorderWidthRight = 1,
+			BorderWidthBottom = 1,
+			CornerRadiusTopLeft = 8,
+			CornerRadiusTopRight = 8,
+			CornerRadiusBottomLeft = 8,
+			CornerRadiusBottomRight = 8,
+			ContentMarginLeft = 16,
+			ContentMarginRight = 16,
+			ContentMarginTop = 9,
+			ContentMarginBottom = 9
 		};
 		button.AddThemeStyleboxOverride("normal", style);
 		StyleBoxFlat hover = (StyleBoxFlat)style.Duplicate();

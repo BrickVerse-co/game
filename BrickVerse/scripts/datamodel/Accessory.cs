@@ -11,18 +11,30 @@ namespace BrickVerse.Datamodel;
 public partial class Accessory : Dynamic
 {
 	private BrickversianModel.CharacterAttachmentEnum _targetAttachment;
+	private Node3D? _attachmentNode;
+	private Transform3D _attachmentReference;
+	private Transform3D _accessoryReference;
 
-	// Retained for backwards-compatible loading of existing models. Accessories now
-	// use character-local coordinates and no longer follow per-bone attachments.
-	[ScriptProperty]
+	[Editable, ScriptProperty, SyncVar]
 	public BrickversianModel.CharacterAttachmentEnum TargetAttachment
 	{
 		get => _targetAttachment;
 		set
 		{
+			if (_targetAttachment == value)
+				return;
 			_targetAttachment = value;
+			AttachToTarget();
 			OnPropertyChanged();
 		}
+	}
+
+	public override void Init()
+	{
+		base.Init();
+		// Registration must happen during initialization. Attachment may occur later
+		// after replication or parenting has completed.
+		SetProcess(true);
 	}
 
 	public override void PostReparent()
@@ -31,11 +43,54 @@ public partial class Accessory : Dynamic
 
 		if (Parent is CharacterModel)
 		{
-			// Godot reparents Node3D instances while preserving their global transform.
-			// Marketplace accessories instead need their root to be character-local.
-			// Do not assign size here; imported and user-authored scale must be preserved.
+			// Keep the accessory outside the internally scaled rig hierarchy. Bone
+			// movement is applied below without inheriting the rig's import scale.
 			LocalPosition = Vector3.Zero;
 			LocalRotation = Vector3.Zero;
+			AttachToTarget();
 		}
+		else
+		{
+			_attachmentNode = null;
+			SetProcess(false);
+		}
+	}
+
+	private void AttachToTarget()
+	{
+		if (Parent is not BrickversianModel character)
+			return;
+		if (!GodotObject.IsInstanceValid(GDNode3D))
+			return;
+
+		Node3D attachment = character.GetNode3DAttachment(_targetAttachment);
+		if (!GodotObject.IsInstanceValid(attachment))
+			return;
+
+		_attachmentNode = attachment;
+		_attachmentReference = attachment.GlobalTransform;
+		_accessoryReference = GDNode3D.GlobalTransform;
+		SetProcess(true);
+	}
+
+	public override void Process(double delta)
+	{
+		base.Process(delta);
+		if (
+			!GodotObject.IsInstanceValid(_attachmentNode)
+			|| !GodotObject.IsInstanceValid(GDNode3D)
+		)
+			return;
+
+		Transform3D currentAttachment = _attachmentNode!.GlobalTransform;
+		Basis referenceRotation = _attachmentReference.Basis.Orthonormalized();
+		Basis currentRotation = currentAttachment.Basis.Orthonormalized();
+		Basis rotationDelta = currentRotation * referenceRotation.Inverse();
+		Vector3 referenceOffset = _accessoryReference.Origin - _attachmentReference.Origin;
+
+		GDNode3D.GlobalTransform = new Transform3D(
+			(rotationDelta * _accessoryReference.Basis).Orthonormalized(),
+			currentAttachment.Origin + rotationDelta * referenceOffset
+		);
 	}
 }

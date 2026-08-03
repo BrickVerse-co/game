@@ -26,6 +26,9 @@ public partial class CreatorEntry : Node
 	private Task _authInitializationTask = Task.CompletedTask;
 	private string? _pendingWorldId;
 	private string? _pendingFilePath;
+	private const double SessionValidationIntervalSeconds = 10;
+	private double _sessionValidationElapsed;
+	private bool _sessionValidationInFlight;
 
 	public override void _EnterTree()
 	{
@@ -133,6 +136,38 @@ public partial class CreatorEntry : Node
 		}
 	}
 
+	public override void _Process(double delta)
+	{
+		base._Process(delta);
+		if (!CreatorAPI.IsUserAuthenticated || _sessionValidationInFlight)
+			return;
+
+		_sessionValidationElapsed += delta;
+		if (_sessionValidationElapsed < SessionValidationIntervalSeconds)
+			return;
+
+		_sessionValidationElapsed = 0;
+		_ = ValidateCreatorSession();
+	}
+
+	private async Task ValidateCreatorSession()
+	{
+		_sessionValidationInFlight = true;
+		try
+		{
+			await CreatorAPI.ValidateCurrentSessionAsync();
+		}
+		catch (Exception error)
+		{
+			// Network outages must not sign users out. The next interval retries.
+			BV.PrintWarn("Creator session validation unavailable: ", error.Message);
+		}
+		finally
+		{
+			_sessionValidationInFlight = false;
+		}
+	}
+
 	private static async Task InitializeAuthAsync(string? launchToken)
 	{
 		// Keep auth/network work off the startup path so creator UI can render immediately.
@@ -162,6 +197,8 @@ public partial class CreatorEntry : Node
 	private void OnClientAuthenticationFailed(string reason)
 	{
 		BV.PrintErr("CreatorEntry: Client authentication failed: ", reason);
+		if (CreatorService.Interface != null)
+			CreatorService.Interface.PopupAlert(reason, "Creator Session Ended");
 	}
 
 	private void OnClientAuthenticated(OpenIdUserInfoResponse me)

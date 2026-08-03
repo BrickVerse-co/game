@@ -71,11 +71,18 @@ public sealed partial class Toolbox : Control
 	{
 		TopCategory = index switch
 		{
-			1 => "charactersAndCreatures", 2 => "natureAndPlants",
-			3 => "buildingsAndArchitecture", 4 => "weaponsAndCombat",
-			5 => "vehicles", 6 => "environments", 7 => "sciFi",
-			8 => "animations", 9 => "gameplayFeatures", 10 => "engineTools",
-			11 => "materials", _ => "",
+			1 => "charactersAndCreatures",
+			2 => "natureAndPlants",
+			3 => "buildingsAndArchitecture",
+			4 => "weaponsAndCombat",
+			5 => "vehicles",
+			6 => "environments",
+			7 => "sciFi",
+			8 => "animations",
+			9 => "gameplayFeatures",
+			10 => "engineTools",
+			11 => "materials",
+			_ => "",
 		};
 		CurrentPage = 1;
 		Refresh();
