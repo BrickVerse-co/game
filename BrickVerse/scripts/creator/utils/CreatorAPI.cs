@@ -519,7 +519,17 @@ public static class CreatorAPI
 		//BV.Print($"OpenID userinfo response: {body}");
 
 		if (!msg.IsSuccessStatusCode)
-			throw new InvalidOperationException($"OpenID userinfo failed: {msg.StatusCode} {body}");
+		{
+			if (msg.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+				throw new AuthenticationException(
+					$"Creator authorization was revoked: {msg.StatusCode}"
+				);
+			throw new HttpRequestException(
+				$"OpenID userinfo failed: {msg.StatusCode} {body}",
+				null,
+				msg.StatusCode
+			);
+		}
 
 		using JsonDocument doc = JsonDocument.Parse(body);
 		JsonElement root = doc.RootElement;
@@ -581,6 +591,33 @@ public static class CreatorAPI
 				"Creator authentication is required to start a play test."
 			);
 		return Token;
+	}
+
+	public static async Task<bool> ValidateCurrentSessionAsync()
+	{
+		if (!IsUserAuthenticated || string.IsNullOrWhiteSpace(Token))
+			return false;
+
+		try
+		{
+			await EnsureTokenValid();
+			await GetUserInfo(
+				Token,
+				new OpenIdConfig
+				{
+					UserInfoEndpoint = Globals.ApiEndpoint.PathJoin(UserInfoPath),
+				}
+			);
+			return true;
+		}
+		catch (AuthenticationException)
+		{
+			ClearAuth();
+			AuthenticationFailed?.Invoke(
+				"Your account is no longer authorized to use BrickVerse Creator."
+			);
+			return false;
+		}
 	}
 
 	private static void UpdateAuthenticatedProfile(OpenIdUserInfoResponse userInfo)
