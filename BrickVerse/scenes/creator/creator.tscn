@@ -53,7 +53,6 @@
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
 [ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
-[ext_resource type="Script" uid="uid://dm0aee70okptw" path="res://scripts/shared/LauncherAutoInstaller.cs" id="43_ce354"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
 [ext_resource type="Script" uid="uid://dfk832jm6qtwy" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
 [ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
@@ -1758,6 +1757,3 @@ visible = false
 visible = false
 offset_top = -52.0
 offset_bottom = 52.0
-
-[node name="LauncherAutoInstaller" type="Node" parent="." unique_id=490248868]
-script = ExtResource("43_ce354")
