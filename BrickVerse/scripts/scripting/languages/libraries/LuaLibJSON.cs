@@ -22,6 +22,18 @@ public class LuaLibJSON : IScriptObject
 		return JsonElementToObject(root);
 	}
 
+	[ScriptMethod("encode")]
+	public static string Encode(object? data)
+	{
+		return Serialize(data);
+	}
+
+	[ScriptMethod("decode")]
+	public static dynamic? Decode(string str)
+	{
+		return Parse(str);
+	}
+
 	[ScriptLegacyMethod("parse")]
 	public static dynamic? LegacyParse(object? obj)
 	{

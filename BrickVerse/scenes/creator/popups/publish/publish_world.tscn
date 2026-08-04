@@ -4,6 +4,7 @@
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_jjpyp"]
 [ext_resource type="FontFile" uid="uid://clwbylh8y2lf2" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2_22p0f"]
 [ext_resource type="Script" uid="uid://dcoo3smlmrhwj" path="res://scripts/creator/ui/popups/publish/PublishPlaceModal.cs" id="2_jjpyp"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_8wlys"]
 
 [sub_resource type="StyleBoxFlat" id="PopupSurface"]
 bg_color = Color(0.0352941, 0.0470588, 0.0666667, 1)
@@ -177,7 +178,7 @@ vertical_alignment = 1
 [node name="Close" type="Button" parent="TitleBar/Margin/Row" unique_id=1058938951]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
-text = "×"
+icon = ExtResource("3_8wlys")
 flat = true
 
 [node name="Modal" type="Panel" parent="." unique_id=965128555]

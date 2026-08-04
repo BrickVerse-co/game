@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c6o0j3ans0w4w" path="res://scripts/creator/ui/popups/publish/PublishPopup.cs" id="2_lg06a"]
 [ext_resource type="StyleBox" uid="uid://bwksp3bsrvcf6" path="res://resources/styles/card_rounded.tres" id="2_sh75v"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_hiril"]
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="3_lg06a"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
@@ -108,7 +109,7 @@ vertical_alignment = 1
 [node name="Close" type="Button" parent="TitleBar/Margin/Row" unique_id=932784889]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
-text = "×"
+icon = ExtResource("3_hiril")
 flat = true
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=708996311]

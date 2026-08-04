@@ -42,8 +42,14 @@ public sealed partial class FilterService : Instance
 		}
 	}
 
-	[ScriptMethod]
+	[ScriptMethod, Attributes.Obsolete("Use FilterAsync instead")]
 	public static string Filter(string input)
+	{
+		return FilterAsync(input);
+	}
+
+	[ScriptMethod]
+	public static string FilterAsync(string input)
 	{
 		if (_profanityList.Count == 0)
 		{

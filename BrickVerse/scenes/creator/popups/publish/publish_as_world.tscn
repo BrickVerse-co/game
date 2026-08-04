@@ -1,9 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://d31o6cbbh51jo"]
 
-[ext_resource type="FontFile" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1"]
-[ext_resource type="FontFile" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2"]
-[ext_resource type="Script" path="res://scripts/creator/ui/popups/publish/PublishAsPlaceModal.cs" id="3"]
+[ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="1"]
+[ext_resource type="FontFile" uid="uid://clwbylh8y2lf2" path="res://assets/fonts/creator/JetBrainsMono-Regular.ttf" id="2"]
+[ext_resource type="Script" uid="uid://vyuei5rhsiw8" path="res://scripts/creator/ui/popups/publish/PublishAsPlaceModal.cs" id="3"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="4"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="4_f46w8"]
 
 [sub_resource type="StyleBoxFlat" id="Window"]
 bg_color = Color(0.0353, 0.0471, 0.0667, 1)
@@ -25,6 +26,16 @@ border_width_bottom = 1
 border_color = Color(0.1176, 0.1647, 0.2235, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
+
+[sub_resource type="GDScript" id="Drag"]
+script/source = "extends PanelContainer
+var dragging := false
+func _gui_input(event):
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+        dragging = event.pressed
+    elif event is InputEventMouseMotion and dragging:
+        get_window().position += Vector2i(event.relative)
+"
 
 [sub_resource type="StyleBoxFlat" id="Panel"]
 bg_color = Color(0.0392, 0.051, 0.0706, 1)
@@ -83,23 +94,21 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="GDScript" id="Drag"]
-script/source = "extends PanelContainer\nvar dragging := false\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
-
-[node name="PublishAsPlaceModal" type="Window"]
-theme = ExtResource("4")
-force_native = false
-transparent = true
+[node name="PublishAsPlaceModal" type="Window" unique_id=1454021874]
+transparent_bg = true
+oversampling_override = 1.0
 title = "Publish As"
+size = Vector2i(1120, 720)
 exclusive = true
 unresizable = true
 borderless = true
+transparent = true
 popup_window = true
 min_size = Vector2i(980, 650)
-size = Vector2i(1120, 720)
+theme = ExtResource("4")
 script = ExtResource("3")
 
-[node name="PopupSurface" type="Panel" parent="."]
+[node name="PopupSurface" type="Panel" parent="." unique_id=2004123332]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -108,7 +117,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("Window")
 
-[node name="TitleBar" type="PanelContainer" parent="."]
+[node name="TitleBar" type="PanelContainer" parent="." unique_id=114548354]
 custom_minimum_size = Vector2(0, 42)
 anchors_preset = 10
 anchor_right = 1.0
@@ -118,30 +127,30 @@ mouse_default_cursor_shape = 13
 theme_override_styles/panel = SubResource("TitleBar")
 script = SubResource("Drag")
 
-[node name="Margin" type="MarginContainer" parent="TitleBar"]
+[node name="Margin" type="MarginContainer" parent="TitleBar" unique_id=707809938]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_right = 8
 
-[node name="Row" type="HBoxContainer" parent="TitleBar/Margin"]
+[node name="Row" type="HBoxContainer" parent="TitleBar/Margin" unique_id=1023659915]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="TitleBar/Margin/Row"]
+[node name="Title" type="Label" parent="TitleBar/Margin/Row" unique_id=22274453]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("1")
 theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
+theme_override_fonts/font = ExtResource("1")
 theme_override_font_sizes/font_size = 13
 text = "Publish As"
 vertical_alignment = 1
 
-[node name="Close" type="Button" parent="TitleBar/Margin/Row"]
+[node name="Close" type="Button" parent="TitleBar/Margin/Row" unique_id=2074392876]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
+icon = ExtResource("4_f46w8")
 flat = true
-text = "×"
 
-[node name="Modal" type="Panel" parent="."]
+[node name="Modal" type="Panel" parent="." unique_id=1674097485]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -150,8 +159,8 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Panel")
 
-[node name="ContentMargin" type="MarginContainer" parent="Modal"]
-anchors_preset = 15
+[node name="ContentMargin" type="MarginContainer" parent="Modal" unique_id=128890315]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -161,83 +170,83 @@ theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 18
 
-[node name="ContentRoot" type="VBoxContainer" parent="Modal/ContentMargin"]
+[node name="ContentRoot" type="VBoxContainer" parent="Modal/ContentMargin" unique_id=1591283645]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="LeadGroup" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+[node name="LeadGroup" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot" unique_id=524967272]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="LeadTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+[node name="LeadTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup" unique_id=1989045325]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1")
 theme_override_font_sizes/font_size = 16
 text = "Choose where to publish"
 
-[node name="LeadBody" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+[node name="LeadBody" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup" unique_id=1113300349]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.74, 0.82, 1)
 theme_override_font_sizes/font_size = 11
 text = "Select one of your universes, then choose the world that should be overwritten."
 
-[node name="CurrentProject" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup"]
+[node name="CurrentProject" type="Label" parent="Modal/ContentMargin/ContentRoot/LeadGroup" unique_id=78235713]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2")
 theme_override_colors/font_color = Color(0.5, 0.68, 0.87, 1)
+theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 10
 text = "Current project"
 
-[node name="Toolbar" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+[node name="Toolbar" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot" unique_id=2028310872]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Owner" type="OptionButton" parent="Modal/ContentMargin/ContentRoot/Toolbar"]
+[node name="Owner" type="OptionButton" parent="Modal/ContentMargin/ContentRoot/Toolbar" unique_id=1579253825]
 custom_minimum_size = Vector2(230, 36)
 layout_mode = 2
 theme_override_styles/normal = SubResource("Input")
 
-[node name="Search" type="LineEdit" parent="Modal/ContentMargin/ContentRoot/Toolbar"]
+[node name="Search" type="LineEdit" parent="Modal/ContentMargin/ContentRoot/Toolbar" unique_id=1612131620]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("Input")
 placeholder_text = "Search universes by name"
 
-[node name="Split" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+[node name="Split" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot" unique_id=1009684809]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="ListPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
+[node name="ListPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split" unique_id=572667539]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("Panel")
 
-[node name="ListMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel"]
+[node name="ListMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel" unique_id=1366662930]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 14
 
-[node name="ListColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin"]
+[node name="ListColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin" unique_id=1266609589]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HeaderRow" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+[node name="HeaderRow" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn" unique_id=636276065]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Back" type="Button" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+[node name="Back" type="Button" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow" unique_id=2025242512]
 visible = false
 custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
 theme_override_styles/normal = SubResource("SecondaryButton")
 text = "‹"
 
-[node name="Title" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+[node name="Title" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow" unique_id=1539794430]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1")
@@ -245,125 +254,125 @@ theme_override_font_sizes/font_size = 14
 text = "Universes"
 vertical_alignment = 1
 
-[node name="Results" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow"]
+[node name="Results" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/HeaderRow" unique_id=1344504342]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2")
 theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
+theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 10
 text = "0 universes"
 vertical_alignment = 1
 
-[node name="Loading" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+[node name="Loading" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn" unique_id=855359385]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
 text = "Loading publish destinations..."
 
-[node name="Empty" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+[node name="Empty" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn" unique_id=1710014240]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
-autowrap_mode = 3
 text = "No universes found."
+autowrap_mode = 3
 
-[node name="UniverseScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+[node name="UniverseScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn" unique_id=260229617]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="UniverseGrid" type="GridContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/UniverseScroll"]
+[node name="UniverseGrid" type="GridContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/UniverseScroll" unique_id=1869463619]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 3
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
+columns = 3
 
-[node name="WorldScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn"]
+[node name="WorldScroll" type="ScrollContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn" unique_id=341812816]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="WorldList" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/WorldScroll"]
+[node name="WorldList" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/ListPanel/ListMargin/ListColumn/WorldScroll" unique_id=153587180]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="DetailPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split"]
+[node name="DetailPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split" unique_id=1895321944]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("Panel")
 
-[node name="DetailMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel"]
+[node name="DetailMargin" type="MarginContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel" unique_id=1235809744]
 layout_mode = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 15
 theme_override_constants/margin_right = 15
 theme_override_constants/margin_bottom = 15
 
-[node name="DetailColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin"]
+[node name="DetailColumn" type="VBoxContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin" unique_id=464761178]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="DetailBadge" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailBadge" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=914548672]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2")
 theme_override_colors/font_color = Color(0.0039, 0.5294, 0.9725, 1)
+theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 10
 text = "NEW EXPERIENCE"
 
-[node name="DetailPreviewPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailPreviewPanel" type="PanelContainer" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=1666674161]
 custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Panel")
 
-[node name="DetailPreview" type="TextureRect" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn/DetailPreviewPanel"]
+[node name="DetailPreview" type="TextureRect" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn/DetailPreviewPanel" unique_id=1767421167]
+texture_filter = 1
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
-texture_filter = 1
 
-[node name="DetailTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailTitle" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=275279076]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1")
 theme_override_font_sizes/font_size = 15
 text = "Create a new universe"
 text_overrun_behavior = 3
 
-[node name="DetailMeta" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailMeta" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=774841642]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.65, 0.74, 1)
 theme_override_font_sizes/font_size = 10
-autowrap_mode = 3
 text = "The current project will be published as a new experience."
+autowrap_mode = 3
 
-[node name="DetailBody" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailBody" type="Label" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=885246979]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.77, 0.84, 1)
 theme_override_font_sizes/font_size = 11
-autowrap_mode = 3
 text = "Use this when the project should not replace an existing world."
+autowrap_mode = 3
 
-[node name="DetailSpacer" type="Control" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn"]
+[node name="DetailSpacer" type="Control" parent="Modal/ContentMargin/ContentRoot/Split/DetailPanel/DetailMargin/DetailColumn" unique_id=871736728]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Footer" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot"]
+[node name="Footer" type="HBoxContainer" parent="Modal/ContentMargin/ContentRoot" unique_id=1003221137]
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 8
+alignment = 2
 
-[node name="Cancel" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
+[node name="Cancel" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer" unique_id=1500493275]
 custom_minimum_size = Vector2(88, 34)
 layout_mode = 2
 theme_override_styles/normal = SubResource("SecondaryButton")
 text = "Cancel"
 
-[node name="Publish" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer"]
+[node name="Publish" type="Button" parent="Modal/ContentMargin/ContentRoot/Footer" unique_id=250412679]
 custom_minimum_size = Vector2(150, 34)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("1")
 theme_override_styles/normal = SubResource("PrimaryButton")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Create New Experience"

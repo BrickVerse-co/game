@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://m0fqv0kcveqq"]
 
 [ext_resource type="Script" uid="uid://bmhg4ipqf3xcv" path="res://scripts/creator/ui/popups/settings/SettingsPopup.cs" id="1_ycuph"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_4gfvn"]
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="99_creator_theme"]
 
 [sub_resource type="StyleBoxFlat" id="PopupSurface"]
@@ -24,6 +25,20 @@ border_color = Color(0.117647, 0.164706, 0.223529, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 
+[sub_resource type="GDScript" id="PopupDragScript"]
+script/source = "extends PanelContainer
+var dragging := false
+func _ready():
+    var close_button = get_node_or_null(\"Margin/Row/Close\")
+    if close_button:
+        close_button.pressed.connect(func(): get_window().hide())
+func _gui_input(event):
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+        dragging = event.pressed
+    elif event is InputEventMouseMotion and dragging:
+        get_window().position += Vector2i(event.relative)
+"
+
 [sub_resource type="StyleBoxFlat" id="SidebarSurface"]
 bg_color = Color(0.0431373, 0.0588235, 0.0784314, 0.72)
 border_width_left = 1
@@ -36,21 +51,19 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="GDScript" id="PopupDragScript"]
-script/source = "extends PanelContainer\nvar dragging := false\nfunc _ready():\n    var close_button = get_node_or_null(\"Margin/Row/Close\")\n    if close_button:\n        close_button.pressed.connect(func(): get_window().hide())\nfunc _gui_input(event):\n    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:\n        dragging = event.pressed\n    elif event is InputEventMouseMotion and dragging:\n        get_window().position += Vector2i(event.relative)\n"
-
-[node name="Settings" type="Window" node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit", "_sectionTitle")]
-theme = ExtResource("99_creator_theme")
-transparent = true
-borderless = true
+[node name="Settings" type="Window" unique_id=268676490 node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit", "_sectionTitle")]
+transparent_bg = true
 oversampling_override = 1.0
 title = "Creator Settings"
 initial_position = 2
 size = Vector2i(920, 620)
 transient = true
 unresizable = true
+borderless = true
+transparent = true
 minimize_disabled = true
 maximize_disabled = true
+theme = ExtResource("99_creator_theme")
 script = ExtResource("1_ycuph")
 _categoryTree = NodePath("Body/Sidebar/Margin/Layout/Tree")
 _layout = NodePath("Body/Page/Scroll/PageMargin/Settings")
@@ -58,7 +71,7 @@ _settingsSearchEdit = NodePath("Body/Sidebar/Margin/Layout/SectionSearch")
 _keybindSearchEdit = NodePath("Body/Page/Header/KeybindSearch")
 _sectionTitle = NodePath("Body/Page/Header/SectionTitle")
 
-[node name="PopupSurface" type="Panel" parent="."]
+[node name="PopupSurface" type="Panel" parent="." unique_id=708125331]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -67,7 +80,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PopupSurface")
 
-[node name="TitleBar" type="PanelContainer" parent="."]
+[node name="TitleBar" type="PanelContainer" parent="." unique_id=1909283069]
 custom_minimum_size = Vector2(0, 44)
 anchors_preset = 10
 anchor_right = 1.0
@@ -77,15 +90,15 @@ mouse_default_cursor_shape = 13
 theme_override_styles/panel = SubResource("PopupTitleSurface")
 script = SubResource("PopupDragScript")
 
-[node name="Margin" type="MarginContainer" parent="TitleBar"]
+[node name="Margin" type="MarginContainer" parent="TitleBar" unique_id=2074719686]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 8
 
-[node name="Row" type="HBoxContainer" parent="TitleBar/Margin"]
+[node name="Row" type="HBoxContainer" parent="TitleBar/Margin" unique_id=720510455]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="TitleBar/Margin/Row"]
+[node name="Title" type="Label" parent="TitleBar/Margin/Row" unique_id=1889427513]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
@@ -93,13 +106,13 @@ theme_override_font_sizes/font_size = 14
 text = "Creator Settings"
 vertical_alignment = 1
 
-[node name="Close" type="Button" parent="TitleBar/Margin/Row"]
+[node name="Close" type="Button" parent="TitleBar/Margin/Row" unique_id=785398698]
 custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
+icon = ExtResource("3_4gfvn")
 flat = true
-text = "×"
 
-[node name="Body" type="HBoxContainer" parent="."]
+[node name="Body" type="HBoxContainer" parent="." unique_id=997130789]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -111,28 +124,28 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 18
 
-[node name="Sidebar" type="PanelContainer" parent="Body"]
+[node name="Sidebar" type="PanelContainer" parent="Body" unique_id=264050234]
 custom_minimum_size = Vector2(224, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("SidebarSurface")
 
-[node name="Margin" type="MarginContainer" parent="Body/Sidebar"]
+[node name="Margin" type="MarginContainer" parent="Body/Sidebar" unique_id=1768499000]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Layout" type="VBoxContainer" parent="Body/Sidebar/Margin"]
+[node name="Layout" type="VBoxContainer" parent="Body/Sidebar/Margin" unique_id=497121236]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="SectionSearch" type="LineEdit" parent="Body/Sidebar/Margin/Layout"]
+[node name="SectionSearch" type="LineEdit" parent="Body/Sidebar/Margin/Layout" unique_id=1935255300]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 placeholder_text = "Search settings…"
 
-[node name="Tree" type="Tree" parent="Body/Sidebar/Margin/Layout"]
+[node name="Tree" type="Tree" parent="Body/Sidebar/Margin/Layout" unique_id=1637052098]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/item_margin = 4
@@ -140,35 +153,35 @@ enable_drag_unfolding = false
 hide_root = true
 auto_tooltip = false
 
-[node name="Page" type="VBoxContainer" parent="Body"]
+[node name="Page" type="VBoxContainer" parent="Body" unique_id=583191108]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="Header" type="HBoxContainer" parent="Body/Page"]
+[node name="Header" type="HBoxContainer" parent="Body/Page" unique_id=1665822074]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="SectionTitle" type="Label" parent="Body/Page/Header"]
+[node name="SectionTitle" type="Label" parent="Body/Page/Header" unique_id=217015941]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 21
 text = "Settings"
 vertical_alignment = 1
 
-[node name="KeybindSearch" type="LineEdit" parent="Body/Page/Header"]
+[node name="KeybindSearch" type="LineEdit" parent="Body/Page/Header" unique_id=110408540]
 visible = false
 custom_minimum_size = Vector2(270, 38)
 layout_mode = 2
 placeholder_text = "Search keybinds…"
 
-[node name="Scroll" type="ScrollContainer" parent="Body/Page"]
+[node name="Scroll" type="ScrollContainer" parent="Body/Page" unique_id=1558447267]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="PageMargin" type="MarginContainer" parent="Body/Page/Scroll"]
+[node name="PageMargin" type="MarginContainer" parent="Body/Page/Scroll" unique_id=1436375962]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -177,7 +190,7 @@ theme_override_constants/margin_top = 2
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 18
 
-[node name="Settings" type="VBoxContainer" parent="Body/Page/Scroll/PageMargin"]
+[node name="Settings" type="VBoxContainer" parent="Body/Page/Scroll/PageMargin" unique_id=1566937479]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
