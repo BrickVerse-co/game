@@ -1165,7 +1165,6 @@ theme_override_font_sizes/bold_italics_font_size = 14
 theme_override_font_sizes/italics_font_size = 14
 theme_override_font_sizes/mono_font_size = 14
 bbcode_enabled = true
-scroll_active = true
 scroll_following = true
 vertical_alignment = 2
 selection_enabled = true
@@ -1752,6 +1751,7 @@ layout_mode = 1
 
 [node name="AuthRequiredPopup" parent="." unique_id=861667823 instance=ExtResource("42_ce354")]
 visible = false
+z_index = 51
 
 [node name="LoadOverlay" parent="." unique_id=777211887 instance=ExtResource("25_b5k6b")]
 visible = false

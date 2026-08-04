@@ -2,6 +2,7 @@
 
 [ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://cirhnli124hob" path="res://scripts/creator/ui/popups/CreditsPopup.cs" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_fxs13"]
 [ext_resource type="Texture2D" uid="uid://b3sjmxnxgp4tg" path="res://assets/textures/logo/brickverse_blue.png" id="3_logo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleWindow"]
@@ -79,9 +80,6 @@ oversampling_override = 1.0
 title = "About BrickVerse Creator"
 initial_position = 2
 size = Vector2i(720, 520)
-wrap_controls = true
-transient = true
-transient_to_focused = true
 exclusive = true
 borderless = true
 transparent = true
@@ -131,7 +129,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 17
-text = "×"
+icon = ExtResource("3_fxs13")
 flat = true
 
 [node name="BodyScroll" type="ScrollContainer" parent="Root/Card/Layout" unique_id=565460739]
