@@ -371,7 +371,6 @@ public sealed partial class Player : NPC
 			: player.IsGovOfficial ? "gov"
 			: player.IsStarCreator ? "star"
 			: player.IsPartner ? "partner"
-			: player.HasVerifiedBadge ? "verified"
 			: player.IsBetaTester ? "beta"
 			: player.IsBirthdayToday ? "birthday"
 			: !string.IsNullOrEmpty(player.MembershipType) && player.MembershipType != "NONE" ? player.MembershipType.ToLower()

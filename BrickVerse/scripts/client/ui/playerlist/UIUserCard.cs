@@ -22,6 +22,7 @@ public partial class UIUserCard : Control
 	[Export] private Control _statsContainer = null!;
 	[Export] private TextureRect _pfpIconRect = null!;
 	[Export] private TextureRect _badgeRect = null!;
+	[Export] private TextureRect _verifiedBadgeRect = null!;
 	[Export] private UIPlayerList _playerList = null!;
 	private readonly BVImageAsset _plrIconAsset = new();
 	private static World Root => CoreUIRoot.Singleton.Root;
@@ -30,6 +31,7 @@ public partial class UIUserCard : Control
 	public override void _Ready()
 	{
 		_usernameLabel.Text = Root.Players.LocalPlayer.Name;
+		_verifiedBadgeRect.Visible = Root.Players.LocalPlayer.HasVerifiedBadge;
 
 		_plrIconAsset.ResourceLoaded += OnIconLoaded;
 		_plrIconAsset.ImageType = ImageTypeEnum.UserAvatarHeadshot;

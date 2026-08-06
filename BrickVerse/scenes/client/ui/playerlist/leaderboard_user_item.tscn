@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://dobfkys8wf0uc"]
 
 [ext_resource type="Script" uid="uid://dnev3eaahxpav" path="res://scripts/client/ui/playerlist/UILeaderboardUserItem.cs" id="1_dghsi"]
+[ext_resource type="Texture2D" uid="uid://bn7gc1r1r4gk0" path="res://assets/textures/client/ui/VerifiedBadge.png" id="2_og67s"]
 
-[node name="UserItem" type="Button" unique_id=1315937502 node_paths=PackedStringArray("_usernameLabel", "_statsBox", "_badgeRect")]
+[node name="UserItem" type="Button" unique_id=1315937502 node_paths=PackedStringArray("_usernameLabel", "_statsBox", "_badgeRect", "_verifiedBadgeRect")]
 custom_minimum_size = Vector2(0, 20)
 anchors_preset = 10
 anchor_right = 1.0
@@ -14,6 +15,7 @@ script = ExtResource("1_dghsi")
 _usernameLabel = NodePath("Item/PlayerInfo/Username")
 _statsBox = NodePath("Item/Stats")
 _badgeRect = NodePath("Item/PlayerInfo/Badge")
+_verifiedBadgeRect = NodePath("Item/PlayerInfo/VerifiedBadge")
 
 [node name="Item" type="HBoxContainer" parent="." unique_id=237553760]
 layout_mode = 1
@@ -45,6 +47,13 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 13
 text = "Username"
 text_overrun_behavior = 5
+
+[node name="VerifiedBadge" type="TextureRect" parent="Item/PlayerInfo" unique_id=1461458106]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+texture = ExtResource("2_og67s")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Spacer" type="Control" parent="Item" unique_id=366019082]
 custom_minimum_size = Vector2(8, 0)
