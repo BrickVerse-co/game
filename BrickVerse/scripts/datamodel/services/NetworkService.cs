@@ -946,7 +946,7 @@ public sealed partial class NetworkService : Instance
 
 			if (plr.IsAdmin)
 			{
-				plr.ChatColor = Color.FromHtml("#DD5555");
+				plr.ChatColor = Color.FromHtml("#0f9fff");
 			}
 			else if (plr.IsCreator)
 			{
