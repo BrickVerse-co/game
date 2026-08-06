@@ -312,6 +312,24 @@ public sealed partial class Player : NPC
 	[ScriptProperty, SyncVar]
 	public Color ChatColor { get; set; } = new(1, 1, 1);
 
+	[ScriptProperty, SyncVar]
+	public string MembershipType { get; internal set; } = "";
+
+	[ScriptProperty, SyncVar]
+	public bool IsBirthdayToday { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
+	public bool IsGovOfficial { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
+	public bool IsPartner { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
+	public bool IsBetaTester { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
+	public bool IsTrustedReporter { get; internal set; } = false;
+
 	private static readonly Color[] ChatColorPalette =
 		[
 			Color.FromHtml("#4e9aa8"),
@@ -349,10 +367,14 @@ public sealed partial class Player : NPC
 	public static string GetBadgeIconPath(Player player)
 	{
 		string badgeName = player.IsCreator ? "creator"
-			: !string.IsNullOrEmpty(player.UserRoleClass) ? player.UserRoleClass
 			: player.IsAdmin ? "admin"
+			: player.IsGovOfficial ? "gov"
 			: player.IsStarCreator ? "star"
+			: player.IsPartner ? "partner"
 			: player.HasVerifiedBadge ? "verified"
+			: player.IsBetaTester ? "beta"
+			: player.IsBirthdayToday ? "birthday"
+			: !string.IsNullOrEmpty(player.MembershipType) && player.MembershipType != "NONE" ? player.MembershipType.ToLower()
 			: "";
 
 		if (string.IsNullOrEmpty(badgeName))

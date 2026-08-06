@@ -43,6 +43,18 @@ public struct APIValidateResponse
 	[JsonPropertyName("isStarCreator")]
 	public bool IsStarCreator { get; set; }
 
+	[JsonPropertyName("isGovOfficial")]
+	public bool IsGovOfficial { get; set; }
+
+	[JsonPropertyName("isBetaTester")]
+	public bool IsBetaTester { get; set; }
+
+	[JsonPropertyName("isPartner")]
+	public bool IsPartner { get; set; }
+
+	[JsonPropertyName("isTrustedReporter")]
+	public bool IsTrustedReporter { get; set; }
+
 	[JsonPropertyName("hasVerifiedBadge")]
 	public bool HasVerifiedBadge { get; set; }
 }
