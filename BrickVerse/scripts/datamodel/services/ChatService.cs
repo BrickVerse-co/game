@@ -107,7 +107,7 @@ public sealed partial class ChatService : Instance
 		}
 
 		// Filter message
-		string filteredContent = FilterService.Filter(msgContent);
+		string filteredContent = player != null && player.IsAdmin ? msgContent : FilterService.Filter(msgContent);
 
 		if (player != null)
 		{

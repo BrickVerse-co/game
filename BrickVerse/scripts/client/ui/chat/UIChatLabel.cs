@@ -68,6 +68,15 @@ public partial class UIChatLabel : RichTextLabel
 		return $"[img={size}x{size}]{badgePath}[/img]";
 	}
 
+	private string GetVerifiedBadgeBBCode(int fontSize)
+	{
+		if (AuthorPlayer == null || !AuthorPlayer.HasVerifiedBadge)
+			return "";
+
+		int size = fontSize > 0 ? Mathf.Max(fontSize, 16) : 16;
+		return $"[img={size}x{size}]res://assets/textures/client/ui/VerifiedBadge.png[/img]";
+	}
+
 	private void UpdateContent()
 	{
 		string badgeBBCode = GetBadgeBBCode(FontSize);
@@ -81,7 +90,7 @@ public partial class UIChatLabel : RichTextLabel
 			string nameText = ChatColorsEnabled
 				? $"[color={NameColor.ToHtml(false)}]{AuthorName}[/color]"
 				: AuthorName;
-			text = $"{badgeBBCode}{(badgeBBCode.Length > 0 ? " " : "")}{nameText}: {Content}";
+			text = $"{badgeBBCode}{(badgeBBCode.Length > 0 ? " " : "")}{nameText}{(AuthorPlayer != null && AuthorPlayer.HasVerifiedBadge ? GetVerifiedBadgeBBCode(FontSize) : "")}: {Content}";
 		}
 
 		if (!string.IsNullOrEmpty(FontPath))

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkg0xsauyhc42"
-path="res://.godot/imported/blog-writer.png-b4f4a603d754aaffead3e53df91ff490.ctex"
+uid="uid://dwnfuefc3i344"
+path="res://.godot/imported/gov.png-a00493b80f346f2fc554f4acb403b0e5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/client/ui/playerlist/badges/blog-writer.png"
-dest_files=["res://.godot/imported/blog-writer.png-b4f4a603d754aaffead3e53df91ff490.ctex"]
+source_file="res://assets/textures/client/ui/playerlist/badges/gov.png"
+dest_files=["res://.godot/imported/gov.png-a00493b80f346f2fc554f4acb403b0e5.ctex"]
 
 [params]
 

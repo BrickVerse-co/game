@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cl8d6fxhxkju5" path="res://scripts/client/ui/playerlist/UIUserCard.cs" id="1_py1qn"]
 [ext_resource type="Theme" uid="uid://2f3k1nh6p5ac" path="res://resources/themes/hud.tres" id="1_w62j6"]
 [ext_resource type="StyleBox" uid="uid://bwksp3bsrvcf6" path="res://resources/styles/card_rounded.tres" id="2_w62j6"]
+[ext_resource type="Texture2D" uid="uid://bn7gc1r1r4gk0" path="res://assets/textures/client/ui/VerifiedBadge.png" id="4_48xor"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w62j6"]
 content_margin_left = 4.0
@@ -15,7 +16,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="UserCard" type="PanelContainer" unique_id=2105612235 node_paths=PackedStringArray("_usernameLabel", "_statsContainer", "_pfpIconRect", "_badgeRect")]
+[node name="UserCard" type="PanelContainer" unique_id=2105612235 node_paths=PackedStringArray("_usernameLabel", "_statsContainer", "_pfpIconRect", "_badgeRect", "_verifiedBadgeRect")]
 self_modulate = Color(0.08, 0.08, 0.08, 1)
 custom_minimum_size = Vector2(0, 48)
 theme = ExtResource("1_w62j6")
@@ -25,6 +26,7 @@ _usernameLabel = NodePath("Layout/Username")
 _statsContainer = NodePath("Layout/Stats")
 _pfpIconRect = NodePath("Layout/ARC/Clip/Icon")
 _badgeRect = NodePath("Layout/Badge")
+_verifiedBadgeRect = NodePath("Layout/VerifiedBadge")
 
 [node name="Layout" type="HBoxContainer" parent="." unique_id=458831048]
 layout_mode = 2
@@ -68,6 +70,13 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Username"
+
+[node name="VerifiedBadge" type="TextureRect" parent="Layout" unique_id=2079937862]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+texture = ExtResource("4_48xor")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Spacer2" type="Control" parent="Layout" unique_id=1845676044]
 custom_minimum_size = Vector2(15, 0)

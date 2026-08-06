@@ -57,6 +57,9 @@ public struct APIUserInfo
 	[JsonPropertyName("isStaff")]
 	public bool IsStaff { get; set; }
 
+	[JsonPropertyName("isBirthdayToday")]
+	public bool IsBirthdayToday { get; set; }
+
 	[JsonPropertyName("userRoleClass")]
 	public string UserRoleClass { get; set; }
 

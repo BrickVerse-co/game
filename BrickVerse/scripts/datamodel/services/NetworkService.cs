@@ -937,7 +937,13 @@ public sealed partial class NetworkService : Instance
 			plr.IsAdmin = validateRes.IsStaff;
 			plr.UserRoleClass = userData.UserRoleClass ?? "";
 			plr.IsStarCreator = validateRes.IsStarCreator;
+			plr.IsGovOfficial = validateRes.IsGovOfficial;
+			plr.IsPartner = validateRes.IsPartner;
+			plr.IsBetaTester = validateRes.IsBetaTester;
+			plr.IsTrustedReporter = validateRes.IsTrustedReporter;
 			plr.HasVerifiedBadge = validateRes.HasVerifiedBadge;
+			plr.MembershipType = userData.MembershipType ?? "";
+			plr.IsBirthdayToday = userData.IsBirthdayToday;
 			plr.IsCreator = validateRes.IsCreator;
 			plr.IsAgeRestricted = validateRes.IsAgeRestricted;
 			plr.ChatRestrictionReason = validateRes.ChatRestrictionReason ?? "";
@@ -946,7 +952,7 @@ public sealed partial class NetworkService : Instance
 
 			if (plr.IsAdmin)
 			{
-				plr.ChatColor = Color.FromHtml("#DD5555");
+				plr.ChatColor = Color.FromHtml("#0f9fff");
 			}
 			else if (plr.IsCreator)
 			{

@@ -16,6 +16,7 @@ public partial class UILeaderboardUserItem : Button
 	[Export] private Label _usernameLabel = null!;
 	[Export] private Control _statsBox = null!;
 	[Export] private TextureRect _badgeRect = null!;
+	[Export] private TextureRect _verifiedBadgeRect = null!;
 
 	public Player TargetPlayer = null!;
 	public UILeaderboard Leaderboard = null!;
@@ -23,7 +24,7 @@ public partial class UILeaderboardUserItem : Button
 	public override void _Ready()
 	{
 		_usernameLabel.Text = TargetPlayer.Name;
-
+		
 		if (TargetPlayer.UserInfo.HasValue)
 		{
 			UpdateUserInfo(TargetPlayer.UserInfo.Value);
@@ -32,6 +33,8 @@ public partial class UILeaderboardUserItem : Button
 		{
 			TargetPlayer.UserInfoReady += UpdateUserInfo;
 		}
+
+		_verifiedBadgeRect.Visible = TargetPlayer.HasVerifiedBadge;
 
 		TargetPlayer.StatChanged.Connect(OnStatChanged);
 

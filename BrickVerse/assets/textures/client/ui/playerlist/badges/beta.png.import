@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ecx6j2l2dob2"
-path="res://.godot/imported/asset-designer.png-84e77000ea449f2cae1d316da6721530.ctex"
+uid="uid://wvu2w23shv10"
+path="res://.godot/imported/beta.png-1ffa486d0d8da8b61dcced386a31b05b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/client/ui/playerlist/badges/asset-designer.png"
-dest_files=["res://.godot/imported/asset-designer.png-84e77000ea449f2cae1d316da6721530.ctex"]
+source_file="res://assets/textures/client/ui/playerlist/badges/beta.png"
+dest_files=["res://.godot/imported/beta.png-1ffa486d0d8da8b61dcced386a31b05b.ctex"]
 
 [params]
 

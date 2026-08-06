@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b0f1hjtckvmeq"
-path="res://.godot/imported/plusdx.png-bca455c7ef7f4a6a542d09cabc0592e9.ctex"
+uid="uid://cedsmil3upgtx"
+path="res://.godot/imported/level_4.png-ecc216f09d5ab967d198fb33cd639af9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/client/ui/playerlist/badges/plusdx.png"
-dest_files=["res://.godot/imported/plusdx.png-bca455c7ef7f4a6a542d09cabc0592e9.ctex"]
+source_file="res://assets/textures/client/ui/playerlist/badges/level_4.png"
+dest_files=["res://.godot/imported/level_4.png-ecc216f09d5ab967d198fb33cd639af9.ctex"]
 
 [params]
 
