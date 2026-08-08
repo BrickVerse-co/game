@@ -54,6 +54,7 @@ public static class XmlFormat
 		PartMaterialEnum.Dirt,
 		PartMaterialEnum.Stone,
 		PartMaterialEnum.Snow,
+		PartMaterialEnum.Stud,
 		PartMaterialEnum.Ice,
 		PartMaterialEnum.RustyIron,
 		PartMaterialEnum.Sand,

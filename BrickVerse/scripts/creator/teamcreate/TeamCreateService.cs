@@ -337,11 +337,11 @@ public sealed partial class TeamCreateService : Node
 				"Team Create status response is missing the boolean 'enabled' field.");
 
 		bool isEnabled = enabled.GetBoolean();
-		BV.Print(
+		/*BV.Print(
 			"Team Create status for universe ",
 			_universeId,
 			": ",
-			isEnabled ? "enabled" : "disabled");
+			isEnabled ? "enabled" : "disabled");*/
 		return isEnabled;
 	}
 

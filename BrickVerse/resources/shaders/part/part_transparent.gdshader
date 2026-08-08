@@ -11,6 +11,9 @@ uniform float emissive_strength : hint_range(0.0, 5.0) = 0.0;
 uniform float studs_per_tile = 2.0;
 uniform float roughness_value : hint_range(0.0, 1.0) = 0.7;
 uniform float specular_value : hint_range(0.0, 1.0) = 0.5;
+uniform bool use_studs = false;
+uniform float stud_spacing : hint_range(0.25, 4.0) = 1.0;
+uniform float stud_radius : hint_range(0.05, 0.48) = 0.30;
 
 varying vec3 v_local_pos;
 varying vec3 v_local_normal;
@@ -62,6 +65,21 @@ void fragment() {
 	
 	if (use_albedo_texture) {
 		albedo_color *= texture(albedo, uv);
+	}
+
+	if (use_studs && n.y > 0.9) {
+		vec2 stud_grid = part_space.xz + v_object_scale.xz * 0.5;
+		vec2 stud_cell = fract(stud_grid / stud_spacing) - vec2(0.5);
+		float stud_distance = length(stud_cell) * stud_spacing;
+		float edge_width = max(fwidth(stud_distance), 0.006);
+		float stud_mask = 1.0 - smoothstep(stud_radius - edge_width, stud_radius + edge_width, stud_distance);
+		float normalized_distance = clamp(stud_distance / stud_radius, 0.0, 1.0);
+		float dome = sqrt(max(0.0, 1.0 - normalized_distance * normalized_distance));
+		vec3 stud_normal = normalize(vec3(-stud_cell.x * 1.8, stud_cell.y * 1.8, max(0.22, dome)));
+		NORMAL_MAP = mix(vec3(0.5, 0.5, 1.0), stud_normal * 0.5 + 0.5, stud_mask);
+		NORMAL_MAP_DEPTH = 0.85;
+		float rim = smoothstep(stud_radius - 0.055, stud_radius, stud_distance) * stud_mask;
+		albedo_color.rgb *= 1.0 + dome * stud_mask * 0.055 - rim * 0.10;
 	}
 
 	ALBEDO = albedo_color.rgb * COLOR.rgb;
