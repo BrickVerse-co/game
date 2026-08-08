@@ -123,23 +123,11 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
 		_runtimeDebugWindows[processId] = window;
-		Interface.AddChild(window);
-		window.Popup();
-		PositionRuntimeDebugWindow(window);
-	}
-
-	private void PositionRuntimeDebugWindow(RuntimeDebugWindow window)
-	{
-		Vector2I mainPosition = GetWindow().Position;
-		Vector2I mainSize = GetWindow().Size;
-		Rect2I usable = DisplayServer.ScreenGetUsableRect(DisplayServer.WindowGetCurrentScreen());
-		int cascade = Math.Max(0, _runtimeDebugWindows.Count - 1) * 32;
-		Vector2I target = new(mainPosition.X + mainSize.X + 16 + cascade, mainPosition.Y + cascade);
-
-		if (target.X + window.Size.X > usable.End.X)
-			target.X = Math.Max(usable.Position.X, mainPosition.X - window.Size.X - 16 - cascade);
-		target.Y = Mathf.Clamp(target.Y, usable.Position.Y, Math.Max(usable.Position.Y, usable.End.Y - window.Size.Y));
-		window.Position = target;
+		TabContainer bottomTabs = CreatorGUIRoot.Singleton.GetNode<TabContainer>(
+			"Splitter/Center/BottomTabs/Tabs"
+		);
+		bottomTabs.AddChild(window);
+		window.Activate();
 	}
 
 	public void ShowRuntimeDebugWindows()
@@ -147,8 +135,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
 		{
 			if (!IsInstanceValid(window)) continue;
-			window.Show();
-			window.GrabFocus();
+			window.Activate();
 		}
 	}
 
@@ -292,8 +279,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			if (child is Window window
 				&& window.Visible
-				&& window.IsEmbedded()
-				&& window is not RuntimeDebugWindow)
+				&& window.IsEmbedded())
 				return true;
 			if (HasVisibleEmbeddedPopup(child)) return true;
 		}

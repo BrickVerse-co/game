@@ -11,7 +11,7 @@ namespace BrickVerse.Creator.Debugger;
 /// Live view of a play-test process. Runtime changes are intentionally sent
 /// through the debugger instead of mutating the saved Creator world.
 /// </summary>
-public sealed partial class RuntimeDebugWindow : Window
+public sealed partial class RuntimeDebugWindow : MarginContainer
 {
 	private readonly DebugServer _server;
 	private readonly int _processId;
@@ -25,15 +25,20 @@ public sealed partial class RuntimeDebugWindow : Window
 	{
 		_server = server;
 		_processId = processId;
-		Title = isServer ? "Play Test — Server Runtime" : "Play Test — Client Runtime";
-		Size = new Vector2I(900, 700);
-		MinSize = new Vector2I(640, 420);
-		Transient = false;
-		ForceNative = true;
+		Name = isServer ? "Server Runtime" : "Client Runtime";
+		CustomMinimumSize = new Vector2(0, 260);
+		SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+		AddThemeConstantOverride("margin_left", 7);
+		AddThemeConstantOverride("margin_top", 7);
+		AddThemeConstantOverride("margin_right", 7);
+		AddThemeConstantOverride("margin_bottom", 7);
+		SetMeta("_tab_name", Name);
 
 		TabContainer tabs = new();
 		AddChild(tabs);
-		tabs.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		tabs.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		tabs.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 
 		HSplitContainer inspector = new() { Name = "Explorer & Properties" };
 		inspector.AddChild(_explorer);
@@ -56,7 +61,13 @@ public sealed partial class RuntimeDebugWindow : Window
 		_explorer.ItemEdited += OnExplorerItemEdited;
 		execute.Pressed += Execute;
 		_executor.TextSubmitted += _ => Execute();
-		CloseRequested += Hide;
+	}
+
+	public void Activate()
+	{
+		Show();
+		if (GetParent() is TabContainer tabs)
+			tabs.CurrentTab = tabs.GetTabIdxFromControl(this);
 	}
 
 	public override async void _Ready()
