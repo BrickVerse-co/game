@@ -938,6 +938,8 @@ public sealed partial class NetworkService : Instance
 			plr.UserRoleClass = userData.UserRoleClass ?? "";
 			plr.IsStarCreator = validateRes.IsStarCreator;
 			plr.IsGovOfficial = validateRes.IsGovOfficial;
+			plr.IsUniverseTester = validateRes.IsUniverseTester;
+			plr.IsUniverseAdmin = validateRes.IsUniverseAdmin;
 			plr.IsPartner = validateRes.IsPartner;
 			plr.IsBetaTester = validateRes.IsBetaTester;
 			plr.IsTrustedReporter = validateRes.IsTrustedReporter;

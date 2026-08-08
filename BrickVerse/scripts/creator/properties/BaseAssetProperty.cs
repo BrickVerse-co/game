@@ -63,6 +63,10 @@ public sealed partial class BaseAssetProperty : Control, IProperty<BaseAsset?>
 			{
 				typeToLoad = typeof(AudioAsset);
 			}
+			else if (baseAsset is FontAsset)
+			{
+				typeToLoad = typeof(FontAsset);
+			}
 
 			IPropertySubview? subview = Globals.LoadSubviewProperty(typeToLoad);
 			if (subview != null)

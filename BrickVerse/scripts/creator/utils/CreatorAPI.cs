@@ -928,6 +928,32 @@ public static class CreatorAPI
 		return GetWorldsByOwner($"/v3/worlds/guild/{Uri.EscapeDataString(guildId)}");
 	}
 
+	/// <summary>
+	/// Renews Creator's server-side presence. Repeated start calls are intentional:
+	/// they act as a heartbeat so a crashed editor is not counted indefinitely.
+	/// </summary>
+	public static async Task UpdateStudioPresence(long worldId, bool active)
+	{
+		if (!IsUserAuthenticated || Globals.UseNoHttp)
+			return;
+
+		try
+		{
+			await EnsureTokenValid();
+			string state = active ? "start" : "end";
+			string url = Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/editor/presence/{worldId}/{state}"
+			);
+			using HttpResponseMessage response = await _client.PostAsync(url, new ByteArrayContent([]));
+			if (!response.IsSuccessStatusCode)
+				BV.PrintErr($"Creator presence update failed: {(int)response.StatusCode} {response.StatusCode}");
+		}
+		catch (Exception error)
+		{
+			BV.PrintErr("Creator presence update failed: ", error.Message);
+		}
+	}
+
 	private static async Task<CreatorPlaceItem[]> GetWorldsByOwner(string route)
 	{
 		if (!IsUserAuthenticated)

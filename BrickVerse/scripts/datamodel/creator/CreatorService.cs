@@ -63,6 +63,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private double _runtimeViewportForceSyncElapsed;
 	private double _popupStackSyncElapsed;
 	private bool _creatorPromotedForPopup;
+	private double _studioPresenceHeartbeatElapsed;
 
 	public CreatorService()
 	{
@@ -89,6 +90,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		OS.LowProcessorUsageMode = true;
 		Globals.BeforeQuit += OnBeforeQuit;
+		CreatorAPI.UserAuthenticated += OnCreatorAuthenticated;
 		DebugServer = new();
 		DebugServer.Start();
 		DebugServer.RuntimeConnected += OnRuntimeConnected;
@@ -97,12 +99,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 		DebugServer.RuntimeLogReceived += OnRuntimeLogReceived;
 
 		DisplayServer.WindowSetDropFilesCallback(Callable.From<string[]>(OnFilesDropped));
+		_ = CreatorAPI.UpdateStudioPresence(0, active: true);
 		base._Ready();
 	}
 
 	public override void _ExitTree()
 	{
 		Globals.BeforeQuit -= OnBeforeQuit;
+		CreatorAPI.UserAuthenticated -= OnCreatorAuthenticated;
 		DebugServer.RuntimeConnected -= OnRuntimeConnected;
 		DebugServer.RuntimeDisconnected -= OnRuntimeDisconnected;
 		DebugServer.RuntimeSnapshotReceived -= OnRuntimeSnapshotReceived;
@@ -123,23 +127,17 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
 		_runtimeDebugWindows[processId] = window;
-		Interface.AddChild(window);
-		window.Popup();
-		PositionRuntimeDebugWindow(window);
+		TabContainer bottomTabs = CreatorGUIRoot.Singleton.GetNode<TabContainer>(
+			"Splitter/Center/BottomTabs/Tabs"
+		);
+		bottomTabs.AddChild(window);
+		window.Activate();
 	}
 
-	private void PositionRuntimeDebugWindow(RuntimeDebugWindow window)
+	private void OnCreatorAuthenticated(BrickVerse.Schemas.API.OpenIdUserInfoResponse _)
 	{
-		Vector2I mainPosition = GetWindow().Position;
-		Vector2I mainSize = GetWindow().Size;
-		Rect2I usable = DisplayServer.ScreenGetUsableRect(DisplayServer.WindowGetCurrentScreen());
-		int cascade = Math.Max(0, _runtimeDebugWindows.Count - 1) * 32;
-		Vector2I target = new(mainPosition.X + mainSize.X + 16 + cascade, mainPosition.Y + cascade);
-
-		if (target.X + window.Size.X > usable.End.X)
-			target.X = Math.Max(usable.Position.X, mainPosition.X - window.Size.X - 16 - cascade);
-		target.Y = Mathf.Clamp(target.Y, usable.Position.Y, Math.Max(usable.Position.Y, usable.End.Y - window.Size.Y));
-		window.Position = target;
+		long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+		CreatorAPI.UpdateStudioPresence(worldId, active: true);
 	}
 
 	public void ShowRuntimeDebugWindows()
@@ -147,8 +145,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		foreach (RuntimeDebugWindow window in _runtimeDebugWindows.Values)
 		{
 			if (!IsInstanceValid(window)) continue;
-			window.Show();
-			window.GrabFocus();
+			window.Activate();
 		}
 	}
 
@@ -198,6 +195,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private void OnBeforeQuit()
 	{
+		long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+		_ = CreatorAPI.UpdateStudioPresence(worldId, active: false);
+
 		try
 		{
 			StopLocalTest();
@@ -246,6 +246,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public override void _Process(double delta)
 	{
+		_studioPresenceHeartbeatElapsed += delta;
+		if (_studioPresenceHeartbeatElapsed >= 30.0)
+		{
+			_studioPresenceHeartbeatElapsed = 0.0;
+			long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+			_ = CreatorAPI.UpdateStudioPresence(worldId, active: true);
+		}
+
 		if (LocalTestActive)
 		{
 			foreach (int procID in LocalTestProcesses.ToArray())
@@ -292,8 +300,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 		{
 			if (child is Window window
 				&& window.Visible
-				&& window.IsEmbedded()
-				&& window is not RuntimeDebugWindow)
+				&& window.IsEmbedded())
 				return true;
 			if (HasVisibleEmbeddedPopup(child)) return true;
 		}

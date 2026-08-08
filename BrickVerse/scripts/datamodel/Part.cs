@@ -143,7 +143,7 @@ public partial class Part : Entity
 		}
 	}
 
-	[Editable, ScriptProperty, DefaultValue(PartMaterialEnum.SmoothPlastic)]
+	[Editable, ScriptProperty, DefaultValue(PartMaterialEnum.Stud)]
 	public PartMaterialEnum Material
 	{
 		get => _material;
@@ -342,6 +342,7 @@ public partial class Part : Entity
 		Sandstone,
 		Snow,
 		Stone,
+		Stud,
 		Wood
 	}
 }

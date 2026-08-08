@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using BrickVerse.Shared;
+using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -259,7 +260,16 @@ internal sealed class ForgeChatClient
 			Content = new StringContent(json, Encoding.UTF8, "application/json"),
 		};
 
-		if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+		if (settings.Provider == ForgeProviderKind.ForgeFree)
+		{
+			if (string.IsNullOrWhiteSpace(CreatorAPI.Token))
+			{
+				throw new InvalidOperationException("Sign in to BrickVerse before using Forge Free.");
+			}
+
+			httpRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {CreatorAPI.Token}");
+		}
+		else if (!string.IsNullOrWhiteSpace(settings.ApiKey))
 		{
 			if (settings.Provider == ForgeProviderKind.Anthropic)
 			{

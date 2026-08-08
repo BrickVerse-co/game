@@ -1,0 +1,20 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://debmrwsbhstpu"]
+
+[ext_resource type="Shader" uid="uid://dylteiumvf3c7" path="res://resources/shaders/part/part.gdshader" id="1_yslrh"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Stud"
+render_priority = 0
+shader = ExtResource("1_yslrh")
+shader_parameter/use_albedo_texture = false
+shader_parameter/use_orm_texture = false
+shader_parameter/use_normal_texture = false
+shader_parameter/emissive_strength = 0.0
+shader_parameter/metallic_specular = 0.2
+shader_parameter/roughness = 0.7
+shader_parameter/metallic = 0.0
+shader_parameter/studs_per_tile = 2.0
+shader_parameter/use_studs = true
+shader_parameter/stud_spacing = 1.0
+shader_parameter/stud_radius = 0.3

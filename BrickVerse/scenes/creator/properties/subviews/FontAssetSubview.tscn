@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/properties/subviews/FontAssetSubview.cs" id="1_font_preview"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFontPreview"]
+bg_color = Color(0.055, 0.075, 0.098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.22, 0.29, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 9.0
+content_margin_top = 7.0
+content_margin_right = 9.0
+content_margin_bottom = 7.0
+
+[node name="FontAssetView" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 69)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFontPreview")
+script = ExtResource("1_font_preview")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Sample" type="Label" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 19
+text = "Loading font preview…"
+text_overrun_behavior = 3
+vertical_alignment = 1
+
+[node name="Status" type="Label" parent="Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.62, 0.78, 1)
+theme_override_font_sizes/font_size = 10
+text = "Font resource is loading"
