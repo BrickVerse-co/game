@@ -307,6 +307,12 @@ public sealed partial class Player : NPC
 	public bool IsCreator { get; internal set; }
 
 	[ScriptProperty, SyncVar]
+	public bool IsUniverseTester { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
+	public bool IsUniverseAdmin { get; internal set; } = false;
+
+	[ScriptProperty, SyncVar]
 	public string UserRoleClass { get; internal set; } = "";
 
 	[ScriptProperty, SyncVar]
@@ -369,6 +375,8 @@ public sealed partial class Player : NPC
 		string badgeName = player.IsCreator ? "creator"
 			: player.IsAdmin ? "admin"
 			: player.IsGovOfficial ? "gov"
+			: player.IsUniverseAdmin ? "universe_mod"
+			: player.IsUniverseTester ? "universe_tester"
 			: player.IsStarCreator ? "star"
 			: player.IsPartner ? "partner"
 			: player.IsBetaTester ? "beta"
