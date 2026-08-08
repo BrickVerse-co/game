@@ -63,6 +63,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private double _runtimeViewportForceSyncElapsed;
 	private double _popupStackSyncElapsed;
 	private bool _creatorPromotedForPopup;
+	private double _studioPresenceHeartbeatElapsed;
 
 	public CreatorService()
 	{
@@ -89,6 +90,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		OS.LowProcessorUsageMode = true;
 		Globals.BeforeQuit += OnBeforeQuit;
+		CreatorAPI.UserAuthenticated += OnCreatorAuthenticated;
 		DebugServer = new();
 		DebugServer.Start();
 		DebugServer.RuntimeConnected += OnRuntimeConnected;
@@ -97,12 +99,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 		DebugServer.RuntimeLogReceived += OnRuntimeLogReceived;
 
 		DisplayServer.WindowSetDropFilesCallback(Callable.From<string[]>(OnFilesDropped));
+		_ = CreatorAPI.UpdateStudioPresence(0, active: true);
 		base._Ready();
 	}
 
 	public override void _ExitTree()
 	{
 		Globals.BeforeQuit -= OnBeforeQuit;
+		CreatorAPI.UserAuthenticated -= OnCreatorAuthenticated;
 		DebugServer.RuntimeConnected -= OnRuntimeConnected;
 		DebugServer.RuntimeDisconnected -= OnRuntimeDisconnected;
 		DebugServer.RuntimeSnapshotReceived -= OnRuntimeSnapshotReceived;
@@ -128,6 +132,12 @@ public sealed partial class CreatorService : Node, IScriptObject
 		);
 		bottomTabs.AddChild(window);
 		window.Activate();
+	}
+
+	private void OnCreatorAuthenticated(BrickVerse.Schemas.API.OpenIdUserInfoResponse _)
+	{
+		long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+		CreatorAPI.UpdateStudioPresence(worldId, active: true);
 	}
 
 	public void ShowRuntimeDebugWindows()
@@ -185,6 +195,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private void OnBeforeQuit()
 	{
+		long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+		_ = CreatorAPI.UpdateStudioPresence(worldId, active: false);
+
 		try
 		{
 			StopLocalTest();
@@ -233,6 +246,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public override void _Process(double delta)
 	{
+		_studioPresenceHeartbeatElapsed += delta;
+		if (_studioPresenceHeartbeatElapsed >= 30.0)
+		{
+			_studioPresenceHeartbeatElapsed = 0.0;
+			long worldId = CurrentSession?.Metadata.WorldId ?? 0;
+			_ = CreatorAPI.UpdateStudioPresence(worldId, active: true);
+		}
+
 		if (LocalTestActive)
 		{
 			foreach (int procID in LocalTestProcesses.ToArray())
