@@ -121,6 +121,7 @@ public sealed partial class InsertService : Instance
 	{
 		ApplyAssetAuthHeaders();
 		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
+		msg.EnsureSuccessStatusCode();
 		byte[] modelBytes = await msg.Content.ReadAsByteArrayAsync();
 
 		if (optionalName != null)
@@ -148,6 +149,16 @@ public sealed partial class InsertService : Instance
 			Root.TemporaryContainer,
 			optionalName
 		);
+		if (model == null)
+		{
+			BV.PrintErr($"Toolbox prefab {id} could not be imported.");
+			return null;
+		}
+
+		// PackedFormat writes embedded FileLinkAsset contents into toolbox/<model>/
+		// before loading the tree. Rescan now so a clean project immediately owns
+		// the scripts and subsequent saves/publishes retain them.
+		Root.LinkedSession?.RescanFolder();
 		return model;
 	}
 #endif
