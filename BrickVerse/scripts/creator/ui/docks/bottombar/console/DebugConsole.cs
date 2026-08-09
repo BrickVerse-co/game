@@ -67,6 +67,10 @@ public partial class DebugConsole : Control
 		VisibilityChanged += OnVisibilityChanged;
 		_clearBtn.Pressed += Clear;
 		_searchEdit.TextChanged += _ => OnSearch();
+		// Console entries deliberately use BBCode for colours, links and escaped
+		// bracket characters. Without this flag Godot renders tokens such as [lb]
+		// literally instead of treating them as escaped text.
+		_richLabel.BbcodeEnabled = true;
 		_richLabel.Text = "";
 		_richLabel.MetaClicked += OnTraceClicked;
 		VScrollBar scrollBar = _richLabel.GetVScrollBar();

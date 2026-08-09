@@ -36,10 +36,16 @@ public class LuaCompletionService(CreatorSession session)
 
 	public async Task InitAsync()
 	{
+		string definitionPath = Path.Combine(_workspacePath, ".bvproject", "luau", "def.d.luau");
+		if (!File.Exists(definitionPath))
+			throw new FileNotFoundException("Generated BrickVerse Luau definitions were not found.", definitionPath);
+
 		ProcessStartInfo processStartInfo = new()
 		{
 			FileName = NativeBinHelper.ResolveLuauLspBinPath(),
-			Arguments = "lsp --stdio --definitions=@bvproject=.bvproject/luau/def.d.luau",
+			// Pass an absolute definition file so the server cannot lose BrickVerse
+			// globals when a project is opened from a path containing spaces.
+			Arguments = $"lsp --stdio --definitions=\"{definitionPath}\"",
 			RedirectStandardInput = true,
 			RedirectStandardOutput = true,
 			RedirectStandardError = true,

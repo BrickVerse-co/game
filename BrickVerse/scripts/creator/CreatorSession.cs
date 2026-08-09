@@ -259,7 +259,7 @@ public partial class CreatorSession : Node, IDisposable
 
 	private void SetupLuaDocs()
 	{
-		const string definitionSchemaVersion = "2";
+		const string definitionSchemaVersion = "3";
 		string expectedDefinitionVersion = $"{Globals.AppVersion}:luau-{definitionSchemaVersion}";
 		string luauRcPath = ProjectFolderPath.PathJoin(".luaurc");
 		string luauPath = BVProjectFolderPath.PathJoin("luau");

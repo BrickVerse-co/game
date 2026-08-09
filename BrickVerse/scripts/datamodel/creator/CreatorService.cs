@@ -63,6 +63,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private double _runtimeViewportForceSyncElapsed;
 	private double _popupStackSyncElapsed;
 	private bool _creatorPromotedForPopup;
+	private bool _runtimeViewportInteractionActive = true;
 	private double _studioPresenceHeartbeatElapsed;
 
 	public CreatorService()
@@ -276,6 +277,19 @@ public sealed partial class CreatorService : Node, IScriptObject
 		base._Process(delta);
 	}
 
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		if (@event is InputEventMouseButton { Pressed: true } mouseButton
+			&& _primaryRuntimeClientProcess.HasValue)
+		{
+			WorldContainer? worldContainer = Tabs.Singleton?.CurrentWorldContainer;
+			_runtimeViewportInteractionActive = worldContainer != null
+				&& worldContainer.GetGlobalRect().HasPoint(mouseButton.Position);
+			_runtimeViewportSyncElapsed = double.MaxValue;
+		}
+		base._UnhandledInput(@event);
+	}
+
 	private void SyncEditorPopupStack(double delta)
 	{
 		if (!_primaryRuntimeClientProcess.HasValue && !_creatorPromotedForPopup) return;
@@ -320,7 +334,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Rect2I? rect = GetCurrentWorldViewportScreenRect();
 		bool visible = rect.HasValue
 			&& GetWindow().Mode != Window.ModeEnum.Minimized
-			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
+			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true
+			&& _runtimeViewportInteractionActive;
 
 		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
 		if (!forceSync && rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
