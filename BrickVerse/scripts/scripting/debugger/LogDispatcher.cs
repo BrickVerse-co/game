@@ -143,7 +143,12 @@ public partial class LogDispatcher : NetworkedObject
 
 		TryForwardClientLogToServer(data);
 
-		if (Root.Network.IsServer && Root.Network.IsProd)
+		// Creator and local play-tests have their own debugger/output pipeline.
+		// Never upload those logs to the production server-log API.
+		if (Root.Network.IsServer
+			&& Root.Network.IsProd
+			&& Root.SessionType != World.SessionTypeEnum.Creator
+			&& Root.Entry?.IsSoloTest != true)
 		{
 			ServerLogSource source = data.LogFrom == LogFromEnum.Client ? ServerLogSource.Client : ServerLogSource.Server;
 			ServerLogLevel level = data.LogType switch

@@ -96,7 +96,14 @@ public class LuaDefinitionGenerator
 		{
 			builder.AppendLine($"declare {item.StaticAlias}: {item.Name}");
 		}
+		// These are installed by LuauProvider for every script. Keep the
+		// declarations explicit: not every runtime global is represented by a
+		// static ScriptClass alias in the generated API reference.
+		bool declaresWorldAlias = refer.Classes.Any(item =>
+			item.IsStatic && string.Equals(item.StaticAlias, "world", System.StringComparison.Ordinal));
+		if (!declaresWorldAlias) builder.AppendLine("declare world: World");
 		builder.AppendLine("declare game: World");
+		builder.AppendLine("declare script: Script");
 		builder.AppendLine("declare function warn(...: any): ()");
 
 		File.WriteAllText(atFolder.PathJoin("def.d.luau"), builder.ToString());

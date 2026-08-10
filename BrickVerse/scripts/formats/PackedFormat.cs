@@ -242,19 +242,15 @@ public static partial class PackedFormat
 	{
 		progress?.Report(new() { Status = "Packing Model" });
 
-		string rootFolderPath = model.Root.LinkedSession.ProjectFolderPath;
 		FileLinkAsset[] fileLinks = [.. model.Root.Assets.FileLinks.Values];
-
-		int i = 0;
 
 		Dictionary<string, string> indexToFile = [];
 
 		// List files to be processed
-		List<(FileLinkAsset asset, string linkedPath, string originPath)> filesToProcess = [];
+		List<(string archivePath, byte[] contents)> filesToProcess = [];
 
 		foreach (FileLinkAsset f in fileLinks)
 		{
-			i++;
 			bool hadUsed = false;
 			foreach (NetworkedObject item in f.LinkedTo)
 			{
@@ -266,61 +262,32 @@ public static partial class PackedFormat
 			}
 			if (!hadUsed) continue;
 
-			string? linkedPath = f.LinkedPath;
-			if (linkedPath == null) continue;
-
-			indexToFile.Add(f.LinkedID, linkedPath);
-			string originPath = Path.GetFullPath(Path.Join(rootFolderPath, linkedPath));
-
-			if (!File.Exists(originPath))
+			// Read through the FileLink rather than directly from the project folder.
+			// Imported prefabs use @temp paths, so direct project reads drop their
+			// scripts when a model is re-published from a clean project.
+			byte[]? contents = f.ReadFile();
+			if (contents == null)
 			{
-				BV.PrintErr(linkedPath, " doesn't exist");
-				continue;
-			}
-			if (!PathUtils.IsPathInsideDirectory(originPath, rootFolderPath))
-			{
-				BV.PrintErr(linkedPath, " is beyond project directory");
+				BV.PrintWarn("Skipping missing prefab file link: ", f.LinkedID);
 				continue;
 			}
 
-			filesToProcess.Add((f, linkedPath, originPath));
+			string extension = Path.GetExtension(f.LinkedPath ?? "script.luau");
+			if (string.IsNullOrWhiteSpace(extension)) extension = ".luau";
+			string archivePath = $"embedded/{f.LinkedID.Replace(':', '_')}{extension}";
+			indexToFile[f.LinkedID] = archivePath;
+			filesToProcess.Add((archivePath, contents));
 		}
-
-		ConcurrentDictionary<string, byte[]> fileContents = new();
-		int totalFiles = filesToProcess.Count;
-		int processedFiles = 0;
-
-		ParallelOptions parallelOptions = new()
-		{
-			MaxDegreeOfParallelism = Math.Min(MaxParallelism, System.Environment.ProcessorCount)
-		};
-
-		// Parallel read
-		await Parallel.ForEachAsync(filesToProcess, parallelOptions, async (fileInfo, ct) =>
-		{
-			var (asset, linkedPath, originPath) = fileInfo;
-
-			byte[] fileData = await File.ReadAllBytesAsync(originPath, ct);
-			fileContents[linkedPath] = fileData;
-
-			int current = Interlocked.Increment(ref processedFiles);
-			progress?.Report(new() { Status = $"Reading {linkedPath} ({current}/{totalFiles})", Current = current, Total = totalFiles });
-		});
 
 		// Write to zip sequentially
 		int writeIndex = 0;
-		foreach (var (asset, linkedPath, originPath) in filesToProcess)
+		foreach (var (archivePath, contents) in filesToProcess)
 		{
 			writeIndex++;
-			progress?.Report(new() { Status = $"Writing {linkedPath} ({writeIndex}/{totalFiles})", Current = writeIndex, Total = totalFiles });
-
-
-			if (fileContents.TryGetValue(linkedPath, out byte[]? fileData))
-			{
-				ZipArchiveEntry entry = archive.CreateEntry(linkedPath);
-				using Stream entryStream = entry.Open();
-				await entryStream.WriteAsync(fileData);
-			}
+			progress?.Report(new() { Status = $"Embedding {archivePath} ({writeIndex}/{filesToProcess.Count})", Current = writeIndex, Total = filesToProcess.Count });
+			ZipArchiveEntry entry = archive.CreateEntry(archivePath);
+			using Stream entryStream = entry.Open();
+			await entryStream.WriteAsync(contents);
 		}
 
 		// Pack main model data
@@ -649,11 +616,17 @@ public static partial class PackedFormat
 						string writeToPath = Path.Join(baseAssetFolder, modelData.ModelName, originFilePath).SanitizePath();
 						string fileID = item.Key;
 
-						finalIndexToFile[fileID] = writeToPath;
-
 						if (modelData.FileContents.TryGetValue(originFilePath, out byte[]? fileContent))
 						{
 							root.IO.WriteBytesToPath(writeToPath, fileContent);
+							// The source is now part of this world/project. PolyFormat uses
+							// this mapping to create a fresh FileLinkAsset for the imported
+							// script or file, rather than retaining the publisher's path.
+							finalIndexToFile[fileID] = writeToPath;
+						}
+						else
+						{
+							BV.PrintWarn($"Packed model {modelData.ModelName} is missing embedded file {originFilePath}.");
 						}
 					}
 				}

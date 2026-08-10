@@ -11,6 +11,7 @@ using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -405,15 +406,87 @@ public partial class TextEditorRoot : Node
 		}
 	}
 
-	public void FormatDocument() => FormatLines(0, CodeEditor.GetLineCount() - 1);
+	public async void FormatDocument() =>
+		await FormatRangeAsync(0, CodeEditor.GetLineCount() - 1, "document");
 
-	public void FormatSelection()
+	public async void FormatSelection()
 	{
 		if (!CodeEditor.HasSelection()) return;
-		FormatLines(CodeEditor.GetSelectionFromLine(), CodeEditor.GetSelectionToLine());
+		await FormatRangeAsync(CodeEditor.GetSelectionFromLine(), CodeEditor.GetSelectionToLine(), "selection");
 	}
 
-	private void FormatLines(int fromLine, int toLine)
+	private async Task FormatRangeAsync(int fromLine, int toLine, string target)
+	{
+		fromLine = Math.Max(0, fromLine);
+		toLine = Math.Min(CodeEditor.GetLineCount() - 1, toLine);
+		if (fromLine > toLine) return;
+
+		if (Container.CodeCompletion == FileTypeEnum.Lua)
+		{
+			string source = string.Join("\n", Enumerable.Range(fromLine, toLine - fromLine + 1)
+				.Select(CodeEditor.GetLine));
+			string? formatted = await FormatLuauWithStyluaAsync(source);
+			if (formatted != null)
+			{
+				CodeEditor.BeginComplexOperation();
+				CodeEditor.Select(fromLine, 0, toLine, CodeEditor.GetLine(toLine).Length);
+				CodeEditor.InsertTextAtCaret(formatted.TrimEnd('\r', '\n'));
+				CodeEditor.EndComplexOperation();
+				CreatorService.Interface.StatusBar?.SetStatus("Formatted " + target + " with StyLua");
+				return;
+			}
+		}
+
+		FormatLinesFallback(fromLine, toLine);
+		CreatorService.Interface.StatusBar?.SetStatus(
+			"StyLua is unavailable; applied basic formatting to " + target
+		);
+	}
+
+	private static async Task<string?> FormatLuauWithStyluaAsync(string source)
+	{
+		try
+		{
+			ProcessStartInfo startInfo = new()
+			{
+				// StyLua is intentionally resolved from PATH. This keeps the editor
+				// compatible with an updated packaged binary or a creator-installed one.
+				FileName = OS.HasFeature("windows") ? "stylua.exe" : "stylua",
+				Arguments = "--stdin-filepath script.luau -",
+				RedirectStandardInput = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+				CreateNoWindow = true,
+			};
+			Process? process = Process.Start(startInfo);
+			if (process == null) return null;
+			using (process)
+			{
+			Task<string> output = process.StandardOutput.ReadToEndAsync();
+			Task<string> errors = process.StandardError.ReadToEndAsync();
+			await process.StandardInput.WriteAsync(source);
+			process.StandardInput.Close();
+			await process.WaitForExitAsync();
+			string result = await output;
+			string error = await errors;
+			if (process.ExitCode == 0) return result;
+			BV.PrintWarn("StyLua could not format the selection: ", error.Trim());
+			}
+		}
+		catch (System.ComponentModel.Win32Exception)
+		{
+			// StyLua is optional for development builds; the caller uses the
+			// deterministic indentation fallback until it is packaged/installed.
+		}
+		catch (Exception ex)
+		{
+			BV.PrintWarn("StyLua formatter failed: ", ex.Message);
+		}
+		return null;
+	}
+
+	private void FormatLinesFallback(int fromLine, int toLine)
 	{
 		fromLine = Math.Max(0, fromLine);
 		toLine = Math.Min(CodeEditor.GetLineCount() - 1, toLine);
@@ -433,7 +506,6 @@ public partial class TextEditorRoot : Node
 			if (Container.CodeCompletion == FileTypeEnum.Lua && OpensLuauBlock(trimmed))
 				indent++;
 		}
-		CreatorService.Interface.StatusBar?.SetStatus("Formatted " + (fromLine == 0 && toLine == CodeEditor.GetLineCount() - 1 ? "document" : "selection"));
 	}
 
 	private static int CountLeadingIndent(string line)

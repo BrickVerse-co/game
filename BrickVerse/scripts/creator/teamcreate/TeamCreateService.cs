@@ -639,6 +639,7 @@ public sealed partial class TeamCreateService : Node
 				Id = member.GetProperty("id").GetString() ?? "",
 				UserId = member.GetProperty("userId").GetString() ?? "",
 				Username = member.GetProperty("username").GetString() ?? "Unknown",
+				IsVerified = member.TryGetProperty("isVerified", out JsonElement verified) && verified.GetBoolean(),
 			};
 			if (member.TryGetProperty("camera", out JsonElement camera))
 			{
@@ -694,7 +695,7 @@ public sealed partial class TeamCreateService : Node
 				avatar.GlobalRotation = member.Camera.Rotation;
 			}
 			Label3D? label = avatar.GetNodeOrNull<Label3D>("Username");
-			if (label != null) label.Text = DisplayUsername(member.Username);
+			if (label != null) label.Text = DisplayUsername(member.Username, member.IsVerified);
 		}
 
 		foreach ((string id, Node3D avatar) in _cameraAvatars.ToArray())
@@ -758,7 +759,7 @@ public sealed partial class TeamCreateService : Node
 		Label3D label = new()
 		{
 			Name = "Username",
-			Text = DisplayUsername(member.Username),
+			Text = DisplayUsername(member.Username, member.IsVerified),
 			Position = new Vector3(0, 0.48f, 0),
 			Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
 			FixedSize = false,
@@ -773,8 +774,11 @@ public sealed partial class TeamCreateService : Node
 		return avatar;
 	}
 
-	private static string DisplayUsername(string username) =>
-		username.Length <= 24 ? username : username[..21] + "...";
+	private static string DisplayUsername(string username, bool isVerified = false)
+	{
+		string displayName = username.Length <= 24 ? username : username[..21] + "...";
+		return isVerified ? displayName + "  ✓" : displayName;
+	}
 
 	private static Color ColorFromUserId(string userId)
 	{
@@ -1223,6 +1227,7 @@ public sealed class TeamCreateMember
 	public string Id { get; init; } = "";
 	public string UserId { get; init; } = "";
 	public string Username { get; init; } = "";
+	public bool IsVerified { get; init; }
 	public TeamCreateCamera? Camera { get; set; }
 }
 

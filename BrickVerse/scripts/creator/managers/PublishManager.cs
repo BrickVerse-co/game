@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.Managers;
 
-public static class PublishManager
+public static partial class PublishManager
 {
 	public static async Task PublishModel(Instance target, long modelID = 0)
 	{
@@ -24,9 +24,20 @@ public static class PublishManager
 		try
 		{
 			loadOverlay?.SetTitle("Publishing model...");
+			byte[]? preview = null;
+			try
+			{
+				// A thumbnail is an enhancement, never a requirement for publishing.
+				preview = await CaptureModelPreview(target);
+			}
+			catch (Exception previewException)
+			{
+				BV.PrintWarn("Model preview was skipped: ", previewException.Message);
+				CreatorService.Interface.StatusBar?.SetStatus("Preview skipped; publishing model without a thumbnail");
+			}
+
 			loadOverlay?.Show();
-			loadOverlay?.SetStatus("Rendering model preview...");
-			byte[] preview = await CaptureModelPreview(target);
+			loadOverlay?.SetStatus("Packing model...");
 			byte[] packed = await PackedFormat.PackModel(target, loadOverlay.CreateProgressReporter("Publishing model"));
 
 			loadOverlay?.SetStatus("Uploading now...");
@@ -55,10 +66,10 @@ public static class PublishManager
 		}
 	}
 
-	private static async Task<byte[]> CaptureModelPreview(Instance target)
+	private static async Task<byte[]?> CaptureModelPreview(Instance target)
 	{
 		if (target is not Dynamic dynamic || !GodotObject.IsInstanceValid(dynamic.GDNode3D))
-			throw new InvalidOperationException("Only spatial models can be published with a preview.");
+			return null;
 
 		SubViewport viewport = new()
 		{
@@ -68,8 +79,6 @@ public static class PublishManager
 			TransparentBg = false,
 			RenderTargetUpdateMode = SubViewport.UpdateMode.Always,
 		};
-		CreatorService.Interface.AddChild(viewport);
-
 		try
 		{
 			Godot.Environment environment = new()
@@ -91,7 +100,7 @@ public static class PublishManager
 			Vector3 boundsMax = Vector3.Zero;
 			ClonePreviewMeshes(dynamic.GDNode3D, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
 			if (!hasBounds)
-				throw new InvalidOperationException("The model does not contain renderable geometry for a preview.");
+				return null;
 
 			Vector3 center = (boundsMin + boundsMax) * 0.5f;
 			Vector3 size = boundsMax - boundsMin;
@@ -124,6 +133,9 @@ public static class PublishManager
 			};
 			viewport.AddChild(fillLight);
 
+			bool capturePreview = await ConfirmPreviewCamera(viewport, camera, center, distance);
+			if (!capturePreview) return null;
+
 			await CreatorService.Interface.ToSignal(
 				CreatorService.Interface.GetTree(),
 				SceneTree.SignalName.ProcessFrame
@@ -141,6 +153,138 @@ public static class PublishManager
 		finally
 		{
 			viewport.QueueFree();
+		}
+	}
+
+	private static async Task<bool> ConfirmPreviewCamera(
+		SubViewport viewport,
+		Camera3D camera,
+		Vector3 center,
+		float distance
+	)
+	{
+		ModelPreviewCameraPopup popup = new(viewport, camera, center, distance);
+		CreatorService.Interface.AddChild(popup);
+		return await popup.ShowAndWait();
+	}
+
+	private sealed partial class ModelPreviewCameraPopup : Window
+	{
+		private readonly SubViewport _viewport;
+		private readonly Camera3D _camera;
+		private readonly Vector3 _target;
+		private readonly float _defaultDistance;
+		private readonly TaskCompletionSource<bool> _completion = new();
+		private float _yaw = -0.65f;
+		private float _pitch = -0.28f;
+		private float _distance;
+		private bool _dragging;
+
+		public ModelPreviewCameraPopup(SubViewport viewport, Camera3D camera, Vector3 target, float distance)
+		{
+			_viewport = viewport;
+			_camera = camera;
+			_target = target;
+			_defaultDistance = distance;
+			_distance = distance;
+			Title = "Frame Model Preview";
+			Size = new Vector2I(900, 620);
+			MinSize = new Vector2I(640, 480);
+			Exclusive = true;
+			CloseRequested += () => Finish(false);
+			BuildUI();
+		}
+
+		public async Task<bool> ShowAndWait()
+		{
+			PopupCentered();
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			UpdateCamera();
+			return await _completion.Task;
+		}
+
+		private void BuildUI()
+		{
+			VBoxContainer root = new();
+			root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+			root.AddThemeConstantOverride("separation", 10);
+			AddChild(root);
+
+			Label heading = new()
+			{
+				Text = "Choose the thumbnail view for this model",
+				AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			};
+			heading.AddThemeFontSizeOverride("font_size", 20);
+			root.AddChild(heading);
+			root.AddChild(new Label { Text = "Drag to orbit • Mouse wheel to zoom • This does not modify the model." });
+
+			SubViewportContainer preview = new()
+			{
+				CustomMinimumSize = new Vector2(640, 420),
+				SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+				Stretch = true,
+			};
+			preview.AddChild(_viewport);
+			preview.GuiInput += OnPreviewInput;
+			root.AddChild(preview);
+
+			HBoxContainer actions = new() { Alignment = BoxContainer.AlignmentMode.End };
+			Button reset = new() { Text = "Reset view" };
+			reset.Pressed += ResetCamera;
+			actions.AddChild(reset);
+			Button skip = new() { Text = "Publish without preview" };
+			skip.Pressed += () => Finish(false);
+			actions.AddChild(skip);
+			Button confirm = new() { Text = "Use this preview" };
+			confirm.Pressed += () => Finish(true);
+			actions.AddChild(confirm);
+			root.AddChild(actions);
+		}
+
+		private void OnPreviewInput(InputEvent @event)
+		{
+			if (@event is InputEventMouseButton button)
+			{
+				if (button.ButtonIndex == MouseButton.Left) _dragging = button.Pressed;
+				if (button.Pressed && button.ButtonIndex == MouseButton.WheelUp) _distance = Mathf.Max(0.5f, _distance * 0.88f);
+				if (button.Pressed && button.ButtonIndex == MouseButton.WheelDown) _distance = Mathf.Min(100f, _distance * 1.14f);
+				UpdateCamera();
+			}
+			else if (_dragging && @event is InputEventMouseMotion motion)
+			{
+				_yaw -= motion.Relative.X * 0.01f;
+				_pitch = Mathf.Clamp(_pitch - motion.Relative.Y * 0.01f, -1.35f, 1.35f);
+				UpdateCamera();
+			}
+		}
+
+		private void ResetCamera()
+		{
+			_yaw = -0.65f;
+			_pitch = -0.28f;
+			_distance = _defaultDistance;
+			UpdateCamera();
+		}
+
+		private void UpdateCamera()
+		{
+			Vector3 direction = new(
+				Mathf.Cos(_pitch) * Mathf.Sin(_yaw),
+				Mathf.Sin(_pitch),
+				Mathf.Cos(_pitch) * Mathf.Cos(_yaw)
+			);
+			_camera.Position = _target + direction * _distance;
+			_camera.LookAt(_target, Vector3.Up);
+		}
+
+		private void Finish(bool capture)
+		{
+			if (!_completion.TrySetResult(capture)) return;
+			// The capture continues after the dialog closes, so keep its viewport
+			// alive rather than freeing it with the popup tree.
+			_viewport.Reparent(CreatorService.Interface);
+			QueueFree();
 		}
 	}
 
