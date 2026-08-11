@@ -68,6 +68,7 @@ position = Vector2i(0, 34)
 size = Vector2i(900, 610)
 transient = true
 exclusive = true
+always_on_top = true
 borderless = true
 transparent = true
 popup_wm_hint = true
@@ -148,7 +149,11 @@ layout_mode = 2
 [node name="Body" type="HBoxContainer" parent="Modal/Layout" unique_id=1707628496]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
+
+[node name="LeftPadding" type="Control" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
 
 [node name="Left" type="VBoxContainer" parent="Modal/Layout/Body" unique_id=1007829298]
 custom_minimum_size = Vector2(510, 0)
@@ -300,6 +305,10 @@ text = "—"
 custom_minimum_size = Vector2(315, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="RightPadding" type="Control" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
 
 [node name="Form" type="VBoxContainer" parent="Modal/Layout/Body/Right" unique_id=1302093712]
 layout_mode = 2

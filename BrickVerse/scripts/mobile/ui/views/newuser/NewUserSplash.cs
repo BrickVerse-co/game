@@ -2,17 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Mobile.Utils;
+using Godot;
 
 namespace BrickVerse.Mobile.UI;
 
 public partial class NewUserSplash : Control
 {
-	[Export] private Button _registerBtn = null!;
-	[Export] private Button _loginBtn = null!;
-	[Export] private Button _closeBtn = null!;
+	[Export]
+	private Button _registerBtn = null!;
 
+	[Export]
+	private Button _loginBtn = null!;
+
+	[Export]
+	private Button _closeBtn = null!;
 
 	public override void _Ready()
 	{
@@ -44,6 +48,6 @@ public partial class NewUserSplash : Control
 
 	private static void OpenAuthMobile()
 	{
-		PolyMobileAuthAPI.StartMobileAuth();
+		BVMobileAuthAPI.StartMobileAuth();
 	}
 }

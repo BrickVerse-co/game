@@ -107,6 +107,15 @@ public struct CreatorAssetItem
 
 	[JsonPropertyName("textureUrl")]
 	public string? IconUrl { get; set; }
+
+	[JsonPropertyName("assetCategory")]
+	public string Category { get; set; }
+}
+
+public sealed class CreatorAssetPage
+{
+	public CreatorAssetItem[] Items { get; init; } = [];
+	public string? NextCursor { get; init; }
 }
 
 public struct CreatorPublishResponse
@@ -138,6 +147,17 @@ public sealed class PaginationInfo
 	public int TotalPages { get; set; }
 	public bool HasNextPage { get; set; }
 	public bool HasPreviousPage { get; set; }
+}
+
+public sealed class CreatorLatestBinaryResponse
+{
+	[JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
+	[JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
+	[JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
+	[JsonPropertyName("buildNumber")] public int? BuildNumber { get; set; }
+	[JsonPropertyName("platform")] public string Platform { get; set; } = string.Empty;
+	[JsonPropertyName("branch")] public string Branch { get; set; } = string.Empty;
+	[JsonPropertyName("app")] public string App { get; set; } = string.Empty;
 }
 
 public sealed class CreatorWorldListResponse
@@ -187,6 +207,7 @@ public sealed class CreatorWorldListItem
 [JsonSerializable(typeof(CreatorGuildItem))]
 [JsonSerializable(typeof(CreatorGuildItem[]))]
 [JsonSerializable(typeof(CreatorGuildPagination))]
+[JsonSerializable(typeof(CreatorLatestBinaryResponse))]
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(string))]

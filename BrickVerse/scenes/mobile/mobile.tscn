@@ -135,7 +135,7 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="Layout/Navbar/HBoxContainer/Places/VBoxContainer" unique_id=903232058]
 layout_mode = 2
-text = "Places"
+text = "Worlds"
 horizontal_alignment = 1
 
 [node name="Avatar" type="Button" parent="Layout/Navbar/HBoxContainer" unique_id=1210270017]

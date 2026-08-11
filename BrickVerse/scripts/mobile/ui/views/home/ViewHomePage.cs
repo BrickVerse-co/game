@@ -14,7 +14,7 @@ public partial class ViewHomePage : MobileViewBase
 
 	public override void _EnterTree()
 	{
-		PolyMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
+		BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		//_polytorian.AvatarLoaded += OnAvatarLoaded;
 
 		base._EnterTree();
@@ -22,7 +22,7 @@ public partial class ViewHomePage : MobileViewBase
 
 	public override void _ExitTree()
 	{
-		PolyMobileAuthAPI.UserAuthenticated -= OnUserAuthenticated;
+		BVMobileAuthAPI.UserAuthenticated -= OnUserAuthenticated;
 		//_polytorian.AvatarLoaded -= OnAvatarLoaded;
 
 		base._ExitTree();
@@ -42,8 +42,8 @@ public partial class ViewHomePage : MobileViewBase
 
 	private static void LoadView()
 	{
-		//_usernameLabel.Text = PolyMobileAuthAPI.CurrentUserInfo.Username;
-		//_polytorian.LoadAppearance(PolyMobileAuthAPI.CurrentUserInfo.Id);
+		//_usernameLabel.Text = BVMobileAuthAPI.CurrentUserInfo.Username;
+		//_polytorian.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id);
 	}
 
 	public override void ShowView(object? args)

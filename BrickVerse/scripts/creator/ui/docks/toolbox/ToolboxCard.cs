@@ -3,10 +3,12 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using System;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Utils;
 using Mesh = BrickVerse.Datamodel.Mesh;
@@ -109,9 +111,12 @@ public partial class ToolboxCard : Button
 		World root = World.Current;
 		string nameToUse = ItemData.Name.ToPascalCase().RemoveSymbols();
 
-		switch (ItemType)
+		try
 		{
-			case LibraryQueryTypeEnum.Model:
+			CreatorService.Interface.StatusBar?.SetStatus($"Inserting {ItemData.Name}…");
+			switch (ItemType)
+			{
+				case LibraryQueryTypeEnum.Model:
 				{
 					Instance? i = await root.Insert.CreatorImportWebModel(ItemData.ID, ItemData.Name.ToPascalCase().RemoveSymbols());
 					if (i != null)
@@ -125,9 +130,10 @@ public partial class ToolboxCard : Button
 						}
 					}
 					root.LinkedSession?.RescanFolder();
+					if (i != null) CreatorService.Interface.StatusBar?.SetStatus($"Inserted {ItemData.Name}");
 					break;
 				}
-			case LibraryQueryTypeEnum.Mesh:
+				case LibraryQueryTypeEnum.Mesh:
 				{
 					Mesh mesh = root.New<Mesh>();
 					mesh.Name = nameToUse;
@@ -139,7 +145,7 @@ public partial class ToolboxCard : Button
 					root.CreatorContext.Selections.SelectOnly(mesh);
 					break;
 				}
-			case LibraryQueryTypeEnum.Audio:
+				case LibraryQueryTypeEnum.Audio:
 				{
 					Sound sound = root.New<Sound>();
 					sound.Name = nameToUse;
@@ -151,7 +157,7 @@ public partial class ToolboxCard : Button
 					root.CreatorContext.Selections.SelectOnly(sound);
 					break;
 				}
-			case LibraryQueryTypeEnum.Image:
+				case LibraryQueryTypeEnum.Image:
 				{
 					Image3D img = root.New<Image3D>();
 					img.Name = nameToUse;
@@ -163,6 +169,23 @@ public partial class ToolboxCard : Button
 					root.CreatorContext.Selections.SelectOnly(img);
 					break;
 				}
+				case LibraryQueryTypeEnum.Font:
+					{
+						BVFontAsset font = root.New<BVFontAsset>();
+						font.FontID = ItemData.ID.ToString();
+						UILabel label = root.New<UILabel>(root.Environment);
+						label.Name = nameToUse;
+						label.Text = nameToUse;
+						label.FontAsset = font;
+						root.CreatorContext.Selections.SelectOnly(label);
+						break;
+					}
+			}
+		}
+		catch (Exception error)
+		{
+			BV.PrintErr($"Failed to insert toolbox asset {ItemData.ID}: ", error);
+			CreatorService.Interface.PopupAlert(error.Message, "Could not insert asset");
 		}
 
 		base._Pressed();

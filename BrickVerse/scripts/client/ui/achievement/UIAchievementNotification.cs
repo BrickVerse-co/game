@@ -75,6 +75,6 @@ public partial class UIAchievementNotification : UINotificationBase
 
 	public struct AchievementNotifyPayload
 	{
-		public int Id;
+		public string Id;
 	}
 }

@@ -9,6 +9,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
@@ -297,6 +298,14 @@ public partial class ForgeTab : VBoxContainer
 		{
 			builder.AppendLine("Common creatable classes:");
 			builder.AppendLine(ForgeToolExecutor.GetCreatableClassPreview());
+			CreatorSession? session = CreatorService.CurrentSession;
+			string? definitions = session == null ? null : Path.Combine(session.BVProjectFolderPath, "luau", "def.d.luau");
+			if (definitions != null && File.Exists(definitions))
+			{
+				builder.AppendLine();
+				builder.AppendLine("Authoritative BrickVerse Luau API definitions (excerpt):");
+				builder.AppendLine(TrimForContext(File.ReadAllText(definitions), 16000));
+			}
 		}
 
 		return builder.ToString().Trim();

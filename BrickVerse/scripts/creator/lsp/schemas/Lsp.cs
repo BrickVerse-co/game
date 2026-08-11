@@ -187,6 +187,22 @@ public class LspCompletionParams
 	public LspCompletionContext? Context { get; set; }
 }
 
+public class LspTextDocumentPositionParams
+{
+	[JsonPropertyName("textDocument")]
+	public LspTextDocumentIdentifier? TextDocument { get; set; }
+	[JsonPropertyName("position")]
+	public LspPosition? Position { get; set; }
+}
+
+public class LspHover
+{
+	[JsonPropertyName("contents")]
+	public JsonElement Contents { get; set; }
+	[JsonPropertyName("range")]
+	public LspRange? Range { get; set; }
+}
+
 public class LspPosition
 {
 	[JsonPropertyName("line")]
@@ -382,6 +398,8 @@ public sealed class EmptyParams
 [JsonSerializable(typeof(LspDidCloseParams))]
 [JsonSerializable(typeof(LspTextDocumentContentChangeEvent[]))]
 [JsonSerializable(typeof(LspCompletionParams))]
+[JsonSerializable(typeof(LspTextDocumentPositionParams))]
+[JsonSerializable(typeof(LspHover))]
 [JsonSerializable(typeof(List<LspCompletionItem>))]
 [JsonSerializable(typeof(LspCompletionItem))]
 [JsonSerializable(typeof(LspCompletionItemLabelDetails))]

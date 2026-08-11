@@ -133,6 +133,18 @@ public class LspClient : IDisposable
 		return rawResult.Deserialize(LspJsonContext.Default.LspCompletionItemArray);
 	}
 
+	public async Task<LspHover?> RequestHoverAsync(string path, int line, int character, CancellationToken cancellationToken)
+	{
+		JsonElement rawResult = await SendRequestAsync<JsonElement>("textDocument/hover", new LspTextDocumentPositionParams
+		{
+			TextDocument = new() { Uri = PathToUri(path) },
+			Position = new() { Line = line, Character = character }
+		}, cancellationToken);
+
+		if (rawResult.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined) return null;
+		return rawResult.Deserialize(LspJsonContext.Default.LspHover);
+	}
+
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
 #pragma warning disable IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
 	private async Task<T?> SendRequestAsync<T>(string method, object? parameters = null, CancellationToken cancellationToken = default)

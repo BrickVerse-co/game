@@ -21,6 +21,7 @@ public sealed partial class Ribbon : PanelContainer
 	private Button _moveButton = null!;
 	private Button _rotateButton = null!;
 	private Button _scaleButton = null!;
+	private Button _brushButton = null!;
 
 	public override void _Ready()
 	{
@@ -30,6 +31,8 @@ public sealed partial class Ribbon : PanelContainer
 		_moveButton = _container.GetNode<Button>("Move");
 		_rotateButton = _container.GetNode<Button>("Rotate");
 		_scaleButton = _container.GetNode<Button>("Scale");
+		_brushButton = _container.GetNode<Button>("Brush");
+		_brushButton.GuiInput += OnBrushGuiInput;
 
 		Button colorButton = _container.GetNode<Button>("Color");
 		Control paintColorView = _container.GetNode<Control>("Paint/Color");
@@ -112,6 +115,22 @@ public sealed partial class Ribbon : PanelContainer
 		inputManagerButton.Pressed += CreatorService.Interface.OpenInputManager;
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
+	}
+
+	public override void _ExitTree()
+	{
+		if (IsInstanceValid(_brushButton)) _brushButton.GuiInput -= OnBrushGuiInput;
+		base._ExitTree();
+	}
+
+	private void OnBrushGuiInput(InputEvent inputEvent)
+	{
+		if (inputEvent is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) return;
+		if (!_brushButton.ButtonPressed || CreatorService.Interface.ToolMode != ToolModeEnum.Brush) return;
+
+		_selectButton.ButtonPressed = true;
+		CreatorService.Interface.ToolMode = ToolModeEnum.Select;
+		_brushButton.AcceptEvent();
 	}
 
 	public override void _UnhandledKeyInput(InputEvent @event)

@@ -13,27 +13,37 @@ using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace BrickVerse.Creator.Managers;
 
 public static partial class PublishManager
 {
-	public static async Task PublishModel(Instance target, long modelID = 0)
+	public static async Task PublishModel(
+		Instance target,
+		long modelID = 0,
+		string? publishName = null,
+		string? publishDescription = null
+	)
 	{
 		var loadOverlay = CreatorService.Interface.LoadOverlay;
 		try
 		{
 			loadOverlay?.SetTitle("Publishing model...");
 			byte[]? preview = null;
-			try
+			if (await ConfirmIncludePreview())
 			{
-				// A thumbnail is an enhancement, never a requirement for publishing.
-				preview = await CaptureModelPreview(target);
-			}
-			catch (Exception previewException)
-			{
-				BV.PrintWarn("Model preview was skipped: ", previewException.Message);
-				CreatorService.Interface.StatusBar?.SetStatus("Preview skipped; publishing model without a thumbnail");
+				try
+				{
+					// A thumbnail is an enhancement, never a requirement for publishing.
+					preview = await CaptureModelPreview(target);
+				}
+				catch (Exception previewException)
+				{
+					BV.PrintWarn("Model preview was skipped: ", previewException.Message);
+					if (!await ConfirmPublishWithoutPreview(previewException.Message)) return;
+					CreatorService.Interface.StatusBar?.SetStatus("Preview skipped; publishing model without a thumbnail");
+				}
 			}
 
 			loadOverlay?.Show();
@@ -47,7 +57,8 @@ public static partial class PublishManager
 				modelID,
 				"PREFAB",
 				"model.bvxm",
-				target.Name,
+				string.IsNullOrWhiteSpace(publishName) ? target.Name : publishName.Trim(),
+				publishDescription?.Trim() ?? "",
 				previewData: preview
 			);
 
@@ -66,10 +77,50 @@ public static partial class PublishManager
 		}
 	}
 
+	private static async Task<bool> ConfirmIncludePreview()
+	{
+		ConfirmationDialog dialog = new()
+		{
+			Title = "Prefab preview",
+			DialogText = "Create a thumbnail for this prefab? You can position the preview camera before publishing.",
+			OkButtonText = "Create preview",
+			CancelButtonText = "Skip preview",
+		};
+		TaskCompletionSource<bool> completion = new();
+		dialog.Confirmed += () => completion.TrySetResult(true);
+		dialog.Canceled += () => completion.TrySetResult(false);
+		dialog.CloseRequested += () => completion.TrySetResult(false);
+		CreatorService.Interface.AddChild(dialog);
+		dialog.PopupCentered(new Vector2I(470, 180));
+		bool result = await completion.Task;
+		dialog.QueueFree();
+		return result;
+	}
+
+	private static async Task<bool> ConfirmPublishWithoutPreview(string reason)
+	{
+		ConfirmationDialog dialog = new()
+		{
+			Title = "Preview unavailable",
+			DialogText = $"The preview could not be created:\n\n{reason}\n\nPublish this prefab without a preview?",
+			OkButtonText = "Publish without preview",
+			CancelButtonText = "Cancel publish",
+		};
+		TaskCompletionSource<bool> completion = new();
+		dialog.Confirmed += () => completion.TrySetResult(true);
+		dialog.Canceled += () => completion.TrySetResult(false);
+		dialog.CloseRequested += () => completion.TrySetResult(false);
+		CreatorService.Interface.AddChild(dialog);
+		dialog.PopupCentered(new Vector2I(520, 220));
+		bool result = await completion.Task;
+		dialog.QueueFree();
+		return result;
+	}
+
 	private static async Task<byte[]?> CaptureModelPreview(Instance target)
 	{
 		if (target is not Dynamic dynamic || !GodotObject.IsInstanceValid(dynamic.GDNode3D))
-			return null;
+			throw new InvalidOperationException("This model is not loaded into the 3D world, so it cannot be framed for a preview yet.");
 
 		SubViewport viewport = new()
 		{
@@ -99,8 +150,23 @@ public static partial class PublishManager
 			Vector3 boundsMin = Vector3.Zero;
 			Vector3 boundsMax = Vector3.Zero;
 			ClonePreviewMeshes(dynamic.GDNode3D, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+			foreach (Part part in new[] { target }.Concat(target.GetDescendants()).OfType<Part>())
+			{
+				// Most anchored Parts are rendered through DatamodelBridge MultiMeshes,
+				// so there is no MeshInstance3D below their datamodel node to clone.
+				if (!part.IsMeshSeparated && !part.IsHidden)
+					CloneBatchedPart(part, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+			}
 			if (!hasBounds)
-				return null;
+			{
+				foreach (Dynamic child in target.GetDescendants().OfType<Dynamic>())
+				{
+					if (GodotObject.IsInstanceValid(child.GDNode3D))
+						ClonePreviewMeshes(child.GDNode3D, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+				}
+			}
+			if (!hasBounds)
+				throw new InvalidOperationException("The model has no loaded, renderable geometry for a preview. The prefab was not uploaded yet.");
 
 			Vector3 center = (boundsMin + boundsMax) * 0.5f;
 			Vector3 size = boundsMax - boundsMin;
@@ -172,18 +238,21 @@ public static partial class PublishManager
 	{
 		private readonly SubViewport _viewport;
 		private readonly Camera3D _camera;
-		private readonly Vector3 _target;
+		private readonly Vector3 _initialTarget;
+		private Vector3 _target;
 		private readonly float _defaultDistance;
 		private readonly TaskCompletionSource<bool> _completion = new();
 		private float _yaw = -0.65f;
 		private float _pitch = -0.28f;
 		private float _distance;
 		private bool _dragging;
+		private bool _panning;
 
 		public ModelPreviewCameraPopup(SubViewport viewport, Camera3D camera, Vector3 target, float distance)
 		{
 			_viewport = viewport;
 			_camera = camera;
+			_initialTarget = target;
 			_target = target;
 			_defaultDistance = distance;
 			_distance = distance;
@@ -191,6 +260,7 @@ public static partial class PublishManager
 			Size = new Vector2I(900, 620);
 			MinSize = new Vector2I(640, 480);
 			Exclusive = true;
+			Transient = true;
 			CloseRequested += () => Finish(false);
 			BuildUI();
 		}
@@ -205,10 +275,16 @@ public static partial class PublishManager
 
 		private void BuildUI()
 		{
+			MarginContainer margin = new();
+			margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+			margin.AddThemeConstantOverride("margin_left", 18);
+			margin.AddThemeConstantOverride("margin_top", 16);
+			margin.AddThemeConstantOverride("margin_right", 18);
+			margin.AddThemeConstantOverride("margin_bottom", 16);
+			AddChild(margin);
 			VBoxContainer root = new();
-			root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 			root.AddThemeConstantOverride("separation", 10);
-			AddChild(root);
+			margin.AddChild(root);
 
 			Label heading = new()
 			{
@@ -217,7 +293,7 @@ public static partial class PublishManager
 			};
 			heading.AddThemeFontSizeOverride("font_size", 20);
 			root.AddChild(heading);
-			root.AddChild(new Label { Text = "Drag to orbit • Mouse wheel to zoom • This does not modify the model." });
+			root.AddChild(new Label { Text = "Left/right drag: look  •  Middle drag or WASD/QE: move  •  Wheel: zoom  •  Shift: faster" });
 
 			SubViewportContainer preview = new()
 			{
@@ -227,9 +303,12 @@ public static partial class PublishManager
 			};
 			preview.AddChild(_viewport);
 			preview.GuiInput += OnPreviewInput;
+			preview.FocusMode = Control.FocusModeEnum.All;
+			preview.MouseEntered += preview.GrabFocus;
 			root.AddChild(preview);
 
 			HBoxContainer actions = new() { Alignment = BoxContainer.AlignmentMode.End };
+			actions.AddThemeConstantOverride("separation", 8);
 			Button reset = new() { Text = "Reset view" };
 			reset.Pressed += ResetCamera;
 			actions.AddChild(reset);
@@ -246,7 +325,8 @@ public static partial class PublishManager
 		{
 			if (@event is InputEventMouseButton button)
 			{
-				if (button.ButtonIndex == MouseButton.Left) _dragging = button.Pressed;
+				if (button.ButtonIndex is MouseButton.Left or MouseButton.Right) _dragging = button.Pressed;
+				if (button.ButtonIndex == MouseButton.Middle) _panning = button.Pressed;
 				if (button.Pressed && button.ButtonIndex == MouseButton.WheelUp) _distance = Mathf.Max(0.5f, _distance * 0.88f);
 				if (button.Pressed && button.ButtonIndex == MouseButton.WheelDown) _distance = Mathf.Min(100f, _distance * 1.14f);
 				UpdateCamera();
@@ -257,10 +337,40 @@ public static partial class PublishManager
 				_pitch = Mathf.Clamp(_pitch - motion.Relative.Y * 0.01f, -1.35f, 1.35f);
 				UpdateCamera();
 			}
+			else if (_panning && @event is InputEventMouseMotion pan)
+			{
+				float speed = _distance * 0.0018f;
+				_target += _camera.GlobalTransform.Basis.X * -pan.Relative.X * speed;
+				_target += _camera.GlobalTransform.Basis.Y * pan.Relative.Y * speed;
+				UpdateCamera();
+			}
+		}
+
+		public override void _Process(double delta)
+		{
+			Vector3 input = Vector3.Zero;
+			if (Input.IsKeyPressed(Key.W)) input.Z -= 1;
+			if (Input.IsKeyPressed(Key.S)) input.Z += 1;
+			if (Input.IsKeyPressed(Key.A)) input.X -= 1;
+			if (Input.IsKeyPressed(Key.D)) input.X += 1;
+			if (Input.IsKeyPressed(Key.Q)) input.Y -= 1;
+			if (Input.IsKeyPressed(Key.E)) input.Y += 1;
+			if (input == Vector3.Zero) return;
+			float speed = Mathf.Max(0.5f, _distance * 0.8f)
+				* (Input.IsKeyPressed(Key.Shift) ? 3f : 1f) * (float)delta;
+			Vector3 flatForward = -_camera.GlobalTransform.Basis.Z;
+			flatForward.Y = 0;
+			flatForward = flatForward.Normalized();
+			Vector3 flatRight = _camera.GlobalTransform.Basis.X;
+			flatRight.Y = 0;
+			flatRight = flatRight.Normalized();
+			_target += (flatRight * input.X + Vector3.Up * input.Y + flatForward * -input.Z) * speed;
+			UpdateCamera();
 		}
 
 		private void ResetCamera()
 		{
+			_target = _initialTarget;
 			_yaw = -0.65f;
 			_pitch = -0.28f;
 			_distance = _defaultDistance;
@@ -288,6 +398,31 @@ public static partial class PublishManager
 		}
 	}
 
+	private static void CloneBatchedPart(
+		Part part,
+		Node3D previewRoot,
+		Transform3D rootInverse,
+		ref bool hasBounds,
+		ref Vector3 boundsMin,
+		ref Vector3 boundsMax
+	)
+	{
+		(Godot.Mesh mesh, _) = Globals.LoadShape(part.Shape.ToString());
+		Transform3D transform = rootInverse * part.GetGlobalTransform();
+		MeshInstance3D clone = new()
+		{
+			Mesh = mesh,
+			Transform = transform,
+			MaterialOverride = Globals.LoadMaterial(part.Material, part.Color.A),
+			CastShadow = part.CastShadows
+				? GeometryInstance3D.ShadowCastingSetting.On
+				: GeometryInstance3D.ShadowCastingSetting.Off,
+		};
+		clone.SetInstanceShaderParameter("color", part.Color);
+		previewRoot.AddChild(clone);
+		ExpandBounds(mesh.GetAabb(), transform, ref hasBounds, ref boundsMin, ref boundsMax);
+	}
+
 	private static void ClonePreviewMeshes(
 		Node node,
 		Node3D previewRoot,
@@ -312,7 +447,10 @@ public static partial class PublishManager
 			ExpandBounds(source.GetAabb(), relativeTransform, ref hasBounds, ref boundsMin, ref boundsMax);
 		}
 
-		foreach (Node child in node.GetChildren())
+		// BrickVerse renderers intentionally keep generated Part meshes, imported
+		// mesh containers, and other implementation nodes internal. Godot excludes
+		// those from GetChildren() unless includeInternal is explicitly enabled.
+		foreach (Node child in node.GetChildren(true))
 			ClonePreviewMeshes(child, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
 	}
 
@@ -355,7 +493,12 @@ public static partial class PublishManager
 				}
 	}
 
-	public static async Task PublishAddon(ServerScript target, long addonID = 0)
+	public static async Task PublishAddon(
+		ServerScript target,
+		long addonID = 0,
+		string? publishName = null,
+		string? publishDescription = null
+	)
 	{
 		var loadOverlay = CreatorService.Interface.LoadOverlay;
 		try
@@ -396,8 +539,8 @@ public static partial class PublishManager
 				addonID,
 				"PLUGIN",
 				"addon.bvaddon",
-				metadata.Name,
-				metadata.Description
+				string.IsNullOrWhiteSpace(publishName) ? metadata.Name : publishName.Trim(),
+				publishDescription?.Trim() ?? metadata.Description
 			);
 
 			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))

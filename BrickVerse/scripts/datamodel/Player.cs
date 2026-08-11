@@ -958,7 +958,11 @@ public sealed partial class Player : NPC
 		if (Root.Environment.SpawnPoints.Count > 0)
 		{
 			Entity spawnpoint = ArrayUtils.GetRandom(Root.Environment.SpawnPoints);
-			Position = spawnpoint.Position + new Vector3(0, spawnpoint.Size.Y + 2.0f, 0);
+			// Spawn clear of the surface and let physics settle downward. Using the
+			// full height embedded characters for tall spawn parts and occasionally
+			// produced an invalid first physics frame.
+			float spawnClearance = Mathf.Max(3.5f, spawnpoint.Size.Y * 0.5f + 3.0f);
+			Position = spawnpoint.Position + new Vector3(0, spawnClearance, 0);
 			Rotation = new(0, spawnpoint.Rotation.Y, 0);
 		}
 		else
@@ -974,7 +978,7 @@ public sealed partial class Player : NPC
 			if (!_spawnedAtCreatorPos)
 			{
 				_spawnedAtCreatorPos = true;
-				Position = Root.Entry.DebugSpawnPos.Value;
+				Position = Root.Entry.DebugSpawnPos.Value + Vector3.Up * 3.0f;
 				Rotation = Vector3.Zero;
 			}
 		}
