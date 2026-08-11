@@ -3,11 +3,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using static BrickVerse.DocsGen.APIReferenceGenerator;
 
 namespace BrickVerse.DocsGen;
@@ -42,6 +44,15 @@ public class LuaDefinitionGenerator
 		}
 
 		File.WriteAllText(atFolder.PathJoin("def.json"), JsonSerializer.Serialize(refer, APIRefGenerationContext.Default.APIReferenceRoot));
+
+		// luau-lsp rejects the entire definitions file when even one referenced
+		// engine type is undeclared. Discover those types from the generated API
+		// rather than maintaining a fragile hand-written Godot type list.
+		foreach (string externalType in CollectExternalTypeNames(refer))
+		{
+			builder.AppendLine($"declare class {externalType} end");
+		}
+		builder.AppendLine();
 
 		// Add BVSignal type definitions
 		builder.AppendLine("declare class BVSignalConnection");
@@ -94,6 +105,7 @@ public class LuaDefinitionGenerator
 			&& !string.IsNullOrWhiteSpace(item.StaticAlias)
 			&& item.StaticAlias != item.Name))
 		{
+			builder.AppendLine($"--- Runtime alias for the {item.Name} datamodel service.");
 			builder.AppendLine($"declare {item.StaticAlias}: {item.Name}");
 		}
 		// These are installed by LuauProvider for every script. Keep the
@@ -101,9 +113,18 @@ public class LuaDefinitionGenerator
 		// static ScriptClass alias in the generated API reference.
 		bool declaresWorldAlias = refer.Classes.Any(item =>
 			item.IsStatic && string.Equals(item.StaticAlias, "world", System.StringComparison.Ordinal));
-		if (!declaresWorldAlias) builder.AppendLine("declare world: World");
+		if (!declaresWorldAlias)
+		{
+			builder.AppendLine("--- The root World datamodel.");
+			builder.AppendLine("declare world: World");
+		}
+		builder.AppendLine("--- The root World datamodel. `game` and `world` reference the same object.");
 		builder.AppendLine("declare game: World");
+		builder.AppendLine("--- The Script instance currently being executed.");
 		builder.AppendLine("declare script: Script");
+		builder.AppendLine("--- Writes values to Creator Output or the game console.");
+		builder.AppendLine("declare function print(...: any): ()");
+		builder.AppendLine("--- Writes a warning to Creator Output or the game console.");
 		builder.AppendLine("declare function warn(...: any): ()");
 
 		File.WriteAllText(atFolder.PathJoin("def.d.luau"), builder.ToString());
@@ -141,6 +162,7 @@ public class LuaDefinitionGenerator
 		{
 			if (p.IsObsolete) continue;
 			if (p.IsStatic) { hasStatic = true; continue; }
+			builder.AppendLine($"\t--- {p.Name} property ({ProcessType(p.Type ?? "nil")}){(p.IsReadOnly ? "; read-only" : "")}. ");
 			builder.AppendLine($"\t{p.Name} : {ProcessType(p.Type ?? "nil")}");
 		}
 
@@ -177,6 +199,7 @@ public class LuaDefinitionGenerator
 			if (!m.IsSemiStatic) { args.Insert(0, "self"); }
 			else { args[0] = "self"; }
 
+			builder.AppendLine($"\t--- Calls {m.Name} on this {c.Name}.");
 			builder.AppendLine($"\tfunction {m.Name}({string.Join(", ", args)}): {ProcessType(m.ReturnType ?? "")}");
 		}
 
@@ -235,5 +258,45 @@ public class LuaDefinitionGenerator
 			return "{ any }";
 		}
 		return t;
+	}
+
+	private static IEnumerable<string> CollectExternalTypeNames(APIReferenceRoot reference)
+	{
+		HashSet<string> declared = reference.Classes.Select(static item => item.Name)
+			.Concat(reference.Enums.Select(static item => item.Name))
+			.Concat(reference.Enums.Select(static item => item.InternalName))
+			.Concat(["BVSignal", "BVSignalConnection", "Enum"])
+			.ToHashSet(StringComparer.Ordinal);
+		HashSet<string> builtins = new(StringComparer.Ordinal)
+		{
+			"any", "boolean", "buffer", "false", "function", "nil", "never", "number",
+			"string", "table", "thread", "true", "unknown", "self"
+		};
+		HashSet<string> referenced = [];
+
+		void AddType(string? type)
+		{
+			if (string.IsNullOrWhiteSpace(type)) return;
+			foreach (Match match in Regex.Matches(ProcessType(type), @"\b[A-Za-z_][A-Za-z0-9_]*\b"))
+			{
+				string identifier = match.Value;
+				if (!declared.Contains(identifier) && !builtins.Contains(identifier)) referenced.Add(identifier);
+			}
+		}
+
+		foreach (ScriptClass scriptClass in reference.Classes)
+		{
+			AddType(scriptClass.BaseType);
+			foreach (ScriptProperty property in scriptClass.Properties ?? []) AddType(property.Type);
+			foreach (ScriptEvent scriptEvent in scriptClass.Events ?? [])
+				foreach (ScriptParameter parameter in scriptEvent.Parameters ?? []) AddType(parameter.Type);
+			foreach (ScriptMethod method in scriptClass.Methods ?? [])
+			{
+				AddType(method.ReturnType);
+				foreach (ScriptParameter parameter in method.Parameters ?? []) AddType(parameter.Type);
+			}
+		}
+
+		return referenced.Order(StringComparer.Ordinal);
 	}
 }

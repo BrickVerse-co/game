@@ -45,6 +45,8 @@ internal sealed class ForgeChatClient
     - The Creator UI exposes Open/Reveal, View diff, and Rollback actions for tool changes.
     - If create_instance reports a visible path and linked file, both were created; do not contradict the result because an internal staging path appeared during creation.
     - Avoid run_luau unless execution materially helps validation. It always requires user review and confirmation.
+    - BrickVerse exposes one Color value type named Color. Never generate Roblox-style Color3 or Color4 APIs.
+    - Treat the generated def.d.luau supplied in Creator context as authoritative. Do not invent classes, globals, methods, enums, or properties absent from it.
 
     RESPONSE RULES:
     - Keep progress updates brief and specific to the action being taken.

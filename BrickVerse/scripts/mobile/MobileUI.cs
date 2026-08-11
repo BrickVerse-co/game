@@ -2,24 +2,25 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using DeepLinkAddon;
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Web;
 using BrickVerse.Client;
 using BrickVerse.Mobile.UI;
 using BrickVerse.Mobile.Utils;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Web;
+using DeepLinkAddon;
+using Godot;
 
 namespace BrickVerse.Mobile;
 
 public partial class MobileUI : Control
 {
 	public static MobileUI Singleton { get; private set; } = null!;
+
 	public MobileUI()
 	{
 		Singleton = this;
@@ -31,9 +32,14 @@ public partial class MobileUI : Control
 	public MobileViewBase? CurrentViewNode;
 	public MobileViewEnum CurrentView;
 
-	[Export] public StartupSplash? StartSplash { get; private set; }
-	[Export] public NewUserSplash NewUserSplash = null!;
-	[Export] public MobileLoadingScreen LoadingScreen = null!;
+	[Export]
+	public StartupSplash? StartSplash { get; private set; }
+
+	[Export]
+	public NewUserSplash NewUserSplash = null!;
+
+	[Export]
+	public MobileLoadingScreen LoadingScreen = null!;
 
 	private Deeplink _deepLink = new();
 	private readonly Dictionary<MobileViewEnum, MobileViewBase> _viewCache = [];
@@ -63,18 +69,18 @@ public partial class MobileUI : Control
 			StartSplash!.Visible = true;
 		}
 
-		//PolyMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
-		PolyMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
+		//BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
+		BVMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
 
-		PolyMobileAuthAPI.SetupClient();
+		BVMobileAuthAPI.SetupClient();
 		if (mobileToken != null)
 		{
-			_ = PolyMobileAuthAPI.LoginWithAuthToken(mobileToken);
+			_ = BVMobileAuthAPI.LoginWithAuthToken(mobileToken);
 		}
 
 		if (mobileCode != null && mobileState != null)
 		{
-			_ = PolyMobileAuthAPI.LoginWithCodeAndState(mobileCode, mobileState);
+			_ = BVMobileAuthAPI.LoginWithCodeAndState(mobileCode, mobileState);
 		}
 
 		_mainView = GetNode<Control>("Layout/MainView");
@@ -126,7 +132,7 @@ public partial class MobileUI : Control
 			string state = authQuery.Get("state")!;
 
 			LoadingScreen.ShowScreen();
-			await PolyMobileAuthAPI.LoginWithCodeAndState(code, state);
+			await BVMobileAuthAPI.LoginWithCodeAndState(code, state);
 			LoadingScreen.HideScreen();
 		}
 
@@ -142,15 +148,14 @@ public partial class MobileUI : Control
 
 		try
 		{
-			APIJoinPlaceResponse res = await BVAPI.RequestJoinGame(new() { PlaceID = placeID, IsBeta = true });
+			APIJoinPlaceResponse res = await BVAPI.RequestJoinGame(
+				new() { PlaceID = placeID, IsBeta = true }
+			);
 
 			Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 			if (app is ClientEntry ce)
 			{
-				ClientEntry.ClientEntryData entryData = new()
-				{
-					Token = res.Token
-				};
+				ClientEntry.ClientEntryData entryData = new() { Token = res.Token };
 				ce.Entry(entryData);
 			}
 		}
@@ -186,13 +191,18 @@ public partial class MobileUI : Control
 				MobileViewEnum.PlaceInfo => "res://scenes/mobile/views/place_info.tscn",
 				MobileViewEnum.Avatar => "res://scenes/mobile/views/avatar.tscn",
 				MobileViewEnum.Dev => "res://scenes/mobile/views/test.tscn",
-				_ => throw new ArgumentOutOfRangeException(nameof(viewEnum),
-					 $"No scene defined for {viewEnum}")
+				_ => throw new ArgumentOutOfRangeException(
+					nameof(viewEnum),
+					$"No scene defined for {viewEnum}"
+				),
 			};
 
 			BV.Print("Loading ", viewEnum);
 
-			PackedScene packed = ResourceLoader.Load<PackedScene>(pathToLoad, cacheMode: ResourceLoader.CacheMode.IgnoreDeep);
+			PackedScene packed = ResourceLoader.Load<PackedScene>(
+				pathToLoad,
+				cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+			);
 			page = packed.Instantiate<MobileViewBase>();
 			_viewCache[viewEnum] = page;
 			_mainView.AddChild(page);
@@ -214,5 +224,5 @@ public enum MobileViewEnum
 	Avatar,
 	Store,
 	Dev,
-	PlaceInfo
+	PlaceInfo,
 }

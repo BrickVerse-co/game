@@ -66,6 +66,12 @@ public class BVAssetProvider : IAssetProvider
 
 					return item;
 				}
+			case ResourceType.Font:
+				{
+					FontFile font = new() { Data = buffer };
+					item.Resource = font;
+					return item;
+				}
 			case ResourceType.Texture:
 			case ResourceType.AssetThumbnail:
 			case ResourceType.UniverseThumbnail:

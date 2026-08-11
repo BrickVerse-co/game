@@ -11,6 +11,7 @@ namespace BrickVerse.Datamodel;
 [Instantiable]
 public partial class Clothing : Instance
 {
+	[ScriptEnum("ClothingType")]
 	public enum ClothingType
 	{
 		TShirt,

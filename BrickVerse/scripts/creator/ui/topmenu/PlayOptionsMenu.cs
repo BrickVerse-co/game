@@ -7,6 +7,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Shared;
+using BrickVerse.Creator.UI.Popups;
 
 namespace BrickVerse.Creator.UI.Menus;
 
@@ -17,6 +18,7 @@ public partial class PlayOptionsMenu : Control
 	[Export] private Button _stopBtn = null!;
 	[Export] private Button _collaborateBtn = null!;
 	[Export] private Button _sessionBtn = null!;
+	[Export] private Button _betaFeaturesBtn = null!;
 	[Export] private TextureRect _internetStatusIcon = null!;
 	[Export] private TextureRect _teamCreateStatusIcon = null!;
 	[Export] private OptionButton _playerCountOption = null!;
@@ -34,6 +36,7 @@ public partial class PlayOptionsMenu : Control
 		_stopBtn.Pressed += OnStopButtonPressed;
 		_collaborateBtn.Pressed += OnCollaborateButtonPressed;
 		_sessionBtn.Pressed += OnSessionButtonPressed;
+		_betaFeaturesBtn.Pressed += OnBetaFeaturesPressed;
 		_playerCountOption.ItemSelected += OnPlayerCountSelected;
 		_playerCountOption.Select(0);
 		_playerCountOption.Text = _playerCountOption.GetItemId(0).ToString();
@@ -120,6 +123,13 @@ public partial class PlayOptionsMenu : Control
 			CreatorService.Interface.AddChild(service);
 		}
 		service.ShowSessionWindow();
+	}
+
+	private void OnBetaFeaturesPressed()
+	{
+		BetaFeaturesPopup popup = new();
+		CreatorService.Interface.AddChild(popup);
+		popup.PopupCentered();
 	}
 
 	private void UpdateConnectionIndicators()

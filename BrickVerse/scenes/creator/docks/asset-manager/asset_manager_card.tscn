@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/docks/asset-manager/AssetManagerCard.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="Card"]
+bg_color = Color(0.047, 0.063, 0.086, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.17, 0.23, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="AssetCard" type="PanelContainer" node_paths=PackedStringArray("_preview", "_name", "_type", "_menu")]
+custom_minimum_size = Vector2(160, 170)
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("Card")
+script = ExtResource("1")
+_preview = NodePath("Margin/Content/Preview")
+_name = NodePath("Margin/Content/Details/Name")
+_type = NodePath("Margin/Content/Details/Type")
+_menu = NodePath("Margin/Content/Details/Menu")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Preview" type="TextureButton" parent="Margin/Content"]
+custom_minimum_size = Vector2(144, 105)
+layout_mode = 2
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Details" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="Margin/Content/Details"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Asset"
+clip_text = true
+
+[node name="Type" type="Label" parent="Margin/Content/Details"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.51, 0.57, 0.65, 1)
+text = "PREFAB"
+
+[node name="Menu" type="Button" parent="Margin/Content/Details"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "⋮"
+flat = true
+

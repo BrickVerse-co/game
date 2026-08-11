@@ -565,10 +565,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Report a Bug",
-					Pressed = () =>
-					{
-						OS.ShellOpen("https://brickverse.gg/forum");
-					},
+					Pressed = BugReportPopup.Open,
 				},
 			]
 		);

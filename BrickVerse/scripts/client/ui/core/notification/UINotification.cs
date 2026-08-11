@@ -19,7 +19,7 @@ public partial class UINotification : Control
 		base._Ready();
 	}
 
-	private void OnGotAchievement(int id)
+	private void OnGotAchievement(string id)
 	{
 		if (!CoreUI.Root.Achievements.NotifyAchievements) return;
 		FireNotification(NotificationType.Achievement, new UIAchievementNotification.AchievementNotifyPayload() { Id = id });

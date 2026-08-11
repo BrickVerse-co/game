@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Creator.LSP;
 using BrickVerse.Creator.LSP.Schemas;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
@@ -16,19 +17,56 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace BrickVerse.Creator.UI.TextEditor;
 
 public partial class TextEditorRoot : Node
 {
+	public static event Action<string>? ExternalFileChanged;
+	public static void NotifyExternalFileChanged(string absolutePath) => ExternalFileChanged?.Invoke(absolutePath);
 	private const string CodeCompletionIconPath = "res://assets/textures/creator/tabs/text_editor/code_completion/";
-	private const int DiagDelay = 500;
+	private const int DiagDelay = 75;
 
 	[Export] public TextEditorField CodeEditor = null!;
 	public TextEditorContainer Container = null!;
 	public bool Saved = false;
 
 	public event Action<bool>? SavedChanged;
+
+	public void ReloadFromDiskIfCurrent(string absolutePath)
+	{
+		if (!Path.GetFullPath(Container.TargetFilePathAbsolute).Equals(
+			Path.GetFullPath(absolutePath), StringComparison.OrdinalIgnoreCase)) return;
+		if (!File.Exists(absolutePath)) return;
+		string source = File.ReadAllText(absolutePath);
+		if (CodeEditor.Text == source) return;
+		CodeEditor.Text = source;
+		CodeEditor.ClearUndoHistory();
+		_oldText = source;
+		Saved = true;
+		SavedChanged?.Invoke(true);
+		if (_completion != null) _ = _completion.UpdateScriptChangeAsync(absolutePath, source);
+	}
+
+	public void OpenInExternalEditor()
+	{
+		string path = Path.GetFullPath(Container.TargetFilePathAbsolute);
+		PreferredEditorEnum editor = CreatorSettingsService.Instance.Get<PreferredEditorEnum>(CreatorSettingKeys.CodeEditor.PreferredEditor);
+		try
+		{
+			if (editor == PreferredEditorEnum.VSCode)
+				Process.Start(new ProcessStartInfo("code", $"--goto \"{path}:{CodeEditor.GetCaretLine() + 1}:{CodeEditor.GetCaretColumn() + 1}\"") { UseShellExecute = true });
+			else if (editor == PreferredEditorEnum.Zed)
+				Process.Start(new ProcessStartInfo("zed", $"\"{path}\"") { UseShellExecute = true });
+			else
+				OS.ShellOpen(path);
+		}
+		catch (Exception ex)
+		{
+			CreatorService.Interface.PopupAlert($"Could not open the external editor: {ex.Message}", "External editor");
+		}
+	}
 
 	public void GoToLine(int oneBasedLine)
 	{
@@ -57,6 +95,11 @@ public partial class TextEditorRoot : Node
 	private LuaCompletionService? _completion = null!;
 
 	private Godot.Timer _autoCompleteTimer = null!;
+	private Godot.Timer _hoverTimer = null!;
+	private PopupPanel _hoverPopup = null!;
+	private RichTextLabel _hoverText = null!;
+	private Vector2 _hoverPosition;
+	private CancellationTokenSource? _hoverCts;
 	private CancellationTokenSource? _diagCts;
 	private HashSet<string>? _editorPropertySet;
 	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnosticsByLine = [];
@@ -75,6 +118,9 @@ public partial class TextEditorRoot : Node
 
 	public override async void _ExitTree()
 	{
+		ExternalFileChanged -= ReloadFromDiskIfCurrent;
+		_hoverCts?.Cancel();
+		_hoverCts?.Dispose();
 		if (_completion != null)
 		{
 			await _completion.CloseScriptAsync(Container.TargetFilePathAbsolute);
@@ -86,9 +132,22 @@ public partial class TextEditorRoot : Node
 
 	public override async void _Ready()
 	{
+		ExternalFileChanged += ReloadFromDiskIfCurrent;
 		AddChild(_autoCompleteTimer = new());
 		_autoCompleteTimer.OneShot = true;
 		_autoCompleteTimer.Timeout += OnCompletionRequest;
+		AddChild(_hoverTimer = new());
+		_hoverTimer.OneShot = true;
+		_hoverTimer.WaitTime = 0.45;
+		_hoverTimer.Timeout += RequestHoverDocumentation;
+		AddChild(_hoverPopup = new PopupPanel { Unresizable = true });
+		_hoverPopup.AddChild(_hoverText = new RichTextLabel
+		{
+			BbcodeEnabled = true,
+			FitContent = true,
+			CustomMinimumSize = new Vector2(420, 72),
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+		});
 
 		if (Container.CodeCompletion == FileTypeEnum.Lua)
 		{
@@ -98,6 +157,7 @@ public partial class TextEditorRoot : Node
 			CodeEditor.CodeCompletionPrefixes = [".", ":", "\n", ",", " ", "("];
 			CodeEditor.CodeCompletionEnabled = true;
 			CodeEditor.CodeCompletionRequested += OnCompletionRequest;
+			WarmStyLuaInstallation();
 		}
 
 		CodeEditor.Text = File.ReadAllText(Container.TargetFilePathAbsolute);
@@ -165,6 +225,14 @@ public partial class TextEditorRoot : Node
 
 		if (e.Key == CreatorSettingKeys.CodeEditor.ColorTheme)
 			InitSyntaxHighlighter(Container.CodeCompletion);
+
+		if (e.Key == CreatorSettingKeys.CodeEditor.InlineSuggestions
+			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions))
+			CodeEditor.SetInlineSuggestion(string.Empty);
+
+		if (e.Key == CreatorSettingKeys.CodeEditor.HoverDocumentation
+			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.HoverDocumentation))
+			HideHoverDocumentation();
 	}
 
 	private void ApplyIndentSettings()
@@ -372,14 +440,63 @@ public partial class TextEditorRoot : Node
 
 	private async void OnCodeEditGUIInput(InputEvent @event)
 	{
-		if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.F })
+		if (@event is InputEventMouseMotion motion)
+		{
+			_hoverPosition = motion.Position;
+			HideHoverDocumentation();
+			if (_completion != null && CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.HoverDocumentation))
+				_hoverTimer.Start();
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Tab, CtrlPressed: false, AltPressed: false }
+			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions)
+			&& !CodeEditor.HasActiveCodeCompletion()
+			&& CodeEditor.AcceptInlineSuggestion())
+		{
+			CodeEditor.AcceptEvent();
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, ShiftPressed: true, Keycode: Key.F }
+			or InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.F })
 		{
 			CodeEditor.AcceptEvent();
 			FormatDocument();
 		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.Space })
+		{
+			CodeEditor.AcceptEvent();
+			OnCompletionRequest();
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.D })
+		{
+			CodeEditor.AcceptEvent();
+			DuplicateCurrentLines();
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.K })
+		{
+			CodeEditor.AcceptEvent();
+			DeleteCurrentLines();
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.L })
+		{
+			CodeEditor.AcceptEvent();
+			int line = CodeEditor.GetCaretLine();
+			CodeEditor.Select(line, 0, line, CodeEditor.GetLine(line).Length);
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, Keycode: Key.Up })
+		{
+			CodeEditor.AcceptEvent();
+			MoveCurrentLine(-1);
+		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, Keycode: Key.Down })
+		{
+			CodeEditor.AcceptEvent();
+			MoveCurrentLine(1);
+		}
 		else if (@event.IsActionPressed("save"))
 		{
 			CodeEditor.AcceptEvent();
+			if (Container.CodeCompletion == FileTypeEnum.Lua
+				&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.FormatOnSave))
+				await FormatRangeAsync(0, CodeEditor.GetLineCount() - 1, "document");
 			Save();
 			Saved = true;
 			SavedChanged?.Invoke(true);
@@ -402,8 +519,88 @@ public partial class TextEditorRoot : Node
 		}
 		else
 		{
+			if (@event is InputEventKey { Pressed: true }) HideHoverDocumentation();
 			UpdateStatusBar();
 		}
+	}
+
+	private async void WarmStyLuaInstallation()
+	{
+		await StyLuaInstaller.EnsureInstalledAsync();
+	}
+
+	public void DuplicateCurrentLines()
+	{
+		int first = CodeEditor.HasSelection() ? CodeEditor.GetSelectionFromLine() : CodeEditor.GetCaretLine();
+		int last = CodeEditor.HasSelection() ? CodeEditor.GetSelectionToLine() : first;
+		string[] copies = Enumerable.Range(first, last - first + 1).Select(CodeEditor.GetLine).ToArray();
+		CodeEditor.BeginComplexOperation();
+		for (int index = 0; index < copies.Length; index++) CodeEditor.InsertLineAt(last + 1 + index, copies[index]);
+		CodeEditor.EndComplexOperation();
+		CodeEditor.SetCaretLine(last + copies.Length);
+	}
+
+	public void DeleteCurrentLines()
+	{
+		int first = CodeEditor.HasSelection() ? CodeEditor.GetSelectionFromLine() : CodeEditor.GetCaretLine();
+		int last = CodeEditor.HasSelection() ? CodeEditor.GetSelectionToLine() : first;
+		CodeEditor.BeginComplexOperation();
+		for (int line = last; line >= first; line--) CodeEditor.RemoveLineAt(line);
+		CodeEditor.EndComplexOperation();
+		CodeEditor.SetCaretLine(Math.Min(first, CodeEditor.GetLineCount() - 1));
+	}
+
+	public void MoveCurrentLine(int direction)
+	{
+		if (CodeEditor.HasSelection()) return;
+		int line = CodeEditor.GetCaretLine();
+		int target = line + direction;
+		if (target < 0 || target >= CodeEditor.GetLineCount()) return;
+		CodeEditor.BeginComplexOperation();
+		CodeEditor.SwapLines(line, target);
+		CodeEditor.EndComplexOperation();
+		CodeEditor.SetCaretLine(target);
+	}
+
+	private async void RequestHoverDocumentation()
+	{
+		if (_completion == null || !CodeEditor.GetGlobalRect().HasPoint(CodeEditor.GetGlobalMousePosition())) return;
+
+		Vector2I position = CodeEditor.GetLineColumnAtPos((Vector2I)_hoverPosition);
+		if (position.X < 0 || position.Y < 0) return;
+
+		_hoverCts?.Cancel();
+		_hoverCts?.Dispose();
+		_hoverCts = new CancellationTokenSource();
+		try
+		{
+			// TextEdit returns column in X and line in Y.
+			string? documentation = await _completion.GetHoverAsync(
+				Container.TargetFilePathAbsolute, position.Y, position.X, _hoverCts.Token);
+			if (string.IsNullOrWhiteSpace(documentation) || _hoverCts.IsCancellationRequested) return;
+
+			_hoverText.Text = MarkdownToBbcode(documentation);
+			Vector2 screenPosition = CodeEditor.GetScreenPosition() + _hoverPosition + new Vector2(14, 20);
+			_hoverPopup.Popup(new Rect2I((Vector2I)screenPosition, new Vector2I(480, 120)));
+		}
+		catch (OperationCanceledException) { }
+	}
+
+	private static string MarkdownToBbcode(string markdown)
+	{
+		string text = markdown.Replace("\r\n", "\n").Replace("[", "[lb]");
+		text = Regex.Replace(text, "```(?:[A-Za-z0-9_+-]+)?\\s*\\n?(.*?)```", "[code]$1[/code]", RegexOptions.Singleline);
+		text = Regex.Replace(text, "`([^`\\n]+)`", "[code]$1[/code]");
+		text = Regex.Replace(text, "\\*\\*([^*]+)\\*\\*", "[b]$1[/b]");
+		text = Regex.Replace(text, "(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)", "[i]$1[/i]");
+		return text.Trim();
+	}
+
+	private void HideHoverDocumentation()
+	{
+		_hoverTimer?.Stop();
+		_hoverCts?.Cancel();
+		if (_hoverPopup?.Visible == true) _hoverPopup.Hide();
 	}
 
 	public async void FormatDocument() =>
@@ -447,11 +644,11 @@ public partial class TextEditorRoot : Node
 	{
 		try
 		{
+			string? executable = await StyLuaInstaller.EnsureInstalledAsync();
+			if (executable == null) return null;
 			ProcessStartInfo startInfo = new()
 			{
-				// StyLua is intentionally resolved from PATH. This keeps the editor
-				// compatible with an updated packaged binary or a creator-installed one.
-				FileName = OS.HasFeature("windows") ? "stylua.exe" : "stylua",
+				FileName = executable,
 				Arguments = "--stdin-filepath script.luau -",
 				RedirectStandardInput = true,
 				RedirectStandardOutput = true,
@@ -740,6 +937,7 @@ public partial class TextEditorRoot : Node
 
 	private async void OnCodeEditTextChanged()
 	{
+		CodeEditor.SetInlineSuggestion(string.Empty);
 		string curText = CodeEditor.Text;
 		Saved = false;
 		SavedChanged?.Invoke(false);
@@ -805,6 +1003,16 @@ public partial class TextEditorRoot : Node
 			}
 		}
 
+		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions))
+		{
+			CodeEditCompletionItem inlineItem = items.FirstOrDefault(item =>
+				item.InsertText.Length > wcaret.Length
+				&& item.InsertText.StartsWith(wcaret, StringComparison.OrdinalIgnoreCase));
+			CodeEditor.SetInlineSuggestion(string.IsNullOrEmpty(inlineItem.InsertText)
+				? string.Empty
+				: inlineItem.InsertText[wcaret.Length..]);
+		}
+
 		foreach (CodeEditCompletionItem item in items)
 		{
 			string? iconTxt = item.Kind switch
@@ -818,7 +1026,10 @@ public partial class TextEditorRoot : Node
 			{
 				icon = GD.Load<Texture2D>(CodeCompletionIconPath.PathJoin(iconTxt + ".svg"));
 			}
-			CodeEditor.AddCodeCompletionOption(item.Kind, item.DisplayText, item.InsertText, icon: icon, location: -1);
+			string display = string.IsNullOrWhiteSpace(item.Detail)
+				? item.DisplayText
+				: $"{item.DisplayText}    {item.Detail.Replace('\n', ' ')}";
+			CodeEditor.AddCodeCompletionOption(item.Kind, display, item.InsertText, icon: icon, location: -1);
 		}
 		CodeEditor.UpdateCodeCompletionOptions(false);
 	}

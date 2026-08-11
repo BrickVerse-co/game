@@ -379,7 +379,12 @@ public partial class DebugConsole : Control
 	}
 
 	private static string EscapeBb(string text) =>
-		(text ?? string.Empty).Replace("[", "[lb]").Replace("]", "[rb]");
+		(text ?? string.Empty)
+			// Older chat/log producers pre-escaped brackets. Normalize those tokens
+			// before escaping once for this RichTextLabel.
+			.Replace("[lb]", "[", StringComparison.OrdinalIgnoreCase)
+			.Replace("[rb]", "]", StringComparison.OrdinalIgnoreCase)
+			.Replace("[", "[lb]").Replace("]", "[rb]");
 
 	private static bool CanOpenSource(string source)
 	{

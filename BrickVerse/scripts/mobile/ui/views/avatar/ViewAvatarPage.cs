@@ -8,10 +8,9 @@ public partial class ViewAvatarPage : MobileViewBase
 {
 	//private BrickversianModel _polytorian = null!;
 
-
 	public override void _Ready()
 	{
-		//_polytorian.LoadAppearance(PolyMobileAuthAPI.CurrentUserInfo.Id);
+		//_polytorian.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id);
 	}
 
 	public override void ShowView(object? args)

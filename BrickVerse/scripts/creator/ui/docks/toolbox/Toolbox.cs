@@ -139,6 +139,7 @@ public sealed partial class Toolbox : Control
 			2 => LibraryQueryTypeEnum.Audio,
 			3 => LibraryQueryTypeEnum.Mesh,
 			4 => LibraryQueryTypeEnum.Addon,
+			5 => LibraryQueryTypeEnum.Font,
 			_ => LibraryQueryTypeEnum.Model
 		};
 		TopCategory = "";

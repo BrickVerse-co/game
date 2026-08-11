@@ -1,0 +1,92 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/docks/asset-manager/AssetManagerDock.cs" id="1"]
+
+[node name="AssetManager" type="MarginContainer" node_paths=PackedStringArray("_search", "_type", "_scope", "_grid", "_status", "_previous", "_next", "_publishSelection")]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+script = ExtResource("1")
+_search = NodePath("Layout/Filters/Search")
+_type = NodePath("Layout/FilterOptions/Type")
+_scope = NodePath("Layout/FilterOptions/Scope")
+_grid = NodePath("Layout/Scroll/Grid")
+_status = NodePath("Layout/Footer/Status")
+_previous = NodePath("Layout/Footer/Previous")
+_next = NodePath("Layout/Footer/Next")
+_publishSelection = NodePath("Layout/Header/Publish")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="Header" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Asset Manager"
+
+[node name="Publish" type="Button" parent="Layout/Header"]
+custom_minimum_size = Vector2(86, 34)
+layout_mode = 2
+text = "Publish"
+tooltip_text = "Publish the selected model or script"
+
+[node name="Filters" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="Search" type="LineEdit" parent="Layout/Filters"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search assets…"
+clear_button_enabled = true
+
+[node name="FilterOptions" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Type" type="OptionButton" parent="Layout/FilterOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Scope" type="OptionButton" parent="Layout/FilterOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Grid" type="GridContainer" parent="Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 9
+theme_override_constants/v_separation = 9
+columns = 2
+
+[node name="Footer" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="Previous" type="Button" parent="Layout/Footer"]
+custom_minimum_size = Vector2(38, 32)
+layout_mode = 2
+disabled = true
+text = "‹"
+
+[node name="Status" type="Label" parent="Layout/Footer"]
+layout_mode = 2
+text = "Loading assets…"
+
+[node name="Next" type="Button" parent="Layout/Footer"]
+custom_minimum_size = Vector2(38, 32)
+layout_mode = 2
+disabled = true
+text = "›"

@@ -93,6 +93,18 @@ public static class CreatorSettingsRegistry
 				DefaultValue = true
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.ShowUpdateNotifications,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.ShowUpdateNotifications,
+				SectionKey = "creator",
+				Label = "Creator Update Notifications",
+				Description = "Notify you at startup when a newer Creator build is available.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>
@@ -421,6 +433,42 @@ public static class CreatorSettingsRegistry
 				]
 			});
 
+		defs.Add(CreatorSettingKeys.CodeEditor.InlineSuggestions,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.CodeEditor.InlineSuggestions,
+				SectionKey = "code_editor",
+				Label = "Inline Suggestions",
+				Description = "Show a local, type-aware completion after the caret. Press Tab to accept it.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.CodeEditor.HoverDocumentation,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.CodeEditor.HoverDocumentation,
+				SectionKey = "code_editor",
+				Label = "Hover Documentation",
+				Description = "Show Luau types and API documentation when hovering over globals, methods, and properties.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.CodeEditor.FormatOnSave,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.CodeEditor.FormatOnSave,
+				SectionKey = "code_editor",
+				Label = "Format on Save",
+				Description = "Format Luau documents with StyLua before saving.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = false
+			});
+
 		defs.Add(CreatorSettingKeys.CodeEditor.IndentationMode,
 			new SettingDef<IndentationModeEnum>
 			{
@@ -671,6 +719,18 @@ public static class CreatorSettingsRegistry
 				SectionKey = "popups",
 				Label = "Executor Success Message",
 				Description = "Show a completion popup after Luau finishes successfully.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Popups.PrefabScriptWarning,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Popups.PrefabScriptWarning,
+				SectionKey = "popups",
+				Label = "Prefab Script Warning",
+				Description = "Warn before inserting a prefab or model that contains executable scripts.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true

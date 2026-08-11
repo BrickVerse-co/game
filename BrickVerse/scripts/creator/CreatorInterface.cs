@@ -176,6 +176,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		ApplyVSync();
 		ApplyFpsCap();
 		WhatsNewPopup.CheckForUpdates();
+		GetTree().CreateTimer(2.0).Timeout += CreatorUpdatePopup.CheckAndShow;
 
 		base._Ready();
 	}
@@ -705,7 +706,9 @@ public partial class CreatorInterface : Control, IScriptObject
 	public async Task<bool> PromptConfirmation(
 		string msg,
 		string title = "Please Confirm",
-		string? dismissKey = null
+		string? dismissKey = null,
+		string confirmText = "OK",
+		string cancelText = "Cancel"
 	)
 	{
 		if (dismissKey != null)
@@ -722,6 +725,8 @@ public partial class CreatorInterface : Control, IScriptObject
 			WrapControls = true,
 			Title = title,
 			DialogCloseOnEscape = true,
+			OkButtonText = confirmText,
+			CancelButtonText = cancelText,
 		};
 
 		VBoxContainer v = new() { Alignment = BoxContainer.AlignmentMode.Center };
@@ -730,10 +735,21 @@ public partial class CreatorInterface : Control, IScriptObject
 		Label txt = new() { Text = msg, HorizontalAlignment = HorizontalAlignment.Center };
 		v.AddChild(txt);
 
+		CheckBox? dismissCheckBox = null;
+		if (dismissKey != null)
+		{
+			dismissCheckBox = new CheckBox()
+			{
+				Text = "Don't show this again.",
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter | SizeFlags.Expand,
+			};
+			v.AddChild(dismissCheckBox);
+		}
+
 		dialog.Confirmed += () =>
 		{
 			tcs.SetResult(true);
-			if (dismissKey != null)
+			if (dismissKey != null && dismissCheckBox?.ButtonPressed == true)
 			{
 				CreatorSettingsService.Instance.Set(dismissKey, false);
 			}
@@ -745,16 +761,6 @@ public partial class CreatorInterface : Control, IScriptObject
 			tcs.SetResult(false);
 			dialog.QueueFree();
 		};
-
-		if (dismissKey != null)
-		{
-			CheckBox chk = new()
-			{
-				Text = "Don't show this again.",
-				SizeFlagsHorizontal = SizeFlags.ShrinkCenter | SizeFlags.Expand,
-			};
-			v.AddChild(chk);
-		}
 
 		PopupWindow(dialog);
 

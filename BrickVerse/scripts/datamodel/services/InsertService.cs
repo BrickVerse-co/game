@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BrickVerse.Attributes;
@@ -15,6 +16,7 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
 #if CREATOR
+using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
 #endif
@@ -119,10 +121,10 @@ public sealed partial class InsertService : Instance
 #if CREATOR
 	public async Task<Instance?> CreatorImportWebModel(string id, string? optionalName = null)
 	{
-		ApplyAssetAuthHeaders();
-		using HttpResponseMessage msg = await _httpClient.GetAsync(GetModelDownloadUrl(id));
-		msg.EnsureSuccessStatusCode();
-		byte[] modelBytes = await msg.Content.ReadAsByteArrayAsync();
+		if (string.IsNullOrWhiteSpace(id))
+			throw new ArgumentException("A prefab asset ID is required.", nameof(id));
+		byte[] modelBytes = await CreatorAPI.DownloadCreatorAsset(id);
+		BV.Print($"Downloaded prefab {id} ({modelBytes.Length:N0} bytes); importing into the current project.");
 
 		if (optionalName != null)
 		{
@@ -151,7 +153,31 @@ public sealed partial class InsertService : Instance
 		);
 		if (model == null)
 		{
-			BV.PrintErr($"Toolbox prefab {id} could not be imported.");
+			throw new InvalidDataException($"Prefab {id} is not a valid BVXM/model package.");
+		}
+
+		int scriptCount = model is Script ? 1 : 0;
+		foreach (Instance descendant in model.GetDescendants())
+		{
+			if (descendant is Script) scriptCount++;
+		}
+
+		if (
+			scriptCount > 0
+			&& !await CreatorService.Interface.PromptConfirmation(
+				$"This prefab contains {scriptCount} executable script{(scriptCount == 1 ? "" : "s")}. "
+					+ "Scripts may run during play-testing or after publishing and can modify your experience. "
+					+ "Only insert prefabs from creators you trust.",
+				"Prefab Contains Scripts",
+				CreatorSettingKeys.Popups.PrefabScriptWarning,
+				"Insert Anyway",
+				"Cancel"
+			)
+		)
+		{
+			model.Delete();
+			Root.LinkedSession?.RescanFolder();
+			BV.Print($"Canceled prefab {id} insertion because it contains scripts.");
 			return null;
 		}
 
@@ -159,6 +185,7 @@ public sealed partial class InsertService : Instance
 		// before loading the tree. Rescan now so a clean project immediately owns
 		// the scripts and subsequent saves/publishes retain them.
 		Root.LinkedSession?.RescanFolder();
+		BV.Print($"Imported prefab {id} as {model.LuaPath}.");
 		return model;
 	}
 #endif
@@ -384,6 +411,9 @@ public sealed partial class InsertService : Instance
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(
+				CreatorAPI.Token
+			);
 			_httpClient.DefaultRequestHeaders["Cookie"] =
 				"auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
 		}

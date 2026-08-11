@@ -52,6 +52,7 @@
 [ext_resource type="Texture2D" uid="uid://dsctyc3b08xsp" path="res://assets/textures/ui-icons/messages.svg" id="39_5xx7o"]
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
+[ext_resource type="PackedScene" path="res://scenes/creator/docks/asset-manager/asset_manager.tscn" id="41_asset_manager"]
 [ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
 [ext_resource type="Script" uid="uid://dfk832jm6qtwy" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
@@ -205,7 +206,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
+[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_betaFeaturesBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("5_c7ht3")
@@ -214,6 +215,7 @@ _playAtCamBtn = NodePath("Layout/PlayAtCam")
 _stopBtn = NodePath("Layout/Stop")
 _collaborateBtn = NodePath("Layout/Collaborate")
 _sessionBtn = NodePath("Layout/Session")
+_betaFeaturesBtn = NodePath("Layout/BetaFeatures")
 _internetStatusIcon = NodePath("Layout/InternetStatus")
 _teamCreateStatusIcon = NodePath("Layout/TeamCreateStatus")
 _playerCountOption = NodePath("Layout/PlayerCount")
@@ -258,6 +260,12 @@ custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
 tooltip_text = "View Team Create session and collaborator cameras"
 text = "Session"
+
+[node name="BetaFeatures" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+tooltip_text = "Enroll in Creator beta features"
+text = "Beta"
 
 [node name="Play" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=1354859142]
 clip_children = 2
@@ -1007,6 +1015,8 @@ current_tab = 0
 tab_0/icon = ExtResource("23_5xx7o")
 tab_1/title = "Files"
 tab_1/icon = ExtResource("24_wlglv")
+tab_2/title = "Assets"
+tab_2/icon = ExtResource("36_5ay1h")
 
 [node name="Toolbox" parent="GUI/Splitter/Left/Split" unique_id=1950152327 instance=ExtResource("26_dfqoe")]
 layout_mode = 2
@@ -1018,6 +1028,12 @@ visible = false
 layout_mode = 2
 metadata/_tab_name = "Files"
 metadata/_tab_index = 1
+
+[node name="AssetManager" parent="GUI/Splitter/Left/Split" instance=ExtResource("41_asset_manager")]
+visible = false
+layout_mode = 2
+metadata/_tab_name = "Assets"
+metadata/_tab_index = 2
 
 [node name="Center" type="VSplitContainer" parent="GUI/Splitter" unique_id=906556874]
 layout_mode = 2

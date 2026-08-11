@@ -664,17 +664,22 @@ public partial class NPC : Physical
 
 			if (walkTarget.HasValue)
 			{
-				Vector3 velo = GetGlobalPosition().DirectionTo(walkTarget.Value with { Y = Position.Y });
-				CharacterVelocity = new(velo.X * WalkSpeed, CharacterVelocity.Y, velo.Z * WalkSpeed);
-				GDNode3D.GlobalRotationDegrees = new Vector3(Rotation.X, Mathf.RadToDeg(Mathf.LerpAngle(Mathf.DegToRad(Rotation.Y), Mathf.Atan2(CharacterVelocity.X, CharacterVelocity.Z), MathUtils.ExpDecay((float)delta, BodyRotateLerp))), Rotation.Z);
-
 				float distanceToTarget = GetGlobalPosition().DistanceTo(walkTarget.Value);
 
 				if (distanceToTarget > 0.5f)
 				{
+					Vector3 velo = GetGlobalPosition().DirectionTo(walkTarget.Value with { Y = Position.Y });
+					CharacterVelocity = new(velo.X * WalkSpeed, CharacterVelocity.Y, velo.Z * WalkSpeed);
+					GDNode3D.GlobalRotationDegrees = new Vector3(Rotation.X, Mathf.RadToDeg(Mathf.LerpAngle(Mathf.DegToRad(Rotation.Y), Mathf.Atan2(CharacterVelocity.X, CharacterVelocity.Z), MathUtils.ExpDecay((float)delta, BodyRotateLerp))), Rotation.Z);
 					finalState = CharacterModel.CharacterModelStateEnum.Walking;
 					animSpeed = WalkSpeed / 8;
 					TryStepUp();
+				}
+				else
+				{
+					// Do not retain the last horizontal velocity after reaching a
+					// MoveTo/navigation target; that presented as idle NPCs sliding.
+					CharacterVelocity = new(0, CharacterVelocity.Y, 0);
 				}
 			}
 			else if (this is not Player || playerNPCOverride)

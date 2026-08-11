@@ -49,7 +49,7 @@ transparent_bg = true
 oversampling_override = 1.0
 title = "Publish Place"
 initial_position = 2
-size = Vector2i(900, 560)
+size = Vector2i(960, 620)
 transient = true
 unresizable = true
 borderless = true
@@ -57,7 +57,7 @@ transparent = true
 popup_wm_hint = true
 minimize_disabled = true
 maximize_disabled = true
-min_size = Vector2i(900, 560)
+min_size = Vector2i(960, 620)
 theme = ExtResource("99_creator_theme")
 script = ExtResource("2_lg06a")
 _listContainer = NodePath("HBoxContainer/Panel/Control2/VBoxContainer/ScrollContainer/VBoxContainer")
@@ -116,15 +116,15 @@ flat = true
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
+offset_left = 12.0
 offset_top = 46.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_right = -12.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="HBoxContainer" unique_id=1351491859]
-custom_minimum_size = Vector2(310, 0)
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ksoaw")
 
@@ -137,10 +137,10 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 theme = ExtResource("99_creator_theme")
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Panel/Control2" unique_id=1986906485]
 layout_mode = 2
@@ -182,10 +182,10 @@ text = "+  Create New {TYPE}"
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("99_creator_theme")
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Control" unique_id=1894748430]
 layout_mode = 2

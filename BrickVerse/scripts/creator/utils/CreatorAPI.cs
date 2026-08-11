@@ -84,6 +84,32 @@ public static class CreatorAPI
 		_client.BeforeRequestAsync = EnsureTokenValid;
 	}
 
+	public static Task<CreatorLatestBinaryResponse?> GetLatestCreatorBinary(string platform, string branch)
+	{
+		return _client.GetFromJsonAsync(
+			$"{Globals.MainEndpoint}/api/v3/binaries/{Uri.EscapeDataString(platform)}/{Uri.EscapeDataString(branch)}/creator",
+			CreatorAPIGenerationContext.Default.CreatorLatestBinaryResponse
+		);
+	}
+
+	public static async Task<byte[]> DownloadCreatorAsset(string assetId)
+	{
+		if (string.IsNullOrWhiteSpace(assetId))
+			throw new ArgumentException("An asset ID is required.", nameof(assetId));
+		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + Uri.EscapeDataString(assetId));
+		using HttpResponseMessage response = await _client.GetAsync(url);
+		if (!response.IsSuccessStatusCode)
+		{
+			string body = await response.Content.ReadAsStringAsync();
+			throw new HttpRequestException(
+				$"Prefab {assetId} download failed with {(int)response.StatusCode} ({response.StatusCode}). {body}"
+			);
+		}
+		byte[] data = await response.Content.ReadAsByteArrayAsync();
+		if (data.Length == 0) throw new System.IO.InvalidDataException($"Prefab {assetId} returned an empty file.");
+		return data;
+	}
+
 	public static async Task SetupAuth()
 	{
 		CreatorAuthServer.StartServer();
@@ -1155,23 +1181,54 @@ public static class CreatorAPI
 				? updatedAt
 				: null,
 			IconUrl = GetString(asset, "textureUrl"),
+			Category = GetString(asset, "assetCategory"),
 		};
 	}
 
 	public static async Task<CreatorAssetItem[]> GetCreatorAssets(
-		UI.Popups.PublishPopup.PublishTypeEnum assetType,
+		UI.Popups.PublishPopup.PublishTypeEnum? assetType,
 		int? cursor = null
+	)
+	{
+		CreatorAssetPage page = await GetCreatorAssetPage(
+			assetType,
+			cursor?.ToString()
+		);
+		return page.Items;
+	}
+
+	public static async Task<CreatorAssetPage> GetCreatorAssetPage(
+		UI.Popups.PublishPopup.PublishTypeEnum? assetType,
+		string? cursor = null,
+		string search = "",
+		string sort = "UPDATED_DESC",
+		string? creatorType = null,
+		string? creatorId = null,
+		string? privacy = null,
+		string? moderation = null,
+		string scope = "CREATED",
+		int limit = 20
 	)
 	{
 		if (!IsUserAuthenticated)
 			throw new AuthenticationException("User authentication required");
 
+		List<string> query =
+		[
+			"limit=" + Math.Clamp(limit, 1, 50),
+			"sort=" + Uri.EscapeDataString(sort),
+			"scope=" + Uri.EscapeDataString(scope),
+		];
+		if (assetType.HasValue) query.Add("type=" + Uri.EscapeDataString(assetType.Value.ToString().ToUpperInvariant()));
+		if (!string.IsNullOrWhiteSpace(cursor)) query.Add("cursor=" + Uri.EscapeDataString(cursor));
+		if (!string.IsNullOrWhiteSpace(search)) query.Add("search=" + Uri.EscapeDataString(search.Trim()));
+		if (!string.IsNullOrWhiteSpace(creatorType)) query.Add("creatorType=" + Uri.EscapeDataString(creatorType));
+		if (!string.IsNullOrWhiteSpace(creatorId)) query.Add("creatorId=" + Uri.EscapeDataString(creatorId));
+		if (!string.IsNullOrWhiteSpace(privacy)) query.Add("privacy=" + Uri.EscapeDataString(privacy));
+		if (!string.IsNullOrWhiteSpace(moderation)) query.Add("moderation=" + Uri.EscapeDataString(moderation));
+
 		using HttpResponseMessage msg = await _client.GetAsync(
-			Globals.ApiEndpoint.PathJoin(
-				"/v3/assets?limit=50&type="
-					+ assetType.ToString().ToUpper()
-					+ (cursor.HasValue ? "&cursor=" + cursor.Value : "")
-			)
+			Globals.ApiEndpoint.PathJoin("/v3/assets?" + string.Join("&", query))
 		);
 		string body = await msg.Content.ReadAsStringAsync();
 
@@ -1190,7 +1247,7 @@ public static class CreatorAPI
 		)
 		{
 			BV.PrintErr("CreatorAPI: /v3/assets response did not include an assets array");
-			return [];
+			return new CreatorAssetPage();
 		}
 
 		List<CreatorAssetItem> assetList = [];
@@ -1200,7 +1257,11 @@ public static class CreatorAPI
 			assetList.Add(ParseCreatorAssetItem(asset));
 		}
 
-		return [.. assetList];
+		string? nextCursor = doc.RootElement.TryGetProperty("nextCursor", out JsonElement next)
+			&& next.ValueKind == JsonValueKind.String
+			? next.GetString()
+			: null;
+		return new CreatorAssetPage { Items = [.. assetList], NextCursor = nextCursor };
 	}
 
 	private static async Task<CreatorPlaceItem[]> GetCreatedWorldsFromCreatedWorldsEndpoint()
