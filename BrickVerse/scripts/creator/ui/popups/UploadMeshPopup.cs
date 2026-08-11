@@ -222,6 +222,8 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 		string extension = Path.GetExtension(path).ToLowerInvariant();
 		if (extension is not ".obj" and not ".fbx" and not ".glb" and not ".gltf")
 			throw new InvalidOperationException("Choose an OBJ, FBX, GLB, or GLTF model.");
+		if (extension == ".obj")
+			return WavefrontObjImporter.Import(path);
 
 		Resource? loaded = ResourceLoader.Load(path, cacheMode: ResourceLoader.CacheMode.Ignore);
 		if (loaded is Godot.Mesh directMesh)

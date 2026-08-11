@@ -13,6 +13,7 @@ public static class CreatorSettingKeys
 		public const string PromptForWorldProjectLocation = "creator.prompt_for_world_project_location";
 		public const string ShowInteractiveTutorial = "creator.show_interactive_tutorial";
 		public const string ShowWhatsNew = "creator.show_whats_new";
+		public const string ShowUpdateNotifications = "creator.show_update_notifications";
 	}
 
 	public static class Interface
@@ -62,6 +63,9 @@ public static class CreatorSettingKeys
 		public const string CursorWidth = "code_editor.cursor_width";
 		public const string ColorTheme = "code_editor.color_theme";
 		public const string FontSize = "code_editor.font_size";
+		public const string InlineSuggestions = "code_editor.inline_suggestions";
+		public const string HoverDocumentation = "code_editor.hover_documentation";
+		public const string FormatOnSave = "code_editor.format_on_save";
 	}
 
 	public static class Popups
@@ -71,5 +75,6 @@ public static class CreatorSettingKeys
 		public const string CloseTabWarning = "popups.close_tab_warning";
 		public const string ExecutorConfirmation = "popups.executor_confirmation";
 		public const string ExecutorSuccess = "popups.executor_success";
+		public const string PrefabScriptWarning = "popups.prefab_script_warning";
 	}
 }

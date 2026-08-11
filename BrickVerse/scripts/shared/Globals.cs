@@ -155,6 +155,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		FileLinkAsset.RegisterAsset();
 		GradientImageAsset.RegisterAsset();
 		BVMeshAnimationAsset.RegisterAsset();
+		BVFontAsset.RegisterAsset();
 	}
 
 	public override void _EnterTree()

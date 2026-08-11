@@ -26,11 +26,11 @@ public sealed partial class AchievementsService : Instance
 
 	private bool _useAchievementSound = true;
 	private bool _notifyAchievements = true;
-	private readonly HashSet<int> _gotAchievements = [];
+	private readonly HashSet<string> _gotAchievements = [];
 	private int _requestsThisMinute = 0;
 	private int _currentMinute = 0;
 
-	[ScriptProperty] public BVSignal<int> GotAchievement { get; private set; } = new();
+	[ScriptProperty] public BVSignal<string> GotAchievement { get; private set; } = new();
 
 	[Editable, ScriptProperty]
 	public bool UseAchievementSound
@@ -92,6 +92,12 @@ public sealed partial class AchievementsService : Instance
 	[ScriptMethod]
 	public async Task AwardAsync(string userID, int achievementID)
 	{
+		await AwardAsync(userID, achievementID.ToString());
+	}
+
+	[ScriptMethod]
+	public async Task AwardAsync(string userID, string achievementID)
+	{
 		ServerGuard();
 
 		Player? targetPlr = Root.Players.GetPlayerByID(userID);
@@ -117,7 +123,7 @@ public sealed partial class AchievementsService : Instance
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
-	private void NetRecvAchievement(int id)
+	private void NetRecvAchievement(string id)
 	{
 		if (_gotAchievements.Contains(id)) return;
 		_gotAchievements.Add(id);
@@ -144,6 +150,12 @@ public sealed partial class AchievementsService : Instance
 	[ScriptMethod]
 	public async Task<bool> HasAchievementAsync(string userID, int achievementID)
 	{
+		return await HasAchievementAsync(userID, achievementID.ToString());
+	}
+
+	[ScriptMethod]
+	public async Task<bool> HasAchievementAsync(string userID, string achievementID)
+	{
 		ServerGuard();
 
 		if (!UseRequest())
@@ -159,31 +171,26 @@ public sealed partial class AchievementsService : Instance
 		return false;
 	}
 
-	internal async Task RequestGiveAchievement(string userID, int achievementID)
+	internal async Task RequestGiveAchievement(string userID, string achievementID)
 	{
 		SetHttpClientAuthToken();
-
-		List<KeyValuePair<string, string>> formVariables =
-		[
-			new("userID", userID.ToString()),
-			new("achievementID", achievementID.ToString()),
-		];
-		FormUrlEncodedContent formContent = new(formVariables);
-
-		using var pa = await _client.PostAsync(
-			Globals.ApiEndpoint.PathJoin("/v1/game/server/achievements/award"),
-			formContent
+		string query = "?userId=" + Uri.EscapeDataString(userID)
+			+ "&achievementId=" + Uri.EscapeDataString(achievementID);
+		using HttpResponseMessage response = await _client.PostAsync(
+			Globals.ApiEndpoint.PathJoin("/v3/world/server/achievements/grant" + query),
+			new ByteArrayContent([])
 		);
+		response.EnsureSuccessStatusCode();
 	}
 
-	internal async Task<bool> RequestHasAchievement(string userID, int achievementID)
+	internal async Task<bool> RequestHasAchievement(string userID, string achievementID)
 	{
 		SetHttpClientAuthToken();
 		APIHasAchievementResponse res = await _client.GetFromJsonAsync(
-			Globals.ApiEndpoint.PathJoin("/v1/game/server/achievements/has-achievement?userID=" + userID + "&achievementID=" + achievementID),
+			Globals.ApiEndpoint.PathJoin("/v3/world/server/achievements/ownership?userId=" + Uri.EscapeDataString(userID) + "&achievementId=" + Uri.EscapeDataString(achievementID)),
 			ServerAPIGenerationContext.Default.APIHasAchievementResponse
 		);
-		return res.HasAchievement;
+		return res.UserOwns;
 	}
 
 	private void SetHttpClientAuthToken()

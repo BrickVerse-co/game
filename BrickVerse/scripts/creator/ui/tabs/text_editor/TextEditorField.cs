@@ -34,8 +34,14 @@ public sealed partial class TextEditorField : CodeEdit
 
 	private int _currentFontSize = 16;
 	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnostics = [];
+	private string _inlineSuggestion = string.Empty;
 	private const int FormatDocumentMenuId = 10001;
 	private const int FormatSelectionMenuId = 10002;
+	private const int DuplicateLineMenuId = 10003;
+	private const int DeleteLineMenuId = 10004;
+	private const int MoveLineUpMenuId = 10005;
+	private const int MoveLineDownMenuId = 10006;
+	private const int OpenExternalEditorMenuId = 10007;
 
 	public override void _Ready()
 	{
@@ -49,6 +55,13 @@ public sealed partial class TextEditorField : CodeEdit
 		menu.AddSeparator();
 		menu.AddItem("Format Document", FormatDocumentMenuId);
 		menu.AddItem("Format Selection", FormatSelectionMenuId);
+		menu.AddSeparator();
+		menu.AddItem("Duplicate Line/Selection    Ctrl+D", DuplicateLineMenuId);
+		menu.AddItem("Delete Line/Selection    Ctrl+Shift+K", DeleteLineMenuId);
+		menu.AddItem("Move Line Up    Alt+Up", MoveLineUpMenuId);
+		menu.AddItem("Move Line Down    Alt+Down", MoveLineDownMenuId);
+		menu.AddSeparator();
+		menu.AddItem("Open in External Editor", OpenExternalEditorMenuId);
 		menu.IdPressed += OnEditorMenuPressed;
 		menu.AboutToPopup += () =>
 			menu.SetItemDisabled(menu.GetItemIndex(FormatSelectionMenuId), !HasSelection());
@@ -80,6 +93,11 @@ public sealed partial class TextEditorField : CodeEdit
 	{
 		if (id == FormatDocumentMenuId) Root.FormatDocument();
 		else if (id == FormatSelectionMenuId) Root.FormatSelection();
+		else if (id == DuplicateLineMenuId) Root.DuplicateCurrentLines();
+		else if (id == DeleteLineMenuId) Root.DeleteCurrentLines();
+		else if (id == MoveLineUpMenuId) Root.MoveCurrentLine(-1);
+		else if (id == MoveLineDownMenuId) Root.MoveCurrentLine(1);
+		else if (id == OpenExternalEditorMenuId) Root.OpenInExternalEditor();
 	}
 
 	public void SetDiagnostics(IReadOnlyDictionary<int, List<EditorDiagnosticDecoration>> diagnostics)
@@ -100,6 +118,7 @@ public sealed partial class TextEditorField : CodeEdit
 	public override void _Draw()
 	{
 		base._Draw();
+		DrawInlineSuggestion();
 		if (_diagnostics.Count == 0) return;
 
 		Font font = GetThemeFont("font");
@@ -139,6 +158,35 @@ public sealed partial class TextEditorField : CodeEdit
 			float lensY = startRect.Position.Y + startRect.Size.Y - 3f;
 			DrawString(font, new Vector2(lensX, lensY), fitted, HorizontalAlignment.Left, -1, fontSize, color);
 		}
+	}
+
+	public void SetInlineSuggestion(string suggestion)
+	{
+		_inlineSuggestion = suggestion;
+		QueueRedraw();
+	}
+
+	public bool AcceptInlineSuggestion()
+	{
+		if (string.IsNullOrEmpty(_inlineSuggestion)) return false;
+		InsertTextAtCaret(_inlineSuggestion);
+		SetInlineSuggestion(string.Empty);
+		return true;
+	}
+
+	public bool HasActiveCodeCompletion() => GetCodeCompletionSelectedIndex() >= 0;
+
+	private void DrawInlineSuggestion()
+	{
+		if (string.IsNullOrEmpty(_inlineSuggestion) || HasSelection() || GetCaretCount() != 1) return;
+
+		Rect2I caretRect = GetRectAtLineColumn(GetCaretLine(), GetCaretColumn());
+		if (caretRect.Position.X < 0 || caretRect.Position.Y < 0) return;
+
+		Font font = GetThemeFont("font");
+		int fontSize = GetThemeFontSize("font_size");
+		Vector2 position = new(caretRect.Position.X, caretRect.Position.Y + font.GetAscent(fontSize));
+		DrawString(font, position, _inlineSuggestion, HorizontalAlignment.Left, -1, fontSize, Color.FromHtml("#6E7681"));
 	}
 
 	private void DrawSquiggle(Vector2 start, float width, Color color)

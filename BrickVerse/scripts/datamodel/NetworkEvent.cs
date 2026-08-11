@@ -7,7 +7,9 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using System;
+using System.Collections.Generic;
 
 namespace BrickVerse.Datamodel;
 
@@ -15,6 +17,57 @@ namespace BrickVerse.Datamodel;
 public sealed partial class NetworkEvent : Instance
 {
 	private bool _reliable;
+	private bool _rateLimitEnabled;
+	private int _rateLimitMaxRequests = 30;
+	private float _rateLimitWindowSeconds = 1f;
+	private RateLimitScopeEnum _rateLimitScope;
+	private bool _logRateLimitRejections;
+	private readonly Dictionary<int, Queue<ulong>> _requestTimesByPeer = [];
+	private readonly Queue<ulong> _requestTimesForServer = new();
+
+	/// <summary>Enables server-side limiting of client invocations. Disabled by default.</summary>
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool RateLimitEnabled
+	{
+		get => _rateLimitEnabled;
+		set
+		{
+			_rateLimitEnabled = value;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Maximum accepted requests during each configured rate-limit window.</summary>
+	[Editable, ScriptProperty, DefaultValue(30)]
+	public int RateLimitMaxRequests
+	{
+		get => _rateLimitMaxRequests;
+		set { _rateLimitMaxRequests = Math.Clamp(value, 1, 10000); OnPropertyChanged(); }
+	}
+
+	/// <summary>Length of the sliding rate-limit window, in seconds.</summary>
+	[Editable, ScriptProperty, DefaultValue(1f)]
+	public float RateLimitWindowSeconds
+	{
+		get => _rateLimitWindowSeconds;
+		set { _rateLimitWindowSeconds = Math.Clamp(value, 0.1f, 60f); OnPropertyChanged(); }
+	}
+
+	/// <summary>Whether request capacity is tracked separately per player or shared by the server.</summary>
+	[Editable, ScriptProperty, DefaultValue(RateLimitScopeEnum.PerPlayer)]
+	public RateLimitScopeEnum RateLimitScope
+	{
+		get => _rateLimitScope;
+		set { _rateLimitScope = value; OnPropertyChanged(); }
+	}
+
+	/// <summary>Writes a warning when a request is rejected. Disabled to avoid log spam by default.</summary>
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool LogRateLimitRejections
+	{
+		get => _logRateLimitRejections;
+		set { _logRateLimitRejections = value; OnPropertyChanged(); }
+	}
 
 	/// <summary>
 	/// Fires when the server receives a message from the client.
@@ -136,6 +189,7 @@ public sealed partial class NetworkEvent : Instance
 	{
 		try
 		{
+			if (Root.Network.IsServer && !AcceptClientRequest(sentBy)) return;
 			NetMessage msg = await NetMessage.Deserialize(rawdata);
 
 			if (Root.Network.IsServer)
@@ -156,5 +210,33 @@ public sealed partial class NetworkEvent : Instance
 		{
 			GD.PushError(e);
 		}
+	}
+
+	private bool AcceptClientRequest(int peerId)
+	{
+		if (!RateLimitEnabled) return true;
+		ulong now = Time.GetTicksMsec();
+		Queue<ulong> requests;
+		if (RateLimitScope == RateLimitScopeEnum.PerServer)
+			requests = _requestTimesForServer;
+		else if (!_requestTimesByPeer.TryGetValue(peerId, out requests!))
+			_requestTimesByPeer[peerId] = requests = new Queue<ulong>();
+		ulong windowMilliseconds = (ulong)Math.Max(100, RateLimitWindowSeconds * 1000f);
+		while (requests.Count > 0 && now - requests.Peek() >= windowMilliseconds) requests.Dequeue();
+		if (requests.Count >= RateLimitMaxRequests)
+		{
+			if (LogRateLimitRejections)
+				BV.PrintWarn($"NetworkEvent {LuaPath} rejected a {RateLimitScope} rate-limited request from peer {peerId}.");
+			return false;
+		}
+		requests.Enqueue(now);
+		return true;
+	}
+
+	[ScriptEnum("NetworkEventRateLimitScope")]
+	public enum RateLimitScopeEnum
+	{
+		PerPlayer,
+		PerServer,
 	}
 }

@@ -72,7 +72,7 @@ custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 0
-item_count = 5
+item_count = 6
 popup/item_0/text = "Models"
 popup/item_0/id = 0
 popup/item_1/text = "Images"
@@ -83,6 +83,8 @@ popup/item_3/text = "Meshes"
 popup/item_3/id = 3
 popup/item_4/text = "Plugins"
 popup/item_4/id = 4
+popup/item_5/text = "Fonts"
+popup/item_5/id = 5
 
 [node name="Filter" type="OptionButton" parent="Content/Container/Options" unique_id=67359682]
 custom_minimum_size = Vector2(88, 30)

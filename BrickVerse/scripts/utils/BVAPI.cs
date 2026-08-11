@@ -356,6 +356,7 @@ public static class BVAPI
 			LibraryQueryTypeEnum.Audio => "SOUND",
 			LibraryQueryTypeEnum.Mesh => "MESH",
 			LibraryQueryTypeEnum.Addon => "PLUGIN",
+			LibraryQueryTypeEnum.Font => "FONT",
 			_ => ""
 		};
 

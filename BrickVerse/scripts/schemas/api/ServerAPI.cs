@@ -67,8 +67,8 @@ public struct APIValidateResponse
 
 public struct APIHasAchievementResponse
 {
-	[JsonPropertyName("hasAchievement")]
-	public bool HasAchievement { get; set; }
+	[JsonPropertyName("userOwns")]
+	public bool UserOwns { get; set; }
 }
 
 public struct APIPurchaseResponse
@@ -77,10 +77,19 @@ public struct APIPurchaseResponse
 	public bool Success { get; set; }
 }
 
+public struct SocialFriendRequest
+{
+	[JsonPropertyName("senderId")]
+	public string SenderId { get; set; }
+	[JsonPropertyName("recipientId")]
+	public string RecipientId { get; set; }
+}
+
 [JsonSerializable(typeof(APIHeartbeatResponse))]
 [JsonSerializable(typeof(APIValidateResponse))]
 [JsonSerializable(typeof(APIHasAchievementResponse))]
 [JsonSerializable(typeof(APIPurchaseResponse))]
+[JsonSerializable(typeof(SocialFriendRequest))]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(bool))]

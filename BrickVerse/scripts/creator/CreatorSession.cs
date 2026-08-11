@@ -259,7 +259,7 @@ public partial class CreatorSession : Node, IDisposable
 
 	private void SetupLuaDocs()
 	{
-		const string definitionSchemaVersion = "3";
+		const string definitionSchemaVersion = "6";
 		string expectedDefinitionVersion = $"{Globals.AppVersion}:luau-{definitionSchemaVersion}";
 		string luauRcPath = ProjectFolderPath.PathJoin(".luaurc");
 		string luauPath = BVProjectFolderPath.PathJoin("luau");
@@ -279,7 +279,13 @@ public partial class CreatorSession : Node, IDisposable
 		//BV.Print("Reading version...");
 		string versionData = File.ReadAllText(versionPath);
 
-		if (versionData != expectedDefinitionVersion || Globals.IsInGDEditor)
+		string definitionPath = luauPath.PathJoin("def.d.luau");
+		bool definitionsAreComplete = File.Exists(definitionPath)
+			&& File.ReadLines(definitionPath).Any(static line => line.Trim() == "declare game: World")
+			&& File.ReadLines(definitionPath).Any(static line => line.Trim() == "declare script: Script")
+			&& File.ReadLines(definitionPath).Any(static line => line.StartsWith("declare function print(", StringComparison.Ordinal));
+
+		if (versionData != expectedDefinitionVersion || !definitionsAreComplete || Globals.IsInGDEditor)
 		{
 			//BV.Print("Generating doc...");
 			LuaDefinitionGenerator.GenerateDocFiles(luauPath);

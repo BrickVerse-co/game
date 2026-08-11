@@ -10,8 +10,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Godot;
-using BrickVerse.Attributes;
 using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -887,6 +887,8 @@ internal sealed class ForgeToolExecutor
 		if (script.LinkedScript?.LinkedPath is string linkedPath)
 		{
 			_root.IO.WriteTextToPath(linkedPath, source);
+			string absolutePath = _root.LinkedSession?.GlobalizePath(linkedPath) ?? linkedPath;
+			TextEditorRoot.NotifyExternalFileChanged(absolutePath);
 			return;
 		}
 
