@@ -6,10 +6,13 @@ using Godot;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Utils;
+using System;
+using System.Net.Http;
 
 namespace BrickVerse.Mobile.UI;
 
-public partial class FeedPostCard : Node
+public partial class FeedPostCard : PanelContainer
 {
 	[Export] private Label _usernameLabel = null!;
 	[Export] private Label _postDateLabel = null!;
@@ -21,11 +24,16 @@ public partial class FeedPostCard : Node
 	[Export] private Label _commentLabel = null!;
 
 	private readonly BVImageAsset _pfpAsset = new();
+	private Button _likeButton = null!;
+	private Button _commentButton = null!;
+	private bool _isLiked;
+	private bool _likeBusy;
 
 	public APIFeedPostData Data;
 
 	public override void _Ready()
 	{
+		MobileMotion.BindCard(this);
 		_pfpAsset.ResourceLoaded += OnPFPLoaded;
 		_pfpAsset.ImageType = ImageTypeEnum.UserAvatarHeadshot;
 		_pfpAsset.ImageID = Data.Author.Id.ToString();
@@ -34,7 +42,15 @@ public partial class FeedPostCard : Node
 		_postDateLabel.Text = Data.PostedAt.ToShortDateString();
 		_contentLabel.Text = Data.Content;
 		_likeLabel.Text = Data.LikeCount.ToString();
-		_commentLabel.Text = Data.Comments.Length.ToString();
+		_commentLabel.Text = Data.ReplyCount.ToString();
+		_isLiked = Data.IsLiked;
+		_likeButton = GetNode<Button>("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer/LikeButton");
+		_commentButton = GetNode<Button>("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2/CommentButton");
+		_likeButton.Modulate = _isLiked ? new Color(1f, 0.35f, 0.45f) : Colors.White;
+		_likeButton.Pressed += ToggleLike;
+		_commentButton.Pressed += OpenComments;
+		MobileMotion.Bind(_likeButton);
+		MobileMotion.Bind(_commentButton);
 
 		if (Data.PlaceID != null)
 		{
@@ -58,6 +74,31 @@ public partial class FeedPostCard : Node
 		{
 			_mediaRect.Visible = false;
 		}
+	}
+
+	private async void ToggleLike()
+	{
+		if (_likeBusy) return;
+		_likeBusy = true;
+		_likeButton.Disabled = true;
+		try
+		{
+			using var response = await BVAPI.SendJson(_isLiked ? HttpMethod.Delete : HttpMethod.Post, $"/v3/social/posts/{Data.Id}/like");
+			_isLiked = !_isLiked;
+			Data.LikeCount = Math.Max(0, Data.LikeCount + (_isLiked ? 1 : -1));
+			_likeLabel.Text = Data.LikeCount.ToString();
+			_likeButton.Modulate = _isLiked ? new Color(1f, 0.35f, 0.45f) : Colors.White;
+		}
+		catch (Exception exception) { OS.Alert(exception.Message, "Could not update like"); }
+		finally { _likeBusy = false; _likeButton.Disabled = false; }
+	}
+
+	private void OpenComments()
+	{
+		FeedCommentsDialog dialog = GD.Load<PackedScene>("res://scenes/mobile/components/home/feed_comments_dialog.tscn").Instantiate<FeedCommentsDialog>();
+		GetTree().Root.AddChild(dialog);
+		dialog.Open(Data.Id);
+		dialog.CommentAdded += () => { Data.ReplyCount++; _commentLabel.Text = Data.ReplyCount.ToString(); };
 	}
 
 	private void OnPFPLoaded(Resource resource)

@@ -45,6 +45,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Control" type="Panel" parent="ScrollContainer/VBoxContainer" unique_id=1767925624]
+visible = false
 custom_minimum_size = Vector2(0, 225)
 clip_contents = true
 layout_mode = 2
@@ -143,6 +144,20 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_0s7as")
 layout_mode = 2
 theme_override_constants/separation = 16
 
+[node name="TopSafeArea" type="Control" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Discover worlds"
+
+[node name="Subtitle" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+modulate = Color(0.71, 0.76, 0.83, 1)
+layout_mode = 2
+text = "Find your next favorite experience"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=658400945]
 visible = false
 layout_mode = 2
@@ -161,6 +176,55 @@ size_flags_vertical = 4
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="Search" type="LineEdit" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+placeholder_text = "Search worlds"
+
+[node name="Filters" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Sort" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 5
+popup/item_0/text = "Recommended"
+popup/item_0/id = 0
+popup/item_1/text = "Featured"
+popup/item_1/id = 1
+popup/item_2/text = "Popular"
+popup/item_2/id = 2
+popup/item_3/text = "Top rated"
+popup/item_3/id = 3
+popup/item_4/text = "New & rising"
+popup/item_4/id = 4
+
+[node name="Genre" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 7
+popup/item_0/text = "All genres"
+popup/item_0/id = 0
+popup/item_1/text = "Adventure"
+popup/item_1/id = 1
+popup/item_2/text = "Action"
+popup/item_2/id = 2
+popup/item_3/text = "Roleplay"
+popup/item_3/id = 3
+popup/item_4/text = "Simulation"
+popup/item_4/id = 4
+popup/item_5/text = "Sports"
+popup/item_5/id = 5
+popup/item_6/text = "Horror"
+popup/item_6/id = 6
+
+[node name="Status" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+modulate = Color(0.71, 0.76, 0.83, 1)
+layout_mode = 2
+text = "Loading worlds…"
+horizontal_alignment = 1
+
 [node name="Center" type="CenterContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=1062181130]
 layout_mode = 2
 
@@ -168,5 +232,5 @@ layout_mode = 2
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
-columns = 2
+columns = 3
 script = ExtResource("5_jqfof")

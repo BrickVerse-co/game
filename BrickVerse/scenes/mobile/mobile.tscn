@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://dudwjpjg5ui44" path="res://scenes/mobile/splash/new_user_splash.tscn" id="10_py0ce"]
 [ext_resource type="PackedScene" uid="uid://yd2us4t5s5uc" path="res://scenes/mobile/splash/startup_splash.tscn" id="11_lfm17"]
 [ext_resource type="PackedScene" uid="uid://bnoa0l7kacn1h" path="res://scenes/mobile/components/misc/loading_modal.tscn" id="12_p1d8x"]
+[ext_resource type="Script" path="res://scripts/mobile/utils/MobileBillingService.cs" id="13_billing"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xbpss"]
 bg_color = Color(0.12941177, 0.24313726, 0.38039216, 1)
@@ -222,7 +223,7 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="Layout/Navbar/HBoxContainer/Dev/VBoxContainer" unique_id=839326636]
 layout_mode = 2
-text = "Dev"
+text = "More"
 horizontal_alignment = 1
 
 [node name="Panel" type="Panel" parent="." unique_id=1084268898]
@@ -250,6 +251,17 @@ texture = ExtResource("9_xbpss")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="HomeButton" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 58.0
+offset_bottom = 58.0
+flat = true
+tooltip_text = "Home"
+script = ExtResource("4_xbpss")
+SwitchTo = 1
+
 [node name="NewUserSplash" parent="." unique_id=1174497852 instance=ExtResource("10_py0ce")]
 visible = false
 layout_mode = 1
@@ -260,3 +272,6 @@ layout_mode = 1
 
 [node name="LoadingModal" parent="." unique_id=724430762 instance=ExtResource("12_p1d8x")]
 layout_mode = 1
+
+[node name="MobileBilling" type="Node" parent="."]
+script = ExtResource("13_billing")

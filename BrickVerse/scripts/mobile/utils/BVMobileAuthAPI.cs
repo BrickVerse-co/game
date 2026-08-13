@@ -29,6 +29,7 @@ public static class BVMobileAuthAPI
 	public static event Action? AskForAuthentication;
 
 	public static APIV3AuthMeUser CurrentUserInfo { get; private set; }
+	public static bool IsAuthenticated => !string.IsNullOrWhiteSpace(_authData.Token);
 
 	private static MobileAuthData _authData;
 	private const string AuthDataPath = "user://auth2";
@@ -50,6 +51,7 @@ public static class BVMobileAuthAPI
 			{
 				BV.Print("Existing mobile authentication data found.");
 				_authData = auth.Value;
+				_authState = _authData.PendingState ?? "";
 			}
 		}
 
@@ -76,14 +78,17 @@ public static class BVMobileAuthAPI
 	}
 
 	public static void StartMobileAuth() => _ = StartMobileAuthAsync();
+	public static void StartMobileAuth(bool register) => _ = StartMobileAuthAsync(register);
 
-	private static async Task StartMobileAuthAsync()
+	private static async Task StartMobileAuthAsync(bool register = false)
 	{
 		_mobileAuthCancellation?.Cancel();
 		_mobileAuthCancellation?.Dispose();
 		_mobileAuthCancellation = new CancellationTokenSource();
 		CancellationToken cancellationToken = _mobileAuthCancellation.Token;
 		_authState = Guid.NewGuid().ToString();
+		_authData.PendingState = _authState;
+		SaveAuthData();
 
 		try
 		{
@@ -106,7 +111,7 @@ public static class BVMobileAuthAPI
 
 			string code = tokenNode.GetString()!;
 			string authUrl = Globals.MainEndpoint.PathJoin(
-				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}"
+				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}&mode={(register ? "signup" : "login")}"
 			);
 			OS.ShellOpen(authUrl);
 			await PollForQuickSignInAsync(code, DateTime.UtcNow.AddMinutes(5), cancellationToken);
@@ -122,6 +127,26 @@ public static class BVMobileAuthAPI
 		}
 	}
 
+	public static async void Logout()
+	{
+		_mobileAuthCancellation?.Cancel();
+		try
+		{
+			using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Post, "/v3/auth/logout");
+		}
+		catch (Exception exception)
+		{
+			// Always clear the local credential; an expired/revoked server session is
+			// already effectively logged out.
+			BV.PrintWarn("Server logout did not complete: ", exception.Message);
+		}
+		_authData = new();
+		if (FileAccess.FileExists(AuthDataPath))
+			DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(AuthDataPath));
+		BVAPI.SetAuthToken("");
+		AskForAuthentication?.Invoke();
+	}
+
 	public static async Task LoginWithCodeAndState(string code, string state)
 	{
 		if (string.IsNullOrWhiteSpace(code))
@@ -129,7 +154,7 @@ public static class BVMobileAuthAPI
 			throw new AuthenticationException("Authentication code is required");
 		}
 
-		if (!string.IsNullOrWhiteSpace(_authState) && !string.Equals(state, _authState, StringComparison.Ordinal))
+		if (string.IsNullOrWhiteSpace(_authState) || !string.Equals(state, _authState, StringComparison.Ordinal))
 			throw new AuthenticationException("This sign-in link belongs to a different mobile session.");
 
 		await CompleteQuickSignInAsync(code);
@@ -207,6 +232,7 @@ public static class BVMobileAuthAPI
 				if (!string.IsNullOrWhiteSpace(token))
 				{
 					await LoginWithAuthToken(token);
+					_authState = "";
 					return;
 				}
 			}
@@ -230,6 +256,7 @@ public static class BVMobileAuthAPI
 			_authData.Username = me.Username;
 			_authData.Token = userToken;
 			_authData.UserID = me.Id;
+			_authData.PendingState = null;
 			SaveAuthData();
 			BV.Print("Hello!! ", me.Username);
 
@@ -271,4 +298,7 @@ public struct MobileAuthData
 
 	[JsonInclude]
 	public string Username { get; set; }
+
+	[JsonInclude]
+	public string? PendingState { get; set; }
 }

@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/mobile/ui/MobileAnimatedToggle.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="row"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+
+[node name="SettingToggle" type="CheckButton"]
+custom_minimum_size = Vector2(0, 54)
+size_flags_horizontal = 3
+text = "Setting"
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("row")
+theme_override_styles/hover = SubResource("row")
+theme_override_styles/pressed = SubResource("row")
+script = ExtResource("1")

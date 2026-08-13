@@ -876,7 +876,7 @@ public struct APIMeResponse
 public struct APIWorldsData
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("creatorType")]
 	public string CreatorType { get; set; }
@@ -969,7 +969,7 @@ public struct APIJoinPlaceResponse
 public struct APIJoinPlaceRequest
 {
 	[JsonPropertyName("placeID")]
-	public int PlaceID { get; set; }
+	public long PlaceID { get; set; }
 
 	[JsonPropertyName("isBeta")]
 	public bool IsBeta { get; set; }
@@ -978,7 +978,7 @@ public struct APIJoinPlaceRequest
 public struct APIFeedPostAuthor
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
@@ -1020,7 +1020,7 @@ public struct APIFeedPostComment
 public struct APIFeedPostData
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("content")]
 	public string Content { get; set; }
@@ -1029,7 +1029,7 @@ public struct APIFeedPostData
 	public DateTime PostedAt { get; set; }
 
 	[JsonPropertyName("placeID")]
-	public int? PlaceID { get; set; }
+	public long? PlaceID { get; set; }
 
 	[JsonPropertyName("author")]
 	public APIFeedPostAuthor Author { get; set; }

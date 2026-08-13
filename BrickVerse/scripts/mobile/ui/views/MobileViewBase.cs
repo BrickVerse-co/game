@@ -17,4 +17,6 @@ public partial class MobileViewBase : Control
 	{
 
 	}
+
+	public virtual void RefreshView() { }
 }

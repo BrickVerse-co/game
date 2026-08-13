@@ -57,3 +57,20 @@ stretch_mode = 5
 
 [node name="Container" type="VBoxContainer" parent="." unique_id=179719079]
 layout_mode = 2
+
+[node name="Pagination" type="HBoxContainer" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="Previous" type="Button" parent="Pagination"]
+layout_mode = 2
+text = "Previous"
+
+[node name="Page" type="Label" parent="Pagination"]
+layout_mode = 2
+text = "Page 1"
+vertical_alignment = 1
+
+[node name="Next" type="Button" parent="Pagination"]
+layout_mode = 2
+text = "Next"

@@ -19,6 +19,7 @@ public partial class UserHeadshotCard : Node
 	[Export] private Label _usernameLabel = null!;
 
 	private readonly BVImageAsset _iconAsset = new();
+	private bool _disposed;
 
 	public override void _Ready()
 	{
@@ -30,11 +31,23 @@ public partial class UserHeadshotCard : Node
 
 	private void OnIconLoaded(Resource resource)
 	{
-		_imageRect.Texture = (Texture2D)resource;
+		if (!_disposed && IsInstanceValid(_imageRect)) _imageRect.Texture = (Texture2D)resource;
+	}
+
+	public override void _ExitTree()
+	{
+		_disposed = true;
+		_iconAsset.ResourceLoaded -= OnIconLoaded;
+		base._ExitTree();
 	}
 
 	public async void LoadUserCard()
 	{
+		if (string.IsNullOrWhiteSpace(UserID))
+		{
+			QueueFree();
+			return;
+		}
 		_iconAsset.ImageType = ImageTypeEnum.UserAvatarHeadshot;
 		_iconAsset.ImageID = UserID.ToString();
 		_iconAsset.LoadResource();
@@ -43,7 +56,7 @@ public partial class UserHeadshotCard : Node
 		{
 			APIUserInfo userData = await BVAPI.GetUserFromID(UserID.ToString());
 
-			_usernameLabel.Text = userData.Username;
+			if (!_disposed && IsInstanceValid(_usernameLabel)) _usernameLabel.Text = userData.Username;
 		}
 		catch (Exception ex)
 		{

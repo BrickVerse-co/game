@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="StyleBoxFlat" id="body"]
+bg_color = Color(0.16, 0.28, 0.41, 0.72)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="line"]
+bg_color = Color(0.25, 0.39, 0.53, 0.72)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="SkeletonCard" type="PanelContainer"]
+custom_minimum_size = Vector2(210, 210)
+theme_override_styles/panel = SubResource("body")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Image" type="Panel" parent="Layout"]
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+theme_override_styles/panel = SubResource("line")
+
+[node name="Title" type="Panel" parent="Layout"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_styles/panel = SubResource("line")
+
+[node name="Meta" type="Panel" parent="Layout"]
+custom_minimum_size = Vector2(105, 14)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("line")

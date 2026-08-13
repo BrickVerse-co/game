@@ -69,18 +69,18 @@ public partial class MobileUI : Control
 			StartSplash!.Visible = true;
 		}
 
-		//BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
+		BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		BVMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
 
 		BVMobileAuthAPI.SetupClient();
 		if (mobileToken != null)
 		{
-			_ = BVMobileAuthAPI.LoginWithAuthToken(mobileToken);
+			_ = CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithAuthToken(mobileToken));
 		}
 
-		if (mobileCode != null && mobileState != null)
+		else if (mobileCode != null && mobileState != null)
 		{
-			_ = BVMobileAuthAPI.LoginWithCodeAndState(mobileCode, mobileState);
+			_ = CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithCodeAndState(mobileCode, mobileState));
 		}
 
 		_mainView = GetNode<Control>("Layout/MainView");
@@ -98,7 +98,7 @@ public partial class MobileUI : Control
 		SwitchTo(MobileViewEnum.Home);
 	}
 
-	private void OnUserAuthenticated(APIMeResponse me)
+	private void OnUserAuthenticated(APIV3AuthMeUser me)
 	{
 		HideStartupSplash();
 		if (NewUserSplash != null && IsInstanceValid(NewUserSplash))
@@ -110,10 +110,7 @@ public partial class MobileUI : Control
 	private void OnAskForAuthentication()
 	{
 		HideStartupSplash();
-		if (!Globals.IsInGDEditor)
-		{
-			NewUserSplash.ShowSplash();
-		}
+		NewUserSplash.ShowSplash();
 	}
 
 	private void HideStartupSplash()
@@ -124,16 +121,19 @@ public partial class MobileUI : Control
 
 	private async void OnDeeplinkReceived(DeeplinkURL url)
 	{
-		// Handle polytoria://auth link
+		// Handle brickverse://auth link
 		if (url.Host == "auth")
 		{
 			NameValueCollection authQuery = HttpUtility.ParseQueryString(url.Query);
-			string code = authQuery.Get("code")!;
-			string state = authQuery.Get("state")!;
+			string? code = authQuery.Get("code");
+			string? state = authQuery.Get("state");
+			if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
+			{
+				OS.Alert("The sign-in link is incomplete. Please start sign-in again.", "Authentication Failure");
+				return;
+			}
 
-			LoadingScreen.ShowScreen();
-			await BVMobileAuthAPI.LoginWithCodeAndState(code, state);
-			LoadingScreen.HideScreen();
+			await CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithCodeAndState(code, state));
 		}
 
 		if (url.Host == "client")
@@ -142,7 +142,28 @@ public partial class MobileUI : Control
 		}
 	}
 
-	public async void LaunchGame(int placeID)
+	private async System.Threading.Tasks.Task CompleteAuthenticationAsync(
+		Func<System.Threading.Tasks.Task> authenticate
+	)
+	{
+		LoadingScreen.ShowScreen();
+		try
+		{
+			await authenticate();
+		}
+		catch (Exception exception)
+		{
+			BV.PrintErr("Mobile authentication failed: ", exception);
+			OS.Alert(exception.Message, "Authentication Failure");
+			OnAskForAuthentication();
+		}
+		finally
+		{
+			LoadingScreen.HideScreen();
+		}
+	}
+
+	public async void LaunchGame(long placeID)
 	{
 		LoadingScreen.ShowScreen();
 
@@ -177,7 +198,7 @@ public partial class MobileUI : Control
 		if (CurrentViewNode != null)
 		{
 			CurrentViewNode.HideView();
-			CurrentViewNode.Visible = false;
+			AnimateViewOut(CurrentViewNode, viewEnum == MobileViewEnum.PlaceInfo ? -28f : 0f);
 		}
 
 		// Check if cached
@@ -189,8 +210,14 @@ public partial class MobileUI : Control
 				MobileViewEnum.Home => "res://scenes/mobile/views/home.tscn",
 				MobileViewEnum.Worlds => "res://scenes/mobile/views/worlds.tscn",
 				MobileViewEnum.PlaceInfo => "res://scenes/mobile/views/place_info.tscn",
+				MobileViewEnum.RecordDetail => "res://scenes/mobile/views/record_detail.tscn",
 				MobileViewEnum.Avatar => "res://scenes/mobile/views/avatar.tscn",
-				MobileViewEnum.Dev => "res://scenes/mobile/views/test.tscn",
+				MobileViewEnum.Guilds or MobileViewEnum.Profile or MobileViewEnum.Settings
+					or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Notifications
+					or MobileViewEnum.FriendRequests or MobileViewEnum.Marketplace
+					or MobileViewEnum.Transactions or MobileViewEnum.Upgrade
+					=> "res://scenes/mobile/views/collection.tscn",
+				MobileViewEnum.Store or MobileViewEnum.Dev => "res://scenes/mobile/views/collection.tscn",
 				_ => throw new ArgumentOutOfRangeException(
 					nameof(viewEnum),
 					$"No scene defined for {viewEnum}"
@@ -210,9 +237,40 @@ public partial class MobileUI : Control
 		}
 
 		CurrentViewNode = page;
+		CurrentView = viewEnum;
 		page.ShowView(args);
 		page.Visible = true;
+		AnimateViewIn(page, viewEnum == MobileViewEnum.PlaceInfo ? 28f : 12f);
 		ViewPathSwitched?.Invoke(viewEnum);
+	}
+
+	public void RefreshCurrentView()
+	{
+		CurrentViewNode?.RefreshView();
+		if (CurrentViewNode == null) return;
+		foreach (Node node in CurrentViewNode.FindChildren("*", "", true, false))
+		{
+			if (node is WorldsGrid worlds) worlds.Refresh();
+			else if (node is HomeShelf shelf) shelf.Refresh();
+			else if (node is FeedRoot feed) feed.Refresh();
+		}
+	}
+
+	private static void AnimateViewIn(Control view, float offset)
+	{
+		view.Modulate = new Color(1, 1, 1, 0);
+		view.Position = new Vector2(offset, 0);
+		Tween tween = view.CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+		tween.TweenProperty(view, "modulate:a", 1f, 0.2);
+		tween.TweenProperty(view, "position:x", 0f, 0.24);
+	}
+
+	private static void AnimateViewOut(Control view, float offset)
+	{
+		Tween tween = view.CreateTween().SetParallel().SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+		tween.TweenProperty(view, "modulate:a", 0f, 0.14);
+		tween.TweenProperty(view, "position:x", offset, 0.14);
+		tween.Chain().TweenCallback(Callable.From(() => { if (IsInstanceValid(view)) { view.Visible = false; view.Position = Vector2.Zero; view.Modulate = Colors.White; } }));
 	}
 }
 
@@ -225,4 +283,15 @@ public enum MobileViewEnum
 	Store,
 	Dev,
 	PlaceInfo,
+	Guilds,
+	Profile,
+	Settings,
+	Forum,
+	Events,
+	Notifications,
+	FriendRequests,
+	Marketplace,
+	Transactions,
+	Upgrade,
+	RecordDetail,
 }

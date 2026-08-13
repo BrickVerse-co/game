@@ -11,6 +11,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text;
 
 namespace BrickVerse.Utils;
 
@@ -31,6 +33,48 @@ public static class BVAPI
 
 		_client.DefaultRequestHeaders["Cookie"] =
 			$"auth_token={token}";
+	}
+
+	public static async Task<JsonDocument> GetJson(string apiPath)
+	{
+		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin(apiPath));
+		response.EnsureSuccessStatusCode();
+		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+	}
+
+	public static async Task<JsonDocument> SendJson(HttpMethod method, string apiPath, string json = "{}")
+	{
+		using HttpRequestMessage request = new(method, Globals.ApiEndpoint.PathJoin(apiPath))
+		{
+			Content = new StringContent(json, Encoding.UTF8, "application/json"),
+		};
+		using HttpResponseMessage response = await _client.SendAsync(request);
+		response.EnsureSuccessStatusCode();
+		string body = await response.Content.ReadAsStringAsync();
+		return JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
+	}
+
+	public static async Task<string> ResolveThumbnailUrl(string type, string id)
+	{
+		if (string.IsNullOrWhiteSpace(id)) return "";
+		using JsonDocument response = await GetJson($"/v3/thumbnails/{Uri.EscapeDataString(type)}/{Uri.EscapeDataString(id)}");
+		return response.RootElement.TryGetProperty("url", out JsonElement url) && url.ValueKind == JsonValueKind.String
+			? url.GetString() ?? "" : "";
+	}
+
+	public static async Task<string> GetUniverseThumbnailUrl(long universeId)
+	{
+		using JsonDocument response = await GetJson($"/v3/universe/{universeId}/thumbnails");
+		if (!response.RootElement.TryGetProperty("thumbnails", out JsonElement thumbnails) || thumbnails.ValueKind != JsonValueKind.Array) return "";
+		JsonElement? selected = null;
+		foreach (JsonElement thumbnail in thumbnails.EnumerateArray())
+		{
+			if (!thumbnail.TryGetProperty("thumbnailId", out JsonElement id) || id.ValueKind == JsonValueKind.Null) continue;
+			selected ??= thumbnail;
+			if (thumbnail.TryGetProperty("primary", out JsonElement primary) && primary.ValueKind == JsonValueKind.True) { selected = thumbnail; break; }
+		}
+		if (!selected.HasValue || !selected.Value.TryGetProperty("thumbnailId", out JsonElement selectedId)) return "";
+		return await ResolveThumbnailUrl("ASSET", selectedId.ToString());
 	}
 
 	private static string NormalizeToken(string token)
@@ -93,31 +137,27 @@ public static class BVAPI
 	public static async Task<APIJoinPlaceResponse> RequestJoinGame(APIJoinPlaceRequest req)
 	{
 		APIV3WorldRoot worldInfo = await GetWorldRootFromID(req.PlaceID);
+		string requestJson = $"{{\"universeId\":{JsonSerializer.Serialize(worldInfo.Universe.Id)},\"worldId\":{JsonSerializer.Serialize(worldInfo.World.Id)},\"platform\":{JsonSerializer.Serialize(Globals.IsMobileBuild ? "MOBILE" : "PC")}}}";
+		using JsonDocument queued = await SendJson(HttpMethod.Post, "/v3/world/join", requestJson);
+		if (queued.RootElement.TryGetProperty("joinToken", out JsonElement immediateToken) && immediateToken.ValueKind == JsonValueKind.String)
+			return new APIJoinPlaceResponse { Success = true, Token = immediateToken.GetString() ?? "" };
+		if (!queued.RootElement.TryGetProperty("requestId", out JsonElement requestNode) || requestNode.ValueKind != JsonValueKind.String)
+			throw new Exception(queued.RootElement.TryGetProperty("message", out JsonElement message) ? message.GetString() : "The server did not create a join request.");
 
-		APIV3JoinWorldRequest joinRequest = new()
+		string requestId = requestNode.GetString()!;
+		DateTime deadline = DateTime.UtcNow.AddMinutes(8);
+		while (DateTime.UtcNow < deadline)
 		{
-			Platform = Globals.IsMobileBuild ? "MOBILE" : "PC",
-			UniverseId = worldInfo.Universe.Id,
-			WorldId = worldInfo.World.Id,
-		};
-
-		HttpResponseMessage response = await _client.PostAsJsonAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/world/join"),
-			joinRequest,
-			APIGenerationContext.Default.APIV3JoinWorldRequest
-		);
-
-		response.EnsureSuccessStatusCode();
-
-		APIV3JoinWorldResponse result = await response.Content.ReadFromJsonAsync(
-			APIGenerationContext.Default.APIV3JoinWorldResponse
-		);
-
-		return new APIJoinPlaceResponse
-		{
-			Success = result.Success,
-			Token = result.JoinToken,
-		};
+			await Task.Delay(1000);
+			using JsonDocument status = await GetJson("/v3/world/join/" + Uri.EscapeDataString(requestId));
+			string state = status.RootElement.TryGetProperty("status", out JsonElement stateNode) ? stateNode.GetString() ?? "" : "";
+			if (state == "READY" && status.RootElement.TryGetProperty("joinToken", out JsonElement token) && token.ValueKind == JsonValueKind.String)
+				return new APIJoinPlaceResponse { Success = true, Token = token.GetString() ?? "" };
+			if (state == "FAILED" || (status.RootElement.TryGetProperty("success", out JsonElement success) && success.ValueKind == JsonValueKind.False))
+				throw new Exception(status.RootElement.TryGetProperty("message", out JsonElement failure) ? failure.GetString() : "Unable to join this world.");
+		}
+		try { using JsonDocument _ = await SendJson(HttpMethod.Delete, "/v3/world/join/" + Uri.EscapeDataString(requestId)); } catch { }
+		throw new TimeoutException("The game server took too long to start. Please try again.");
 	}
 
 	public static async Task<APIAvatarResponse> GetUserAvatarFromID(string userID)

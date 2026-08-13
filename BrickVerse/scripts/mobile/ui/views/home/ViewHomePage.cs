@@ -4,12 +4,13 @@
 
 using BrickVerse.Mobile.Utils;
 using BrickVerse.Schemas.API;
+using Godot;
 
 namespace BrickVerse.Mobile.UI;
 
 public partial class ViewHomePage : MobileViewBase
 {
-	//private Label _usernameLabel = null!;
+	private Label _usernameLabel = null!;
 	//private BrickversianModel _polytorian = null!;
 
 	public override void _EnterTree()
@@ -18,6 +19,12 @@ public partial class ViewHomePage : MobileViewBase
 		//_polytorian.AvatarLoaded += OnAvatarLoaded;
 
 		base._EnterTree();
+	}
+
+	public override void _Ready()
+	{
+		_usernameLabel = GetNode<Label>("ScrollContainer/VBoxContainer/Control/Layout/Username");
+		if (BVMobileAuthAPI.IsAuthenticated) LoadView();
 	}
 
 	public override void _ExitTree()
@@ -40,9 +47,9 @@ public partial class ViewHomePage : MobileViewBase
 		LoadView();
 	}
 
-	private static void LoadView()
+	private void LoadView()
 	{
-		//_usernameLabel.Text = BVMobileAuthAPI.CurrentUserInfo.Username;
+		_usernameLabel.Text = BVMobileAuthAPI.CurrentUserInfo.Username;
 		//_polytorian.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id);
 	}
 

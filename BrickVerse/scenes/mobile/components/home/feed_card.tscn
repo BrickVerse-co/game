@@ -9,8 +9,6 @@
 
 [node name="FeedCard" type="PanelContainer" unique_id=1622089533 node_paths=PackedStringArray("_usernameLabel", "_postDateLabel", "_locationLabel", "_contentLabel", "_pfpRect", "_mediaRect", "_likeLabel", "_commentLabel")]
 clip_contents = true
-offset_right = 371.0
-offset_bottom = 379.0
 size_flags_horizontal = 3
 size_flags_vertical = 0
 mouse_filter = 2
@@ -27,7 +25,7 @@ _commentLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContain
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=452575751]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 16
 
@@ -89,6 +87,7 @@ text = "Content Content Content Content Content Content Content Content Content 
 autowrap_mode = 3
 
 [node name="Media" type="TextureRect" parent="HBoxContainer/VBoxContainer" unique_id=1231194857]
+visible = false
 custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 expand_mode = 1
@@ -101,6 +100,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
+name = "LikeButton"
 layout_mode = 2
 icon = ExtResource("5_vmni1")
 flat = true
@@ -113,6 +113,7 @@ text = "0"
 layout_mode = 2
 
 [node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
+name = "CommentButton"
 layout_mode = 2
 icon = ExtResource("6_uiikp")
 flat = true

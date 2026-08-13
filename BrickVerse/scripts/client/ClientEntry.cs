@@ -787,6 +787,7 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (OS.HasFeature("mobile-ui"))
 		{
+			NetworkService?.DisconnectSelf("Left game");
 			Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.MobileUI);
 			return;
 		}
@@ -914,6 +915,7 @@ public sealed partial class ClientEntry : Node3D
 
 	public override void _ExitTree()
 	{
+		NetworkService?.DisconnectSelf("Client closed");
 		if (!Globals.IsExiting)
 		{
 			Root.ForceDelete();

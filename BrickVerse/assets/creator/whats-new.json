@@ -1,18 +1,63 @@
 {
-  "id": "creator-2026-08-02",
-  "title": "What’s new in BrickVerse Creator",
-  "subtitle": "A faster, more capable world-building workflow.",
-  "date": "August 2, 2026",
+  "id": "creator-2026-08-11",
+  "title": "What's new in BrickVerse Creator",
+  "subtitle": "A more connected editor with stronger publishing, scripting, and collaboration workflows.",
+  "date": "August 11, 2026",
   "sections": [
     {
-      "title": "Code editor improvements",
-      "body": "Creator now recognizes and colors many more file formats.",
-      "items": ["JSON and JSONC", "YAML and TOML", "C#, JavaScript, TypeScript and Python", "XML, SVG, HTML, CSS, Markdown and shell scripts"]
+      "title": "A smarter code editor",
+      "body": "Writing Luau now feels much closer to a modern IDE, with Creator-aware language tooling.",
+      "items": [
+        "Up-to-date world, game, script, class, property, and child suggestions",
+        "Hover documentation, inline diagnostics, and improved error visibility",
+        "StyLua-powered document and selection formatting",
+        "Syntax highlighting for Luau, JSON, JSONC, YAML, TOML, C#, JavaScript, TypeScript, Python, and more",
+        "Open scripts in an external editor such as VS Code or Zed"
+      ]
     },
     {
-      "title": "Creator tooling",
-      "body": "Recent releases include expanded terrain, animation, Team Create and play-test debugging workflows.",
-      "items": ["Improved runtime debugging tools", "More complete terrain editing", "Animation rig preview and publishing", "Team Create presence and replication improvements"]
+      "title": "Publishing and Asset Manager",
+      "body": "Assets are easier to publish, preview, discover, update, and reuse across projects.",
+      "items": [
+        "New Asset Manager dock for owned and universe assets",
+        "Prefab publishing with editable metadata and an interactive 3D preview camera",
+        "Toolbox and Asset Manager prefab insertion, including safe script-import warnings",
+        "Improved mesh, texture, sound, animation, model, and prefab upload flows",
+        "Website asset links can open and insert content directly in Creator"
+      ]
+    },
+    {
+      "title": "Terrain and animation workflows",
+      "body": "Build richer environments and character animation without leaving Creator.",
+      "items": [
+        "Custom TerrainMaterial instances with color, surface, Albedo, and PBR controls",
+        "Flatten, smooth, paint, heightmap import, and procedural terrain generation tools",
+        "Terrain persistence, publishing, replication, rendering, and collision improvements",
+        "Character-rig animation editor with 3D preview, keyframes, gizmos, IK, camera controls, and wireframe view",
+        "FBX and GLTF animation import plus .bvanim publishing"
+      ]
+    },
+    {
+      "title": "Play testing and collaboration",
+      "body": "Debugging and Team Create now stay closer to the normal editing experience.",
+      "items": [
+        "Docked client and server runtime Explorer, Properties, Console, and Luau execution tools",
+        "Improved play-test viewport placement, resizing, cleanup, and runtime inspection",
+        "Team Create presence, camera avatars, reconnection, terrain, instance, and property replication improvements",
+        "Session, Collaborate, connection, and Team Create status controls in the toolbar",
+        "Idle client handling and improved local network recovery"
+      ]
+    },
+    {
+      "title": "Creator quality-of-life",
+      "body": "The home screen and common editing actions received a broad usability pass.",
+      "items": [
+        "Redesigned full-screen Creator home with world cards, loading feedback, and automatic project folders",
+        "Quick access to Forge AI, Terrain, Animator, Toolbox, Asset Manager, and Input Manager",
+        "Beta Features enrollment and expanded Creator settings",
+        "Interactive onboarding tutorial, camera-speed indicator, output filters, trace links, and improved scrollback",
+        "What's New and update notifications can be disabled from Creator settings"
+      ]
     }
   ],
   "links": [

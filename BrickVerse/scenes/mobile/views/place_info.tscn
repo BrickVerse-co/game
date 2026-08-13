@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://wlrvgtw6qeuw" path="res://assets/textures/mobile/home/headerbg_color.png" id="3_2b3aw"]
 [ext_resource type="PackedScene" uid="uid://baoot5bioy8p6" path="res://scenes/mobile/ui/success_gradient.tscn" id="4_vkmeh"]
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="5_e6spv"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/chevron-left.svg" id="6_back"]
 
 [sub_resource type="Gradient" id="Gradient_w46nw"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -33,7 +34,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="Control" type="ColorRect" unique_id=882536811 node_paths=PackedStringArray("_playButton", "_genreLabel", "_placeNameLabel", "_creatorNameLabel", "_thumbnailRect", "_thumbnailGradient")]
+[node name="Control" type="ColorRect" unique_id=882536811 node_paths=PackedStringArray("_playButton", "_genreLabel", "_placeNameLabel", "_creatorNameLabel", "_thumbnailRect", "_thumbnailGradient", "_descriptionLabel", "_statsLabel", "_backButton")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -49,6 +50,27 @@ _placeNameLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/
 _creatorNameLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Layout/Label")
 _thumbnailRect = NodePath("ScrollContainer/VBoxContainer/Control/TextureRect2")
 _thumbnailGradient = NodePath("ScrollContainer/VBoxContainer/Control/TextureRect2/TextureRect")
+_descriptionLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Description")
+_statsLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats")
+_backButton = NodePath("Back")
+
+[node name="Back" type="Button" parent="."]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -64.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 64.0
+grow_horizontal = 0
+icon = ExtResource("6_back")
+mouse_filter = 0
+text = "←"
+theme_override_font_sizes/font_size = 24
+z_index = 100
+top_level = true
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1116018527]
 layout_mode = 1
@@ -129,6 +151,17 @@ text = "By Username"
 
 [node name="TextureRect" type="TextureRect" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Layout" unique_id=1956159128]
 layout_mode = 2
+
+[node name="Stats" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.71, 0.76, 0.83, 1)
+text = "0 playing • 0 visits"
+autowrap_mode = 3
+
+[node name="Description" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+text = "Description"
+autowrap_mode = 3
 
 [node name="Play" type="Button" parent="." unique_id=1628177988]
 clip_children = 1

@@ -23,12 +23,12 @@ public partial class NewUserSplash : Control
 		_registerBtn.Pressed += OnRegisterPressed;
 		_loginBtn.Pressed += OnLoginPressed;
 		_closeBtn.Pressed += OnClosePressed;
+		_closeBtn.Visible = false;
 	}
 
 	private void OnClosePressed()
 	{
-		Visible = false;
-		MobileUI.Singleton.SwitchTo(MobileViewEnum.Home);
+		OS.Alert("Sign in or create an account to use BrickVerse Mobile.", "Sign in required");
 	}
 
 	public void ShowSplash()
@@ -38,16 +38,11 @@ public partial class NewUserSplash : Control
 
 	private void OnRegisterPressed()
 	{
-		OpenAuthMobile();
+		BVMobileAuthAPI.StartMobileAuth(register: true);
 	}
 
 	private void OnLoginPressed()
 	{
-		OpenAuthMobile();
-	}
-
-	private static void OpenAuthMobile()
-	{
-		BVMobileAuthAPI.StartMobileAuth();
+		BVMobileAuthAPI.StartMobileAuth(register: false);
 	}
 }
