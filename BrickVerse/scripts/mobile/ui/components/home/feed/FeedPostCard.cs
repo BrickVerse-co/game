@@ -39,7 +39,13 @@ public partial class FeedPostCard : PanelContainer
 		_pfpAsset.ImageID = Data.Author.Id.ToString();
 		_pfpAsset.LoadResource();
 		_usernameLabel.Text = Data.Author.Username;
-		_postDateLabel.Text = Data.PostedAt.ToShortDateString();
+		GetNode<TextureRect>("HBoxContainer/VBoxContainer/HBoxContainer/Verified").Visible = Data.Author.IsVerified;
+		DateTime postedUtc = Data.PostedAt.Kind == DateTimeKind.Utc
+			? Data.PostedAt
+			: DateTime.SpecifyKind(Data.PostedAt, DateTimeKind.Utc);
+		_postDateLabel.Text = postedUtc.ToLocalTime().ToString("M/d/yyyy");
+		_locationLabel.Visible = true;
+		_locationLabel.Text = RelativeTime(postedUtc);
 		_contentLabel.Text = Data.Content;
 		_likeLabel.Text = Data.LikeCount.ToString();
 		_commentLabel.Text = Data.ReplyCount.ToString();
@@ -54,12 +60,8 @@ public partial class FeedPostCard : PanelContainer
 
 		if (Data.PlaceID != null)
 		{
-			_locationLabel.Visible = true;
-			_locationLabel.Text = Data.PlaceName;
-		}
-		else
-		{
-			_locationLabel.Visible = false;
+			string place = string.IsNullOrWhiteSpace(Data.PlaceName) ? "In a world" : Data.PlaceName;
+			_locationLabel.Text += "  •  " + place;
 		}
 
 		if (Data.MediaUrl != null)
@@ -74,6 +76,17 @@ public partial class FeedPostCard : PanelContainer
 		{
 			_mediaRect.Visible = false;
 		}
+	}
+
+	private static string RelativeTime(DateTime postedUtc)
+	{
+		TimeSpan elapsed = DateTime.UtcNow - postedUtc;
+		if (elapsed < TimeSpan.Zero || elapsed.TotalSeconds < 45) return "Just now";
+		if (elapsed.TotalMinutes < 60) return $"{Math.Max(1, (int)elapsed.TotalMinutes)}m ago";
+		if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
+		if (elapsed.TotalDays < 7) return $"{(int)elapsed.TotalDays}d ago";
+		if (elapsed.TotalDays < 30) return $"{Math.Max(1, (int)(elapsed.TotalDays / 7))}w ago";
+		return postedUtc.ToLocalTime().ToString("MMM d, yyyy");
 	}
 
 	private async void ToggleLike()

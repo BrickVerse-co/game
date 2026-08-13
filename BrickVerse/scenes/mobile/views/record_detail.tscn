@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/mobile/ui/views/MobileRecordDetail.cs" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/mobile/components/shared/markdown.tscn" id="2"]
 
 [node name="RecordDetail" type="Control"]
 layout_mode = 3
@@ -52,8 +53,6 @@ text = "Details"
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Description" type="Label" parent="Layout/Scroll"]
+[node name="Description" parent="Layout/Scroll" instance=ExtResource("2")]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Description"
-autowrap_mode = 3

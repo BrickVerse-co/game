@@ -78,7 +78,7 @@ theme = SubResource("Theme_lfm17")
 theme_override_styles/panel = SubResource("StyleBoxFlat_p1d8x")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Layout/Navbar" unique_id=682553378]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 
 [node name="Home" type="Button" parent="Layout/Navbar/HBoxContainer" unique_id=1800290436]
@@ -99,7 +99,7 @@ theme_override_constants/separation = 0
 alignment = 1
 
 [node name="TextureRect" type="TextureRect" parent="Layout/Navbar/HBoxContainer/Home/VBoxContainer" unique_id=1901518675]
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 texture = ExtResource("4_uj03d")
 expand_mode = 1

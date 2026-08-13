@@ -1,6 +1,7 @@
-[gd_scene format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileListCard.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
 bg_color = Color(0.075, 0.14, 0.22, 1)
@@ -66,3 +67,18 @@ mouse_filter = 2
 text = "Detail"
 autowrap_mode = 3
 text_overrun_behavior = 3
+[node name="Verified" type="TextureRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -34.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 34.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5

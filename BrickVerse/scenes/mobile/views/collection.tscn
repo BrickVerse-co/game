@@ -1,6 +1,57 @@
-[gd_scene format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/mobile/ui/views/MobileCollectionView.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="field"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.13, 0.24, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 14.0
+content_margin_right = 14.0
+
+[sub_resource type="StyleBoxFlat" id="chip"]
+bg_color = Color(0.09, 0.18, 0.28, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 14.0
+content_margin_right = 14.0
+
+[sub_resource type="StyleBoxFlat" id="category_idle"]
+bg_color = Color(0.065, 0.13, 0.21, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="category_selected"]
+bg_color = Color(0.13, 0.38, 0.7, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="Collection" type="Control"]
 layout_mode = 3
@@ -33,19 +84,39 @@ layout_mode = 2
 [node name="Title" type="Label" parent="Layout/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 30
 text = "View"
 [node name="Refresh" type="Button" parent="Layout/Header"]
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
-text = "Refresh"
+text = "↻"
+flat = true
+theme_override_font_sizes/font_size = 22
 [node name="Search" type="LineEdit" parent="Layout"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 placeholder_text = "Search"
+theme_override_styles/normal = SubResource("field")
+theme_override_styles/focus = SubResource("field")
 
 [node name="PromoHost" type="VBoxContainer" parent="Layout"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Category" type="TabBar" parent="Layout"]
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_styles/tab_unselected = SubResource("category_idle")
+theme_override_styles/tab_hovered = SubResource("category_idle")
+theme_override_styles/tab_selected = SubResource("category_selected")
+tab_count = 4
+tab_0/title = "Featured"
+tab_1/title = "Top Selling"
+tab_2/title = "Trending"
+tab_3/title = "New"
+scrolling_enabled = false
 [node name="State" type="Label" parent="Layout"]
 layout_mode = 2
 text = "Loading…"
@@ -66,8 +137,8 @@ theme_override_constants/separation = 8
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 18
 columns = 2
 
 [node name="Pagination" type="HBoxContainer" parent="Layout"]

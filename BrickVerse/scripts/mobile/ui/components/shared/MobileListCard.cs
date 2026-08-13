@@ -12,16 +12,20 @@ public partial class MobileListCard : Button
 	private Label _meta = null!;
 	private Label _detail = null!;
 	private TextureRect? _currencyIcon;
+	private TextureRect? _verified;
 
 	public override void _Ready()
 	{
 		MobileMotion.Bind(this);
-		_image = GetNode<TextureRect>("Content/Image");
+		_image = GetNodeOrNull<TextureRect>("Content/ImagePanel/Image") ?? GetNode<TextureRect>("Content/Image");
 		_title = GetNode<Label>("Content/Copy/Title");
 		_meta = GetNodeOrNull<Label>("Content/Copy/Price/Meta") ?? GetNode<Label>("Content/Copy/Meta");
-		_detail = GetNode<Label>("Content/Copy/Detail");
+		_detail = GetNodeOrNull<Label>("Content/Copy/DetailRow/Detail") ?? GetNode<Label>("Content/Copy/Detail");
 		_currencyIcon = GetNodeOrNull<TextureRect>("Content/Copy/Price/CurrencyIcon") ?? GetNodeOrNull<TextureRect>("Content/Copy/CurrencyIcon");
+		_verified = GetNodeOrNull<TextureRect>("Content/Copy/DetailRow/Verified") ?? GetNodeOrNull<TextureRect>("Verified");
 	}
+
+	public void SetVerified(bool verified) { if (_verified != null) _verified.Visible = verified; }
 
 	public void Configure(string title, string meta = "", string detail = "", string imageUrl = "")
 	{
@@ -32,11 +36,20 @@ public partial class MobileListCard : Button
 		_detail.Text = detail;
 		_detail.Visible = !string.IsNullOrWhiteSpace(detail);
 		_image.Visible = !string.IsNullOrWhiteSpace(imageUrl);
+		if (_image.GetParent() is PanelContainer imagePanel) imagePanel.Visible = _image.Visible;
 		if (_image.Visible) _ = LoadImage(imageUrl);
+	}
+
+	public void SetDetail(string detail)
+	{
+		_detail.Text = detail;
+		_detail.Visible = !string.IsNullOrWhiteSpace(detail);
 	}
 
 	private async System.Threading.Tasks.Task LoadImage(string imageUrl)
 	{
+		const string marketplaceMarker = "marketplace-item://";
+		if (imageUrl.StartsWith(marketplaceMarker, System.StringComparison.Ordinal)) imageUrl = await BVAPI.ResolveThumbnailUrl("MARKETPLACE_ITEM", imageUrl[marketplaceMarker.Length..]);
 		const string marker = "/v3/thumbnails/asset/";
 		int markerIndex = imageUrl.IndexOf(marker, System.StringComparison.OrdinalIgnoreCase);
 		if (markerIndex >= 0) imageUrl = await BVAPI.ResolveThumbnailUrl("ASSET", imageUrl[(markerIndex + marker.Length)..]);

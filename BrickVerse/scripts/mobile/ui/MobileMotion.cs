@@ -5,6 +5,17 @@ namespace BrickVerse.Mobile.UI;
 
 public static class MobileMotion
 {
+	public static void Enter(Control control, int index = 0)
+	{
+		control.Modulate = new Color(1, 1, 1, 0);
+		control.PivotOffset = control.Size / 2f;
+		control.Scale = new Vector2(0.97f, 0.97f);
+		Tween tween = control.CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+		double delay = System.Math.Min(index, 8) * 0.025;
+		tween.TweenProperty(control, "scale", Vector2.One, 0.24).SetDelay(delay);
+		tween.TweenProperty(control, "modulate:a", 1f, 0.2).SetDelay(delay);
+	}
+
 	public static void BindCard(Control card)
 	{
 		card.MouseEntered += () => Animate(card, new Vector2(1.012f, 1.012f), 0.14);

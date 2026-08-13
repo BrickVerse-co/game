@@ -16,7 +16,7 @@ public partial class WorldsGrid : Control
 	private const string PlaceCardPath = "res://scenes/mobile/components/shared/place_card.tscn";
 	public PackedScene _placeCardPacked = null!;
 	private LineEdit _search = null!;
-	private OptionButton _sort = null!;
+	private TabBar _sort = null!;
 	private OptionButton _genre = null!;
 	private Label _status = null!;
 	private PackedScene _skeletonScene = null!;
@@ -25,12 +25,14 @@ public partial class WorldsGrid : Control
 	{
 		_placeCardPacked = GD.Load<PackedScene>(PlaceCardPath);
 		_search = GetNode<LineEdit>("../../Search");
-		_sort = GetNode<OptionButton>("../../Filters/Sort");
+		_sort = GetNode<TabBar>("../../Filters/Sort");
 		_genre = GetNode<OptionButton>("../../Filters/Genre");
 		_status = GetNode<Label>("../../Status");
+		Resized += UpdateColumns;
+		UpdateColumns();
 		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/skeleton_card.tscn");
 		_search.TextSubmitted += query => LoadWorlds(query);
-		_sort.ItemSelected += _ => LoadWorlds(_search.Text);
+		_sort.TabChanged += _ => LoadWorlds(_search.Text);
 		_genre.ItemSelected += _ => LoadWorlds(_search.Text);
 		LoadWorlds("");
 	}
@@ -44,7 +46,7 @@ public partial class WorldsGrid : Control
 			for (int index = 0; index < 6; index++) AddChild(_skeletonScene.Instantiate());
 			string path = "/v3/worlds/discover?limit=30&platform=MOBILE";
 			if (!string.IsNullOrWhiteSpace(search)) path += "&search=" + Uri.EscapeDataString(search);
-			string sort = _genre.Selected > 0 ? "trending_genre" : _sort.Selected switch { 1 => "featured", 2 => "top_playing_now", 3 => "top_rated", 4 => "up_and_coming", _ => "all" };
+			string sort = _genre.Selected > 0 ? "trending_genre" : _sort.CurrentTab switch { 1 => "featured", 2 => "top_trending", 3 => "top_rated", 4 => "top_playing_now", 5 => "up_and_coming", _ => "all" };
 			path += "&sortBy=" + sort;
 			if (_genre.Selected > 0)
 			{
@@ -69,6 +71,7 @@ public partial class WorldsGrid : Control
 				string thumbnailId = FindPrimaryThumbnailId(item);
 				card.ThumbnailUrl = await BVAPI.ResolveThumbnailUrl("ASSET", thumbnailId);
 				AddChild(card);
+				MobileMotion.Enter(card, GetChildCount() - 1);
 			}
 			_status.Text = worlds.GetArrayLength() == 0 ? "No worlds match those filters." : "";
 		}
@@ -89,6 +92,11 @@ public partial class WorldsGrid : Control
 	}
 
 	public void Refresh() => LoadWorlds(_search.Text);
+	private void UpdateColumns()
+	{
+		float available = GetViewportRect().Size.X - 40f;
+		Set("columns", Mathf.Clamp(Mathf.FloorToInt(available / 220f), 2, 4));
+	}
 
 	private static string ReadString(JsonElement item, string name, string fallback) =>
 		item.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String

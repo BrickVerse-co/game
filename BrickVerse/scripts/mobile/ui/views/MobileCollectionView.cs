@@ -31,7 +31,10 @@ public partial class MobileCollectionView : MobileViewBase
 	private PackedScene _profileSummaryScene = null!;
 	private PackedScene _transactionCardScene = null!;
 	private PackedScene _upgradeBannerScene = null!;
+	private PackedScene _forumBannerScene = null!;
+	private PackedScene _notificationCardScene = null!;
 	private VBoxContainer _promoHost = null!;
+	private TabBar _category = null!;
 	private Button _previous = null!;
 	private Button _next = null!;
 	private Label _pageLabel = null!;
@@ -40,6 +43,9 @@ public partial class MobileCollectionView : MobileViewBase
 	private string? _nextCursor;
 	private bool _hasNextPage;
 	private bool _hasLoaded;
+	private string? _forumCategoryId;
+	private string _forumCategoryName = "";
+	private string _profileUserId = "";
 
 	public override void _Ready()
 	{
@@ -59,7 +65,13 @@ public partial class MobileCollectionView : MobileViewBase
 		_profileSummaryScene = GD.Load<PackedScene>("res://scenes/mobile/components/profile/profile_summary.tscn");
 		_transactionCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/transactions/transaction_card.tscn");
 		_upgradeBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/marketplace/upgrade_banner.tscn");
+		_forumBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/forum/readonly_banner.tscn");
+		_notificationCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/notification_card.tscn");
 		_promoHost = GetNode<VBoxContainer>("Layout/PromoHost");
+		_category = GetNode<TabBar>("Layout/Category");
+		_category.TabChanged += selected => { ResetPagination(); _ = LoadAsync(); };
+		Resized += UpdateGridColumns;
+		UpdateGridColumns();
 		_previous = GetNode<Button>("Layout/Pagination/Previous");
 		_next = GetNode<Button>("Layout/Pagination/Next");
 		_pageLabel = GetNode<Label>("Layout/Pagination/Page");
@@ -77,17 +89,24 @@ public partial class MobileCollectionView : MobileViewBase
 	public override void ShowView(object? args)
 	{
 		_view = args is MobileViewEnum requested ? requested : MobileUI.Singleton.CurrentView;
+		string requestedProfileId = args is string userId && !string.IsNullOrWhiteSpace(userId) ? userId : BVMobileAuthAPI.CurrentUserInfo.Id;
+		bool profileChanged = _view == MobileViewEnum.Profile && requestedProfileId != _profileUserId;
+		if (_view == MobileViewEnum.Profile) _profileUserId = requestedProfileId;
+		bool forumReset = _view == MobileViewEnum.Forum && args is MobileViewEnum && _forumCategoryId != null;
+		if (_view == MobileViewEnum.Forum && args is MobileViewEnum) { _forumCategoryId = null; _forumCategoryName = ""; }
 		bool grid = _view is MobileViewEnum.Guilds or MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		_listItems.Visible = !grid;
 		_gridItems.Visible = grid;
 		_items = grid ? _gridItems : _listItems;
 		ResetPagination();
-		_title.Text = TitleFor(_view);
+		_title.Text = _view == MobileViewEnum.Forum && _forumCategoryId != null ? _forumCategoryName : TitleFor(_view);
 		_search.Visible = _view is MobileViewEnum.Guilds or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		_search.PlaceholderText = $"Search {TitleFor(_view).ToLowerInvariant()}";
 		foreach (Node child in _promoHost.GetChildren()) child.QueueFree();
 		if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) _promoHost.AddChild(_upgradeBannerScene.Instantiate());
-		if (!_hasLoaded) { _hasLoaded = true; _ = LoadAsync(); }
+		else if (_view == MobileViewEnum.Forum) _promoHost.AddChild(_forumBannerScene.Instantiate());
+		_category.Visible = _view is MobileViewEnum.Marketplace or MobileViewEnum.Store;
+		if (!_hasLoaded || profileChanged || forumReset) { _hasLoaded = true; _ = LoadAsync(); }
 	}
 
 	public override void RefreshView() { ResetPagination(); _ = LoadAsync(); }
@@ -155,9 +174,10 @@ public partial class MobileCollectionView : MobileViewBase
 			AddAsyncAction("Mark all as read", async () => { using (await BVAPI.SendJson(System.Net.Http.HttpMethod.Post, "/v3/social/notifications/read-all")) { } await LoadAsync(); });
 		else if (_view == MobileViewEnum.FriendRequests) AddInfo("Review incoming requests below.");
 		else if (_view == MobileViewEnum.Guilds) AddInfo("Discover communities and open a guild to see its details.");
-		else if (_view == MobileViewEnum.Forum) AddInfo("Browse discussions and open threads without leaving the app.");
+		else if (_view == MobileViewEnum.Forum && _forumCategoryId != null)
+			AddAction("‹ All forum categories", () => { _forumCategoryId = null; _forumCategoryName = ""; _title.Text = "Forum"; _ = LoadAsync(); });
 		else if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) { }
-		else if (_view == MobileViewEnum.Profile) AddDestination("Edit account settings", MobileViewEnum.Settings);
+		else if (_view == MobileViewEnum.Profile && _profileUserId == BVMobileAuthAPI.CurrentUserInfo.Id) AddDestination("Edit account settings", MobileViewEnum.Settings);
 	}
 
 	private void BuildAccountActions()
@@ -191,6 +211,11 @@ public partial class MobileCollectionView : MobileViewBase
 
 	private void AddRecord(JsonElement record)
 	{
+		if (_view == MobileViewEnum.Notifications)
+		{
+			AddNotificationRecord(record);
+			return;
+		}
 		if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store)
 		{
 			AddMarketplaceRecord(record);
@@ -229,9 +254,47 @@ public partial class MobileCollectionView : MobileViewBase
 		{
 			card.Pressed += () => Open("/my/friends?tab=requests");
 		}
+		else if (_view == MobileViewEnum.Forum && _forumCategoryId == null)
+		{
+			int threads = record.TryGetProperty("_count", out JsonElement counts) ? ReadNumber(counts, "threads") : 0;
+			int replies = record.TryGetProperty("_count", out counts) ? ReadNumber(counts, "replies") : 0;
+			string latest = record.TryGetProperty("latestThread", out JsonElement latestThread) && latestThread.ValueKind == JsonValueKind.Object
+				? "Latest: " + (FirstString(latestThread, "title") ?? "Thread") : "No threads yet";
+			card.Configure(title, $"{threads:N0} threads • {replies:N0} replies", latest);
+			card.Pressed += () => { _forumCategoryId = id; _forumCategoryName = title; _title.Text = title; _ = LoadAsync(); };
+		}
 		else if (_view == MobileViewEnum.Forum)
-			card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(title, "Forum thread", detail, "", _view));
+		{
+			string author = NestedName(record, "user", "username") ?? "Unknown author";
+			int replies = ReadNumber(record, "totalReplies");
+			int views = ReadNumber(record, "views");
+			string category = record.TryGetProperty("category", out JsonElement categoryNode) ? FirstString(categoryNode, "name") ?? _forumCategoryName : _forumCategoryName;
+			card.Configure(title, $"{category} • By {author}", $"{replies:N0} replies • {views:N0} views");
+			card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(title, $"By {author}", detail, "", _view, id ?? ""));
+		}
 		else card.Pressed += () => OpenRecord(id);
+	}
+
+	private void AddNotificationRecord(JsonElement record)
+	{
+		string id = FirstString(record, "id") ?? "";
+		string title = FirstString(record, "title", "type") ?? "Notification";
+		string message = FirstString(record, "message", "content") ?? "You have a new update.";
+		bool isRead = record.TryGetProperty("isRead", out JsonElement readNode) && readNode.ValueKind == JsonValueKind.True;
+		DateTime.TryParse(FirstString(record, "createdAt") ?? "", null,
+			System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+			out DateTime createdAt);
+		MobileNotificationCard card = _notificationCardScene.Instantiate<MobileNotificationCard>();
+		_items.AddChild(card);
+		card.Configure(title, message, createdAt == default ? DateTime.UtcNow : createdAt, isRead);
+		card.Pressed += async () =>
+		{
+			if (isRead || string.IsNullOrWhiteSpace(id)) return;
+			using (await BVAPI.SendJson(System.Net.Http.HttpMethod.Post, $"/v3/social/notifications/{Uri.EscapeDataString(id)}/read")) { }
+			isRead = true;
+			card.MarkRead();
+		};
+		MobileMotion.Enter(card, _items.GetChildCount() - 1);
 	}
 
 	private void AddDiscoveryRecord(JsonElement record)
@@ -247,6 +310,7 @@ public partial class MobileCollectionView : MobileViewBase
 		if (!string.IsNullOrWhiteSpace(imageId))
 			imageUrl = imageId.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? imageId : Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + imageId);
 		MobileListCard card = CreateListCard(name, meta, Trim(description, 90), imageUrl);
+		card.SetVerified(record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
 		card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(name, meta, description, imageUrl, _view));
 	}
 
@@ -308,13 +372,37 @@ public partial class MobileCollectionView : MobileViewBase
 		JsonElement stats = record.TryGetProperty("statistics", out JsonElement statistics) ? statistics : default;
 		MobileProfileSummary summary = _profileSummaryScene.Instantiate<MobileProfileSummary>();
 		_items.AddChild(summary);
-		summary.Configure(
+			summary.Configure(
 			FirstString(record, "id") ?? BVMobileAuthAPI.CurrentUserInfo.Id,
 			FirstString(record, "username", "name") ?? "Profile",
 			(FirstString(record, "status") ?? "BrickVerse member").Replace('_', ' '),
 			FirstString(record, "description") ?? "No description provided.",
 			ReadNumber(stats, "visits"), ReadNumber(stats, "profileViews"), ReadNumber(stats, "forumPosts"),
-			FirstString(record, "createdAt") ?? "");
+			FirstString(record, "createdAt") ?? "",
+			record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
+		BuildProfileActions(record);
+	}
+
+	private void BuildProfileActions(JsonElement record)
+	{
+		string userId = FirstString(record, "id") ?? "";
+		bool ownProfile = userId == BVMobileAuthAPI.CurrentUserInfo.Id;
+		if (!ownProfile)
+		{
+			AddAction("Add friend / Manage friendship", () => Open($"/users/{Uri.EscapeDataString(userId)}"));
+			if (record.TryGetProperty("state", out JsonElement state)
+				&& state.TryGetProperty("currentActivity", out JsonElement activity))
+			{
+				string? worldId = FirstString(activity, "worldId", "universeId");
+				if (long.TryParse(worldId, out long placeId)) AddAction("Join game", () => MobileUI.Singleton.LaunchGame(placeId));
+			}
+		}
+		if (record.TryGetProperty("achievements", out JsonElement achievements) && achievements.ValueKind == JsonValueKind.Array)
+		{
+			AddInfo("Achievements");
+			foreach (JsonElement achievement in achievements.EnumerateArray().Take(8))
+				CreateListCard(FirstString(achievement, "name") ?? "Achievement", "Earned", Trim(FirstString(achievement, "description") ?? "", 100), FirstString(achievement, "icon") ?? "");
+		}
 	}
 
 	private void BuildTransactionCard(JsonElement record)
@@ -336,11 +424,19 @@ public partial class MobileCollectionView : MobileViewBase
 		string id = FirstString(record, "id") ?? "";
 		string name = FirstString(record, "name") ?? "Marketplace item";
 		int price = record.TryGetProperty("price", out JsonElement priceNode) && priceNode.TryGetInt32(out int value) ? value : 0;
+		string type = FirstString(record, "type") ?? "Accessory";
+		string creator = FirstString(record, "creatorName") ?? "BrickVerse creator";
+		MobileListCard marketCard = CreateListCard(name, price == 0 ? "Free" : $"{price:N0} Cubes", $"{type.Replace('_', ' ')} • By {creator}", "marketplace-item://" + id);
+		marketCard.SetVerified(record.TryGetProperty("creatorVerified", out JsonElement creatorVerified) && creatorVerified.ValueKind == JsonValueKind.True);
+		marketCard.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.MarketplaceItem, id);
+		return;
+		#if false
 		string imageUrl = "";
 		if (record.TryGetProperty("thumbnailId", out JsonElement thumbnail) && thumbnail.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(thumbnail.GetString()))
 			imageUrl = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + thumbnail.GetString());
 		MobileListCard card = CreateListCard(name, price == 0 ? "Free" : $"◈ {price:N0}", "", imageUrl);
 		card.Pressed += () => ConfirmMarketplacePurchase(id, name, price);
+		#endif
 	}
 
 	private void ConfirmMarketplacePurchase(string id, string name, int price)
@@ -405,7 +501,13 @@ public partial class MobileCollectionView : MobileViewBase
 		MobileListCard card = (_items == _gridItems ? _gridCardScene : _listCardScene).Instantiate<MobileListCard>();
 		_items.AddChild(card);
 		card.Configure(title, meta, detail, imageUrl);
+		MobileMotion.Enter(card, _items.GetChildCount() - 1);
 		return card;
+	}
+	private void UpdateGridColumns()
+	{
+		float available = GetViewportRect().Size.X - 32f;
+		_gridItems.Columns = Mathf.Clamp(Mathf.FloorToInt((available + 10f) / 190f), 2, 4);
 	}
 	private void ClearItems() { foreach (Node child in _listItems.GetChildren()) child.QueueFree(); foreach (Node child in _gridItems.GetChildren()) child.QueueFree(); }
 	private static string TitleFor(MobileViewEnum view) => view switch { MobileViewEnum.FriendRequests => "Friend requests", MobileViewEnum.Store => "Marketplace", MobileViewEnum.Dev => "More", _ => view.ToString() };
@@ -416,12 +518,12 @@ public partial class MobileCollectionView : MobileViewBase
 		return view switch
 		{
 			MobileViewEnum.Guilds => $"/v3/social/guilds?limit=20&page={_page}" + q,
-			MobileViewEnum.Profile => "/v3/profile/" + BVMobileAuthAPI.CurrentUserInfo.Id + "/id",
-			MobileViewEnum.Forum => "/v3/forum/threads?limit=30" + q,
+			MobileViewEnum.Profile => "/v3/profile/" + Uri.EscapeDataString(string.IsNullOrWhiteSpace(_profileUserId) ? BVMobileAuthAPI.CurrentUserInfo.Id : _profileUserId) + "/id",
+			MobileViewEnum.Forum => _forumCategoryId == null ? "/v3/forum/categories" : "/v3/forum/threads?limit=30&categoryId=" + Uri.EscapeDataString(_forumCategoryId) + q,
 			MobileViewEnum.Events => "/v3/social/events?limit=30" + q,
 			MobileViewEnum.Notifications => "/v3/social/notifications?limit=50",
 			MobileViewEnum.FriendRequests => "/v3/social/friends/requests?limit=50",
-			MobileViewEnum.Marketplace or MobileViewEnum.Store => "/v3/marketplace/discover?limit=20" + q + (_page > 1 && _marketCursors.Count >= _page && !string.IsNullOrWhiteSpace(_marketCursors[_page - 1]) ? "&cursor=" + Uri.EscapeDataString(_marketCursors[_page - 1]!) : ""),
+			MobileViewEnum.Marketplace or MobileViewEnum.Store => "/v3/marketplace/discover?limit=20&sortBy=" + (_category.CurrentTab switch { 0 => "featured", 1 => "topSelling", 2 => "trending", _ => "newlyCreated" }) + q + (_page > 1 && _marketCursors.Count >= _page && !string.IsNullOrWhiteSpace(_marketCursors[_page - 1]) ? "&cursor=" + Uri.EscapeDataString(_marketCursors[_page - 1]!) : ""),
 			MobileViewEnum.Transactions => "/v3/auth/me/transactions?limit=50",
 			_ => "/v3/auth/me",
 		};

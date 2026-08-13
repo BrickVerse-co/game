@@ -1,4 +1,11 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
+using BrickVerse.Mobile.UI;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using Godot;
 
 namespace BrickVerse.Mobile.Utils;
@@ -6,23 +13,96 @@ namespace BrickVerse.Mobile.Utils;
 public partial class MobileBillingService : Node
 {
 	public static MobileBillingService? Singleton { get; private set; }
-	public override void _Ready() => Singleton = this;
+	private Node? _bridge;
+	private MobileIapProductsDialog _dialog = null!;
+	private readonly List<MobileStoreProduct> _products = [];
+	private MobileProductKind _visibleKind;
+
+	public override void _Ready()
+	{
+		Singleton = this;
+		_dialog = GD.Load<PackedScene>("res://scenes/mobile/views/iap_products_dialog.tscn").Instantiate<MobileIapProductsDialog>();
+		AddChild(_dialog);
+		CallDeferred(MethodName.ConnectBridge);
+	}
+
+	private void ConnectBridge()
+	{
+		_bridge = GetNodeOrNull<Node>("/root/BrickVerseOpenIap");
+		if (_bridge == null) { BV.PrintErr("OpenIAP bridge is unavailable. Enable the godot-iap plugin for mobile exports."); return; }
+		_bridge.Connect("products_loaded", Callable.From<Godot.Collections.Array>(OnProductsLoaded));
+		_bridge.Connect("purchase_received", Callable.From<Godot.Collections.Dictionary>(OnPurchaseReceived));
+		_bridge.Connect("purchase_failed", Callable.From<Godot.Collections.Dictionary>(OnPurchaseFailed));
+	}
 
 	public void OpenProducts(MobileProductKind kind)
 	{
-		string singletonName = OS.GetName() == "Android" ? "GodotGooglePlayBilling" : "InAppStore";
-		if (!Engine.HasSingleton(singletonName))
+		_visibleKind = kind;
+		if (_bridge == null)
 		{
-			OS.Alert($"{(OS.GetName() == "Android" ? "Google Play Billing" : "Apple StoreKit")} is not installed in this build.", "Purchases unavailable");
+			OS.Alert("App-store purchases are only available in Android and iOS builds.", "Purchases unavailable");
 			return;
 		}
-
-		// Product querying and purchase callbacks are supplied by the platform
-		// billing plugin. Do not fall back to web/Stripe for mobile digital goods.
-		EmitSignal(SignalName.ProductRequested, (int)kind);
+		_dialog.ShowProducts(kind, _products);
+		if (_products.Count == 0) _bridge.Call("refresh_products");
 	}
 
-	[Signal] public delegate void ProductRequestedEventHandler(int kind);
+	public void Purchase(string productId, bool subscription) => _bridge?.Call("request_product", productId, subscription);
+	public void RestorePurchases() { _dialog.SetStatus("Checking your app-store purchases…", true); _bridge?.Call("restore_purchases"); }
+
+	private void OnProductsLoaded(Godot.Collections.Array products)
+	{
+		_products.Clear();
+		foreach (Variant value in products)
+		{
+			Godot.Collections.Dictionary product = value.AsGodotDictionary();
+			string id = Read(product, "id");
+			if (string.IsNullOrWhiteSpace(id)) continue;
+			string title = Read(product, "title");
+			string price = Read(product, "displayPrice", "display_price", "localizedPrice");
+			string type = Read(product, "type");
+			bool subscription = type.Contains("sub", StringComparison.OrdinalIgnoreCase) || id.StartsWith("astro", StringComparison.Ordinal);
+			_products.Add(new(id, string.IsNullOrWhiteSpace(title) ? ProductTitle(id) : title, price, subscription));
+		}
+		if (_dialog.Visible) _dialog.ShowProducts(_visibleKind, _products);
+	}
+
+	private async void OnPurchaseReceived(Godot.Collections.Dictionary purchase)
+	{
+		string productId = Read(purchase, "productId", "product_id");
+		bool consumable = productId.StartsWith("cubes_", StringComparison.Ordinal);
+		_dialog.SetStatus("Verifying your purchase with BrickVerse…", true);
+		try
+		{
+			string purchaseJson = Json.Stringify(purchase);
+			string payload = $"{{\"platform\":{JsonSerializer.Serialize(OS.GetName())},\"purchase\":{purchaseJson}}}";
+			using JsonDocument verified = await BVAPI.SendJson(HttpMethod.Post, "/v3/auth/mobile-iap/verify", payload);
+			if (!verified.RootElement.TryGetProperty("success", out JsonElement success) || !success.GetBoolean())
+				throw new InvalidOperationException(verified.RootElement.TryGetProperty("message", out JsonElement message) ? message.GetString() : "Purchase verification failed.");
+			_bridge?.Call("finish_verified_purchase", purchase, consumable);
+			_dialog.SetStatus(consumable ? "Cubes added to your account." : "Membership activated.");
+		}
+		catch (Exception exception)
+		{
+			// Never finish an unverified transaction. It will be replayed for recovery.
+			_dialog.SetStatus("We could not verify this purchase. It has not been consumed; use Restore purchases after retrying.");
+			BV.PrintErr("Mobile IAP verification failed: ", exception);
+		}
+	}
+
+	private void OnPurchaseFailed(Godot.Collections.Dictionary error)
+	{
+		string code = Read(error, "code");
+		_dialog.SetStatus(code == "user-cancelled" ? "Purchase cancelled." : Read(error, "message"));
+	}
+
+	private static string Read(Godot.Collections.Dictionary dictionary, params string[] keys)
+	{
+		foreach (string key in keys) if (dictionary.TryGetValue(key, out Variant value)) return value.AsString();
+		return "";
+	}
+
+	private static string ProductTitle(string id) => id.Replace('_', ' ').Replace("astro", "Astro", StringComparison.OrdinalIgnoreCase).Replace("cubes", "Cubes", StringComparison.OrdinalIgnoreCase);
 }
 
 public enum MobileProductKind { Cubes, Membership }

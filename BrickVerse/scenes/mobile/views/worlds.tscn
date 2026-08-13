@@ -20,6 +20,55 @@ content_margin_top = 16.0
 content_margin_right = 16.0
 content_margin_bottom = 16.0
 
+[sub_resource type="StyleBoxFlat" id="field"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.13, 0.24, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 14.0
+content_margin_right = 14.0
+
+[sub_resource type="StyleBoxFlat" id="chip"]
+bg_color = Color(0.09, 0.18, 0.28, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="category_idle"]
+bg_color = Color(0.065, 0.13, 0.21, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="category_selected"]
+bg_color = Color(0.13, 0.38, 0.7, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
 [node name="Control" type="Control" unique_id=612193340]
 layout_mode = 3
 anchors_preset = 15
@@ -150,7 +199,7 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Discover worlds"
 
 [node name="Subtitle" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
@@ -180,29 +229,33 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 placeholder_text = "Search worlds"
+theme_override_styles/normal = SubResource("field")
+theme_override_styles/focus = SubResource("field")
 
 [node name="Filters" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Sort" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+[node name="Sort" type="TabBar" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-item_count = 5
-popup/item_0/text = "Recommended"
-popup/item_0/id = 0
-popup/item_1/text = "Featured"
-popup/item_1/id = 1
-popup/item_2/text = "Popular"
-popup/item_2/id = 2
-popup/item_3/text = "Top rated"
-popup/item_3/id = 3
-popup/item_4/text = "New & rising"
-popup/item_4/id = 4
+theme_override_constants/h_separation = 6
+theme_override_styles/tab_unselected = SubResource("category_idle")
+theme_override_styles/tab_hovered = SubResource("category_idle")
+theme_override_styles/tab_selected = SubResource("category_selected")
+tab_count = 3
+tab_0/title = "For You"
+tab_1/title = "Featured"
+tab_2/title = "Trending"
+scrolling_enabled = false
 
 [node name="Genre" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("chip")
+theme_override_styles/hover = SubResource("chip")
+theme_override_styles/pressed = SubResource("chip")
 item_count = 7
 popup/item_0/text = "All genres"
 popup/item_0/id = 0
@@ -230,7 +283,7 @@ layout_mode = 2
 
 [node name="PlacesGrid" type="GridContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Center" unique_id=1817401922]
 layout_mode = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 18
 columns = 3
 script = ExtResource("5_jqfof")

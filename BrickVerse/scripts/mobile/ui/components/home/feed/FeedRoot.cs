@@ -65,9 +65,9 @@ public partial class FeedRoot : Node
 					Id = long.TryParse(item.TryGetProperty("id", out JsonElement postId) ? postId.ToString() : "0", out long parsedPostId) ? parsedPostId : 0,
 					Content = item.TryGetProperty("content", out JsonElement content) ? content.GetString() ?? "" : "",
 					PostedAt = postedAt,
-					Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user" },
-					LikeCount = item.TryGetProperty("likeCount", out JsonElement likes) && likes.TryGetInt32(out int likeCount) ? likeCount : 0,
-					ReplyCount = item.TryGetProperty("commentCount", out JsonElement replies) && replies.TryGetInt32(out int replyCount) ? replyCount : 0,
+					Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user", IsVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True },
+					LikeCount = ReadCount(item, "totalLikes", "likeCount"),
+					ReplyCount = ReadCount(item, "totalComments", "commentCount"),
 					IsLiked = item.TryGetProperty("isLikedByUser", out JsonElement liked) && liked.ValueKind == JsonValueKind.True,
 					Comments = [],
 				};
@@ -82,6 +82,12 @@ public partial class FeedRoot : Node
 			foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
 			BV.PrintErr("Failed to load feed");
 		}
+	}
+
+	private static int ReadCount(JsonElement item, params string[] names)
+	{
+		foreach (string name in names) if (item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int count)) return count;
+		return 0;
 	}
 
 	public void Refresh() => LoadFeed();

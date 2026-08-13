@@ -21,14 +21,15 @@ public partial class FeedComposer : AcceptDialog
 	public void Open()
 	{
 		_editor.Text = "";
-		PopupCentered();
+		PopupCentered(new Vector2I(380, 280));
+		_editor.GrabFocus();
 	}
 
 	private async void Submit()
 	{
 		string content = _editor.Text.Trim();
 		if (string.IsNullOrWhiteSpace(content)) return;
-		if (content.Length > 500) { OS.Alert("Posts can contain up to 500 characters.", "Post is too long"); return; }
+		if (content.Length > 5000) { OS.Alert("Posts can contain up to 5,000 characters.", "Post is too long"); return; }
 		GetOkButton().Disabled = true;
 		try
 		{

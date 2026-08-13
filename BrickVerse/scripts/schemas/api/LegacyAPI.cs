@@ -997,6 +997,9 @@ public struct APIFeedPostAuthor
 
 	[JsonPropertyName("isStaff")]
 	public bool IsStaff { get; set; }
+
+	[JsonPropertyName("isVerified")]
+	public bool IsVerified { get; set; }
 }
 
 public struct APIFeedPostComment

@@ -15,12 +15,14 @@ public partial class HomeShelf : VBoxContainer
 	private PackedScene _placeCardScene = null!;
 	private PackedScene _friendCardScene = null!;
 	private PackedScene _skeletonScene = null!;
+	private PackedScene _friendSkeletonScene = null!;
 
 	public override void _Ready()
 	{
 		_placeCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/place_card.tscn");
 		_friendCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/user_headshot_card.tscn");
 		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/skeleton_card.tscn");
+		_friendSkeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/friend_skeleton.tscn");
 		BVMobileAuthAPI.UserAuthenticated += user => _ = LoadAsync();
 		if (BVMobileAuthAPI.IsAuthenticated) _ = LoadAsync();
 		else Visible = false;
@@ -32,7 +34,7 @@ public partial class HomeShelf : VBoxContainer
 		Label count = GetNode<Label>("VBoxContainer/Label2");
 		foreach (Node child in items.GetChildren()) child.QueueFree();
 		Visible = true;
-		for (int index = 0; index < 3; index++) items.AddChild(_skeletonScene.Instantiate());
+		for (int index = 0; index < 3; index++) items.AddChild((RecentWorlds ? _skeletonScene : _friendSkeletonScene).Instantiate());
 		try
 		{
 			using JsonDocument document = await BVAPI.GetJson(

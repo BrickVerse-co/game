@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/mobile/ui/components/profile/MobileProfileSummary.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
 bg_color = Color(0.055, 0.11, 0.18, 1)
@@ -39,10 +40,19 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Username" type="Label" parent="Identity/Content/Copy"]
+[node name="NameRow" type="HBoxContainer" parent="Identity/Content/Copy"]
+layout_mode = 2
+[node name="Username" type="Label" parent="Identity/Content/Copy/NameRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Username"
+[node name="Verified" type="TextureRect" parent="Identity/Content/Copy/NameRow"]
+visible = false
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Status" type="Label" parent="Identity/Content/Copy"]
 modulate = Color(0.62, 0.86, 1, 1)

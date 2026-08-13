@@ -7,9 +7,10 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class MobileProfileSummary : VBoxContainer
 {
-	public void Configure(string userId, string username, string status, string description, int visits, int views, int posts, string joined)
+	public void Configure(string userId, string username, string status, string description, int visits, int views, int posts, string joined, bool verified)
 	{
-		GetNode<Label>("Identity/Content/Copy/Username").Text = username;
+		GetNode<Label>("Identity/Content/Copy/NameRow/Username").Text = username;
+		GetNode<TextureRect>("Identity/Content/Copy/NameRow/Verified").Visible = verified;
 		GetNode<Label>("Identity/Content/Copy/Status").Text = status;
 		GetNode<Label>("About/Description").Text = description;
 		GetNode<Label>("Stats/Visits/Value").Text = visits.ToString("N0");

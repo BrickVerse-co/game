@@ -20,12 +20,16 @@ public partial class UserHeadshotCard : Node
 
 	private readonly BVImageAsset _iconAsset = new();
 	private bool _disposed;
+	private APIUserInfo _userData;
 
 	public override void _Ready()
 	{
 		_imageRect.Texture = null;
 		_usernameLabel.Text = "";
 		_iconAsset.ResourceLoaded += OnIconLoaded;
+		Button button = GetNode<Button>("Button");
+		MobileMotion.Bind(button);
+		button.Pressed += OpenProfile;
 		LoadUserCard();
 	}
 
@@ -55,6 +59,7 @@ public partial class UserHeadshotCard : Node
 		try
 		{
 			APIUserInfo userData = await BVAPI.GetUserFromID(UserID.ToString());
+			_userData = userData;
 
 			if (!_disposed && IsInstanceValid(_usernameLabel)) _usernameLabel.Text = userData.Username;
 		}
@@ -62,5 +67,11 @@ public partial class UserHeadshotCard : Node
 		{
 			BV.PrintErr(ex);
 		}
+	}
+
+	private void OpenProfile()
+	{
+		if (string.IsNullOrWhiteSpace(_userData.Username)) return;
+		MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, UserID);
 	}
 }

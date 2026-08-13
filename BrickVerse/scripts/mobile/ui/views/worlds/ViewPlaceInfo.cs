@@ -20,13 +20,15 @@ public partial class ViewPlaceInfo : MobileViewBase
 	[Export] private Label _creatorNameLabel = null!;
 	[Export] private TextureRect _thumbnailRect = null!;
 	[Export] private Control _thumbnailGradient = null!;
-	[Export] private Label _descriptionLabel = null!;
+	[Export] private MobileMarkdown _descriptionLabel = null!;
 	[Export] private Label _statsLabel = null!;
 	[Export] private Button _backButton = null!;
 
 	private long _worldID;
 	private APIPlaceInfo _placeInfo;
 	private Control _contentPanel = null!;
+	private Control _loadingSkeleton = null!;
+	private Tween? _skeletonTween;
 	private bool _closing;
 
 	public override void _Ready()
@@ -37,6 +39,8 @@ public partial class ViewPlaceInfo : MobileViewBase
 		MobileMotion.Bind(_playButton);
 		MobileMotion.Bind(_backButton);
 		_contentPanel = GetNode<Control>("ScrollContainer/VBoxContainer/PanelContainer");
+		_loadingSkeleton = GetNode<Control>("LoadingSkeleton");
+		GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=world&id={_worldID}"));
 	}
 
 	private void OnPlayButtonPressed()
@@ -54,8 +58,10 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_genreLabel.Text = "";
 		_placeNameLabel.Text = "Loading world...";
 		_creatorNameLabel.Text = "Loading details in the background";
-		_descriptionLabel.Text = "Loading...";
+		_descriptionLabel.SetMarkdown("Loading...");
 		_playButton.Disabled = true;
+		_loadingSkeleton.Visible = true;
+		PulseSkeleton();
 
 		try
 		{
@@ -63,8 +69,9 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_genreLabel.Text = _placeInfo.Genre;
 			_placeNameLabel.Text = _placeInfo.Name;
 			_creatorNameLabel.Text = "By " + _placeInfo.Creator.Name;
-			_descriptionLabel.Text = string.IsNullOrWhiteSpace(_placeInfo.Description) ? "No description provided." : _placeInfo.Description;
+			_descriptionLabel.SetMarkdown(string.IsNullOrWhiteSpace(_placeInfo.Description) ? "No description provided." : _placeInfo.Description);
 			_playButton.Disabled = false;
+			HideSkeleton();
 			_statsLabel.Text = $"{_placeInfo.Playing:N0} playing  •  {_placeInfo.Visits:N0} visits  •  {_placeInfo.MaxPlayers:N0} max players";
 			string thumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(_placeInfo.UniverseId);
 			if (!string.IsNullOrWhiteSpace(thumbnailUrl))
@@ -72,10 +79,29 @@ public partial class ViewPlaceInfo : MobileViewBase
 		}
 		catch (Exception exception)
 		{
+			HideSkeleton();
 			_playButton.Disabled = true;
-			_descriptionLabel.Text = "This world could not be loaded. Please try again.";
+			_descriptionLabel.SetMarkdown("This world could not be loaded. Please try again.");
 			BV.PrintErr(exception);
 		}
+	}
+
+	private void PulseSkeleton()
+	{
+		_loadingSkeleton.Modulate = Colors.White;
+		_skeletonTween?.Kill();
+		_skeletonTween = CreateTween().SetLoops().SetTrans(Tween.TransitionType.Sine);
+		_skeletonTween.TweenProperty(_loadingSkeleton, "modulate:a", 0.92f, 0.7);
+		_skeletonTween.TweenProperty(_loadingSkeleton, "modulate:a", 1f, 0.7);
+	}
+
+	private void HideSkeleton()
+	{
+		if (!IsInstanceValid(_loadingSkeleton)) return;
+		_skeletonTween?.Kill();
+		Tween tween = CreateTween();
+		tween.TweenProperty(_loadingSkeleton, "modulate:a", 0f, 0.18);
+		tween.TweenCallback(Callable.From(() => { if (IsInstanceValid(_loadingSkeleton)) _loadingSkeleton.Visible = false; }));
 	}
 
 	private void PlayEntranceAnimation()

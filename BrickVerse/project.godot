@@ -51,6 +51,8 @@ Globals="*res://scripts/shared/Globals.cs"
 AssetLoader="*res://scripts/shared/asset_loaders/AssetLoader.cs"
 WebAssetLoader="*res://scripts/shared/asset_loaders/WebAssetLoader.cs"
 AppCloseDimmer="*res://scripts/shared/AppCloseDimmer.cs"
+GodotIapPlugin="*uid://bduhiigcr38mm"
+BrickVerseOpenIap="*res://scripts/mobile/utils/open_iap_bridge.gd"
 
 [brickverse]
 
@@ -75,7 +77,7 @@ project/solution_directory="../"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg")
+enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg", "res://addons/godot-iap/plugin.cfg")
 
 [gui]
 

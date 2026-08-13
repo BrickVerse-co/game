@@ -192,6 +192,7 @@ public partial class MobileUI : Control
 	{
 		if (viewEnum == CurrentView)
 		{
+			if (args != null) CurrentViewNode?.ShowView(args);
 			return;
 		}
 
@@ -211,6 +212,7 @@ public partial class MobileUI : Control
 				MobileViewEnum.Worlds => "res://scenes/mobile/views/worlds.tscn",
 				MobileViewEnum.PlaceInfo => "res://scenes/mobile/views/place_info.tscn",
 				MobileViewEnum.RecordDetail => "res://scenes/mobile/views/record_detail.tscn",
+				MobileViewEnum.MarketplaceItem => "res://scenes/mobile/views/marketplace_item.tscn",
 				MobileViewEnum.Avatar => "res://scenes/mobile/views/avatar.tscn",
 				MobileViewEnum.Guilds or MobileViewEnum.Profile or MobileViewEnum.Settings
 					or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Notifications
@@ -294,4 +296,5 @@ public enum MobileViewEnum
 	Transactions,
 	Upgrade,
 	RecordDetail,
+	MarketplaceItem,
 }

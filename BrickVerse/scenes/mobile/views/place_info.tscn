@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://baoot5bioy8p6" path="res://scenes/mobile/ui/success_gradient.tscn" id="4_vkmeh"]
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="5_e6spv"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/chevron-left.svg" id="6_back"]
+[ext_resource type="PackedScene" path="res://scenes/mobile/components/shared/markdown.tscn" id="7_markdown"]
 
 [sub_resource type="Gradient" id="Gradient_w46nw"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -33,6 +34,9 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="loading_background"]
+bg_color = Color(0.12941177, 0.24313726, 0.38039216, 1)
 
 [node name="Control" type="ColorRect" unique_id=882536811 node_paths=PackedStringArray("_playButton", "_genreLabel", "_placeNameLabel", "_creatorNameLabel", "_thumbnailRect", "_thumbnailGradient", "_descriptionLabel", "_statsLabel", "_backButton")]
 anchors_preset = 15
@@ -158,10 +162,13 @@ theme_override_colors/font_color = Color(0.71, 0.76, 0.83, 1)
 text = "0 playing • 0 visits"
 autowrap_mode = 3
 
-[node name="Description" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+[node name="Description" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" instance=ExtResource("7_markdown")]
 layout_mode = 2
-text = "Description"
-autowrap_mode = 3
+
+[node name="Report" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+text = "Report this world"
+flat = true
 
 [node name="Play" type="Button" parent="." unique_id=1628177988]
 clip_children = 1
@@ -180,6 +187,51 @@ grow_vertical = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_ub80p")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_axuuk")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ub80p")
+
+[node name="LoadingSkeleton" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -92.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 50
+theme_override_styles/panel = SubResource("loading_background")
+
+[node name="Layout" type="VBoxContainer" parent="LoadingSkeleton"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Hero" type="ColorRect" parent="LoadingSkeleton/Layout"]
+custom_minimum_size = Vector2(0, 225)
+layout_mode = 2
+color = Color(0.16, 0.29, 0.42, 1)
+
+[node name="Padding" type="MarginContainer" parent="LoadingSkeleton/Layout"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="Lines" type="VBoxContainer" parent="LoadingSkeleton/Layout/Padding"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
+custom_minimum_size = Vector2(250, 34)
+layout_mode = 2
+color = Color(0.22, 0.35, 0.48, 1)
+
+[node name="Creator" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
+custom_minimum_size = Vector2(150, 20)
+layout_mode = 2
+color = Color(0.2, 0.32, 0.45, 1)
+
+[node name="Description" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+color = Color(0.18, 0.3, 0.43, 1)
 
 [node name="TextureRect" parent="Play" unique_id=2058874076 instance=ExtResource("4_vkmeh")]
 layout_mode = 1
