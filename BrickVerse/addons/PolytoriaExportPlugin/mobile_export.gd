@@ -29,7 +29,10 @@ func _supports_platform(platform) -> bool:
 
 func _get_export_options_overrides(platform) -> Dictionary:
 	return {
-		"dotnet/android_use_linux_bionic": true,
+		# Linux-bionic is not the Android runtime. Forcing it on x86_64 omits
+		# System.Security.Cryptography.Native.Android from the APK, causing the
+		# first HTTPS request to abort the process on a .NET worker thread.
+		"dotnet/android_use_linux_bionic": false,
 	}
 
 

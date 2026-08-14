@@ -56,24 +56,33 @@ public partial class BaseAsset : NetworkedObject
 
 	}
 
-	public async void UnlinkFrom(NetworkedObject obj)
+	public void UnlinkFrom(NetworkedObject obj)
 	{
 		Root = obj.Root;
-		LinkedTo.Remove(obj);
-		LinkCount--;
+		if (!LinkedTo.Remove(obj))
+			return;
+
+		LinkCount = Math.Max(0, LinkCount - 1);
 		if (LinkedTo.Count == 0)
 		{
 			PendingDeletion = true;
 
 			InvalidateTimer();
 
-			if ((_timer == null || !Node.IsInstanceValid(_timer)) && Node.IsInstanceValid(GDNode))
+			// Property cleanup also runs while a model and its Godot nodes are
+			// leaving the scene tree. Starting a Timer there is invalid and can
+			// abort NativeAOT Android builds from a .NET worker thread. Assets
+			// owned by that teardown are destroyed with their parent; only defer
+			// deletion while their node is still live in the tree.
+			if ((_timer == null || !Node.IsInstanceValid(_timer)) &&
+				Node.IsInstanceValid(GDNode) && GDNode.IsInsideTree() && !IsDeleted)
 			{
 				_timer = new();
 				GDNode.AddChild(_timer, @internal: Node.InternalMode.Back);
 				_timer.OneShot = true;
 				_timer.Timeout += DeleteTimerTimeout;
-				_timer.Start(DeleteTimeoutSec);
+				if (_timer.IsInsideTree())
+					_timer.Start(DeleteTimeoutSec);
 			}
 		}
 	}
@@ -86,6 +95,7 @@ public partial class BaseAsset : NetworkedObject
 			_timer.Timeout -= DeleteTimerTimeout;
 			_timer.QueueFree();
 		}
+		_timer = null;
 	}
 
 	private void DeleteTimerTimeout()

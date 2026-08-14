@@ -9,6 +9,7 @@ using BrickVerse.Utils;
 using BrickVerse.Mobile.Utils;
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -25,6 +26,8 @@ public partial class FeedRoot : Node
 	private Label _pageLabel = null!;
 	private PackedScene _skeletonScene = null!;
 	[Export] private Control _feedContainer = null!;
+	private int _loadVersion;
+	private bool _disposed;
 
 	public override void _Ready()
 	{
@@ -41,48 +44,68 @@ public partial class FeedRoot : Node
 		_next.Pressed += () => { _page++; LoadFeed(); };
 		MobileMotion.Bind(_previous);
 		MobileMotion.Bind(_next);
-		BVMobileAuthAPI.UserAuthenticated += _ => LoadFeed();
+		BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		if (BVMobileAuthAPI.IsAuthenticated) LoadFeed();
 	}
+
+	public override void _ExitTree()
+	{
+		_disposed = true;
+		_loadVersion++;
+		BVMobileAuthAPI.UserAuthenticated -= OnUserAuthenticated;
+		if (_composer != null) _composer.PostCreated -= LoadFeed;
+		base._ExitTree();
+	}
+
+	private void OnUserAuthenticated(APIV3AuthMeUser _) => LoadFeed();
 
 	private void OpenComposer() => _composer.Open();
 
 	private async void LoadFeed()
 	{
+		int version = ++_loadVersion;
 		try
 		{
 			foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
 			for (int index = 0; index < 3; index++) _feedContainer.AddChild(_skeletonScene.Instantiate());
 			using JsonDocument feed = await BVAPI.GetJson($"/v3/social/feed?limit={PageSize}&offset={_page * PageSize}");
-			foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
-			if (!feed.RootElement.TryGetProperty("posts", out JsonElement posts)) return;
-			foreach (JsonElement item in posts.EnumerateArray())
+			await RunOnMainThread(() =>
 			{
-				JsonElement user = item.TryGetProperty("user", out JsonElement userNode) ? userNode : default;
-				long.TryParse(user.ValueKind == JsonValueKind.Object && user.TryGetProperty("id", out JsonElement userId) ? userId.ToString() : "0", out long authorId);
-				DateTime.TryParse(item.TryGetProperty("createdAt", out JsonElement created) ? created.GetString() : null, out DateTime postedAt);
-				FeedPostCard card = _feedCard.Instantiate<FeedPostCard>();
-				card.Data = new APIFeedPostData
+				if (_disposed || version != _loadVersion || !IsInstanceValid(_feedContainer)) return;
+				foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
+				if (!feed.RootElement.TryGetProperty("posts", out JsonElement posts)) return;
+				foreach (JsonElement item in posts.EnumerateArray())
 				{
-					Id = long.TryParse(item.TryGetProperty("id", out JsonElement postId) ? postId.ToString() : "0", out long parsedPostId) ? parsedPostId : 0,
-					Content = item.TryGetProperty("content", out JsonElement content) ? content.GetString() ?? "" : "",
-					PostedAt = postedAt,
-					Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user", IsVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True },
-					LikeCount = ReadCount(item, "totalLikes", "likeCount"),
-					ReplyCount = ReadCount(item, "totalComments", "commentCount"),
-					IsLiked = item.TryGetProperty("isLikedByUser", out JsonElement liked) && liked.ValueKind == JsonValueKind.True,
-					Comments = [],
-				};
-				_feedContainer.AddChild(card);
-			}
-			_previous.Disabled = _page == 0;
-			_next.Disabled = posts.GetArrayLength() < PageSize;
-			_pageLabel.Text = $"Page {_page + 1}";
+					JsonElement user = item.TryGetProperty("user", out JsonElement userNode) ? userNode : default;
+					long.TryParse(user.ValueKind == JsonValueKind.Object && user.TryGetProperty("id", out JsonElement userId) ? userId.ToString() : "0", out long authorId);
+					DateTime.TryParse(item.TryGetProperty("createdAt", out JsonElement created) ? created.GetString() : null, out DateTime postedAt);
+					FeedPostCard card = _feedCard.Instantiate<FeedPostCard>();
+					card.Data = new APIFeedPostData
+					{
+						Id = long.TryParse(item.TryGetProperty("id", out JsonElement postId) ? postId.ToString() : "0", out long parsedPostId) ? parsedPostId : 0,
+						Content = item.TryGetProperty("content", out JsonElement content) ? content.GetString() ?? "" : "",
+						PostedAt = postedAt,
+						Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user", IsVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True },
+						LikeCount = ReadCount(item, "totalLikes", "likeCount"),
+						ReplyCount = ReadCount(item, "totalComments", "commentCount"),
+						IsLiked = item.TryGetProperty("isLikedByUser", out JsonElement liked) && liked.ValueKind == JsonValueKind.True,
+						Comments = [],
+					};
+					_feedContainer.AddChild(card);
+				}
+				_previous.Disabled = _page == 0;
+				_next.Disabled = posts.GetArrayLength() < PageSize;
+				_pageLabel.Text = $"Page {_page + 1}";
+			});
 		}
-		catch
+		catch (Exception exception)
 		{
-			foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
-			BV.PrintErr("Failed to load feed");
+			if (_disposed || version != _loadVersion || !IsInstanceValid(_feedContainer)) return;
+			await RunOnMainThread(() =>
+			{
+				if (IsInstanceValid(_feedContainer)) foreach (Node child in _feedContainer.GetChildren()) child.QueueFree();
+			});
+			BV.PrintErr("Failed to load feed: ", exception);
 		}
 	}
 
@@ -93,4 +116,15 @@ public partial class FeedRoot : Node
 	}
 
 	public void Refresh() => LoadFeed();
+
+	private static Task RunOnMainThread(Action action)
+	{
+		TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		BV.CallOnMainThread(() =>
+		{
+			try { action(); completion.SetResult(); }
+			catch (Exception exception) { completion.SetException(exception); }
+		});
+		return completion.Task;
+	}
 }

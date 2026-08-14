@@ -17,6 +17,7 @@ public partial class MobileBillingService : Node
 	private MobileIapProductsDialog _dialog = null!;
 	private readonly List<MobileStoreProduct> _products = [];
 	private MobileProductKind _visibleKind;
+	private bool _storeConnected;
 
 	public override void _Ready()
 	{
@@ -31,8 +32,10 @@ public partial class MobileBillingService : Node
 		_bridge = GetNodeOrNull<Node>("/root/BrickVerseOpenIap");
 		if (_bridge == null) { BV.PrintErr("OpenIAP bridge is unavailable. Enable the godot-iap plugin for mobile exports."); return; }
 		_bridge.Connect("products_loaded", Callable.From<Godot.Collections.Array>(OnProductsLoaded));
+		_bridge.Connect("products_unavailable", Callable.From<string>(OnProductsUnavailable));
 		_bridge.Connect("purchase_received", Callable.From<Godot.Collections.Dictionary>(OnPurchaseReceived));
 		_bridge.Connect("purchase_failed", Callable.From<Godot.Collections.Dictionary>(OnPurchaseFailed));
+		_bridge.Connect("connection_changed", Callable.From<bool>(OnConnectionChanged));
 	}
 
 	public void OpenProducts(MobileProductKind kind)
@@ -44,10 +47,33 @@ public partial class MobileBillingService : Node
 			return;
 		}
 		_dialog.ShowProducts(kind, _products);
-		if (_products.Count == 0) _bridge.Call("refresh_products");
+		if (!_storeConnected)
+		{
+			_dialog.SetStatus("Google Play is unavailable. Install this app from a Play testing track and sign in to Google Play, then try again.");
+			return;
+		}
+		if (_products.Count == 0)
+		{
+			_dialog.SetStatus("Loading products from Google Play…", true);
+			_bridge.Call("refresh_products");
+		}
 	}
 
-	public void Purchase(string productId, bool subscription) => _bridge?.Call("request_product", productId, subscription);
+	private void OnConnectionChanged(bool connected)
+	{
+		_storeConnected = connected;
+		if (!connected && _dialog.Visible)
+			_dialog.SetStatus("The app store could not be reached. Check Google Play and your connection, then try again.");
+	}
+
+	private void OnProductsUnavailable(string message)
+	{
+		BV.PrintErr("Mobile IAP products unavailable: ", message);
+		if (_dialog.Visible)
+			_dialog.SetStatus(message);
+	}
+
+	public void Purchase(string productId, bool subscription, string offerToken) => _bridge?.Call("request_product", productId, subscription, offerToken);
 	public void RestorePurchases() { _dialog.SetStatus("Checking your app-store purchases…", true); _bridge?.Call("restore_purchases"); }
 
 	private void OnProductsLoaded(Godot.Collections.Array products)
@@ -61,8 +87,10 @@ public partial class MobileBillingService : Node
 			string title = Read(product, "title");
 			string price = Read(product, "displayPrice", "display_price", "localizedPrice");
 			string type = Read(product, "type");
-			bool subscription = type.Contains("sub", StringComparison.OrdinalIgnoreCase) || id.StartsWith("astro", StringComparison.Ordinal);
-			_products.Add(new(id, string.IsNullOrWhiteSpace(title) ? ProductTitle(id) : title, price, subscription));
+			string storeProductId = Read(product, "storeProductId", "store_product_id");
+			string offerToken = Read(product, "offerToken", "offer_token");
+			bool subscription = type.Contains("sub", StringComparison.OrdinalIgnoreCase) || storeProductId == "astro_membership";
+			_products.Add(new(id, string.IsNullOrWhiteSpace(storeProductId) ? id : storeProductId, string.IsNullOrWhiteSpace(title) ? ProductTitle(id) : title, price, subscription, offerToken));
 		}
 		if (_dialog.Visible) _dialog.ShowProducts(_visibleKind, _products);
 	}

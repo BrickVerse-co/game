@@ -20,6 +20,8 @@ public partial class WorldsGrid : Control
 	private OptionButton _genre = null!;
 	private Label _status = null!;
 	private PackedScene _skeletonScene = null!;
+	private int _loadVersion;
+	private bool _disposed;
 
 	public override void _Ready()
 	{
@@ -37,8 +39,16 @@ public partial class WorldsGrid : Control
 		LoadWorlds("");
 	}
 
+	public override void _ExitTree()
+	{
+		_disposed = true;
+		_loadVersion++;
+		base._ExitTree();
+	}
+
 	private async void LoadWorlds(string search)
 	{
+		int version = ++_loadVersion;
 		_status.Text = "Loading worlds…";
 		try
 		{
@@ -53,6 +63,7 @@ public partial class WorldsGrid : Control
 				path += "&genre=" + Uri.EscapeDataString(_genre.GetItemText(_genre.Selected).ToUpperInvariant().Replace(' ', '_'));
 			}
 			using JsonDocument response = await BVAPI.GetJson(path);
+			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
 			foreach (Node child in GetChildren()) child.QueueFree();
 			JsonElement worlds = response.RootElement.GetProperty("worlds");
 			foreach (JsonElement item in worlds.EnumerateArray())
@@ -70,6 +81,7 @@ public partial class WorldsGrid : Control
 				};
 				string thumbnailId = FindPrimaryThumbnailId(item);
 				card.ThumbnailUrl = await BVAPI.ResolveThumbnailUrl("ASSET", thumbnailId);
+				if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
 				AddChild(card);
 				MobileMotion.Enter(card, GetChildCount() - 1);
 			}
@@ -77,6 +89,7 @@ public partial class WorldsGrid : Control
 		}
 		catch (Exception ex)
 		{
+			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
 			foreach (Node child in GetChildren()) child.QueueFree();
 			BV.PrintErr(ex);
 			_status.Text = "Worlds could not be loaded. Try another search or refresh this page.";

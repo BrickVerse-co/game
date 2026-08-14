@@ -1,6 +1,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 using BrickVerse.Shared;
 using BrickVerse.Mobile.Utils;
 using BrickVerse.Utils;
@@ -49,40 +50,57 @@ public partial class HomeShelf : VBoxContainer
 			);
 			string propertyName = RecentWorlds ? "worlds" : "friends";
 			JsonElement records = document.RootElement.GetProperty(propertyName);
-			foreach (Node child in items.GetChildren()) child.QueueFree();
-			count.Text = RecentWorlds ? "Continue Playing" : $"Friends Online ({records.GetArrayLength()})";
+			await RunOnMainThread(() =>
+			{
+				if (!IsInstanceValid(items) || !IsInstanceValid(count)) return;
+				foreach (Node child in items.GetChildren()) child.QueueFree();
+				count.Text = RecentWorlds ? "Continue Playing" : $"Friends Online ({records.GetArrayLength()})";
+			});
 			foreach (JsonElement record in records.EnumerateArray())
 			{
 				JsonElement data = !RecentWorlds && record.TryGetProperty("user", out JsonElement user) ? user : record;
 				string id = data.TryGetProperty("id", out JsonElement idNode) ? idNode.ToString() : "";
 				if (RecentWorlds && long.TryParse(id, out long worldId))
 				{
-					PlaceCard card = _placeCardScene.Instantiate<PlaceCard>();
-					card.PlaceData = new APIWorldsData { Id = worldId, Name = ReadString(data, "name"), Playing = 0, Rating = null };
-					card.ThumbnailUrl = ReadString(data, "thumbnailUrl");
-					if (string.IsNullOrWhiteSpace(card.ThumbnailUrl))
+					string worldName = ReadString(data, "name");
+					string thumbnailUrl = ReadString(data, "thumbnailUrl");
+					if (string.IsNullOrWhiteSpace(thumbnailUrl))
 					{
 						string universeIdText = ReadString(data, "universeId");
-						if (long.TryParse(universeIdText, out long universeId)) card.ThumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(universeId);
+						if (long.TryParse(universeIdText, out long universeId)) thumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(universeId);
 					}
-					items.AddChild(card);
+					await RunOnMainThread(() =>
+					{
+						if (!IsInstanceValid(items)) return;
+						PlaceCard card = _placeCardScene.Instantiate<PlaceCard>();
+						card.PlaceData = new APIWorldsData { Id = worldId, Name = worldName, Playing = 0, Rating = null };
+						card.ThumbnailUrl = thumbnailUrl;
+						items.AddChild(card);
+					});
 				}
 				else if (!RecentWorlds && !string.IsNullOrWhiteSpace(id))
 				{
-					UserHeadshotCard card = _friendCardScene.Instantiate<UserHeadshotCard>();
-					card.UserID = id;
-					card.InitialUsername = ReadString(data, "username");
-					card.IsVerified = data.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
-					card.IsAdmin = data.TryGetProperty("isStaff", out JsonElement staff) && staff.ValueKind == JsonValueKind.True;
-					items.AddChild(card);
+					string username = ReadString(data, "username");
+					bool isVerified = data.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
+					bool isAdmin = data.TryGetProperty("isStaff", out JsonElement staff) && staff.ValueKind == JsonValueKind.True;
+					await RunOnMainThread(() =>
+					{
+						if (!IsInstanceValid(items)) return;
+						UserHeadshotCard card = _friendCardScene.Instantiate<UserHeadshotCard>();
+						card.UserID = id;
+						card.InitialUsername = username;
+						card.IsVerified = isVerified;
+						card.IsAdmin = isAdmin;
+						items.AddChild(card);
+					});
 				}
 			}
-			Visible = records.GetArrayLength() > 0;
+			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = records.GetArrayLength() > 0; });
 		}
 		catch (Exception exception)
 		{
 			BV.PrintErr("Could not load home shelf: ", exception);
-			Visible = false;
+			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = false; });
 		}
 	}
 
@@ -91,4 +109,15 @@ public partial class HomeShelf : VBoxContainer
 	private static string ReadString(JsonElement item, string name) => item.TryGetProperty(name, out JsonElement value)
 		? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString()
 		: "";
+
+	private static Task RunOnMainThread(Action action)
+	{
+		TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		BV.CallOnMainThread(() =>
+		{
+			try { action(); completion.SetResult(); }
+			catch (Exception exception) { completion.SetException(exception); }
+		});
+		return completion.Task;
+	}
 }

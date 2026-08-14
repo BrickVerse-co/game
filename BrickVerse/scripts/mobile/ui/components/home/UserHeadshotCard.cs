@@ -79,15 +79,15 @@ public partial class UserHeadshotCard : PanelContainer
 		{
 			APIUserInfo userData = await BVAPI.GetUserFromID(UserID.ToString());
 			_userData = userData;
-
-			if (!_disposed && IsInstanceValid(_usernameLabel))
+			BV.CallOnMainThread(() =>
 			{
+				if (_disposed || !IsInstanceValid(_usernameLabel)) return;
 				_usernameLabel.Text = userData.Username;
 				GetNode<TextureRect>("VBoxContainer/NameRow/Verified").Visible = IsVerified;
 				GetNode<TextureRect>("VBoxContainer/NameRow/Admin").Visible = IsAdmin || userData.IsStaff;
 				_textSkeleton.Visible = false;
 				StopSkeletonWhenReady();
-			}
+			});
 		}
 		catch (Exception ex)
 		{

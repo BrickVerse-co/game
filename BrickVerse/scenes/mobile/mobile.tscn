@@ -36,9 +36,9 @@ Button/styles/normal = SubResource("StyleBoxEmpty_py0ce")
 Button/styles/pressed = SubResource("StyleBoxFlat_lfm17")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1d8x"]
-bg_color = Color(0.02745098, 0.047058824, 0.07450981, 1)
 content_margin_left = 12.0
 content_margin_right = 12.0
+bg_color = Color(0.02745098, 0.047058824, 0.07450981, 1)
 
 [sub_resource type="Gradient" id="Gradient_1gyer"]
 colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 1)

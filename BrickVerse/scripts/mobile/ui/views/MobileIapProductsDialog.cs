@@ -10,7 +10,7 @@ public partial class MobileIapProductsDialog : Window
 	private ItemList _products = null!;
 	private Button _purchase = null!;
 	private Label _status = null!;
-	private readonly List<(string Id, bool Subscription)> _ids = [];
+	private readonly List<(string StoreProductId, bool Subscription, string OfferToken)> _ids = [];
 
 	public override void _Ready()
 	{
@@ -31,7 +31,7 @@ public partial class MobileIapProductsDialog : Window
 		{
 			if ((kind == MobileProductKind.Membership) != product.Subscription) continue;
 			_products.AddItem($"{product.Title}\n{product.DisplayPrice}");
-			_ids.Add((product.Id, product.Subscription));
+			_ids.Add((product.StoreProductId, product.Subscription, product.OfferToken));
 		}
 		_status.Text = _ids.Count == 0 ? "Products are still loading from the app store." : "Purchases are processed securely by your device's app store.";
 		_purchase.Disabled = _ids.Count == 0;
@@ -44,10 +44,10 @@ public partial class MobileIapProductsDialog : Window
 	{
 		int selected = _products.GetSelectedItems().Length > 0 ? _products.GetSelectedItems()[0] : -1;
 		if (selected < 0 || selected >= _ids.Count) { _status.Text = "Select a product first."; return; }
-		(string id, bool subscription) = _ids[selected];
+		(string id, bool subscription, string offerToken) = _ids[selected];
 		SetStatus("Opening the app store…", true);
-		MobileBillingService.Singleton?.Purchase(id, subscription);
+		MobileBillingService.Singleton?.Purchase(id, subscription, offerToken);
 	}
 }
 
-public sealed record MobileStoreProduct(string Id, string Title, string DisplayPrice, bool Subscription);
+public sealed record MobileStoreProduct(string Id, string StoreProductId, string Title, string DisplayPrice, bool Subscription, string OfferToken);

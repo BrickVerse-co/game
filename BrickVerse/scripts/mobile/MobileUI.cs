@@ -41,8 +41,10 @@ public partial class MobileUI : Control
 	[Export]
 	public MobileLoadingScreen LoadingScreen = null!;
 
-	private Deeplink _deepLink = new();
+	private Deeplink? _deepLink;
+	private MobileAuthBrowser? _authBrowser;
 	private readonly Dictionary<MobileViewEnum, MobileViewBase> _viewCache = [];
+	private bool _disposed;
 
 	public override void _Ready()
 	{
@@ -54,11 +56,28 @@ public partial class MobileUI : Control
 		cmdargs.TryGetValue("code", out string? mobileCode);
 		cmdargs.TryGetValue("state", out string? mobileState);
 
-		AddChild(_deepLink, true);
+		// Deep links are an optional Android/iOS export plugin. Emulator and
+		// sideload builds may not include its singleton, so don't initialize a
+		// wrapper that can only emit errors. Browser/code login remains usable.
+		if (Engine.HasSingleton("DeeplinkPlugin"))
+		{
+			_deepLink = new Deeplink();
+			AddChild(_deepLink, true);
+			if (_deepLink.Initialize() == (int)Error.Ok)
+				_deepLink.DeeplinkReceived += OnDeeplinkReceived;
+			else
+				BV.PrintErr("Deep-link initialization failed; continuing without app links.");
+		}
 
-		var initResult = _deepLink.Initialize();
+		else
+		{
+			BV.Print("Deep-link plugin unavailable; continuing without app links.");
+		}
 
-		_deepLink.DeeplinkReceived += OnDeeplinkReceived;
+		_authBrowser = new MobileAuthBrowser();
+		AddChild(_authBrowser, true);
+		_authBrowser.CallbackReceived += OnAuthBrowserCallback;
+		BVMobileAuthAPI.InAppBrowserLauncher = _authBrowser.Open;
 
 		if (Globals.IsMobileBuild)
 		{
@@ -75,7 +94,7 @@ public partial class MobileUI : Control
 		BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		BVMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
 
-		BVMobileAuthAPI.SetupClient();
+		_ = InitializeAuthenticationAsync();
 		if (mobileToken != null)
 		{
 			_ = CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithAuthToken(mobileToken));
@@ -98,20 +117,72 @@ public partial class MobileUI : Control
 			DisplayServer.WindowSetSize((Vector2I)new Vector2(412, 700));
 		}
 
-		SwitchTo(MobileViewEnum.Home);
+	}
+
+	public override void _ExitTree()
+	{
+		_disposed = true;
+		BVMobileAuthAPI.UserAuthenticated -= OnUserAuthenticated;
+		BVMobileAuthAPI.AskForAuthentication -= OnAskForAuthentication;
+		if (_deepLink != null)
+			_deepLink.DeeplinkReceived -= OnDeeplinkReceived;
+		if (_authBrowser != null)
+			_authBrowser.CallbackReceived -= OnAuthBrowserCallback;
+		BVMobileAuthAPI.InAppBrowserLauncher = null;
+		if (ReferenceEquals(Singleton, this)) Singleton = null!;
+		base._ExitTree();
+	}
+
+	private async void OnAuthBrowserCallback(string rawUrl)
+	{
+		try
+		{
+			Uri uri = new(rawUrl);
+			if (!uri.Scheme.Equals("brickverse", StringComparison.OrdinalIgnoreCase) ||
+				!uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase)) return;
+			NameValueCollection query = HttpUtility.ParseQueryString(uri.Query);
+			string? code = query.Get("code");
+			string? state = query.Get("state");
+			if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
+				throw new InvalidOperationException("The sign-in response was incomplete.");
+			await CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithCodeAndState(code, state));
+		}
+		catch (Exception exception)
+		{
+			BV.PrintErr("In-app authentication callback failed: ", exception);
+			if (!_disposed && IsInstanceValid(this)) OS.Alert(exception.Message, "Authentication Failure");
+		}
+	}
+
+	private async System.Threading.Tasks.Task InitializeAuthenticationAsync()
+	{
+		try
+		{
+			await BVMobileAuthAPI.SetupClient();
+		}
+		catch (Exception exception)
+		{
+			// SetupClient is defensive itself; retain this boundary so a future
+			// provider implementation cannot terminate the Android process.
+			BV.PrintErr("Unexpected mobile authentication startup failure: ", exception);
+			if (IsInstanceValid(this)) OnAskForAuthentication();
+		}
 	}
 
 	private void OnUserAuthenticated(APIV3AuthMeUser me)
 	{
+		if (_disposed || !IsInstanceValid(this)) return;
 		HideStartupSplash();
 		if (NewUserSplash != null && IsInstanceValid(NewUserSplash))
 		{
 			NewUserSplash.Visible = false;
 		}
+		if (CurrentViewNode == null) SwitchTo(MobileViewEnum.Home);
 	}
 
 	private void OnAskForAuthentication()
 	{
+		if (_disposed || !IsInstanceValid(this)) return;
 		HideStartupSplash();
 		NewUserSplash.ShowSplash();
 	}
@@ -162,7 +233,7 @@ public partial class MobileUI : Control
 		}
 		finally
 		{
-			LoadingScreen.HideScreen();
+			if (!_disposed && IsInstanceValid(LoadingScreen)) LoadingScreen.HideScreen();
 		}
 	}
 
@@ -174,8 +245,12 @@ public partial class MobileUI : Control
 		{
 			APIJoinPlaceResponse res = await BVAPI.RequestJoinGame(
 				new() { PlaceID = placeID, IsBeta = true },
-				(title, status) => Callable.From(() => LoadingScreen.UpdateStatus(title, status)).CallDeferred()
+				(title, status) => Callable.From(() =>
+				{
+					if (!_disposed && IsInstanceValid(LoadingScreen)) LoadingScreen.UpdateStatus(title, status);
+				}).CallDeferred()
 			);
+			if (_disposed || !IsInstanceValid(this)) return;
 			LoadingScreen.UpdateStatus("Launching BrickVerse", "Connecting you to the game client…");
 
 			Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
@@ -187,15 +262,16 @@ public partial class MobileUI : Control
 		}
 		catch (Exception ex)
 		{
-			OS.Alert(ex.Message, "World join failed");
+			BV.PrintErr("World join failed: ", ex);
+			if (!_disposed && IsInstanceValid(this)) OS.Alert(ex.Message, "World join failed");
 		}
 
-		LoadingScreen.HideScreen();
+		if (!_disposed && IsInstanceValid(LoadingScreen)) LoadingScreen.HideScreen();
 	}
 
 	public void SwitchTo(MobileViewEnum viewEnum, object? args = null)
 	{
-		if (viewEnum == CurrentView)
+		if (CurrentViewNode != null && viewEnum == CurrentView)
 		{
 			if (args != null) CurrentViewNode?.ShowView(args);
 			return;

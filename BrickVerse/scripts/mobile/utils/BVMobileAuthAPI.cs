@@ -27,6 +27,7 @@ public static class BVMobileAuthAPI
 
 	public static event Action<APIV3AuthMeUser>? UserAuthenticated;
 	public static event Action? AskForAuthentication;
+	public static Func<string, bool>? InAppBrowserLauncher { private get; set; }
 
 	public static APIV3AuthMeUser CurrentUserInfo { get; private set; }
 	public static bool IsAuthenticated => !string.IsNullOrWhiteSpace(_authData.Token);
@@ -34,9 +35,11 @@ public static class BVMobileAuthAPI
 	private static MobileAuthData _authData;
 	private const string AuthDataPath = "user://auth2";
 
-	public static async void SetupClient()
+	public static async Task SetupClient()
 	{
-		_authData = new();
+		try
+		{
+			_authData = new();
 
 		if (FileAccess.FileExists(AuthDataPath))
 		{
@@ -55,13 +58,19 @@ public static class BVMobileAuthAPI
 			}
 		}
 
-		if (_authData.Token == null)
-		{
-			AskForAuthentication?.Invoke();
+			if (_authData.Token == null)
+				AskForAuthentication?.Invoke();
+			else
+				await LoginWithAuthToken(_authData.Token!);
 		}
-		else
+		catch (Exception exception)
 		{
-			await LoginWithAuthToken(_authData.Token!);
+			// Corrupt storage and platform I/O failures must never escape an
+			// async-void startup callback on Android NativeAOT.
+			BV.PrintErr("Mobile authentication initialization failed: ", exception);
+			_authData = new();
+			BVAPI.SetAuthToken("");
+			AskForAuthentication?.Invoke();
 		}
 	}
 
@@ -113,7 +122,11 @@ public static class BVMobileAuthAPI
 			string authUrl = Globals.MainEndpoint.PathJoin(
 				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}&mode={(register ? "signup" : "login")}"
 			);
-			OS.ShellOpen(authUrl);
+			if (InAppBrowserLauncher?.Invoke(authUrl) != true)
+			{
+				BV.PrintWarn("In-app auth browser unavailable; falling back to the system browser.");
+				OS.ShellOpen(authUrl);
+			}
 			await PollForQuickSignInAsync(code, DateTime.UtcNow.AddMinutes(5), cancellationToken);
 		}
 		catch (OperationCanceledException)
