@@ -21,6 +21,21 @@ func _export_begin(features: PackedStringArray, is_debug: bool, path: String, fl
 
 		ProjectSettings.save()
 
+	if "android" in features:
+		# Godot's .NET exporter keeps the primary NativeAOT image but otherwise
+		# drops this runtime-pack companion. HttpClient loads it dynamically on
+		# the first TLS request; omitting it terminates the Android process.
+		var configuration := "ExportDebug" if is_debug else "ExportRelease"
+		_add_android_runtime_library(configuration, "android-arm64", "arm64")
+		_add_android_runtime_library(configuration, "android-x64", "x86_64")
+
+func _add_android_runtime_library(configuration: String, runtime_id: String, architecture: String) -> void:
+	var library_path := "res://.godot/mono/temp/bin/%s/%s/publish/libSystem.Security.Cryptography.Native.Android.so" % [configuration, runtime_id]
+	if not FileAccess.file_exists(library_path):
+		push_error("Required Android .NET runtime library was not published: " + library_path)
+		return
+	add_shared_object(library_path, PackedStringArray([architecture]), "")
+
 func _supports_platform(platform) -> bool:
 	if platform is EditorExportPlatformAndroid:
 		return true
