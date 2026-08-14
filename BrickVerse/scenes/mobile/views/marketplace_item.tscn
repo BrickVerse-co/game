@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/mobile/components/shared/markdown.tscn" id="3"]
 [ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/mobile/components/marketplace/item_detail_skeleton.tscn" id="5"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/user-circle.svg" id="6_creator"]
 [sub_resource type="StyleBoxFlat" id="buy"]
 bg_color = Color(0.12, 0.55, 0.28, 1)
 corner_radius_top_left = 12
@@ -75,6 +76,7 @@ light_energy = 0.65
 [node name="Camera" type="Camera3D" parent="Layout/PreviewFrame/Padding/Preview3D/Viewport"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
 current = true
+near = 0.01
 [node name="Overlay" type="Control" parent="Layout/PreviewFrame"]
 layout_mode = 2
 mouse_filter = 2
@@ -140,9 +142,12 @@ layout_mode = 2
 text = "Accessory"
 [node name="Creator" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
-[node name="Name" type="Label" parent="Layout/Creator"]
+[node name="Name" type="Button" parent="Layout/Creator"]
 layout_mode = 2
 text = "Created by"
+icon = ExtResource("6_creator")
+icon_max_width = 18
+flat = true
 [node name="Verified" type="TextureRect" parent="Layout/Creator"]
 visible = false
 custom_minimum_size = Vector2(20, 20)

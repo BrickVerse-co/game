@@ -24,6 +24,7 @@ public partial class NewUserSplash : Control
 		_loginBtn.Pressed += OnLoginPressed;
 		_closeBtn.Pressed += OnClosePressed;
 		_closeBtn.Visible = false;
+		GetNode<Label>("BuildInfo").Text = $"BrickVerse {ProjectSettings.GetSetting("application/config/version", "1.0.0")}  •  © {System.DateTime.UtcNow.Year} Meta Games LLC";
 	}
 
 	private void OnClosePressed()

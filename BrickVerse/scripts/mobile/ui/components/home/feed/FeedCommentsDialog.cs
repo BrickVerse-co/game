@@ -14,13 +14,17 @@ public partial class FeedCommentsDialog : AcceptDialog
 	private VBoxContainer _comments = null!;
 	private LineEdit _input = null!;
 	private Button _post = null!;
+	private PackedScene _commentCard = null!;
 
 	public override void _Ready()
 	{
 		_comments = GetNode<VBoxContainer>("Layout/Scroll/Comments");
 		_input = GetNode<LineEdit>("Layout/Composer/Input");
 		_post = GetNode<Button>("Layout/Composer/Post");
+		_commentCard = GD.Load<PackedScene>("res://scenes/mobile/components/home/feed_comment_card.tscn");
 		_post.Pressed += Submit;
+		_input.TextSubmitted += _ => Submit();
+		MobileMotion.Bind(_post);
 		CloseRequested += QueueFree;
 		Confirmed += QueueFree;
 	}
@@ -32,14 +36,35 @@ public partial class FeedCommentsDialog : AcceptDialog
 		foreach (Node child in _comments.GetChildren()) child.QueueFree();
 		using JsonDocument response = await BVAPI.GetJson($"/v3/social/posts/{_postId}/comments?limit=50");
 		if (!response.RootElement.TryGetProperty("comments", out JsonElement records)) return;
+		if (records.GetArrayLength() == 0)
+		{
+			Label empty = GD.Load<PackedScene>("res://scenes/mobile/components/shared/info_label.tscn").Instantiate<Label>();
+			empty.Text = "No comments yet. Start the conversation.";
+			_comments.AddChild(empty);
+			return;
+		}
 		foreach (JsonElement item in records.EnumerateArray())
 		{
-			Label row = GD.Load<PackedScene>("res://scenes/mobile/components/shared/info_label.tscn").Instantiate<Label>();
+			PanelContainer row = _commentCard.Instantiate<PanelContainer>();
 			string author = item.TryGetProperty("user", out JsonElement user) && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "User" : "User";
 			string content = item.TryGetProperty("content", out JsonElement text) ? text.GetString() ?? "" : "";
-			row.Text = $"{author}\n{content}";
+			row.GetNode<Label>("Content/Author").Text = author;
+			row.GetNode<Label>("Content/Body").Text = content;
+			string createdAt = item.TryGetProperty("createdAt", out JsonElement created) ? created.GetString() ?? "" : "";
+			row.GetNode<Label>("Content/Time").Text = DateTime.TryParse(createdAt, out DateTime timestamp)
+				? RelativeTime(timestamp) : "Just now";
 			_comments.AddChild(row);
 		}
+	}
+
+	private static string RelativeTime(DateTime timestamp)
+	{
+		DateTime utc = timestamp.Kind == DateTimeKind.Utc ? timestamp : timestamp.ToUniversalTime();
+		TimeSpan elapsed = DateTime.UtcNow - utc;
+		if (elapsed < TimeSpan.Zero || elapsed.TotalMinutes < 1) return "Just now";
+		if (elapsed.TotalHours < 1) return $"{(int)elapsed.TotalMinutes}m ago";
+		if (elapsed.TotalDays < 1) return $"{(int)elapsed.TotalHours}h ago";
+		return $"{(int)elapsed.TotalDays}d ago";
 	}
 
 	private async void Submit()
@@ -51,6 +76,8 @@ public partial class FeedCommentsDialog : AcceptDialog
 		{
 			string json = $"{{\"content\":{JsonSerializer.Serialize(content)}}}";
 			using JsonDocument response = await BVAPI.SendJson(HttpMethod.Post, $"/v3/social/posts/{_postId}/comments", json);
+			if (response.RootElement.TryGetProperty("success", out JsonElement success) && success.ValueKind == JsonValueKind.False)
+				throw new InvalidOperationException(response.RootElement.TryGetProperty("message", out JsonElement message) ? message.GetString() : "The comment could not be posted.");
 			_input.Clear();
 			EmitSignal(SignalName.CommentAdded);
 			await LoadComments();

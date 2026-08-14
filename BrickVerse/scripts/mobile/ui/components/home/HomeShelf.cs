@@ -31,7 +31,14 @@ public partial class HomeShelf : VBoxContainer
 	private async System.Threading.Tasks.Task LoadAsync()
 	{
 		HBoxContainer items = GetNode<HBoxContainer>("ScrollContainer/HBoxContainer2");
-		Label count = GetNode<Label>("VBoxContainer/Label2");
+		Label count = GetNodeOrNull<Label>("VBoxContainer/TitleRow/Label2") ?? GetNode<Label>("VBoxContainer/Label2");
+		Button? viewAll = GetNodeOrNull<Button>("VBoxContainer/TitleRow/ViewAll");
+		if (viewAll != null && !viewAll.HasMeta("bound"))
+		{
+			viewAll.SetMeta("bound", true);
+			viewAll.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Friends, MobileViewEnum.Friends);
+			MobileMotion.Bind(viewAll);
+		}
 		foreach (Node child in items.GetChildren()) child.QueueFree();
 		Visible = true;
 		for (int index = 0; index < 3; index++) items.AddChild((RecentWorlds ? _skeletonScene : _friendSkeletonScene).Instantiate());
@@ -64,6 +71,9 @@ public partial class HomeShelf : VBoxContainer
 				{
 					UserHeadshotCard card = _friendCardScene.Instantiate<UserHeadshotCard>();
 					card.UserID = id;
+					card.InitialUsername = ReadString(data, "username");
+					card.IsVerified = data.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
+					card.IsAdmin = data.TryGetProperty("isStaff", out JsonElement staff) && staff.ValueKind == JsonValueKind.True;
 					items.AddChild(card);
 				}
 			}

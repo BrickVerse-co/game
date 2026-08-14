@@ -7,6 +7,12 @@ public static class MobileMotion
 {
 	public static void Enter(Control control, int index = 0)
 	{
+		if (Setting("reduce_motion", false))
+		{
+			control.Modulate = Colors.White;
+			control.Scale = Vector2.One;
+			return;
+		}
 		control.Modulate = new Color(1, 1, 1, 0);
 		control.PivotOffset = control.Size / 2f;
 		control.Scale = new Vector2(0.97f, 0.97f);
@@ -18,6 +24,7 @@ public static class MobileMotion
 
 	public static void BindCard(Control card)
 	{
+		if (Setting("reduce_motion", false)) return;
 		card.MouseEntered += () => Animate(card, new Vector2(1.012f, 1.012f), 0.14);
 		card.MouseExited += () => Animate(card, Vector2.One, 0.16);
 	}
@@ -28,15 +35,28 @@ public static class MobileMotion
 		button.Resized += () => { if (GodotObject.IsInstanceValid(button)) button.PivotOffset = button.Size / 2f; };
 		button.MouseEntered += () => Animate(button, new Vector2(1.025f, 1.025f), 0.11);
 		button.MouseExited += () => Animate(button, Vector2.One, 0.13);
-		button.ButtonDown += () => Animate(button, new Vector2(0.96f, 0.96f), 0.07);
+		button.ButtonDown += () =>
+		{
+			if (Setting("haptics", true)) Input.VibrateHandheld(18);
+			Animate(button, new Vector2(0.96f, 0.96f), 0.07);
+		};
 		button.ButtonUp += () => Animate(button, button.IsHovered() ? new Vector2(1.025f, 1.025f) : Vector2.One, 0.1);
 	}
 
 	private static void Animate(Control control, Vector2 scale, double duration)
 	{
 		if (!GodotObject.IsInstanceValid(control) || !control.IsInsideTree()) return;
+		if (Setting("reduce_motion", false)) { control.Scale = Vector2.One; return; }
 		Tween tween = control.CreateTween();
 		tween.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
 		tween.TweenProperty(control, "scale", scale, duration);
+	}
+
+	private static bool Setting(string key, bool fallback)
+	{
+		ConfigFile config = new();
+		return config.Load("user://mobile_settings.cfg") == Error.Ok
+			? (bool)config.GetValue("app", key, fallback)
+			: fallback;
 	}
 }

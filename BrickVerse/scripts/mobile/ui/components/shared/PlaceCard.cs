@@ -27,7 +27,7 @@ public partial class PlaceCard : Button
 		MobileMotion.Bind(this);
 		_iconAsset.ResourceLoaded += OnIconLoaded;
 
-		_gameTitleLabel.Text = PlaceData.Name;
+		_gameTitleLabel.Text = string.IsNullOrWhiteSpace(PlaceData.Name) ? "Untitled place" : PlaceData.Name;
 		_playingLabel.Text = PlaceData.Playing.ToString();
 		if (PlaceData.Rating != null)
 		{
@@ -42,7 +42,7 @@ public partial class PlaceCard : Button
 		{
 			WebAssetLoader.Singleton.GetResource(
 				new() { Type = WebResourceType.Image, URL = ThumbnailUrl },
-				resource => _iconRect.Texture = (Texture2D)resource
+				resource => { if (IsInstanceValid(_iconRect)) _iconRect.Texture = (Texture2D)resource; }
 			);
 		}
 		else
@@ -62,6 +62,6 @@ public partial class PlaceCard : Button
 
 	private void OnIconLoaded(Resource tex)
 	{
-		_iconRect.Texture = (Texture2D)tex;
+		if (IsInstanceValid(_iconRect)) _iconRect.Texture = (Texture2D)tex;
 	}
 }

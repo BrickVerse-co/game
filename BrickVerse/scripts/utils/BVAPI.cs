@@ -5,6 +5,8 @@
 using Godot;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using BrickVerse.Providers.AssetLoaders;
+using BrickVerse.Shared.AssetLoaders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,11 +136,14 @@ public static class BVAPI
 		return response.User;
 	}
 
-	public static async Task<APIJoinPlaceResponse> RequestJoinGame(APIJoinPlaceRequest req)
+	public static async Task<APIJoinPlaceResponse> RequestJoinGame(APIJoinPlaceRequest req, Action<string, string>? onStatus = null)
 	{
+		onStatus?.Invoke("Preparing world", "Checking the experience and your access…");
 		APIV3WorldRoot worldInfo = await GetWorldRootFromID(req.PlaceID);
+		onStatus?.Invoke("Finding a server", "Looking for an available server near you…");
 		string requestJson = $"{{\"universeId\":{JsonSerializer.Serialize(worldInfo.Universe.Id)},\"worldId\":{JsonSerializer.Serialize(worldInfo.World.Id)},\"platform\":{JsonSerializer.Serialize(Globals.IsMobileBuild ? "MOBILE" : "PC")}}}";
 		using JsonDocument queued = await SendJson(HttpMethod.Post, "/v3/world/join", requestJson);
+		onStatus?.Invoke("Joining world", queued.RootElement.TryGetProperty("message", out JsonElement queuedMessage) ? queuedMessage.GetString() ?? "Your join request is queued." : "Your join request is queued.");
 		if (queued.RootElement.TryGetProperty("joinToken", out JsonElement immediateToken) && immediateToken.ValueKind == JsonValueKind.String)
 			return new APIJoinPlaceResponse { Success = true, Token = immediateToken.GetString() ?? "" };
 		if (!queued.RootElement.TryGetProperty("requestId", out JsonElement requestNode) || requestNode.ValueKind != JsonValueKind.String)
@@ -151,6 +156,8 @@ public static class BVAPI
 			await Task.Delay(1000);
 			using JsonDocument status = await GetJson("/v3/world/join/" + Uri.EscapeDataString(requestId));
 			string state = status.RootElement.TryGetProperty("status", out JsonElement stateNode) ? stateNode.GetString() ?? "" : "";
+			string detail = status.RootElement.TryGetProperty("message", out JsonElement statusMessage) ? statusMessage.GetString() ?? "" : "";
+			onStatus?.Invoke(StatusTitle(state), string.IsNullOrWhiteSpace(detail) ? StatusDetail(state) : detail);
 			if (state == "READY" && status.RootElement.TryGetProperty("joinToken", out JsonElement token) && token.ValueKind == JsonValueKind.String)
 				return new APIJoinPlaceResponse { Success = true, Token = token.GetString() ?? "" };
 			if (state == "FAILED" || (status.RootElement.TryGetProperty("success", out JsonElement success) && success.ValueKind == JsonValueKind.False))
@@ -159,6 +166,23 @@ public static class BVAPI
 		try { using JsonDocument _ = await SendJson(HttpMethod.Delete, "/v3/world/join/" + Uri.EscapeDataString(requestId)); } catch { }
 		throw new TimeoutException("The game server took too long to start. Please try again.");
 	}
+
+	private static string StatusTitle(string state) => state switch
+	{
+		"QUEUED" => "Join queued",
+		"FINDING_SERVER" => "Finding a server",
+		"BOOTING_SERVER" => "Starting a server",
+		"AUTHORIZING_CLIENT" => "Securing your session",
+		"READY" => "World ready",
+		_ => "Joining world",
+	};
+
+	private static string StatusDetail(string state) => state switch
+	{
+		"BOOTING_SERVER" => "No server was ready, so a new one is starting. This can take a minute.",
+		"AUTHORIZING_CLIENT" => "Creating your secure game session…",
+		_ => "This can take longer when an experience server is waking up.",
+	};
 
 	public static async Task<APIAvatarResponse> GetUserAvatarFromID(string userID)
 	{
@@ -182,7 +206,12 @@ public static class BVAPI
 				try
 				{
 					APIMarketplace3DResponse metadataResponse = await GetMarketplace3D(marketplaceId);
-					if (metadataResponse.Success) metadata = metadataResponse.Item;
+					if (metadataResponse.Success)
+					{
+						metadata = metadataResponse.Item;
+						BVAssetProvider.RegisterDirectAssetUrl(ResourceType.Mesh, metadata.MeshId, metadata.MeshUrl);
+						BVAssetProvider.RegisterDirectAssetUrl(ResourceType.Texture, metadata.TextureId, metadata.TextureUrl);
+					}
 				}
 				catch (Exception exception)
 				{

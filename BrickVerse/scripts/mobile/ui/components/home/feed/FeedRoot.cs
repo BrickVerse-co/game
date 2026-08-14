@@ -39,6 +39,8 @@ public partial class FeedRoot : Node
 		_pageLabel = GetNode<Label>("Pagination/Page");
 		_previous.Pressed += () => { if (_page > 0) { _page--; LoadFeed(); } };
 		_next.Pressed += () => { _page++; LoadFeed(); };
+		MobileMotion.Bind(_previous);
+		MobileMotion.Bind(_next);
 		BVMobileAuthAPI.UserAuthenticated += _ => LoadFeed();
 		if (BVMobileAuthAPI.IsAuthenticated) LoadFeed();
 	}

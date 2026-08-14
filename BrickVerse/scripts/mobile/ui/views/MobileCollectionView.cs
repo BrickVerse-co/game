@@ -32,7 +32,9 @@ public partial class MobileCollectionView : MobileViewBase
 	private PackedScene _transactionCardScene = null!;
 	private PackedScene _upgradeBannerScene = null!;
 	private PackedScene _forumBannerScene = null!;
+	private PackedScene _forumCardScene = null!;
 	private PackedScene _notificationCardScene = null!;
+	private PackedScene _adBannerScene = null!;
 	private VBoxContainer _promoHost = null!;
 	private TabBar _category = null!;
 	private Button _previous = null!;
@@ -66,7 +68,9 @@ public partial class MobileCollectionView : MobileViewBase
 		_transactionCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/transactions/transaction_card.tscn");
 		_upgradeBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/marketplace/upgrade_banner.tscn");
 		_forumBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/forum/readonly_banner.tscn");
+		_forumCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/forum/forum_card.tscn");
 		_notificationCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/notification_card.tscn");
+		_adBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/ad_banner.tscn");
 		_promoHost = GetNode<VBoxContainer>("Layout/PromoHost");
 		_category = GetNode<TabBar>("Layout/Category");
 		_category.TabChanged += selected => { ResetPagination(); _ = LoadAsync(); };
@@ -100,11 +104,12 @@ public partial class MobileCollectionView : MobileViewBase
 		_items = grid ? _gridItems : _listItems;
 		ResetPagination();
 		_title.Text = _view == MobileViewEnum.Forum && _forumCategoryId != null ? _forumCategoryName : TitleFor(_view);
-		_search.Visible = _view is MobileViewEnum.Guilds or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Marketplace or MobileViewEnum.Store;
+		_search.Visible = _view is MobileViewEnum.Friends or MobileViewEnum.Guilds or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		_search.PlaceholderText = $"Search {TitleFor(_view).ToLowerInvariant()}";
 		foreach (Node child in _promoHost.GetChildren()) child.QueueFree();
 		if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) _promoHost.AddChild(_upgradeBannerScene.Instantiate());
 		else if (_view == MobileViewEnum.Forum) _promoHost.AddChild(_forumBannerScene.Instantiate());
+		else if (_view is MobileViewEnum.Guilds or MobileViewEnum.Events or MobileViewEnum.Notifications) _promoHost.AddChild(_adBannerScene.Instantiate());
 		_category.Visible = _view is MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		if (!_hasLoaded || profileChanged || forumReset) { _hasLoaded = true; _ = LoadAsync(); }
 	}
@@ -197,12 +202,26 @@ public partial class MobileCollectionView : MobileViewBase
 		}
 		if (_view == MobileViewEnum.Settings)
 		{
-			AddInfo("App preferences");
+			AddInfo("App experience");
 			AddSettingToggle("Background loading", "background_loading", true);
 			AddSettingToggle("Push notifications", "push_notifications", true);
 			AddSettingToggle("Reduce motion", "reduce_motion", false);
-			AddInfo("Account & privacy\nYour signed-in account, security, privacy and parental controls remain protected by the BrickVerse API.");
-			AddAction("Sign out", BVMobileAuthAPI.Logout);
+			AddSettingToggle("Autoplay 3D previews", "autoplay_3d_previews", true);
+			AddSettingToggle("Use cellular data for images", "cellular_images", true);
+			AddInfo("Accessibility");
+			AddSettingToggle("Larger interface text", "large_interface_text", false);
+			AddSettingToggle("High contrast controls", "high_contrast", false);
+			AddSettingToggle("Haptic feedback", "haptics", true);
+			AddInfo("Privacy & communication");
+			AddSettingToggle("Show online status", "show_online_status", true);
+			AddSettingToggle("Allow friend requests", "allow_friend_requests", true);
+			AddSettingToggle("Direct-message notifications", "dm_notifications", true);
+			AddInfo("Account & security");
+			AddAction("Manage account details", () => Open("/my/settings?section=account"));
+			AddAction("Privacy and parental controls", () => Open("/my/settings?section=privacy"));
+			AddAction("Security and active sessions", () => Open("/my/settings?section=security"));
+			AddAction("Open full settings on website", () => Open("/my/settings"));
+			AddDangerAction("Sign out", ConfirmSignOut);
 			return;
 		}
 		AddAction("Cubes", () => MobileBillingService.Singleton?.OpenProducts(MobileProductKind.Cubes));
@@ -211,6 +230,16 @@ public partial class MobileCollectionView : MobileViewBase
 
 	private void AddRecord(JsonElement record)
 	{
+		if (_view == MobileViewEnum.Friends)
+		{
+			JsonElement user = record.TryGetProperty("user", out JsonElement nestedUser) ? nestedUser : record;
+			string userId = FirstString(user, "id") ?? "";
+			string username = FirstString(user, "username", "name") ?? "Unknown user";
+			string status = FirstString(record, "state", "status") ?? "Friend";
+			MobileListCard friend = CreateListCard(username, status.Equals("ACCEPTED", StringComparison.OrdinalIgnoreCase) ? "Friend" : status, "Tap to view profile");
+			friend.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, userId);
+			return;
+		}
 		if (_view == MobileViewEnum.Notifications)
 		{
 			AddNotificationRecord(record);
@@ -234,6 +263,11 @@ public partial class MobileCollectionView : MobileViewBase
 		if (_view == MobileViewEnum.Profile)
 		{
 			AddProfileRecord(record);
+			return;
+		}
+		if (_view == MobileViewEnum.Forum)
+		{
+			AddForumRecord(record);
 			return;
 		}
 		string title = FirstString(record, "name", "title", "username", "type", "action") ?? "BrickVerse item";
@@ -275,6 +309,33 @@ public partial class MobileCollectionView : MobileViewBase
 		else card.Pressed += () => OpenRecord(id);
 	}
 
+	private void AddForumRecord(JsonElement record)
+	{
+		string id = FirstString(record, "id") ?? "";
+		string title = FirstString(record, "name", "title") ?? "Forum";
+		MobileForumCard card = _forumCardScene.Instantiate<MobileForumCard>();
+		_items.AddChild(card);
+		if (_forumCategoryId == null)
+		{
+			int threads = record.TryGetProperty("_count", out JsonElement counts) ? ReadNumber(counts, "threads") : 0;
+			int replies = record.TryGetProperty("_count", out counts) ? ReadNumber(counts, "replies") : 0;
+			string latest = record.TryGetProperty("latestThread", out JsonElement latestThread) && latestThread.ValueKind == JsonValueKind.Object
+				? "Latest: " + (FirstString(latestThread, "title") ?? "Thread") : "No threads yet";
+			card.Configure(title, $"{threads:N0} threads • {replies:N0} replies", latest, FirstString(record, "icon") ?? "");
+			card.Pressed += () => { _forumCategoryId = id; _forumCategoryName = title; _title.Text = title; _ = LoadAsync(); };
+		}
+		else
+		{
+			string author = NestedName(record, "user", "username") ?? "Unknown author";
+			int replies = ReadNumber(record, "totalReplies");
+			int views = ReadNumber(record, "views");
+			string category = record.TryGetProperty("category", out JsonElement categoryNode) ? FirstString(categoryNode, "name") ?? _forumCategoryName : _forumCategoryName;
+			card.Configure(title, $"{category} • By {author}", $"{replies:N0} replies • {views:N0} views", "chat");
+			card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(title, $"By {author}", FirstString(record, "content") ?? "", "", _view, id));
+		}
+		MobileMotion.Enter(card, _items.GetChildCount() - 1);
+	}
+
 	private void AddNotificationRecord(JsonElement record)
 	{
 		string id = FirstString(record, "id") ?? "";
@@ -309,9 +370,10 @@ public partial class MobileCollectionView : MobileViewBase
 		string imageUrl = "";
 		if (!string.IsNullOrWhiteSpace(imageId))
 			imageUrl = imageId.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? imageId : Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + imageId);
+		else if (_view == MobileViewEnum.Guilds) imageUrl = "res://assets/textures/ui-icons/users-group.svg";
 		MobileListCard card = CreateListCard(name, meta, Trim(description, 90), imageUrl);
 		card.SetVerified(record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
-		card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(name, meta, description, imageUrl, _view));
+		card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(name, meta, description, imageUrl, _view, id));
 	}
 
 	private void AddProfileRecord(JsonElement record)
@@ -401,7 +463,17 @@ public partial class MobileCollectionView : MobileViewBase
 		{
 			AddInfo("Achievements");
 			foreach (JsonElement achievement in achievements.EnumerateArray().Take(8))
-				CreateListCard(FirstString(achievement, "name") ?? "Achievement", "Earned", Trim(FirstString(achievement, "description") ?? "", 100), FirstString(achievement, "icon") ?? "");
+			{
+				string icon = FirstString(achievement, "iconUrl", "thumbnailUrl", "icon") ?? "";
+				if (icon.StartsWith('/')) icon = Globals.MainEndpoint.PathJoin(icon);
+				else if (!string.IsNullOrWhiteSpace(icon) && !icon.StartsWith("http", StringComparison.OrdinalIgnoreCase)) icon = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + icon);
+				if (string.IsNullOrWhiteSpace(icon))
+				{
+					string iconId = FirstString(achievement, "iconId", "assetId") ?? "";
+					if (!string.IsNullOrWhiteSpace(iconId)) icon = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + iconId);
+				}
+				CreateListCard(FirstString(achievement, "name") ?? "Achievement", "Earned", Trim(FirstString(achievement, "description") ?? "", 100), icon);
+			}
 		}
 	}
 
@@ -485,6 +557,25 @@ public partial class MobileCollectionView : MobileViewBase
 	}
 	private void AddDestination(string label, MobileViewEnum view) => AddAction(label, () => MobileUI.Singleton.SwitchTo(view, view));
 	private void AddAction(string label, Action action) { Button button = _actionScene.Instantiate<Button>(); button.Text = label; button.Pressed += action; _items.AddChild(button); }
+	private void AddDangerAction(string label, Action action)
+	{
+		Button button = GD.Load<PackedScene>("res://scenes/mobile/components/shared/danger_button.tscn").Instantiate<Button>();
+		button.Text = label;
+		button.Pressed += action;
+		MobileMotion.Bind(button);
+		_items.AddChild(button);
+	}
+	private void ConfirmSignOut()
+	{
+		ConfirmationDialog dialog = _purchaseDialogScene.Instantiate<ConfirmationDialog>();
+		dialog.Title = "Sign out?";
+		dialog.DialogText = "You will need to authenticate again to use BrickVerse Mobile.";
+		dialog.OkButtonText = "Sign out";
+		dialog.Confirmed += () => { BVMobileAuthAPI.Logout(); dialog.QueueFree(); };
+		dialog.Canceled += dialog.QueueFree;
+		AddChild(dialog);
+		dialog.PopupCentered();
+	}
 	private void AddInfo(string text) { Label label = _infoScene.Instantiate<Label>(); label.Text = text; _items.AddChild(label); }
 	private void AddSettingToggle(string label, string key, bool fallback)
 	{
@@ -510,13 +601,14 @@ public partial class MobileCollectionView : MobileViewBase
 		_gridItems.Columns = Mathf.Clamp(Mathf.FloorToInt((available + 10f) / 190f), 2, 4);
 	}
 	private void ClearItems() { foreach (Node child in _listItems.GetChildren()) child.QueueFree(); foreach (Node child in _gridItems.GetChildren()) child.QueueFree(); }
-	private static string TitleFor(MobileViewEnum view) => view switch { MobileViewEnum.FriendRequests => "Friend requests", MobileViewEnum.Store => "Marketplace", MobileViewEnum.Dev => "More", _ => view.ToString() };
+	private static string TitleFor(MobileViewEnum view) => view switch { MobileViewEnum.Friends => "Friends", MobileViewEnum.FriendRequests => "Friend requests", MobileViewEnum.Store => "Marketplace", MobileViewEnum.Dev => "More", _ => view.ToString() };
 
 	private string PathFor(MobileViewEnum view, string search)
 	{
 		string q = string.IsNullOrWhiteSpace(search) ? "" : "&search=" + Uri.EscapeDataString(search.Trim());
 		return view switch
 		{
+			MobileViewEnum.Friends => "/v3/social/friends",
 			MobileViewEnum.Guilds => $"/v3/social/guilds?limit=20&page={_page}" + q,
 			MobileViewEnum.Profile => "/v3/profile/" + Uri.EscapeDataString(string.IsNullOrWhiteSpace(_profileUserId) ? BVMobileAuthAPI.CurrentUserInfo.Id : _profileUserId) + "/id",
 			MobileViewEnum.Forum => _forumCategoryId == null ? "/v3/forum/categories" : "/v3/forum/threads?limit=30&categoryId=" + Uri.EscapeDataString(_forumCategoryId) + q,

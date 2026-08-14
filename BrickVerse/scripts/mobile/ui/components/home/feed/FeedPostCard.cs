@@ -28,6 +28,8 @@ public partial class FeedPostCard : PanelContainer
 	private Button _commentButton = null!;
 	private bool _isLiked;
 	private bool _likeBusy;
+	private Texture2D _heartOutline = null!;
+	private Texture2D _heartFilled = null!;
 
 	public APIFeedPostData Data;
 
@@ -52,7 +54,9 @@ public partial class FeedPostCard : PanelContainer
 		_isLiked = Data.IsLiked;
 		_likeButton = GetNode<Button>("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer/LikeButton");
 		_commentButton = GetNode<Button>("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2/CommentButton");
-		_likeButton.Modulate = _isLiked ? new Color(1f, 0.35f, 0.45f) : Colors.White;
+		_heartOutline = GD.Load<Texture2D>("res://assets/textures/ui-icons/heart.svg");
+		_heartFilled = GD.Load<Texture2D>("res://assets/textures/ui-icons/heart-filled.svg");
+		UpdateLikeVisual();
 		_likeButton.Pressed += ToggleLike;
 		_commentButton.Pressed += OpenComments;
 		MobileMotion.Bind(_likeButton);
@@ -69,7 +73,7 @@ public partial class FeedPostCard : PanelContainer
 			_mediaRect.Visible = true;
 			WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = Data.MediaUrl }, (resource) =>
 			{
-				_mediaRect.Texture = (Texture2D)resource;
+				if (IsInstanceValid(_mediaRect)) _mediaRect.Texture = (Texture2D)resource;
 			});
 		}
 		else
@@ -97,17 +101,30 @@ public partial class FeedPostCard : PanelContainer
 		try
 		{
 			using var response = await BVAPI.SendJson(_isLiked ? HttpMethod.Delete : HttpMethod.Post, $"/v3/social/posts/{Data.Id}/like");
+			if (response.RootElement.TryGetProperty("success", out var success) && success.ValueKind == System.Text.Json.JsonValueKind.False)
+				throw new InvalidOperationException(response.RootElement.TryGetProperty("message", out var message) ? message.GetString() : "The reaction could not be updated.");
 			_isLiked = !_isLiked;
 			Data.LikeCount = Math.Max(0, Data.LikeCount + (_isLiked ? 1 : -1));
 			_likeLabel.Text = Data.LikeCount.ToString();
-			_likeButton.Modulate = _isLiked ? new Color(1f, 0.35f, 0.45f) : Colors.White;
+			UpdateLikeVisual();
 		}
 		catch (Exception exception) { OS.Alert(exception.Message, "Could not update like"); }
-		finally { _likeBusy = false; _likeButton.Disabled = false; }
+		finally { if (IsInstanceValid(_likeButton)) { _likeBusy = false; _likeButton.Disabled = false; } }
+	}
+
+	private void UpdateLikeVisual()
+	{
+		if (!IsInstanceValid(_likeButton)) return;
+		_likeButton.Icon = _isLiked ? _heartFilled : _heartOutline;
+		_likeButton.Modulate = _isLiked ? new Color(1f, 0.2f, 0.3f) : Colors.White;
 	}
 
 	private void OpenComments()
 	{
+		_commentButton.PivotOffset = _commentButton.Size / 2f;
+		Tween feedback = CreateTween();
+		feedback.TweenProperty(_commentButton, "scale", new Vector2(0.86f, 0.86f), 0.06);
+		feedback.TweenProperty(_commentButton, "scale", Vector2.One, 0.1);
 		FeedCommentsDialog dialog = GD.Load<PackedScene>("res://scenes/mobile/components/home/feed_comments_dialog.tscn").Instantiate<FeedCommentsDialog>();
 		GetTree().Root.AddChild(dialog);
 		dialog.Open(Data.Id);

@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://duq1w7g3l6kml" path="res://assets/textures/ui-icons/heart-filled.svg" id="5_vmni1"]
 [ext_resource type="Texture2D" uid="uid://c4kjeilc8dstc" path="res://assets/textures/ui-icons/comments.svg" id="6_uiikp"]
 [ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="7_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/heart.svg" id="8_heart_outline"]
 
 [node name="FeedCard" type="PanelContainer" unique_id=1622089533 node_paths=PackedStringArray("_usernameLabel", "_postDateLabel", "_locationLabel", "_contentLabel", "_pfpRect", "_mediaRect", "_likeLabel", "_commentLabel")]
 clip_contents = true
@@ -107,10 +108,10 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=1191138764]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
-name = "LikeButton"
+[node name="LikeButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
 layout_mode = 2
-icon = ExtResource("5_vmni1")
+action_mode = 0
+icon = ExtResource("8_heart_outline")
 flat = true
 
 [node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1222054684]
@@ -120,9 +121,9 @@ text = "0"
 [node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=767609104]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
-name = "CommentButton"
+[node name="CommentButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
 layout_mode = 2
+action_mode = 0
 icon = ExtResource("6_uiikp")
 flat = true
 

@@ -46,6 +46,9 @@ public partial class MobileUI : Control
 
 	public override void _Ready()
 	{
+		// Keep Godot dialogs embedded in the app viewport on mobile. Native
+		// subwindows are inconsistent or unsupported on iOS and Android.
+		GetWindow().GuiEmbedSubwindows = true;
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
 		cmdargs.TryGetValue("token", out string? mobileToken);
 		cmdargs.TryGetValue("code", out string? mobileCode);
@@ -146,7 +149,7 @@ public partial class MobileUI : Control
 		Func<System.Threading.Tasks.Task> authenticate
 	)
 	{
-		LoadingScreen.ShowScreen();
+		LoadingScreen.ShowScreen("Preparing world", "Checking the experience and your access…");
 		try
 		{
 			await authenticate();
@@ -170,8 +173,10 @@ public partial class MobileUI : Control
 		try
 		{
 			APIJoinPlaceResponse res = await BVAPI.RequestJoinGame(
-				new() { PlaceID = placeID, IsBeta = true }
+				new() { PlaceID = placeID, IsBeta = true },
+				(title, status) => Callable.From(() => LoadingScreen.UpdateStatus(title, status)).CallDeferred()
 			);
+			LoadingScreen.UpdateStatus("Launching BrickVerse", "Connecting you to the game client…");
 
 			Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 			if (app is ClientEntry ce)
@@ -196,6 +201,8 @@ public partial class MobileUI : Control
 			return;
 		}
 
+		if (CurrentViewNode != null && !CurrentViewNode.TryNavigateAway(() => SwitchTo(viewEnum, args))) return;
+
 		if (CurrentViewNode != null)
 		{
 			CurrentViewNode.HideView();
@@ -216,7 +223,7 @@ public partial class MobileUI : Control
 				MobileViewEnum.Avatar => "res://scenes/mobile/views/avatar.tscn",
 				MobileViewEnum.Guilds or MobileViewEnum.Profile or MobileViewEnum.Settings
 					or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Notifications
-					or MobileViewEnum.FriendRequests or MobileViewEnum.Marketplace
+					or MobileViewEnum.Friends or MobileViewEnum.FriendRequests or MobileViewEnum.Marketplace
 					or MobileViewEnum.Transactions or MobileViewEnum.Upgrade
 					=> "res://scenes/mobile/views/collection.tscn",
 				MobileViewEnum.Store or MobileViewEnum.Dev => "res://scenes/mobile/views/collection.tscn",
@@ -291,6 +298,7 @@ public enum MobileViewEnum
 	Forum,
 	Events,
 	Notifications,
+	Friends,
 	FriendRequests,
 	Marketplace,
 	Transactions,

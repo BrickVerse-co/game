@@ -1115,6 +1115,12 @@ public struct APIMarketplace3DItem
 	[JsonPropertyName("textureId")]
 	public string? TextureId { get; set; }
 
+	[JsonPropertyName("textureUrl")]
+	public string? TextureUrl { get; set; }
+
+	[JsonPropertyName("meshUrl")]
+	public string? MeshUrl { get; set; }
+
 	[JsonPropertyName("meshPos")]
 	public APIPosition3? MeshPosition { get; set; }
 }

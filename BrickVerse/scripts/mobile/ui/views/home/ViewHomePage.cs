@@ -5,12 +5,15 @@
 using BrickVerse.Mobile.Utils;
 using BrickVerse.Schemas.API;
 using Godot;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Utils;
 
 namespace BrickVerse.Mobile.UI;
 
 public partial class ViewHomePage : MobileViewBase
 {
 	private Label _usernameLabel = null!;
+	private TextureRect _bodyshot = null!;
 	//private BrickversianModel _polytorian = null!;
 
 	public override void _EnterTree()
@@ -24,6 +27,13 @@ public partial class ViewHomePage : MobileViewBase
 	public override void _Ready()
 	{
 		_usernameLabel = GetNode<Label>("ScrollContainer/VBoxContainer/Control/Layout/Username");
+		_bodyshot = GetNode<TextureRect>("ScrollContainer/VBoxContainer/Control/TextureRect");
+		Button terms = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Terms");
+		Button privacy = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Privacy");
+		terms.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/terms/terms-of-service");
+		privacy.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/privacy/privacy-policy");
+		MobileMotion.Bind(terms);
+		MobileMotion.Bind(privacy);
 		if (BVMobileAuthAPI.IsAuthenticated) LoadView();
 	}
 
@@ -47,9 +57,15 @@ public partial class ViewHomePage : MobileViewBase
 		LoadView();
 	}
 
-	private void LoadView()
+	private async void LoadView()
 	{
 		_usernameLabel.Text = BVMobileAuthAPI.CurrentUserInfo.Username;
+		try
+		{
+			string url = await BVAPI.ResolveThumbnailUrl("USER_BODYSHOT", BVMobileAuthAPI.CurrentUserInfo.Id);
+			if (!string.IsNullOrWhiteSpace(url)) WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = url }, resource => { if (IsInstanceValid(_bodyshot)) _bodyshot.Texture = (Texture2D)resource; });
+		}
+		catch { }
 		//_polytorian.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id);
 	}
 

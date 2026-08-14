@@ -48,8 +48,8 @@ public partial class MobileMarketplaceItem : MobileViewBase
 		_preview3D.GuiInput += HandlePreviewInput;
 		Button zoomOut = GetNode<Button>("Layout/PreviewFrame/Overlay/CameraControls/ZoomOut");
 		Button zoomIn = GetNode<Button>("Layout/PreviewFrame/Overlay/CameraControls/ZoomIn");
-		zoomOut.Pressed += () => ZoomBy(1.14f);
-		zoomIn.Pressed += () => ZoomBy(0.86f);
+		zoomOut.Pressed += () => ZoomBy(1.18f);
+		zoomIn.Pressed += () => ZoomBy(0.78f);
 		MobileMotion.Bind(zoomOut);
 		MobileMotion.Bind(zoomIn);
 		MobileMotion.Bind(_previewToggle);
@@ -58,6 +58,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 		GetNode<Button>("Layout/Header/Back").Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Store, MobileViewEnum.Store);
 		_buy.Pressed += Buy;
 		GetNode<Button>("Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=marketplace_item&id={Uri.EscapeDataString(_itemId)}"));
+		GetNode<Button>("Layout/Creator/Name").Pressed += OpenCreator;
 	}
 
 	public override async void ShowView(object? args)
@@ -83,7 +84,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 			GetNode<Label>("Layout/Type").Text = Read("type", "Accessory").Replace('_', ' ') + (Bool("isFeatured") ? "  •  Featured" : "");
 			GetNode<MobileMarkdown>("Layout/Description").SetMarkdown(Read("description", "No description provided."));
 			GetNode<Label>("Layout/Stats").Text = $"{Number("sales"):N0} sold  •  {Number("favorites"):N0} favorites" + (Bool("isLimited") ? $"  •  {Number("remainingStock"):N0} remaining" : "");
-			GetNode<Label>("Layout/Creator/Name").Text = "Created by " + Read("creatorName", "BrickVerse creator");
+			GetNode<Button>("Layout/Creator/Name").Text = "Created by " + Read("creatorName", "BrickVerse creator");
 			GetNode<TextureRect>("Layout/Creator/Verified").Visible = Bool("creatorVerified");
 			GetNode<Label>("Layout/Tags").Text = ReadTags();
 			_buy.Text = owned ? "Owned" : Bool("isForSale") ? price == 0 ? "Get" : $"Buy for {price:N0} Cubes" : "Off sale";
@@ -97,6 +98,16 @@ public partial class MobileMarketplaceItem : MobileViewBase
 				&& !string.IsNullOrWhiteSpace(mesh.GetString())) await Load3DPreview(mesh.GetString()!);
 		}
 		catch (Exception exception) { HideSkeleton(version); GetNode<MobileMarkdown>("Layout/Description").SetMarkdown("This item could not be loaded."); BV.PrintErr(exception); }
+	}
+
+	private void OpenCreator()
+	{
+		string creatorId = Read("creatorId", "");
+		if (string.IsNullOrWhiteSpace(creatorId)) return;
+		if (Read("creatorType", "USER").Equals("GUILD", StringComparison.OrdinalIgnoreCase))
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail,
+				new MobileRecordDetailArgs(Read("creatorName", "Guild"), "Marketplace creator", "View this guild and its creations in BrickVerse.", "", MobileViewEnum.Store, creatorId));
+		else MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, creatorId);
 	}
 
 	private void ShowSkeleton()
@@ -191,7 +202,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 
 	private void ZoomBy(float factor)
 	{
-		_cameraDistance = Mathf.Clamp(_cameraDistance * factor, 1.15f, 12f);
+		_cameraDistance = Mathf.Clamp(_cameraDistance * factor, 0.28f, 12f);
 		_cameraHeight = Mathf.Clamp(_cameraHeight, -_cameraDistance * 0.65f, _cameraDistance * 0.65f);
 		ApplyCamera();
 	}
@@ -219,7 +230,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 				Vector3 center = bounds.Value.GetCenter();
 				float radius = Mathf.Max(bounds.Value.Size.Length() * 0.65f, 0.5f);
 				_previewRoot.Position = -center;
-				_cameraDistance = Mathf.Clamp(radius * 2.4f, 1.15f, 12f);
+				_cameraDistance = Mathf.Clamp(radius * 2.4f, 0.28f, 12f);
 				_cameraHeight = radius * 0.25f;
 				ApplyCamera();
 			}

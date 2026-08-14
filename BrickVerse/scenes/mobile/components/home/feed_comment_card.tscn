@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="StyleBoxFlat" id="card"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 14.0
+content_margin_top = 11.0
+content_margin_right = 14.0
+content_margin_bottom = 11.0
+
+[node name="CommentCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 72)
+theme_override_styles/panel = SubResource("card")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Author" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Username"
+
+[node name="Body" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Comment"
+autowrap_mode = 3
+
+[node name="Time" type="Label" parent="Content"]
+modulate = Color(0.58, 0.68, 0.78, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Just now"

@@ -208,3 +208,20 @@ horizontal_alignment = 1
 
 [node name="LoadingGuy" parent="." unique_id=1147355995 instance=ExtResource("3_qb01s")]
 layout_mode = 1
+
+[node name="BuildInfo" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.48)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -76.0
+offset_right = -24.0
+offset_bottom = -38.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "BrickVerse 1.0.0\n© 2026 Meta Games LLC"
+horizontal_alignment = 1

@@ -9,6 +9,7 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using System;
+using System.Text.Json;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -17,7 +18,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 	[Export] private Button _playButton = null!;
 	[Export] private Label _genreLabel = null!;
 	[Export] private Label _placeNameLabel = null!;
-	[Export] private Label _creatorNameLabel = null!;
+	[Export] private Button _creatorNameLabel = null!;
 	[Export] private TextureRect _thumbnailRect = null!;
 	[Export] private Control _thumbnailGradient = null!;
 	[Export] private MobileMarkdown _descriptionLabel = null!;
@@ -30,17 +31,32 @@ public partial class ViewPlaceInfo : MobileViewBase
 	private Control _loadingSkeleton = null!;
 	private Tween? _skeletonTween;
 	private bool _closing;
+	private Label _playLabel = null!;
+	private Label _unavailableNotice = null!;
 
 	public override void _Ready()
 	{
 		_playButton.Pressed += OnPlayButtonPressed;
 		_backButton.Pressed += CloseToWorlds;
+		_creatorNameLabel.Pressed += OpenCreator;
 		_backButton.Text = "";
 		MobileMotion.Bind(_playButton);
 		MobileMotion.Bind(_backButton);
 		_contentPanel = GetNode<Control>("ScrollContainer/VBoxContainer/PanelContainer");
 		_loadingSkeleton = GetNode<Control>("LoadingSkeleton");
+		_playLabel = GetNode<Label>("Play/HBoxContainer/Label");
+		_unavailableNotice = GetNode<Label>("ScrollContainer/VBoxContainer/PanelContainer/Layout/UnavailableNotice");
 		GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=world&id={_worldID}"));
+	}
+
+	private void OpenCreator()
+	{
+		if (_placeInfo.Creator.Id <= 0) return;
+		string creatorId = _placeInfo.Creator.Id.ToString();
+		if (_placeInfo.Creator.Type.Equals("GUILD", StringComparison.OrdinalIgnoreCase))
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail,
+				new MobileRecordDetailArgs(_placeInfo.Creator.Name, "World creator", "View this guild and its worlds in BrickVerse.", _placeInfo.Creator.Thumbnail, MobileViewEnum.PlaceInfo, creatorId));
+		else MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, creatorId);
 	}
 
 	private void OnPlayButtonPressed()
@@ -60,6 +76,8 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_creatorNameLabel.Text = "Loading details in the background";
 		_descriptionLabel.SetMarkdown("Loading...");
 		_playButton.Disabled = true;
+		_playLabel.Text = "Play";
+		_unavailableNotice.Visible = false;
 		_loadingSkeleton.Visible = true;
 		PulseSkeleton();
 
@@ -70,7 +88,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_placeNameLabel.Text = _placeInfo.Name;
 			_creatorNameLabel.Text = "By " + _placeInfo.Creator.Name;
 			_descriptionLabel.SetMarkdown(string.IsNullOrWhiteSpace(_placeInfo.Description) ? "No description provided." : _placeInfo.Description);
-			_playButton.Disabled = false;
+			await LoadPlayPermission();
 			HideSkeleton();
 			_statsLabel.Text = $"{_placeInfo.Playing:N0} playing  •  {_placeInfo.Visits:N0} visits  •  {_placeInfo.MaxPlayers:N0} max players";
 			string thumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(_placeInfo.UniverseId);
@@ -84,6 +102,19 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_descriptionLabel.SetMarkdown("This world could not be loaded. Please try again.");
 			BV.PrintErr(exception);
 		}
+	}
+
+	private async System.Threading.Tasks.Task LoadPlayPermission()
+	{
+		using JsonDocument document = await BVAPI.GetJson($"/v3/universe/{_placeInfo.UniverseId}/permissions");
+		JsonElement root = document.RootElement;
+		bool canPlay = root.TryGetProperty("canPlay", out JsonElement allowed) && allowed.ValueKind == JsonValueKind.True;
+		string reason = root.TryGetProperty("playDeniedReason", out JsonElement reasonNode) && reasonNode.ValueKind == JsonValueKind.String
+			? reasonNode.GetString() ?? "" : "";
+		_playButton.Disabled = !canPlay;
+		_playLabel.Text = canPlay ? "Play" : "Unavailable";
+		_unavailableNotice.Visible = !canPlay && !string.IsNullOrWhiteSpace(reason);
+		_unavailableNotice.Text = reason;
 	}
 
 	private void PulseSkeleton()

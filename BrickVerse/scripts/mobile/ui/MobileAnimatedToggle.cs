@@ -5,5 +5,16 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class MobileAnimatedToggle : CheckButton
 {
-	public override void _Ready() => MobileMotion.Bind(this);
+	public override void _Ready()
+	{
+		MobileMotion.Bind(this);
+		Toggled += AnimateState;
+		AnimateState(ButtonPressed);
+	}
+
+	private void AnimateState(bool enabled)
+	{
+		Color target = enabled ? new Color(0.68f, 0.87f, 1f) : Colors.White;
+		CreateTween().TweenProperty(this, "modulate", target, 0.16).SetTrans(Tween.TransitionType.Cubic);
+	}
 }

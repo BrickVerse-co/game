@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bxsc41504qogy" path="res://scripts/mobile/ui/views/avatar/ViewAvatarPage.cs" id="1"]
 [ext_resource type="Texture2D" uid="uid://ducav07koy0iq" path="res://assets/textures/client/placeholder/avatar.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/search.svg" id="3_search"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/save.svg" id="4_save"]
 
 [sub_resource type="StyleBoxFlat" id="category_idle"]
 content_margin_left = 13.0
@@ -30,6 +32,39 @@ corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="field"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14, 0.29, 0.43, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="save"]
+bg_color = Color(0.08, 0.52, 0.27, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="discard"]
+bg_color = Color(0.08, 0.16, 0.25, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.32, 0.46, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="Avatar" type="Control" unique_id=1182580197]
 layout_mode = 3
@@ -66,12 +101,38 @@ text = "Avatar"
 layout_mode = 2
 text = "Refresh"
 
-[node name="Preview" type="TextureRect" parent="Layout" unique_id=360200808]
+[node name="Preview" type="PanelContainer" parent="Layout" unique_id=360200808]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
-texture = ExtResource("2")
-expand_mode = 1
-stretch_mode = 5
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="Layout/Preview"]
+layout_mode = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Layout/Preview/ViewportContainer"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(512, 512)
+render_target_update_mode = 4
+
+[node name="Camera" type="Camera3D" parent="Layout/Preview/ViewportContainer/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 8)
+projection = 1
+size = 6.5
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Layout/Preview/ViewportContainer/Viewport"]
+rotation_degrees = Vector3(-35, -30, 0)
+light_energy = 1.25
+
+[node name="FillLight" type="OmniLight3D" parent="Layout/Preview/ViewportContainer/Viewport"]
+position = Vector3(-3, 4, 4)
+omni_range = 12.0
+light_energy = 0.8
+
+[node name="Skeleton" type="ColorRect" parent="Layout/Preview"]
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.12, 0.22, 0.33, 1)
 
 [node name="Status" type="Label" parent="Layout" unique_id=1498727806]
 layout_mode = 2
@@ -95,6 +156,15 @@ tab_3/title = "Pants"
 tab_4/title = "Face"
 tab_5/title = "Gear"
 
+[node name="Search" type="LineEdit" parent="Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+placeholder_text = "Search your avatar items"
+right_icon = ExtResource("3_search")
+clear_button_enabled = true
+theme_override_styles/normal = SubResource("field")
+theme_override_styles/focus = SubResource("field")
+
 [node name="Scroll" type="ScrollContainer" parent="Layout" unique_id=1307298175]
 layout_mode = 2
 size_flags_vertical = 3
@@ -106,7 +176,32 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="Save" type="Button" parent="Layout" unique_id=847045101]
+[node name="Actions" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Discard" type="Button" parent="Layout/Actions"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "Save Avatar"
+size_flags_horizontal = 3
+text = "Discard changes"
+theme_override_styles/normal = SubResource("discard")
+theme_override_styles/hover = SubResource("discard")
+theme_override_styles/pressed = SubResource("discard")
+
+[node name="Save" type="Button" parent="Layout/Actions" unique_id=847045101]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save avatar"
+icon = ExtResource("4_save")
+icon_max_width = 20
+theme_override_styles/normal = SubResource("save")
+theme_override_styles/hover = SubResource("save")
+theme_override_styles/pressed = SubResource("save")
+
+[node name="DiscardWarning" type="ConfirmationDialog" parent="."]
+title = "Discard avatar changes?"
+dialog_text = "Your unsaved avatar changes will be discarded if you leave this page."
+ok_button_text = "Discard and leave"
+cancel_button_text = "Keep editing"

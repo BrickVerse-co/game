@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://wlrvgtw6qeuw" path="res://assets/textures/mobile/home/headerbg_color.png" id="3_ybeeg"]
 [ext_resource type="Texture2D" uid="uid://dgna45btjijiq" path="res://assets/textures/ui-icons/star-filled.svg" id="4_ccoek"]
 [ext_resource type="Script" uid="uid://ubmohvfs7uwn" path="res://scripts/mobile/ui/components/worlds/WorldsGrid.cs" id="5_jqfof"]
+[ext_resource type="Theme" path="res://resources/themes/mobile_dropdown.tres" id="6_dropdown"]
 
 [sub_resource type="Gradient" id="Gradient_w46nw"]
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
@@ -253,6 +254,7 @@ scrolling_enabled = false
 [node name="Genre" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("6_dropdown")
 theme_override_styles/normal = SubResource("chip")
 theme_override_styles/hover = SubResource("chip")
 theme_override_styles/pressed = SubResource("chip")

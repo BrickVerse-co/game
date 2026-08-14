@@ -7,12 +7,14 @@
 [ext_resource type="Texture2D" uid="uid://d2efj51sdi6ov" path="res://assets/textures/ui-icons/planet.svg" id="5_1gyer"]
 [ext_resource type="Texture2D" uid="uid://0s4gs7ygxle6" path="res://assets/textures/ui-icons/user-circle.svg" id="6_xbpss"]
 [ext_resource type="Texture2D" uid="uid://cn2pxpsce6582" path="res://assets/textures/ui-icons/shopping-cart.svg" id="7_py0ce"]
-[ext_resource type="Texture2D" uid="uid://dxyy205k2vxka" path="res://assets/textures/ui-icons/barrier-block.svg" id="8_1gyer"]
+[ext_resource type="Texture2D" uid="uid://co60jcrmb4bkb" path="res://assets/textures/ui-icons/settings.svg" id="8_mssyi"]
+[ext_resource type="Texture2D" uid="uid://q41v5u10ix88" path="res://assets/textures/ui-icons/users.svg" id="8_t4bjj"]
 [ext_resource type="Texture2D" uid="uid://y1tgfxo86kip" path="res://assets/textures/logo/logo.png" id="9_xbpss"]
 [ext_resource type="PackedScene" uid="uid://dudwjpjg5ui44" path="res://scenes/mobile/splash/new_user_splash.tscn" id="10_py0ce"]
 [ext_resource type="PackedScene" uid="uid://yd2us4t5s5uc" path="res://scenes/mobile/splash/startup_splash.tscn" id="11_lfm17"]
 [ext_resource type="PackedScene" uid="uid://bnoa0l7kacn1h" path="res://scenes/mobile/components/misc/loading_modal.tscn" id="12_p1d8x"]
-[ext_resource type="Script" path="res://scripts/mobile/utils/MobileBillingService.cs" id="13_billing"]
+[ext_resource type="Script" uid="uid://bmqei0eqdbayr" path="res://scripts/mobile/utils/MobileBillingService.cs" id="13_billing"]
+[ext_resource type="Script" uid="uid://blbi6j0xvl5d0" path="res://scripts/mobile/DevScreenShot.cs" id="14_mssyi"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xbpss"]
 bg_color = Color(0.12941177, 0.24313726, 0.38039216, 1)
@@ -35,6 +37,8 @@ Button/styles/pressed = SubResource("StyleBoxFlat_lfm17")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1d8x"]
 bg_color = Color(0.02745098, 0.047058824, 0.07450981, 1)
+content_margin_left = 12.0
+content_margin_right = 12.0
 
 [sub_resource type="Gradient" id="Gradient_1gyer"]
 colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 1)
@@ -80,6 +84,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_p1d8x")
 [node name="HBoxContainer" type="HBoxContainer" parent="Layout/Navbar" unique_id=682553378]
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
+theme_override_constants/separation = 2
 
 [node name="Home" type="Button" parent="Layout/Navbar/HBoxContainer" unique_id=1800290436]
 modulate = Color(1, 1, 1, 0.47058824)
@@ -194,7 +199,36 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="Layout/Navbar/HBoxContainer/Store/VBoxContainer" unique_id=984981940]
 layout_mode = 2
-text = "Store"
+text = "Market"
+horizontal_alignment = 1
+
+[node name="Guilds" type="Button" parent="Layout/Navbar/HBoxContainer" unique_id=2114035241]
+modulate = Color(1, 1, 1, 0.49803922)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("4_xbpss")
+SwitchTo = 7
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Layout/Navbar/HBoxContainer/Guilds" unique_id=1539036461]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="Layout/Navbar/HBoxContainer/Guilds/VBoxContainer" unique_id=1578093731]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+texture = ExtResource("8_t4bjj")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Layout/Navbar/HBoxContainer/Guilds/VBoxContainer" unique_id=105266929]
+layout_mode = 2
+text = "Guilds"
 horizontal_alignment = 1
 
 [node name="Dev" type="Button" parent="Layout/Navbar/HBoxContainer" unique_id=1264053511]
@@ -217,7 +251,7 @@ alignment = 1
 [node name="TextureRect" type="TextureRect" parent="Layout/Navbar/HBoxContainer/Dev/VBoxContainer" unique_id=1098193970]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-texture = ExtResource("8_1gyer")
+texture = ExtResource("8_mssyi")
 expand_mode = 1
 stretch_mode = 5
 
@@ -251,14 +285,14 @@ texture = ExtResource("9_xbpss")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="HomeButton" type="Button" parent="Panel"]
+[node name="HomeButton" type="Button" parent="Panel" unique_id=2109401704]
 layout_mode = 1
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 58.0
 offset_bottom = 58.0
-flat = true
 tooltip_text = "Home"
+flat = true
 script = ExtResource("4_xbpss")
 SwitchTo = 1
 
@@ -273,5 +307,8 @@ layout_mode = 1
 [node name="LoadingModal" parent="." unique_id=724430762 instance=ExtResource("12_p1d8x")]
 layout_mode = 1
 
-[node name="MobileBilling" type="Node" parent="."]
+[node name="MobileBilling" type="Node" parent="." unique_id=1946240008]
 script = ExtResource("13_billing")
+
+[node name="DevScreenShot" type="Node" parent="." unique_id=1573872254]
+script = ExtResource("14_mssyi")

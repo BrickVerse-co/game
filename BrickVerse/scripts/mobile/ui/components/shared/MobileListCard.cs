@@ -48,6 +48,12 @@ public partial class MobileListCard : Button
 
 	private async System.Threading.Tasks.Task LoadImage(string imageUrl)
 	{
+		if (imageUrl.StartsWith("res://", System.StringComparison.Ordinal))
+		{
+			Texture2D? local = GD.Load<Texture2D>(imageUrl);
+			if (local != null && IsInstanceValid(_image)) _image.Texture = local;
+			return;
+		}
 		const string marketplaceMarker = "marketplace-item://";
 		if (imageUrl.StartsWith(marketplaceMarker, System.StringComparison.Ordinal)) imageUrl = await BVAPI.ResolveThumbnailUrl("MARKETPLACE_ITEM", imageUrl[marketplaceMarker.Length..]);
 		const string marker = "/v3/thumbnails/asset/";

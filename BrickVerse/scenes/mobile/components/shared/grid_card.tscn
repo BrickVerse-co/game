@@ -58,7 +58,7 @@ custom_minimum_size = Vector2(0, 154)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
-stretch_mode = 0
+stretch_mode = 5
 
 [node name="Copy" type="VBoxContainer" parent="Content"]
 layout_mode = 2

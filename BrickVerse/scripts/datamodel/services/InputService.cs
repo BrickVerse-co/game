@@ -229,7 +229,7 @@ public sealed partial class InputService : Instance
 
 	public override void Init()
 	{
-		if (Globals.IsMobileBuild || OS.HasFeature("touchscreen"))
+		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen"))
 		{
 			IsTouchscreen = true;
 		}
