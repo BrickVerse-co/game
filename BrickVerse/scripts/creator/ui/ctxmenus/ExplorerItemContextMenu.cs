@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Interfaces;
@@ -65,7 +66,7 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		}
 
 		Entity[] geometryTargets = [.. Targets.OfType<Entity>()];
-		if (geometryTargets.Length > 0)
+		if (CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling) && geometryTargets.Length > 0)
 		{
 			AddSeparator();
 			if (geometryTargets.Length >= 2)
@@ -73,7 +74,7 @@ public partial class ExplorerItemContextMenu : ContextMenu
 			bool allNegated = geometryTargets.All(entity => entity.IsNegated);
 			AddIconItem("subtract", allNegated ? "Unnegate" : "Negate", 34);
 		}
-		if (isSingle && Target is UnionOperation)
+		if (CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling) && isSingle && Target is UnionOperation)
 		{
 			AddIconItem("ungroup", "Separate Union", 35);
 		}

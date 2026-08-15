@@ -76,33 +76,24 @@ public sealed partial class GeometryService : Instance
 		return await BakeMeshes(geometry);
 	}
 
-	private Task<EditableMesh> BakeMeshes(IEnumerable<(Godot.Mesh Mesh, Transform3D Transform, bool Subtract)> inputs)
+	private async Task<EditableMesh> BakeMeshes(IEnumerable<(Godot.Mesh Mesh, Transform3D Transform, bool Subtract)> inputs)
 	{
-		List<RuntimeCsg.Solid> positive = [];
-		List<RuntimeCsg.Solid> negative = [];
+		List<RuntimeVoxelBoolean.Input> geometry = [];
 		foreach ((Godot.Mesh mesh, Transform3D transform, bool subtract) in inputs)
 		{
-			RuntimeCsg.Solid solid = RuntimeCsg.FromMesh(mesh, transform);
-			(subtract ? negative : positive).Add(solid);
+			Vector3[] faces = mesh.GetFaces();
+			for (int i = 0; i < faces.Length; i++) faces[i] = transform * faces[i];
+			geometry.Add(new RuntimeVoxelBoolean.Input(faces, subtract));
 		}
-		if (positive.Count == 0) throw new InvalidOperationException("A boolean operation requires at least one non-negated solid.");
-		RuntimeCsg.Solid result = positive.Skip(1).Aggregate(positive[0], (current, solid) => current.Union(solid));
-		foreach (RuntimeCsg.Solid cutter in negative) result = result.Subtract(cutter);
-		EditableMesh editable = ToEditableMesh(result);
+		if (!geometry.Any(input => !input.Subtract)) throw new InvalidOperationException("A boolean operation requires at least one non-negated solid.");
+		Vector3[] triangles = await Task.Run(() => RuntimeVoxelBoolean.Bake(geometry));
+		EditableMesh editable = ToEditableMesh(triangles);
 		if (editable.FaceCount == 0) throw new InvalidOperationException("Boolean operation produced empty geometry.");
-		return Task.FromResult(editable);
+		return editable;
 	}
 
-	private static EditableMesh ToEditableMesh(RuntimeCsg.Solid solid)
+	private static EditableMesh ToEditableMesh(Vector3[] triangles)
 	{
-		EditableMesh editable = new();
-		foreach (RuntimeCsg.Polygon polygon in solid.Polygons)
-		{
-			for (int i = 2; i < polygon.Vertices.Count; i++)
-			{
-				int a = editable.AddVertex(polygon.Vertices[0]); int b = editable.AddVertex(polygon.Vertices[i - 1]); int c = editable.AddVertex(polygon.Vertices[i]); editable.AddTriangle(a, b, c);
-			}
-		}
-		editable.Commit(); return editable;
+		return EditableMesh.FromTriangleSoup(triangles);
 	}
 }

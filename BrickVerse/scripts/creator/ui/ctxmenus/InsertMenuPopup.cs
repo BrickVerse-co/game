@@ -9,6 +9,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -228,6 +229,8 @@ public partial class InsertMenuPopup : PopupPanel
 				&& type.IsDefined(typeof(InstantiableAttribute), false)
 				&& !type.IsDefined(typeof(InternalAttribute), false))
 			.Select(static type => type.Name)
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
+				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
 			.Where(name => !categorized.Contains(name)
 				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
 			.OrderBy(static name => name, StringComparer.Ordinal)
@@ -246,6 +249,8 @@ public partial class InsertMenuPopup : PopupPanel
 					: subItems
 						.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase))
 						.ToList();
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
+				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
 
 			// If none matched, skip this category
 			if (filtered.Count == 0)

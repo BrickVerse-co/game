@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c5rby7f7hhcx1"
-path="res://.godot/imported/RuntimeCsg.svg-ac01de4f8b2a0fa1cd850ce516028b5d.ctex"
+path="res://.godot/imported/RuntimeVoxelBoolean.svg-4dd29a9a663509f1aeb75f5fe1fd81ca.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/datamodel/RuntimeCsg.svg"
-dest_files=["res://.godot/imported/RuntimeCsg.svg-ac01de4f8b2a0fa1cd850ce516028b5d.ctex"]
+source_file="res://assets/textures/datamodel/RuntimeVoxelBoolean.svg"
+dest_files=["res://.godot/imported/RuntimeVoxelBoolean.svg-4dd29a9a663509f1aeb75f5fe1fd81ca.ctex"]
 
 [params]
 
