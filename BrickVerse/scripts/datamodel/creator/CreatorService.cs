@@ -65,6 +65,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private bool _creatorPromotedForPopup;
 	private bool _runtimeViewportInteractionActive = true;
 	private double _studioPresenceHeartbeatElapsed;
+	private MessageRuntimeDeviceEmulation? _deviceEmulation;
 
 	public CreatorService()
 	{
@@ -124,6 +125,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 			_primaryRuntimeClientProcess = processId;
 			_lastRuntimeViewportRect = null;
 			_runtimeViewportSyncElapsed = double.MaxValue;
+			if (_deviceEmulation != null) DebugServer.SetRuntimeDeviceEmulation(processId, _deviceEmulation);
 		}
 
 		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
@@ -148,6 +150,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 			if (!IsInstanceValid(window)) continue;
 			window.Activate();
 		}
+	}
+
+	public bool ApplyDeviceEmulation(MessageRuntimeDeviceEmulation state)
+	{
+		_deviceEmulation = state;
+		if (!_primaryRuntimeClientProcess.HasValue) return false;
+		DebugServer.SetRuntimeDeviceEmulation(_primaryRuntimeClientProcess.Value, state);
+		return true;
 	}
 
 	private void CloseRuntimeDebugWindows()

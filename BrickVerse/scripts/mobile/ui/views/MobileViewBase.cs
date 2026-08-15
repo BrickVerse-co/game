@@ -17,4 +17,8 @@ public partial class MobileViewBase : Control
 	{
 
 	}
+
+	public virtual void RefreshView() { }
+
+	public virtual bool TryNavigateAway(System.Action continuation) => true;
 }

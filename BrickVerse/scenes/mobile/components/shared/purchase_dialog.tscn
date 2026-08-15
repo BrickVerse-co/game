@@ -1,0 +1,6 @@
+[gd_scene format=3]
+[node name="PurchaseDialog" type="ConfirmationDialog"]
+title = "Purchase item"
+initial_position = 2
+size = Vector2i(380, 220)
+ok_button_text = "Buy"

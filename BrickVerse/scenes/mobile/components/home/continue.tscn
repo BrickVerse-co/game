@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://4jodg5v8ee3v"]
 
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/home/HomeShelf.cs" id="1_shelf"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xq0dv"]
 
 [sub_resource type="Theme" id="Theme_5xsir"]
@@ -7,6 +9,8 @@ PanelContainer/styles/panel = SubResource("StyleBoxEmpty_xq0dv")
 
 [node name="Continue" type="VBoxContainer" unique_id=765714448]
 theme_override_constants/separation = 8
+script = ExtResource("1_shelf")
+RecentWorlds = true
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=2028167230]
 layout_mode = 2
@@ -26,7 +30,7 @@ theme_override_font_sizes/font_size = 20
 text = "Continue Playing"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=854719316]
-custom_minimum_size = Vector2(0, 230)
+custom_minimum_size = Vector2(0, 232)
 layout_mode = 2
 vertical_scroll_mode = 0
 

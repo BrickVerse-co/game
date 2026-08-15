@@ -661,7 +661,8 @@ public struct CreatorProjectMetadata()
 	[JsonInclude] public long UniverseId = 0;
 	[JsonInclude] public string ProjectName = "Project Name";
 	[JsonInclude] public string MainWorld = "main.bvxw";
-	[JsonInclude] public int? IconID;
+	[JsonInclude] public long? IconID;
+	[JsonInclude] public string ThumbnailUrl = "";
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]

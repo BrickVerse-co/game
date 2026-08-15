@@ -1,0 +1,8 @@
+[config]
+name="GodotIap"
+binary_type="local"
+binary="GodotIap.release.aar"
+
+[dependencies]
+local=[]
+remote=["io.github.hyochan.openiap:openiap-google:3.3.0", "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0"]

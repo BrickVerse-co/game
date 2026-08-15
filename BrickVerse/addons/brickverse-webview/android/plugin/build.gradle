@@ -1,0 +1,11 @@
+plugins { id 'com.android.library' }
+
+android {
+    namespace 'gg.brickverse.webview'
+    compileSdk 36
+    defaultConfig { minSdk 24 }
+}
+
+dependencies {
+    compileOnly files('../../../../android/build/libs/release/godot-lib.template_release.aar')
+}

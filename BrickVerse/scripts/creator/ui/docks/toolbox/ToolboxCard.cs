@@ -117,58 +117,58 @@ public partial class ToolboxCard : Button
 			switch (ItemType)
 			{
 				case LibraryQueryTypeEnum.Model:
-				{
-					Instance? i = await root.Insert.CreatorImportWebModel(ItemData.ID, ItemData.Name.ToPascalCase().RemoveSymbols());
-					if (i != null)
 					{
-						i.Parent = root.Environment;
-						root.CreatorContext.Selections.SelectOnly(i);
-
-						if (i is Dynamic dyn)
+						Instance? i = await root.Insert.CreatorImportWebModel(ItemData.ID, ItemData.Name.ToPascalCase().RemoveSymbols());
+						if (i != null)
 						{
-							dyn.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+							i.Parent = root.Environment;
+							root.CreatorContext.Selections.SelectOnly(i);
+
+							if (i is Dynamic dyn)
+							{
+								dyn.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+							}
 						}
+						root.LinkedSession?.RescanFolder();
+						if (i != null) CreatorService.Interface.StatusBar?.SetStatus($"Inserted {ItemData.Name}");
+						break;
 					}
-					root.LinkedSession?.RescanFolder();
-					if (i != null) CreatorService.Interface.StatusBar?.SetStatus($"Inserted {ItemData.Name}");
-					break;
-				}
 				case LibraryQueryTypeEnum.Mesh:
-				{
-					Mesh mesh = root.New<Mesh>();
-					mesh.Name = nameToUse;
-					mesh.Parent = root.Environment;
-					BVMeshAsset asset = root.New<BVMeshAsset>();
-					asset.AssetID = ItemData.ID.ToString();
-					mesh.Asset = asset;
-					mesh.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-					root.CreatorContext.Selections.SelectOnly(mesh);
-					break;
-				}
+					{
+						Mesh mesh = root.New<Mesh>();
+						mesh.Name = nameToUse;
+						mesh.Parent = root.Environment;
+						BVMeshAsset asset = root.New<BVMeshAsset>();
+						asset.AssetID = ItemData.ID.ToString();
+						mesh.Asset = asset;
+						mesh.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+						root.CreatorContext.Selections.SelectOnly(mesh);
+						break;
+					}
 				case LibraryQueryTypeEnum.Audio:
-				{
-					Sound sound = root.New<Sound>();
-					sound.Name = nameToUse;
-					sound.Parent = root.Environment;
-					BVAudioAsset asset = root.New<BVAudioAsset>();
-					asset.AudioID = ItemData.ID.ToString();
-					sound.Audio = asset;
-					sound.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-					root.CreatorContext.Selections.SelectOnly(sound);
-					break;
-				}
+					{
+						Sound sound = root.New<Sound>();
+						sound.Name = nameToUse;
+						sound.Parent = root.Environment;
+						BVAudioAsset asset = root.New<BVAudioAsset>();
+						asset.AudioID = ItemData.ID.ToString();
+						sound.Audio = asset;
+						sound.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+						root.CreatorContext.Selections.SelectOnly(sound);
+						break;
+					}
 				case LibraryQueryTypeEnum.Image:
-				{
-					Image3D img = root.New<Image3D>();
-					img.Name = nameToUse;
-					img.Parent = root.Environment;
-					BVImageAsset asset = root.New<BVImageAsset>();
-					asset.ImageID = ItemData.ID.ToString();
-					img.Image = asset;
-					img.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-					root.CreatorContext.Selections.SelectOnly(img);
-					break;
-				}
+					{
+						Image3D img = root.New<Image3D>();
+						img.Name = nameToUse;
+						img.Parent = root.Environment;
+						BVImageAsset asset = root.New<BVImageAsset>();
+						asset.ImageID = ItemData.ID.ToString();
+						img.Image = asset;
+						img.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+						root.CreatorContext.Selections.SelectOnly(img);
+						break;
+					}
 				case LibraryQueryTypeEnum.Font:
 					{
 						BVFontAsset font = root.New<BVFontAsset>();

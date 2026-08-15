@@ -1,0 +1,103 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileNotificationCard.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/messages.svg" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="card"]
+bg_color = Color(0.065, 0.125, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.23, 0.34, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="icon"]
+bg_color = Color(0.12, 0.3, 0.5, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[node name="NotificationCard" type="Button"]
+custom_minimum_size = Vector2(0, 102)
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("card")
+theme_override_styles/hover = SubResource("card")
+theme_override_styles/pressed = SubResource("card")
+script = ExtResource("1")
+
+[node name="Content" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="IconPanel" type="PanelContainer" parent="Content"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("icon")
+
+[node name="Icon" type="TextureRect" parent="Content/IconPanel"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Copy" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="Header" type="HBoxContainer" parent="Content/Copy"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Content/Copy/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+text = "Notification"
+text_overrun_behavior = 3
+
+[node name="Time" type="Label" parent="Content/Copy/Header"]
+modulate = Color(0.68, 0.75, 0.82, 1)
+layout_mode = 2
+mouse_filter = 2
+text = "Now"
+
+[node name="Message" type="Label" parent="Content/Copy"]
+modulate = Color(0.78, 0.82, 0.87, 1)
+layout_mode = 2
+mouse_filter = 2
+text = "Notification details"
+autowrap_mode = 3
+max_lines_visible = 2
+text_overrun_behavior = 3
+
+[node name="Unread" type="ColorRect" parent="Content"]
+custom_minimum_size = Vector2(5, 5)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.2, 0.65, 1, 1)

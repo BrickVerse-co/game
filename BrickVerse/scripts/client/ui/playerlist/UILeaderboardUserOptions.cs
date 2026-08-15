@@ -69,9 +69,9 @@ public partial class UILeaderboardUserOptions : Control
 		_animPlay.Stop();
 		_animPlay.Play("appear");
 
-		
+
 		int myReq = _lastReq;
-		
+
 		ShowLoader(true);
 
 		// Fetch friendship status

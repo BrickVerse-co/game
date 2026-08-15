@@ -22,6 +22,7 @@ namespace BrickVerse.Schemas.Debugger;
 [MemoryPackUnion(11, typeof(MessageRuntimeExecute))]
 [MemoryPackUnion(12, typeof(MessageRuntimeRename))]
 [MemoryPackUnion(13, typeof(MessageRuntimeViewportRect))]
+[MemoryPackUnion(14, typeof(MessageRuntimeDeviceEmulation))]
 public partial interface IDebugMessage
 {
 }
@@ -137,4 +138,25 @@ public partial class MessageRuntimeViewportRect : IDebugMessage
 	public int Width;
 	public int Height;
 	public bool Visible = true;
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeDeviceEmulation : IDebugMessage
+{
+	public string DeviceType = "PC";
+	public bool Enabled;
+	public bool Touchscreen;
+	public bool Gamepad;
+	public bool VR;
+	public float LeftX;
+	public float LeftY;
+	public float RightX;
+	public float RightY;
+	public bool PrimaryButton;
+	public bool SecondaryButton;
+	public bool LeftTrigger;
+	public bool RightTrigger;
+	public float HeadYaw;
+	public float HeadHeight = 1.7f;
+	public float HandSpread = 0.45f;
 }

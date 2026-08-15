@@ -105,11 +105,13 @@ jobs:
           $projectSettings = "${{ github.workspace }}\${{ env.PROJECT_DIR }}\project.godot"
           $channel = "${{ env.RELEASE_CHANNEL }}"
           $version = "$channel-${{ github.run_number }}"
+          $commit = "${{ github.sha }}"
           $content = Get-Content -LiteralPath $projectSettings -Raw
           $content = $content -replace '(?m)^build/channel="[^"]*"$', "build/channel=`"$channel`""
           $content = $content -replace '(?m)^build/version="[^"]*"$', "build/version=`"$version`""
+          $content = $content -replace '(?m)^build/commit="[^"]*"$', "build/commit=`"$commit`""
           Set-Content -LiteralPath $projectSettings -Value $content -Encoding utf8NoBOM
-          Write-Host "Stamped BrickVerse client $version ($channel)"
+          Write-Host "Stamped BrickVerse client $version ($channel) commit $commit"
 
       - name: Restore NuGet cache
         uses: actions/cache@v4

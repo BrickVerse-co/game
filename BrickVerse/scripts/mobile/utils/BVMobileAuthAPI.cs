@@ -27,39 +27,50 @@ public static class BVMobileAuthAPI
 
 	public static event Action<APIV3AuthMeUser>? UserAuthenticated;
 	public static event Action? AskForAuthentication;
+	public static Func<string, bool>? InAppBrowserLauncher { private get; set; }
 
 	public static APIV3AuthMeUser CurrentUserInfo { get; private set; }
+	public static bool IsAuthenticated => !string.IsNullOrWhiteSpace(_authData.Token);
 
 	private static MobileAuthData _authData;
 	private const string AuthDataPath = "user://auth2";
 
-	public static async void SetupClient()
+	public static async Task SetupClient()
 	{
-		_authData = new();
-
-		if (FileAccess.FileExists(AuthDataPath))
+		try
 		{
-			using FileAccess access = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Read);
-			string data = access.GetAsText();
-			access.Close();
-			MobileAuthData? auth = JsonSerializer.Deserialize(
-				data,
-				MobileAuthDataGenerationContext.Default.MobileAuthData
-			);
-			if (auth != null)
+			_authData = new();
+
+			if (FileAccess.FileExists(AuthDataPath))
 			{
-				BV.Print("Existing mobile authentication data found.");
-				_authData = auth.Value;
+				using FileAccess access = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Read);
+				string data = access.GetAsText();
+				access.Close();
+				MobileAuthData? auth = JsonSerializer.Deserialize(
+					data,
+					MobileAuthDataGenerationContext.Default.MobileAuthData
+				);
+				if (auth != null)
+				{
+					BV.Print("Existing mobile authentication data found.");
+					_authData = auth.Value;
+					_authState = _authData.PendingState ?? "";
+				}
 			}
-		}
 
-		if (_authData.Token == null)
-		{
-			AskForAuthentication?.Invoke();
+			if (_authData.Token == null)
+				AskForAuthentication?.Invoke();
+			else
+				await LoginWithAuthToken(_authData.Token!);
 		}
-		else
+		catch (Exception exception)
 		{
-			await LoginWithAuthToken(_authData.Token!);
+			// Corrupt storage and platform I/O failures must never escape an
+			// async-void startup callback on Android NativeAOT.
+			BV.PrintErr("Mobile authentication initialization failed: ", exception);
+			_authData = new();
+			BVAPI.SetAuthToken("");
+			AskForAuthentication?.Invoke();
 		}
 	}
 
@@ -76,14 +87,17 @@ public static class BVMobileAuthAPI
 	}
 
 	public static void StartMobileAuth() => _ = StartMobileAuthAsync();
+	public static void StartMobileAuth(bool register) => _ = StartMobileAuthAsync(register);
 
-	private static async Task StartMobileAuthAsync()
+	private static async Task StartMobileAuthAsync(bool register = false)
 	{
 		_mobileAuthCancellation?.Cancel();
 		_mobileAuthCancellation?.Dispose();
 		_mobileAuthCancellation = new CancellationTokenSource();
 		CancellationToken cancellationToken = _mobileAuthCancellation.Token;
 		_authState = Guid.NewGuid().ToString();
+		_authData.PendingState = _authState;
+		SaveAuthData();
 
 		try
 		{
@@ -106,9 +120,13 @@ public static class BVMobileAuthAPI
 
 			string code = tokenNode.GetString()!;
 			string authUrl = Globals.MainEndpoint.PathJoin(
-				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}"
+				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}&mode={(register ? "signup" : "login")}"
 			);
-			OS.ShellOpen(authUrl);
+			if (InAppBrowserLauncher?.Invoke(authUrl) != true)
+			{
+				BV.PrintWarn("In-app auth browser unavailable; falling back to the system browser.");
+				OS.ShellOpen(authUrl);
+			}
 			await PollForQuickSignInAsync(code, DateTime.UtcNow.AddMinutes(5), cancellationToken);
 		}
 		catch (OperationCanceledException)
@@ -122,6 +140,26 @@ public static class BVMobileAuthAPI
 		}
 	}
 
+	public static async void Logout()
+	{
+		_mobileAuthCancellation?.Cancel();
+		try
+		{
+			using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Post, "/v3/auth/logout");
+		}
+		catch (Exception exception)
+		{
+			// Always clear the local credential; an expired/revoked server session is
+			// already effectively logged out.
+			BV.PrintWarn("Server logout did not complete: ", exception.Message);
+		}
+		_authData = new();
+		if (FileAccess.FileExists(AuthDataPath))
+			DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(AuthDataPath));
+		BVAPI.SetAuthToken("");
+		AskForAuthentication?.Invoke();
+	}
+
 	public static async Task LoginWithCodeAndState(string code, string state)
 	{
 		if (string.IsNullOrWhiteSpace(code))
@@ -129,7 +167,7 @@ public static class BVMobileAuthAPI
 			throw new AuthenticationException("Authentication code is required");
 		}
 
-		if (!string.IsNullOrWhiteSpace(_authState) && !string.Equals(state, _authState, StringComparison.Ordinal))
+		if (string.IsNullOrWhiteSpace(_authState) || !string.Equals(state, _authState, StringComparison.Ordinal))
 			throw new AuthenticationException("This sign-in link belongs to a different mobile session.");
 
 		await CompleteQuickSignInAsync(code);
@@ -196,21 +234,22 @@ public static class BVMobileAuthAPI
 				new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
 			);
 
-		if (quickSignInResponse.IsSuccessStatusCode)
-		{
-			using JsonDocument doc = JsonDocument.Parse(
-				await quickSignInResponse.Content.ReadAsStringAsync()
-			);
-			if (doc.RootElement.TryGetProperty("token", out JsonElement tokenNode))
+			if (quickSignInResponse.IsSuccessStatusCode)
 			{
-				string? token = tokenNode.GetString();
-				if (!string.IsNullOrWhiteSpace(token))
+				using JsonDocument doc = JsonDocument.Parse(
+					await quickSignInResponse.Content.ReadAsStringAsync()
+				);
+				if (doc.RootElement.TryGetProperty("token", out JsonElement tokenNode))
 				{
-					await LoginWithAuthToken(token);
-					return;
+					string? token = tokenNode.GetString();
+					if (!string.IsNullOrWhiteSpace(token))
+					{
+						await LoginWithAuthToken(token);
+						_authState = "";
+						return;
+					}
 				}
 			}
-		}
 
 			throw new AuthenticationException("The mobile sign-in code could not be exchanged.");
 		}
@@ -230,6 +269,7 @@ public static class BVMobileAuthAPI
 			_authData.Username = me.Username;
 			_authData.Token = userToken;
 			_authData.UserID = me.Id;
+			_authData.PendingState = null;
 			SaveAuthData();
 			BV.Print("Hello!! ", me.Username);
 
@@ -271,4 +311,7 @@ public struct MobileAuthData
 
 	[JsonInclude]
 	public string Username { get; set; }
+
+	[JsonInclude]
+	public string? PendingState { get; set; }
 }

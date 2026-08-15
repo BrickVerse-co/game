@@ -1,0 +1,14 @@
+[gd_scene format=3]
+[sub_resource type="StyleBoxFlat" id="card"]
+bg_color = Color(0.075, 0.14, 0.22, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+[node name="ShelfCard" type="Button"]
+custom_minimum_size = Vector2(148, 128)
+text = "Item"
+autowrap_mode = 3
+theme_override_styles/normal = SubResource("card")
+theme_override_styles/hover = SubResource("card")
+theme_override_styles/pressed = SubResource("card")

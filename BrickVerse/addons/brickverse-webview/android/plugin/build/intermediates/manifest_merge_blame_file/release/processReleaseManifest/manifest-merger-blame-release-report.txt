@@ -1,0 +1,17 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="gg.brickverse.webview" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <application>
+7-->C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\main\AndroidManifest.xml:3:5-7:19
+8        <meta-data
+8-->C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\main\AndroidManifest.xml:4:9-6:77
+9            android:name="org.godotengine.plugin.v2.BrickVerseWebView"
+9-->C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\main\AndroidManifest.xml:5:13-71
+10            android:value="gg.brickverse.webview.BrickVerseWebViewPlugin" />
+10-->C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\main\AndroidManifest.xml:6:13-74
+11    </application>
+12
+13</manifest>

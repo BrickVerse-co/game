@@ -92,6 +92,15 @@ public static class CreatorAPI
 		);
 	}
 
+	public static async Task<JsonDocument> GetAuthenticatedJson(string apiPath)
+	{
+		if (!IsUserAuthenticated || string.IsNullOrWhiteSpace(Token))
+			throw new AuthenticationException("Creator authentication is required.");
+		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin(apiPath));
+		response.EnsureSuccessStatusCode();
+		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+	}
+
 	public static async Task<byte[]> DownloadCreatorAsset(string assetId)
 	{
 		if (string.IsNullOrWhiteSpace(assetId))

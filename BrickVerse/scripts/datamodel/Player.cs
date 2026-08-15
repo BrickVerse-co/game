@@ -51,6 +51,8 @@ public sealed partial class Player : NPC
 	private bool _useBubbleChat = true;
 	private bool _autoLoadAppearance = true;
 	private bool _allowAnimationWhileMoving = false;
+	private bool _showNametagToLocalPlayer = true;
+	private bool _showNametagToOtherPlayers = true;
 	private PlayerMovementModeEnum _movementMode = PlayerMovementModeEnum.Default;
 	private Team? _team;
 	private Color _chatColorBeforeTeam;
@@ -245,6 +247,30 @@ public sealed partial class Player : NPC
 		set
 		{
 			_allowAnimationWhileMoving = value;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Allows this player's nametag to be rendered for the player who owns this character.</summary>
+	[Editable, ScriptProperty, SyncVar]
+	public bool ShowNametagToLocalPlayer
+	{
+		get => _showNametagToLocalPlayer;
+		set
+		{
+			_showNametagToLocalPlayer = value;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Allows this player's nametag to be rendered for every other player.</summary>
+	[Editable, ScriptProperty, SyncVar]
+	public bool ShowNametagToOtherPlayers
+	{
+		get => _showNametagToOtherPlayers;
+		set
+		{
+			_showNametagToOtherPlayers = value;
 			OnPropertyChanged();
 		}
 	}

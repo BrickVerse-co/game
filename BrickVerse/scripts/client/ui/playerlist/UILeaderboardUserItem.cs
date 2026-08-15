@@ -24,7 +24,7 @@ public partial class UILeaderboardUserItem : Button
 	public override void _Ready()
 	{
 		_usernameLabel.Text = TargetPlayer.Name;
-		
+
 		if (TargetPlayer.UserInfo.HasValue)
 		{
 			UpdateUserInfo(TargetPlayer.UserInfo.Value);

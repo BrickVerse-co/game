@@ -45,7 +45,7 @@ public partial class PlayerGUI : Instance
 
 	private void OnGameReady()
 	{
-		if (!Root.Input.IsTouchscreen) return;
+		if (!Root.Input.IsTouchscreen && !OS.HasFeature("mobile-ui")) return;
 		PackedScene packed2 = GD.Load<PackedScene>(TouchControlsPath);
 		Node touchUI = packed2.Instantiate();
 		GDNode.AddChild(touchUI, true, @internal: Node.InternalMode.Back);

@@ -112,6 +112,7 @@ public sealed partial class World : Instance
 	public PlayerGUI PlayerGUI => FindChild<PlayerGUI>("PlayerGUI")!;
 	public ChatService Chat => FindChild<ChatService>("Chat")!;
 	public InputService Input => FindChild<InputService>("Input")!;
+	public VRService VRService => FindChild<VRService>("VRService")!;
 	public FilterService Filter => FindChild<FilterService>("Filter")!;
 	public AssetsService Assets => FindChild<AssetsService>("Assets")!;
 	public AchievementsService Achievements => FindChild<AchievementsService>("Achievements")!;
@@ -793,6 +794,14 @@ public sealed partial class World : Instance
 			captureService = Globals.LoadInstance<CaptureService>(Root);
 			captureService.NameOverride = "Capture";
 			captureService.NetworkParent = this;
+		}
+
+		VRService? vrService = FindChild<VRService>("VRService");
+		if (vrService == null)
+		{
+			vrService = Globals.LoadInstance<VRService>(Root);
+			vrService.NameOverride = "VRService";
+			vrService.NetworkParent = this;
 		}
 
 		PresenceService? presenceService = FindChild<PresenceService>("Presence");

@@ -1,0 +1,349 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Theme" path="res://resources/themes/creator/creator.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/MediaUploadPopup.cs" id="2_script"]
+[ext_resource type="Texture2D" path="res://assets/textures/creator/close_x2.svg" id="3_close"]
+
+[sub_resource type="StyleBoxFlat" id="StyleModal"]
+bg_color = Color(0.075, 0.086, 0.105, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.21, 0.26, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StylePreview"]
+bg_color = Color(0.045, 0.052, 0.065, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.18, 0.22, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="StylePanel"]
+content_margin_left = 14.0
+content_margin_top = 13.0
+content_margin_right = 14.0
+content_margin_bottom = 13.0
+bg_color = Color(0.095, 0.108, 0.13, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17, 0.2, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StylePrimary"]
+bg_color = Color(0.004, 0.529, 0.973, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="ButtonGroup" id="OwnerGroup"]
+
+[node name="MediaUploadPopup" type="Window" node_paths=PackedStringArray("_titleLabel", "_subtitleLabel", "_closeButton", "_fileDialog", "_preview", "_kindIcon", "_previewMessage", "_fileName", "_fileDetails", "_error", "_busy", "_name", "_description", "_personal", "_guild", "_guildDropdown", "_choose", "_replace", "_upload", "_cancel")]
+transparent_bg = true
+oversampling_override = 1.0
+title = "Upload media"
+size = Vector2i(900, 610)
+min_size = Vector2i(760, 540)
+transient = true
+exclusive = true
+always_on_top = true
+borderless = true
+transparent = true
+popup_wm_hint = true
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+_titleLabel = NodePath("Modal/Layout/Header/Row/TitleStack/Title")
+_subtitleLabel = NodePath("Modal/Layout/Header/Row/TitleStack/Subtitle")
+_closeButton = NodePath("Modal/Layout/Header/Row/Close")
+_fileDialog = NodePath("FileDialog")
+_preview = NodePath("Modal/Layout/Body/Left/Preview/Image")
+_kindIcon = NodePath("Modal/Layout/Body/Left/Preview/Empty/Icon")
+_previewMessage = NodePath("Modal/Layout/Body/Left/Preview/Empty/Message")
+_fileName = NodePath("Modal/Layout/Body/Left/FileCard/Content/Row/FileName")
+_fileDetails = NodePath("Modal/Layout/Body/Left/FileCard/Content/Details")
+_error = NodePath("Modal/Layout/Body/Right/Form/Error")
+_busy = NodePath("Modal/Layout/Footer/Row/Busy")
+_name = NodePath("Modal/Layout/Body/Right/Form/Name")
+_description = NodePath("Modal/Layout/Body/Right/Form/Description")
+_personal = NodePath("Modal/Layout/Body/Right/Form/Ownership/Personal")
+_guild = NodePath("Modal/Layout/Body/Right/Form/Ownership/Guild")
+_guildDropdown = NodePath("Modal/Layout/Body/Right/Form/GuildDropdown")
+_choose = NodePath("Modal/Layout/Body/Left/FileCard/Content/Row/ChooseFile")
+_replace = NodePath("Modal/Layout/Body/Left/FileCard/Content/Row/ReplaceFile")
+_upload = NodePath("Modal/Layout/Footer/Row/Upload")
+_cancel = NodePath("Modal/Layout/Footer/Row/Cancel")
+
+[node name="Modal" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleModal")
+
+[node name="Layout" type="VBoxContainer" parent="Modal"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Header" type="MarginContainer" parent="Modal/Layout"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Header"]
+layout_mode = 2
+
+[node name="TitleStack" type="VBoxContainer" parent="Modal/Layout/Header/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Modal/Layout/Header/Row/TitleStack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Upload media"
+
+[node name="Subtitle" type="Label" parent="Modal/Layout/Header/Row/TitleStack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Import, preview, and publish media to BrickVerse."
+
+[node name="Close" type="Button" parent="Modal/Layout/Header/Row"]
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_horizontal = 8
+icon = ExtResource("3_close")
+flat = true
+
+[node name="HeaderSeparator" type="HSeparator" parent="Modal/Layout"]
+layout_mode = 2
+
+[node name="Body" type="HBoxContainer" parent="Modal/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="LeftPadding" type="Control" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Left" type="VBoxContainer" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(510, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Preview" type="PanelContainer" parent="Modal/Layout/Body/Left"]
+custom_minimum_size = Vector2(0, 350)
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+theme_override_styles/panel = SubResource("StylePreview")
+
+[node name="Image" type="TextureRect" parent="Modal/Layout/Body/Left/Preview"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Empty" type="VBoxContainer" parent="Modal/Layout/Body/Left/Preview"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="TopSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Icon" type="TextureRect" parent="Modal/Layout/Body/Left/Preview/Empty"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+self_modulate = Color(0.45, 0.62, 0.8, 0.75)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Message" type="Label" parent="Modal/Layout/Body/Left/Preview/Empty"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Choose a file to preview it here."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="BottomSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FileCard" type="PanelContainer" parent="Modal/Layout/Body/Left"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Content" type="VBoxContainer" parent="Modal/Layout/Body/Left/FileCard"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Body/Left/FileCard/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FileName" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No file selected"
+text_overrun_behavior = 3
+
+[node name="ChooseFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+custom_minimum_size = Vector2(104, 34)
+layout_mode = 2
+text = "Choose file"
+
+[node name="ReplaceFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+visible = false
+custom_minimum_size = Vector2(88, 34)
+layout_mode = 2
+text = "Replace"
+
+[node name="Details" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Supported format information"
+
+[node name="Right" type="PanelContainer" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(315, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Form" type="VBoxContainer" parent="Modal/Layout/Body/Right"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailsTitle" type="Label" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Asset details"
+
+[node name="NameLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+text = "Name"
+
+[node name="Name" type="LineEdit" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+placeholder_text = "Asset name"
+max_length = 64
+caret_blink = true
+
+[node name="DescriptionLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+text = "Description (optional)"
+
+[node name="Description" type="TextEdit" parent="Modal/Layout/Body/Right/Form"]
+custom_minimum_size = Vector2(0, 124)
+layout_mode = 2
+placeholder_text = "Describe this asset..."
+wrap_mode = 1
+
+[node name="OwnerLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+text = "Owner"
+
+[node name="Ownership" type="HBoxContainer" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Personal" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("OwnerGroup")
+text = "Personal"
+
+[node name="Guild" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_group = SubResource("OwnerGroup")
+text = "Guild"
+
+[node name="GuildDropdown" type="OptionButton" parent="Modal/Layout/Body/Right/Form"]
+visible = false
+layout_mode = 2
+
+[node name="OwnerHelp" type="Label" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Only guilds where you have upload permission are shown."
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="Modal/Layout/Body/Right/Form"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Error" type="Label" parent="Modal/Layout/Body/Right/Form"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.35, 0.35, 1)
+autowrap_mode = 2
+
+[node name="RightPadding" type="Control" parent="Modal/Layout/Body"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="FooterSeparator" type="HSeparator" parent="Modal/Layout"]
+layout_mode = 2
+
+[node name="Footer" type="MarginContainer" parent="Modal/Layout"]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Footer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Busy" type="Label" parent="Modal/Layout/Footer/Row"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
+text = "Preparing upload..."
+
+[node name="Cancel" type="Button" parent="Modal/Layout/Footer/Row"]
+custom_minimum_size = Vector2(92, 36)
+layout_mode = 2
+text = "Cancel"
+
+[node name="Upload" type="Button" parent="Modal/Layout/Footer/Row"]
+custom_minimum_size = Vector2(128, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StylePrimary")
+disabled = true
+text = "Upload asset"
+
+[node name="FileDialog" type="FileDialog" parent="."]
+title = "Open a File"
+initial_position = 2
+size = Vector2i(900, 600)
+file_mode = 0
+access = 2
+use_native_dialog = true

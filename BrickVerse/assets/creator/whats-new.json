@@ -1,67 +1,77 @@
 {
-  "id": "creator-2026-08-11",
+  "id": "creator-2026-08-14-device-preview-vr",
   "title": "What's new in BrickVerse Creator",
-  "subtitle": "A more connected editor with stronger publishing, scripting, and collaboration workflows.",
-  "date": "August 11, 2026",
+  "subtitle": "Preview experiences across devices, experiment with VR, and keep published project details in sync.",
+  "date": "August 14, 2026",
   "sections": [
     {
-      "title": "A smarter code editor",
-      "body": "Writing Luau now feels much closer to a modern IDE, with Creator-aware language tooling.",
+      "title": "New beta: Device Emulator",
+      "body": "Test responsive experiences and input behavior across more target devices without constantly changing hardware.",
       "items": [
-        "Up-to-date world, game, script, class, property, and child suggestions",
-        "Hover documentation, inline diagnostics, and improved error visibility",
-        "StyLua-powered document and selection formatting",
-        "Syntax highlighting for Luau, JSON, JSONC, YAML, TOML, C#, JavaScript, TypeScript, Python, and more",
-        "Open scripts in an external editor such as VS Code or Zed"
+        "Preview phone, tablet, console, desktop, and VR device profiles from Tools > Device Emulator",
+        "Display phone, tablet, TV, and landscape screen-size guides directly over the editor viewport without starting a play test",
+        "Inject fake thumbstick, gamepad button, trigger, touchscreen, headset, and VR controller input into the active play-test client",
+        "Emulated Input.DeviceType, LastInputDevice, touchscreen, gamepad, and VR state use the same runtime paths as real devices",
+        "Device Emulator is opt-in from Beta Features and can be enabled or disabled without restarting Creator"
       ]
     },
     {
-      "title": "Publishing and Asset Manager",
-      "body": "Assets are easier to publish, preview, discover, update, and reuse across projects.",
+      "title": "Experimental VR and gamepad support",
+      "body": "BrickVerse experiences can begin targeting connected PC headsets and standalone XR builds while the APIs continue to evolve.",
       "items": [
-        "New Asset Manager dock for owned and universe assets",
-        "Prefab publishing with editable metadata and an interactive 3D preview camera",
-        "Toolbox and Asset Manager prefab insertion, including safe script-import warnings",
-        "Improved mesh, texture, sound, animation, model, and prefab upload flows",
-        "Website asset links can open and insert content directly in Creator"
+        "Experimental OpenXR runtime support for PC-connected headsets and XR-enabled exports",
+        "New Luau VRService access to headset and hand poses, tracking state, controller modes, navigation, recentering, and haptics",
+        "Headset and controller movement can drive character VR poses and common gameplay actions",
+        "Gamepad navigation and device reporting support console-style play and Creator input simulation",
+        "OpenXR stays disabled in normal non-XR exports, preventing unsupported-headset startup alerts"
       ]
     },
     {
-      "title": "Terrain and animation workflows",
-      "body": "Build richer environments and character animation without leaving Creator.",
+      "title": "New beta: Animation Editor",
+      "body": "The experimental Animation Editor is available for creators who want to test the unfinished animation workflow and share feedback.",
       "items": [
-        "Custom TerrainMaterial instances with color, surface, Albedo, and PBR controls",
-        "Flatten, smooth, paint, heightmap import, and procedural terrain generation tools",
-        "Terrain persistence, publishing, replication, rendering, and collision improvements",
-        "Character-rig animation editor with 3D preview, keyframes, gizmos, IK, camera controls, and wireframe view",
-        "FBX and GLTF animation import plus .bvanim publishing"
+        "Animation Editor now has its own explicit Beta Features enrollment",
+        "The Tools menu remains locked until the beta is enabled",
+        "Beta enrollment updates menu availability immediately without requiring a restart",
+        "Clear instability and compatibility messaging sets expectations while the workflow is under development"
       ]
     },
     {
-      "title": "Play testing and collaboration",
-      "body": "Debugging and Team Create now stay closer to the normal editing experience.",
+      "title": "Device-aware runtime debugging",
+      "body": "Creator and play-test clients now exchange richer device state through the existing runtime debugger connection.",
       "items": [
-        "Docked client and server runtime Explorer, Properties, Console, and Luau execution tools",
-        "Improved play-test viewport placement, resizing, cleanup, and runtime inspection",
-        "Team Create presence, camera avatars, reconnection, terrain, instance, and property replication improvements",
-        "Session, Collaborate, connection, and Team Create status controls in the toolbar",
-        "Idle client handling and improved local network recovery"
+        "New debugger messages carry device profiles, controller axes and buttons, VR poses, and tracking state",
+        "Emulation settings automatically reapply when a new play-test client connects",
+        "Fake VR input is exposed to Luau through VRService signals and user CFrame APIs",
+        "Synthetic gamepad events pass through Godot's normal input pipeline so game code can be tested realistically",
+        "The emulator reports whether input is live or requires an active play test"
       ]
     },
     {
-      "title": "Creator quality-of-life",
-      "body": "The home screen and common editing actions received a broad usability pass.",
+      "title": "Recent projects stay current",
+      "body": "Creator's home screen now follows the latest published universe metadata instead of relying on stale local placeholders.",
       "items": [
-        "Redesigned full-screen Creator home with world cards, loading feedback, and automatic project folders",
-        "Quick access to Forge AI, Terrain, Animator, Toolbox, Asset Manager, and Input Manager",
-        "Beta Features enrollment and expanded Creator settings",
-        "Interactive onboarding tutorial, camera-speed indicator, output filters, trace links, and improved scrollback",
-        "What's New and update notifications can be disabled from Creator settings"
+        "Recent-world cards load the current primary thumbnail URL from the BrickVerse API",
+        "Opening or refreshing a project updates its universe name, primary world ID, thumbnail ID, and cached thumbnail URL",
+        "Modern 64-bit thumbnail IDs are supported without overflowing older metadata fields",
+        "Metadata refresh waits for Creator authentication and uses the authenticated OAuth API client",
+        "Offline projects continue using their last cached metadata instead of failing to open"
+      ]
+    },
+    {
+      "title": "A clearer Creator interface",
+      "body": "Common actions are easier to recognize, and experimental tooling is clearly separated from stable workflows.",
+      "items": [
+        "File, Edit, Insert, Model, Tools, View, Help, and Dev actions now use consistent SVG icons",
+        "Input Manager is available from Tools with a dedicated keyboard icon",
+        "Device Emulator and Animation Editor show contextual beta-lock tooltips when unavailable",
+        "Beta feature changes propagate live to their menu entries",
+        "What's New continues to work offline using this packaged release feed"
       ]
     }
   ],
   "links": [
     { "label": "Read the documentation", "url": "https://developers.brickverse.gg/" },
-    { "label": "Share feedback", "url": "https://brickverse.gg/forum" }
+    { "label": "Share beta feedback", "url": "https://brickverse.gg/forum" }
   ]
 }

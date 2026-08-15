@@ -660,15 +660,15 @@ public partial class TextEditorRoot : Node
 			if (process == null) return null;
 			using (process)
 			{
-			Task<string> output = process.StandardOutput.ReadToEndAsync();
-			Task<string> errors = process.StandardError.ReadToEndAsync();
-			await process.StandardInput.WriteAsync(source);
-			process.StandardInput.Close();
-			await process.WaitForExitAsync();
-			string result = await output;
-			string error = await errors;
-			if (process.ExitCode == 0) return result;
-			BV.PrintWarn("StyLua could not format the selection: ", error.Trim());
+				Task<string> output = process.StandardOutput.ReadToEndAsync();
+				Task<string> errors = process.StandardError.ReadToEndAsync();
+				await process.StandardInput.WriteAsync(source);
+				process.StandardInput.Close();
+				await process.WaitForExitAsync();
+				string result = await output;
+				string error = await errors;
+				if (process.ExitCode == 0) return result;
+				BV.PrintWarn("StyLua could not format the selection: ", error.Trim());
 			}
 		}
 		catch (System.ComponentModel.Win32Exception)

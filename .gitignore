@@ -51,6 +51,11 @@ TestResults/
 
 # Generated Android build files (except the manifest)
 /BrickVerse/android/build/*
+/BrickVerse/.gradle-plugin-cache/
+/BrickVerse/addons/brickverse-webview/android/build/
+/BrickVerse/addons/brickverse-webview/android/plugin/build/
+/BrickVerse/addons/brickverse-webview/android/.gradle/
+/BrickVerse/addons/godotopenxrvendors/.bin
 
 # Signing keys
 /BrickVerse/android/key/*

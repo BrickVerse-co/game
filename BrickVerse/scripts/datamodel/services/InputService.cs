@@ -10,9 +10,11 @@ using BrickVerse.Enums;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
+using BrickVerse.Client.XR;
 using System;
 using System.Collections.Generic;
 using static BrickVerse.Datamodel.Environment;
+using BrickVerse.Schemas.Debugger;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -47,6 +49,56 @@ public sealed partial class InputService : Instance
 	[ScriptProperty] public bool IsInputFocused => !IsGameFocused;
 	[ScriptProperty] public bool IsGamepadConnected { get; private set; } = false;
 	[ScriptProperty] public bool IsMenuOpened { get; internal set; } = false;
+	[ScriptProperty] public string LastInputDevice { get; private set; } = "KeyboardMouse";
+	private bool _creatorEmulation;
+	private string _creatorDeviceType = "PC";
+	[ScriptProperty] public bool IsVR => VRService.CreatorEmulationEnabled || XR?.IsActive == true;
+	[ScriptProperty] public string DeviceType => _creatorEmulation ? _creatorDeviceType : IsVR ? "VR" : Globals.IsMobileBuild ? (Math.Min(ScreenWidth, ScreenHeight) >= 720 ? "Tablet" : "Phone") : OS.HasFeature("console") ? "Console" : "PC";
+	[ScriptProperty] public Vector3 XRHeadPosition => XR?.HeadPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRLeftHandPosition => XR?.LeftHandPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRRightHandPosition => XR?.RightHandPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRHeadRotation => XR?.HeadPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRLeftHandRotation => XR?.LeftHandPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRRightHandRotation => XR?.RightHandPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public float XRLeftTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftTrigger : XR?.LeftTrigger ?? 0f;
+	[ScriptProperty] public float XRRightTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
+	[ScriptProperty] public float XRLeftGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
+	[ScriptProperty] public float XRRightGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
+
+	internal XRRuntime? XR { get; private set; }
+
+	internal void ApplyCreatorEmulation(MessageRuntimeDeviceEmulation state)
+	{
+		_creatorEmulation = state.Enabled;
+		_creatorDeviceType = string.IsNullOrWhiteSpace(state.DeviceType) ? "PC" : state.DeviceType;
+		IsTouchscreen = state.Enabled ? state.Touchscreen : Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen");
+		IsGamepadConnected = state.Enabled ? state.Gamepad || state.VR : Input.GetConnectedJoypads().Count > 0;
+		if (state.Enabled) LastInputDevice = state.VR ? "VR" : state.Gamepad ? "Gamepad" : state.Touchscreen ? "Touch" : "KeyboardMouse";
+		VRService.ApplyCreatorEmulation(state);
+
+		ParseJoyAxis(JoyAxis.LeftX, state.Enabled ? state.LeftX : 0f);
+		ParseJoyAxis(JoyAxis.LeftY, state.Enabled ? state.LeftY : 0f);
+		ParseJoyAxis(JoyAxis.RightX, state.Enabled ? state.RightX : 0f);
+		ParseJoyAxis(JoyAxis.RightY, state.Enabled ? state.RightY : 0f);
+		ParseJoyButton(JoyButton.A, state.Enabled && state.PrimaryButton);
+		ParseJoyButton(JoyButton.B, state.Enabled && state.SecondaryButton);
+		ParseJoyButton(JoyButton.LeftShoulder, state.Enabled && state.LeftTrigger);
+		ParseJoyButton(JoyButton.RightShoulder, state.Enabled && state.RightTrigger);
+	}
+
+	private static void ParseJoyAxis(JoyAxis axis, float value) => Input.ParseInputEvent(new InputEventJoypadMotion
+	{
+		Device = 0,
+		Axis = axis,
+		AxisValue = Mathf.Clamp(value, -1f, 1f),
+	});
+
+	private static void ParseJoyButton(JoyButton button, bool pressed) => Input.ParseInputEvent(new InputEventJoypadButton
+	{
+		Device = 0,
+		ButtonIndex = button,
+		Pressed = pressed,
+	});
 
 	[ScriptProperty]
 	public bool CursorLocked
@@ -229,7 +281,7 @@ public sealed partial class InputService : Instance
 
 	public override void Init()
 	{
-		if (Globals.IsMobileBuild || OS.HasFeature("touchscreen"))
+		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen"))
 		{
 			IsTouchscreen = true;
 		}
@@ -270,8 +322,20 @@ public sealed partial class InputService : Instance
 		Globals.GodotNotification += OnNotification;
 
 		SetProcess(true);
+		if (Root != null && Root.Network != null && Root.SessionType == World.SessionTypeEnum.Client && !Root.Network.IsServer && XRRuntime.WasRequested())
+		{
+			Callable.From(InitializeXR).CallDeferred();
+		}
 
 		base.Init();
+	}
+
+	private void InitializeXR()
+	{
+		if (XR != null || Root == null || Root.Environment == null) return;
+		XR = new XRRuntime { Name = "XRRuntime" };
+		Root.Environment.GDNode.AddChild(XR);
+		XR.Initialize(Root);
 	}
 
 	public override void PreDelete()
@@ -295,6 +359,7 @@ public sealed partial class InputService : Instance
 		RenderingServer.FramePostDraw -= ClearInputFrames;
 		Globals.GodotNotification -= OnNotification;
 		Input.Singleton.JoyConnectionChanged -= OnJoyConnectionChanged;
+		XR?.QueueFree();
 		base.PreDelete();
 	}
 
@@ -358,6 +423,7 @@ public sealed partial class InputService : Instance
 
 	public override void Process(double delta)
 	{
+		if (IsVR) LastInputDevice = "VR";
 		bool newFocused = RecomputeGameFocused();
 		if (newFocused != IsGameFocused)
 		{
@@ -449,6 +515,15 @@ public sealed partial class InputService : Instance
 	public void OnInput(Godot.InputEvent @event)
 	{
 		if (@event.IsEcho()) return;
+		if (@event is InputEventJoypadButton joyButton)
+		{
+			LastInputDevice = "Gamepad";
+			if (joyButton.ButtonIndex == JoyButton.X) BridgeGamepadAction("interact", joyButton.Pressed);
+			else if (joyButton.ButtonIndex == JoyButton.Y) BridgeGamepadAction("drop_tool", joyButton.Pressed);
+		}
+		else if (@event is InputEventJoypadMotion) LastInputDevice = "Gamepad";
+		else if (@event is InputEventScreenTouch or InputEventScreenDrag) LastInputDevice = "Touch";
+		else if (@event is InputEventKey or InputEventMouse) LastInputDevice = "KeyboardMouse";
 		if (IsWindowFocused && IsUserActivity(@event))
 		{
 			Root.Network?.NotifyLocalActivity();
@@ -555,6 +630,11 @@ public sealed partial class InputService : Instance
 				_mouseScrollDelta = -mouseBtn.Factor;
 			}
 		}
+	}
+
+	private static void BridgeGamepadAction(string action, bool pressed)
+	{
+		Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = pressed, Strength = pressed ? 1f : 0f });
 	}
 
 	private static bool IsUserActivity(Godot.InputEvent @event)

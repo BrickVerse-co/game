@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
+using BrickVerse.Shared.AssetLoaders;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -16,15 +17,17 @@ public partial class PlaceCard : Button
 	[Export] private Label _ratingLabel = null!;
 
 	public APIWorldsData PlaceData;
+	public string ThumbnailUrl = "";
 
 	private readonly BVImageAsset _iconAsset = new();
 
 
 	public override void _Ready()
 	{
+		MobileMotion.Bind(this);
 		_iconAsset.ResourceLoaded += OnIconLoaded;
 
-		_gameTitleLabel.Text = PlaceData.Name;
+		_gameTitleLabel.Text = string.IsNullOrWhiteSpace(PlaceData.Name) ? "Untitled place" : PlaceData.Name;
 		_playingLabel.Text = PlaceData.Playing.ToString();
 		if (PlaceData.Rating != null)
 		{
@@ -35,9 +38,19 @@ public partial class PlaceCard : Button
 			_ratingLabel.Text = "--";
 		}
 
-		_iconAsset.ImageType = ImageTypeEnum.WorldThumbnail;
-		_iconAsset.ImageID = PlaceData.Id.ToString();
-		_iconAsset.LoadResource();
+		if (!string.IsNullOrWhiteSpace(ThumbnailUrl))
+		{
+			WebAssetLoader.Singleton.GetResource(
+				new() { Type = WebResourceType.Image, URL = ThumbnailUrl },
+				resource => { if (IsInstanceValid(_iconRect)) _iconRect.Texture = (Texture2D)resource; }
+			);
+		}
+		else
+		{
+			_iconAsset.ImageType = ImageTypeEnum.WorldThumbnail;
+			_iconAsset.ImageID = PlaceData.Id.ToString();
+			_iconAsset.LoadResource();
+		}
 
 		Pressed += OnPressed;
 	}
@@ -49,6 +62,6 @@ public partial class PlaceCard : Button
 
 	private void OnIconLoaded(Resource tex)
 	{
-		_iconRect.Texture = (Texture2D)tex;
+		if (IsInstanceValid(_iconRect)) _iconRect.Texture = (Texture2D)tex;
 	}
 }

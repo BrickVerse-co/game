@@ -121,15 +121,18 @@ public static class StyLuaInstaller
 	{
 		try
 		{
-			using Process process = new() { StartInfo = new ProcessStartInfo
+			using Process process = new()
 			{
-				FileName = executablePath,
-				Arguments = "--version",
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
-				UseShellExecute = false,
-				CreateNoWindow = true,
-			} };
+				StartInfo = new ProcessStartInfo
+				{
+					FileName = executablePath,
+					Arguments = "--version",
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true,
+				}
+			};
 			if (!process.Start()) return false;
 			await process.WaitForExitAsync(cancellationToken);
 			return process.ExitCode == 0;

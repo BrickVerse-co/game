@@ -1,0 +1,60 @@
+[gd_resource type="Theme" load_steps=4 format=3]
+
+[sub_resource type="StyleBoxFlat" id="field"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14, 0.3, 0.45, 1)
+content_margin_left = 14.0
+content_margin_top = 11.0
+content_margin_right = 14.0
+content_margin_bottom = 11.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="popup"]
+bg_color = Color(0.035, 0.075, 0.125, 0.99)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.34, 0.5, 1)
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="hover"]
+bg_color = Color(0.11, 0.32, 0.58, 1)
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[resource]
+OptionButton/colors/font_color = Color(0.9, 0.94, 0.98, 1)
+OptionButton/colors/font_hover_color = Color(1, 1, 1, 1)
+OptionButton/font_sizes/font_size = 16
+OptionButton/styles/normal = SubResource("field")
+OptionButton/styles/hover = SubResource("field")
+OptionButton/styles/pressed = SubResource("field")
+PopupMenu/colors/font_color = Color(0.88, 0.93, 0.98, 1)
+PopupMenu/colors/font_hover_color = Color(1, 1, 1, 1)
+PopupMenu/constants/item_start_padding = 12
+PopupMenu/constants/item_end_padding = 12
+PopupMenu/constants/v_separation = 8
+PopupMenu/font_sizes/font_size = 17
+PopupMenu/styles/panel = SubResource("popup")
+PopupMenu/styles/hover = SubResource("hover")
