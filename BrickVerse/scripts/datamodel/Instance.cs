@@ -201,6 +201,7 @@ public partial class Instance : NetworkedObject
 			}
 
 			NetworkParent = value;
+			OnParentChanged((Instance?)oldParent, value);
 
 			// If set parent, invoke ready
 			if (!isTemp && Root != null)
@@ -230,6 +231,9 @@ public partial class Instance : NetworkedObject
 			}
 		}
 	}
+
+	/// <summary>Called whenever the DataModel parent changes, including reparenting inside the active tree.</summary>
+	protected virtual void OnParentChanged(Instance? oldParent, Instance? newParent) { }
 
 	[CloneInclude, ScriptLegacyProperty("Name"), SyncVar]
 	public string LegacyName

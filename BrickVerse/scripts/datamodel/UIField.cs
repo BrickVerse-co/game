@@ -218,15 +218,34 @@ public partial class UIField : Instance
 
 	public override void EnterTree()
 	{
-		// Hide if not in GUI related class
-		if (Parent is not PlayerGUI and not UIField and not GUI and not GUI3D)
-		{
-			IsParentedToUI = false;
-		}
-		else
-		{
-			IsParentedToUI = true;
-		}
+		RefreshUIHierarchyState();
+		QueueRecomputeTransform();
+		RecomputeVisible();
+		base.EnterTree();
+	}
+
+	protected override void OnParentChanged(Instance? oldParent, Instance? newParent)
+	{
+		RefreshUIHierarchyState();
+		QueueRecomputeTransform();
+		RecomputeVisible();
+		foreach (Instance child in GetChildren())
+			if (child is UIField field) field.RefreshUIHierarchyStateRecursive();
+		base.OnParentChanged(oldParent, newParent);
+	}
+
+	private void RefreshUIHierarchyStateRecursive()
+	{
+		RefreshUIHierarchyState();
+		QueueRecomputeTransform();
+		RecomputeVisible();
+		foreach (Instance child in GetChildren())
+			if (child is UIField field) field.RefreshUIHierarchyStateRecursive();
+	}
+
+	private void RefreshUIHierarchyState()
+	{
+		IsParentedToUI = Parent is PlayerGUI or UIField or GUI or GUI3D;
 #if CREATOR
 		IsParentedToCreatorGUI = IsDescendantOfClass<CreatorGUI>();
 		if (!IsParentedToCreatorGUI)
@@ -235,9 +254,6 @@ public partial class UIField : Instance
 			NodeControl.FocusMode = Control.FocusModeEnum.Click;
 		}
 #endif
-		QueueRecomputeTransform();
-		RecomputeVisible();
-		base.EnterTree();
 	}
 
 	internal ControllerState? _controllerState;
