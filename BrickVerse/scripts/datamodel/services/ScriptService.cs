@@ -155,6 +155,7 @@ public sealed partial class ScriptService : Instance
 			{ "Camera", root.Environment.CurrentCamera },
 			{ "Assets", root.Assets },
 			{ "Input", root.Input },
+			{ "VRService", root.VRService },
 			{ "Achievements", root.Achievements },
 			{ "Tween", root.Tween },
 			{ "CoreUI", root.CoreUI },

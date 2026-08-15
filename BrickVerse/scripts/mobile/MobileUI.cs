@@ -45,12 +45,20 @@ public partial class MobileUI : Control
 	private MobileAuthBrowser? _authBrowser;
 	private readonly Dictionary<MobileViewEnum, MobileViewBase> _viewCache = [];
 	private bool _disposed;
+	private XRMobileShell? _xrShell;
 
 	public override void _Ready()
 	{
 		// Keep Godot dialogs embedded in the app viewport on mobile. Native
 		// subwindows are inconsistent or unsupported on iOS and Android.
 		GetWindow().GuiEmbedSubwindows = true;
+		AddChild(new MobileControllerNavigation { Name = "ControllerNavigation" });
+		if (Globals.IsXRLaunch)
+		{
+			_xrShell = new XRMobileShell { Name = "XRMobileShell" };
+			AddChild(_xrShell);
+			_xrShell.Initialize();
+		}
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
 		cmdargs.TryGetValue("token", out string? mobileToken);
 		cmdargs.TryGetValue("code", out string? mobileCode);
@@ -79,7 +87,7 @@ public partial class MobileUI : Control
 		_authBrowser.CallbackReceived += OnAuthBrowserCallback;
 		BVMobileAuthAPI.InAppBrowserLauncher = _authBrowser.Open;
 
-		if (Globals.IsMobileBuild)
+		if (Globals.IsMobileBuild && !Globals.IsXRLaunch)
 		{
 			GetTree().Root.ContentScaleFactor = Globals.MobileScale;
 		}
@@ -106,7 +114,7 @@ public partial class MobileUI : Control
 		}
 
 		_mainView = GetNode<Control>("Layout/MainView");
-		if (Globals.IsMobileBuild)
+		if (Globals.IsMobileBuild && !Globals.IsXRLaunch)
 		{
 			DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Portrait);
 			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);

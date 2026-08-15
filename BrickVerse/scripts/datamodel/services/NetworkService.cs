@@ -6,6 +6,7 @@ using Godot;
 using MemoryPack;
 using BrickVerse.Attributes;
 using BrickVerse.Client;
+using BrickVerse.Client.XR;
 using BrickVerse.Client.Networking;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Client.WebAPI.Interfaces;
@@ -1422,6 +1423,7 @@ public sealed partial class NetworkService : Instance
 
 	private static ClientPlatformEnum ResolveClientPlatform()
 	{
+		if (XRRuntime.WasRequested()) return ClientPlatformEnum.VR;
 		if (OS.HasFeature("xr") || OS.HasFeature("vr")) return ClientPlatformEnum.VR;
 		if (OS.HasFeature("console")) return ClientPlatformEnum.Console;
 		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui"))

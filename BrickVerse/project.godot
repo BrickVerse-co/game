@@ -45,6 +45,15 @@ config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
+[xr]
+
+openxr/enabled=true
+openxr/default_action_map="res://openxr_action_map.tres"
+openxr/form_factor=0
+openxr/view_configuration=1
+openxr/reference_space=1
+shaders/enabled=true
+
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"
