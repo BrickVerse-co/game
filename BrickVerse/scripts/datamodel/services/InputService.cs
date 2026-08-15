@@ -100,6 +100,7 @@ public sealed partial class InputService : Instance
 		ButtonIndex = button,
 		Pressed = pressed,
 	});
+
 =======
 	[ScriptProperty] public float XRLeftTrigger => XR?.LeftTrigger ?? 0f;
 	[ScriptProperty] public float XRRightTrigger => XR?.RightTrigger ?? 0f;
@@ -107,7 +108,6 @@ public sealed partial class InputService : Instance
 	[ScriptProperty] public float XRRightGrip => XR?.RightGrip ?? 0f;
 	internal XRRuntime? XR { get; private set; }
 >>>>>>> 57d6d2350d5ee9da0f9ca693f4ec3a47807252cd
-
 	[ScriptProperty]
 	public bool CursorLocked
 	{

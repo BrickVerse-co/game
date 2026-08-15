@@ -41,7 +41,8 @@ public sealed partial class VRService : Instance
 	[Editable, ScriptProperty] public VRControllerModelModeEnum ControllerModels { get; set; } = VRControllerModelModeEnum.Transparent;
 	[Editable, ScriptProperty] public VRLaserPointerModeEnum LaserPointer { get; set; } = VRLaserPointerModeEnum.Pointer;
 	[Editable, ScriptProperty] public bool FadeOutViewOnCollision { get; set; } = true;
-	[Editable, ScriptProperty, SyncVar] public bool AvatarGestures
+	[Editable, ScriptProperty, SyncVar]
+	public bool AvatarGestures
 	{
 		get => _avatarGestures;
 		set { _avatarGestures = value; OnPropertyChanged(); }

@@ -188,29 +188,29 @@ public sealed partial class AssetManagerDock : MarginContainer
 			switch (item.Type.ToUpperInvariant())
 			{
 				case "PREFAB":
-				Instance? prefab = await root.Insert.CreatorImportWebModel(item.Id.ToString(), name);
-				if (prefab != null)
-				{
-					prefab.Parent = root.Environment;
-					if (prefab is Dynamic dynamic) dynamic.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-					root.CreatorContext.Selections.SelectOnly(prefab);
-					root.LinkedSession?.RescanFolder();
-					CreatorService.Interface.StatusBar?.SetStatus($"Inserted {item.Name}");
-				}
-				break;
+					Instance? prefab = await root.Insert.CreatorImportWebModel(item.Id.ToString(), name);
+					if (prefab != null)
+					{
+						prefab.Parent = root.Environment;
+						if (prefab is Dynamic dynamic) dynamic.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+						root.CreatorContext.Selections.SelectOnly(prefab);
+						root.LinkedSession?.RescanFolder();
+						CreatorService.Interface.StatusBar?.SetStatus($"Inserted {item.Name}");
+					}
+					break;
 				case "TEXTURE":
-				Image3D image = root.New<Image3D>(root.Environment); image.Name = name;
-				BVImageAsset imageAsset = root.New<BVImageAsset>(); imageAsset.ImageID = item.Id.ToString(); image.Image = imageAsset;
-				break;
+					Image3D image = root.New<Image3D>(root.Environment); image.Name = name;
+					BVImageAsset imageAsset = root.New<BVImageAsset>(); imageAsset.ImageID = item.Id.ToString(); image.Image = imageAsset;
+					break;
 				case "SOUND":
-				Sound sound = root.New<Sound>(root.Environment); sound.Name = name;
-				BVAudioAsset audioAsset = root.New<BVAudioAsset>(); audioAsset.AudioID = item.Id.ToString(); sound.Audio = audioAsset;
-				break;
+					Sound sound = root.New<Sound>(root.Environment); sound.Name = name;
+					BVAudioAsset audioAsset = root.New<BVAudioAsset>(); audioAsset.AudioID = item.Id.ToString(); sound.Audio = audioAsset;
+					break;
 				case "MESH":
-				Mesh mesh = root.New<Mesh>(root.Environment); mesh.Name = name;
-				BVMeshAsset meshAsset = root.New<BVMeshAsset>(); meshAsset.AssetID = item.Id.ToString(); mesh.Asset = meshAsset;
-				mesh.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-				root.CreatorContext.Selections.SelectOnly(mesh);
+					Mesh mesh = root.New<Mesh>(root.Environment); mesh.Name = name;
+					BVMeshAsset meshAsset = root.New<BVMeshAsset>(); meshAsset.AssetID = item.Id.ToString(); mesh.Asset = meshAsset;
+					mesh.Position = root.CreatorContext.Freelook.GetPlacementPosition();
+					root.CreatorContext.Selections.SelectOnly(mesh);
 					break;
 				case "FONT":
 					BVFontAsset font = root.New<BVFontAsset>();
@@ -219,8 +219,8 @@ public sealed partial class AssetManagerDock : MarginContainer
 					root.CreatorContext.Selections.SelectOnly(label);
 					break;
 				default:
-				OS.ShellOpen(Globals.MainEndpoint.PathJoin("/assets/" + item.Id));
-				break;
+					OS.ShellOpen(Globals.MainEndpoint.PathJoin("/assets/" + item.Id));
+					break;
 			}
 		}
 		catch (Exception error)

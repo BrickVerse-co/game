@@ -76,10 +76,10 @@ public partial class ViewAvatarPage : MobileViewBase
 			using JsonDocument appearances = await BVAPI.GetJson("/v3/character/appearances");
 			if (appearances.RootElement.TryGetProperty("appearances", out JsonElement list))
 				foreach (JsonElement appearance in list.EnumerateArray()) if (appearance.TryGetProperty("isEquipped", out JsonElement equipped) && equipped.ValueKind == JsonValueKind.True)
-				{
-					_appearanceId = appearance.GetProperty("id").ToString();
-					if (appearance.TryGetProperty("accessories", out JsonElement accessories)) foreach (JsonElement accessory in accessories.EnumerateArray()) _equipped.Add(accessory.ValueKind == JsonValueKind.Object && accessory.TryGetProperty("id", out JsonElement id) ? id.ToString() : accessory.ToString());
-				}
+					{
+						_appearanceId = appearance.GetProperty("id").ToString();
+						if (appearance.TryGetProperty("accessories", out JsonElement accessories)) foreach (JsonElement accessory in accessories.EnumerateArray()) _equipped.Add(accessory.ValueKind == JsonValueKind.Object && accessory.TryGetProperty("id", out JsonElement id) ? id.ToString() : accessory.ToString());
+					}
 			using JsonDocument inventory = await BVAPI.GetJson("/v3/marketplace/inventory?limit=50");
 			foreach (JsonElement owned in inventory.RootElement.GetProperty("items").EnumerateArray())
 			{

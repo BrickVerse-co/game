@@ -1210,7 +1210,7 @@ public enum LibraryQueryTypeEnum
 	Image,
 	Mesh,
 	Addon
-	,Font
+	, Font
 }
 
 [JsonSerializable(typeof(APIChatFilterRequest))]

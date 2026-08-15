@@ -392,7 +392,7 @@ public partial class MobileCollectionView : MobileViewBase
 	{
 		BuildProfileSummary(record);
 		return;
-		#if false
+#if false
 		string username = FirstString(record, "username", "name") ?? "Profile";
 		string description = FirstString(record, "description") ?? "No description provided.";
 		string status = FirstString(record, "status") ?? "";
@@ -401,7 +401,7 @@ public partial class MobileCollectionView : MobileViewBase
 		AddInfo(description);
 		if (record.TryGetProperty("statistics", out JsonElement stats))
 			AddInfo($"{ReadNumber(stats, "visits"):N0} visits   •   {ReadNumber(stats, "profileViews"):N0} profile views   •   {ReadNumber(stats, "forumPosts"):N0} forum posts");
-		#endif
+#endif
 	}
 
 	private static int ReadNumber(JsonElement item, string name) => item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int number) ? number : 0;
@@ -419,7 +419,7 @@ public partial class MobileCollectionView : MobileViewBase
 	{
 		BuildTransactionCard(record);
 		return;
-		#if false
+#if false
 		int amount = 0;
 		foreach (string field in new[] { "creditAmount", "givenAmount", "amount" })
 			if (record.TryGetProperty(field, out JsonElement amountNode) && amountNode.TryGetInt32(out amount)) break;
@@ -430,7 +430,7 @@ public partial class MobileCollectionView : MobileViewBase
 		string to = NestedName(record, "toUser", "username") ?? NestedName(record, "toGuild", "name") ?? "System";
 		MobileListCard row = CreateListCard($"{(received ? "+" : "−")} ◈ {amount:N0}", status.Replace('_', ' '), $"{from} → {to}{(string.IsNullOrWhiteSpace(date) ? "" : "   " + date)}");
 		row.Modulate = received ? new Color(0.62f, 0.95f, 0.72f) : Colors.White;
-		#endif
+#endif
 	}
 
 	private static string? NestedName(JsonElement record, string objectName, string fieldName)
@@ -446,14 +446,14 @@ public partial class MobileCollectionView : MobileViewBase
 		JsonElement stats = record.TryGetProperty("statistics", out JsonElement statistics) ? statistics : default;
 		MobileProfileSummary summary = _profileSummaryScene.Instantiate<MobileProfileSummary>();
 		_items.AddChild(summary);
-			summary.Configure(
-			FirstString(record, "id") ?? BVMobileAuthAPI.CurrentUserInfo.Id,
-			FirstString(record, "username", "name") ?? "Profile",
-			(FirstString(record, "status") ?? "BrickVerse member").Replace('_', ' '),
-			FirstString(record, "description") ?? "No description provided.",
-			ReadNumber(stats, "visits"), ReadNumber(stats, "profileViews"), ReadNumber(stats, "forumPosts"),
-			FirstString(record, "createdAt") ?? "",
-			record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
+		summary.Configure(
+		FirstString(record, "id") ?? BVMobileAuthAPI.CurrentUserInfo.Id,
+		FirstString(record, "username", "name") ?? "Profile",
+		(FirstString(record, "status") ?? "BrickVerse member").Replace('_', ' '),
+		FirstString(record, "description") ?? "No description provided.",
+		ReadNumber(stats, "visits"), ReadNumber(stats, "profileViews"), ReadNumber(stats, "forumPosts"),
+		FirstString(record, "createdAt") ?? "",
+		record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
 		BuildProfileActions(record);
 	}
 
@@ -514,13 +514,13 @@ public partial class MobileCollectionView : MobileViewBase
 		marketCard.SetVerified(record.TryGetProperty("creatorVerified", out JsonElement creatorVerified) && creatorVerified.ValueKind == JsonValueKind.True);
 		marketCard.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.MarketplaceItem, id);
 		return;
-		#if false
+#if false
 		string imageUrl = "";
 		if (record.TryGetProperty("thumbnailId", out JsonElement thumbnail) && thumbnail.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(thumbnail.GetString()))
 			imageUrl = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + thumbnail.GetString());
 		MobileListCard card = CreateListCard(name, price == 0 ? "Free" : $"◈ {price:N0}", "", imageUrl);
 		card.Pressed += () => ConfirmMarketplacePurchase(id, name, price);
-		#endif
+#endif
 	}
 
 	private void ConfirmMarketplacePurchase(string id, string name, int price)

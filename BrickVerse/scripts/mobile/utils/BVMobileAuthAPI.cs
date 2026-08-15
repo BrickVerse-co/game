@@ -41,22 +41,22 @@ public static class BVMobileAuthAPI
 		{
 			_authData = new();
 
-		if (FileAccess.FileExists(AuthDataPath))
-		{
-			using FileAccess access = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Read);
-			string data = access.GetAsText();
-			access.Close();
-			MobileAuthData? auth = JsonSerializer.Deserialize(
-				data,
-				MobileAuthDataGenerationContext.Default.MobileAuthData
-			);
-			if (auth != null)
+			if (FileAccess.FileExists(AuthDataPath))
 			{
-				BV.Print("Existing mobile authentication data found.");
-				_authData = auth.Value;
-				_authState = _authData.PendingState ?? "";
+				using FileAccess access = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Read);
+				string data = access.GetAsText();
+				access.Close();
+				MobileAuthData? auth = JsonSerializer.Deserialize(
+					data,
+					MobileAuthDataGenerationContext.Default.MobileAuthData
+				);
+				if (auth != null)
+				{
+					BV.Print("Existing mobile authentication data found.");
+					_authData = auth.Value;
+					_authState = _authData.PendingState ?? "";
+				}
 			}
-		}
 
 			if (_authData.Token == null)
 				AskForAuthentication?.Invoke();
@@ -234,22 +234,22 @@ public static class BVMobileAuthAPI
 				new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
 			);
 
-		if (quickSignInResponse.IsSuccessStatusCode)
-		{
-			using JsonDocument doc = JsonDocument.Parse(
-				await quickSignInResponse.Content.ReadAsStringAsync()
-			);
-			if (doc.RootElement.TryGetProperty("token", out JsonElement tokenNode))
+			if (quickSignInResponse.IsSuccessStatusCode)
 			{
-				string? token = tokenNode.GetString();
-				if (!string.IsNullOrWhiteSpace(token))
+				using JsonDocument doc = JsonDocument.Parse(
+					await quickSignInResponse.Content.ReadAsStringAsync()
+				);
+				if (doc.RootElement.TryGetProperty("token", out JsonElement tokenNode))
 				{
-					await LoginWithAuthToken(token);
-					_authState = "";
-					return;
+					string? token = tokenNode.GetString();
+					if (!string.IsNullOrWhiteSpace(token))
+					{
+						await LoginWithAuthToken(token);
+						_authState = "";
+						return;
+					}
 				}
 			}
-		}
 
 			throw new AuthenticationException("The mobile sign-in code could not be exchanged.");
 		}
