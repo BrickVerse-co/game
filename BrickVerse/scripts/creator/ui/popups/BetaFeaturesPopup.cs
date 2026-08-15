@@ -14,6 +14,7 @@ public static class CreatorBetaFeatures
 	public const string DeviceEmulator = "DeviceEmulator";
 	public const string AnimationEditor = "AnimationEditor";
 	public const string SolidModeling = "SolidModeling";
+	public const string SkinnedGrass = "SkinnedGrass";
 	public static event Action<string, bool>? FeatureChanged;
 
 	public static bool IsEnabled(string flag)
@@ -58,6 +59,12 @@ public sealed partial class BetaFeaturesPopup : Window
 			CreatorBetaFeatures.SolidModeling,
 			"Solid Modeling",
 			"Enable experimental Negate, Union, and Separate tools. Boolean output quality and compatibility may change while this feature is in beta.",
+			false
+		),
+		(
+			CreatorBetaFeatures.SkinnedGrass,
+			"Skinned Terrain Grass",
+			"Paint customizable GPU-instanced grass onto terrain, including wind animation, variation, and optional surface-conforming deformation.",
 			false
 		),
 		//("ForgeInlineActions", "Forge inline actions", "Allow Forge to surface experimental editor-aware actions and richer generated API context.", false),

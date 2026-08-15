@@ -231,6 +231,8 @@ public partial class InsertMenuPopup : PopupPanel
 			.Select(static type => type.Name)
 			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
 				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
+				|| name is not nameof(TerrainGrass))
 			.Where(name => !categorized.Contains(name)
 				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
 			.OrderBy(static name => name, StringComparer.Ordinal)
@@ -251,6 +253,8 @@ public partial class InsertMenuPopup : PopupPanel
 						.ToList();
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
 				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass))
+				filtered.RemoveAll(name => name is nameof(TerrainGrass));
 
 			// If none matched, skip this category
 			if (filtered.Count == 0)

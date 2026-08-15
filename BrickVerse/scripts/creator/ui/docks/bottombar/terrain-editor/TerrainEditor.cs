@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
+using BrickVerse.Creator.UI.Popups;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +24,8 @@ public partial class TerrainEditor : Control
 		Smooth,
 		Flatten,
 		Grow,
-		Erode
+		Erode,
+		Grass
 	}
 
 	private enum BrushShape
@@ -67,6 +69,8 @@ public partial class TerrainEditor : Control
 	[Export(PropertyHint.Range, "0,255,1")] private int _defaultMaterialId = 1;
 
 	private readonly Dictionary<Button, TerrainTool> _toolButtons = [];
+	private Button? _grassButton;
+	private VBoxContainer? _grassSettings;
 
 	private TerrainTool _tool = TerrainTool.Add;
 	private BrushShape _shape = BrushShape.Sphere;
@@ -106,11 +110,12 @@ public partial class TerrainEditor : Control
 		_toolButtons[_flattenButton] = TerrainTool.Flatten;
 		_toolButtons[_growButton] = TerrainTool.Grow;
 		_toolButtons[_erodeButton] = TerrainTool.Erode;
-
 		foreach ((Button button, TerrainTool tool) in _toolButtons)
 		{
 			button.Pressed += () => SelectTool(tool);
 		}
+		CreatorBetaFeatures.FeatureChanged += OnBetaFeatureChanged;
+		SetGrassBetaEnabled(CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass));
 
 		_shapeOption.ItemSelected += OnShapeSelected;
 		_materialOption.ItemSelected += _ => UpdateStatus();
@@ -141,6 +146,7 @@ public partial class TerrainEditor : Control
 
 	public override void _ExitTree()
 	{
+		CreatorBetaFeatures.FeatureChanged -= OnBetaFeatureChanged;
 		FinishStroke();
 
 		if (_brushPreview != null && GodotObject.IsInstanceValid(_brushPreview))
@@ -152,6 +158,84 @@ public partial class TerrainEditor : Control
 		_brushPreviewOutline = null;
 		_previewMaterial = null;
 		_previewOutlineMaterial = null;
+	}
+
+	private void OnBetaFeatureChanged(string flag, bool enabled)
+	{
+		if (flag == CreatorBetaFeatures.SkinnedGrass) SetGrassBetaEnabled(enabled);
+	}
+
+	private void SetGrassBetaEnabled(bool enabled)
+	{
+		if (enabled && _grassButton == null)
+		{
+			_grassButton = new Button { Text = "Grass", ToggleMode = true, TooltipText = "Paint skinned grass; hold Shift to erase" };
+			_grassButton.Pressed += () => SelectTool(TerrainTool.Grass);
+			_erodeButton.GetParent().AddChild(_grassButton);
+			_toolButtons[_grassButton] = TerrainTool.Grass;
+			CreateGrassSettingsPanel();
+		}
+		else if (!enabled && _grassButton != null)
+		{
+			if (_tool == TerrainTool.Grass) SelectTool(TerrainTool.Add);
+			_toolButtons.Remove(_grassButton);
+			_grassButton.QueueFree();
+			_grassButton = null;
+			_grassSettings?.QueueFree();
+			_grassSettings = null;
+		}
+	}
+
+	private void CreateGrassSettingsPanel()
+	{
+		if (_grassSettings != null) return;
+		HBoxContainer top = GetNode<HBoxContainer>("Layout/Scroll/Top");
+		_grassSettings = new VBoxContainer { Name = "GrassSettings", CustomMinimumSize = new Vector2(245, 0), Visible = _tool == TerrainTool.Grass };
+		top.AddChild(_grassSettings);
+		_grassSettings.AddChild(new Label { Text = "SKINNED GRASS (BETA)", Modulate = new Color("a1a8b8") });
+		PanelContainer card = new(); _grassSettings.AddChild(card);
+		MarginContainer margin = new(); margin.AddThemeConstantOverride("margin_left", 10); margin.AddThemeConstantOverride("margin_top", 8); margin.AddThemeConstantOverride("margin_right", 10); margin.AddThemeConstantOverride("margin_bottom", 8); card.AddChild(margin);
+		VBoxContainer content = new(); content.AddThemeConstantOverride("separation", 5); margin.AddChild(content);
+		TerrainGrass? existing = GetGrassLayer(false);
+		content.AddChild(new Label { Text = "Global layer", Modulate = new Color("72c96b") });
+		AddGrassNumber(content, "Density", 0.05, 8, 0.05, existing?.Density ?? 1.2, (grass, value) => grass.Density = value);
+		AddGrassNumber(content, "Height", 0.05, 12, 0.05, existing?.BladeHeight ?? 1.4, (grass, value) => grass.BladeHeight = value);
+		AddGrassNumber(content, "Width", 0.01, 3, 0.01, existing?.BladeWidth ?? 0.13, (grass, value) => grass.BladeWidth = value);
+		AddGrassNumber(content, "Surface inset", -2, 2, 0.01, existing?.SurfaceOffset ?? -0.1, (grass, value) => grass.SurfaceOffset = value);
+		AddGrassNumber(content, "Wind strength", 0, 3, 0.05, existing?.WindStrength ?? 0.28, (grass, value) => grass.WindStrength = value);
+		AddGrassNumber(content, "Wind speed", 0, 10, 0.1, existing?.WindSpeed ?? 1.5, (grass, value) => grass.WindSpeed = value);
+		AddGrassColor(content, "Base color", existing?.BaseColor ?? new Color("327a32"), (grass, color) => grass.BaseColor = color);
+		AddGrassColor(content, "Tip color", existing?.TipColor ?? new Color("83c95b"), (grass, color) => grass.TipColor = color);
+		CheckButton conform = new() { Text = "Conform blades to surface", ButtonPressed = existing?.DeformToSurface ?? true }; conform.Toggled += value => GetGrassLayer(true)!.DeformToSurface = value; content.AddChild(conform);
+		content.AddChild(new HSeparator());
+		content.AddChild(new Label { Text = "Paint-at-location overrides", Modulate = new Color("6ac2ff") });
+		AddGrassNumber(content, "Local density", 0.05, 8, 0.05, existing?.PaintDensityScale ?? 1, (grass, value) => grass.PaintDensityScale = value);
+		AddGrassNumber(content, "Local height", 0.05, 8, 0.05, existing?.PaintHeightScale ?? 1, (grass, value) => grass.PaintHeightScale = value);
+		AddGrassNumber(content, "Local width", 0.05, 8, 0.05, existing?.PaintWidthScale ?? 1, (grass, value) => grass.PaintWidthScale = value);
+		AddGrassColor(content, "Local tint", existing?.PaintColor ?? Colors.White, (grass, color) => grass.PaintColor = color);
+		content.AddChild(new Label { Text = "Local values are stored on newly painted blades. Hold Shift while painting to erase.", AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color("9aa8ba") });
+	}
+
+	private void AddGrassNumber(VBoxContainer parent, string label, double min, double max, double step, double initial, Action<TerrainGrass, float> apply)
+	{
+		HBoxContainer row = new(); row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(105, 0), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		SpinBox input = new() { MinValue = min, MaxValue = max, Step = step, Value = initial, CustomMinimumSize = new Vector2(90, 0) };
+		input.ValueChanged += value => apply(GetGrassLayer(true)!, (float)value); row.AddChild(input); parent.AddChild(row);
+	}
+
+	private void AddGrassColor(VBoxContainer parent, string label, Color initial, Action<TerrainGrass, Color> apply)
+	{
+		HBoxContainer row = new(); row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(105, 0), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		ColorPickerButton input = new() { Color = initial, CustomMinimumSize = new Vector2(90, 28) };
+		input.ColorChanged += color => apply(GetGrassLayer(true)!, color); row.AddChild(input); parent.AddChild(row);
+	}
+
+	private TerrainGrass? GetGrassLayer(bool create)
+	{
+		Terrain? terrain = CurrentTerrain; if (terrain == null) return null;
+		TerrainGrass? grass = terrain.GetChildrenOfClass<TerrainGrass>().FirstOrDefault();
+		if (grass == null && create) grass = terrain.New<TerrainGrass>(terrain);
+		return grass;
 	}
 
 	public override void _Process(double delta)
@@ -221,11 +305,12 @@ public partial class TerrainEditor : Control
 		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Paint or TerrainTool.Flatten;
 		_materialOption.Disabled = !materialEnabled;
 
-		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Flatten or TerrainTool.Grow or TerrainTool.Erode;
+		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Flatten or TerrainTool.Grow or TerrainTool.Erode or TerrainTool.Grass;
 		_strengthSlider.Editable = strengthEnabled;
 		_strengthSpinBox.Editable = strengthEnabled;
 
 		UpdatePreviewColor();
+		if (_grassSettings != null) _grassSettings.Visible = tool == TerrainTool.Grass;
 		UpdateStatus();
 	}
 
@@ -271,6 +356,12 @@ public partial class TerrainEditor : Control
 		}
 
 		FinishStroke();
+		if (_tool == TerrainTool.Grass)
+		{
+			terrain.GetChildrenOfClass<TerrainGrass>().FirstOrDefault()?.Clear();
+			UpdateStatus("Grass coverage cleared.");
+			return;
+		}
 		terrain.Clear();
 
 		Camera3D? camera =
@@ -439,6 +530,17 @@ public partial class TerrainEditor : Control
 
 			case TerrainTool.Erode:
 				terrain.ErodeBall(position, radius, BrushStrength);
+				break;
+
+			case TerrainTool.Grass:
+				TerrainGrass? grass = terrain.GetChildrenOfClass<TerrainGrass>().FirstOrDefault();
+				if (grass == null)
+				{
+					grass = terrain.New<TerrainGrass>(terrain);
+					CreatorService.CurrentGame?.CreatorContext.Selections.SelectOnly(grass);
+				}
+				if (Input.IsKeyPressed(Key.Shift)) grass.Erase(position, radius);
+				else grass.Paint(position, _brushNormal, radius, BrushStrength);
 				break;
 		}
 	}
