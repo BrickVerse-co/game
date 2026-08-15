@@ -26,10 +26,31 @@ public partial class Part : Entity
 	private Node3D _nRemoteAt = null!; // Remote collider proxy
 
 	internal Shape3D ColliderShape => _collider.Shape;
-	internal (Godot.Mesh Mesh, Transform3D Transform) GetBooleanGeometry()
+	internal override (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
 	{
 		(Godot.Mesh mesh, _) = Globals.LoadShape(_shape.ToString());
-		return (mesh, GDNode3D.GlobalTransform.ScaledLocal(NodeSize));
+		if (mesh is SphereMesh sphere)
+		{
+			mesh = new SphereMesh
+			{
+				Radius = sphere.Radius,
+				Height = sphere.Height,
+				RadialSegments = Mathf.Min(sphere.RadialSegments, 16),
+				Rings = Mathf.Min(sphere.Rings, 8),
+			};
+		}
+		return [(mesh, GDNode3D.GlobalTransform.ScaledLocal(NodeSize))];
+	}
+
+	internal override void OnNegatedChanged()
+	{
+#if CREATOR
+		if (IsNegated && !_isSeparateMesh)
+		{
+			CreateSeparateMesh();
+		}
+#endif
+		UpdateMaterial();
 	}
 
 	public bool IsMeshSeparated => _isSeparateMesh;
@@ -147,6 +168,7 @@ public partial class Part : Entity
 			_shape = value;
 
 			UpdateShape();
+			UpdateNegateHighlight();
 			OnPropertyChanged();
 		}
 	}
@@ -250,7 +272,7 @@ public partial class Part : Entity
 				_mesh.MaterialOverride = _meshMaterial;
 			}
 
-			_mesh.SetInstanceShaderParameter("color", _color);
+			_mesh.SetInstanceShaderParameter("color", GetVisualColor(_color));
 			ApplyVisualEffectParameters();
 		}
 
@@ -307,7 +329,7 @@ public partial class Part : Entity
 	{
 		if (_shaderEffect != null) return ShaderEffect.SharedMaterial;
 		if (_surfaceAppearance != null) return _surfaceAppearance.Material;
-		return Globals.LoadMaterial(_material, Color.A);
+		return Globals.LoadMaterial(_material, GetVisualColor(Color).A);
 	}
 
 	internal void UpdateShadow()

@@ -57,11 +57,34 @@ internal static class RuntimeCsg
 		public List<Polygon> AllPolygons() { List<Polygon> all = [.. _polygons]; if (_front != null) all.AddRange(_front.AllPolygons()); if (_back != null) all.AddRange(_back.AllPolygons()); return all; }
 		public void Build(IEnumerable<Polygon> source)
 		{
-			List<Polygon> polygons = [.. source]; if (polygons.Count == 0) return; _plane ??= polygons[0].Plane;
+			List<Polygon> polygons = [.. source]; if (polygons.Count == 0) return; _plane ??= ChoosePlane(polygons);
 			List<Polygon> front = [], back = [];
 			foreach (Polygon polygon in polygons) Split(_plane.Value, polygon, _polygons, _polygons, front, back);
 			if (front.Count > 0) { _front ??= new Node(); _front.Build(front); }
 			if (back.Count > 0) { _back ??= new Node(); _back.Build(back); }
+		}
+
+		private static Plane ChoosePlane(IReadOnlyList<Polygon> polygons)
+		{
+			Plane best = polygons[0].Plane; int bestScore = int.MaxValue;
+			int step = Math.Max(1, polygons.Count / 24);
+			for (int candidate = 0; candidate < polygons.Count; candidate += step)
+			{
+				Plane plane = polygons[candidate].Plane; int front = 0, back = 0, spanning = 0;
+				foreach (Polygon polygon in polygons)
+				{
+					int side = 0;
+					foreach (Vector3 vertex in polygon.Vertices)
+					{
+						float distance = plane.Normal.Dot(vertex) - plane.D;
+						side |= distance < -Epsilon ? 2 : distance > Epsilon ? 1 : 0;
+					}
+					if (side == 1) front++; else if (side == 2) back++; else if (side == 3) spanning++;
+				}
+				int score = Math.Abs(front - back) + spanning * 3;
+				if (score < bestScore) { best = plane; bestScore = score; }
+			}
+			return best;
 		}
 	}
 

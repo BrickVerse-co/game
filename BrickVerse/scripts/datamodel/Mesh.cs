@@ -237,13 +237,15 @@ public sealed partial class Mesh : Entity
 
 	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
 
-	internal (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
+	internal override (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
 	{
 		List<(Godot.Mesh, Transform3D)> result = [];
 		foreach (MeshInstance3D instance in _meshInstances)
 			if (instance.Mesh != null) result.Add((instance.Mesh, instance.GlobalTransform));
 		return [.. result];
 	}
+
+	internal override void OnNegatedChanged() => UpdateColor();
 
 	[ScriptEnum("MeshCollisionType")]
 	public enum CollisionTypeEnum
@@ -378,6 +380,7 @@ public sealed partial class Mesh : Entity
 			UpdateMeshOffset();
 
 			Loading = false;
+			UpdateNegateHighlight();
 			Loaded.Invoke();
 		}
 	}
@@ -472,10 +475,10 @@ public sealed partial class Mesh : Entity
 			{
 				Color origin = sm.GetMeta("_origin_clr").AsColor();
 				bool hasAlpha = sm.GetMeta("_origin_hasalpha").AsBool();
-				Color setto = _color;
+				Color setto = GetVisualColor(_color);
 				if (!UsePartColor)
 				{
-					setto = origin;
+					setto = GetVisualColor(origin);
 				}
 				sm.AlbedoColor = setto;
 				if (!hasAlpha)

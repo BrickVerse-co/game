@@ -31,6 +31,8 @@ public sealed partial class Gizmos : Node
 	private Vector2 _dragStartPos;
 	private Vector2 _rightClickStart;
 	private bool _rightClickPending;
+	private Instance? _rightClickTarget;
+	private float _rightClickTravel;
 	private const float DragThreshold = 6f;
 	private const float MinimumScale = 0.01f;
 	private const float MinimumSnap = 0.0001f;
@@ -601,12 +603,15 @@ public sealed partial class Gizmos : Node
 				if (button.Pressed)
 				{
 					_rightClickStart = button.Position;
+					_rightClickTarget = selectInstance;
+					_rightClickTravel = 0;
 					_rightClickPending = true;
 				}
-				else if (_rightClickPending && button.Position.DistanceTo(_rightClickStart) < DragThreshold)
+				else if (_rightClickPending && _rightClickTravel < DragThreshold)
 				{
-					ShowViewportContextMenu(selectInstance);
+					ShowViewportContextMenu(_rightClickTarget);
 					_rightClickPending = false;
+					_rightClickTarget = null;
 				}
 				return;
 			}
@@ -710,8 +715,15 @@ public sealed partial class Gizmos : Node
 		}
 		else if (@event is InputEventMouseMotion motion)
 		{
-			if (_rightClickPending && motion.Position.DistanceTo(_rightClickStart) >= DragThreshold)
-				_rightClickPending = false;
+			if (_rightClickPending)
+			{
+				_rightClickTravel += motion.Relative.Length();
+				if (_rightClickTravel >= DragThreshold)
+				{
+					_rightClickPending = false;
+					_rightClickTarget = null;
+				}
+			}
 			if (_isDragPending && !_isDraggingDyn)
 			{
 				float distance = motion.Position.DistanceTo(_dragStartPos);

@@ -937,6 +937,10 @@ public partial class TerrainEditor : Control
 		{
 			return source;
 		}
+		if (image.IsCompressed() && image.Decompress() != Error.Ok)
+		{
+			return source;
+		}
 
 		image.Resize(size, size, Image.Interpolation.Lanczos);
 		return ImageTexture.CreateFromImage(image);

@@ -181,7 +181,17 @@ public partial class ExplorerItemContextMenu : ContextMenu
 					Transform3D[] transforms = entities.Select(entity => entity.GDNode3D.GlobalTransform).ToArray();
 					bool[] hidden = entities.Select(entity => entity.IsHidden).ToArray();
 					bool[] collisions = entities.Select(entity => entity.CanCollide).ToArray();
-					UnionOperation union = await context.Root.Geometry.UnionAsync(entities);
+					UnionOperation union;
+					try
+					{
+						union = await context.Root.Geometry.UnionAsync(entities);
+					}
+					catch (Exception exception)
+					{
+						GD.PushError($"Unable to union the selected solids: {exception}");
+						CreatorService.Interface.StatusBar?.SetStatus($"Union failed: {exception.Message}");
+						break;
+					}
 					Instance unionParent = union.Parent!;
 					Transform3D unionTransform = union.GDNode3D.GlobalTransform;
 					context.History.RecordAppliedAction("Union solids",

@@ -65,8 +65,7 @@ public sealed partial class GeometryService : Instance
 			bool subtract = entity.IsNegated;
 			if (entity is Part part)
 			{
-				(Godot.Mesh mesh, Transform3D transform) = part.GetBooleanGeometry();
-				geometry.Add((mesh, inverse * transform, subtract));
+				geometry.AddRange(part.GetBooleanGeometry().Select(item => (item.Mesh, inverse * item.Transform, subtract)));
 			}
 			else if (entity is Mesh imported)
 			{
