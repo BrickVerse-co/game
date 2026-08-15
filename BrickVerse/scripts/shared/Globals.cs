@@ -127,6 +127,8 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	/// Check if this build is a mobile build
 	/// </summary>
 	public static bool IsMobileBuild { get; private set; } = false;
+	public static bool IsXRLaunch => OS.HasFeature("xr") || ReadCmdArgs().TryGetValue("xr-mode", out string? mode) && mode.Equals("on", StringComparison.OrdinalIgnoreCase);
+	public static bool UsesMobileUI => OS.HasFeature("mobile-ui") || IsXRLaunch;
 
 	/// <summary>
 	/// Check if Godot is available, this can be false in unit testing environments

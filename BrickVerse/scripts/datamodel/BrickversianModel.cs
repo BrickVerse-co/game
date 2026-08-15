@@ -1160,14 +1160,16 @@ public sealed partial class BrickversianModel : CharacterModel
 			{
 				try
 				{
-					Accessory? accessory = Root.Insert.CreateAccessory(
-						asset.ID,
-						asset.MeshID,
-						asset.TextureID,
-						asset.AccessoryType,
-						asset.Name,
-						asset.MeshPosition
-					);
+					Accessory? accessory = Root?.Insert != null
+						? Root.Insert.CreateAccessory(
+							asset.ID,
+							asset.MeshID,
+							asset.TextureID,
+							asset.AccessoryType,
+							asset.Name,
+							asset.MeshPosition
+						)
+						: CreateStandalonePreviewAccessory(asset);
 					if (myCount != _loadAppearanceCount)
 					{
 						accessory?.Delete();
@@ -1192,7 +1194,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					hasTool = true;
 					try
 					{
-						Tool? tool = await Root.Insert.ToolAsync(asset.ID);
+						Tool? tool = await Root!.Insert.ToolAsync(asset.ID);
 						if (myCount != _loadAppearanceCount)
 						{
 							tool?.Delete();
@@ -1215,7 +1217,7 @@ public sealed partial class BrickversianModel : CharacterModel
 					hasTool = true;
 					try
 					{
-						Tool? tool = await Root.Insert.ToolAsync(asset.ID);
+						Tool? tool = await Root!.Insert.ToolAsync(asset.ID);
 						if (myCount != _loadAppearanceCount)
 						{
 							tool?.Delete();
@@ -1240,6 +1242,46 @@ public sealed partial class BrickversianModel : CharacterModel
 		AssetLoadCheckout();
 
 		return new() { HasTool = hasTool };
+	}
+
+	/// <summary>
+	/// Builds an accessory without World services for account/avatar preview scenes.
+	/// Signed marketplace URLs are registered before this is called, so the normal
+	/// mesh and texture resources can still load without a world join token.
+	/// </summary>
+	private Accessory? CreateStandalonePreviewAccessory(APIAvatarAsset asset)
+	{
+		if (string.IsNullOrWhiteSpace(asset.MeshID)) return null;
+
+		BVMeshAsset meshAsset = New<BVMeshAsset>();
+		meshAsset.AssetID = asset.MeshID;
+		Accessory accessory = New<Accessory>(this);
+		Mesh mesh = New<Mesh>(accessory);
+		mesh.Asset = meshAsset;
+		mesh.Size = Vector3.One;
+		mesh.IncludeOffset = true;
+		mesh.CanCollide = false;
+		mesh.Anchored = true;
+		mesh.Name = "Mesh";
+		if (!string.IsNullOrWhiteSpace(asset.TextureID))
+		{
+			BVImageAsset texture = New<BVImageAsset>();
+			texture.ImageID = asset.TextureID;
+			mesh.Texture = texture;
+		}
+
+		accessory.Name = string.IsNullOrWhiteSpace(asset.Name) ? $"Accessory_{asset.ID}" : asset.Name;
+		accessory.Size = Vector3.One;
+		string kind = (asset.AccessoryType ?? asset.Type ?? "").Replace("_", "").Replace("-", "").Replace(" ", "").ToLowerInvariant();
+		accessory.TargetAttachment = kind switch
+		{
+			"neckaccessory" or "frontaccessory" or "backaccessory" or "shoulderaccessory" => CharacterAttachmentEnum.UpperTorso,
+			"waistaccessory" => CharacterAttachmentEnum.LowerTorso,
+			_ => CharacterAttachmentEnum.Head,
+		};
+		APIPosition3 position = asset.MeshPosition ?? new APIPosition3();
+		mesh.LocalPosition = new Vector3(position.X, position.Y, position.Z) * Mesh.ImportedAssetScale;
+		return accessory;
 	}
 
 	internal async Task WaitForAppearanceLoad()

@@ -1,7 +1,9 @@
-[gd_scene format=3 uid="uid://dl1lw4gsfxq4v"]
+[gd_scene load_steps=9 format=3 uid="uid://dl1lw4gsfxq4v"]
 
 [ext_resource type="Texture2D" uid="uid://c52ki0xeowsgk" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="1_4lxpx"]
 [ext_resource type="Script" uid="uid://deyvobhog18bw" path="res://scripts/mobile/ui/components/home/UserHeadshotCard.cs" id="1_7hgdk"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="2_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/AdminBadge.png" id="3_admin"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4lxpx"]
 
@@ -11,13 +13,41 @@ corner_radius_top_right = 50
 corner_radius_bottom_right = 50
 corner_radius_bottom_left = 50
 
+[sub_resource type="StyleBoxFlat" id="SkeletonCircle"]
+bg_color = Color(0.24, 0.37, 0.5, 0.9)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
+
+[sub_resource type="StyleBoxFlat" id="SkeletonLine"]
+bg_color = Color(0.21, 0.34, 0.47, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="JoinNormal"]
+bg_color = Color(0.055, 0.48, 0.22, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="JoinPressed"]
+bg_color = Color(0.035, 0.34, 0.15, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="UserHeadshotCard" type="PanelContainer" unique_id=752816337 node_paths=PackedStringArray("_imageRect", "_usernameLabel")]
 custom_minimum_size = Vector2(110, 0)
 mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBoxEmpty_4lxpx")
 script = ExtResource("1_7hgdk")
 _imageRect = NodePath("VBoxContainer/Panel/TextureRect")
-_usernameLabel = NodePath("VBoxContainer/Label")
+_usernameLabel = NodePath("VBoxContainer/NameRow/Label")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1614919679]
 layout_mode = 2
@@ -42,8 +72,99 @@ texture = ExtResource("1_4lxpx")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=1267437004]
+[node name="ImageSkeleton" type="Panel" parent="VBoxContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SkeletonCircle")
+
+[node name="NameRow" type="HBoxContainer" parent="VBoxContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(0, 19)
 layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/NameRow" unique_id=1267437004]
+custom_minimum_size = Vector2(64, 19)
+layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 1
-text = "mawji"
+theme_override_font_sizes/font_size = 13
+text = ""
 horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="Verified" type="TextureRect" parent="VBoxContainer/NameRow"]
+visible = false
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 2
+texture = ExtResource("2_verified")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Admin" type="TextureRect" parent="VBoxContainer/NameRow"]
+visible = false
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 2
+texture = ExtResource("3_admin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextSkeleton" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(76, 15)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SkeletonLine")
+
+[node name="Presence" type="HBoxContainer" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="Dot" type="Label" parent="VBoxContainer/Presence"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "●"
+
+[node name="Text" type="Label" parent="VBoxContainer/Presence"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.79, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "Online"
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="Join" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -72.0
+offset_top = -34.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("JoinNormal")
+theme_override_styles/hover = SubResource("JoinNormal")
+theme_override_styles/pressed = SubResource("JoinPressed")
+text = "▶ Join"

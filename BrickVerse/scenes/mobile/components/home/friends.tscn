@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cvv45fcrv7srk"]
 
 [ext_resource type="PackedScene" uid="uid://dl1lw4gsfxq4v" path="res://scenes/mobile/components/home/user_headshot_card.tscn" id="1_vbbsq"]
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/home/HomeShelf.cs" id="2_shelf"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xq0dv"]
 
@@ -9,6 +10,7 @@ PanelContainer/styles/panel = SubResource("StyleBoxEmpty_xq0dv")
 
 [node name="Friends" type="VBoxContainer" unique_id=1766939917]
 theme_override_constants/separation = 8
+script = ExtResource("2_shelf")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=690857295]
 layout_mode = 2
@@ -21,14 +23,24 @@ mouse_filter = 1
 theme_override_font_sizes/font_size = 16
 text = "Who's online today?"
 
-[node name="Label2" type="Label" parent="VBoxContainer" unique_id=584500153]
+[node name="TitleRow" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
+
+[node name="Label2" type="Label" parent="VBoxContainer/TitleRow" unique_id=584500153]
+layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 1
 theme_override_font_sizes/font_size = 20
 text = "Your Friends (42)"
 
+[node name="ViewAll" type="Button" parent="VBoxContainer/TitleRow"]
+layout_mode = 2
+text = "View all  ›"
+flat = true
+modulate = Color(0.55, 0.8, 1, 1)
+
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1801077322]
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 vertical_scroll_mode = 0
 

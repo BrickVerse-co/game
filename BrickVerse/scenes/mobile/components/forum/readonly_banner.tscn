@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+[sub_resource type="StyleBoxFlat" id="banner"]
+bg_color = Color(0.1, 0.24, 0.38, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.52, 0.76, 0.65)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 16.0
+content_margin_top = 13.0
+content_margin_right = 16.0
+content_margin_bottom = 13.0
+[node name="ReadOnlyBanner" type="PanelContainer"]
+theme_override_styles/panel = SubResource("banner")
+[node name="Text" type="Label" parent="."]
+layout_mode = 2
+text = "Forum is read-only in the mobile app alpha; to create a post or reply use the website."
+autowrap_mode = 3
