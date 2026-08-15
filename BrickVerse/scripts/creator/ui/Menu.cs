@@ -379,6 +379,15 @@ public sealed partial class Menu : PanelContainer
 						CreatorService.Interface.OpenUploadSoundMenu();
 					},
 				},
+				new MenuButtonItem()
+				{
+					Text = "Upload Video",
+					Icon = "video",
+					Pressed = () =>
+					{
+						CreatorService.Interface.OpenUploadVideoMenu();
+					},
+				},
 			]
 		);
 

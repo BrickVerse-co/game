@@ -206,6 +206,11 @@ public sealed partial class AssetManagerDock : MarginContainer
 					Sound sound = root.New<Sound>(root.Environment); sound.Name = name;
 					BVAudioAsset audioAsset = root.New<BVAudioAsset>(); audioAsset.AudioID = item.Id.ToString(); sound.Audio = audioAsset;
 					break;
+				case "VIDEO":
+					UIVideoFrame video = root.New<UIVideoFrame>(root.Environment); video.Name = name;
+					BVVideoAsset videoAsset = root.New<BVVideoAsset>(); videoAsset.VideoID = item.Id.ToString(); video.Video = videoAsset;
+					root.CreatorContext.Selections.SelectOnly(video);
+					break;
 				case "MESH":
 					Mesh mesh = root.New<Mesh>(root.Environment); mesh.Name = name;
 					BVMeshAsset meshAsset = root.New<BVMeshAsset>(); meshAsset.AssetID = item.Id.ToString(); mesh.Asset = meshAsset;

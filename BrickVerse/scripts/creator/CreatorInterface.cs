@@ -852,6 +852,11 @@ public partial class CreatorInterface : Control, IScriptObject
 		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Sound);
 	}
 
+	public void OpenUploadVideoMenu()
+	{
+		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Video);
+	}
+
 	private void OpenMediaUploadMenu(MediaUploadPopup.MediaKind kind)
 	{
 		MediaUploadPopup popup = Globals.CreateInstanceFromScene<MediaUploadPopup>(

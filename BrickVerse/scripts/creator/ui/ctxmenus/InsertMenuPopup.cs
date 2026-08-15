@@ -112,6 +112,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"UILabel",
 			"UIButton",
 			"UIImage",
+			"UIVideoFrame",
 			"UITextInput",
 			"UIHLayout",
 			"UIVLayout",
