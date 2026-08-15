@@ -68,7 +68,7 @@ public partial class AppEntry : Node
 		{
 			entry = AppEntryEnum.Creator;
 		}
-		if (OS.HasFeature("mobile-ui"))
+		if (Globals.UsesMobileUI)
 		{
 			entry = AppEntryEnum.MobileUI;
 		}

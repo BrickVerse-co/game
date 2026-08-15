@@ -22,19 +22,22 @@ public class DefaultMovement : IPlayerMovement
 
 		if (cam != null && Root.Input.IsGameFocused && Target.CanMove && !Target.IsDead)
 		{
-			Vector3 facingRot = cam.Camera3D.GlobalRotation;
+			Vector3 facingRot = Root.Input.IsVR && Root.Input.XR != null
+				? new Vector3(0, Root.Input.XR.HeadYaw, 0)
+				: cam.Camera3D.GlobalRotation;
 			camRotation = facingRot;
 
-			float forwardStrength = Input.GetActionStrength("forward");
-			float backwardStrength = Input.GetActionStrength("backward");
+			Vector2 xrMove = Root.Input.IsVR && Root.Input.XR != null ? Root.Input.XR.MoveVector : Vector2.Zero;
+			float forwardStrength = Root.Input.IsVR ? Mathf.Max(0, -xrMove.Y) : Input.GetActionStrength("forward");
+			float backwardStrength = Root.Input.IsVR ? Mathf.Max(0, xrMove.Y) : Input.GetActionStrength("backward");
 			forwardInput = forwardStrength - backwardStrength;
 
-			moveDirection.X = Input.GetActionStrength("rightward") - Input.GetActionStrength("leftward");
+			moveDirection.X = Root.Input.IsVR ? xrMove.X : Input.GetActionStrength("rightward") - Input.GetActionStrength("leftward");
 			moveDirection.Z = backwardStrength - forwardStrength;
 			moveDirection = moveDirection.Rotated(Vector3.Up, facingRot.Y).LimitLength(1);
 
 			bool initialSprintOverride = Target.SprintOverride;
-			jump = Input.IsActionPressed("jump");
+			jump = Root.Input.IsVR && Root.Input.XR != null ? Root.Input.XR.JumpPressed : Input.IsActionPressed("jump");
 			sprint = Input.IsActionPressed("sprint") || initialSprintOverride;
 
 			if (Target.SprintHoldAgain)

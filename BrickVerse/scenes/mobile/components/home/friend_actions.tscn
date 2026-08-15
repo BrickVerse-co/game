@@ -1,0 +1,88 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="StyleBoxFlat" id="panel"]
+bg_color = Color(0.045, 0.09, 0.15, 0.99)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.31, 0.48, 1)
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="action"]
+bg_color = Color(0.075, 0.16, 0.25, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="action_pressed"]
+bg_color = Color(0.1, 0.34, 0.62, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="danger"]
+bg_color = Color(0.42, 0.1, 0.14, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="FriendActions" type="PopupPanel"]
+size = Vector2i(340, 250)
+transparent_bg = true
+theme_override_styles/panel = SubResource("panel")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 324.0
+offset_bottom = 234.0
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "Friend"
+
+[node name="Status" type="Label" parent="Layout"]
+modulate = Color(0.64, 0.78, 0.9, 1)
+layout_mode = 2
+text = "Online"
+
+[node name="ViewProfile" type="Button" parent="Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "View profile"
+theme_override_styles/normal = SubResource("action")
+theme_override_styles/hover = SubResource("action")
+theme_override_styles/pressed = SubResource("action_pressed")
+
+[node name="Report" type="Button" parent="Layout"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Report user"
+theme_override_styles/normal = SubResource("danger")
+theme_override_styles/hover = SubResource("danger")
+theme_override_styles/pressed = SubResource("danger")
+
+[node name="Close" type="Button" parent="Layout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Close"
+flat = true

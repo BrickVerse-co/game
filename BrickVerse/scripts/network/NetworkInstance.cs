@@ -178,6 +178,8 @@ public class NetworkInstance
 		}
 		_peer.Flush();
 		_peer.Destroy();
+		while (_actionQueue.TryDequeue(out _)) { }
+		while (_mainThreadEventQueue.TryDequeue(out _)) { }
 	}
 
 	public void BroadcastMessage(byte[] data, TransferMode transferMode, int transferChannel = 0, int[]? except = null)
@@ -356,6 +358,12 @@ public class NetworkInstance
 
 	private void DrainEvents()
 	{
+		if (_shutdownd)
+		{
+			while (_mainThreadEventQueue.TryDequeue(out _)) { }
+			Interlocked.Exchange(ref _mainThreadDrainScheduled, 0);
+			return;
+		}
 		try
 		{
 			while (_mainThreadEventQueue.TryDequeue(out DeferredNetworkEvent? e))

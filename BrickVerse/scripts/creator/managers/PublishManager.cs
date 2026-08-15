@@ -125,9 +125,11 @@ public static partial class PublishManager
 		SubViewport viewport = new()
 		{
 			Name = "PrefabPublishPreview",
-			Size = new Vector2I(768, 432),
+			// Toolbox and marketplace prefab cards use square artwork. Render at a
+			// high enough resolution to remain crisp in expanded/card-detail views.
+			Size = new Vector2I(1024, 1024),
 			OwnWorld3D = true,
-			TransparentBg = false,
+			TransparentBg = true,
 			RenderTargetUpdateMode = SubViewport.UpdateMode.Always,
 		};
 		try
@@ -135,7 +137,9 @@ public static partial class PublishManager
 			Godot.Environment environment = new()
 			{
 				BackgroundMode = Godot.Environment.BGMode.Color,
-				BackgroundColor = new Color("182431"),
+				// Preserve alpha in the generated PNG instead of baking the old
+				// blue/black preview backdrop into every uploaded prefab thumbnail.
+				BackgroundColor = new Color(0f, 0f, 0f, 0f),
 				AmbientLightSource = Godot.Environment.AmbientSource.Color,
 				AmbientLightColor = new Color("dbe9f5"),
 				AmbientLightEnergy = 0.7f,
@@ -202,6 +206,10 @@ public static partial class PublishManager
 			bool capturePreview = await ConfirmPreviewCamera(viewport, camera, center, distance);
 			if (!capturePreview) return null;
 
+			// The preview container temporarily sizes the viewport for the on-screen
+			// camera editor. Restore the full export resolution after it is detached.
+			viewport.Size = new Vector2I(1024, 1024);
+
 			await CreatorService.Interface.ToSignal(
 				CreatorService.Interface.GetTree(),
 				SceneTree.SignalName.ProcessFrame
@@ -257,8 +265,8 @@ public static partial class PublishManager
 			_defaultDistance = distance;
 			_distance = distance;
 			Title = "Frame Model Preview";
-			Size = new Vector2I(900, 620);
-			MinSize = new Vector2I(640, 480);
+			Size = new Vector2I(820, 900);
+			MinSize = new Vector2I(760, 840);
 			Exclusive = true;
 			Transient = true;
 			CloseRequested += () => Finish(false);
@@ -297,8 +305,9 @@ public static partial class PublishManager
 
 			SubViewportContainer preview = new()
 			{
-				CustomMinimumSize = new Vector2(640, 420),
-				SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+				CustomMinimumSize = new Vector2(720, 720),
+				SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+				SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
 				Stretch = true,
 			};
 			preview.AddChild(_viewport);

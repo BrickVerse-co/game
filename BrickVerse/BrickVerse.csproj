@@ -16,6 +16,46 @@
 		<IsMobile>true</IsMobile>
 		<DefineConstants>$(DefineConstants);CLIENT</DefineConstants>
 	</PropertyGroup>
+	<!--
+		NativeAOT's Unix targets normally discover clang from PATH. Godot is often
+		launched from Explorer/Android Studio without the NDK toolchain directory in
+		PATH, even though the configured Android SDK contains it. Resolve the tools
+		directly so editor exports and command-line exports behave identically.
+	-->
+	<PropertyGroup Condition="'$(GodotTargetPlatform)' == 'android' And $([MSBuild]::IsOSPlatform('Windows'))">
+		<BrickVerseAndroidSdkRoot Condition="'$(ANDROID_HOME)' != ''">$(ANDROID_HOME)</BrickVerseAndroidSdkRoot>
+		<BrickVerseAndroidSdkRoot Condition="'$(BrickVerseAndroidSdkRoot)' == '' And '$(ANDROID_SDK_ROOT)' != ''">$(ANDROID_SDK_ROOT)</BrickVerseAndroidSdkRoot>
+		<BrickVerseAndroidSdkRoot Condition="'$(BrickVerseAndroidSdkRoot)' == '' And '$(LOCALAPPDATA)' != ''">$(LOCALAPPDATA)\Android\Sdk</BrickVerseAndroidSdkRoot>
+		<!-- Override this property when upgrading the NDK used by the export preset. -->
+		<BrickVerseAndroidNdkVersion Condition="'$(BrickVerseAndroidNdkVersion)' == ''">30.0.15729638</BrickVerseAndroidNdkVersion>
+		<BrickVerseAndroidNdkBin>$(BrickVerseAndroidSdkRoot)\ndk\$(BrickVerseAndroidNdkVersion)\toolchains\llvm\prebuilt\windows-x86_64\bin</BrickVerseAndroidNdkBin>
+		<!-- Also covers the NativeAOT target's later `ar` and `llvm-objcopy` probes. -->
+		<Path>$(BrickVerseAndroidNdkBin);$(Path)</Path>
+		<!-- NativeAOT validates these with where.exe, which rejects absolute paths. -->
+		<CppCompilerAndLinker>clang</CppCompilerAndLinker>
+		<ObjCopyName>llvm-objcopy</ObjCopyName>
+	</PropertyGroup>
+	<UsingTask TaskName="BrickVerseSetEnvironmentVariable"
+		TaskFactory="RoslynCodeTaskFactory"
+		AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<Name ParameterType="System.String" Required="true" />
+			<Value ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Code Type="Fragment" Language="cs"><![CDATA[
+				System.Environment.SetEnvironmentVariable(Name, Value);
+			]]></Code>
+		</Task>
+	</UsingTask>
+	<Target Name="ConfigureBrickVerseAndroidNativeAotToolchain"
+		BeforeTargets="SetupOSSpecificProps"
+		Condition="'$(GodotTargetPlatform)' == 'android' And $([MSBuild]::IsOSPlatform('Windows'))">
+		<Error Condition="!Exists('$(BrickVerseAndroidNdkBin)\clang.exe')"
+			Text="Android NDK clang was not found at '$(BrickVerseAndroidNdkBin)'. Install NDK $(BrickVerseAndroidNdkVersion), or pass /p:BrickVerseAndroidNdkVersion=&lt;installed-version&gt;." />
+		<!-- Exec tasks inherit the MSBuild process environment, not the MSBuild Path property. -->
+		<BrickVerseSetEnvironmentVariable Name="PATH" Value="$(BrickVerseAndroidNdkBin);$([System.Environment]::GetEnvironmentVariable('PATH'))" />
+	</Target>
 	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'ios-arm64'">
 		<DirectPInvoke Include="Luau.VM" />
 		<DirectPInvoke Include="Luau.Compiler" />
@@ -33,6 +73,26 @@
 		<NativeLibrary Include="native/luau/iossimulator-arm64/libLuau.Ast.a" />
 		<NativeLibrary Include="native/luau/iossimulator-arm64/libLuau.Bytecode.a" />
 		<NativeLibrary Include="native/luau/iossimulator-arm64/libLuau.Common.a" />
+	</ItemGroup>
+	<!--
+		The Android NativeAOT runtime loads its cryptography PAL dynamically when
+		HttpClient first performs TLS. Godot packages the main AOT image but does
+		not automatically retain this companion library from the runtime pack.
+		Without it, HTTPS aborts the entire process from a .NET worker thread.
+		Retain the ABI-matched companion library for both production arm64 and
+		the x86_64 Android emulator target.
+	-->
+	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'android-arm64'">
+		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-arm64\10.0.1\runtimes\android-arm64\native\libSystem.Security.Cryptography.Native.Android.so"
+			Link="libSystem.Security.Cryptography.Native.Android.so"
+			CopyToOutputDirectory="Always"
+			CopyToPublishDirectory="Always" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'android-x64'">
+		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-x64\10.0.1\runtimes\android-x64\native\libSystem.Security.Cryptography.Native.Android.so"
+			Link="libSystem.Security.Cryptography.Native.Android.so"
+			CopyToOutputDirectory="Always"
+			CopyToPublishDirectory="Always" />
 	</ItemGroup>
 	<ItemGroup>
 		<!-- Trimmer ignores, this is currently required for Godot NativeAOT projects -->
@@ -73,8 +133,11 @@
 	</PropertyGroup>
 	<!-- Build Target Configurations -->
 	<PropertyGroup>
-		<IsCreator>false</IsCreator>
-		<IsMobile>false</IsMobile>
+		<!-- Do not overwrite platform values assigned above. Android/iOS set
+		     IsMobile=true before this group is evaluated; resetting it here
+		     excluded every scripts/mobile/**/*.cs file from NativeAOT exports. -->
+		<IsCreator Condition="'$(IsCreator)' == ''">false</IsCreator>
+		<IsMobile Condition="'$(IsMobile)' == ''">false</IsMobile>
 		<IsCreator Condition="'$(BV_BUILD_TARGET)' == 'CREATOR'">true</IsCreator>
 		<IsMobile Condition="'$(BV_BUILD_TARGET)' == 'MOBILE'">true</IsMobile>
 	</PropertyGroup>

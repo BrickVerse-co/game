@@ -14,6 +14,7 @@ public partial class NavbarButton : Button
 	public override void _Ready()
 	{
 		MobileUI.Singleton.ViewPathSwitched += OnViewPathSwitched;
+		MobileMotion.Bind(this);
 		base._Ready();
 	}
 
@@ -24,7 +25,8 @@ public partial class NavbarButton : Button
 
 	public override void _Pressed()
 	{
-		MobileUI.Singleton.SwitchTo(SwitchTo);
+		if (MobileUI.Singleton.CurrentView == SwitchTo) MobileUI.Singleton.RefreshCurrentView();
+		else MobileUI.Singleton.SwitchTo(SwitchTo);
 		base._Pressed();
 	}
 }

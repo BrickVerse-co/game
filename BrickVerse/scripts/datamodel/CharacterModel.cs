@@ -7,6 +7,7 @@ using BrickVerse.Datamodel.Services;
 using BrickVerse.Networking;
 using System;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -17,6 +18,10 @@ public partial class CharacterModel : Dynamic
 	private float _currentSpeed = 1;
 	private readonly Dictionary<CharacterModelBlendEnum, float> _blendValues = [];
 	private Animator? _animator = null!;
+
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRHeadPose { get; internal set; } = Transform3D.Identity;
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRLeftHandPose { get; internal set; } = Transform3D.Identity;
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRRightHandPose { get; internal set; } = Transform3D.Identity;
 
 	[ScriptEnum]
 	public enum CharacterModelStateEnum

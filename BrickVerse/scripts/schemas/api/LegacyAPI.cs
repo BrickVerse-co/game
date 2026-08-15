@@ -876,7 +876,7 @@ public struct APIMeResponse
 public struct APIWorldsData
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("creatorType")]
 	public string CreatorType { get; set; }
@@ -969,7 +969,7 @@ public struct APIJoinPlaceResponse
 public struct APIJoinPlaceRequest
 {
 	[JsonPropertyName("placeID")]
-	public int PlaceID { get; set; }
+	public long PlaceID { get; set; }
 
 	[JsonPropertyName("isBeta")]
 	public bool IsBeta { get; set; }
@@ -978,7 +978,7 @@ public struct APIJoinPlaceRequest
 public struct APIFeedPostAuthor
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("username")]
 	public string Username { get; set; }
@@ -997,6 +997,9 @@ public struct APIFeedPostAuthor
 
 	[JsonPropertyName("isStaff")]
 	public bool IsStaff { get; set; }
+
+	[JsonPropertyName("isVerified")]
+	public bool IsVerified { get; set; }
 }
 
 public struct APIFeedPostComment
@@ -1020,7 +1023,7 @@ public struct APIFeedPostComment
 public struct APIFeedPostData
 {
 	[JsonPropertyName("id")]
-	public int Id { get; set; }
+	public long Id { get; set; }
 
 	[JsonPropertyName("content")]
 	public string Content { get; set; }
@@ -1029,7 +1032,7 @@ public struct APIFeedPostData
 	public DateTime PostedAt { get; set; }
 
 	[JsonPropertyName("placeID")]
-	public int? PlaceID { get; set; }
+	public long? PlaceID { get; set; }
 
 	[JsonPropertyName("author")]
 	public APIFeedPostAuthor Author { get; set; }
@@ -1111,6 +1114,12 @@ public struct APIMarketplace3DItem
 
 	[JsonPropertyName("textureId")]
 	public string? TextureId { get; set; }
+
+	[JsonPropertyName("textureUrl")]
+	public string? TextureUrl { get; set; }
+
+	[JsonPropertyName("meshUrl")]
+	public string? MeshUrl { get; set; }
 
 	[JsonPropertyName("meshPos")]
 	public APIPosition3? MeshPosition { get; set; }

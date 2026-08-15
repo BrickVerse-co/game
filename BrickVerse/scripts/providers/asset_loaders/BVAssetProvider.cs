@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -24,6 +25,13 @@ namespace BrickVerse.Providers.AssetLoaders;
 public class BVAssetProvider : IAssetProvider
 {
 	private readonly BVHttpClient _client = new();
+	private static readonly ConcurrentDictionary<(ResourceType Type, string Id), string> DirectAssetUrls = new();
+
+	public static void RegisterDirectAssetUrl(ResourceType type, string? id, string? url)
+	{
+		if (!string.IsNullOrWhiteSpace(id) && Uri.TryCreate(url, UriKind.Absolute, out _))
+			DirectAssetUrls[(type, id)] = url!;
+	}
 
 	public async Task<CacheItem> LoadResource(CacheItem item)
 	{
@@ -344,6 +352,7 @@ public class BVAssetProvider : IAssetProvider
 
 	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
+		if (DirectAssetUrls.TryGetValue((itemType, id), out string? directUrl)) return directUrl;
 		if (itemType is ResourceType.UserBodyshot or ResourceType.UserHeadshot)
 		{
 			return Globals.ApiEndpoint.PathJoin(

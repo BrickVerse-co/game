@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileMarkdown.cs" id="1"]
+[node name="Markdown" type="RichTextLabel"]
+custom_minimum_size = Vector2(0, 40)
+size_flags_horizontal = 3
+mouse_filter = 0
+bbcode_enabled = true
+fit_content = true
+selection_enabled = true
+context_menu_enabled = true
+script = ExtResource("1")

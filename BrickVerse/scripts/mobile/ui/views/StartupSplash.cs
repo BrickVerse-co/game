@@ -11,6 +11,7 @@ public partial class StartupSplash : Control
 	public override void _Ready()
 	{
 		Visible = true;
+		GetNode<Label>("BuildInfo").Text = $"BrickVerse {ProjectSettings.GetSetting("application/config/version", "1.0.0")}\n© {System.DateTime.UtcNow.Year} Meta Games LLC";
 	}
 
 	public void HideSplash()

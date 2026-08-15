@@ -1,0 +1,8 @@
+[config]
+name="BrickVerseWebView"
+binary_type="local"
+binary="BrickVerseWebView.release.aar"
+
+[dependencies]
+local=[]
+remote=[]

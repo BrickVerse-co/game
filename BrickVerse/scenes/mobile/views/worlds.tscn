@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://wlrvgtw6qeuw" path="res://assets/textures/mobile/home/headerbg_color.png" id="3_ybeeg"]
 [ext_resource type="Texture2D" uid="uid://dgna45btjijiq" path="res://assets/textures/ui-icons/star-filled.svg" id="4_ccoek"]
 [ext_resource type="Script" uid="uid://ubmohvfs7uwn" path="res://scripts/mobile/ui/components/worlds/WorldsGrid.cs" id="5_jqfof"]
+[ext_resource type="Theme" path="res://resources/themes/mobile_dropdown.tres" id="6_dropdown"]
 
 [sub_resource type="Gradient" id="Gradient_w46nw"]
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
@@ -19,6 +20,55 @@ content_margin_left = 16.0
 content_margin_top = 16.0
 content_margin_right = 16.0
 content_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxFlat" id="field"]
+bg_color = Color(0.055, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.13, 0.24, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 14.0
+content_margin_right = 14.0
+
+[sub_resource type="StyleBoxFlat" id="chip"]
+bg_color = Color(0.09, 0.18, 0.28, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="category_idle"]
+bg_color = Color(0.065, 0.13, 0.21, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="category_selected"]
+bg_color = Color(0.13, 0.38, 0.7, 1)
+border_width_left = 3
+border_width_right = 3
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="Control" type="Control" unique_id=612193340]
 layout_mode = 3
@@ -45,6 +95,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Control" type="Panel" parent="ScrollContainer/VBoxContainer" unique_id=1767925624]
+visible = false
 custom_minimum_size = Vector2(0, 225)
 clip_contents = true
 layout_mode = 2
@@ -143,6 +194,20 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_0s7as")
 layout_mode = 2
 theme_override_constants/separation = 16
 
+[node name="TopSafeArea" type="Control" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Discover worlds"
+
+[node name="Subtitle" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+modulate = Color(0.71, 0.76, 0.83, 1)
+layout_mode = 2
+text = "Find your next favorite experience"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=658400945]
 visible = false
 layout_mode = 2
@@ -161,12 +226,66 @@ size_flags_vertical = 4
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="Search" type="LineEdit" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+placeholder_text = "Search worlds"
+theme_override_styles/normal = SubResource("field")
+theme_override_styles/focus = SubResource("field")
+
+[node name="Filters" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Sort" type="TabBar" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 6
+theme_override_styles/tab_unselected = SubResource("category_idle")
+theme_override_styles/tab_hovered = SubResource("category_idle")
+theme_override_styles/tab_selected = SubResource("category_selected")
+tab_count = 3
+tab_0/title = "For You"
+tab_1/title = "Featured"
+tab_2/title = "Trending"
+scrolling_enabled = false
+
+[node name="Genre" type="OptionButton" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Filters"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("6_dropdown")
+theme_override_styles/normal = SubResource("chip")
+theme_override_styles/hover = SubResource("chip")
+theme_override_styles/pressed = SubResource("chip")
+item_count = 7
+popup/item_0/text = "All genres"
+popup/item_0/id = 0
+popup/item_1/text = "Adventure"
+popup/item_1/id = 1
+popup/item_2/text = "Action"
+popup/item_2/id = 2
+popup/item_3/text = "Roleplay"
+popup/item_3/id = 3
+popup/item_4/text = "Simulation"
+popup/item_4/id = 4
+popup/item_5/text = "Sports"
+popup/item_5/id = 5
+popup/item_6/text = "Horror"
+popup/item_6/id = 6
+
+[node name="Status" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+modulate = Color(0.71, 0.76, 0.83, 1)
+layout_mode = 2
+text = "Loading worlds…"
+horizontal_alignment = 1
+
 [node name="Center" type="CenterContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=1062181130]
 layout_mode = 2
 
 [node name="PlacesGrid" type="GridContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Center" unique_id=1817401922]
 layout_mode = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
-columns = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 18
+columns = 3
 script = ExtResource("5_jqfof")

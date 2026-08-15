@@ -1,0 +1,119 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileListCard.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/box-fill.svg" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="3"]
+
+[sub_resource type="StyleBoxFlat" id="card"]
+bg_color = Color(0.055, 0.105, 0.17, 0.96)
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="image"]
+bg_color = Color(0.09, 0.16, 0.24, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="GridCard" type="Button"]
+custom_minimum_size = Vector2(150, 254)
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_styles/normal = SubResource("card")
+theme_override_styles/hover = SubResource("card")
+theme_override_styles/pressed = SubResource("card")
+script = ExtResource("1")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="ImagePanel" type="PanelContainer" parent="Content"]
+clip_children = 1
+custom_minimum_size = Vector2(0, 154)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("image")
+
+[node name="Image" type="TextureRect" parent="Content/ImagePanel"]
+custom_minimum_size = Vector2(0, 154)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Copy" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Content/Copy"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 15
+text = "Title"
+autowrap_mode = 3
+max_lines_visible = 2
+text_overrun_behavior = 3
+
+[node name="Price" type="HBoxContainer" parent="Content/Copy"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="CurrencyIcon" type="TextureRect" parent="Content/Copy/Price"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Meta" type="Label" parent="Content/Copy/Price"]
+layout_mode = 2
+mouse_filter = 2
+modulate = Color(0.62, 0.86, 1, 1)
+text = "Meta"
+
+[node name="DetailRow" type="HBoxContainer" parent="Content/Copy"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Detail" type="Label" parent="Content/Copy/DetailRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+modulate = Color(0.72, 0.77, 0.84, 1)
+theme_override_font_sizes/font_size = 13
+text = "Detail"
+autowrap_mode = 3
+max_lines_visible = 1
+text_overrun_behavior = 3
+
+[node name="Verified" type="TextureRect" parent="Content/Copy/DetailRow"]
+visible = false
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5

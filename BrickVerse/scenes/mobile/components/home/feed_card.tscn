@@ -6,11 +6,11 @@
 [ext_resource type="Texture2D" uid="uid://c52ki0xeowsgk" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="3_vmni1"]
 [ext_resource type="Texture2D" uid="uid://duq1w7g3l6kml" path="res://assets/textures/ui-icons/heart-filled.svg" id="5_vmni1"]
 [ext_resource type="Texture2D" uid="uid://c4kjeilc8dstc" path="res://assets/textures/ui-icons/comments.svg" id="6_uiikp"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="7_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/heart.svg" id="8_heart_outline"]
 
 [node name="FeedCard" type="PanelContainer" unique_id=1622089533 node_paths=PackedStringArray("_usernameLabel", "_postDateLabel", "_locationLabel", "_contentLabel", "_pfpRect", "_mediaRect", "_likeLabel", "_commentLabel")]
 clip_contents = true
-offset_right = 371.0
-offset_bottom = 379.0
 size_flags_horizontal = 3
 size_flags_vertical = 0
 mouse_filter = 2
@@ -27,7 +27,7 @@ _commentLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContain
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=452575751]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 16
 
@@ -66,12 +66,19 @@ size_flags_horizontal = 0
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "mawji"
+[node name="Verified" type="TextureRect" parent="HBoxContainer/VBoxContainer/HBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+texture = ExtResource("7_verified")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Label2" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=940951789]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.5019608)
 theme_override_font_sizes/font_size = 14
-text = "5 Days ago"
+text = "Just now"
 
 [node name="Label3" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1172311074]
 custom_minimum_size = Vector2(140, 0)
@@ -79,7 +86,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.5019608)
 theme_override_font_sizes/font_size = 14
-text = "5 Days ago"
+text = "Just now"
 text_overrun_behavior = 4
 
 [node name="Label3" type="Label" parent="HBoxContainer/VBoxContainer" unique_id=1839125975]
@@ -89,6 +96,7 @@ text = "Content Content Content Content Content Content Content Content Content 
 autowrap_mode = 3
 
 [node name="Media" type="TextureRect" parent="HBoxContainer/VBoxContainer" unique_id=1231194857]
+visible = false
 custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 expand_mode = 1
@@ -100,9 +108,10 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=1191138764]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
+[node name="LikeButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
 layout_mode = 2
-icon = ExtResource("5_vmni1")
+action_mode = 0
+icon = ExtResource("8_heart_outline")
 flat = true
 
 [node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1222054684]
@@ -112,8 +121,9 @@ text = "0"
 [node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=767609104]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
+[node name="CommentButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
 layout_mode = 2
+action_mode = 0
 icon = ExtResource("6_uiikp")
 flat = true
 

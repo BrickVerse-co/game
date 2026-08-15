@@ -45,26 +45,23 @@ config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
-<<<<<<< Updated upstream
-=======
 [xr]
 
-openxr/enabled=false
-openxr/enabled.xr=true
-openxr/startup_alert=false
+openxr/enabled=true
 openxr/default_action_map="res://openxr_action_map.tres"
 openxr/form_factor=0
 openxr/view_configuration=1
 openxr/reference_space=1
 shaders/enabled=true
 
->>>>>>> Stashed changes
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"
 AssetLoader="*res://scripts/shared/asset_loaders/AssetLoader.cs"
 WebAssetLoader="*res://scripts/shared/asset_loaders/WebAssetLoader.cs"
 AppCloseDimmer="*res://scripts/shared/AppCloseDimmer.cs"
+GodotIapPlugin="*uid://bduhiigcr38mm"
+BrickVerseOpenIap="*res://scripts/mobile/utils/open_iap_bridge.gd"
 
 [brickverse]
 
@@ -89,7 +86,7 @@ project/solution_directory="../"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg")
+enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg", "res://addons/godot-iap/plugin.cfg", "res://addons/brickverse-webview/plugin.cfg")
 
 [gui]
 

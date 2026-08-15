@@ -293,3 +293,20 @@ layout_mode = 1
 
 [node name="AnimPlay" type="AnimationPlayer" parent="." unique_id=757395909]
 libraries/ = SubResource("AnimationLibrary_agegb")
+
+[node name="BuildInfo" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.52)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -42.0
+offset_right = -20.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "BrickVerse 1.0.0  •  © 2026 Meta Games LLC"
+horizontal_alignment = 1
