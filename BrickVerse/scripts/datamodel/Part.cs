@@ -26,6 +26,11 @@ public partial class Part : Entity
 	private Node3D _nRemoteAt = null!; // Remote collider proxy
 
 	internal Shape3D ColliderShape => _collider.Shape;
+	internal (Godot.Mesh Mesh, Transform3D Transform) GetBooleanGeometry()
+	{
+		(Godot.Mesh mesh, _) = Globals.LoadShape(_shape.ToString());
+		return (mesh, GDNode3D.GlobalTransform.ScaledLocal(NodeSize));
+	}
 
 	public bool IsMeshSeparated => _isSeparateMesh;
 	public int BridgeID = -1;

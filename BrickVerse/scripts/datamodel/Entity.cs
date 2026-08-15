@@ -13,6 +13,7 @@ public abstract partial class Entity : RigidBody
 	internal const uint CameraClipCollisionLayerMask = 1u << 5;
 
 	private bool _isSpawn = false;
+	private bool _isNegated = false;
 
 	private Color _color = new(1, 1, 1);
 	private bool _castShadows = true;
@@ -45,6 +46,22 @@ public abstract partial class Entity : RigidBody
 			}
 
 			_castShadows = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool IsNegated
+	{
+		get => _isNegated;
+		set
+		{
+			if (_isNegated == value)
+			{
+				return;
+			}
+
+			_isNegated = value;
 			OnPropertyChanged();
 		}
 	}

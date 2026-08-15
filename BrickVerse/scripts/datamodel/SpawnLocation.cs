@@ -3,7 +3,7 @@ using Godot;
 
 namespace BrickVerse.Datamodel;
 
-/// <summary>A Roblox-compatible spawn part with optional team filtering.</summary>
+/// <summary>A spawn part with optional team filtering.</summary>
 [Instantiable]
 public sealed partial class SpawnLocation : Part
 {

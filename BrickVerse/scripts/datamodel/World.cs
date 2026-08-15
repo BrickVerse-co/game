@@ -133,6 +133,7 @@ public sealed partial class World : Instance
 	public SocialService Social => FindChild<SocialService>("Social")!;
 	public PathfindingService Pathfinding => FindChild<PathfindingService>("PathfindingService")!;
 	public AdService Ads => FindChild<AdService>("AdService")!;
+	public GeometryService Geometry => FindChild<GeometryService>("GeometryService")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
 #endif
@@ -760,6 +761,14 @@ public sealed partial class World : Instance
 			adService = Globals.LoadInstance<AdService>(Root);
 			adService.NameOverride = "AdService";
 			adService.NetworkParent = this;
+		}
+
+		GeometryService? geometryService = FindChild<GeometryService>("GeometryService");
+		if (geometryService == null)
+		{
+			geometryService = Globals.LoadInstance<GeometryService>(Root);
+			geometryService.NameOverride = "GeometryService";
+			geometryService.NetworkParent = this;
 		}
 
 		CoreUIService? coreUIService = FindChild<CoreUIService>("CoreUI");

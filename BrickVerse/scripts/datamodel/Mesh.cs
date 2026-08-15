@@ -237,6 +237,14 @@ public sealed partial class Mesh : Entity
 
 	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
 
+	internal (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
+	{
+		List<(Godot.Mesh, Transform3D)> result = [];
+		foreach (MeshInstance3D instance in _meshInstances)
+			if (instance.Mesh != null) result.Add((instance.Mesh, instance.GlobalTransform));
+		return [.. result];
+	}
+
 	[ScriptEnum("MeshCollisionType")]
 	public enum CollisionTypeEnum
 	{
