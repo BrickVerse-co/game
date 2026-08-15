@@ -60,13 +60,12 @@ public sealed partial class InputService : Instance
 	[ScriptProperty] public Vector3 XRHeadRotation => XR?.HeadPose.Basis.GetEuler() ?? Vector3.Zero;
 	[ScriptProperty] public Vector3 XRLeftHandRotation => XR?.LeftHandPose.Basis.GetEuler() ?? Vector3.Zero;
 	[ScriptProperty] public Vector3 XRRightHandRotation => XR?.RightHandPose.Basis.GetEuler() ?? Vector3.Zero;
-<<<<<<< HEAD
 	[ScriptProperty] public float XRLeftTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftTrigger : XR?.LeftTrigger ?? 0f;
 	[ScriptProperty] public float XRRightTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
 	[ScriptProperty] public float XRLeftGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
 	[ScriptProperty] public float XRRightGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
+	
 	internal XRRuntime? XR { get; private set; }
->>>>>>> Stashed changes
 
 	internal void ApplyCreatorEmulation(MessageRuntimeDeviceEmulation state)
 	{
@@ -101,13 +100,6 @@ public sealed partial class InputService : Instance
 		Pressed = pressed,
 	});
 
-=======
-	[ScriptProperty] public float XRLeftTrigger => XR?.LeftTrigger ?? 0f;
-	[ScriptProperty] public float XRRightTrigger => XR?.RightTrigger ?? 0f;
-	[ScriptProperty] public float XRLeftGrip => XR?.LeftGrip ?? 0f;
-	[ScriptProperty] public float XRRightGrip => XR?.RightGrip ?? 0f;
-	internal XRRuntime? XR { get; private set; }
->>>>>>> 57d6d2350d5ee9da0f9ca693f4ec3a47807252cd
 	[ScriptProperty]
 	public bool CursorLocked
 	{

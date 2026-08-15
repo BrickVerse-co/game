@@ -47,7 +47,9 @@ boot_splash/minimum_display_time=3000
 
 [xr]
 
-openxr/enabled=true
+openxr/enabled=false
+openxr/enabled.xr=true
+openxr/startup_alert=false
 openxr/default_action_map="res://openxr_action_map.tres"
 openxr/form_factor=0
 openxr/view_configuration=1
