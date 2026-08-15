@@ -190,30 +190,31 @@ public partial class TerrainEditor : Control
 	{
 		if (_grassSettings != null) return;
 		HBoxContainer top = GetNode<HBoxContainer>("Layout/Scroll/Top");
-		_grassSettings = new VBoxContainer { Name = "GrassSettings", CustomMinimumSize = new Vector2(245, 0), Visible = _tool == TerrainTool.Grass };
+		_grassSettings = new VBoxContainer { Name = "GrassSettings", CustomMinimumSize = new Vector2(520, 0), Visible = _tool == TerrainTool.Grass };
 		top.AddChild(_grassSettings);
 		_grassSettings.AddChild(new Label { Text = "SKINNED GRASS (BETA)", Modulate = new Color("a1a8b8") });
 		PanelContainer card = new(); _grassSettings.AddChild(card);
 		MarginContainer margin = new(); margin.AddThemeConstantOverride("margin_left", 10); margin.AddThemeConstantOverride("margin_top", 8); margin.AddThemeConstantOverride("margin_right", 10); margin.AddThemeConstantOverride("margin_bottom", 8); card.AddChild(margin);
-		VBoxContainer content = new(); content.AddThemeConstantOverride("separation", 5); margin.AddChild(content);
+		HBoxContainer columns = new(); columns.AddThemeConstantOverride("separation", 16); margin.AddChild(columns);
+		VBoxContainer global = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; global.AddThemeConstantOverride("separation", 5); columns.AddChild(global);
+		VBoxContainer local = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; local.AddThemeConstantOverride("separation", 5); columns.AddChild(local);
 		TerrainGrass? existing = GetGrassLayer(false);
-		content.AddChild(new Label { Text = "Global layer", Modulate = new Color("72c96b") });
-		AddGrassNumber(content, "Density", 0.05, 8, 0.05, existing?.Density ?? 1.2, (grass, value) => grass.Density = value);
-		AddGrassNumber(content, "Height", 0.05, 12, 0.05, existing?.BladeHeight ?? 1.4, (grass, value) => grass.BladeHeight = value);
-		AddGrassNumber(content, "Width", 0.01, 3, 0.01, existing?.BladeWidth ?? 0.13, (grass, value) => grass.BladeWidth = value);
-		AddGrassNumber(content, "Surface inset", -2, 2, 0.01, existing?.SurfaceOffset ?? -0.1, (grass, value) => grass.SurfaceOffset = value);
-		AddGrassNumber(content, "Wind strength", 0, 3, 0.05, existing?.WindStrength ?? 0.28, (grass, value) => grass.WindStrength = value);
-		AddGrassNumber(content, "Wind speed", 0, 10, 0.1, existing?.WindSpeed ?? 1.5, (grass, value) => grass.WindSpeed = value);
-		AddGrassColor(content, "Base color", existing?.BaseColor ?? new Color("327a32"), (grass, color) => grass.BaseColor = color);
-		AddGrassColor(content, "Tip color", existing?.TipColor ?? new Color("83c95b"), (grass, color) => grass.TipColor = color);
-		CheckButton conform = new() { Text = "Conform blades to surface", ButtonPressed = existing?.DeformToSurface ?? true }; conform.Toggled += value => GetGrassLayer(true)!.DeformToSurface = value; content.AddChild(conform);
-		content.AddChild(new HSeparator());
-		content.AddChild(new Label { Text = "Paint-at-location overrides", Modulate = new Color("6ac2ff") });
-		AddGrassNumber(content, "Local density", 0.05, 8, 0.05, existing?.PaintDensityScale ?? 1, (grass, value) => grass.PaintDensityScale = value);
-		AddGrassNumber(content, "Local height", 0.05, 8, 0.05, existing?.PaintHeightScale ?? 1, (grass, value) => grass.PaintHeightScale = value);
-		AddGrassNumber(content, "Local width", 0.05, 8, 0.05, existing?.PaintWidthScale ?? 1, (grass, value) => grass.PaintWidthScale = value);
-		AddGrassColor(content, "Local tint", existing?.PaintColor ?? Colors.White, (grass, color) => grass.PaintColor = color);
-		content.AddChild(new Label { Text = "Local values are stored on newly painted blades. Hold Shift while painting to erase.", AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color("9aa8ba") });
+		global.AddChild(new Label { Text = "Global layer", Modulate = new Color("72c96b") });
+		AddGrassNumber(global, "Density", 0.05, 8, 0.05, existing?.Density ?? 1.2, (grass, value) => grass.Density = value);
+		AddGrassNumber(global, "Height", 0.05, 12, 0.05, existing?.BladeHeight ?? 1.4, (grass, value) => grass.BladeHeight = value);
+		AddGrassNumber(global, "Width", 0.01, 3, 0.01, existing?.BladeWidth ?? 0.13, (grass, value) => grass.BladeWidth = value);
+		AddGrassNumber(global, "Surface inset", -2, 2, 0.01, existing?.SurfaceOffset ?? -0.1, (grass, value) => grass.SurfaceOffset = value);
+		AddGrassNumber(global, "Wind strength", 0, 3, 0.05, existing?.WindStrength ?? 0.28, (grass, value) => grass.WindStrength = value);
+		AddGrassNumber(global, "Wind speed", 0, 10, 0.1, existing?.WindSpeed ?? 1.5, (grass, value) => grass.WindSpeed = value);
+		AddGrassColor(global, "Base color", existing?.BaseColor ?? new Color("327a32"), (grass, color) => grass.BaseColor = color);
+		AddGrassColor(global, "Tip color", existing?.TipColor ?? new Color("83c95b"), (grass, color) => grass.TipColor = color);
+		CheckButton conform = new() { Text = "Conform blades to surface", ButtonPressed = existing?.DeformToSurface ?? true }; conform.Toggled += value => GetGrassLayer(true)!.DeformToSurface = value; global.AddChild(conform);
+		local.AddChild(new Label { Text = "Paint-at-location", Modulate = new Color("6ac2ff") });
+		AddGrassNumber(local, "Density", 0.05, 8, 0.05, existing?.PaintDensityScale ?? 1, (grass, value) => grass.PaintDensityScale = value);
+		AddGrassNumber(local, "Height", 0.05, 8, 0.05, existing?.PaintHeightScale ?? 1, (grass, value) => grass.PaintHeightScale = value);
+		AddGrassNumber(local, "Width", 0.05, 8, 0.05, existing?.PaintWidthScale ?? 1, (grass, value) => grass.PaintWidthScale = value);
+		AddGrassColor(local, "Tint", existing?.PaintColor ?? Colors.White, (grass, color) => grass.PaintColor = color);
+		local.AddChild(new Label { Text = "Local values are stored on newly painted blades. Hold Shift while painting to erase.", AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color("9aa8ba") });
 	}
 
 	private void AddGrassNumber(VBoxContainer parent, string label, double min, double max, double step, double initial, Action<TerrainGrass, float> apply)
