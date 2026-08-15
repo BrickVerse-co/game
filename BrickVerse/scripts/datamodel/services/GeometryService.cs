@@ -20,7 +20,14 @@ public sealed partial class GeometryService : Instance
 		result.Position = entities[0].Position;
 		result.Parent = entities[0].Parent ?? Root.Environment;
 		result.SetGeometry(await BakeEntities(entities, result.GDNode3D.GlobalTransform));
-		foreach (Entity entity in entities) { entity.Parent = result; entity.IsHidden = true; entity.CanCollide = false; }
+		foreach (Entity entity in entities)
+		{
+			Transform3D transform = entity.GDNode3D.GlobalTransform;
+			entity.Parent = result;
+			entity.GDNode3D.GlobalTransform = transform;
+			entity.IsHidden = true;
+			entity.CanCollide = false;
+		}
 #if CREATOR
 		Root.CreatorContext.Selections.SelectOnly(result);
 #endif
