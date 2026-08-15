@@ -120,7 +120,7 @@ public partial class ExplorerTree : Tree
 		return true;
 	}
 
-	public override void _DropData(Vector2 atPosition, Variant data)
+	public override async void _DropData(Vector2 atPosition, Variant data)
 	{
 		CreatorHistory history = Root.CreatorContext.History;
 		TreeItem targetItem = GetItemAtPosition(atPosition);
@@ -141,6 +141,14 @@ public partial class ExplorerTree : Tree
 
 		switch (dragData)
 		{
+			case ToolboxAssetDragData toolboxAsset:
+				await ToolboxCard.InsertAssetAsync(
+					new BrickVerse.Schemas.API.APILibraryItem { ID = toolboxAsset.AssetID, Name = toolboxAsset.AssetName },
+					(BrickVerse.Schemas.API.LibraryQueryTypeEnum)toolboxAsset.AssetType,
+					target
+				);
+				Root.PlayerGUI.GrabFocus();
+				return;
 			case InstanceDragData instanceDrag:
 				{
 					foreach (Instance item in instanceDrag.Instances)
