@@ -523,7 +523,15 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 				LuaStatus status;
 				lock (thread)
 				{
-					status = thread.Resume(from, narg);
+					long profileStartedAt = LuauProfiler.Timestamp();
+					try
+					{
+						status = thread.Resume(from, narg);
+					}
+					finally
+					{
+						LuauProfiler.Record(script, profileStartedAt);
+					}
 				}
 
 				if (!script.ShouldContinue) return;

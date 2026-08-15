@@ -24,6 +24,10 @@ public partial class DebugConsoleTab : Control
 	private int _lastRenderedIndex = 0;
 	private bool _needsFullRebuild = false;
 	private bool _hasPendingAppend = false;
+	private string _search = "";
+	private bool _showInfo = true;
+	private bool _showWarnings = true;
+	private bool _showErrors = true;
 
 	public List<LogData> Logs = [];
 	public HashSet<string> ShownLogs = [];
@@ -35,8 +39,32 @@ public partial class DebugConsoleTab : Control
 	{
 		Logger = CoreUIRoot.Singleton.Root.ScriptService.Logger;
 		TextLabel.Text = "";
+		Control originalParent = (Control)TextLabel.GetParent();
+		originalParent.RemoveChild(TextLabel);
+		VBoxContainer layout = new();
+		originalParent.AddChild(layout);
+		HBoxContainer toolbar = new();
+		layout.AddChild(toolbar);
+		LineEdit search = new() { PlaceholderText = "Search output…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		search.TextChanged += value => { _search = value; _needsFullRebuild = true; };
+		toolbar.AddChild(search);
+		AddFilter(toolbar, "Info", true, value => _showInfo = value);
+		AddFilter(toolbar, "Warnings", true, value => _showWarnings = value);
+		AddFilter(toolbar, "Errors", true, value => _showErrors = value);
+		Button clear = new() { Text = "Clear" };
+		clear.Pressed += () => { Logs.Clear(); ShownLogs.Clear(); _needsFullRebuild = true; };
+		toolbar.AddChild(clear);
+		TextLabel.SizeFlagsVertical = SizeFlags.ExpandFill;
+		layout.AddChild(TextLabel);
 		Logger.NewLog += OnNewLog;
 		Logger.LogSynchronized += OnLogSynchronized;
+	}
+
+	private void AddFilter(Control parent, string label, bool enabled, System.Action<bool> setter)
+	{
+		CheckButton filter = new() { Text = label, ButtonPressed = enabled };
+		filter.Toggled += value => { setter(value); _needsFullRebuild = true; };
+		parent.AddChild(filter);
 	}
 
 	public override void _Process(double delta)
@@ -119,6 +147,7 @@ public partial class DebugConsoleTab : Control
 
 	private void AppendSingleLog(LogData item)
 	{
+		if (!ShouldShow(item)) { _lastRenderedIndex++; return; }
 		_textBuilder.Clear();
 		BuildLogLine(_textBuilder, item);
 		TextLabel.AppendText(_textBuilder.ToString());
@@ -130,12 +159,22 @@ public partial class DebugConsoleTab : Control
 		_textBuilder.Clear();
 
 		foreach (LogData item in Logs)
-			BuildLogLine(_textBuilder, item);
+			if (ShouldShow(item)) BuildLogLine(_textBuilder, item);
 
 		TextLabel.Text = _textBuilder.ToString();
 		_lastRenderedIndex = Logs.Count;
 		_needsFullRebuild = false;
 		_hasPendingAppend = false;
+	}
+
+	private bool ShouldShow(LogData item)
+	{
+		if (item.LogType == LogTypeEnum.Info && !_showInfo) return false;
+		if (item.LogType == LogTypeEnum.Warning && !_showWarnings) return false;
+		if (item.LogType == LogTypeEnum.Error && !_showErrors) return false;
+		return _search.Length == 0
+			|| item.Content.Contains(_search, System.StringComparison.OrdinalIgnoreCase)
+			|| item.Source.Contains(_search, System.StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static void BuildLogLine(StringBuilder sb, LogData item)
