@@ -551,6 +551,19 @@ public partial class Instance : NetworkedObject
 		return null;
 	}
 
+	/// <summary>Returns the Actor containing this instance, or nil outside an Actor.</summary>
+	[ScriptMethod]
+	public Actor? GetActor()
+	{
+		Instance? current = this;
+		while (current != null)
+		{
+			if (current is Actor actor) return actor;
+			current = current.Parent;
+		}
+		return null;
+	}
+
 	[ScriptLegacyMethod("FindChildByClass")]
 	public Instance? LegacyFindChildByClass(string className)
 	{

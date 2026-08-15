@@ -49,6 +49,8 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	private static int _allocsSinceLastGC = 0;
 
 	internal LuaState GlobalLuaState = null!;
+	private readonly Dictionary<Actor, LuaState> _actorLuaStates = [];
+	private readonly object _actorLuaStatesLock = new();
 
 	private static readonly IntPtr _internalScriptPtr = 0x61;
 	private static readonly IntPtr _loggerPtr = 0x67;
@@ -105,8 +107,12 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	public LuauProvider()
 	{
 		Singleton = this;
+		GlobalLuaState = CreateGlobalState();
+	}
+
+	private LuaState CreateGlobalState()
+	{
 		LuaState state = new();
-		GlobalLuaState = state;
 		InitializeCache(state);
 		state.OpenLibs();
 
@@ -146,6 +152,8 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		{
 			state.Pop(1); // pop string
 		}
+
+		return state;
 	}
 
 	public void Run(Script script)
@@ -189,7 +197,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 	public LuaState InitalizeScript(Script script)
 	{
-		LuaState state = NewThread(GlobalLuaState);
+		LuaState state = NewThread(GetExecutionDomain(script));
 		script.LuauState = state;
 
 		state.SandboxGlobals();
@@ -323,6 +331,22 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		script.LuauMainThread = mainThread;
 
 		return mainThread;
+	}
+
+	private LuaState GetExecutionDomain(Script script)
+	{
+		Actor? actor = script.GetActor();
+		if (actor == null) return GlobalLuaState;
+
+		lock (_actorLuaStatesLock)
+		{
+			if (!_actorLuaStates.TryGetValue(actor, out LuaState? state))
+			{
+				state = CreateGlobalState();
+				_actorLuaStates.Add(actor, state);
+			}
+			return state;
+		}
 	}
 
 	public async Task CallAsync(Script script, string funcName, object?[]? args)
@@ -1915,7 +1939,15 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		return GetGlobalTablePtr<LogDispatcher>(state, _loggerPtr)!;
 	}
 
-	public void Dispose() { }
+	public void Dispose()
+	{
+		lock (_actorLuaStatesLock)
+		{
+			foreach (LuaState state in _actorLuaStates.Values) state.Dispose();
+			_actorLuaStates.Clear();
+		}
+		GlobalLuaState.Dispose();
+	}
 
 	private readonly struct MethodsCacheKey(Type type, string methodName, bool isCompatibility) : IEquatable<MethodsCacheKey>
 	{
