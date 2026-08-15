@@ -69,6 +69,7 @@ BrickVerseOpenIap="*res://scripts/mobile/utils/open_iap_bridge.gd"
 
 build/channel=""
 build/version=""
+build/commit=""
 
 [debug]
 

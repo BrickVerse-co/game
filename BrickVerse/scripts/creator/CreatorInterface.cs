@@ -854,7 +854,10 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	private void OpenMediaUploadMenu(MediaUploadPopup.MediaKind kind)
 	{
-		MediaUploadPopup popup = new(kind);
+		MediaUploadPopup popup = Globals.CreateInstanceFromScene<MediaUploadPopup>(
+			"res://scenes/creator/popups/media_upload.tscn"
+		);
+		popup.Configure(kind);
 		PopupWindow(popup);
 		popup.Open();
 	}

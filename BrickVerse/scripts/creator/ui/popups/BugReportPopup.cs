@@ -72,8 +72,26 @@ public sealed partial class BugReportPopup : Window
 	private static string BuildEnvironment()
 	{
 		string world = World.Current?.Name ?? "No world open";
-		return $"- Creator: {Globals.AppVersion}\n- Build: {ProjectSettings.GetSetting("brickverse/build/version", "development").AsString()}"
-			+ $"\n- Channel: {ProjectSettings.GetSetting("brickverse/build/channel", "debug").AsString()}"
+		return $"- Creator: {Globals.AppVersion}\n- Build: {ResolveBuildNumber()}"
+			+ $"\n- Channel: {ResolveBuildChannel()}"
 			+ $"\n- OS: {OS.GetName()} {OS.GetVersion()}\n- CPU: {OS.GetProcessorName()}\n- Renderer: {RenderingServer.GetVideoAdapterName()}\n- World: {world}";
+	}
+
+	private static string ResolveBuildNumber()
+	{
+		string configuredBuild = ProjectSettings.GetSetting("brickverse/build/version", "").AsString().Trim();
+		if (!string.IsNullOrWhiteSpace(configuredBuild)) return configuredBuild;
+
+		return string.IsNullOrWhiteSpace(Globals.ShortBuildCommit)
+			? $"local-{Globals.AppVersion}"
+			: $"local-{Globals.ShortBuildCommit}";
+	}
+
+	private static string ResolveBuildChannel()
+	{
+		string configuredChannel = ProjectSettings.GetSetting("brickverse/build/channel", "").AsString().Trim().ToLowerInvariant();
+		if (!string.IsNullOrWhiteSpace(configuredChannel)) return configuredChannel;
+		if (OS.IsDebugBuild()) return "debug";
+		return Globals.IsBetaBuild ? "beta" : "prod";
 	}
 }

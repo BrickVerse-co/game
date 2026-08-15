@@ -82,6 +82,8 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	public const string BuiltInAudioLocation = "res://assets/audio/built-in";
 	public const float MobileScale = 2.5f;
 	public static string AppVersion { get; private set; } = "";
+	public static string BuildCommit { get; private set; } = "";
+	public static string ShortBuildCommit => BuildCommit.Length > 8 ? BuildCommit[..8] : BuildCommit;
 	public static string MajorAppVersion { get; private set; } = "2";
 	public static Node? CurrentAppEntryNode { get; private set; }
 	public static AppEntryEnum CurrentAppEntry { get; private set; }
@@ -173,10 +175,18 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		GDAvailable = true;
 
 		AppVersion = (string)ProjectSettings.GetSetting("application/config/version");
+		BuildCommit = ProjectSettings.GetSetting("brickverse/build/commit", "").AsString().Trim();
+		if (string.IsNullOrWhiteSpace(BuildCommit))
+			BuildCommit = System.Environment.GetEnvironmentVariable("GITHUB_SHA")?.Trim() ?? "";
+#if CREATOR
+		if (string.IsNullOrWhiteSpace(BuildCommit) && OS.IsDebugBuild())
+			BuildCommit = ResolveLocalGitCommit();
+#endif
 
 		if (OS.IsDebugBuild()) AppVersion += "+dev";
 
 		BV.Print($"BrickVerse v{AppVersion}");
+		if (!string.IsNullOrWhiteSpace(BuildCommit)) BV.Print($"Build commit: {BuildCommit}");
 		BV.Print("https://brickverse.gg/");
 		BV.Print("-- System Info --");
 		BV.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
@@ -212,6 +222,34 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		}
 #endif
 	}
+
+#if CREATOR
+	private static string ResolveLocalGitCommit()
+	{
+		try
+		{
+			using System.Diagnostics.Process process = new();
+			process.StartInfo = new System.Diagnostics.ProcessStartInfo
+			{
+				FileName = "git",
+				Arguments = "rev-parse --short=8 HEAD",
+				WorkingDirectory = ProjectSettings.GlobalizePath("res://"),
+				UseShellExecute = false,
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			};
+			if (!process.Start()) return "";
+			string output = process.StandardOutput.ReadToEnd().Trim();
+			process.WaitForExit(1500);
+			return process.ExitCode == 0 ? output : "";
+		}
+		catch
+		{
+			return "";
+		}
+	}
+#endif
 
 	public override void _Process(double delta)
 	{

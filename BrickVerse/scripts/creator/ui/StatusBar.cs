@@ -24,7 +24,13 @@ public partial class StatusBar : Control
 	public override void _Ready()
 	{
 		CreatorService.Interface.StatusBar = this;
-		_versionLabel.Text = $"BrickVerse Creator {Globals.AppVersion}";
+		string commit = Globals.ShortBuildCommit;
+		_versionLabel.Text = string.IsNullOrWhiteSpace(commit)
+			? $"BrickVerse Creator {Globals.AppVersion}"
+			: $"BrickVerse Creator {Globals.AppVersion}  •  {commit}";
+		_versionLabel.TooltipText = string.IsNullOrWhiteSpace(Globals.BuildCommit)
+			? "Build commit unavailable"
+			: $"Git commit: {Globals.BuildCommit}";
 
 #if CREATOR
 		CreatorAPI.UserAuthenticated += UpdateUserDisplay;

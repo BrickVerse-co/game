@@ -121,6 +121,18 @@ public static class ClientSettingsRegistry
 				Step = 0.1f
 			});
 
+		defs.Add(ClientSettingKeys.General.ShowOwnNametag,
+			new SettingDef<bool>
+			{
+				Key = ClientSettingKeys.General.ShowOwnNametag,
+				SectionKey = "general",
+				Label = "Show Own Nametag",
+				Description = "Show your username, badges, device, and health above your own character when the experience allows it.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
 		defs.Add(ClientSettingKeys.Display.UiScale,
 			new SettingDef<float>
 			{

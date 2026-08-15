@@ -11,6 +11,7 @@ public static class ClientSettingKeys
 		public const string CtrlLock = "general.ctrl_lock";
 		public const string MasterVolume = "general.master_volume";
 		public const string CameraSensitivity = "general.camera_sensitivity";
+		public const string ShowOwnNametag = "general.show_own_nametag";
 	}
 
 	public static class Chat

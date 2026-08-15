@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
+using BrickVerse.Client.Settings;
 
 namespace BrickVerse.Client;
 
@@ -49,10 +50,21 @@ public partial class Nametag : Node3D
 			useNametag = (cam.Position - GlobalPosition).Length() < Target.NametagVisibleRadius;
 		}
 
-		// Hide if self is Target
-		if (Target == Target.Root.Players?.LocalPlayer)
+		if (Target is Player playerTarget)
 		{
-			useNametag = false;
+			bool isLocalPlayer = Target == Target.Root.Players?.LocalPlayer;
+			if (isLocalPlayer)
+			{
+				bool userAllowsOwnNametag = ClientSettingsService.Instance == null
+					|| ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.General.ShowOwnNametag);
+				useNametag = useNametag
+					&& playerTarget.ShowNametagToLocalPlayer
+					&& userAllowsOwnNametag;
+			}
+			else
+			{
+				useNametag = useNametag && playerTarget.ShowNametagToOtherPlayers;
+			}
 		}
 
 		Visible = useNametag;

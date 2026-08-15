@@ -8,6 +8,7 @@ using BrickVerse.Creator.Spatial;
 using BrickVerse.Creator.UI;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Utils;
 using System.Collections.Generic;
 using System.Linq;
@@ -459,20 +460,28 @@ public sealed partial class Gizmos : Node
 	public static Instance? GetModelRoot(Instance instance)
 	{
 		Instance? current = instance;
-		Instance? topModel = instance;
+		Instance? authoredRoot = null;
 
 		while (current != null)
 		{
+			// Saved/imported prefabs explicitly point every member at their root.
+			// Prefer that boundary even when the root is not a Model subclass.
 			if (current.ModelRoot != null)
-				topModel = current.ModelRoot;
-			else if (current is Model model)
-				topModel = model;
-			else if (current is Physical phy)
-				topModel = phy;
+				authoredRoot = current.ModelRoot;
+
+			// Models and folders are Creator grouping boundaries. Continue walking
+			// so nested content selects the outer authored group by default.
+			if (current is IGroup)
+				authoredRoot = current;
+
+			// A linked model is itself a prefab boundary.
+			if (current.LinkedModel != null)
+				authoredRoot = current;
+
 			current = current.Parent;
 		}
 
-		return topModel;
+		return authoredRoot ?? instance;
 	}
 
 	public override void _Input(InputEvent @event)
@@ -524,10 +533,14 @@ public sealed partial class Gizmos : Node
 
 		if (hoveringOn != null)
 		{
-			selectInstance = Input.IsKeyPressed(Key.Alt) ? GetModelRoot(hoveringOn) ?? hoveringOn : hoveringOn;
+			// Roblox Studio-style selection: click selects the complete authored
+			// model/prefab, while Alt-click deliberately drills into a child.
+			selectInstance = Input.IsKeyPressed(Key.Alt)
+				? hoveringOn
+				: GetModelRoot(hoveringOn) ?? hoveringOn;
 		}
 
-		if (hoveringOn is Dynamic sdyn && !sdyn.Locked)
+		if (selectInstance is Dynamic sdyn && !sdyn.Locked)
 		{
 			_hoverBox.Target = sdyn;
 		}
