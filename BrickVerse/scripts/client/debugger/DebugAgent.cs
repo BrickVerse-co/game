@@ -170,6 +170,10 @@ public class DebugAgent
 		{
 			BV.CallOnMainThread(() => ClientEntry.ApplyLocalTestViewport(viewportRect));
 		}
+		else if (msg is MessageRuntimeDeviceEmulation emulation)
+		{
+			BV.CallOnMainThread(() => World.Current?.Input.ApplyCreatorEmulation(emulation));
+		}
 	}
 
 	public async Task SendMessage(IDebugMessage msg)

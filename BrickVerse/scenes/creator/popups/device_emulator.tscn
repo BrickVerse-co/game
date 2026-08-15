@@ -1,0 +1,194 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/DeviceEmulatorPopup.cs" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/creator/creator.tres" id="2"]
+
+[node name="DeviceEmulator" type="Window" node_paths=PackedStringArray("_profile", "_screen", "_enabled", "_preview", "_leftX", "_leftY", "_rightX", "_rightY", "_headYaw", "_headHeight", "_handSpread", "_primary", "_secondary", "_leftTrigger", "_rightTrigger", "_status")]
+title = "Device Emulator"
+initial_position = 1
+size = Vector2i(590, 720)
+min_size = Vector2i(480, 560)
+theme = ExtResource("2")
+script = ExtResource("1")
+_profile = NodePath("Margin/Scroll/Content/Profile")
+_screen = NodePath("Margin/Scroll/Content/Screen")
+_enabled = NodePath("Margin/Scroll/Content/Enabled")
+_preview = NodePath("Margin/Scroll/Content/Preview")
+_leftX = NodePath("Margin/Scroll/Content/GamepadGrid/LeftX")
+_leftY = NodePath("Margin/Scroll/Content/GamepadGrid/LeftY")
+_rightX = NodePath("Margin/Scroll/Content/GamepadGrid/RightX")
+_rightY = NodePath("Margin/Scroll/Content/GamepadGrid/RightY")
+_headYaw = NodePath("Margin/Scroll/Content/VRGrid/HeadYaw")
+_headHeight = NodePath("Margin/Scroll/Content/VRGrid/HeadHeight")
+_handSpread = NodePath("Margin/Scroll/Content/VRGrid/HandSpread")
+_primary = NodePath("Margin/Scroll/Content/Buttons/Primary")
+_secondary = NodePath("Margin/Scroll/Content/Buttons/Secondary")
+_leftTrigger = NodePath("Margin/Scroll/Content/Buttons/LeftTrigger")
+_rightTrigger = NodePath("Margin/Scroll/Content/Buttons/RightTrigger")
+_status = NodePath("Margin/Scroll/Content/Status")
+
+[node name="Margin" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="Scroll" type="ScrollContainer" parent="Margin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Device Emulator"
+
+[node name="Description" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "Preview responsive layouts in edit mode and inject synthetic device input into the active play-test client."
+autowrap_mode = 2
+
+[node name="Enabled" type="CheckButton" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "Enable input and device emulation"
+
+[node name="ProfileLabel" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "DEVICE PROFILE"
+
+[node name="Profile" type="OptionButton" parent="Margin/Scroll/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+item_count = 5
+popup/item_0/text = "Desktop PC"
+popup/item_1/text = "Phone / touch"
+popup/item_2/text = "Tablet / touch"
+popup/item_3/text = "Console / gamepad"
+popup/item_4/text = "VR headset + controllers"
+
+[node name="ScreenLabel" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "SCREEN-SIZE GUIDE (NO PLAY TEST REQUIRED)"
+
+[node name="Screen" type="OptionButton" parent="Margin/Scroll/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+item_count = 5
+popup/item_0/text = "No guide"
+popup/item_1/text = "Phone portrait · 390 × 844"
+popup/item_2/text = "Tablet portrait · 1024 × 1366"
+popup/item_3/text = "Console / TV · 1920 × 1080"
+popup/item_4/text = "Phone landscape · 1280 × 720"
+
+[node name="Preview" type="CheckButton" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "Show safe preview frame over editor viewport"
+
+[node name="GamepadTitle" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Gamepad input"
+
+[node name="GamepadGrid" type="GridContainer" parent="Margin/Scroll/Content"]
+layout_mode = 2
+columns = 2
+
+[node name="LeftXLabel" type="Label" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+text = "Left stick X"
+[node name="LeftX" type="HSlider" parent="Margin/Scroll/Content/GamepadGrid"]
+custom_minimum_size = Vector2(260, 28)
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+[node name="LeftYLabel" type="Label" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+text = "Left stick Y"
+[node name="LeftY" type="HSlider" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+[node name="RightXLabel" type="Label" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+text = "Right stick X"
+[node name="RightX" type="HSlider" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+[node name="RightYLabel" type="Label" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+text = "Right stick Y"
+[node name="RightY" type="HSlider" parent="Margin/Scroll/Content/GamepadGrid"]
+layout_mode = 2
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+
+[node name="Buttons" type="GridContainer" parent="Margin/Scroll/Content"]
+layout_mode = 2
+columns = 2
+[node name="Primary" type="CheckButton" parent="Margin/Scroll/Content/Buttons"]
+layout_mode = 2
+text = "A / Primary"
+[node name="Secondary" type="CheckButton" parent="Margin/Scroll/Content/Buttons"]
+layout_mode = 2
+text = "B / Secondary"
+[node name="LeftTrigger" type="CheckButton" parent="Margin/Scroll/Content/Buttons"]
+layout_mode = 2
+text = "Left trigger"
+[node name="RightTrigger" type="CheckButton" parent="Margin/Scroll/Content/Buttons"]
+layout_mode = 2
+text = "Right trigger"
+
+[node name="VRTitle" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "VR pose simulation"
+
+[node name="VRGrid" type="GridContainer" parent="Margin/Scroll/Content"]
+layout_mode = 2
+columns = 2
+[node name="HeadYawLabel" type="Label" parent="Margin/Scroll/Content/VRGrid"]
+layout_mode = 2
+text = "Head yaw"
+[node name="HeadYaw" type="HSlider" parent="Margin/Scroll/Content/VRGrid"]
+custom_minimum_size = Vector2(260, 28)
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 1.0
+[node name="HeadHeightLabel" type="Label" parent="Margin/Scroll/Content/VRGrid"]
+layout_mode = 2
+text = "Head height"
+[node name="HeadHeight" type="HSlider" parent="Margin/Scroll/Content/VRGrid"]
+layout_mode = 2
+min_value = 0.5
+max_value = 2.5
+step = 0.05
+value = 1.7
+[node name="HandSpreadLabel" type="Label" parent="Margin/Scroll/Content/VRGrid"]
+layout_mode = 2
+text = "Controller spread"
+[node name="HandSpread" type="HSlider" parent="Margin/Scroll/Content/VRGrid"]
+layout_mode = 2
+min_value = 0.1
+max_value = 1.2
+step = 0.05
+value = 0.45
+
+[node name="Status" type="Label" parent="Margin/Scroll/Content"]
+layout_mode = 2
+text = "Start Play Test to inject input. Screen preview works in edit mode."
+autowrap_mode = 2

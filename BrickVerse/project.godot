@@ -45,6 +45,20 @@ config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
 
+<<<<<<< Updated upstream
+=======
+[xr]
+
+openxr/enabled=false
+openxr/enabled.xr=true
+openxr/startup_alert=false
+openxr/default_action_map="res://openxr_action_map.tres"
+openxr/form_factor=0
+openxr/view_configuration=1
+openxr/reference_space=1
+shaders/enabled=true
+
+>>>>>>> Stashed changes
 [autoload]
 
 Globals="*res://scripts/shared/Globals.cs"

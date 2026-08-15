@@ -29,11 +29,15 @@ public partial class RecentPlaceCard : Button
 		_pathLabel.Text = Data.FolderPath;
 		_pathLabel.TooltipText = Data.FolderPath;
 
-		if (Data.IconID is > 0)
+		string thumbnailUrl = Data.ThumbnailUrl;
+		if (string.IsNullOrWhiteSpace(thumbnailUrl) && Data.IconID is > 0)
 		{
-			string thumbnailUrl = Globals.ApiEndpoint.PathJoin(
+			thumbnailUrl = Globals.ApiEndpoint.PathJoin(
 				"/v3/thumbnails/asset/" + Data.IconID.Value
 			);
+		}
+		if (!string.IsNullOrWhiteSpace(thumbnailUrl))
+		{
 			WebAssetLoader.Singleton.GetResource(new() { URL = thumbnailUrl }, resource =>
 			{
 				if (IsInstanceValid(_thumbnail) && resource is Texture2D texture)

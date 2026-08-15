@@ -1,0 +1,7 @@
+gg.brickverse.webview.plugin-pngs-0 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\build\generated\res\pngs\release
+gg.brickverse.webview.plugin-resValues-1 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\build\generated\res\resValues\release
+gg.brickverse.webview.plugin-mergeReleaseResources-2 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\build\intermediates\incremental\release\mergeReleaseResources\merged.dir
+gg.brickverse.webview.plugin-mergeReleaseResources-3 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\build\intermediates\incremental\release\mergeReleaseResources\stripped.dir
+gg.brickverse.webview.plugin-release-4 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\build\intermediates\merged_res\release\mergeReleaseResources
+gg.brickverse.webview.plugin-main-5 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\main\res
+gg.brickverse.webview.plugin-release-6 C:\Users\tyran\OneDrive\Desktop\BrickVerseEngine\BrickVerse\addons\brickverse-webview\android\plugin\src\release\res

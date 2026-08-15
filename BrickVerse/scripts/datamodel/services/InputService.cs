@@ -13,6 +13,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using static BrickVerse.Datamodel.Environment;
+using BrickVerse.Schemas.Debugger;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -47,6 +48,58 @@ public sealed partial class InputService : Instance
 	[ScriptProperty] public bool IsInputFocused => !IsGameFocused;
 	[ScriptProperty] public bool IsGamepadConnected { get; private set; } = false;
 	[ScriptProperty] public bool IsMenuOpened { get; internal set; } = false;
+<<<<<<< Updated upstream
+=======
+	[ScriptProperty] public string LastInputDevice { get; private set; } = "KeyboardMouse";
+	private bool _creatorEmulation;
+	private string _creatorDeviceType = "PC";
+	[ScriptProperty] public bool IsVR => VRService.CreatorEmulationEnabled || XR?.IsActive == true;
+	[ScriptProperty] public string DeviceType => _creatorEmulation ? _creatorDeviceType : IsVR ? "VR" : Globals.IsMobileBuild ? (Math.Min(ScreenWidth, ScreenHeight) >= 720 ? "Tablet" : "Phone") : OS.HasFeature("console") ? "Console" : "PC";
+	[ScriptProperty] public Vector3 XRHeadPosition => XR?.HeadPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRLeftHandPosition => XR?.LeftHandPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRRightHandPosition => XR?.RightHandPose.Origin ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRHeadRotation => XR?.HeadPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRLeftHandRotation => XR?.LeftHandPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public Vector3 XRRightHandRotation => XR?.RightHandPose.Basis.GetEuler() ?? Vector3.Zero;
+	[ScriptProperty] public float XRLeftTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftTrigger : XR?.LeftTrigger ?? 0f;
+	[ScriptProperty] public float XRRightTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
+	[ScriptProperty] public float XRLeftGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
+	[ScriptProperty] public float XRRightGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
+	internal XRRuntime? XR { get; private set; }
+>>>>>>> Stashed changes
+
+	internal void ApplyCreatorEmulation(MessageRuntimeDeviceEmulation state)
+	{
+		_creatorEmulation = state.Enabled;
+		_creatorDeviceType = string.IsNullOrWhiteSpace(state.DeviceType) ? "PC" : state.DeviceType;
+		IsTouchscreen = state.Enabled ? state.Touchscreen : Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen");
+		IsGamepadConnected = state.Enabled ? state.Gamepad || state.VR : Input.GetConnectedJoypads().Count > 0;
+		if (state.Enabled) LastInputDevice = state.VR ? "VR" : state.Gamepad ? "Gamepad" : state.Touchscreen ? "Touch" : "KeyboardMouse";
+		VRService.ApplyCreatorEmulation(state);
+
+		ParseJoyAxis(JoyAxis.LeftX, state.Enabled ? state.LeftX : 0f);
+		ParseJoyAxis(JoyAxis.LeftY, state.Enabled ? state.LeftY : 0f);
+		ParseJoyAxis(JoyAxis.RightX, state.Enabled ? state.RightX : 0f);
+		ParseJoyAxis(JoyAxis.RightY, state.Enabled ? state.RightY : 0f);
+		ParseJoyButton(JoyButton.A, state.Enabled && state.PrimaryButton);
+		ParseJoyButton(JoyButton.B, state.Enabled && state.SecondaryButton);
+		ParseJoyButton(JoyButton.LeftShoulder, state.Enabled && state.LeftTrigger);
+		ParseJoyButton(JoyButton.RightShoulder, state.Enabled && state.RightTrigger);
+	}
+
+	private static void ParseJoyAxis(JoyAxis axis, float value) => Input.ParseInputEvent(new InputEventJoypadMotion
+	{
+		Device = 0,
+		Axis = axis,
+		AxisValue = Mathf.Clamp(value, -1f, 1f),
+	});
+
+	private static void ParseJoyButton(JoyButton button, bool pressed) => Input.ParseInputEvent(new InputEventJoypadButton
+	{
+		Device = 0,
+		ButtonIndex = button,
+		Pressed = pressed,
+	});
 
 	[ScriptProperty]
 	public bool CursorLocked

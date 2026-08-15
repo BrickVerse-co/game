@@ -85,6 +85,7 @@ public partial class CreatorSession : Node, IDisposable
 		}
 
 		Metadata = PackedFormat.ReadProjectMetadata(projectData);
+		Metadata = await ProjectManager.RefreshRemoteMetadata(Metadata, ProjectFilePath);
 		OldIndexFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectIndexName));
 		InputMapFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectInputMapName));
 		BVProjectFolderPath = Path.GetFullPath(ProjectFolderPath.PathJoin(".bvproject"));

@@ -245,6 +245,9 @@ public class DebugServer
 			Visible = visible
 		});
 
+	public void SetRuntimeDeviceEmulation(int processId, MessageRuntimeDeviceEmulation state) =>
+		SendToProcess(processId, state);
+
 	private void SendToProcess(int processId, IDebugMessage message)
 	{
 		foreach ((TcpClient client, ClientData data) in _clientToData)

@@ -5,8 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -26,6 +26,7 @@ public sealed partial class Menu : PanelContainer
 		public Shortcut? KeyShortcut;
 		public Action? Pressed;
 		public bool RequireGameOpen = false;
+		public string? RequiredBetaFeature;
 		public int Id = 0;
 		public int Index = 0;
 	}
@@ -77,18 +78,21 @@ public sealed partial class Menu : PanelContainer
 
 	public override void _Ready()
 	{
+		CreatorBetaFeatures.FeatureChanged += OnBetaFeatureChanged;
 		_menus.Add(
 			new() { Title = "File" },
 			[
 				new MenuButtonItem()
 				{
 					Text = "What's New",
+					Icon = "star",
 					Pressed = WhatsNewPopup.ShowLatest,
 				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
 					Text = "New",
+					Icon = "plus",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.N }],
@@ -98,6 +102,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Open",
+					Icon = "folder",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.O }],
@@ -108,6 +113,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Save",
+					Icon = "save",
 					RequireGameOpen = true,
 					KeyShortcut = new()
 					{
@@ -121,6 +127,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Save As...",
+					Icon = "save",
 					RequireGameOpen = true,
 					KeyShortcut = new()
 					{
@@ -140,6 +147,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Publish",
+					Icon = "publish",
 					RequireGameOpen = true,
 					Pressed = async () =>
 					{
@@ -158,6 +166,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Publish As...",
+					Icon = "rocket",
 					RequireGameOpen = true,
 					Pressed = async () =>
 					{
@@ -176,12 +185,16 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Edit Universe Details",
+					Icon = "edit",
 					RequireGameOpen = true,
 					Pressed = async () =>
 					{
 						if (World.Current != null)
 						{
-							OS.ShellOpen("https://brickverse.gg/creator/worlds/edit/" + World.Current.UniverseID);
+							OS.ShellOpen(
+								"https://brickverse.gg/creator/worlds/edit/"
+									+ World.Current.UniverseID
+							);
 						}
 						else
 						{
@@ -194,6 +207,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Open in Browser",
+					Icon = "external-link",
 					RequireGameOpen = true,
 					Pressed = async () =>
 					{
@@ -212,6 +226,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Exit",
+					Icon = "door-exit",
 					Pressed = () =>
 					{
 						Globals.Singleton.Quit();
@@ -226,6 +241,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Undo",
+					Icon = "arrow-counter-clockwise",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.Z }],
@@ -235,6 +251,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Redo",
+					Icon = "arrow-clockwise",
 					KeyShortcut = new()
 					{
 						Events =
@@ -253,6 +270,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Delete",
+					Icon = "trash",
 					KeyShortcut = new()
 					{
 						Events =
@@ -269,6 +287,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Duplicate",
+					Icon = "duplicate",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.D }],
@@ -281,6 +300,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Toggle Locked",
+					Icon = "lock",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.L }],
@@ -294,6 +314,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Select All",
+					Icon = "select-all",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.A }],
@@ -308,11 +329,6 @@ public sealed partial class Menu : PanelContainer
 					},
 				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem()
-				{
-					Text = "Input Manager",
-					Pressed = CreatorService.Interface.OpenInputManager,
-				},
 			]
 		);
 
@@ -322,6 +338,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "New Instance",
+					Icon = "plus",
 					KeyShortcut = new()
 					{
 						Events =
@@ -338,6 +355,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Upload Mesh",
+					Icon = "cube",
 					Pressed = () =>
 					{
 						CreatorService.Interface.OpenUploadMeshMenu();
@@ -346,6 +364,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Upload Texture",
+					Icon = "image-square",
 					Pressed = () =>
 					{
 						CreatorService.Interface.OpenUploadTextureMenu();
@@ -354,6 +373,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Upload Sound",
+					Icon = "waveform",
 					Pressed = () =>
 					{
 						CreatorService.Interface.OpenUploadSoundMenu();
@@ -368,6 +388,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Group",
+					Icon = "group",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.G }],
@@ -380,6 +401,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Ungroup",
+					Icon = "ungroup",
 					KeyShortcut = new()
 					{
 						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.U }],
@@ -392,6 +414,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Group Folder",
+					Icon = "folder",
 					KeyShortcut = new()
 					{
 						Events =
@@ -414,6 +437,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Group RigidBody",
+					Icon = "brick",
 					KeyShortcut = new()
 					{
 						Events =
@@ -437,6 +461,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Import",
+					Icon = "arrow-down",
 					Pressed = () =>
 					{
 						CreatorService.Interface.PromptImportModel();
@@ -445,6 +470,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Export",
+					Icon = "arrow-up",
 					Pressed = () =>
 					{
 						CreatorService.Interface.ExportSelectedModel();
@@ -485,18 +511,40 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Manage Addons",
+					Icon = "addon",
 					Pressed = CreatorInterface.PopupManageAddons,
 				},
 				new MenuButtonItem()
 				{
+					Text = "Input Manager",
+					Icon = "keyboard",
+					Pressed = CreatorService.Interface.OpenInputManager,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Device Emulator",
+					Icon = "gamepad",
+					RequiredBetaFeature = CreatorBetaFeatures.DeviceEmulator,
+					Pressed = DeviceEmulatorPopup.Open,
+				},
+				new MenuButtonItem()
+				{
 					Text = "Animation Editor",
+					Icon = "play-filled",
+					RequiredBetaFeature = CreatorBetaFeatures.AnimationEditor,
 					Pressed = CreatorService.Interface.OpenAnimationEditor,
 				},
-				new MenuAddonSlotItem() { Text = "Addons", RequireGameOpen = true },
+				new MenuAddonSlotItem()
+				{
+					Text = "Addons",
+					Icon = "addon",
+					RequireGameOpen = true,
+				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
 					Text = "Migrate Coordinates",
+					Icon = "route",
 					RequireGameOpen = true,
 					Pressed = () =>
 					{
@@ -522,6 +570,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Toggle Fullscreen",
+					Icon = "resize-handle",
 					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F11 }] },
 					Pressed = () =>
 					{
@@ -531,6 +580,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Show Runtime Debug Windows",
+					Icon = "code",
 					Pressed = () =>
 					{
 						CreatorService.Singleton.ShowRuntimeDebugWindows();
@@ -556,6 +606,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Open Documentation",
+					Icon = "book",
 					Pressed = () =>
 					{
 						OS.ShellOpen("https://developers.brickverse.gg/");
@@ -565,6 +616,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Report a Bug",
+					Icon = "bug",
 					Pressed = BugReportPopup.Open,
 				},
 			]
@@ -576,12 +628,14 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem()
 				{
 					Text = "Pack Current Project",
+					Icon = "archive",
 					RequireGameOpen = true,
 					Pressed = CreatorService.PackCurrentProject,
 				},
 				new MenuButtonItem()
 				{
 					Text = "Link Device",
+					Icon = "link",
 					Pressed = () =>
 					{
 						CreatorService.Interface.OpenLinkDevicePrompt();
@@ -662,6 +716,17 @@ public sealed partial class Menu : PanelContainer
 						}
 						menu.SetItemShortcut(index, btnI.KeyShortcut);
 					}
+					if (btnI.RequiredBetaFeature != null)
+					{
+						bool enabled = CreatorBetaFeatures.IsEnabled(btnI.RequiredBetaFeature);
+						menu.SetItemDisabled(index, !enabled);
+						menu.SetItemTooltip(
+							index,
+							enabled
+								? "Experimental Creator feature"
+								: $"Enable {btnI.Text} in Beta Features first"
+						);
+					}
 					addedCount++;
 				}
 				else if (item is MenuSeperatorItem st)
@@ -681,6 +746,30 @@ public sealed partial class Menu : PanelContainer
 		}
 
 		SwitchTo(null);
+	}
+
+	public override void _ExitTree()
+	{
+		CreatorBetaFeatures.FeatureChanged -= OnBetaFeatureChanged;
+	}
+
+	private void OnBetaFeatureChanged(string flag, bool enabled)
+	{
+		foreach ((MenuButtonMenus menu, MenuItem[] items) in _menus)
+		{
+			foreach (MenuItem item in items)
+			{
+				if (item is not MenuButtonItem button || button.RequiredBetaFeature != flag)
+					continue;
+				menu.Popup.SetItemDisabled(button.Index, !enabled);
+				menu.Popup.SetItemTooltip(
+					button.Index,
+					enabled
+						? "Experimental Creator feature"
+						: $"Enable {button.Text} in Beta Features first"
+				);
+			}
+		}
 	}
 
 	public void UpdateAddonMenu(AddonObject obj)
@@ -782,11 +871,20 @@ public sealed partial class Menu : PanelContainer
 				}
 				foreach (MenuItem item in items)
 				{
-					if (item is MenuButtonItem btnI && btnI.RequireGameOpen)
+					if (
+						item is MenuButtonItem btnI
+						&& (btnI.RequireGameOpen || btnI.RequiredBetaFeature != null)
+					)
 					{
 						try
 						{
-							mbtn.Popup.SetItemDisabled(btnI.Index, disabled);
+							bool betaDisabled =
+								btnI.RequiredBetaFeature != null
+								&& !CreatorBetaFeatures.IsEnabled(btnI.RequiredBetaFeature);
+							mbtn.Popup.SetItemDisabled(
+								btnI.Index,
+								btnI.RequireGameOpen && disabled || betaDisabled
+							);
 						}
 						catch (Exception e)
 						{
@@ -839,15 +937,15 @@ public sealed partial class Menu : PanelContainer
 		switch (idx)
 		{
 			case 0: // About BrickVerse
-				{
-					CreatorService.Interface.PopupCredits();
-					break;
-				}
+			{
+				CreatorService.Interface.PopupCredits();
+				break;
+			}
 			case 1: // Startup splash
-				{
-					StartupSplash.Singleton.Show();
-					break;
-				}
+			{
+				StartupSplash.Singleton.Show();
+				break;
+			}
 		}
 	}
 }

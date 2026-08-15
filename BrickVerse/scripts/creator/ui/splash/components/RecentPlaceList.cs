@@ -4,6 +4,8 @@
 
 using Godot;
 using BrickVerse.Creator.Managers;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using System.Threading.Tasks;
 
@@ -17,7 +19,18 @@ public partial class RecentPlaceList : Control
 
 	public override void _Ready()
 	{
+		CreatorAPI.UserAuthenticated += OnUserAuthenticated;
 		_ = LoadList();
+	}
+
+	public override void _ExitTree()
+	{
+		CreatorAPI.UserAuthenticated -= OnUserAuthenticated;
+	}
+
+	private void OnUserAuthenticated(OpenIdUserInfoResponse _)
+	{
+		Reload();
 	}
 
 	public void Reload()

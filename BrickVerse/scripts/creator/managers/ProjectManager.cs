@@ -9,6 +9,7 @@ using BrickVerse.Datamodel.Services;
 using BrickVerse.Formats;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -37,7 +38,7 @@ public static class ProjectManager
 			RecentData[] data = JsonSerializer.Deserialize(raw, RecentsFileGenerationContext.Default.RecentDataArray) ?? [];
 
 			List<RecentData> finalData = [];
-			List<Task> tasks = [];
+			List<Task<RecentData?>> tasks = [];
 
 			foreach (RecentData r in data)
 			{
@@ -48,30 +49,7 @@ public static class ProjectManager
 					string projectMetaFile = Path.GetFullPath(Path.Join(r.FolderPath, Globals.ProjectMetaFileName));
 					if (!File.Exists(projectMetaFile)) continue;
 
-					tasks.Add(Task.Run(() =>
-					{
-						try
-						{
-							string projectTxt = File.ReadAllText(projectMetaFile);
-							CreatorProjectMetadata metadata = JsonSerializer.Deserialize(projectTxt, ProjectJSONGenerationContext.Default.CreatorProjectMetadata);
-
-							lock (finalData)
-							{
-								finalData.Add(new()
-								{
-									WorldId = metadata.WorldId,
-									PlaceName = metadata.ProjectName,
-									IconID = metadata.IconID,
-									FolderPath = r.FolderPath,
-									LastOpened = r.LastOpened
-								});
-							}
-						}
-						catch (Exception ex)
-						{
-							BV.Print($"failed to load recent project: {ex.Message}");
-						}
-					}));
+					tasks.Add(LoadRecentProject(r));
 				}
 				else
 				{
@@ -79,7 +57,11 @@ public static class ProjectManager
 				}
 			}
 
-			await Task.WhenAll(tasks);
+			if (tasks.Count > 0)
+			{
+				RecentData?[] loaded = await Task.WhenAll(tasks);
+				finalData.AddRange(loaded.Where(x => x.HasValue).Select(x => x!.Value));
+			}
 
 			return [.. finalData.OrderByDescending(x => x.LastOpened)];
 		}
@@ -87,6 +69,102 @@ public static class ProjectManager
 		{
 			return [];
 		}
+	}
+
+	private static async Task<RecentData?> LoadRecentProject(RecentData recent)
+	{
+		string projectMetaFile = Path.GetFullPath(Path.Join(recent.FolderPath, Globals.ProjectMetaFileName));
+		try
+		{
+			string projectTxt = await File.ReadAllTextAsync(projectMetaFile);
+			CreatorProjectMetadata metadata = JsonSerializer.Deserialize(projectTxt, ProjectJSONGenerationContext.Default.CreatorProjectMetadata);
+			metadata = await RefreshRemoteMetadata(metadata, projectMetaFile);
+			return new RecentData
+			{
+				WorldId = metadata.WorldId,
+				UniverseId = metadata.UniverseId,
+				PlaceName = metadata.ProjectName,
+				IconID = metadata.IconID,
+				ThumbnailUrl = metadata.ThumbnailUrl,
+				FolderPath = recent.FolderPath,
+				LastOpened = recent.LastOpened,
+			};
+		}
+		catch (Exception ex)
+		{
+			BV.PrintWarn($"Could not refresh recent project '{recent.FolderPath}': {ex.Message}");
+			return null;
+		}
+	}
+
+	public static async Task<CreatorProjectMetadata> RefreshRemoteMetadata(CreatorProjectMetadata metadata, string? metadataPath = null)
+	{
+		if (metadata.UniverseId <= 0 || !CreatorAPI.IsUserAuthenticated) return metadata;
+
+		try
+		{
+			using JsonDocument response = await CreatorAPI.GetAuthenticatedJson($"/v3/universe/{metadata.UniverseId}");
+			if (response.RootElement.TryGetProperty("universe", out JsonElement universe))
+			{
+				if (universe.TryGetProperty("name", out JsonElement universeName)
+					&& universeName.ValueKind == JsonValueKind.String
+					&& !string.IsNullOrWhiteSpace(universeName.GetString()))
+					metadata.ProjectName = universeName.GetString()!;
+
+				if (universe.TryGetProperty("worlds", out JsonElement worlds) && worlds.ValueKind == JsonValueKind.Array)
+				{
+					JsonElement? primary = null;
+					foreach (JsonElement world in worlds.EnumerateArray())
+					{
+						if (world.TryGetProperty("isRootWorld", out JsonElement root) && root.ValueKind == JsonValueKind.True)
+						{
+							primary = world;
+							break;
+						}
+					}
+					if (primary.HasValue && primary.Value.TryGetProperty("id", out JsonElement id)
+						&& long.TryParse(id.ToString(), out long worldId))
+						metadata.WorldId = worldId;
+				}
+			}
+
+			using JsonDocument thumbnails = await BVAPI.GetJson($"/v3/universe/{metadata.UniverseId}/thumbnails");
+			if (thumbnails.RootElement.TryGetProperty("thumbnails", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
+			{
+				JsonElement? selected = null;
+				foreach (JsonElement item in items.EnumerateArray())
+				{
+					if (!item.TryGetProperty("type", out JsonElement type) || type.GetString() != "IMAGE") continue;
+					selected ??= item;
+					if (item.TryGetProperty("primary", out JsonElement primary) && primary.ValueKind == JsonValueKind.True)
+					{
+						selected = item;
+						break;
+					}
+				}
+				if (selected.HasValue)
+				{
+					if (selected.Value.TryGetProperty("thumbnailId", out JsonElement thumbnailId)
+						&& long.TryParse(thumbnailId.ToString(), out long iconId)) metadata.IconID = iconId;
+					if (selected.Value.TryGetProperty("url", out JsonElement url) && url.ValueKind == JsonValueKind.String)
+						metadata.ThumbnailUrl = url.GetString() ?? "";
+				}
+				else
+				{
+					metadata.IconID = null;
+					metadata.ThumbnailUrl = "";
+				}
+			}
+
+			if (!string.IsNullOrWhiteSpace(metadataPath))
+				await File.WriteAllTextAsync(metadataPath, JsonSerializer.Serialize(metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+		}
+		catch (Exception ex)
+		{
+			// Offline Creator startup should continue using the last cached metadata.
+			BV.PrintWarn($"Could not update project metadata from the API: {ex.Message}");
+		}
+		return metadata;
 	}
 
 	public static async Task AddToRecents(string folderPath)
@@ -428,7 +506,9 @@ public static class ProjectManager
 		[JsonInclude] public string FolderPath;
 		[JsonInclude] public DateTime LastOpened;
 		[JsonIgnore] public string PlaceName;
-		[JsonIgnore] public int? IconID;
+		[JsonIgnore] public long? IconID;
+		[JsonIgnore] public long UniverseId;
+		[JsonIgnore] public string ThumbnailUrl;
 		[JsonIgnore] public long? WorldId;
 	}
 

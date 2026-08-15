@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "id": "creator-2026-08-02",
   "title": "What’s new in BrickVerse Creator",
   "subtitle": "A faster, more capable world-building workflow.",
@@ -13,10 +14,81 @@
       "title": "Creator tooling",
       "body": "Recent releases include expanded terrain, animation, Team Create and play-test debugging workflows.",
       "items": ["Improved runtime debugging tools", "More complete terrain editing", "Animation rig preview and publishing", "Team Create presence and replication improvements"]
+=======
+  "id": "creator-2026-08-14-device-preview-vr",
+  "title": "What's new in BrickVerse Creator",
+  "subtitle": "Preview experiences across devices, experiment with VR, and keep published project details in sync.",
+  "date": "August 14, 2026",
+  "sections": [
+    {
+      "title": "New beta: Device Emulator",
+      "body": "Test responsive experiences and input behavior across more target devices without constantly changing hardware.",
+      "items": [
+        "Preview phone, tablet, console, desktop, and VR device profiles from Tools > Device Emulator",
+        "Display phone, tablet, TV, and landscape screen-size guides directly over the editor viewport without starting a play test",
+        "Inject fake thumbstick, gamepad button, trigger, touchscreen, headset, and VR controller input into the active play-test client",
+        "Emulated Input.DeviceType, LastInputDevice, touchscreen, gamepad, and VR state use the same runtime paths as real devices",
+        "Device Emulator is opt-in from Beta Features and can be enabled or disabled without restarting Creator"
+      ]
+    },
+    {
+      "title": "Experimental VR and gamepad support",
+      "body": "BrickVerse experiences can begin targeting connected PC headsets and standalone XR builds while the APIs continue to evolve.",
+      "items": [
+        "Experimental OpenXR runtime support for PC-connected headsets and XR-enabled exports",
+        "New Luau VRService access to headset and hand poses, tracking state, controller modes, navigation, recentering, and haptics",
+        "Headset and controller movement can drive character VR poses and common gameplay actions",
+        "Gamepad navigation and device reporting support console-style play and Creator input simulation",
+        "OpenXR stays disabled in normal non-XR exports, preventing unsupported-headset startup alerts"
+      ]
+    },
+    {
+      "title": "New beta: Animation Editor",
+      "body": "The experimental Animation Editor is available for creators who want to test the unfinished animation workflow and share feedback.",
+      "items": [
+        "Animation Editor now has its own explicit Beta Features enrollment",
+        "The Tools menu remains locked until the beta is enabled",
+        "Beta enrollment updates menu availability immediately without requiring a restart",
+        "Clear instability and compatibility messaging sets expectations while the workflow is under development"
+      ]
+    },
+    {
+      "title": "Device-aware runtime debugging",
+      "body": "Creator and play-test clients now exchange richer device state through the existing runtime debugger connection.",
+      "items": [
+        "New debugger messages carry device profiles, controller axes and buttons, VR poses, and tracking state",
+        "Emulation settings automatically reapply when a new play-test client connects",
+        "Fake VR input is exposed to Luau through VRService signals and user CFrame APIs",
+        "Synthetic gamepad events pass through Godot's normal input pipeline so game code can be tested realistically",
+        "The emulator reports whether input is live or requires an active play test"
+      ]
+    },
+    {
+      "title": "Recent projects stay current",
+      "body": "Creator's home screen now follows the latest published universe metadata instead of relying on stale local placeholders.",
+      "items": [
+        "Recent-world cards load the current primary thumbnail URL from the BrickVerse API",
+        "Opening or refreshing a project updates its universe name, primary world ID, thumbnail ID, and cached thumbnail URL",
+        "Modern 64-bit thumbnail IDs are supported without overflowing older metadata fields",
+        "Metadata refresh waits for Creator authentication and uses the authenticated OAuth API client",
+        "Offline projects continue using their last cached metadata instead of failing to open"
+      ]
+    },
+    {
+      "title": "A clearer Creator interface",
+      "body": "Common actions are easier to recognize, and experimental tooling is clearly separated from stable workflows.",
+      "items": [
+        "File, Edit, Insert, Model, Tools, View, Help, and Dev actions now use consistent SVG icons",
+        "Input Manager is available from Tools with a dedicated keyboard icon",
+        "Device Emulator and Animation Editor show contextual beta-lock tooltips when unavailable",
+        "Beta feature changes propagate live to their menu entries",
+        "What's New continues to work offline using this packaged release feed"
+      ]
+>>>>>>> Stashed changes
     }
   ],
   "links": [
     { "label": "Read the documentation", "url": "https://developers.brickverse.gg/" },
-    { "label": "Share feedback", "url": "https://brickverse.gg/forum" }
+    { "label": "Share beta feedback", "url": "https://brickverse.gg/forum" }
   ]
 }
