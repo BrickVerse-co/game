@@ -981,9 +981,12 @@ public sealed partial class Player : NPC
 
 	public void WrapToSpawnPoint()
 	{
-		if (Root.Environment.SpawnPoints.Count > 0)
+		Entity[] eligibleSpawns = Root.Environment.SpawnPoints
+			.Where(spawn => spawn is not SpawnLocation location || location.CanSpawn(this))
+			.ToArray();
+		if (eligibleSpawns.Length > 0)
 		{
-			Entity spawnpoint = ArrayUtils.GetRandom(Root.Environment.SpawnPoints);
+			Entity spawnpoint = ArrayUtils.GetRandom(eligibleSpawns);
 			// Spawn clear of the surface and let physics settle downward. Using the
 			// full height embedded characters for tall spawn parts and occasionally
 			// produced an invalid first physics frame.

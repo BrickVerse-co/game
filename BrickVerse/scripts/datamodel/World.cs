@@ -131,6 +131,8 @@ public sealed partial class World : Instance
 	public IOService IO => FindChild<IOService>("IO")!;
 	public WorldsService Worlds => FindChild<WorldsService>("Worlds")!;
 	public SocialService Social => FindChild<SocialService>("Social")!;
+	public PathfindingService Pathfinding => FindChild<PathfindingService>("PathfindingService")!;
+	public AdService Ads => FindChild<AdService>("AdService")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
 #endif
@@ -742,6 +744,22 @@ public sealed partial class World : Instance
 			achievementsService = Globals.LoadInstance<AchievementsService>(Root);
 			achievementsService.NameOverride = "Achievements";
 			achievementsService.NetworkParent = this;
+		}
+
+		PathfindingService? pathfindingService = FindChild<PathfindingService>("PathfindingService");
+		if (pathfindingService == null)
+		{
+			pathfindingService = Globals.LoadInstance<PathfindingService>(Root);
+			pathfindingService.NameOverride = "PathfindingService";
+			pathfindingService.NetworkParent = this;
+		}
+
+		AdService? adService = FindChild<AdService>("AdService");
+		if (adService == null)
+		{
+			adService = Globals.LoadInstance<AdService>(Root);
+			adService.NameOverride = "AdService";
+			adService.NetworkParent = this;
 		}
 
 		CoreUIService? coreUIService = FindChild<CoreUIService>("CoreUI");

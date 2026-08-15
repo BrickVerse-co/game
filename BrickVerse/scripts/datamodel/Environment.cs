@@ -243,7 +243,7 @@ public sealed partial class Environment : Instance
 
 	public void RegisterSpawnPoint(Entity spawnpoint)
 	{
-		SpawnPoints.Add(spawnpoint);
+		if (!SpawnPoints.Contains(spawnpoint)) SpawnPoints.Add(spawnpoint);
 	}
 
 	public void UnregisterSpawnPoint(Entity spawnpoint)
