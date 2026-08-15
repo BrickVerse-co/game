@@ -1,0 +1,9 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Highlight: selection/effect volume surrounding a target Part -->
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10 9C8.34315 9 7 10.3431 7 12V36C7 37.6569 8.34315 39 10 39H38C39.6569 39 41 37.6569 41 36V12C41 10.3431 39.6569 9 38 9H10ZM12 13C11.4477 13 11 13.4477 11 14V34C11 34.5523 11.4477 35 12 35H36C36.5523 35 37 34.5523 37 34V14C37 13.4477 36.5523 13 36 13H12Z" fill="#FFB020"/>
+<path d="M24 16L33 20.75L24 25.5L15 20.75L24 16Z" fill="#FFD06A"/>
+<path d="M15 20.75L24 25.5V33L15 28.25V20.75Z" fill="#E99400"/>
+<path d="M33 20.75L24 25.5V33L33 28.25V20.75Z" fill="#FFB020"/>
+<path d="M8 16H12V12H16V9H10C8.34315 9 7 10.3431 7 12V18H8V16Z" fill="#FFE3A3"/>
+<path d="M40 30H36V34H32V39H38C39.6569 39 41 37.6569 41 36V30H40Z" fill="#FFE3A3"/>
+</svg>

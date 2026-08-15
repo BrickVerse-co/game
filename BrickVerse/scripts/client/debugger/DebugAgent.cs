@@ -88,12 +88,18 @@ public class DebugAgent
 		}
 	}
 
-	private void OnMessageRecv(IDebugMessage msg)
+	private async void OnMessageRecv(IDebugMessage msg)
 	{
 		if (msg is MessageShutdown)
 		{
 			if (!Globals.IsMobileBuild)
 			{
+				if (World.Current?.Network.IsServer == true)
+				{
+					World.Current.Players.InvokeShutdownPlayerRemoved();
+					// Allow yielded Luau event handlers and reliable RPCs to flush.
+					await Globals.Singleton.WaitAsync(0.15f);
+				}
 				Globals.Singleton.Quit();
 			}
 		}

@@ -1118,11 +1118,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		CloseRuntimeDebugWindows();
 		if (!LocalTestActive) return;
-		foreach (int item in LocalTestProcesses)
-		{
-			OS.Kill(item);
-		}
+
+		int[] processes = [.. LocalTestProcesses];
 		DebugServer.SendTerminateProgram();
+		// Runtime instances shut down cooperatively so server scripts receive
+		// PlayerRemoved. A short timeout retains the old force-stop guarantee.
+		await Globals.Singleton.WaitAsync(0.5f);
+		foreach (int item in processes)
+		{
+			if (OS.IsProcessRunning(item)) OS.Kill(item);
+		}
 	}
 
 	public static void MigrateCoordinates(World root)

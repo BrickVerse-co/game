@@ -533,9 +533,12 @@ public sealed partial class Gizmos : Node
 
 		if (hoveringOn != null)
 		{
-			// Roblox Studio-style selection: click selects the complete authored
-			// model/prefab, while Alt-click deliberately drills into a child.
-			selectInstance = Input.IsKeyPressed(Key.Alt)
+			// A plain click selects the complete authored model/prefab. Holding a
+			// selection modifier deliberately drills into the part beneath the cursor.
+			bool drillIntoModel = Input.IsKeyPressed(Key.Alt)
+				|| Input.IsKeyPressed(Key.Ctrl)
+				|| Input.IsKeyPressed(Key.Shift);
+			selectInstance = drillIntoModel
 				? hoveringOn
 				: GetModelRoot(hoveringOn) ?? hoveringOn;
 		}

@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Shared;
+using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
@@ -19,6 +20,8 @@ public partial class Part : Entity
 	private Color _color = new(1, 1, 1);
 	private bool _isSeparateMesh = false;
 	private bool _castShadows;
+	private ShaderEffect? _shaderEffect;
+	private SurfaceAppearance? _surfaceAppearance;
 
 	private Node3D _nRemoteAt = null!; // Remote collider proxy
 
@@ -224,17 +227,18 @@ public partial class Part : Entity
 			return;
 		}
 
-		_meshMaterial = Globals.LoadMaterial(_material, Color.A);
+		_meshMaterial = ResolveVisualMaterial();
 		_mesh.MaterialOverride = _meshMaterial;
 
 		UpdateColor();
+		ApplyVisualEffectParameters();
 	}
 
 	internal void UpdateColor()
 	{
 		if (_isSeparateMesh && _mesh != null)
 		{
-			Material targetMat = Globals.LoadMaterial(_material, Color.A);
+			Material targetMat = ResolveVisualMaterial();
 			if (!ReferenceEquals(_meshMaterial, targetMat))
 			{
 				_meshMaterial = targetMat;
@@ -242,9 +246,63 @@ public partial class Part : Entity
 			}
 
 			_mesh.SetInstanceShaderParameter("color", _color);
+			ApplyVisualEffectParameters();
 		}
 
 		UpdateCamLayer();
+	}
+
+	private void ApplyVisualEffectParameters()
+	{
+		if (_mesh == null || _shaderEffect == null) return;
+		_mesh.SetInstanceShaderParameter("bv_effect", (int)_shaderEffect.Effect);
+		_mesh.SetInstanceShaderParameter("bv_color", _color);
+		_mesh.SetInstanceShaderParameter("bv_effect_color", _shaderEffect.EffectColor);
+		_mesh.SetInstanceShaderParameter("bv_secondary_color", _shaderEffect.SecondaryColor);
+		_mesh.SetInstanceShaderParameter("bv_strength", _shaderEffect.Strength);
+		_mesh.SetInstanceShaderParameter("bv_speed", _shaderEffect.Speed);
+		_mesh.SetInstanceShaderParameter("bv_scale", _shaderEffect.Scale);
+		_mesh.SetInstanceShaderParameter("bv_progress", _shaderEffect.Progress);
+	}
+
+	internal void RefreshShaderEffect(ShaderEffect? ignored = null)
+	{
+		ShaderEffect? effect = null;
+		Instance? current = this;
+		while (current != null && effect == null)
+		{
+			effect = current.Children.OfType<ShaderEffect>()
+				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			current = current.Parent;
+		}
+
+		if (_shaderEffect == effect) { ApplyVisualEffectParameters(); return; }
+		_shaderEffect = effect;
+		if (effect != null && !_isSeparateMesh) CreateSeparateMesh();
+		UpdateMaterial();
+	}
+
+	internal void RefreshSurfaceAppearance(SurfaceAppearance? ignored = null)
+	{
+		SurfaceAppearance? appearance = null;
+		Instance? current = this;
+		while (current != null && appearance == null)
+		{
+			appearance = current.Children.OfType<SurfaceAppearance>()
+				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			current = current.Parent;
+		}
+
+		_surfaceAppearance = appearance;
+		if (appearance != null && !_isSeparateMesh) CreateSeparateMesh();
+		UpdateMaterial();
+	}
+
+	private Material ResolveVisualMaterial()
+	{
+		if (_shaderEffect != null) return ShaderEffect.SharedMaterial;
+		if (_surfaceAppearance != null) return _surfaceAppearance.Material;
+		return Globals.LoadMaterial(_material, Color.A);
 	}
 
 	internal void UpdateShadow()
@@ -345,4 +403,5 @@ public partial class Part : Entity
 		Stud,
 		Wood
 	}
+
 }

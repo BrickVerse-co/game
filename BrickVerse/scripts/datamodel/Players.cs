@@ -148,6 +148,18 @@ public sealed partial class Players : Instance
 		Rpc(nameof(OnPlayerRemoved), player.Name);
 	}
 
+	/// <summary>
+	/// Gives server scripts their normal PlayerRemoved notification when a local
+	/// play-test is stopped as a unit instead of waiting for peer disconnects.
+	/// </summary>
+	internal void InvokeShutdownPlayerRemoved()
+	{
+		foreach (Player player in GetPlayers().ToArray())
+		{
+			InvokePlayerRemoved(player);
+		}
+	}
+
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable, CallLocal = true)]
 	private void OnPlayerAdded(string username)
 	{

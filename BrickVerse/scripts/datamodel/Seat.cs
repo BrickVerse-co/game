@@ -79,7 +79,7 @@ public partial class Seat : Part
 		Sat.Invoke(npc);
 	}
 
-	internal void InvokeVacated(NPC npc)
+	internal virtual void InvokeVacated(NPC npc)
 	{
 		Vacated.Invoke(npc);
 	}

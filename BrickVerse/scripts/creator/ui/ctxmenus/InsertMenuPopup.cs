@@ -44,17 +44,20 @@ public partial class InsertMenuPopup : PopupPanel
 			"Mesh",
 			"EditableMesh",
 			"Seat",
+			"VehicleSeat",
 			"Model",
 			"Folder",
 			"Text3D",
 			"Image3D",
 			"Decal",
+			"Attachment",
+			"SurfaceAppearance",
 			"Camera",
 			"TerrainMaterial",
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-			new() { "InteractionPrompt", "NetworkEvent", "BindableEvent" },
+			new() { "ClickDetector", "DragDetector", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -68,8 +71,9 @@ public partial class InsertMenuPopup : PopupPanel
 			"ColorValue",
 			"InstanceValue",
 		},
-		[new() { Title = "Effects" }] = new() { "Particles" },
-		[new() { Title = "Audio" }] = new() { "Sound" },
+		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
+		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
+		[new() { Title = "Audio" }] = new() { "Sound", "SoundGroup" },
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
 			"Accessory",
@@ -87,7 +91,12 @@ public partial class InsertMenuPopup : PopupPanel
 		*/
 		[new() { Title = "Lighting Effects", RecommendOn = [typeof(Lighting)] }] = new()
 		{
+			"BloomEffect",
+			"AmbientOcclusionEffect",
 			"ColorAdjustModifier",
+			"ColorCorrectionEffect",
+			"FogEffect",
+			"TonemapEffect",
 		},
 		[
 			new()
@@ -108,6 +117,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"UIVLayout",
 			"UIHFlow",
 			"UIVFlow",
+			"UIGradient",
 			"UIGridLayout",
 			"UIScrollView",
 			"UIViewport",
