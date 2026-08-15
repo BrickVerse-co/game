@@ -56,6 +56,7 @@ TestResults/
 /BrickVerse/addons/brickverse-webview/android/plugin/build/
 /BrickVerse/addons/brickverse-webview/android/.gradle/
 /BrickVerse/addons/godotopenxrvendors/.bin
+.gradle-plugin-cache/
 
 # Signing keys
 /BrickVerse/android/key/*

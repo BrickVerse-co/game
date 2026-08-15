@@ -17,6 +17,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -43,6 +44,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 	private static readonly ConditionalWeakTable<object, string> _objectIDS = new();
 	private static long _nextObjectID;
+	private static readonly ConcurrentDictionary<IntPtr, byte> _cancelledTasks = [];
 
 	private static int _allocsSinceLastGC = 0;
 
@@ -201,6 +203,9 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		state.Register("warn", LuaWarn);
 		state.Register("wait", LuaWait);
 		state.Register("spawn", LuaSpawn);
+		state.Register("delay", LuaDelay);
+		state.Register("elapsedTime", LuaTime);
+		RegisterTaskLibrary(state);
 		state.Register("tick", LuaTick);
 		state.Register("time", LuaTime);
 		state.Register("require", LuaRequire);
@@ -271,6 +276,9 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 		PushValueToLua(state, script.Root);
 		state.SetGlobal("world");
+
+		PushValueToLua(state, script.Root);
+		state.SetGlobal("workspace");
 
 		PushCSClass(state, typeof(Instance));
 		state.SetGlobal("Instance");
@@ -497,6 +505,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 			while (true)
 			{
+				if (_cancelledTasks.TryRemove(thread.State, out _)) return;
 				if (thread == null)
 				{
 					BV.PrintErr("Thread's null");
@@ -675,6 +684,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 			n = 0;
 		}
 
+		ulong startedAt = Time.GetTicksMsec();
 		TaskCompletionSource<int> tcs = new();
 
 		SetYieldTask(lua, tcs.Task);
@@ -690,13 +700,30 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 				await Globals.Singleton.WaitPhysicsFrame();
 			}
 
-			PushValueToLua(lua, true);
+			PushValueToLua(lua, (Time.GetTicksMsec() - startedAt) / 1000.0);
 			tcs.SetResult(1);
 		}
 
 		RunAsync();
 
 		return lua.Yield(1);
+	}
+
+	private void RegisterTaskLibrary(LuaState state)
+	{
+		state.NewTable();
+		state.PushCFunction(LuaWait, "task.wait");
+		state.SetField(-2, "wait");
+		state.PushCFunction(LuaTaskSpawn, "task.spawn");
+		state.SetField(-2, "spawn");
+		state.PushCFunction(LuaTaskDefer, "task.defer");
+		state.SetField(-2, "defer");
+		state.PushCFunction(LuaTaskDelay, "task.delay");
+		state.SetField(-2, "delay");
+		state.PushCFunction(LuaTaskCancel, "task.cancel");
+		state.SetField(-2, "cancel");
+		state.SetReadOnly(-1, true);
+		state.SetGlobal("task");
 	}
 
 	public int LuaTime(IntPtr L)
@@ -832,17 +859,56 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 	public static int LuaSpawn(IntPtr L)
 	{
 		LuaState state = LuaState.FromIntPtr(L);
+		return StartTask(state, 1, 2, null, returnThread: false);
+	}
 
-		if (!state.IsFunction(1))
+	public static int LuaTaskSpawn(IntPtr L)
+	{
+		LuaState state = LuaState.FromIntPtr(L);
+		return StartTask(state, 1, 2, null, returnThread: true);
+	}
+
+	public static int LuaTaskDefer(IntPtr L)
+	{
+		LuaState state = LuaState.FromIntPtr(L);
+		return StartTask(state, 1, 2, 0, returnThread: true);
+	}
+
+	public static int LuaTaskDelay(IntPtr L)
+	{
+		LuaState state = LuaState.FromIntPtr(L);
+		if (!state.IsNumber(1)) return state.Error("task.delay requires a delay in seconds");
+		return StartTask(state, 2, 3, Math.Max(0, state.ToNumber(1)), returnThread: true);
+	}
+
+	public static int LuaDelay(IntPtr L)
+	{
+		LuaState state = LuaState.FromIntPtr(L);
+		if (!state.IsNumber(1)) return state.Error("delay requires a delay in seconds");
+		StartTask(state, 2, 3, Math.Max(0, state.ToNumber(1)), returnThread: false);
+		return 0;
+	}
+
+	public static int LuaTaskCancel(IntPtr L)
+	{
+		LuaState state = LuaState.FromIntPtr(L);
+		if (!state.IsThread(1)) return state.Error("task.cancel requires a thread");
+		LuaState target = state.ToThread(1);
+		_cancelledTasks[target.State] = 0;
+		return 0;
+	}
+
+	private static int StartTask(LuaState state, int functionIndex, int firstArgumentIndex, double? delaySeconds, bool returnThread)
+	{
+		if (!state.IsFunction(functionIndex))
 		{
-			state.Error("spawn requires a function");
-			return 0;
+			return state.Error("task function expected");
 		}
 
 		int argCount = state.GetTop();
-		int numArgs = argCount - 1;
+		int numArgs = Math.Max(0, argCount - firstArgumentIndex + 1);
 
-		state.PushValue(1);
+		state.PushValue(functionIndex);
 		int funcRef = state.Ref();
 
 		LuaState co = NewThread(state);
@@ -854,17 +920,25 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		// Move arguments to the new thread
 		if (numArgs > 0)
 		{
-			for (int i = 2; i <= argCount; i++)
+			for (int i = firstArgumentIndex; i <= argCount; i++)
 				state.PushValue(i);
 			state.XMove(co, numArgs);
 		}
 
 		state.Unref(funcRef);
+		if (returnThread) state.GetRef(coRef);
 
 		async void run()
 		{
 			try
 			{
+				if (delaySeconds.HasValue)
+				{
+					if (delaySeconds.Value > 0)
+						await Globals.Singleton.WaitAsync((float)delaySeconds.Value);
+					else
+						await Globals.Singleton.WaitPhysicsFrame();
+				}
 				await ResumeThread(co, null, numArgs);
 			}
 			finally
@@ -875,7 +949,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 		run();
 
-		return 0;
+		return returnThread ? 1 : 0;
 	}
 
 

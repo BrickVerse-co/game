@@ -140,7 +140,14 @@ public partial class TextEditorRoot : Node
 		_hoverTimer.OneShot = true;
 		_hoverTimer.WaitTime = 0.45;
 		_hoverTimer.Timeout += RequestHoverDocumentation;
-		AddChild(_hoverPopup = new PopupPanel { Unresizable = true });
+		AddChild(_hoverPopup = new PopupPanel
+		{
+			Unresizable = true,
+			// Documentation is informational. A regular popup takes keyboard focus,
+			// which prevents the CodeEdit from receiving arrows, Enter, and other
+			// editing keys while the popup is visible.
+			Unfocusable = true,
+		});
 		_hoverPopup.AddChild(_hoverText = new RichTextLabel
 		{
 			BbcodeEnabled = true,

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
@@ -139,7 +140,10 @@ public partial class InsertMenuPopup : PopupPanel
 
 	[Export]
 	public Control ItemContainer = null!;
+	[Export]
+	public ScrollContainer ItemScroll = null!;
 	private Button? _bottomFix;
+	private InsertPopupItem? _firstItem;
 
 	private Control? _dummyFocus;
 
@@ -165,11 +169,17 @@ public partial class InsertMenuPopup : PopupPanel
 
 	private void OnSearchboxGUIInput(InputEvent @event)
 	{
-		if (@event is InputEventKey key)
+		if (@event is InputEventKey { Pressed: true } key)
 		{
 			if (key.Keycode == Key.Down)
 			{
-				_bottomFix?.GrabFocus();
+				_firstItem?.GrabFocus();
+				SearchBox.AcceptEvent();
+			}
+			else if ((key.Keycode == Key.Enter || key.Keycode == Key.KpEnter) && _firstItem != null)
+			{
+				OnInsert(_firstItem.Classname);
+				SearchBox.AcceptEvent();
 			}
 		}
 	}
@@ -190,12 +200,27 @@ public partial class InsertMenuPopup : PopupPanel
 		string? query = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 		InsertPopupItem? previousItem = null;
 		InsertPopupItem? firstItem = null;
+		_firstItem = null;
 
 		_bottomFix?.QueueFree();
 		_bottomFix = new() { Visible = false };
 		ItemContainer.AddChild(_bottomFix);
 
 		List<(ItemKey cat, List<string> filtered)> toProcess = [];
+		HashSet<string> categorized = insertItems.Values
+			.SelectMany(static items => items)
+			.ToHashSet(StringComparer.Ordinal);
+		List<string> uncategorized = typeof(Instance).Assembly.GetTypes()
+			.Where(static type => type.IsClass
+				&& !type.IsAbstract
+				&& typeof(Instance).IsAssignableFrom(type)
+				&& type.IsDefined(typeof(InstantiableAttribute), false)
+				&& !type.IsDefined(typeof(InternalAttribute), false))
+			.Select(static type => type.Name)
+			.Where(name => !categorized.Contains(name)
+				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
+			.OrderBy(static name => name, StringComparer.Ordinal)
+			.ToList();
 
 		// Process recommended
 		foreach (KeyValuePair<ItemKey, SubItems> kv in insertItems)
@@ -234,6 +259,9 @@ public partial class InsertMenuPopup : PopupPanel
 			}
 		}
 
+		if (uncategorized.Count > 0)
+			toProcess.Add((new ItemKey { Title = "Other" }, uncategorized));
+
 		// Process categories
 		foreach (var (cat, filtered) in toProcess)
 		{
@@ -262,10 +290,13 @@ public partial class InsertMenuPopup : PopupPanel
 
 		if (firstItem != null)
 		{
+			_firstItem = firstItem;
 			SearchBox.FocusNeighborBottom = firstItem.GetPath();
 			_bottomFix!.FocusNeighborBottom = firstItem.GetPath();
 			firstItem.FocusNeighborTop = SearchBox.GetPath();
 		}
+
+		ItemScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 0);
 	}
 
 	private void OnSearchTextChanged(string newText)

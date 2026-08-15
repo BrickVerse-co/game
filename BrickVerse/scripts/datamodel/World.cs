@@ -252,6 +252,26 @@ public sealed partial class World : Instance
 		return await WaitForNetObjectAsync(networkID);
 	}
 
+	/// <summary>Returns a root DataModel service by its BrickVerse alias or class name.</summary>
+	[ScriptMethod]
+	public Instance? GetService(string className)
+	{
+		if (string.Equals(className, "Workspace", StringComparison.OrdinalIgnoreCase)
+			|| string.Equals(className, "World", StringComparison.OrdinalIgnoreCase))
+			return this;
+
+		return Services.ScriptService.GetStaticObjects(this)
+			.FirstOrDefault(pair =>
+				string.Equals(pair.Key, className, StringComparison.OrdinalIgnoreCase)
+				|| string.Equals((pair.Value as Instance)?.ClassName, className, StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(pair.Value?.GetType().Name, className, StringComparison.OrdinalIgnoreCase))
+			.Value as Instance;
+	}
+
+	/// <summary>Returns a root DataModel service, or nil when it is unavailable.</summary>
+	[ScriptMethod]
+	public Instance? FindService(string className) => GetService(className);
+
 	[SyncVar]
 	public bool ServerUnderLoad
 	{
