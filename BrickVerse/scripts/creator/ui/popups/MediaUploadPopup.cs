@@ -22,11 +22,15 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 
 	private static readonly Dictionary<string, string> TextureMimes = new(StringComparer.OrdinalIgnoreCase)
 	{
-		[".png"] = "image/png", [".jpg"] = "image/jpeg", [".jpeg"] = "image/jpeg",
+		[".png"] = "image/png",
+		[".jpg"] = "image/jpeg",
+		[".jpeg"] = "image/jpeg",
 	};
 	private static readonly Dictionary<string, string> SoundMimes = new(StringComparer.OrdinalIgnoreCase)
 	{
-		[".ogg"] = "audio/ogg", [".wav"] = "audio/wav", [".mp3"] = "audio/mpeg",
+		[".ogg"] = "audio/ogg",
+		[".wav"] = "audio/wav",
+		[".mp3"] = "audio/mpeg",
 	};
 
 	[Export] private Label _titleLabel = null!;

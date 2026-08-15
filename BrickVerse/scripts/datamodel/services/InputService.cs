@@ -64,7 +64,7 @@ public sealed partial class InputService : Instance
 	[ScriptProperty] public float XRRightTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
 	[ScriptProperty] public float XRLeftGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
 	[ScriptProperty] public float XRRightGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
-	
+
 	internal XRRuntime? XR { get; private set; }
 
 	internal void ApplyCreatorEmulation(MessageRuntimeDeviceEmulation state)
