@@ -33,10 +33,18 @@ layout_mode = 2
 text = "← Back"
 
 [node name="Image" type="TextureRect" parent="Layout"]
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
+
+[node name="GuildLogo" type="TextureRect" parent="Layout"]
+visible = false
+custom_minimum_size = Vector2(92, 92)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="Layout"]
 layout_mode = 2
@@ -55,18 +63,21 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="Primary" type="Button" parent="Layout/Actions"]
-custom_minimum_size = Vector2(130, 46)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Join guild"
 
 [node name="Members" type="Button" parent="Layout/Actions"]
-custom_minimum_size = Vector2(130, 46)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Members"
 
 [node name="Manage" type="Button" parent="Layout/Actions"]
-custom_minimum_size = Vector2(130, 46)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Manage"
 
 [node name="Scroll" type="ScrollContainer" parent="Layout"]
@@ -80,6 +91,26 @@ theme_override_constants/separation = 12
 
 [node name="Description" parent="Layout/Scroll/Content" instance=ExtResource("2")]
 layout_mode = 2
+
+[node name="GuildMembers" type="VBoxContainer" parent="Layout/Scroll/Content"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Layout/Scroll/Content/GuildMembers"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Members by rank"
+
+[node name="Cards" type="HFlowContainer" parent="Layout/Scroll/Content/GuildMembers"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 12
+
+[node name="LoadMore" type="Button" parent="Layout/Scroll/Content/GuildMembers"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Load more members"
 
 [node name="RepliesTitle" type="Label" parent="Layout/Scroll/Content"]
 visible = false

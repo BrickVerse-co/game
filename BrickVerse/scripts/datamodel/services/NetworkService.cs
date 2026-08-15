@@ -802,12 +802,7 @@ public sealed partial class NetworkService : Instance
 			GD.PushWarning($"Client ({peerID})");
 		}
 
-		ClientPlatformEnum platform = ClientPlatformEnum.Desktop;
-
-		if (Globals.IsMobileBuild)
-		{
-			platform = ClientPlatformEnum.Mobile;
-		}
+		ClientPlatformEnum platform = ResolveClientPlatform();
 
 		string platformName = Globals.ResolveCurrentPlatform();
 
@@ -1420,7 +1415,21 @@ public sealed partial class NetworkService : Instance
 	{
 		Desktop,
 		Mobile,
-		VR
+		VR,
+		Tablet,
+		Console
+	}
+
+	private static ClientPlatformEnum ResolveClientPlatform()
+	{
+		if (OS.HasFeature("xr") || OS.HasFeature("vr")) return ClientPlatformEnum.VR;
+		if (OS.HasFeature("console")) return ClientPlatformEnum.Console;
+		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui"))
+		{
+			Vector2I viewport = DisplayServer.WindowGetSize();
+			return Mathf.Min(viewport.X, viewport.Y) >= 720 ? ClientPlatformEnum.Tablet : ClientPlatformEnum.Mobile;
+		}
+		return ClientPlatformEnum.Desktop;
 	}
 
 	private class RateLimiters

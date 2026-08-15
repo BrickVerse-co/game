@@ -17,6 +17,8 @@ public partial class UserHeadshotCard : PanelContainer
 	public string InitialUsername = string.Empty;
 	public bool IsVerified;
 	public bool IsAdmin;
+	public string InitialPresence = "OFFLINE";
+	public long JoinWorldID;
 
 	[Export] private TextureRect _imageRect = null!;
 	[Export] private Label _usernameLabel = null!;
@@ -44,7 +46,26 @@ public partial class UserHeadshotCard : PanelContainer
 		Button button = GetNode<Button>("Button");
 		MobileMotion.Bind(button);
 		button.Pressed += OpenActions;
+		ConfigurePresence();
 		LoadUserCard();
+	}
+
+	private void ConfigurePresence()
+	{
+		HBoxContainer presence = GetNode<HBoxContainer>("VBoxContainer/Presence");
+		Label dot = presence.GetNode<Label>("Dot");
+		Label text = presence.GetNode<Label>("Text");
+		Button join = GetNode<Button>("Join");
+		string state = InitialPresence.ToUpperInvariant();
+		presence.Visible = true;
+		text.Text = state == "PLAYING" ? "Playing" : state == "ONLINE" ? "Online" : "Offline";
+		dot.Modulate = state == "PLAYING" ? Color.FromHtml("#31a8ff") : state == "ONLINE" ? Color.FromHtml("#59e680") : Color.FromHtml("#7b8794");
+		join.Visible = state == "PLAYING" && JoinWorldID > 0;
+		if (join.Visible)
+		{
+			MobileMotion.Bind(join);
+			join.Pressed += () => MobileUI.Singleton.LaunchGame(JoinWorldID);
+		}
 	}
 
 	private void OnIconLoaded(Resource resource)
@@ -82,7 +103,7 @@ public partial class UserHeadshotCard : PanelContainer
 			BV.CallOnMainThread(() =>
 			{
 				if (_disposed || !IsInstanceValid(_usernameLabel)) return;
-				_usernameLabel.Text = userData.Username;
+				_usernameLabel.Text = string.IsNullOrWhiteSpace(userData.Username) ? InitialUsername : userData.Username;
 				GetNode<TextureRect>("VBoxContainer/NameRow/Verified").Visible = IsVerified;
 				GetNode<TextureRect>("VBoxContainer/NameRow/Admin").Visible = IsAdmin || userData.IsStaff;
 				_textSkeleton.Visible = false;
@@ -92,6 +113,13 @@ public partial class UserHeadshotCard : PanelContainer
 		catch (Exception ex)
 		{
 			BV.PrintErr(ex);
+			BV.CallOnMainThread(() =>
+			{
+				if (_disposed || !IsInstanceValid(_usernameLabel)) return;
+				_usernameLabel.Text = string.IsNullOrWhiteSpace(InitialUsername) ? "User" : InitialUsername;
+				_textSkeleton.Visible = false;
+				StopSkeletonWhenReady();
+			});
 		}
 	}
 

@@ -52,7 +52,7 @@ public partial class WorldsGrid : Control
 		_status.Text = "Loading worlds…";
 		try
 		{
-			foreach (Node child in GetChildren()) child.QueueFree();
+			ClearCards();
 			for (int index = 0; index < 6; index++) AddChild(_skeletonScene.Instantiate());
 			string path = "/v3/worlds/discover?limit=30&platform=MOBILE";
 			if (!string.IsNullOrWhiteSpace(search)) path += "&search=" + Uri.EscapeDataString(search);
@@ -64,7 +64,7 @@ public partial class WorldsGrid : Control
 			}
 			using JsonDocument response = await BVAPI.GetJson(path);
 			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
-			foreach (Node child in GetChildren()) child.QueueFree();
+			ClearCards();
 			JsonElement worlds = response.RootElement.GetProperty("worlds");
 			foreach (JsonElement item in worlds.EnumerateArray())
 			{
@@ -90,7 +90,7 @@ public partial class WorldsGrid : Control
 		catch (Exception ex)
 		{
 			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
-			foreach (Node child in GetChildren()) child.QueueFree();
+			ClearCards();
 			BV.PrintErr(ex);
 			_status.Text = "Worlds could not be loaded. Try another search or refresh this page.";
 			if (OS.IsDebugBuild())
@@ -105,6 +105,14 @@ public partial class WorldsGrid : Control
 	}
 
 	public void Refresh() => LoadWorlds(_search.Text);
+	private void ClearCards()
+	{
+		foreach (Node child in GetChildren())
+		{
+			RemoveChild(child);
+			child.QueueFree();
+		}
+	}
 	private void UpdateColumns()
 	{
 		float available = GetViewportRect().Size.X - 40f;

@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [sub_resource type="StyleBoxFlat" id="panel"]
 bg_color = Color(0.045, 0.09, 0.15, 0.99)
@@ -15,6 +15,33 @@ corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="action"]
+bg_color = Color(0.075, 0.16, 0.25, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="action_pressed"]
+bg_color = Color(0.1, 0.34, 0.62, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="danger"]
+bg_color = Color(0.42, 0.1, 0.14, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="FriendActions" type="PopupPanel"]
 size = Vector2i(340, 250)
@@ -42,11 +69,17 @@ text = "Online"
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "View profile"
+theme_override_styles/normal = SubResource("action")
+theme_override_styles/hover = SubResource("action")
+theme_override_styles/pressed = SubResource("action_pressed")
 
 [node name="Report" type="Button" parent="Layout"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Report user"
+theme_override_styles/normal = SubResource("danger")
+theme_override_styles/hover = SubResource("danger")
+theme_override_styles/pressed = SubResource("danger")
 
 [node name="Close" type="Button" parent="Layout"]
 custom_minimum_size = Vector2(0, 40)

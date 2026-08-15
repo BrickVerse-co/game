@@ -1,4 +1,10 @@
-[gd_scene format=3 uid="uid://bhr73ix2cmhos"]
+[gd_scene load_steps=10 format=3 uid="uid://bhr73ix2cmhos"]
+
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="1_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/devices/phone.svg" id="2_phone"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/devices/tablet.svg" id="3_tablet"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/devices/pc.svg" id="4_pc"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/devices/console.svg" id="5_console"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_0xxpl"]
 viewport_path = NodePath("SubViewport")
@@ -62,17 +68,36 @@ size_flags_horizontal = 6
 theme_override_constants/separation = 4
 alignment = 2
 
-[node name="Title" type="Label" parent="SubViewport/Control" unique_id=2054279508]
+[node name="NameRow" type="HBoxContainer" parent="SubViewport/Control"]
 custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="SubViewport/Control/NameRow" unique_id=2054279508]
 layout_mode = 2
 theme_override_constants/outline_size = 16
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxEmpty_0xxpl")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_m6t0u")
 text = "NAME"
-horizontal_alignment = 1
 vertical_alignment = 2
-autowrap_mode = 1
+
+[node name="Verified" type="TextureRect" parent="SubViewport/Control/NameRow"]
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("1_verified")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Device" type="TextureRect" parent="SubViewport/Control/NameRow"]
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("4_pc")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Healthbar" type="ProgressBar" parent="SubViewport/Control" unique_id=946472907]
 custom_minimum_size = Vector2(0, 30)

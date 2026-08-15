@@ -2,6 +2,7 @@
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Utils;
 using Godot;
+using System;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -16,7 +17,14 @@ public partial class MobileProfileSummary : VBoxContainer
 		GetNode<Label>("Stats/Visits/Value").Text = visits.ToString("N0");
 		GetNode<Label>("Stats/Views/Value").Text = views.ToString("N0");
 		GetNode<Label>("Stats/Posts/Value").Text = posts.ToString("N0");
-		GetNode<Label>("Joined").Text = string.IsNullOrWhiteSpace(joined) ? "" : "Member since " + joined;
+		Label joinedLabel = GetNode<Label>("Joined");
+		if (DateTime.TryParse(joined, out DateTime joinedAt))
+		{
+			joinedAt = joinedAt.ToLocalTime();
+			joinedLabel.Text = "Member since " + joinedAt.ToString("MMMM d, yyyy");
+			joinedLabel.TooltipText = joinedAt.ToString("f");
+		}
+		else joinedLabel.Text = "";
 		_ = LoadAvatar(userId);
 	}
 

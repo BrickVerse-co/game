@@ -40,7 +40,7 @@ public partial class HomeShelf : VBoxContainer
 			viewAll.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Friends, MobileViewEnum.Friends);
 			MobileMotion.Bind(viewAll);
 		}
-		foreach (Node child in items.GetChildren()) child.QueueFree();
+		ClearChildren(items);
 		Visible = true;
 		for (int index = 0; index < 3; index++) items.AddChild((RecentWorlds ? _skeletonScene : _friendSkeletonScene).Instantiate());
 		try
@@ -53,7 +53,7 @@ public partial class HomeShelf : VBoxContainer
 			await RunOnMainThread(() =>
 			{
 				if (!IsInstanceValid(items) || !IsInstanceValid(count)) return;
-				foreach (Node child in items.GetChildren()) child.QueueFree();
+				ClearChildren(items);
 				count.Text = RecentWorlds ? "Continue Playing" : $"Friends Online ({records.GetArrayLength()})";
 			});
 			foreach (JsonElement record in records.EnumerateArray())
@@ -83,6 +83,17 @@ public partial class HomeShelf : VBoxContainer
 					string username = ReadString(data, "username");
 					bool isVerified = data.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
 					bool isAdmin = data.TryGetProperty("isStaff", out JsonElement staff) && staff.ValueKind == JsonValueKind.True;
+					string presence = ReadString(record, "state");
+					long joinWorldId = 0;
+					if (record.TryGetProperty("currentGame", out JsonElement currentGame) && currentGame.ValueKind == JsonValueKind.Object)
+					{
+						string worldIdText = ReadString(currentGame, "worldId");
+						if (!long.TryParse(worldIdText, out joinWorldId))
+						{
+							string universeIdText = ReadString(currentGame, "universeId");
+							long.TryParse(universeIdText, out joinWorldId);
+						}
+					}
 					await RunOnMainThread(() =>
 					{
 						if (!IsInstanceValid(items)) return;
@@ -91,6 +102,8 @@ public partial class HomeShelf : VBoxContainer
 						card.InitialUsername = username;
 						card.IsVerified = isVerified;
 						card.IsAdmin = isAdmin;
+						card.InitialPresence = presence;
+						card.JoinWorldID = joinWorldId;
 						items.AddChild(card);
 					});
 				}
@@ -105,6 +118,15 @@ public partial class HomeShelf : VBoxContainer
 	}
 
 	public void Refresh() => _ = LoadAsync();
+
+	private static void ClearChildren(Node parent)
+	{
+		foreach (Node child in parent.GetChildren())
+		{
+			parent.RemoveChild(child);
+			child.QueueFree();
+		}
+	}
 
 	private static string ReadString(JsonElement item, string name) => item.TryGetProperty(name, out JsonElement value)
 		? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString()

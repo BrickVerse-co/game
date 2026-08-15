@@ -110,7 +110,19 @@ public partial class MobileCollectionView : MobileViewBase
 		if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) _promoHost.AddChild(_upgradeBannerScene.Instantiate());
 		else if (_view == MobileViewEnum.Forum) _promoHost.AddChild(_forumBannerScene.Instantiate());
 		else if (_view is MobileViewEnum.Guilds or MobileViewEnum.Events or MobileViewEnum.Notifications) _promoHost.AddChild(_adBannerScene.Instantiate());
-		_category.Visible = _view is MobileViewEnum.Marketplace or MobileViewEnum.Store;
+		_category.Visible = _view is MobileViewEnum.Marketplace or MobileViewEnum.Store or MobileViewEnum.Guilds;
+		if (_view == MobileViewEnum.Guilds)
+		{
+			_category.TabCount = 2;
+			_category.SetTabTitle(0, "Discover");
+			_category.SetTabTitle(1, "My Guilds");
+		}
+		else if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store)
+		{
+			_category.TabCount = 4;
+			_category.SetTabTitle(0, "Featured"); _category.SetTabTitle(1, "Top Selling");
+			_category.SetTabTitle(2, "Trending"); _category.SetTabTitle(3, "New");
+		}
 		if (!_hasLoaded || profileChanged || forumReset) { _hasLoaded = true; _ = LoadAsync(); }
 	}
 
@@ -600,7 +612,11 @@ public partial class MobileCollectionView : MobileViewBase
 		float available = GetViewportRect().Size.X - 32f;
 		_gridItems.Columns = Mathf.Clamp(Mathf.FloorToInt((available + 10f) / 190f), 2, 4);
 	}
-	private void ClearItems() { foreach (Node child in _listItems.GetChildren()) child.QueueFree(); foreach (Node child in _gridItems.GetChildren()) child.QueueFree(); }
+	private void ClearItems() { ClearContainer(_listItems); ClearContainer(_gridItems); }
+	private static void ClearContainer(Node container)
+	{
+		foreach (Node child in container.GetChildren()) { container.RemoveChild(child); child.QueueFree(); }
+	}
 	private static string TitleFor(MobileViewEnum view) => view switch { MobileViewEnum.Friends => "Friends", MobileViewEnum.FriendRequests => "Friend requests", MobileViewEnum.Store => "Marketplace", MobileViewEnum.Dev => "More", _ => view.ToString() };
 
 	private string PathFor(MobileViewEnum view, string search)
@@ -609,7 +625,9 @@ public partial class MobileCollectionView : MobileViewBase
 		return view switch
 		{
 			MobileViewEnum.Friends => "/v3/social/friends",
-			MobileViewEnum.Guilds => $"/v3/social/guilds?limit=20&page={_page}" + q,
+			MobileViewEnum.Guilds => _category.CurrentTab == 1
+				? "/v3/social/guilds/user/" + Uri.EscapeDataString(BVMobileAuthAPI.CurrentUserInfo.Id)
+				: $"/v3/social/guilds?limit=20&page={_page}" + q,
 			MobileViewEnum.Profile => "/v3/profile/" + Uri.EscapeDataString(string.IsNullOrWhiteSpace(_profileUserId) ? BVMobileAuthAPI.CurrentUserInfo.Id : _profileUserId) + "/id",
 			MobileViewEnum.Forum => _forumCategoryId == null ? "/v3/forum/categories" : "/v3/forum/threads?limit=30&categoryId=" + Uri.EscapeDataString(_forumCategoryId) + q,
 			MobileViewEnum.Events => "/v3/social/events?limit=30" + q,
@@ -624,7 +642,8 @@ public partial class MobileCollectionView : MobileViewBase
 	private void ResetPagination() { _page = 1; _marketCursors.Clear(); _marketCursors.Add(null); _nextCursor = null; _hasNextPage = false; UpdatePagination(); }
 	private void UpdatePagination()
 	{
-		bool paged = _view is MobileViewEnum.Guilds or MobileViewEnum.Marketplace or MobileViewEnum.Store;
+		bool paged = (_view == MobileViewEnum.Guilds && _category.CurrentTab == 0)
+			|| _view is MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		GetNode<Control>("Layout/Pagination").Visible = paged;
 		_previous.Disabled = _page <= 1;
 		_next.Disabled = !_hasNextPage;
