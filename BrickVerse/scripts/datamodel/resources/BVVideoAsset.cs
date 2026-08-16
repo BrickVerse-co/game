@@ -1,6 +1,7 @@
 using BrickVerse.Attributes;
 using BrickVerse.Shared.AssetLoaders;
 namespace BrickVerse.Datamodel.Resources;
+
 [Instantiable]
 public sealed partial class BVVideoAsset : VideoAsset
 {

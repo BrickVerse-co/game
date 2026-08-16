@@ -30,25 +30,25 @@ internal static class RuntimeVoxelBoolean
 		Input[] negative = [.. inputs.Where(input => input.Subtract)];
 
 		for (int x = 0; x < nx; x++) for (int y = 0; y < ny; y++) for (int z = 0; z < nz; z++)
-		{
-			Vector3 point = min + new Vector3(x + 0.5f, y + 0.500137f, z + 0.500271f) * cell;
-			bool inside = positive.Any(input => Contains(input.Triangles, point));
-			if (inside && negative.Any(input => Contains(input.Triangles, point))) inside = false;
-			occupied[x, y, z] = inside;
-		}
+				{
+					Vector3 point = min + new Vector3(x + 0.5f, y + 0.500137f, z + 0.500271f) * cell;
+					bool inside = positive.Any(input => Contains(input.Triangles, point));
+					if (inside && negative.Any(input => Contains(input.Triangles, point))) inside = false;
+					occupied[x, y, z] = inside;
+				}
 
 		List<Vector3> result = [];
 		for (int x = 0; x < nx; x++) for (int y = 0; y < ny; y++) for (int z = 0; z < nz; z++)
-		{
-			if (!occupied[x, y, z]) continue;
-			Vector3 p = min + new Vector3(x, y, z) * cell;
-			if (!At(occupied, x - 1, y, z)) Face(result, p, Vector3.Back * cell, Vector3.Up * cell, false);
-			if (!At(occupied, x + 1, y, z)) Face(result, p + Vector3.Right * cell, Vector3.Back * cell, Vector3.Up * cell, true);
-			if (!At(occupied, x, y - 1, z)) Face(result, p, Vector3.Right * cell, Vector3.Back * cell, false);
-			if (!At(occupied, x, y + 1, z)) Face(result, p + Vector3.Up * cell, Vector3.Right * cell, Vector3.Back * cell, true);
-			if (!At(occupied, x, y, z - 1)) Face(result, p, Vector3.Up * cell, Vector3.Right * cell, false);
-			if (!At(occupied, x, y, z + 1)) Face(result, p + Vector3.Back * cell, Vector3.Up * cell, Vector3.Right * cell, true);
-		}
+				{
+					if (!occupied[x, y, z]) continue;
+					Vector3 p = min + new Vector3(x, y, z) * cell;
+					if (!At(occupied, x - 1, y, z)) Face(result, p, Vector3.Back * cell, Vector3.Up * cell, false);
+					if (!At(occupied, x + 1, y, z)) Face(result, p + Vector3.Right * cell, Vector3.Back * cell, Vector3.Up * cell, true);
+					if (!At(occupied, x, y - 1, z)) Face(result, p, Vector3.Right * cell, Vector3.Back * cell, false);
+					if (!At(occupied, x, y + 1, z)) Face(result, p + Vector3.Up * cell, Vector3.Right * cell, Vector3.Back * cell, true);
+					if (!At(occupied, x, y, z - 1)) Face(result, p, Vector3.Up * cell, Vector3.Right * cell, false);
+					if (!At(occupied, x, y, z + 1)) Face(result, p + Vector3.Back * cell, Vector3.Up * cell, Vector3.Right * cell, true);
+				}
 		return Smooth([.. result]);
 	}
 

@@ -1,6 +1,7 @@
 using BrickVerse.Attributes;
 using Godot;
 namespace BrickVerse.Datamodel;
+
 [Instantiable]
 public sealed partial class RopeConstraint : Instance
 {

@@ -3,6 +3,7 @@ using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using Godot;
 namespace BrickVerse.Datamodel;
+
 [Instantiable]
 public sealed partial class VehicleSeat : Seat
 {

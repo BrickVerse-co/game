@@ -2,6 +2,7 @@ using BrickVerse.Attributes;
 using Godot;
 using System.Linq;
 namespace BrickVerse.Datamodel;
+
 [Instantiable]
 public sealed partial class SoundGroup : Instance
 {

@@ -647,7 +647,7 @@ public partial class Instance : NetworkedObject
 	}
 
 	/// <summary>Returns the Actor containing this instance, or nil outside an Actor.</summary>
-	[ScriptMethod]
+	[ScriptMethod, ParallelSafe]
 	public Actor? GetActor()
 	{
 		Instance? current = this;

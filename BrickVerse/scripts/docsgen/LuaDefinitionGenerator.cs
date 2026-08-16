@@ -146,6 +146,8 @@ public class LuaDefinitionGenerator
 		builder.AppendLine("\tdefer: (callback: (...any) -> (), ...any) -> thread,");
 		builder.AppendLine("\tdelay: (duration: number, callback: (...any) -> (), ...any) -> thread,");
 		builder.AppendLine("\tcancel: (scheduledThread: thread) -> (),");
+		builder.AppendLine("\tdesynchronize: () -> (),");
+		builder.AppendLine("\tsynchronize: () -> (),");
 		builder.AppendLine("}");
 
 		File.WriteAllText(atFolder.PathJoin("def.d.luau"), builder.ToString());

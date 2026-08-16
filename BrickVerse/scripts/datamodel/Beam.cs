@@ -44,7 +44,7 @@ public sealed partial class Beam : Instance
 		for (int i = 0; i <= _segments; i++)
 		{
 			float t = i / (float)_segments, u = 1 - t;
-			Vector3 p = u*u*u*a + 3*u*u*t*(a + _attachment0.WorldAxis*_curveSize0) + 3*u*t*t*(b - _attachment1.WorldAxis*_curveSize1) + t*t*t*b;
+			Vector3 p = u * u * u * a + 3 * u * u * t * (a + _attachment0.WorldAxis * _curveSize0) + 3 * u * t * t * (b - _attachment1.WorldAxis * _curveSize1) + t * t * t * b;
 			Vector3 tangent = (b - a).Normalized(); Vector3 side = tangent.Cross((camera - p).Normalized()).Normalized() * Mathf.Lerp(_width0, _width1, t) * 0.5f;
 			_mesh.SurfaceSetColor(_color); _mesh.SurfaceAddVertex(p - side); _mesh.SurfaceSetColor(_color); _mesh.SurfaceAddVertex(p + side);
 		}

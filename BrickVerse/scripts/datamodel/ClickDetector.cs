@@ -1,6 +1,7 @@
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
 namespace BrickVerse.Datamodel;
+
 [Instantiable]
 public sealed partial class ClickDetector : Instance
 {

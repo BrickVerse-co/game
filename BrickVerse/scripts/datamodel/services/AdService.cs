@@ -37,8 +37,8 @@ public sealed partial class AdService : Instance
 		else response = await BVAPI.GetJson(path);
 		using (response)
 		{
-		if (!response.RootElement.TryGetProperty("ad", out JsonElement ad)) return null;
-		return new AdPlacement(ad.GetProperty("id").GetString() ?? "", ad.GetProperty("creativeId").GetString() ?? "", ad.TryGetProperty("creativeType", out JsonElement type) ? type.GetString() ?? "TEXTURE" : "TEXTURE", ad.GetProperty("ctaUri").GetString() ?? "");
+			if (!response.RootElement.TryGetProperty("ad", out JsonElement ad)) return null;
+			return new AdPlacement(ad.GetProperty("id").GetString() ?? "", ad.GetProperty("creativeId").GetString() ?? "", ad.TryGetProperty("creativeType", out JsonElement type) ? type.GetString() ?? "TEXTURE" : "TEXTURE", ad.GetProperty("ctaUri").GetString() ?? "");
 		}
 	}
 

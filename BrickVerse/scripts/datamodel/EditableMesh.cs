@@ -126,9 +126,9 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		}
 		foreach ((int vertexId, Vector3 sum) in normalSums) normalIds[vertexId] = mesh.AddNormalInternal(sum.Normalized(), automatic: true);
 		foreach (FaceData face in mesh._faces.Values) for (int corner = 0; corner < 3; corner++)
-		{
-			int vertexId = face.Vertices[corner]; face.Normals[corner] = normalIds[vertexId]; face.UVs[corner] = uvIds[vertexId]; face.Colors[corner] = colorIds[vertexId];
-		}
+			{
+				int vertexId = face.Vertices[corner]; face.Normals[corner] = normalIds[vertexId]; face.UVs[corner] = uvIds[vertexId]; face.Colors[corner] = colorIds[vertexId];
+			}
 		mesh.MarkDirty(); mesh.Commit(); return mesh;
 	}
 

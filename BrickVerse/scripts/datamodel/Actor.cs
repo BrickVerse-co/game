@@ -6,8 +6,10 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
+using BrickVerse.Scripting.Luau;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Datamodel;
 
@@ -25,20 +27,49 @@ public sealed partial class Actor : Instance, IGroup
 	}
 
 	[ScriptMethod]
+	public BVSignalConnection BindToMessageParallel(string topic, BVCallback callback)
+	{
+		if (string.IsNullOrWhiteSpace(topic)) throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
+		if (callback.FromScript?.GetActor() != this)
+			throw new InvalidOperationException("BindToMessageParallel callbacks must be created by a script beneath this Actor.");
+		callback.InvokeInParallel = true;
+		callback.ParallelActor = this;
+		return GetMessage(topic).Connect(callback);
+	}
+
+	[ScriptMethod, ParallelSafe]
 	public void SendMessage(string topic, params object?[] arguments)
 	{
 		if (string.IsNullOrWhiteSpace(topic)) throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
-		if (!_messages.TryGetValue(topic, out BVSignal? signal)) return;
-		BV.CallDeferred(() => signal.InvokeDirect(arguments));
+		BVSignal? signal;
+		lock (_messages) if (!_messages.TryGetValue(topic, out signal)) return;
+		if (ParallelLuauContext.IsParallel) BV.CallOnMainThread(() => signal.InvokeDirect(arguments));
+		else BV.CallDeferred(() => signal.InvokeDirect(arguments));
 	}
 
 	private BVSignal GetMessage(string topic)
 	{
-		if (!_messages.TryGetValue(topic, out BVSignal? signal))
+		lock (_messages)
 		{
-			signal = new();
-			_messages.Add(topic, signal);
+			if (!_messages.TryGetValue(topic, out BVSignal? signal))
+			{
+				signal = new();
+				_messages.Add(topic, signal);
+			}
+			return signal;
 		}
-		return signal;
+	}
+
+	public override void PreDelete()
+	{
+		lock (_messages)
+		{
+			foreach (BVSignal signal in _messages.Values) signal.DisconnectAll();
+			_messages.Clear();
+		}
+		_ = ParallelLuauScheduler.Retire(this).ContinueWith(
+			_ => LuauProvider.Singleton.ReleaseExecutionDomain(this),
+			TaskScheduler.Default);
+		base.PreDelete();
 	}
 }
