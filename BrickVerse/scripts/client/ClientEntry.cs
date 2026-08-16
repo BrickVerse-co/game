@@ -574,8 +574,8 @@ public sealed partial class ClientEntry : Node3D
 			APIServerListenResponse listenResponse = await ClientAuthAPI.SendServerListen();
 			LogServerListenResponse(listenResponse);
 
-			Root.WorldID = listenResponse.WorldID;
 			Root.ServerID = listenResponse.ServerID;
+			Root.WorldID = listenResponse.WorldID;
 
 			BV.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
 
@@ -671,8 +671,8 @@ public sealed partial class ClientEntry : Node3D
 			_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
 			LogClientConnectionInfo(_clientConnectionInfo);
 
-			Root.WorldID = _clientConnectionInfo.WorldID;
 			Root.ServerID = _clientConnectionInfo.ServerID;
+			Root.WorldID = _clientConnectionInfo.WorldID;
 			NetworkService.IsProd = true;
 
 			StartServerStatusPolling();
