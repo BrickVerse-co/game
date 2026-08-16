@@ -35,10 +35,12 @@ public sealed partial class TerrainGrass : Instance
 	[Editable, ScriptProperty] public float PaintHeightScale { get => _paintHeightScale; set { _paintHeightScale = Mathf.Clamp(value, 0.05f, 8f); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public float PaintWidthScale { get => _paintWidthScale; set { _paintWidthScale = Mathf.Clamp(value, 0.05f, 8f); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public Color PaintColor { get => _paintColor; set { _paintColor = value; OnPropertyChanged(); } }
+	[Editable(IsHidden = true), Attributes.Obsolete("Terrain grass now uses Environment.WindStrength")] public float WindStrength { get => Root?.Environment?.WindStrength ?? 0.28f; set { if (Root?.Environment != null) Root.Environment.WindStrength = value; } }
+	[Editable(IsHidden = true), Attributes.Obsolete("Terrain grass now uses Environment.WindSpeed")] public float WindSpeed { get => Root?.Environment?.WindSpeed ?? 1.5f; set { if (Root?.Environment != null) Root.Environment.WindSpeed = value; } }
 
 	public override void Init()
 	{
-		base.Init(); Name = "TerrainGrass";
+		SetProcess(true); base.Init(); Name = "TerrainGrass";
 		_renderer = new MultiMeshInstance3D { Name = "GrassRenderer" }; GDNode.AddChild(_renderer, false, Node.InternalMode.Back);
 		_material = new ShaderMaterial { Shader = new Shader { Code = ShaderCode } }; UpdateShader(); Refresh();
 	}

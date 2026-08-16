@@ -31,6 +31,7 @@ namespace BrickVerse.Client;
 
 public sealed partial class ClientEntry : Node3D
 {
+	private static bool _localTestAttached;
 	private const int ServerStatusPollIntervalSeconds = 2;
 	private const string LocalTestLogPath = "user://logs/localtest";
 	private const string DefaultLocalAddress = "127.0.0.1";
@@ -97,6 +98,7 @@ public sealed partial class ClientEntry : Node3D
 			);
 			ApplyMobileWindowSettings();
 			CreateCoreServices(launchOptions.IsServer);
+			ApplyLocalTestViewport(launchOptions);
 			InitializeWorld(stopwatch);
 			// Let the loading UI present the constructed-world state before world IO,
 			// replication, authentication, and asset initialization continue.
@@ -166,6 +168,7 @@ public sealed partial class ClientEntry : Node3D
 		args.TryGetValue("debug", out string? debugAddress);
 		args.TryGetValue("debug-id", out string? debugId);
 		args.TryGetValue("ltrect", out string? localTestViewportRect);
+		args.TryGetValue("ltmode", out string? localTestPresentation);
 		args.TryGetValue("port", out string? serverPortText);
 
 		bool runAsServer =
@@ -182,6 +185,7 @@ public sealed partial class ClientEntry : Node3D
 			DebugAddress = debugAddress,
 			DebugId = debugId,
 			LocalTestViewportRect = localTestViewportRect,
+			LocalTestPresentation = localTestPresentation,
 			ServerPort = int.TryParse(serverPortText, out int serverPort) ? serverPort : null,
 		};
 
@@ -869,8 +873,21 @@ public sealed partial class ClientEntry : Node3D
 
 	private static void ApplyLocalTestViewport(ClientLaunchOptions options)
 	{
-		if (options.IsServer || string.IsNullOrWhiteSpace(options.LocalTestViewportRect))
+		if (options.IsServer)
 			return;
+		_localTestAttached = string.Equals(options.LocalTestPresentation, "attached", StringComparison.OrdinalIgnoreCase);
+		if (string.Equals(options.LocalTestPresentation, "windowed", StringComparison.OrdinalIgnoreCase))
+		{
+			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+			DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, false);
+			DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, false);
+			Vector2I screenSize = DisplayServer.ScreenGetSize();
+			Vector2I size = new(Math.Min(1280, screenSize.X - 80), Math.Min(720, screenSize.Y - 80));
+			DisplayServer.WindowSetSize(size);
+			DisplayServer.WindowSetPosition((screenSize - size) / 2);
+			return;
+		}
+		if (string.IsNullOrWhiteSpace(options.LocalTestViewportRect)) return;
 
 		string[] values = options.LocalTestViewportRect.Split(',');
 		if (
@@ -898,9 +915,9 @@ public sealed partial class ClientEntry : Node3D
 
 	internal static void ApplyLocalTestViewport(MessageRuntimeViewportRect rect)
 	{
+		if (!_localTestAttached) return;
 		if (!rect.Visible)
 		{
-			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Minimized);
 			return;
 		}
 
@@ -939,6 +956,7 @@ public sealed partial class ClientEntry : Node3D
 		public string? DebugAddress { get; set; }
 		public string? DebugId { get; set; }
 		public string? LocalTestViewportRect { get; set; }
+		public string? LocalTestPresentation { get; set; }
 		public string? LocalWorldPath { get; set; }
 
 #if ALLOW_SELFHOST

@@ -59,6 +59,7 @@
 [ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
 [ext_resource type="Texture2D" uid="uid://d2bki8a2bbea7" path="res://assets/textures/ui-icons/tools.svg" id="48_toolbox"]
 [ext_resource type="Texture2D" uid="uid://0oxaq8x81vax" path="res://assets/textures/ui-icons/keyboard.svg" id="49_input"]
+[ext_resource type="Texture2D" uid="uid://dnrf2lr7agcg1" path="res://assets/textures/creator/ribbon/shapes/shapes.svg" id="50_shapes"]
 
 [sub_resource type="StyleBoxFlat" id="TopBarSurface"]
 content_margin_left = 8.0
@@ -261,7 +262,7 @@ layout_mode = 2
 tooltip_text = "View Team Create session and collaborator cameras"
 text = "Session"
 
-[node name="BetaFeatures" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout"]
+[node name="BetaFeatures" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=618285065]
 custom_minimum_size = Vector2(54, 0)
 layout_mode = 2
 tooltip_text = "Enroll in Creator beta features"
@@ -815,6 +816,37 @@ vertical_alignment = 2
 layout_mode = 2
 theme_override_constants/separation = 2
 
+[node name="Shapes" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1010620178]
+custom_minimum_size = Vector2(62, 54)
+layout_mode = 2
+tooltip_text = "Quickly create a primitive shape"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Shapes" unique_id=1177847324]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("50_shapes")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Shapes" unique_id=1246474973]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Shapes"
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="Forge" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1588466449]
 custom_minimum_size = Vector2(58, 54)
 layout_mode = 2
@@ -1029,7 +1061,7 @@ layout_mode = 2
 metadata/_tab_name = "Files"
 metadata/_tab_index = 1
 
-[node name="AssetManager" parent="GUI/Splitter/Left/Split" instance=ExtResource("41_asset_manager")]
+[node name="AssetManager" parent="GUI/Splitter/Left/Split" unique_id=720799064 instance=ExtResource("41_asset_manager")]
 visible = false
 layout_mode = 2
 metadata/_tab_name = "Assets"

@@ -52,3 +52,10 @@ public enum SelectionPivotModeEnum
 	Center,
 	PrimarySelection
 }
+
+[ScriptEnum("PlayTestPresentation", IsCreatorOnly = true)]
+public enum PlayTestPresentationEnum
+{
+	Attached,
+	Windowed
+}

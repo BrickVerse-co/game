@@ -132,6 +132,13 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 		else _viewContainer.AddChild(new SettingsSectionPage { SectionKey = key });
 	}
 
+	public void SwitchToGameSettings()
+	{
+		string? key = _categoryButtons.Keys.FirstOrDefault(x => x.Equals("game:Game", System.StringComparison.OrdinalIgnoreCase))
+			?? _categoryButtons.Keys.FirstOrDefault(x => x.StartsWith("game:"));
+		if (key != null) SwitchSection(key);
+	}
+
 	private void UpdateCategoryButtons()
 	{
 		foreach (var pair in _categoryButtons)

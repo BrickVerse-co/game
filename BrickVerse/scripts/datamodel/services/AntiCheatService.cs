@@ -18,12 +18,17 @@ internal sealed partial class AntiCheatService : Instance
 		public float AirborneSeconds;
 		public float HoverSeconds;
 		public ulong LastSampleMsec;
+		public ulong GraceUntilMsec;
+		public int ConsecutiveSpeedSamples;
+		public bool WasInGrace = true;
+		public bool EnforcementRequested;
 	}
 
 	private readonly Dictionary<Player, PlayerState> _states = [];
 	private const float SampleInterval = 0.2f;
 	private const float TeleportDistance = 120f;
 	private const float EnforcementScore = 12f;
+	private const ulong MovementWarmupMsec = 3000;
 	private const float MaximumWorldCoordinate = 10_000_000f;
 	private const long ManagedMemoryWarningBytes = 6L * 1024 * 1024 * 1024;
 	private const long WorkingSetWarningBytes = 10L * 1024 * 1024 * 1024;
@@ -32,6 +37,12 @@ internal sealed partial class AntiCheatService : Instance
 	private double _memoryElapsed;
 	private long _lastManagedMemory;
 	internal bool Enabled { get; private set; } = true;
+
+	public override void Init()
+	{
+		SetProcess(true);
+		base.Init();
+	}
 
 	public override void Ready()
 	{
@@ -72,38 +83,71 @@ internal sealed partial class AntiCheatService : Instance
 		Vector3 position = player.Position; Vector3 velocity = player.Velocity;
 		if (!_states.TryGetValue(player, out PlayerState? state))
 		{
-			_states[player] = new PlayerState { Position = position, Velocity = velocity, LastSampleMsec = Time.GetTicksMsec() }; return;
+			ulong now = Time.GetTicksMsec();
+			_states[player] = new PlayerState { Position = position, Velocity = velocity, LastSampleMsec = now, GraceUntilMsec = now + MovementWarmupMsec }; return;
 		}
+		if (state.EnforcementRequested) return;
 		if (!IsFinite(position) || !IsFinite(velocity) || MaxAbs(position) > MaximumWorldCoordinate)
 		{
 			Flag(player, state, "invalid numeric/position state", 12); return;
 		}
 		bool grace = !player.IsReady || player.IsDead || player.Anchored || player.IsSitting || player.teleporting;
-		if (grace) { ResetMotionState(state, position, velocity); return; }
+		ulong sampleTime = Time.GetTicksMsec();
+		if (grace)
+		{
+			state.WasInGrace = true;
+			state.GraceUntilMsec = sampleTime + MovementWarmupMsec;
+			state.ConsecutiveSpeedSamples = 0;
+			ResetMotionState(state, position, velocity);
+			return;
+		}
+		if (state.WasInGrace)
+		{
+			state.WasInGrace = false;
+			state.GraceUntilMsec = sampleTime + MovementWarmupMsec;
+			ResetMotionState(state, position, velocity);
+			return;
+		}
+		if (sampleTime < state.GraceUntilMsec) { ResetMotionState(state, position, velocity); return; }
 
 		Vector3 displacement = position - state.Position;
 		float horizontalDistance = new Vector2(displacement.X, displacement.Z).Length();
 		float maximumSpeed = Math.Max(player.WalkSpeed, player.SprintSpeed);
 		float externalAllowance = new Vector2(player.ExternalVelocity.X, player.ExternalVelocity.Z).Length();
 		float distanceAllowance = (maximumSpeed * 2.15f + externalAllowance) * interval + 2.5f + Math.Min(player.NetworkPing, 500) * 0.008f;
-		if (displacement.Length() > TeleportDistance) Flag(player, state, "teleport", 5);
-		else if (horizontalDistance > distanceAllowance) Flag(player, state, "impossible horizontal speed", 2.5f);
-
-		Vector2 horizontalVelocity = new(velocity.X, velocity.Z); Vector2 oldHorizontalVelocity = new(state.Velocity.X, state.Velocity.Z);
-		float acceleration = (horizontalVelocity - oldHorizontalVelocity).Length() / Math.Max(interval, 0.01f);
-		if (acceleration > Math.Max(180f, maximumSpeed * 14f) && externalAllowance < 1f) Flag(player, state, "impossible acceleration", 1.25f);
-		float measuredSpeed = horizontalDistance / Math.Max(interval, 0.01f);
-		if (measuredSpeed > maximumSpeed * 1.8f + 5f && Math.Abs(measuredSpeed - horizontalVelocity.Length()) > maximumSpeed) Flag(player, state, "position/velocity mismatch", 1.25f);
-
-		if (player.IsOnGround || player.IsClimbing) { state.AirborneSeconds = 0; state.HoverSeconds = 0; }
-		else
+		if (displacement.Length() > TeleportDistance)
 		{
-			state.AirborneSeconds += interval;
-			if (Math.Abs(displacement.Y) < 0.08f && Math.Abs(velocity.Y) < 0.5f) state.HoverSeconds += interval; else state.HoverSeconds = Math.Max(0, state.HoverSeconds - interval);
-			if (state.HoverSeconds > 1.8f) { Flag(player, state, "sustained hover/fly", 2); state.HoverSeconds = 0.8f; }
-			if (state.AirborneSeconds > 2.5f && velocity.Y > Math.Max(player.JumpPower * 1.25f, 50f)) Flag(player, state, "impossible vertical velocity", 2);
+			Flag(player, state, "teleport", 5);
+			state.ConsecutiveSpeedSamples = 0;
 		}
-		if (player.CharBody3D.IsOnWall() && horizontalDistance > distanceAllowance * 0.8f) Flag(player, state, "collision bypass/noclip pattern", 0.75f);
+		else if (horizontalDistance > distanceAllowance)
+		{
+			state.ConsecutiveSpeedSamples++;
+			// Network replication can deliver one movement update as a burst. Only
+			// score speed that remains impossible across a full second of samples.
+			if (state.ConsecutiveSpeedSamples >= 5 && state.ConsecutiveSpeedSamples % 5 == 0)
+				Flag(player, state, "sustained impossible horizontal speed", 2.5f);
+		}
+		else state.ConsecutiveSpeedSamples = 0;
+
+		// Ground, wall and velocity state are authoritative only for a locally
+		// simulated character. A dedicated server receives remote character
+		// transforms in bursts and must not infer noclip/fly from its stale body.
+		if (player.IsLocal)
+		{
+			Vector2 horizontalVelocity = new(velocity.X, velocity.Z); Vector2 oldHorizontalVelocity = new(state.Velocity.X, state.Velocity.Z);
+			float acceleration = (horizontalVelocity - oldHorizontalVelocity).Length() / Math.Max(interval, 0.01f);
+			if (acceleration > Math.Max(180f, maximumSpeed * 14f) && externalAllowance < 1f) Flag(player, state, "impossible acceleration", 1.25f);
+			if (player.IsOnGround || player.IsClimbing) { state.AirborneSeconds = 0; state.HoverSeconds = 0; }
+			else
+			{
+				state.AirborneSeconds += interval;
+				if (Math.Abs(displacement.Y) < 0.08f && Math.Abs(velocity.Y) < 0.5f) state.HoverSeconds += interval; else state.HoverSeconds = Math.Max(0, state.HoverSeconds - interval);
+				if (state.HoverSeconds > 1.8f) { Flag(player, state, "sustained hover/fly", 2); state.HoverSeconds = 0.8f; }
+				if (state.AirborneSeconds > 2.5f && velocity.Y > Math.Max(player.JumpPower * 1.25f, 50f)) Flag(player, state, "impossible vertical velocity", 2);
+			}
+			if (player.CharBody3D.IsOnWall() && horizontalDistance > distanceAllowance * 0.8f) Flag(player, state, "collision bypass/noclip pattern", 0.75f);
+		}
 
 		state.Score = Math.Max(0, state.Score - interval * 0.12f);
 		state.Position = position; state.Velocity = velocity; state.LastSampleMsec = Time.GetTicksMsec();
@@ -112,7 +156,11 @@ internal sealed partial class AntiCheatService : Instance
 	private void OnSuspiciousPeerActivity(int peerId, string reason, int severity)
 	{
 		Player? player = Root.Players.GetPlayerFromPeerID(peerId); if (player == null) return;
-		if (!_states.TryGetValue(player, out PlayerState? state)) _states[player] = state = new PlayerState { Position = player.Position, Velocity = player.Velocity };
+		if (!_states.TryGetValue(player, out PlayerState? state))
+		{
+			ulong now = Time.GetTicksMsec();
+			_states[player] = state = new PlayerState { Position = player.Position, Velocity = player.Velocity, LastSampleMsec = now, GraceUntilMsec = now + MovementWarmupMsec };
+		}
 		Flag(player, state, "network:" + reason, Math.Clamp(severity, 1, 4));
 	}
 
@@ -126,8 +174,13 @@ internal sealed partial class AntiCheatService : Instance
 
 	private void Flag(Player player, PlayerState state, string reason, float weight)
 	{
+		if (state.EnforcementRequested) return;
 		state.Score += weight; BV.PrintWarn("Internal anti-cheat flag: ", player.Name, " reason=", reason, " score=", state.Score);
-		if (state.Score >= EnforcementScore) player.Kick("Connection closed after repeated invalid client behavior.");
+		if (state.Score >= EnforcementScore)
+		{
+			state.EnforcementRequested = true;
+			player.Kick("Connection closed after repeated invalid client behavior.");
+		}
 	}
 
 	private static void ResetMotionState(PlayerState state, Vector3 position, Vector3 velocity) { state.Position = position; state.Velocity = velocity; state.AirborneSeconds = 0; state.HoverSeconds = 0; }

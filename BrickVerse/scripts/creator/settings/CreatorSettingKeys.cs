@@ -14,6 +14,7 @@ public static class CreatorSettingKeys
 		public const string ShowInteractiveTutorial = "creator.show_interactive_tutorial";
 		public const string ShowWhatsNew = "creator.show_whats_new";
 		public const string ShowUpdateNotifications = "creator.show_update_notifications";
+		public const string PlayTestPresentation = "creator.play_test_presentation";
 	}
 
 	public static class Interface

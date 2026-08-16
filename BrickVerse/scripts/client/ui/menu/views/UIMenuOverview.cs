@@ -20,29 +20,25 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 	[Export] private Label _statTimePlayedLabel = null!;
 	[Export] private Label _statPlayerCountLabel = null!;
 	[Export] private Label _statInstanceCountLabel = null!;
-	[Export] private Button _screenshotButton = null!;
-	[Export] private Button _respawnButton = null!;
-	[Export] private Button _leaveButton = null!;
 	[Export] private Button _reportButton = null!;
+	private TextureRect _hero = null!;
 
 	private BVImageAsset? _userAvatarImage;
 	private BVImageAsset? _placeThumbnailImage;
 
 	public override void _Ready()
 	{
-		_screenshotButton.Pressed += OnScreenshot;
-		_respawnButton.Pressed += OnRespawn;
-		_leaveButton.Pressed += OnLeave;
+		_hero = GetNode<TextureRect>("Content/Hero");
 		_reportButton.Pressed += OnReport;
+		Resized += RefreshResponsiveLayout;
+		RefreshResponsiveLayout();
 		base._Ready();
 	}
 
 	public override void _ExitTree()
 	{
-		_screenshotButton.Pressed -= OnScreenshot;
-		_respawnButton.Pressed -= OnRespawn;
-		_leaveButton.Pressed -= OnLeave;
 		_reportButton.Pressed -= OnReport;
+		Resized -= RefreshResponsiveLayout;
 		base._ExitTree();
 	}
 
@@ -52,21 +48,10 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 		OS.ShellOpen("https://brickverse.gg/report?type=universe&id=" + Menu.CoreUI.Root.WorldID);
 	}
 
-	private void OnLeave()
+	private void RefreshResponsiveLayout()
 	{
-		Menu.CoreUI.Root.Entry?.LeaveGame();
-	}
-
-	private void OnRespawn()
-	{
-		Menu.CoreUI.GameMenu.HideMenu();
-		Menu.CoreUI.Root.Players.LocalPlayer.Kill();
-	}
-
-	private void OnScreenshot()
-	{
-		Menu.CoreUI.GameMenu.HideMenu();
-		Menu.CoreUI.Root.Capture.TakePhoto();
+		float width = Size.X;
+		_hero.CustomMinimumSize = new Vector2(0, width < 520 ? 150 : 190);
 	}
 
 	public override void ShowView()
@@ -82,11 +67,14 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 			_placeTypeLabel.Text = root.WorldInfo.Value.Genre.Capitalize();
 			_placeCreatorLabel.Text = "By " + root.WorldInfo.Value.Creator.Name;
 
-			_placeThumbnailImage = new();
-			_placeThumbnailImage.ResourceLoaded += OnWorldThumbnailLoaded;
-			_placeThumbnailImage.ImageType = ImageTypeEnum.WorldThumbnail;
-			_placeThumbnailImage.ImageID = root.FirstWorldMedia;
-			_placeThumbnailImage.LoadResource();
+			if (_placeThumbnailImage == null)
+			{
+				_placeThumbnailImage = new();
+				_placeThumbnailImage.ResourceLoaded += OnWorldThumbnailLoaded;
+				_placeThumbnailImage.ImageType = ImageTypeEnum.WorldThumbnail;
+				_placeThumbnailImage.ImageID = root.FirstWorldMedia;
+				_placeThumbnailImage.LoadResource();
+			}
 		}
 		else
 		{
@@ -111,19 +99,6 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 			_userAvatarImage.ImageType = ImageTypeEnum.UserAvatar;
 			_userAvatarImage.ImageID = root.Players.LocalPlayer.UserID;
 			_userAvatarImage.LoadResource();
-		}
-
-		if (Menu.CoreUI.Service.CanRespawn)
-		{
-			_respawnButton.Modulate = new(1, 1, 1, 1f);
-			_respawnButton.MouseFilter = MouseFilterEnum.Stop;
-			_respawnButton.MouseDefaultCursorShape = CursorShape.PointingHand;
-		}
-		else
-		{
-			_respawnButton.Modulate = new(1, 1, 1, 0.5f);
-			_respawnButton.MouseFilter = MouseFilterEnum.Ignore;
-			_respawnButton.MouseDefaultCursorShape = CursorShape.Forbidden;
 		}
 
 		base.ShowView();

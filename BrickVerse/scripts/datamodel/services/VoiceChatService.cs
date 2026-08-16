@@ -52,6 +52,12 @@ public sealed partial class VoiceChatService : Instance
 	[ScriptProperty] public BVSignal<Player, bool> PlayerSpeakingChanged { get; private set; } = new();
 	[ScriptProperty] public BVSignal<Player, float> VoiceLevelChanged { get; private set; } = new();
 
+	public override void Init()
+	{
+		SetProcess(true);
+		base.Init();
+	}
+
 	public override void Ready()
 	{
 		base.Ready();
