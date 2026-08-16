@@ -1,5 +1,6 @@
 using Godot;
 using BrickVerse.Client.Settings;
+using BrickVerse.Datamodel;
 using BrickVerse.Shared.Settings;
 using System.Linq;
 
@@ -19,6 +20,11 @@ public sealed partial class SettingsSectionPage : VBoxContainer
 
 		foreach (var def in defs)
 		{
+			if (IsVoiceSetting(def.Key) && World.Current?.Players.LocalPlayer?.CanVoiceChat != true)
+			{
+				continue;
+			}
+
 			if (def.IsAdvanced && !ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.Advanced.ShowAdvancedSettings))
 			{
 				continue;
@@ -41,4 +47,9 @@ public sealed partial class SettingsSectionPage : VBoxContainer
 
 		base._Ready();
 	}
+
+	private static bool IsVoiceSetting(string key) => key is
+		ClientSettingKeys.Audio.MicrophoneInputDevice or
+		ClientSettingKeys.Audio.MicrophoneVolume or
+		ClientSettingKeys.Audio.VoiceChatVolume;
 }

@@ -17,6 +17,8 @@ public partial class UIChat : Control
 	private const int MaxMessages = 100;
 	private const float AspectRatio = 400f / 240f;
 	private const string ChatLabelPath = "res://scenes/client/ui/chat/chat_label.tscn";
+	private const string MicrophoneIconPath = "res://assets/textures/ui-icons/microphone-bold.svg";
+	private const string MutedMicrophoneIconPath = "res://assets/textures/ui-icons/microphone-slash-bold.svg";
 	[Export] private LineEdit _chatField = null!;
 	[Export] private Control _chatLayout = null!;
 	[Export] private ScrollContainer _chatScroll = null!;
@@ -68,9 +70,34 @@ public partial class UIChat : Control
 	private void CreateVoiceChatButton()
 	{
 		if (!LocalPlayer.CanVoiceChat || _voiceChatButton != null) return;
-		_voiceChatButton = new Button { Text = "Mic Off", ToggleMode = true, TooltipText = "Voice uses the active game connection and is not routed through BrickVerse's privacy proxy." };
-		_chatFieldPanel.AddChild(_voiceChatButton);
-		_voiceChatButton.Toggled += enabled => { Root.VoiceChat.SetMicrophoneEnabled(enabled); _voiceChatButton.Text = enabled ? "Mic On" : "Mic Off"; };
+
+		_voiceChatButton = new Button
+		{
+			ToggleMode = true,
+			CustomMinimumSize = new Vector2(36, 36),
+			FocusMode = FocusModeEnum.None,
+			Flat = true,
+			Icon = GD.Load<Texture2D>(MutedMicrophoneIconPath),
+			ExpandIcon = true,
+			Modulate = new Color(1, 1, 1, 0.5f),
+			MouseDefaultCursorShape = CursorShape.PointingHand,
+			TooltipText = "Turn microphone on"
+		};
+		_voiceChatButton.AddThemeConstantOverride("icon_max_width", 24);
+
+		Container composer = _emojiButton.GetParent<Container>();
+		composer.AddChild(_voiceChatButton);
+		composer.MoveChild(_voiceChatButton, _emojiButton.GetIndex() + 1);
+		_voiceChatButton.Toggled += OnMicrophoneToggled;
+	}
+
+	private void OnMicrophoneToggled(bool enabled)
+	{
+		if (_voiceChatButton == null) return;
+		Root.VoiceChat.SetMicrophoneEnabled(enabled);
+		_voiceChatButton.Modulate = enabled ? Colors.White : new Color(1, 1, 1, 0.5f);
+		_voiceChatButton.Icon = enabled ? GD.Load<Texture2D>(MicrophoneIconPath) : GD.Load<Texture2D>(MutedMicrophoneIconPath);
+		_voiceChatButton.TooltipText = enabled ? "Mute microphone" : "Turn microphone on";
 	}
 
 	private void ConnectSignals()
@@ -186,6 +213,7 @@ public partial class UIChat : Control
 
 	public override void _ExitTree()
 	{
+		if (_voiceChatButton != null) _voiceChatButton.Toggled -= OnMicrophoneToggled;
 		Root.Chat.NewChatMessage.Disconnect(OnNewChatMessage);
 		Root.Chat.MessageDeclined.Disconnect(OnMessageDeclined);
 		Root.Chat.MessageReceived.Disconnect(OnMessageReceived);
@@ -494,10 +522,20 @@ public partial class UIChat : Control
 			string[] suggestions = Root.Chat.GetCommandSuggestions(newText[..cursorPos]).ToArray();
 			if (suggestions.Length > 0)
 			{
-				_commandAutocomplete?.QueueFree(); _commandAutocomplete = new PopupMenu();
+				_commandAutocomplete?.QueueFree();
+				_commandAutocomplete = new PopupMenu { Unfocusable = true };
 				for (int i = 0; i < suggestions.Length; i++) _commandAutocomplete.AddItem(suggestions[i], i);
-				_commandAutocomplete.IdPressed += id => { _chatField.Text = suggestions[(int)id] + " "; _chatField.CaretColumn = _chatField.Text.Length; _commandAutocomplete?.Hide(); };
-				AddChild(_commandAutocomplete); Vector2I at = (Vector2I)(_chatField.GlobalPosition + new Vector2(0, _chatField.Size.Y)); _commandAutocomplete.Popup(new Rect2I(at, Vector2I.Zero));
+				_commandAutocomplete.IdPressed += id =>
+				{
+					_chatField.Text = suggestions[(int)id] + " ";
+					_chatField.CaretColumn = _chatField.Text.Length;
+					_commandAutocomplete?.Hide();
+					_chatField.GrabFocus();
+				};
+				AddChild(_commandAutocomplete);
+				Vector2I at = (Vector2I)(_chatField.GlobalPosition + new Vector2(0, _chatField.Size.Y));
+				_commandAutocomplete.Popup(new Rect2I(at, Vector2I.Zero));
+				_chatField.CallDeferred(Control.MethodName.GrabFocus);
 				return;
 			}
 		}

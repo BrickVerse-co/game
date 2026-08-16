@@ -17,8 +17,8 @@ public sealed partial class VoiceChatService : Instance
 {
 	private const string MicScene = "res://addons/twovoip/voiphelper/two_voip_mic.tscn";
 	private const string SpeakerScene = "res://addons/twovoip/voiphelper/two_voip_speaker.tscn";
-	private const string MicrophoneIcon = "res://assets/textures/client/emojis/microphone.png";
-	private const string MutedIcon = "res://assets/textures/client/emojis/mute.png";
+	private const string MicrophoneIcon = "res://assets/textures/ui-icons/microphone-bold.svg";
+	private const string MutedIcon = "res://assets/textures/ui-icons/microphone-slash-bold.svg";
 	private const int MaximumPacketBytes = 4096;
 	private readonly Dictionary<Player, (AudioStreamPlayer3D Player, Node Decoder)> _speakers = [];
 	private readonly Dictionary<Player, VoiceIndicator> _indicators = [];
@@ -34,6 +34,8 @@ public sealed partial class VoiceChatService : Instance
 	private bool _initialized;
 	private bool _microphoneEnabled;
 	private float _inputSensitivity = 1f;
+	private float _microphoneVolume = 1f;
+	private float _outputVolume = 1f;
 	private double _levelSendTimer;
 	private bool _indicatorEnabled = true;
 	private Color _indicatorColor = new("35d06f");
@@ -43,6 +45,8 @@ public sealed partial class VoiceChatService : Instance
 	[ScriptProperty] public bool IsAvailable => _initialized && Root.Players.LocalPlayer?.CanVoiceChat == true;
 	[ScriptProperty] public bool MicrophoneEnabled => _microphoneEnabled;
 	[ScriptProperty] public float InputSensitivity => _inputSensitivity;
+	[ScriptProperty] public float MicrophoneVolume => _microphoneVolume;
+	[ScriptProperty] public float OutputVolume => _outputVolume;
 	[ScriptProperty] public bool IndicatorEnabled => _indicatorEnabled;
 	[ScriptProperty] public Color IndicatorColor => _indicatorColor;
 	[ScriptProperty] public Color IndicatorIdleColor => _indicatorIdleColor;
@@ -82,6 +86,7 @@ public sealed partial class VoiceChatService : Instance
 		Button ptt = new() { ToggleMode = true }; Button vox = new() { ToggleMode = true, ButtonPressed = true }; Button denoise = new() { ToggleMode = true, ButtonPressed = true };
 		_microphone.Call("initvoipmic", _microphoneToggle, default(Variant), ptt, vox, denoise, default(Variant));
 		_microphone.Call("setopusvalues", 48000, 20, 1, 16000, 5, true); _microphone.Call("set_voxthreshhold", 0.025f / _inputSensitivity);
+		_microphone.Call("set_gain", _microphoneVolume);
 		_microphone.Connect("transmitaudiopacket", Callable.From<byte[], long>(OnEncodedPacket));
 		_microphone.Connect("transmitaudiojsonpacket", Callable.From<Godot.Collections.Dictionary>(OnStreamMetadata));
 		_initialized = true;
@@ -101,6 +106,24 @@ public sealed partial class VoiceChatService : Instance
 	{
 		_inputSensitivity = Mathf.Clamp(sensitivity, 0.1f, 4f);
 		_microphone?.Call("set_voxthreshhold", 0.025f / _inputSensitivity);
+	}
+
+	[ScriptMethod]
+	public void SetMicrophoneVolume(float volume)
+	{
+		_microphoneVolume = Mathf.Clamp(volume, 0f, 2f);
+		_microphone?.Call("set_gain", _microphoneVolume);
+	}
+
+	[ScriptMethod]
+	public void SetOutputVolume(float volume)
+	{
+		_outputVolume = Mathf.Clamp(volume, 0f, 2f);
+		foreach (var (player, speaker) in _speakers)
+		{
+			float playerVolume = _playerVolumes.GetValueOrDefault(player.UserID, 1f);
+			speaker.Player.VolumeDb = ToVolumeDb(playerVolume * _outputVolume);
+		}
 	}
 
 	[ScriptMethod]
@@ -127,7 +150,7 @@ public sealed partial class VoiceChatService : Instance
 	{
 		if (player == null) return;
 		volume = Mathf.Clamp(volume, 0f, 2f); _playerVolumes[player.UserID] = volume;
-		if (_speakers.TryGetValue(player, out var speaker)) speaker.Player.VolumeDb = volume <= 0f ? -80f : Mathf.LinearToDb(volume);
+		if (_speakers.TryGetValue(player, out var speaker)) speaker.Player.VolumeDb = ToVolumeDb(volume * _outputVolume);
 	}
 
 	private void SetPlayerMuted(Player player, bool muted)
@@ -233,7 +256,7 @@ public sealed partial class VoiceChatService : Instance
 	{
 		if (_speakers.TryGetValue(sender, out var existing)) return existing;
 		float volume = _playerVolumes.GetValueOrDefault(sender.UserID, 1f);
-		AudioStreamPlayer3D spatialPlayer = new() { Name = "VoiceChatAudio", MaxDistance = 85, UnitSize = 8, VolumeDb = volume <= 0f ? -80f : Mathf.LinearToDb(volume), AttenuationModel = AudioStreamPlayer3D.AttenuationModelEnum.InverseDistance };
+		AudioStreamPlayer3D spatialPlayer = new() { Name = "VoiceChatAudio", MaxDistance = 85, UnitSize = 8, VolumeDb = ToVolumeDb(volume * _outputVolume), AttenuationModel = AudioStreamPlayer3D.AttenuationModelEnum.InverseDistance };
 		sender.GDNode3D.AddChild(spatialPlayer, false, Node.InternalMode.Back);
 		Node decoder = ResourceLoader.Load<PackedScene>(SpeakerScene).Instantiate(); spatialPlayer.AddChild(decoder);
 		return _speakers[sender] = (spatialPlayer, decoder);
@@ -267,6 +290,8 @@ public sealed partial class VoiceChatService : Instance
 		if (_indicators.Remove(player, out VoiceIndicator? indicator)) indicator.QueueFree();
 	}
 
+	private static float ToVolumeDb(float volume) => volume <= 0f ? -80f : Mathf.LinearToDb(volume);
+
 	public override void ExitTree()
 	{
 		SetMicrophoneEnabled(false); Root.Players.PlayerRemoved.Disconnect(OnPlayerRemoved);
@@ -284,19 +309,19 @@ public sealed partial class VoiceChatService : Instance
 		{
 			_target = target; _microphone = microphone; _muted = muted;
 			Name = "VoiceChatBubble"; Texture = microphone; Billboard = BaseMaterial3D.BillboardModeEnum.Enabled;
-			NoDepthTest = true; FixedSize = true; PixelSize = 0.0022f; RenderPriority = 10; Visible = false;
+			NoDepthTest = true; FixedSize = true; PixelSize = 0.0012f; RenderPriority = 10; Visible = false;
 		}
 
 		public override void _Process(double delta)
 		{
-			Position = new Vector3(0, Mathf.Max(3.2f, _target.CalculateBounds().Size.Y * 0.7f + 1.1f), 0);
+			Position = new Vector3(0, Mathf.Max(2.1f, _target.CalculateBounds().Size.Y * 0.5f + 0.35f), 0);
 		}
 
 		public void UpdateVisual(bool visible, float level, bool muted, Color active, Color idle, Color mutedColor)
 		{
 			Visible = visible; Texture = muted ? _muted : _microphone;
 			Modulate = muted ? mutedColor : idle.Lerp(active, Mathf.Clamp(level * 2.5f, 0f, 1f));
-			Scale = Vector3.One * (1f + Mathf.Clamp(level, 0f, 1f) * 0.18f);
+			Scale = Vector3.One * (0.62f + Mathf.Clamp(level, 0f, 1f) * 0.08f);
 		}
 	}
 }

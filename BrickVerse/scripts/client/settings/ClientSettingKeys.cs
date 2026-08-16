@@ -14,6 +14,14 @@ public static class ClientSettingKeys
 		public const string ShowOwnNametag = "general.show_own_nametag";
 	}
 
+	public static class Audio
+	{
+		public const string OutputDevice = "audio.output_device";
+		public const string MicrophoneInputDevice = "audio.microphone_input_device";
+		public const string MicrophoneVolume = "audio.microphone_volume";
+		public const string VoiceChatVolume = "audio.voice_chat_volume";
+	}
+
 	public static class Chat
 	{
 		public const string ChatColors = "chat.chat_colors";
