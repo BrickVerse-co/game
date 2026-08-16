@@ -55,6 +55,12 @@ public static class ClientAuthAPI
 		ServerListener?.SetToken(joinToken);
 	}
 
+	public static string GetAuthorizationHeaderValue()
+	{
+		if (string.IsNullOrWhiteSpace(JoinToken)) return string.Empty;
+		return JoinToken.StartsWith("Bearer ", System.StringComparison.OrdinalIgnoreCase) ? JoinToken : "Bearer " + JoinToken;
+	}
+
 	public static void SetCreatorToken(string creatorToken)
 	{
 		if (string.IsNullOrWhiteSpace(creatorToken))

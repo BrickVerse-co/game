@@ -11,6 +11,7 @@ using BrickVerse.Utils.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -113,6 +114,47 @@ public partial class NetMessage : IScriptObject
 		return new NetMessage();
 	}
 
+	public static NetMessage FromObject(object? value)
+	{
+		if (value == null) return new();
+		if (value is NetMessage message) return message;
+		if (value is not IDictionary dictionary) throw new ArgumentException("Network payload must be a NetMessage or a table with string keys.");
+		NetMessage result = new();
+		foreach (DictionaryEntry pair in dictionary)
+		{
+			if (pair.Key is not string key) throw new ArgumentException("Network payload table keys must be strings.");
+			if (pair.Value != null) AddValue(result, key, pair.Value);
+		}
+		return result;
+	}
+
+	internal static void AddValue(NetMessage message, string key, object value)
+	{
+		switch (value)
+		{
+			case string v: message.Strings[key] = v; break;
+			case bool v: message.Bools[key] = v; break;
+			case byte or short or int: message.Ints[key] = Convert.ToInt32(value); break;
+			case long v when v >= int.MinValue && v <= int.MaxValue: message.Ints[key] = (int)v; break;
+			case float or double or decimal: message.Numbers[key] = Convert.ToSingle(value); break;
+			case Vector2 v: message.Vec2s[key] = v; break;
+			case Vector3 v: message.Vec3s[key] = v; break;
+			case Color v: message.Colors[key] = v; break;
+			case Instance v: message.Instances[key] = v; break;
+			case byte[] v: message.Buffers[key] = v; break;
+			default: throw new ArgumentException($"Unsupported network value for '{key}': {value.GetType().Name}");
+		}
+	}
+
+	internal static NetMessage FromPayload(NetMessagePayload payload)
+	{
+		NetMessage msg = new() { Strings = payload.Strings, Ints = payload.Ints, Numbers = payload.Numbers, Bools = payload.Bools, Buffers = payload.Buffers };
+		foreach ((string key, Vector2Dto value) in payload.Vec2s) msg.Vec2s[key] = value.ToVector2();
+		foreach ((string key, Vector3Dto value) in payload.Vec3s) msg.Vec3s[key] = value.ToVector3();
+		foreach ((string key, ColorDto value) in payload.Colors) msg.Colors[key] = value.ToColor();
+		return msg;
+	}
+
 	public byte[] Serialize()
 	{
 		NetMessagePayload payload = new()
@@ -145,26 +187,7 @@ public partial class NetMessage : IScriptObject
 	public static async Task<NetMessage> Deserialize(byte[] rawdata)
 	{
 		NetMessagePayload? payload = SerializeUtils.Deserialize<NetMessagePayload>(rawdata) ?? throw new Exception("Message is invalid");
-		NetMessage msg = new()
-		{
-			Strings = payload.Strings,
-			Ints = payload.Ints,
-			Numbers = payload.Numbers,
-			Bools = payload.Bools,
-			Buffers = payload.Buffers,
-		};
-		foreach ((string key, Vector2Dto v2) in payload.Vec2s)
-		{
-			msg.Vec2s[key] = v2.ToVector2();
-		}
-		foreach ((string key, Vector3Dto v3) in payload.Vec3s)
-		{
-			msg.Vec3s[key] = v3.ToVector3();
-		}
-		foreach ((string key, ColorDto c) in payload.Colors)
-		{
-			msg.Colors[key] = c.ToColor();
-		}
+		NetMessage msg = FromPayload(payload);
 		foreach ((string key, string netID) in payload.Instances)
 		{
 			NetworkedObject? netobj = await World.Current!.WaitForNetObjectAsync(netID);

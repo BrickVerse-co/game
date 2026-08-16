@@ -31,6 +31,8 @@ public sealed partial class Gizmos : Node
 	private Vector2 _dragStartPos;
 	private Vector2 _rightClickStart;
 	private bool _rightClickPending;
+	private Instance? _rightClickTarget;
+	private float _rightClickTravel;
 	private const float DragThreshold = 6f;
 	private const float MinimumScale = 0.01f;
 	private const float MinimumSnap = 0.0001f;
@@ -533,9 +535,12 @@ public sealed partial class Gizmos : Node
 
 		if (hoveringOn != null)
 		{
-			// Roblox Studio-style selection: click selects the complete authored
-			// model/prefab, while Alt-click deliberately drills into a child.
-			selectInstance = Input.IsKeyPressed(Key.Alt)
+			// A plain click selects the complete authored model/prefab. Holding a
+			// selection modifier deliberately drills into the part beneath the cursor.
+			bool drillIntoModel = Input.IsKeyPressed(Key.Alt)
+				|| Input.IsKeyPressed(Key.Ctrl)
+				|| Input.IsKeyPressed(Key.Shift);
+			selectInstance = drillIntoModel
 				? hoveringOn
 				: GetModelRoot(hoveringOn) ?? hoveringOn;
 		}
@@ -551,7 +556,15 @@ public sealed partial class Gizmos : Node
 
 		if (Selected.Count > 0)
 		{
-			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToggleTransformOrientation, Key.L))
+			if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.L })
+			{
+				Dynamic[] targets = [.. Selected]; Transform3D[] before = targets.Select(target => target.GetGlobalTransform()).ToArray();
+				_history.NewAction("Align selection to world axes");
+				_history.AddDoCallback(new((_) => { foreach (Dynamic target in targets) target.Rotation = Vector3.Zero; }));
+				_history.AddUndoCallback(new((_) => { for (int i = 0; i < targets.Length; i++) targets[i].SetGlobalTransform(before[i]); }));
+				_history.CommitAction(); CreatorService.Interface.StatusBar?.SetStatus("Aligned selection to world axes");
+			}
+			else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToggleTransformOrientation, Key.L))
 			{
 				TransformOrientationEnum nextOrientation = CreatorService.Interface.TransformOrientation == TransformOrientationEnum.Global
 					? TransformOrientationEnum.Local
@@ -598,12 +611,15 @@ public sealed partial class Gizmos : Node
 				if (button.Pressed)
 				{
 					_rightClickStart = button.Position;
+					_rightClickTarget = selectInstance;
+					_rightClickTravel = 0;
 					_rightClickPending = true;
 				}
-				else if (_rightClickPending && button.Position.DistanceTo(_rightClickStart) < DragThreshold)
+				else if (_rightClickPending && _rightClickTravel < DragThreshold)
 				{
-					ShowViewportContextMenu(selectInstance);
+					ShowViewportContextMenu(_rightClickTarget);
 					_rightClickPending = false;
+					_rightClickTarget = null;
 				}
 				return;
 			}
@@ -707,8 +723,15 @@ public sealed partial class Gizmos : Node
 		}
 		else if (@event is InputEventMouseMotion motion)
 		{
-			if (_rightClickPending && motion.Position.DistanceTo(_rightClickStart) >= DragThreshold)
-				_rightClickPending = false;
+			if (_rightClickPending)
+			{
+				_rightClickTravel += motion.Relative.Length();
+				if (_rightClickTravel >= DragThreshold)
+				{
+					_rightClickPending = false;
+					_rightClickTarget = null;
+				}
+			}
 			if (_isDragPending && !_isDraggingDyn)
 			{
 				float distance = motion.Position.DistanceTo(_dragStartPos);

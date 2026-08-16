@@ -1,0 +1,8 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- RuntimeCsg: overlapping solids + runtime/play indicator -->
+<path d="M8 11H27C29.209 11 31 12.791 31 15V34C31 36.209 29.209 38 27 38H8C5.791 38 4 36.209 4 34V15C4 12.791 5.791 11 8 11Z" fill="#6AC2FF"/>
+<circle cx="30" cy="24" r="13" fill="#2D91D8"/>
+<path d="M25 17V31L36 24L25 17Z" fill="#B9E3FF"/>
+<path d="M17 11V38" stroke="#B9E3FF" stroke-width="2.5" opacity=".55"/>
+<circle cx="30" cy="24" r="3" fill="#6AC2FF" opacity=".5"/>
+</svg>

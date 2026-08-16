@@ -9,6 +9,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -44,17 +45,20 @@ public partial class InsertMenuPopup : PopupPanel
 			"Mesh",
 			"EditableMesh",
 			"Seat",
+			"VehicleSeat",
 			"Model",
 			"Folder",
 			"Text3D",
 			"Image3D",
 			"Decal",
+			"Attachment",
+			"SurfaceAppearance",
 			"Camera",
 			"TerrainMaterial",
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-			new() { "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
+		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -68,8 +72,9 @@ public partial class InsertMenuPopup : PopupPanel
 			"ColorValue",
 			"InstanceValue",
 		},
-		[new() { Title = "Effects" }] = new() { "Particles" },
-		[new() { Title = "Audio" }] = new() { "Sound" },
+		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
+		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
+		[new() { Title = "Audio" }] = new() { "Sound", "SoundGroup" },
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
 			"Accessory",
@@ -87,7 +92,12 @@ public partial class InsertMenuPopup : PopupPanel
 		*/
 		[new() { Title = "Lighting Effects", RecommendOn = [typeof(Lighting)] }] = new()
 		{
+			"BloomEffect",
+			"AmbientOcclusionEffect",
 			"ColorAdjustModifier",
+			"ColorCorrectionEffect",
+			"FogEffect",
+			"TonemapEffect",
 		},
 		[
 			new()
@@ -103,11 +113,13 @@ public partial class InsertMenuPopup : PopupPanel
 			"UILabel",
 			"UIButton",
 			"UIImage",
+			"UIVideoFrame",
 			"UITextInput",
 			"UIHLayout",
 			"UIVLayout",
 			"UIHFlow",
 			"UIVFlow",
+			"UIGradient",
 			"UIGridLayout",
 			"UIScrollView",
 			"UIViewport",
@@ -217,6 +229,10 @@ public partial class InsertMenuPopup : PopupPanel
 				&& type.IsDefined(typeof(InstantiableAttribute), false)
 				&& !type.IsDefined(typeof(InternalAttribute), false))
 			.Select(static type => type.Name)
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
+				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
+				|| name is not nameof(TerrainGrass))
 			.Where(name => !categorized.Contains(name)
 				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
 			.OrderBy(static name => name, StringComparer.Ordinal)
@@ -235,6 +251,10 @@ public partial class InsertMenuPopup : PopupPanel
 					: subItems
 						.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase))
 						.ToList();
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
+				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass))
+				filtered.RemoveAll(name => name is nameof(TerrainGrass));
 
 			// If none matched, skip this category
 			if (filtered.Count == 0)
@@ -328,6 +348,9 @@ public partial class InsertMenuPopup : PopupPanel
 					break;
 				case Light:
 					parentTo = World.Current.Lighting;
+					break;
+				case GUI:
+					parentTo = World.Current.PlayerGUI;
 					break;
 				case UIField when instance is not GUI:
 					{

@@ -1,8 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://crg4tn211i31u"]
 
-[ext_resource type="Theme" path="res://resources/themes/creator/creator.tres" id="1_theme"]
-[ext_resource type="Script" path="res://scripts/creator/ui/popups/MediaUploadPopup.cs" id="2_script"]
-[ext_resource type="Texture2D" path="res://assets/textures/creator/close_x2.svg" id="3_close"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://c0u2hhsy50310" path="res://scripts/creator/ui/popups/MediaUploadPopup.cs" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3_close"]
 
 [sub_resource type="StyleBoxFlat" id="StyleModal"]
 bg_color = Color(0.075, 0.086, 0.105, 1)
@@ -44,6 +44,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="ButtonGroup" id="OwnerGroup"]
+
 [sub_resource type="StyleBoxFlat" id="StylePrimary"]
 bg_color = Color(0.004, 0.529, 0.973, 1)
 corner_radius_top_left = 6
@@ -51,20 +53,18 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[sub_resource type="ButtonGroup" id="OwnerGroup"]
-
-[node name="MediaUploadPopup" type="Window" node_paths=PackedStringArray("_titleLabel", "_subtitleLabel", "_closeButton", "_fileDialog", "_preview", "_kindIcon", "_previewMessage", "_fileName", "_fileDetails", "_error", "_busy", "_name", "_description", "_personal", "_guild", "_guildDropdown", "_choose", "_replace", "_upload", "_cancel")]
+[node name="MediaUploadPopup" type="Window" unique_id=852389180 node_paths=PackedStringArray("_titleLabel", "_subtitleLabel", "_closeButton", "_fileDialog", "_preview", "_kindIcon", "_previewMessage", "_fileName", "_fileDetails", "_error", "_busy", "_name", "_description", "_personal", "_guild", "_guildDropdown", "_choose", "_replace", "_upload", "_cancel")]
 transparent_bg = true
 oversampling_override = 1.0
 title = "Upload media"
 size = Vector2i(900, 610)
-min_size = Vector2i(760, 540)
 transient = true
 exclusive = true
-always_on_top = true
 borderless = true
+always_on_top = true
 transparent = true
 popup_wm_hint = true
+min_size = Vector2i(760, 540)
 theme = ExtResource("1_theme")
 script = ExtResource("2_script")
 _titleLabel = NodePath("Modal/Layout/Header/Row/TitleStack/Title")
@@ -88,7 +88,7 @@ _replace = NodePath("Modal/Layout/Body/Left/FileCard/Content/Row/ReplaceFile")
 _upload = NodePath("Modal/Layout/Footer/Row/Upload")
 _cancel = NodePath("Modal/Layout/Footer/Row/Cancel")
 
-[node name="Modal" type="PanelContainer" parent="."]
+[node name="Modal" type="PanelContainer" parent="." unique_id=1056248730]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -96,11 +96,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleModal")
 
-[node name="Layout" type="VBoxContainer" parent="Modal"]
+[node name="Layout" type="VBoxContainer" parent="Modal" unique_id=754520181]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="Header" type="MarginContainer" parent="Modal/Layout"]
+[node name="Header" type="MarginContainer" parent="Modal/Layout" unique_id=1928779535]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_constants/margin_left = 22
@@ -108,166 +108,166 @@ theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="Row" type="HBoxContainer" parent="Modal/Layout/Header"]
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Header" unique_id=660873849]
 layout_mode = 2
 
-[node name="TitleStack" type="VBoxContainer" parent="Modal/Layout/Header/Row"]
+[node name="TitleStack" type="VBoxContainer" parent="Modal/Layout/Header/Row" unique_id=16097287]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="Title" type="Label" parent="Modal/Layout/Header/Row/TitleStack"]
+[node name="Title" type="Label" parent="Modal/Layout/Header/Row/TitleStack" unique_id=1759648031]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Upload media"
 
-[node name="Subtitle" type="Label" parent="Modal/Layout/Header/Row/TitleStack"]
+[node name="Subtitle" type="Label" parent="Modal/Layout/Header/Row/TitleStack" unique_id=1282494443]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
 text = "Import, preview, and publish media to BrickVerse."
 
-[node name="Close" type="Button" parent="Modal/Layout/Header/Row"]
+[node name="Close" type="Button" parent="Modal/Layout/Header/Row" unique_id=358903266]
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 size_flags_horizontal = 8
 icon = ExtResource("3_close")
 flat = true
 
-[node name="HeaderSeparator" type="HSeparator" parent="Modal/Layout"]
+[node name="HeaderSeparator" type="HSeparator" parent="Modal/Layout" unique_id=1724637263]
 layout_mode = 2
 
-[node name="Body" type="HBoxContainer" parent="Modal/Layout"]
+[node name="Body" type="HBoxContainer" parent="Modal/Layout" unique_id=1335566026]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="LeftPadding" type="Control" parent="Modal/Layout/Body"]
+[node name="LeftPadding" type="Control" parent="Modal/Layout/Body" unique_id=1348311387]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="Left" type="VBoxContainer" parent="Modal/Layout/Body"]
+[node name="Left" type="VBoxContainer" parent="Modal/Layout/Body" unique_id=1172896950]
 custom_minimum_size = Vector2(510, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="Preview" type="PanelContainer" parent="Modal/Layout/Body/Left"]
+[node name="Preview" type="PanelContainer" parent="Modal/Layout/Body/Left" unique_id=411049610]
 custom_minimum_size = Vector2(0, 350)
+clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
-clip_contents = true
 theme_override_styles/panel = SubResource("StylePreview")
 
-[node name="Image" type="TextureRect" parent="Modal/Layout/Body/Left/Preview"]
+[node name="Image" type="TextureRect" parent="Modal/Layout/Body/Left/Preview" unique_id=1472704408]
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Empty" type="VBoxContainer" parent="Modal/Layout/Body/Left/Preview"]
+[node name="Empty" type="VBoxContainer" parent="Modal/Layout/Body/Left/Preview" unique_id=960134529]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 12
+alignment = 1
 
-[node name="TopSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty"]
+[node name="TopSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty" unique_id=1376501989]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Icon" type="TextureRect" parent="Modal/Layout/Body/Left/Preview/Empty"]
+[node name="Icon" type="TextureRect" parent="Modal/Layout/Body/Left/Preview/Empty" unique_id=2064460640]
+self_modulate = Color(0.45, 0.62, 0.8, 0.75)
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-self_modulate = Color(0.45, 0.62, 0.8, 0.75)
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Message" type="Label" parent="Modal/Layout/Body/Left/Preview/Empty"]
+[node name="Message" type="Label" parent="Modal/Layout/Body/Left/Preview/Empty" unique_id=1713444695]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
 text = "Choose a file to preview it here."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="BottomSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty"]
+[node name="BottomSpacer" type="Control" parent="Modal/Layout/Body/Left/Preview/Empty" unique_id=1025587888]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="FileCard" type="PanelContainer" parent="Modal/Layout/Body/Left"]
+[node name="FileCard" type="PanelContainer" parent="Modal/Layout/Body/Left" unique_id=1778608233]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
 
-[node name="Content" type="VBoxContainer" parent="Modal/Layout/Body/Left/FileCard"]
+[node name="Content" type="VBoxContainer" parent="Modal/Layout/Body/Left/FileCard" unique_id=545370033]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="Row" type="HBoxContainer" parent="Modal/Layout/Body/Left/FileCard/Content"]
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Body/Left/FileCard/Content" unique_id=329814844]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="FileName" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+[node name="FileName" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content/Row" unique_id=1654468139]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "No file selected"
 text_overrun_behavior = 3
 
-[node name="ChooseFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+[node name="ChooseFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row" unique_id=1059076108]
 custom_minimum_size = Vector2(104, 34)
 layout_mode = 2
 text = "Choose file"
 
-[node name="ReplaceFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row"]
+[node name="ReplaceFile" type="Button" parent="Modal/Layout/Body/Left/FileCard/Content/Row" unique_id=800584068]
 visible = false
 custom_minimum_size = Vector2(88, 34)
 layout_mode = 2
 text = "Replace"
 
-[node name="Details" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content"]
+[node name="Details" type="Label" parent="Modal/Layout/Body/Left/FileCard/Content" unique_id=863588940]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
 text = "Supported format information"
 
-[node name="Right" type="PanelContainer" parent="Modal/Layout/Body"]
+[node name="Right" type="PanelContainer" parent="Modal/Layout/Body" unique_id=205904481]
 custom_minimum_size = Vector2(315, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
 
-[node name="Form" type="VBoxContainer" parent="Modal/Layout/Body/Right"]
+[node name="Form" type="VBoxContainer" parent="Modal/Layout/Body/Right" unique_id=644127486]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DetailsTitle" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="DetailsTitle" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=1202846474]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Asset details"
 
-[node name="NameLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="NameLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=1434608996]
 layout_mode = 2
 text = "Name"
 
-[node name="Name" type="LineEdit" parent="Modal/Layout/Body/Right/Form"]
+[node name="Name" type="LineEdit" parent="Modal/Layout/Body/Right/Form" unique_id=1477999799]
 layout_mode = 2
 placeholder_text = "Asset name"
 max_length = 64
 caret_blink = true
 
-[node name="DescriptionLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="DescriptionLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=833882229]
 layout_mode = 2
 text = "Description (optional)"
 
-[node name="Description" type="TextEdit" parent="Modal/Layout/Body/Right/Form"]
+[node name="Description" type="TextEdit" parent="Modal/Layout/Body/Right/Form" unique_id=982532484]
 custom_minimum_size = Vector2(0, 124)
 layout_mode = 2
 placeholder_text = "Describe this asset..."
 wrap_mode = 1
 
-[node name="OwnerLabel" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="OwnerLabel" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=807486711]
 layout_mode = 2
 text = "Owner"
 
-[node name="Ownership" type="HBoxContainer" parent="Modal/Layout/Body/Right/Form"]
+[node name="Ownership" type="HBoxContainer" parent="Modal/Layout/Body/Right/Form" unique_id=431839810]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Personal" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership"]
+[node name="Personal" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership" unique_id=1131921043]
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -275,41 +275,41 @@ button_pressed = true
 button_group = SubResource("OwnerGroup")
 text = "Personal"
 
-[node name="Guild" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership"]
+[node name="Guild" type="Button" parent="Modal/Layout/Body/Right/Form/Ownership" unique_id=166319912]
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 button_group = SubResource("OwnerGroup")
 text = "Guild"
 
-[node name="GuildDropdown" type="OptionButton" parent="Modal/Layout/Body/Right/Form"]
+[node name="GuildDropdown" type="OptionButton" parent="Modal/Layout/Body/Right/Form" unique_id=1702945122]
 visible = false
 layout_mode = 2
 
-[node name="OwnerHelp" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="OwnerHelp" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=1431190991]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
 text = "Only guilds where you have upload permission are shown."
 autowrap_mode = 2
 
-[node name="Spacer" type="Control" parent="Modal/Layout/Body/Right/Form"]
+[node name="Spacer" type="Control" parent="Modal/Layout/Body/Right/Form" unique_id=526874707]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Error" type="Label" parent="Modal/Layout/Body/Right/Form"]
+[node name="Error" type="Label" parent="Modal/Layout/Body/Right/Form" unique_id=707534513]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.35, 0.35, 1)
 autowrap_mode = 2
 
-[node name="RightPadding" type="Control" parent="Modal/Layout/Body"]
+[node name="RightPadding" type="Control" parent="Modal/Layout/Body" unique_id=812284004]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="FooterSeparator" type="HSeparator" parent="Modal/Layout"]
+[node name="FooterSeparator" type="HSeparator" parent="Modal/Layout" unique_id=1295125373]
 layout_mode = 2
 
-[node name="Footer" type="MarginContainer" parent="Modal/Layout"]
+[node name="Footer" type="MarginContainer" parent="Modal/Layout" unique_id=540516955]
 custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 theme_override_constants/margin_left = 18
@@ -317,30 +317,30 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 12
 
-[node name="Row" type="HBoxContainer" parent="Modal/Layout/Footer"]
+[node name="Row" type="HBoxContainer" parent="Modal/Layout/Footer" unique_id=611512854]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Busy" type="Label" parent="Modal/Layout/Footer/Row"]
+[node name="Busy" type="Label" parent="Modal/Layout/Footer/Row" unique_id=1921097580]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.57, 0.62, 0.7, 1)
 text = "Preparing upload..."
 
-[node name="Cancel" type="Button" parent="Modal/Layout/Footer/Row"]
+[node name="Cancel" type="Button" parent="Modal/Layout/Footer/Row" unique_id=1876603222]
 custom_minimum_size = Vector2(92, 36)
 layout_mode = 2
 text = "Cancel"
 
-[node name="Upload" type="Button" parent="Modal/Layout/Footer/Row"]
+[node name="Upload" type="Button" parent="Modal/Layout/Footer/Row" unique_id=1035284567]
 custom_minimum_size = Vector2(128, 36)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StylePrimary")
 disabled = true
 text = "Upload asset"
 
-[node name="FileDialog" type="FileDialog" parent="."]
+[node name="FileDialog" type="FileDialog" parent="." unique_id=539968928]
 title = "Open a File"
 initial_position = 2
 size = Vector2i(900, 600)

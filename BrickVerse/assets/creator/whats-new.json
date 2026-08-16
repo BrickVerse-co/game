@@ -1,77 +1,122 @@
 {
-  "id": "creator-2026-08-14-device-preview-vr",
+  "id": "creator-2026-08-16-world-building-runtime",
   "title": "What's new in BrickVerse Creator",
-  "subtitle": "Preview experiences across devices, experiment with VR, and keep published project details in sync.",
-  "date": "August 14, 2026",
+  "subtitle": "Build richer worlds with expanded geometry, terrain, UI, voice, scripting, debugging, and Creator workflows.",
+  "date": "August 16, 2026",
   "sections": [
     {
-      "title": "New beta: Device Emulator",
-      "body": "Test responsive experiences and input behavior across more target devices without constantly changing hardware.",
+      "title": "A much larger DataModel",
+      "body": "More familiar building blocks are available directly in Creator and Luau.",
       "items": [
-        "Preview phone, tablet, console, desktop, and VR device profiles from Tools > Device Emulator",
-        "Display phone, tablet, TV, and landscape screen-size guides directly over the editor viewport without starting a play test",
-        "Inject fake thumbstick, gamepad button, trigger, touchscreen, headset, and VR controller input into the active play-test client",
-        "Emulated Input.DeviceType, LastInputDevice, touchscreen, gamepad, and VR state use the same runtime paths as real devices",
-        "Device Emulator is opt-in from Beta Features and can be enabled or disabled without restarting Creator"
+        "New Attachment, Beam, Trail, Highlight, SurfaceAppearance, SpawnLocation, VehicleSeat, SoundGroup, ClickDetector, and DragDetector instances",
+        "New Hinge, BallSocket, Spring, Rope, Slider, Motor, AlignPosition, AlignRotation, and Prismatic constraints",
+        "New ColorCorrection, Bloom, Fog, Ambient Occlusion, and Tonemap post-processing effects",
+        "Decals can attach to a selected part face, while UIGradient can target backgrounds, text, strokes, and borders",
+        "Instance attributes add SetAttribute, GetAttribute, removal, enumeration, and change signals"
       ]
     },
     {
-      "title": "Experimental VR and gamepad support",
-      "body": "BrickVerse experiences can begin targeting connected PC headsets and standalone XR builds while the APIs continue to evolve.",
+      "title": "Geometry, unions, and faster shape creation",
+      "body": "Creator now provides more ways to construct reusable geometry without leaving the viewport.",
       "items": [
-        "Experimental OpenXR runtime support for PC-connected headsets and XR-enabled exports",
-        "New Luau VRService access to headset and hand poses, tracking state, controller modes, navigation, recentering, and haptics",
-        "Headset and controller movement can drive character VR poses and common gameplay actions",
-        "Gamepad navigation and device reporting support console-style play and Creator input simulation",
-        "OpenXR stays disabled in normal non-XR exports, preventing unsupported-headset startup alerts"
+        "Union, negate, unmerge, and geometry operations support Parts, Meshes, and EditableMeshes through Creator context menus",
+        "Unstable union tooling is protected by its beta feature enrollment and produces smoother, double-sided results",
+        "Negated geometry is visibly translucent in edit mode so boolean operations are easier to understand",
+        "New configurable Icosphere geometry supports multiple subdivision and face-count levels",
+        "The ribbon's new Shapes dropdown quickly inserts blocks, spheres, cylinders, cones, wedges, corner wedges, toruses, trusses, frames, and icospheres with undo and snapping"
       ]
     },
     {
-      "title": "New beta: Animation Editor",
-      "body": "The experimental Animation Editor is available for creators who want to test the unfinished animation workflow and share feedback.",
+      "title": "New beta: Skinned Terrain Grass",
+      "body": "Paint performant, animated grass directly onto terrain with global and per-stroke art direction.",
       "items": [
-        "Animation Editor now has its own explicit Beta Features enrollment",
-        "The Tools menu remains locked until the beta is enabled",
-        "Beta enrollment updates menu availability immediately without requiring a restart",
-        "Clear instability and compatibility messaging sets expectations while the workflow is under development"
+        "Paint and erase GPU-instanced grass from the Terrain Editor",
+        "Control density, blade height, width, variation, draw distance, base color, and tip color",
+        "Override density, size, and tint at each painted location instead of relying only on global values",
+        "Optionally conform and deform blades to terrain surfaces with adjustable surface inset",
+        "Grass animation now follows Environment wind direction, strength, and speed"
       ]
     },
     {
-      "title": "Device-aware runtime debugging",
-      "body": "Creator and play-test clients now exchange richer device state through the existing runtime debugger connection.",
+      "title": "Voice, chat, and safer communication",
+      "body": "Experiences can offer richer communication while respecting account eligibility, blocking, and local controls.",
       "items": [
-        "New debugger messages carry device profiles, controller axes and buttons, VR poses, and tracking state",
-        "Emulation settings automatically reapply when a new play-test client connects",
-        "Fake VR input is exposed to Luau through VRService signals and user CFrame APIs",
-        "Synthetic gamepad events pass through Godot's normal input pipeline so game code can be tested realistically",
-        "The emulator reports whether input is live or requires an active play test"
+        "VoiceChatService provides spatial Opus voice for eligible 13+ users in voice-enabled experiences",
+        "Voice activity bubbles show microphone input above players and allow quick local mute or microphone toggling",
+        "Blocked users cannot be heard, and Luau can control microphone state, sensitivity, per-player mute, volume, indicators, and voice events",
+        "ChatChannel and SlashCommand instances add custom channels, team chat, local commands, permissions, prefixes, and autofill",
+        "Whispers, friendship and block integration, grouped quick-chat phrases, and a quick-chat wheel improve communication access"
       ]
     },
     {
-      "title": "Recent projects stay current",
-      "body": "Creator's home screen now follows the latest published universe metadata instead of relying on stale local placeholders.",
+      "title": "Developer-defined game settings",
+      "body": "Creators can add experience-specific options to the player's redesigned pause menu.",
       "items": [
-        "Recent-world cards load the current primary thumbnail URL from the BrickVerse API",
-        "Opening or refreshing a project updates its universe name, primary world ID, thumbnail ID, and cached thumbnail URL",
-        "Modern 64-bit thumbnail IDs are supported without overflowing older metadata fields",
-        "Metadata refresh waits for Creator authentication and uses the authenticated OAuth API client",
-        "Offline projects continue using their last cached metadata instead of failing to open"
+        "Create ordered GameSetting instances with custom categories, titles, descriptions, stable keys, and defaults",
+        "Choose boolean, number slider, text, dropdown choice, keybind, or color controls",
+        "Per-universe values persist locally for each player and expose typed Luau getters, setters, reset, and change signals",
+        "The new left-side game menu keeps gameplay visible and opens responsive content panels only when needed",
+        "Controls jumps directly to the experience's Game settings category, while narrow and short windows use compact adaptive layouts"
       ]
     },
     {
-      "title": "A clearer Creator interface",
-      "body": "Common actions are easier to recognize, and experimental tooling is clearly separated from stable workflows.",
+      "title": "Creator workflow improvements",
+      "body": "Common editing and testing actions take fewer steps and behave more predictably.",
       "items": [
-        "File, Edit, Insert, Model, Tools, View, Help, and Dev actions now use consistent SVG icons",
-        "Input Manager is available from Tools with a dedicated keyboard icon",
-        "Device Emulator and Animation Editor show contextual beta-lock tooltips when unavailable",
-        "Beta feature changes propagate live to their menu entries",
-        "What's New continues to work offline using this packaged release feed"
+        "The Insert menu is searchable, scrollable, and automatically includes all creatable instance types",
+        "Shift or Ctrl selection can target a part inside a model instead of always selecting the entire model",
+        "Ctrl+L switches transform orientation, with global and local gizmo alignment available from Creator settings",
+        "A welding workflow makes it easier to connect selected parts and configure constraints",
+        "Play tests can attach to the active Creator viewport or launch as independent resizable windows, without unexpectedly minimizing"
+      ]
+    },
+    {
+      "title": "A richer Toolbox",
+      "body": "Inspect assets before committing them to a project and place them exactly where they belong.",
+      "items": [
+        "Single-clicking an asset opens a detailed modal instead of inserting immediately",
+        "Asset details include descriptions, comments and reviews, purchase, insert, and report actions",
+        "Supported models can be inspected in an interactive 3D viewport preview",
+        "Double-click preserves the fast insert workflow",
+        "Drag assets onto Explorer targets such as ScriptService to choose their parent"
+      ]
+    },
+    {
+      "title": "Expanded Luau and networking",
+      "body": "Roblox-style APIs reduce boilerplate while keeping existing networking workflows compatible.",
+      "items": [
+        "The task library adds wait, spawn, defer, delay, cancel, synchronization helpers, and legacy wait/spawn compatibility",
+        "Network events accept normal Luau values through InvokeServer and automatically serialize supported payloads",
+        "The original NetMessage builder remains supported for explicit typed messages",
+        "Editor completion and generated Luau definitions cover more globals, services, instances, properties, methods, signals, and enums",
+        "Luau profiling infrastructure supplies runtime script timing data to Creator debugging tools"
+      ]
+    },
+    {
+      "title": "Developer Console and diagnostics",
+      "body": "The F8 console has evolved into a broader runtime investigation workspace.",
+      "items": [
+        "New executor tooling runs diagnostic Luau against an active play test",
+        "Script Profiler views expose execution timing and hotspots",
+        "Memory, world, network, player, instance, and runtime information are available from developer tools",
+        "Runtime debug windows stream logs and state back into Creator",
+        "Editor diagnostics and property controls handle more DataModel types, including editable string arrays"
+      ]
+    },
+    {
+      "title": "More world systems and media",
+      "body": "New runtime systems cover navigation, video, advertising, rendering, and vehicle interactions.",
+      "items": [
+        "PathfindingService, PathfindingPath, and NavigationLink add blocked-path reporting and explicit traversal links",
+        "UIVideoFrame supports optimized video playback through the asset pipeline",
+        "UIAd and AdService support display and video placements with eligibility and rate-limited impression handling",
+        "ShaderEffect provides a constrained instance-based visual effect workflow instead of unrestricted custom shader execution",
+        "Internal anti-cheat checks cover suspicious movement, network behavior, invalid state, and memory anomalies, with universe-level enablement"
       ]
     }
   ],
   "links": [
     { "label": "Read the documentation", "url": "https://developers.brickverse.gg/" },
-    { "label": "Share beta feedback", "url": "https://brickverse.gg/forum" }
+    { "label": "Share feedback", "url": "https://brickverse.gg/forum" }
   ]
 }

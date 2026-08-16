@@ -102,10 +102,10 @@ public sealed partial class NetworkEvent : Instance
 	/// </summary>
 	/// <param name="msg"></param>
 	[ScriptMethod]
-	public void InvokeServer(NetMessage? msg = null, object? _ = null)
+	public void InvokeServer(object? payload = null, object? _ = null)
 	{
 		if (Root.Network.IsServer) throw new System.InvalidOperationException("InvokeServer can only be called from client");
-		msg ??= new();
+		NetMessage msg = NetMessage.FromObject(payload);
 
 		if (Reliable)
 		{
@@ -124,11 +124,11 @@ public sealed partial class NetworkEvent : Instance
 	/// <param name="player">player</param>
 	/// <exception cref="System.InvalidOperationException"></exception>
 	[ScriptMethod]
-	public void InvokeClient(NetMessage? msg = null, Player? player = null)
+	public void InvokeClient(object? payload = null, Player? player = null)
 	{
 		if (!Root.Network.IsServer) throw new System.InvalidOperationException("InvokeClient can only be called from server");
 		ArgumentNullException.ThrowIfNull(player);
-		msg ??= new();
+		NetMessage msg = NetMessage.FromObject(payload);
 
 		if (Reliable)
 		{
@@ -146,10 +146,10 @@ public sealed partial class NetworkEvent : Instance
 	/// <param name="msg">NetMessage to send</param>
 	/// <exception cref="System.InvalidOperationException"></exception>
 	[ScriptMethod]
-	public void InvokeClients(NetMessage? msg = null)
+	public void InvokeClients(object? payload = null)
 	{
 		if (!Root.Network.IsServer) throw new System.InvalidOperationException("InvokeClients can only be called from server");
-		msg ??= new();
+		NetMessage msg = NetMessage.FromObject(payload);
 
 		if (Reliable)
 		{

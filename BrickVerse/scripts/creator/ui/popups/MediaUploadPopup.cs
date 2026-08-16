@@ -13,10 +13,10 @@ using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.UI.Popups;
 
-/// <summary>Scene-backed upload form shared by texture and sound assets.</summary>
+/// <summary>Scene-backed upload form shared by texture, sound, and video assets.</summary>
 public sealed partial class MediaUploadPopup : PopupWindowBase
 {
-	public enum MediaKind { Texture, Sound }
+	public enum MediaKind { Texture, Sound, Video }
 	private enum OwnerType { User, Guild }
 	private sealed record GuildOption(string Id, string Name);
 
@@ -31,6 +31,14 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		[".ogg"] = "audio/ogg",
 		[".wav"] = "audio/wav",
 		[".mp3"] = "audio/mpeg",
+	};
+	private static readonly Dictionary<string, string> VideoMimes = new(StringComparer.OrdinalIgnoreCase)
+	{
+		[".mp4"] = "video/mp4",
+		[".webm"] = "video/webm",
+		[".mov"] = "video/quicktime",
+		[".ogv"] = "video/ogg",
+		[".ogg"] = "video/ogg",
 	};
 
 	[Export] private Label _titleLabel = null!;
@@ -107,19 +115,23 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 	private void ConfigureUi()
 	{
 		bool texture = _kind == MediaKind.Texture;
-		string noun = texture ? "texture" : "sound";
+		bool video = _kind == MediaKind.Video;
+		string noun = texture ? "texture" : video ? "video" : "sound";
 		Title = $"Upload {noun}";
 		_titleLabel.Text = $"Upload {noun}";
 		_subtitleLabel.Text = texture
 			? "Import, preview, and publish a PNG or JPEG image."
+			: video ? "Import and publish an MP4, WebM, MOV, or Ogg video. Videos require verified identity."
 			: "Import, inspect, and publish an OGG, WAV, or MP3 audio file.";
-		_kindIcon.Texture = Globals.LoadUIIcon(texture ? "mountain" : "archive");
-		_name.PlaceholderText = texture ? "Texture name" : "Sound name";
+		_kindIcon.Texture = Globals.LoadUIIcon(texture ? "mountain" : video ? "video" : "archive");
+		_name.PlaceholderText = texture ? "Texture name" : video ? "Video name" : "Sound name";
 		_upload.Text = $"Upload {noun}";
-		_fileDialog.OkButtonText = texture ? "Open image" : "Open audio";
+		_fileDialog.OkButtonText = texture ? "Open image" : video ? "Open video" : "Open audio";
 		_fileDialog.Filters = texture
 			? ["*.png ; PNG image", "*.jpg,*.jpeg ; JPEG image"]
-			: ["*.ogg ; Ogg audio", "*.wav ; Wave audio", "*.mp3 ; MP3 audio"];
+			: video
+				? ["*.mp4 ; MPEG-4 video", "*.webm ; WebM video", "*.mov ; QuickTime video", "*.ogv,*.ogg ; Ogg video"]
+				: ["*.ogg ; Ogg audio", "*.wav ; Wave audio", "*.mp3 ; MP3 audio"];
 	}
 
 	private void ResetForm()
@@ -132,11 +144,12 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		_preview.Texture = null;
 		_previewMessage.Text = _kind == MediaKind.Texture
 			? "Choose an image to preview it here."
+			: _kind == MediaKind.Video ? "Choose a video to inspect it here."
 			: "Choose an audio file to inspect it here.";
 		_previewMessage.Visible = true;
 		_kindIcon.Visible = true;
-		_fileName.Text = _kind == MediaKind.Texture ? "No image selected" : "No audio selected";
-		_fileDetails.Text = _kind == MediaKind.Texture ? "PNG or JPEG" : "OGG, WAV, or MP3";
+		_fileName.Text = _kind == MediaKind.Texture ? "No image selected" : _kind == MediaKind.Video ? "No video selected" : "No audio selected";
+		_fileDetails.Text = _kind == MediaKind.Texture ? "PNG or JPEG" : _kind == MediaKind.Video ? "MP4, WebM, MOV, or Ogg" : "OGG, WAV, or MP3";
 		_choose.Visible = true;
 		_replace.Visible = false;
 		_personal.ButtonPressed = true;
@@ -159,7 +172,7 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		HideError();
 		try
 		{
-			Dictionary<string, string> allowed = _kind == MediaKind.Texture ? TextureMimes : SoundMimes;
+			Dictionary<string, string> allowed = _kind == MediaKind.Texture ? TextureMimes : _kind == MediaKind.Video ? VideoMimes : SoundMimes;
 			string extension = Path.GetExtension(path);
 			if (!allowed.TryGetValue(extension, out string? mime))
 				throw new InvalidDataException($"Unsupported file type. Choose {string.Join(", ", allowed.Keys.Select(x => x.TrimStart('.').ToUpperInvariant()))}.");
@@ -187,7 +200,7 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 			else
 			{
 				_preview.Texture = null;
-				_previewMessage.Text = $"{extension.TrimStart('.').ToUpperInvariant()} audio ready to upload";
+				_previewMessage.Text = $"{extension.TrimStart('.').ToUpperInvariant()} {(_kind == MediaKind.Video ? "video" : "audio")} ready to upload";
 				_previewMessage.Visible = true;
 				_kindIcon.Visible = true;
 			}
@@ -223,7 +236,7 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 			bool toGuild = _guild.ButtonPressed;
 			string ownerId = toGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID;
 			CreatorPublishResponse response = await CreatorAPI.UploadAsset(
-				_data, 0, _kind == MediaKind.Texture ? "TEXTURE" : "SOUND",
+				_data, 0, _kind == MediaKind.Texture ? "TEXTURE" : _kind == MediaKind.Video ? "VIDEO" : "SOUND",
 				Path.GetFileName(_sourcePath), assetName, description, ownerId,
 				toGuild ? OwnerType.Guild.ToString() : OwnerType.User.ToString(), _mime);
 			BV.Print($"{_kind} uploaded successfully. Asset ID: {response.Link}");
@@ -282,6 +295,9 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		".wav" => data.Length >= 12 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "RIFF" && System.Text.Encoding.ASCII.GetString(data, 8, 4) == "WAVE",
 		".ogg" => data.Length >= 4 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
 		".mp3" => data.Length >= 3 && (System.Text.Encoding.ASCII.GetString(data, 0, 3) == "ID3" || (data[0] == 0xff && (data[1] & 0xe0) == 0xe0)),
+		".mp4" or ".mov" => data.Length >= 12 && System.Text.Encoding.ASCII.GetString(data, 4, 4) == "ftyp",
+		".webm" => data.Length >= 4 && data[0] == 0x1a && data[1] == 0x45 && data[2] == 0xdf && data[3] == 0xa3,
+		".ogv" => data.Length >= 4 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
 		_ => false,
 	};
 }

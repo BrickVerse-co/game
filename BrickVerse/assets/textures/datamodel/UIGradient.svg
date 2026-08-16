@@ -1,0 +1,20 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="uiGradientGreen" x1="12" y1="36" x2="36" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4FE883" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#4FE883"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="7.5" y="7.5" width="33" height="33" rx="4.5"
+        stroke="#4FE883" stroke-width="3"/>
+
+  <rect x="12" y="12" width="24" height="24" rx="2"
+        fill="url(#uiGradientGreen)"/>
+
+  <path d="M14 34L34 14"
+        stroke="#4FE883" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="14" cy="34" r="3" fill="#4FE883"/>
+  <circle cx="34" cy="14" r="3" fill="#4FE883"/>
+</svg>

@@ -153,6 +153,7 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		// TODO: Maybe this could be automated via source generation?
 		BVImageAsset.RegisterAsset();
 		BVAudioAsset.RegisterAsset();
+		BVVideoAsset.RegisterAsset();
 		BVMeshAsset.RegisterAsset();
 		BuiltInAudioAsset.RegisterAsset();
 		BuiltInFontAsset.RegisterAsset();

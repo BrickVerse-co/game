@@ -770,6 +770,9 @@ internal sealed class ForgeToolExecutor
 			case Light:
 				return _root.Lighting;
 
+			case GUI:
+				return _root.PlayerGUI;
+
 			case UIField when instance is not GUI:
 				{
 					GUI? existingUi = (GUI?)_root.PlayerGUI.FindChild("GUI");

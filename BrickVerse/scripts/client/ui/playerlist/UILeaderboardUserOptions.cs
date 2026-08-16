@@ -19,6 +19,8 @@ public partial class UILeaderboardUserOptions : Control
 	public UILeaderboardUserItem? Target;
 	private World _root = null!;
 	private int _lastReq = 0;
+	private Button _blockButton = null!;
+	private Button _muteVoiceButton = null!;
 
 	public override void _Ready()
 	{
@@ -26,7 +28,25 @@ public partial class UILeaderboardUserOptions : Control
 		_viewProfileBtn.Pressed += OnViewProfile;
 		_addFriendBtn.Pressed += OnAddFriend;
 		_removeFriendBtn.Pressed += OnRemoveFriend;
+		_blockButton = new Button { Text = "Block User", TooltipText = "Hide this user's chat and remove the friendship" };
+		_blockButton.Pressed += OnBlock; _optionsLayout.AddChild(_blockButton);
+		_muteVoiceButton = new Button { Text = "Mute Voice" }; _muteVoiceButton.Pressed += OnMuteVoice; _optionsLayout.AddChild(_muteVoiceButton);
 		base._Ready();
+	}
+
+	private void OnMuteVoice()
+	{
+		if (Target == null) return;
+		bool muted = _root.VoiceChat.IsPlayerMuted(Target.TargetPlayer);
+		if (muted) _root.VoiceChat.UnmutePlayer(Target.TargetPlayer); else _root.VoiceChat.MutePlayer(Target.TargetPlayer);
+		_muteVoiceButton.Text = muted ? "Mute Voice" : "Unmute Voice";
+	}
+
+	private void OnBlock()
+	{
+		if (Target == null) return;
+		_root.Social.LocalSendFriendshipRequest(Target.TargetPlayer, Datamodel.Services.SocialService.FriendshipRequestType.Block);
+		Disappear();
 	}
 
 	private void OnAddFriend()
@@ -81,6 +101,8 @@ public partial class UILeaderboardUserOptions : Control
 		if (myReq != _lastReq) return;
 		_addFriendBtn.Visible = !isFriends;
 		_removeFriendBtn.Visible = isFriends;
+		_muteVoiceButton.Visible = item.TargetPlayer.CanVoiceChat;
+		_muteVoiceButton.Text = _root.VoiceChat.IsPlayerMuted(item.TargetPlayer) ? "Unmute Voice" : "Mute Voice";
 		ShowLoader(false);
 	}
 

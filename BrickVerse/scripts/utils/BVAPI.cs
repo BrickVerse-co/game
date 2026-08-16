@@ -281,6 +281,7 @@ public static class BVAPI
 
 		return new APIPlaceInfo
 		{
+			AntiCheatEnabled = info.Universe.AntiCheatEnabled ?? true,
 			Id = long.TryParse(info.World.Id, out long worldId) ? worldId : placeID,
 			UniverseId = long.TryParse(info.Universe.Id, out long universeId) ? universeId : 0,
 			Name = info.World.Name,

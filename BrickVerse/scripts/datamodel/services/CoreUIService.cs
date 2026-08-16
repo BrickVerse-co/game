@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace BrickVerse.Datamodel.Services;
 
 [Static("CoreUI")]
+[ExplorerExclude]
 public sealed partial class CoreUIService : Instance
 {
 	private const string CoreUIPath = "res://scenes/client/ui/core_ui.tscn";
@@ -31,8 +32,6 @@ public sealed partial class CoreUIService : Instance
 	public CoreUIRoot CoreUI = null!;
 
 	public BVSignal CtrlLockCursorChanged { get; private set; } = new();
-
-
 
 	[Editable, ScriptProperty]
 	public CtrlLockCursorEnum CtrlLockCursor
@@ -141,6 +140,14 @@ public sealed partial class CoreUIService : Instance
 
 	public override void Ready()
 	{
+#if CREATOR
+		// Repair projects created while CoreUI was exposed as an insertion target.
+		// CoreUI is engine-owned; developer screen GUIs belong under PlayerGUI.
+		foreach (Instance child in GetChildren())
+		{
+			if (child is GUI) child.Parent = Root.PlayerGUI;
+		}
+#endif
 		RefreshCoreUIsVisibility();
 		base.Ready();
 	}

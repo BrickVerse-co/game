@@ -69,6 +69,14 @@ public sealed partial class TeamCreateService : Node
 	public string FollowedMemberId => _followMemberId;
 	public string LocalUserId => _localUserId;
 	public bool ShowCameraAvatars => _showCameraAvatars;
+	public event Action<string, string>? TeamChatMessage;
+
+	public void SendTeamChat(string message)
+	{
+		message = (message ?? "").Trim(); if (!Connected || message.Length == 0) return; if (message.Length > 300) message = message[..300];
+		TeamChatMessage?.Invoke(_localUserId, message);
+		QueueChange("team_chat:" + Guid.NewGuid().ToString("N"), new JsonObject { ["kind"] = "team_chat", ["id"] = "", ["senderId"] = _localUserId, ["message"] = message });
+	}
 
 	public TeamCreateService()
 	{
@@ -953,6 +961,12 @@ public sealed partial class TeamCreateService : Node
 		if (world == null) return;
 		string kind = change.GetProperty("kind").GetString() ?? "";
 		string id = change.GetProperty("id").GetString() ?? "";
+		if (kind == "team_chat")
+		{
+			string sender = change.GetProperty("senderId").GetString() ?? ""; string message = change.GetProperty("message").GetString() ?? "";
+			if (sender != _localUserId && message.Length <= 300) TeamChatMessage?.Invoke(sender, message);
+			return;
+		}
 		_applyingRemote = true;
 		try
 		{
