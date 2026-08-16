@@ -3,7 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using BrickVerse.Shared.Settings;
+using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Client.Settings;
 
@@ -12,7 +14,8 @@ public static class ClientSettingsRegistry
 	public static readonly IReadOnlyList<SettingSectionDef> Sections =
 	[
 		new() {Key = "general", Label = "General", IconPath = "res://assets/textures/ui-icons/settings.svg", SortOrder = 0},
-		new() {Key = "display", Label = "Display", IconPath = "res://assets/textures/ui-icons/camera.svg", SortOrder = 1},
+		new() {Key = "audio", Label = "Audio", IconPath = "res://assets/textures/ui-icons/headphones.svg", SortOrder = 1},
+		new() {Key = "display", Label = "Display", IconPath = "res://assets/textures/ui-icons/camera.svg", SortOrder = 2},
 		new() {Key = "graphics", Label = "Graphics", IconPath = "res://assets/textures/ui-icons/mountain.svg", SortOrder = 2},
 		new() {Key = "post_processing", Label = "Post Processing", IconPath = "res://assets/textures/ui-icons/rocket.svg", SortOrder = 3},
 		new() {Key = "overlay", Label = "Overlay", IconPath = "res://assets/textures/ui-icons/copy.svg", SortOrder = 4},
@@ -27,6 +30,62 @@ public static class ClientSettingsRegistry
 		var defs = new Dictionary<string, SettingDef>();
 
 		SharedSettingsRegistry.AddSharedTo(defs);
+
+		defs.Add(ClientSettingKeys.Audio.OutputDevice,
+			new SettingDef<string>
+			{
+				Key = ClientSettingKeys.Audio.OutputDevice,
+				SectionKey = "audio",
+				Label = "Output Device",
+				Description = "Device used for game and voice audio.",
+				ValueKind = SettingValueKind.String,
+				ControlKind = SettingControlKind.Dropdown,
+				DefaultValue = "Default",
+				Options = BuildDeviceOptions(AudioServer.GetOutputDeviceList())
+			});
+
+		defs.Add(ClientSettingKeys.Audio.MicrophoneInputDevice,
+			new SettingDef<string>
+			{
+				Key = ClientSettingKeys.Audio.MicrophoneInputDevice,
+				SectionKey = "audio",
+				Label = "Microphone Input",
+				Description = "Microphone used for voice chat.",
+				ValueKind = SettingValueKind.String,
+				ControlKind = SettingControlKind.Dropdown,
+				DefaultValue = "Default",
+				Options = BuildDeviceOptions(AudioServer.GetInputDeviceList())
+			});
+
+		defs.Add(ClientSettingKeys.Audio.MicrophoneVolume,
+			new SettingDef<float>
+			{
+				Key = ClientSettingKeys.Audio.MicrophoneVolume,
+				SectionKey = "audio",
+				Label = "Microphone Volume",
+				Description = "Adjust how loudly your microphone is transmitted.",
+				ValueKind = SettingValueKind.Float,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 100f,
+				MinValue = 0f,
+				MaxValue = 200f,
+				Step = 5f
+			});
+
+		defs.Add(ClientSettingKeys.Audio.VoiceChatVolume,
+			new SettingDef<float>
+			{
+				Key = ClientSettingKeys.Audio.VoiceChatVolume,
+				SectionKey = "audio",
+				Label = "Voice Chat Volume",
+				Description = "Adjust the volume of other players globally.",
+				ValueKind = SettingValueKind.Float,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 100f,
+				MinValue = 0f,
+				MaxValue = 200f,
+				Step = 5f
+			});
 
 		defs.Add(ClientSettingKeys.Chat.ChatColors,
 			new SettingDef<bool>
@@ -199,5 +258,14 @@ public static class ClientSettingsRegistry
 
 		SettingDef.ValidateAll(defs.Values);
 		return defs;
+	}
+
+	private static IReadOnlyList<SettingOption<string>> BuildDeviceOptions(string[] devices)
+	{
+		return devices.Prepend("Default").Distinct().Select(device => new SettingOption<string>
+		{
+			Value = device,
+			Label = device
+		}).ToArray();
 	}
 }

@@ -101,7 +101,7 @@ public partial class UILeaderboardUserOptions : Control
 		if (myReq != _lastReq) return;
 		_addFriendBtn.Visible = !isFriends;
 		_removeFriendBtn.Visible = isFriends;
-		_muteVoiceButton.Visible = item.TargetPlayer.CanVoiceChat;
+		_muteVoiceButton.Visible = World.Current?.Players.LocalPlayer?.CanVoiceChat == true && item.TargetPlayer.CanVoiceChat;
 		_muteVoiceButton.Text = _root.VoiceChat.IsPlayerMuted(item.TargetPlayer) ? "Unmute Voice" : "Mute Voice";
 		ShowLoader(false);
 	}
