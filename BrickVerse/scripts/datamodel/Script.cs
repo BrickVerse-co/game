@@ -138,6 +138,7 @@ public partial class Script : Instance
 
 	public override void PreDelete()
 	{
+		LuauProfiler.Remove(this);
 		Stop();
 		base.PreDelete();
 	}

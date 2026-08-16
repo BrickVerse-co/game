@@ -6,7 +6,10 @@ using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
+using System.Collections.Generic;
 
 namespace BrickVerse.Creator.UI;
 
@@ -42,7 +45,9 @@ public sealed partial class Ribbon : PanelContainer
 		Button terrainButton = _container.GetNode<Button>("QuickActions/Terrain");
 		Button animatorButton = _container.GetNode<Button>("QuickActions/Animator");
 		Button toolboxButton = _container.GetNode<Button>("QuickActions/Toolbox");
+		Button shapesButton = _container.GetNode<Button>("QuickActions/Shapes");
 		Button inputManagerButton = _container.GetNode<Button>("QuickActions/InputManager");
+		PopulateShapesMenu(shapesButton);
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
@@ -103,6 +108,8 @@ public sealed partial class Ribbon : PanelContainer
 			"../Splitter/Center/BottomTabs/Tabs");
 		TabContainer rightTabs = GetNode<TabContainer>(
 			"../Splitter/Right/RightTabs");
+		if (rightTabs.GetNodeOrNull<BrickVerse.Creator.TeamCreate.TeamChatDock>("Team Chat") == null)
+			rightTabs.AddChild(new BrickVerse.Creator.TeamCreate.TeamChatDock());
 
 		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
 		terrainButton.Pressed += () =>
@@ -115,6 +122,63 @@ public sealed partial class Ribbon : PanelContainer
 		inputManagerButton.Pressed += CreatorService.Interface.OpenInputManager;
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
+	}
+
+	private void PopulateShapesMenu(Button button)
+	{
+		PopupMenu popup = new() { Name = "ShapesPopup" };
+		button.AddChild(popup);
+		(string Label, string Icon, Part.ShapeEnum? Shape, bool Icosphere)[] shapes =
+		[
+			("Block", "block", Part.ShapeEnum.Brick, false),
+			("Sphere", "sphere", Part.ShapeEnum.Sphere, false),
+			("Cylinder", "cylinder", Part.ShapeEnum.Cylinder, false),
+			("Cone", "cone", Part.ShapeEnum.Cone, false),
+			("Wedge", "wedge", Part.ShapeEnum.Wedge, false),
+			("Corner Wedge", "corner-wedge", Part.ShapeEnum.Corner, false),
+			("Torus", "torus", Part.ShapeEnum.Torus, false),
+			("Truss", "truss", Part.ShapeEnum.Truss, false),
+			("Frame", "frame", Part.ShapeEnum.Frame, false),
+			("Icosphere", "icosphere", null, true),
+		];
+		Dictionary<int, (Part.ShapeEnum? Shape, bool Icosphere, string Name)> entries = [];
+		for (int i = 0; i < shapes.Length; i++)
+		{
+			var item = shapes[i];
+			popup.AddIconItem(GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/shapes/{item.Icon}.svg"), item.Label, i);
+			entries[i] = (item.Shape, item.Icosphere, item.Label);
+		}
+		popup.IdPressed += id => { if (entries.TryGetValue((int)id, out var entry)) InsertShape(entry.Shape, entry.Icosphere, entry.Name); };
+		button.Pressed += () =>
+		{
+			popup.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+			popup.Popup();
+		};
+	}
+
+	private static void InsertShape(Part.ShapeEnum? shape, bool isIcosphere, string displayName)
+	{
+		World? world = World.Current; if (world == null) return;
+		Entity entity;
+		Part? insertedPart = null;
+		if (isIcosphere) entity = Globals.LoadInstance<Icosphere>(world);
+		else
+		{
+			insertedPart = Globals.LoadInstance<Part>(world);
+			entity = insertedPart;
+		}
+		entity.Name = displayName; entity.CreatorInserted();
+		world.CreatorContext.History.CreateInstances([entity], world.Environment);
+		// Part.Ready() applies its default shape when the instance enters the tree,
+		// so apply the requested primitive after parenting has completed.
+		if (insertedPart != null) insertedPart.Shape = shape ?? Part.ShapeEnum.Brick;
+		Datamodel.Environment.RayResult? hit = world.CreatorContext.Freelook.GetPlacementRay();
+		entity.Position = hit != null
+			? hit.Value.Position + hit.Value.Normal * (entity.CalculateBounds().Size.Y / 2f)
+			: world.CreatorContext.Freelook.GetPlacementPosition();
+		if (CreatorService.Interface.MoveSnapEnabled) entity.Position = entity.Position.Snap(CreatorService.Interface.MoveSnapping);
+		world.CreatorContext.Selections.SelectOnly(entity);
+		world.Container?.GrabFocus();
 	}
 
 	public override void _ExitTree()

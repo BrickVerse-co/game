@@ -9,10 +9,12 @@ using BrickVerse.Attributes;
 using BrickVerse.Creator.UI;
 #endif
 using BrickVerse.Datamodel.Resources;
+using BrickVerse.Datamodel.Data;
 using BrickVerse.Formats;
 using BrickVerse.Scripting;
 using BrickVerse.Networking.Synchronizers;
 using BrickVerse.Shared;
+using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -36,6 +38,95 @@ public partial class Instance : NetworkedObject
 	private bool _editableChildren;
 	private FileLinkAsset? _linkedModel;
 	private Instance? _modelRoot;
+	private NetMessage _attributes = new();
+	private byte[] _attributeData = [];
+	private readonly Dictionary<string, BVSignal> _attributeSignals = [];
+
+	[ScriptProperty] public BVSignal<string> AttributeChanged { get; private set; } = new();
+
+	[SyncVar]
+	public byte[] AttributeData
+	{
+		get => _attributeData;
+		set
+		{
+			_attributeData = value ?? [];
+			NetMessage previous = _attributes;
+			_attributes = DeserializeAttributes(_attributeData);
+			foreach (string name in AttributeNames(previous).Union(AttributeNames(_attributes)))
+				if (!Equals(ReadAttribute(previous, name), ReadAttribute(_attributes, name))) InvokeAttributeChanged(name);
+		}
+	}
+
+	[ScriptMethod]
+	public object? GetAttribute(string name) => ReadAttribute(_attributes, name);
+
+	[ScriptMethod]
+	public Dictionary<string, object?> GetAttributes()
+	{
+		Dictionary<string, object?> result = [];
+		foreach (string name in AttributeNames(_attributes)) result[name] = ReadAttribute(_attributes, name);
+		return result;
+	}
+
+	[ScriptMethod]
+	public void SetAttribute(string name, object? value)
+	{
+		if (string.IsNullOrWhiteSpace(name) || name.Length > 100) throw new ArgumentException("Attribute names must contain 1-100 characters.", nameof(name));
+		RemoveAttribute(_attributes, name);
+		if (value != null) NetMessage.AddValue(_attributes, name, value);
+		byte[] encoded = _attributes.Serialize();
+		if (encoded.Length > 65536) throw new InvalidOperationException("Instance attributes cannot exceed 64 KiB.");
+		_attributeData = encoded;
+		OnPropertyChanged(nameof(AttributeData));
+		InvokeAttributeChanged(name);
+	}
+
+	[ScriptMethod]
+	public BVSignal GetAttributeChangedSignal(string name)
+	{
+		if (!_attributeSignals.TryGetValue(name, out BVSignal? signal)) _attributeSignals[name] = signal = new();
+		return signal;
+	}
+
+	private void InvokeAttributeChanged(string name)
+	{
+		AttributeChanged.Invoke(name);
+		if (_attributeSignals.TryGetValue(name, out BVSignal? signal)) signal.Invoke();
+	}
+
+	private static IEnumerable<string> AttributeNames(NetMessage message) => message.Strings.Keys
+		.Concat(message.Ints.Keys).Concat(message.Numbers.Keys).Concat(message.Bools.Keys)
+		.Concat(message.Vec2s.Keys).Concat(message.Vec3s.Keys).Concat(message.Colors.Keys)
+		.Concat(message.Instances.Keys).Concat(message.Buffers.Keys).Distinct();
+	private static object? ReadAttribute(NetMessage message, string name)
+	{
+		if (message.Strings.TryGetValue(name, out string? s)) return s;
+		if (message.Ints.TryGetValue(name, out int i)) return i;
+		if (message.Numbers.TryGetValue(name, out float n)) return n;
+		if (message.Bools.TryGetValue(name, out bool b)) return b;
+		if (message.Vec2s.TryGetValue(name, out Vector2 v2)) return v2;
+		if (message.Vec3s.TryGetValue(name, out Vector3 v3)) return v3;
+		if (message.Colors.TryGetValue(name, out Color c)) return c;
+		if (message.Instances.TryGetValue(name, out Instance? instance)) return instance;
+		if (message.Buffers.TryGetValue(name, out byte[]? bytes)) return bytes;
+		return null;
+	}
+	private static void RemoveAttribute(NetMessage message, string name)
+	{
+		message.Strings.Remove(name); message.Ints.Remove(name); message.Numbers.Remove(name); message.Bools.Remove(name);
+		message.Vec2s.Remove(name); message.Vec3s.Remove(name); message.Colors.Remove(name); message.Instances.Remove(name); message.Buffers.Remove(name);
+	}
+	private NetMessage DeserializeAttributes(byte[] bytes)
+	{
+		if (bytes.Length == 0) return new();
+		NetMessage.NetMessagePayload? payload = SerializeUtils.Deserialize<NetMessage.NetMessagePayload>(bytes);
+		if (payload == null) return new();
+		NetMessage message = NetMessage.FromPayload(payload);
+		foreach ((string key, string id) in payload.Instances)
+			if (Root?.GetNetObjectFromID(id) is Instance instance) message.Instances[key] = instance;
+		return message;
+	}
 
 	internal Dictionary<string, Instance> NameToChild = [];
 	internal List<Instance> Children = [];
@@ -110,6 +201,7 @@ public partial class Instance : NetworkedObject
 			}
 
 			NetworkParent = value;
+			OnParentChanged((Instance?)oldParent, value);
 
 			// If set parent, invoke ready
 			if (!isTemp && Root != null)
@@ -139,6 +231,9 @@ public partial class Instance : NetworkedObject
 			}
 		}
 	}
+
+	/// <summary>Called whenever the DataModel parent changes, including reparenting inside the active tree.</summary>
+	protected virtual void OnParentChanged(Instance? oldParent, Instance? newParent) { }
 
 	[CloneInclude, ScriptLegacyProperty("Name"), SyncVar]
 	public string LegacyName
@@ -547,6 +642,19 @@ public partial class Instance : NetworkedObject
 				currentType = currentType.BaseType;
 			}
 			parent = parent.Parent;
+		}
+		return null;
+	}
+
+	/// <summary>Returns the Actor containing this instance, or nil outside an Actor.</summary>
+	[ScriptMethod, ParallelSafe]
+	public Actor? GetActor()
+	{
+		Instance? current = this;
+		while (current != null)
+		{
+			if (current is Actor actor) return actor;
+			current = current.Parent;
 		}
 		return null;
 	}

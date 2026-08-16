@@ -1,201 +1,233 @@
 [gd_scene format=3 uid="uid://kd4fs42si2ah"]
 
-[ext_resource type="FontVariation" uid="uid://c4ad5x0dhckrv" path="res://assets/fonts/default.tres" id="1_8o6pa"]
-[ext_resource type="Theme" uid="uid://c18b344unwt2y" path="res://resources/themes/menu.tres" id="1_q5m05"]
-[ext_resource type="Script" uid="uid://dndgjxhrlrpf4" path="res://scripts/client/ui/menu/UIGameMenu.cs" id="2_q5m05"]
-[ext_resource type="Script" uid="uid://bv1ijsmvfimed" path="res://scripts/client/ui/menu/UIMenuTabButton.cs" id="3_n5wx0"]
-[ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="5_8o6pa"]
-[ext_resource type="Texture2D" uid="uid://clyun8xnbxn3h" path="res://assets/textures/ui-icons/users-group.svg" id="6_4t0yl"]
-[ext_resource type="Texture2D" uid="uid://co60jcrmb4bkb" path="res://assets/textures/ui-icons/settings.svg" id="7_s7waw"]
+[ext_resource type="Theme" uid="uid://c18b344unwt2y" path="res://resources/themes/menu.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://dndgjxhrlrpf4" path="res://scripts/client/ui/menu/UIGameMenu.cs" id="2_menu"]
+[ext_resource type="Script" uid="uid://bv1ijsmvfimed" path="res://scripts/client/ui/menu/UIMenuTabButton.cs" id="3_tab"]
+[ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="4_home"]
+[ext_resource type="Texture2D" uid="uid://clyun8xnbxn3h" path="res://assets/textures/ui-icons/users-group.svg" id="5_players"]
+[ext_resource type="Texture2D" uid="uid://co60jcrmb4bkb" path="res://assets/textures/ui-icons/settings.svg" id="6_settings"]
+[ext_resource type="Texture2D" uid="uid://q41v5u10ix88" path="res://assets/textures/ui-icons/users.svg" id="7_jrf4r"]
+[ext_resource type="Texture2D" uid="uid://b723rf2mv3taw" path="res://assets/textures/ui-icons/flag.svg" id="7_report"]
+[ext_resource type="Texture2D" uid="uid://dkrmo5o0uxt24" path="res://assets/textures/ui-icons/x.svg" id="8_close"]
+[ext_resource type="Texture2D" uid="uid://4n14p76bkw70" path="res://assets/textures/ui-icons/camera.svg" id="9_camera"]
+[ext_resource type="Texture2D" uid="uid://bmayqsxj8htpp" path="res://assets/textures/ui-icons/gamepad.svg" id="10_mky1n"]
+[ext_resource type="Texture2D" uid="uid://d3jb0isvb1w1t" path="res://assets/textures/ui-icons/respawn.svg" id="11_respawn"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aji3h"]
-bg_color = Color(0, 0, 0, 0.54901963)
+[sub_resource type="StyleBoxFlat" id="overlay"]
+bg_color = Color(0, 0, 0, 0.48)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6062u"]
-bg_color = Color(0.09411765, 0.09411765, 0.09411765, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="rail"]
+bg_color = Color(0.105, 0.113, 0.12, 0.985)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.2, 0.24, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 14
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q5m05"]
-bg_color = Color(0.12156863, 0.12156863, 0.12156863, 1)
+[sub_resource type="StyleBoxFlat" id="nav_normal"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xm7nd"]
-bg_color = Color(0.1254902, 0.5176471, 0.78431374, 0.6509804)
+[sub_resource type="StyleBoxFlat" id="nav_hover"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 1, 1, 0.055)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="Theme" id="Theme_e84r2"]
-BoxContainer/constants/separation = 0
-Button/font_sizes/font_size = 24
-Button/fonts/font = ExtResource("1_8o6pa")
-Button/styles/normal = SubResource("StyleBoxFlat_q5m05")
-Button/styles/pressed = SubResource("StyleBoxFlat_xm7nd")
+[sub_resource type="StyleBoxFlat" id="nav_pressed"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 1, 1, 0.085)
+border_width_left = 3
+border_color = Color(0.2, 0.82, 0.84, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6062u"]
+[sub_resource type="Theme" id="nav_theme"]
+Button/colors/font_color = Color(0.95, 0.95, 0.95, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
+Button/font_sizes/font_size = 20
+Button/styles/focus = SubResource("nav_normal")
+Button/styles/hover = SubResource("nav_hover")
+Button/styles/hover_pressed = SubResource("nav_pressed")
+Button/styles/normal = SubResource("nav_normal")
+Button/styles/pressed = SubResource("nav_pressed")
 
-[sub_resource type="Animation" id="Animation_q5m05"]
+[sub_resource type="StyleBoxFlat" id="close_normal"]
+bg_color = Color(0.96, 0.97, 0.97, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="close_hover"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="footer_icon"]
+bg_color = Color(0.14, 0.15, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.36, 0.37, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="leave_normal"]
+bg_color = Color(0.965, 0.965, 0.965, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="leave_hover"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="content_clear"]
+bg_color = Color(0.055, 0.06, 0.065, 0.97)
+
+[sub_resource type="Animation" id="reset"]
 length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Pivot:scale")
+tracks/0/path = NodePath(".:visible")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Pivot:modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath(".:self_modulate")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
-}
-tracks/3/type = "value"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath(".:visible")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [false]
 }
-
-[sub_resource type="Animation" id="Animation_n5wx0"]
-resource_name = "appear"
-length = 0.3
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Pivot:scale")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.3),
-"transitions": PackedFloat32Array(0.2973019, 1),
-"update": 0,
-"values": [Vector2(0.8, 0.8), Vector2(1, 1)]
-}
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Pivot:modulate")
+tracks/1/path = NodePath(".:modulate")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.3),
-"transitions": PackedFloat32Array(0.2973019, 1),
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+"values": [Color(1, 1, 1, 1)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath(".:visible")
+tracks/2/path = NodePath("Shell:position")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-tracks/3/type = "value"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath(".:self_modulate")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"times": PackedFloat32Array(-0.033333335, 0.3),
-"transitions": PackedFloat32Array(0.6597542, 1),
 "update": 0,
-"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+"values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_xm7nd"]
-resource_name = "disappear"
-length = 0.3
+[sub_resource type="Animation" id="appear"]
+resource_name = "appear"
+length = 0.2
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Pivot:scale")
+tracks/0/path = NodePath(".:visible")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.3),
-"transitions": PackedFloat32Array(0.2973019, 0.2973019),
-"update": 0,
-"values": [Vector2(1, 1), Vector2(0.8, 0.8)]
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Pivot:modulate")
+tracks/1/path = NodePath(".:modulate")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.3),
-"transitions": PackedFloat32Array(0.2973019, 0.2973019),
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath(".:self_modulate")
+tracks/2/path = NodePath("Shell:position")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.3),
-"transitions": PackedFloat32Array(0.5547849, 1),
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(0.35, 1),
+"update": 0,
+"values": [Vector2(-28, 0), Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="disappear"]
+resource_name = "disappear"
+length = 0.16
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.16),
+"transitions": PackedFloat32Array(1, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
 }
-tracks/3/type = "value"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath(".:visible")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"times": PackedFloat32Array(0, 0.3),
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.16),
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
 "values": [true, false]
 }
 
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_q5m05"]
+[sub_resource type="AnimationLibrary" id="animations"]
 _data = {
-&"RESET": SubResource("Animation_q5m05"),
-&"appear": SubResource("Animation_n5wx0"),
-&"disappear": SubResource("Animation_xm7nd")
+&"RESET": SubResource("reset"),
+&"appear": SubResource("appear"),
+&"disappear": SubResource("disappear")
 }
 
-[node name="GameMenu" type="Panel" unique_id=1884510904 node_paths=PackedStringArray("_animPlay", "_viewContainer", "_firstFocus", "_gameMenuPanel")]
+[node name="GameMenu" type="Panel" unique_id=1809512425 node_paths=PackedStringArray("_animPlay", "_viewContainer", "_firstFocus", "_gameMenuPanel", "_gameTitle", "_viewTitle", "_resumeButton", "_leaveButton", "_closeButton", "_contentPanel", "_inviteFriendsButton", "_controlsButton", "_moreButton", "_navigationPanel", "_contentHeader", "_contentCloseButton", "_screenshotButton", "_respawnButton")]
 visible = false
 z_index = 10
 anchors_preset = 15
@@ -203,171 +235,283 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_q5m05")
-theme_override_styles/panel = SubResource("StyleBoxFlat_aji3h")
-script = ExtResource("2_q5m05")
+mouse_filter = 1
+theme = ExtResource("1_theme")
+theme_override_styles/panel = SubResource("overlay")
+script = ExtResource("2_menu")
 _animPlay = NodePath("AnimPlay")
-_viewContainer = NodePath("Pivot/Pivot2/Panel/Layout/Container")
-_firstFocus = NodePath("Pivot/Pivot2/Panel/Layout/Layout/Overview")
-_gameMenuPanel = NodePath("Pivot/Pivot2/Panel")
+_viewContainer = NodePath("Shell/Content/Margin/Layout/ViewContainer")
+_firstFocus = NodePath("Shell/Navigation/Margin/Layout/HeaderRow/Close")
+_gameMenuPanel = NodePath("Shell")
+_gameTitle = NodePath("Shell/Navigation/Margin/Layout/Header/GameTitle")
+_viewTitle = NodePath("Shell/Content/Margin/Layout/Top/ViewTitle")
+_resumeButton = NodePath("Shell/Navigation/Margin/Layout/HeaderRow/Close")
+_leaveButton = NodePath("Shell/Navigation/Margin/Layout/Footer/Leave")
+_closeButton = NodePath("Shell/Navigation/Margin/Layout/HeaderRow/Close")
+_contentPanel = NodePath("Shell/Content")
+_inviteFriendsButton = NodePath("Shell/Navigation/Margin/Layout/InviteFriends")
+_controlsButton = NodePath("Shell/Navigation/Margin/Layout/Controls")
+_moreButton = NodePath("Shell/Navigation/Margin/Layout/Footer/More")
+_navigationPanel = NodePath("Shell/Navigation")
+_contentHeader = NodePath("Shell/Content/Margin/Layout/Top")
+_contentCloseButton = NodePath("Shell/Content/Margin/Layout/Top/Close")
+_screenshotButton = NodePath("Shell/Navigation/Margin/Layout/Footer/Screenshot")
+_respawnButton = NodePath("Shell/Navigation/Margin/Layout/Footer/Respawn")
 
-[node name="Pivot" type="Control" parent="." unique_id=1515675631]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Pivot2" type="Control" parent="Pivot" unique_id=1928694062]
-anchors_preset = 0
-
-[node name="Panel" type="Panel" parent="Pivot/Pivot2" unique_id=901691753]
-clip_children = 2
-clip_contents = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -480.0
-offset_top = -262.0
-offset_right = 480.0
-offset_bottom = 262.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_6062u")
-
-[node name="Layout" type="VBoxContainer" parent="Pivot/Pivot2/Panel" unique_id=1915253280]
-clip_contents = true
-layout_mode = 1
-anchors_preset = 15
+[node name="Shell" type="HBoxContainer" parent="." unique_id=1021563492]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 0
 
-[node name="Layout" type="HBoxContainer" parent="Pivot/Pivot2/Panel/Layout" unique_id=804313188]
-custom_minimum_size = Vector2(0, 69)
+[node name="Navigation" type="PanelContainer" parent="Shell" unique_id=1643585319]
+custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
-theme = SubResource("Theme_e84r2")
+theme_override_styles/panel = SubResource("rail")
 
-[node name="Overview" type="Button" parent="Pivot/Pivot2/Panel/Layout/Layout" unique_id=1962451111]
+[node name="Margin" type="MarginContainer" parent="Shell/Navigation" unique_id=1633997077]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="Layout" type="VBoxContainer" parent="Shell/Navigation/Margin" unique_id=1534189629]
+layout_mode = 2
+theme = SubResource("nav_theme")
+theme_override_constants/separation = 0
+
+[node name="HeaderRow" type="HBoxContainer" parent="Shell/Navigation/Margin/Layout" unique_id=260641169]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+
+[node name="Close" type="Button" parent="Shell/Navigation/Margin/Layout/HeaderRow" unique_id=20987902]
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+tooltip_text = "Resume game"
+theme_override_colors/icon_normal_color = Color(0.08, 0.09, 0.1, 1)
+theme_override_colors/icon_hover_color = Color(0.08, 0.09, 0.1, 1)
+theme_override_constants/h_separation = 0
+theme_override_styles/normal = SubResource("close_normal")
+theme_override_styles/pressed = SubResource("close_hover")
+theme_override_styles/hover = SubResource("close_hover")
+theme_override_styles/focus = SubResource("close_normal")
+icon = ExtResource("8_close")
+icon_alignment = 1
+
+[node name="HeaderRowSpacer" type="Control" parent="Shell/Navigation/Margin/Layout/HeaderRow" unique_id=1782064709]
 layout_mode = 2
 size_flags_horizontal = 3
-focus_neighbor_right = NodePath("../Players")
-mouse_default_cursor_shape = 2
+
+[node name="Header" type="VBoxContainer" parent="Shell/Navigation/Margin/Layout" unique_id=1259103535]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GameTitle" type="Label" parent="Shell/Navigation/Margin/Layout/Header" unique_id=1961325836]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_font_sizes/font_size = 25
+text = "BrickVerse Experience"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="TopGap" type="Control" parent="Shell/Navigation/Margin/Layout" unique_id=62327525]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="Resume" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=1678809027]
+visible = false
+layout_mode = 2
+text = "Resume"
+
+[node name="Home" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=2045799868]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
 toggle_mode = true
-script = ExtResource("3_n5wx0")
-
-[node name="Layout" type="HBoxContainer" parent="Pivot/Pivot2/Panel/Layout/Layout/Overview" unique_id=1623549370]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 8
-
-[node name="TextureRect" type="TextureRect" parent="Pivot/Pivot2/Panel/Layout/Layout/Overview/Layout" unique_id=1692675720]
-custom_minimum_size = Vector2(30, 0)
-layout_mode = 2
-texture = ExtResource("5_8o6pa")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Label" type="Label" parent="Pivot/Pivot2/Panel/Layout/Layout/Overview/Layout" unique_id=1058632637]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
+button_pressed = true
 text = "Overview"
+icon = ExtResource("4_home")
+alignment = 0
+expand_icon = true
+script = ExtResource("3_tab")
 
-[node name="Players" type="Button" parent="Pivot/Pivot2/Panel/Layout/Layout" unique_id=310532233]
+[node name="Players" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=547190080]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-size_flags_horizontal = 3
-focus_neighbor_left = NodePath("../Overview")
-focus_neighbor_right = NodePath("../Settings")
-mouse_default_cursor_shape = 2
+theme_override_constants/icon_max_width = 24
 toggle_mode = true
-script = ExtResource("3_n5wx0")
+text = "Players"
+icon = ExtResource("5_players")
+alignment = 0
+expand_icon = true
+script = ExtResource("3_tab")
 SwitchTo = 1
 
-[node name="Layout" type="HBoxContainer" parent="Pivot/Pivot2/Panel/Layout/Layout/Players" unique_id=551659986]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 8
-
-[node name="TextureRect" type="TextureRect" parent="Pivot/Pivot2/Panel/Layout/Layout/Players/Layout" unique_id=1063742821]
-custom_minimum_size = Vector2(30, 0)
+[node name="PlayersDivider" type="HSeparator" parent="Shell/Navigation/Margin/Layout" unique_id=3005260]
+modulate = Color(1, 1, 1, 0.18)
 layout_mode = 2
-texture = ExtResource("6_4t0yl")
-expand_mode = 1
-stretch_mode = 5
 
-[node name="Label" type="Label" parent="Pivot/Pivot2/Panel/Layout/Layout/Players/Layout" unique_id=108619498]
+[node name="InviteFriends" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=332278711]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Players"
+theme_override_constants/icon_max_width = 24
+text = "Invite Friends"
+icon = ExtResource("7_jrf4r")
+alignment = 0
+expand_icon = true
 
-[node name="Settings" type="Button" parent="Pivot/Pivot2/Panel/Layout/Layout" unique_id=529916638]
+[node name="InviteDivider" type="HSeparator" parent="Shell/Navigation/Margin/Layout" unique_id=684050614]
+modulate = Color(1, 1, 1, 0.18)
 layout_mode = 2
-size_flags_horizontal = 3
-focus_neighbor_left = NodePath("../Players")
-mouse_default_cursor_shape = 2
+
+[node name="Settings" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=835212821]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
 toggle_mode = true
-script = ExtResource("3_n5wx0")
+text = "Settings"
+icon = ExtResource("6_settings")
+alignment = 0
+expand_icon = true
+script = ExtResource("3_tab")
 SwitchTo = 3
 
-[node name="Layout" type="HBoxContainer" parent="Pivot/Pivot2/Panel/Layout/Layout/Settings" unique_id=615672688]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 8
-
-[node name="TextureRect" type="TextureRect" parent="Pivot/Pivot2/Panel/Layout/Layout/Settings/Layout" unique_id=1587510477]
-custom_minimum_size = Vector2(30, 0)
+[node name="SettingsDivider" type="HSeparator" parent="Shell/Navigation/Margin/Layout" unique_id=48985162]
+modulate = Color(1, 1, 1, 0.18)
 layout_mode = 2
-texture = ExtResource("7_s7waw")
-expand_mode = 1
-stretch_mode = 5
 
-[node name="Label" type="Label" parent="Pivot/Pivot2/Panel/Layout/Layout/Settings/Layout" unique_id=841508255]
+[node name="Report" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=1182602812]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Settings"
+theme_override_constants/icon_max_width = 24
+toggle_mode = true
+text = "Report"
+icon = ExtResource("7_report")
+alignment = 0
+expand_icon = true
+script = ExtResource("3_tab")
+SwitchTo = 2
 
-[node name="Container" type="PanelContainer" parent="Pivot/Pivot2/Panel/Layout" unique_id=1237943659]
+[node name="ReportDivider" type="HSeparator" parent="Shell/Navigation/Margin/Layout" unique_id=1853357856]
+modulate = Color(1, 1, 1, 0.18)
+layout_mode = 2
+
+[node name="Controls" type="Button" parent="Shell/Navigation/Margin/Layout" unique_id=1732915510]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
+text = "Controls"
+icon = ExtResource("10_mky1n")
+alignment = 0
+expand_icon = true
+
+[node name="Flexible" type="Control" parent="Shell/Navigation/Margin/Layout" unique_id=507724255]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_6062u")
 
-[node name="AnimPlay" type="AnimationPlayer" parent="." unique_id=310794596]
-libraries/ = SubResource("AnimationLibrary_q5m05")
+[node name="Footer" type="HBoxContainer" parent="Shell/Navigation/Margin/Layout" unique_id=597093493]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="More" type="Button" parent="Shell/Navigation/Margin/Layout/Footer" unique_id=256513217]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("footer_icon")
+theme_override_styles/hover = SubResource("nav_hover")
+theme_override_styles/focus = SubResource("footer_icon")
+text = "•••"
+
+[node name="Screenshot" type="Button" parent="Shell/Navigation/Margin/Layout/Footer" unique_id=1210196638]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+tooltip_text = "Take screenshot"
+theme_override_colors/icon_normal_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("footer_icon")
+theme_override_styles/pressed = SubResource("nav_hover")
+theme_override_styles/hover = SubResource("nav_hover")
+theme_override_styles/focus = SubResource("footer_icon")
+icon = ExtResource("9_camera")
+icon_alignment = 1
+
+[node name="Respawn" type="Button" parent="Shell/Navigation/Margin/Layout/Footer" unique_id=1607968365]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+tooltip_text = "Respawn character"
+theme_override_colors/icon_normal_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("footer_icon")
+theme_override_styles/pressed = SubResource("nav_hover")
+theme_override_styles/hover = SubResource("nav_hover")
+theme_override_styles/focus = SubResource("footer_icon")
+icon = ExtResource("11_respawn")
+icon_alignment = 1
+
+[node name="Leave" type="Button" parent="Shell/Navigation/Margin/Layout/Footer" unique_id=1714646774]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.12, 0.12, 0.12, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("leave_normal")
+theme_override_styles/pressed = SubResource("leave_hover")
+theme_override_styles/hover = SubResource("leave_hover")
+theme_override_styles/focus = SubResource("leave_normal")
+text = "Leave"
+
+[node name="Content" type="PanelContainer" parent="Shell" unique_id=1088037691]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("content_clear")
+
+[node name="Margin" type="MarginContainer" parent="Shell/Content" unique_id=1005739117]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Layout" type="VBoxContainer" parent="Shell/Content/Margin" unique_id=774038427]
+layout_mode = 2
+
+[node name="Top" type="HBoxContainer" parent="Shell/Content/Margin/Layout" unique_id=446327314]
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+
+[node name="ViewTitle" type="Label" parent="Shell/Content/Margin/Layout/Top" unique_id=1251644094]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+text = "Home"
+
+[node name="Close" type="Button" parent="Shell/Content/Margin/Layout/Top" unique_id=1546895467]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+icon = ExtResource("8_close")
+flat = true
+
+[node name="Divider" type="HSeparator" parent="Shell/Content/Margin/Layout" unique_id=1810143069]
+visible = false
+layout_mode = 2
+
+[node name="ViewContainer" type="PanelContainer" parent="Shell/Content/Margin/Layout" unique_id=1183167338]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("content_clear")
+
+[node name="AnimPlay" type="AnimationPlayer" parent="." unique_id=1845589185]
+libraries/ = SubResource("animations")

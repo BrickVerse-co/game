@@ -63,7 +63,7 @@ content_margin_top = 4.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 
-[node name="InsertMenu" type="PopupPanel" unique_id=1040719958 node_paths=PackedStringArray("SearchBox", "ItemContainer")]
+[node name="InsertMenu" type="PopupPanel" unique_id=1040719958 node_paths=PackedStringArray("SearchBox", "ItemContainer", "ItemScroll")]
 theme = ExtResource("99_creator_theme")
 oversampling_override = 1.0
 size = Vector2i(250, 350)
@@ -72,6 +72,7 @@ theme = ExtResource("1_qe2nl")
 script = ExtResource("2_hy0vi")
 SearchBox = NodePath("VBoxContainer/Panel/HBoxContainer/LineEdit")
 ItemContainer = NodePath("VBoxContainer/ScrollContainer/VBoxContainer")
+ItemScroll = NodePath("VBoxContainer/ScrollContainer")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=2014692165]
 offset_right = 250.0
@@ -109,6 +110,7 @@ size_flags_vertical = 3
 theme = SubResource("Theme_pwcym")
 theme_override_styles/panel = SubResource("StyleBoxEmpty_imygl")
 follow_focus = true
+vertical_scroll_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer" unique_id=13411747]
 layout_mode = 2

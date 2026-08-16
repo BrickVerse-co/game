@@ -27,6 +27,23 @@ public partial class DevConsoleWindow : Control
 		base._EnterTree();
 	}
 
+	public override void _Ready()
+	{
+		TabContainer tabs = GetNode<TabContainer>("TabContainer");
+		AddToolTab(tabs, "Performance", DeveloperToolsTab.ToolMode.Performance);
+		AddToolTab(tabs, "Scripts", DeveloperToolsTab.ToolMode.Scripts);
+		AddToolTab(tabs, "Memory", DeveloperToolsTab.ToolMode.Memory);
+		AddToolTab(tabs, "Network", DeveloperToolsTab.ToolMode.Network);
+		AddToolTab(tabs, "Executor", DeveloperToolsTab.ToolMode.Executor);
+		base._Ready();
+	}
+
+	private static void AddToolTab(TabContainer tabs, string name, DeveloperToolsTab.ToolMode mode)
+	{
+		DeveloperToolsTab tab = new() { Name = name, Mode = mode };
+		tabs.AddChild(tab);
+	}
+
 	private void OnDragZoneInput(InputEvent @event)
 	{
 		if (@event is InputEventMouseButton mouseButton)
@@ -107,6 +124,11 @@ public partial class DevConsoleWindow : Control
 	public void Toggle()
 	{
 		Visible = !Visible;
+		if (Visible)
+		{
+			MoveToFront();
+			GrabFocus();
+		}
 	}
 
 	private void OnCloseRequested()

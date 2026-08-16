@@ -39,6 +39,14 @@ public sealed partial class Sound : Dynamic
 	private bool _paused = false;
 	private float _pitch = 1f;
 	private float _maxDistance = 60f;
+	private SoundGroup? _soundGroup;
+
+	[Editable, ScriptProperty]
+	public SoundGroup? SoundGroup
+	{
+		get => _soundGroup;
+		set { _soundGroup = value; UpdateSoundGroup(); OnPropertyChanged(); }
+	}
 
 	private AudioStream? _currentStream;
 
@@ -324,6 +332,14 @@ public sealed partial class Sound : Dynamic
 		UpdateMaxDistance();
 		UpdateVolume();
 		UpdatePitch();
+		UpdateSoundGroup();
+	}
+
+	internal void UpdateSoundGroup()
+	{
+		string bus = _soundGroup?.BusName ?? "Master";
+		if (_audioPlayer != null) _audioPlayer.Bus = bus;
+		if (_audioPlayer3D != null) _audioPlayer3D.Bus = bus;
 	}
 
 	private void UpdateMaxDistance()

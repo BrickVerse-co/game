@@ -6,10 +6,15 @@ using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Creator.UI;
 
@@ -58,6 +63,22 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		if (Target is IGroup or RigidBody)
 		{
 			AddIconItem("ungroup", "Ungroup", 32);
+		}
+		if (Targets.OfType<Dynamic>().Count() >= 2)
+			AddIconItem("link", "Weld Selection", 36);
+
+		Entity[] geometryTargets = [.. Targets.OfType<Entity>()];
+		if (CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling) && geometryTargets.Length > 0)
+		{
+			AddSeparator();
+			if (geometryTargets.Length >= 2)
+				AddIconItem("group", "Union", 33);
+			bool allNegated = geometryTargets.All(entity => entity.IsNegated);
+			AddIconItem("subtract", allNegated ? "Unnegate" : "Negate", 34);
+		}
+		if (CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling) && isSingle && Target is UnionOperation)
+		{
+			AddIconItem("ungroup", "Separate Union", 35);
 		}
 
 		if (Target is World)
@@ -155,6 +176,101 @@ public partial class ExplorerItemContextMenu : ContextMenu
 					context.History.UngroupInstances(targets);
 					break;
 				}
+			case 33: // Union
+				{
+					Entity[] entities = [.. targets.OfType<Entity>()];
+					if (entities.Length < 2) break;
+					Instance?[] parents = entities.Select(entity => entity.Parent).ToArray();
+					Transform3D[] transforms = entities.Select(entity => entity.GDNode3D.GlobalTransform).ToArray();
+					bool[] hidden = entities.Select(entity => entity.IsHidden).ToArray();
+					bool[] collisions = entities.Select(entity => entity.CanCollide).ToArray();
+					UnionOperation union;
+					try
+					{
+						union = await context.Root.Geometry.UnionAsync(entities);
+					}
+					catch (Exception exception)
+					{
+						GD.PushError($"Unable to union the selected solids: {exception}");
+						CreatorService.Interface.StatusBar?.SetStatus($"Union failed: {exception.Message}");
+						break;
+					}
+					Instance unionParent = union.Parent!;
+					Transform3D unionTransform = union.GDNode3D.GlobalTransform;
+					context.History.RecordAppliedAction("Union solids",
+						new BVCallback((_) =>
+						{
+							union.Parent = unionParent;
+							union.GDNode3D.GlobalTransform = unionTransform;
+							for (int i = 0; i < entities.Length; i++) ReparentPreservingTransform(entities[i], union, transforms[i], true, false);
+							context.Selections.SelectOnly(union);
+						}),
+						new BVCallback((_) =>
+						{
+							union.Parent = union.Root.TemporaryContainer;
+							for (int i = 0; i < entities.Length; i++)
+							{
+								ReparentPreservingTransform(entities[i], parents[i]!, transforms[i], hidden[i], collisions[i]);
+							}
+							context.Selections.DeselectAll();
+							foreach (Entity entity in entities) context.Selections.Select(entity);
+						}));
+					break;
+				}
+			case 34: // Negate / Unnegate
+				{
+					Entity[] entities = [.. targets.OfType<Entity>()];
+					bool[] previous = entities.Select(entity => entity.IsNegated).ToArray();
+					bool negate = !entities.All(entity => entity.IsNegated);
+					Action apply = () =>
+					{
+						foreach (Entity entity in entities) entity.IsNegated = negate;
+						RebuildContainingUnions(entities);
+					};
+					Action revert = () =>
+					{
+						for (int i = 0; i < entities.Length; i++) entities[i].IsNegated = previous[i];
+						RebuildContainingUnions(entities);
+					};
+					apply();
+					context.History.RecordAppliedAction(negate ? "Negate solids" : "Unnegate solids", new BVCallback((_) => apply()), new BVCallback((_) => revert()));
+					break;
+				}
+			case 35: // Separate Union
+				{
+					if (Target is not UnionOperation union || union.Parent == null) break;
+					Instance parent = union.Parent;
+					Entity[] sources = [.. union.GetChildren().OfType<Entity>()];
+					Transform3D[] transforms = sources.Select(source => source.GDNode3D.GlobalTransform).ToArray();
+					Action separate = () =>
+					{
+						for (int i = 0; i < sources.Length; i++) ReparentPreservingTransform(sources[i], parent, transforms[i], false, true);
+						union.Parent = union.Root.TemporaryContainer;
+						context.Selections.DeselectAll();
+						foreach (Entity source in sources) context.Selections.Select(source);
+					};
+					Action restore = () =>
+					{
+						union.Parent = parent;
+						for (int i = 0; i < sources.Length; i++) ReparentPreservingTransform(sources[i], union, transforms[i], true, false);
+						context.Selections.SelectOnly(union);
+					};
+					separate();
+					context.History.RecordAppliedAction("Separate union", new BVCallback((_) => separate()), new BVCallback((_) => restore()));
+					break;
+				}
+			case 36: // Weld Selection
+				{
+					Dynamic[] dynamics = [.. targets.OfType<Dynamic>()]; if (dynamics.Length < 2) break;
+					List<Instance> welds = [];
+					for (int i = 1; i < dynamics.Length; i++)
+					{
+						Weld weld = context.Root.New<Weld>(); weld.Name = $"{dynamics[0].Name}_{dynamics[i].Name}_Weld"; weld.Part0 = dynamics[0]; weld.Part1 = dynamics[i]; welds.Add(weld);
+					}
+					context.History.CreateInstances([.. welds], dynamics[0]);
+					CreatorService.Interface.StatusBar?.SetStatus($"Created {welds.Count} weld{(welds.Count == 1 ? "" : "s")}");
+					break;
+				}
 			case 39: // Publish
 				{
 					if (Target is World)
@@ -225,5 +341,19 @@ public partial class ExplorerItemContextMenu : ContextMenu
 					break;
 				}
 		}
+	}
+
+	private static void ReparentPreservingTransform(Entity entity, Instance parent, Transform3D transform, bool hidden, bool canCollide)
+	{
+		entity.Parent = parent;
+		entity.GDNode3D.GlobalTransform = transform;
+		entity.IsHidden = hidden;
+		entity.CanCollide = canCollide;
+	}
+
+	private static void RebuildContainingUnions(IEnumerable<Entity> entities)
+	{
+		foreach (UnionOperation union in entities.Select(entity => entity.Parent).OfType<UnionOperation>().Distinct())
+			_ = union.RebuildAsync();
 	}
 }

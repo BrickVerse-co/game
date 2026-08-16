@@ -65,6 +65,17 @@ public partial class GUI : Instance
 		base.EnterTree();
 	}
 
+	protected override void OnParentChanged(Instance? oldParent, Instance? newParent)
+	{
+		RecomputeVisible();
+		Callable.From(() =>
+		{
+			_control.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+			RecomputeChildTransforms();
+		}).CallDeferred();
+		base.OnParentChanged(oldParent, newParent);
+	}
+
 	public void RecomputeVisible()
 	{
 		bool isValidParent = Parent is PlayerGUI or GUI3D

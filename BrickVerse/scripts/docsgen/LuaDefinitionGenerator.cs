@@ -120,12 +120,35 @@ public class LuaDefinitionGenerator
 		}
 		builder.AppendLine("--- The root World datamodel. `game` and `world` reference the same object.");
 		builder.AppendLine("declare game: World");
+		builder.AppendLine("--- Alias for the root World datamodel.");
+		builder.AppendLine("declare workspace: World");
 		builder.AppendLine("--- The Script instance currently being executed.");
 		builder.AppendLine("declare script: Script");
 		builder.AppendLine("--- Writes values to Creator Output or the game console.");
 		builder.AppendLine("declare function print(...: any): ()");
 		builder.AppendLine("--- Writes a warning to Creator Output or the game console.");
 		builder.AppendLine("declare function warn(...: any): ()");
+		builder.AppendLine("--- Yields the current thread for at least the requested duration.");
+		builder.AppendLine("declare function wait(duration: number?): number");
+		builder.AppendLine("--- Runs a function on a new scheduled thread (legacy alias for task.spawn).");
+		builder.AppendLine("declare function spawn(callback: (...any) -> (), ...: any): ()");
+		builder.AppendLine("--- Runs a function after at least the requested duration (legacy alias for task.delay).");
+		builder.AppendLine("declare function delay(duration: number, callback: (...any) -> (), ...: any): ()");
+		builder.AppendLine("--- Seconds elapsed since the current world started.");
+		builder.AppendLine("declare function time(): number");
+		builder.AppendLine("--- Alias for time().");
+		builder.AppendLine("declare function elapsedTime(): number");
+		builder.AppendLine("--- Current Unix timestamp in seconds.");
+		builder.AppendLine("declare function tick(): number");
+		builder.AppendLine("declare task: {");
+		builder.AppendLine("\twait: (duration: number?) -> number,");
+		builder.AppendLine("\tspawn: (callback: (...any) -> (), ...any) -> thread,");
+		builder.AppendLine("\tdefer: (callback: (...any) -> (), ...any) -> thread,");
+		builder.AppendLine("\tdelay: (duration: number, callback: (...any) -> (), ...any) -> thread,");
+		builder.AppendLine("\tcancel: (scheduledThread: thread) -> (),");
+		builder.AppendLine("\tdesynchronize: () -> (),");
+		builder.AppendLine("\tsynchronize: () -> (),");
+		builder.AppendLine("}");
 
 		File.WriteAllText(atFolder.PathJoin("def.d.luau"), builder.ToString());
 	}

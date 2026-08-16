@@ -97,6 +97,41 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		FixedSize = fixedSize;
 	}
 
+	/// <summary>Builds welded topology in one pass for generated geometry.</summary>
+	internal static EditableMesh FromTriangleSoup(Vector3[] triangles)
+	{
+		EditableMesh mesh = new() { AutoCommit = false };
+		Dictionary<Vector3, int> vertexIds = [];
+		Dictionary<int, Vector3> normalSums = [];
+		Dictionary<int, int> normalIds = [], uvIds = [], colorIds = [];
+		for (int i = 0; i < triangles.Length; i++)
+		{
+			Vector3 position = triangles[i];
+			if (vertexIds.ContainsKey(position)) continue;
+			int id = mesh._nextVertexId++;
+			vertexIds[position] = id;
+			mesh._vertices[id] = new VertexData { Position = position };
+			normalSums[id] = Vector3.Zero;
+			uvIds[id] = mesh.AddUvInternal(Vector2.Zero);
+			colorIds[id] = mesh.AddColorInternal(Colors.White);
+		}
+		for (int i = 0; i + 2 < triangles.Length; i += 3)
+		{
+			int a = vertexIds[triangles[i]], b = vertexIds[triangles[i + 1]], c = vertexIds[triangles[i + 2]];
+			if (a == b || b == c || c == a) continue;
+			Vector3 normal = (triangles[i + 1] - triangles[i]).Cross(triangles[i + 2] - triangles[i]).Normalized();
+			normalSums[a] += normal; normalSums[b] += normal; normalSums[c] += normal;
+			FaceData face = new(); face.Vertices[0] = a; face.Vertices[1] = b; face.Vertices[2] = c;
+			mesh._faces[mesh._nextFaceId++] = face;
+		}
+		foreach ((int vertexId, Vector3 sum) in normalSums) normalIds[vertexId] = mesh.AddNormalInternal(sum.Normalized(), automatic: true);
+		foreach (FaceData face in mesh._faces.Values) for (int corner = 0; corner < 3; corner++)
+			{
+				int vertexId = face.Vertices[corner]; face.Normals[corner] = normalIds[vertexId]; face.UVs[corner] = uvIds[vertexId]; face.Colors[corner] = colorIds[vertexId];
+			}
+		mesh.MarkDirty(); mesh.Commit(); return mesh;
+	}
+
 	/// <summary>
 	/// Optional material used for the generated surface.
 	/// This is intentionally not a ScriptProperty because Material is a Godot resource.

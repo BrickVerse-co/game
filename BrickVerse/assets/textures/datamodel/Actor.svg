@@ -1,0 +1,21 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Parallel worker lanes -->
+  <rect x="6" y="11" width="15" height="10" rx="3" fill="#00A86B"/>
+  <rect x="27" y="27" width="15" height="10" rx="3" fill="#00A86B"/>
+
+  <!-- Main Actor execution container -->
+  <rect x="12" y="15" width="24" height="18" rx="4" fill="#00C985"/>
+
+  <!-- Parallel split / execution paths -->
+  <path d="M18 24H12.5C10.0147 24 8 21.9853 8 19.5V19" stroke="#91F2CB" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 24H35.5C37.9853 24 40 26.0147 40 28.5V29" stroke="#91F2CB" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Actor core -->
+  <rect x="18" y="19" width="12" height="10" rx="2.5" fill="#B8FFE1"/>
+  <path d="M22 22V26" stroke="#00A86B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M26 22V26" stroke="#00A86B" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Direction indicators -->
+  <path d="M16 8L20 11L16 14V8Z" fill="#91F2CB"/>
+  <path d="M32 34L28 37L32 40V34Z" fill="#91F2CB"/>
+</svg>

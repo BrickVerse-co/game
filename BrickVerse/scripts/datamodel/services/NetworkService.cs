@@ -85,6 +85,7 @@ public sealed partial class NetworkService : Instance
 
 	// Rate limiters
 	private readonly Dictionary<int, RateLimiters> _peerRateLimiters = [];
+	internal event Action<int, string, int>? SuspiciousPeerActivity;
 	private readonly Lock _rateLimiterLock = new();
 
 	private Players _players = null!;
@@ -354,6 +355,7 @@ public sealed partial class NetworkService : Instance
 
 			if (actualArgCount != expectedArgCount)
 			{
+				if (IsServer && originFromPeer != 1) SuspiciousPeerActivity?.Invoke(originFromPeer, "malformed-rpc-arguments", 2);
 				BV.PrintErr(
 					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
 					$"TargetType={netObj.GetType().FullName}, FromPeer={fromPeer}, OriginPeer={originFromPeer}, " +
@@ -378,6 +380,7 @@ public sealed partial class NetworkService : Instance
 					{
 						if (!_peerRateLimiters.TryGetValue(originFromPeer, out RateLimiters? rateLimiter))
 						{
+							SuspiciousPeerActivity?.Invoke(originFromPeer, "unknown-peer-rpc", 3);
 							BV.PrintErr($"Dropped broadcast RPC from unknown peer {originFromPeer}");
 							return;
 						}
@@ -410,6 +413,7 @@ public sealed partial class NetworkService : Instance
 				}
 				else
 				{
+					SuspiciousPeerActivity?.Invoke(originFromPeer, "rpc-flood", 1);
 					if (Globals.UseLogRPC)
 					{
 						BV.Print($"Blocked {dispatch.Method.Name} from {originFromPeer}");
@@ -434,6 +438,7 @@ public sealed partial class NetworkService : Instance
 					}
 					catch (Exception ex)
 					{
+						if (IsServer && originFromPeer != 1) SuspiciousPeerActivity?.Invoke(originFromPeer, "malformed-rpc-payload", 2);
 						BV.PrintErr(
 							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
 							$"TargetType={netObj.GetType().FullName}, ArgIndex={i}, " +
@@ -872,6 +877,7 @@ public sealed partial class NetworkService : Instance
 				validateRes = new()
 				{
 					CanChat = true,
+					CanVoiceChat = true,
 					UserID = testUserID,
 					IsCreator = true,
 					IsAgeRestricted = false,
@@ -946,6 +952,8 @@ public sealed partial class NetworkService : Instance
 			plr.IsAgeRestricted = validateRes.IsAgeRestricted;
 			plr.ChatRestrictionReason = validateRes.ChatRestrictionReason ?? "";
 			plr.CanChat = validateRes.CanChat;
+			plr.CanQuickChat = validateRes.CanQuickChat;
+			plr.CanVoiceChat = validateRes.CanVoiceChat;
 			plr.UserPlatform = (ClientPlatformEnum)platform;
 
 			if (plr.IsAdmin)

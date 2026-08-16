@@ -105,6 +105,23 @@ public static class CreatorSettingsRegistry
 				DefaultValue = true
 			});
 
+		defs.Add(CreatorSettingKeys.Creator.PlayTestPresentation,
+			new SettingDef<PlayTestPresentationEnum>
+			{
+				Key = CreatorSettingKeys.Creator.PlayTestPresentation,
+				SectionKey = "creator",
+				Label = "Play-test Window",
+				Description = "Attach play-tests over the active world viewport, or launch them as independent resizable windows.",
+				ValueKind = SettingValueKind.Enum,
+				ControlKind = SettingControlKind.Dropdown,
+				DefaultValue = PlayTestPresentationEnum.Attached,
+				Options =
+				[
+					new() { Value = PlayTestPresentationEnum.Attached, Label = "Attached to Creator" },
+					new() { Value = PlayTestPresentationEnum.Windowed, Label = "Separate Window" },
+				]
+			});
+
 		// Interface
 		defs.Add(CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>

@@ -65,6 +65,9 @@ public sealed partial class Environment : Instance
 	private Color _fogColor = new(1, 1, 1);
 	private float _fogStartDistance = 0;
 	private float _fogEndDistance = 250;
+	private Vector3 _windDirection = new(1, 0, 0);
+	private float _windSpeed = 1.5f;
+	private float _windStrength = 0.28f;
 
 	private NavigationRegion3D _navRegion = null!;
 	private NavigationMesh _navMesh = null!;
@@ -105,6 +108,27 @@ public sealed partial class Environment : Instance
 			_autoGenerateNavMesh = value;
 			OnPropertyChanged();
 		}
+	}
+
+	[Editable, ScriptProperty]
+	public Vector3 WindDirection
+	{
+		get => _windDirection;
+		set { _windDirection = value.LengthSquared() > 0.0001f ? value.Normalized() : Vector3.Right; OnPropertyChanged(); }
+	}
+
+	[Editable, ScriptProperty]
+	public float WindSpeed
+	{
+		get => _windSpeed;
+		set { _windSpeed = Mathf.Clamp(value, 0, 20); OnPropertyChanged(); }
+	}
+
+	[Editable, ScriptProperty]
+	public float WindStrength
+	{
+		get => _windStrength;
+		set { _windStrength = Mathf.Clamp(value, 0, 10); OnPropertyChanged(); }
 	}
 
 	[Editable, ScriptProperty, Attributes.Obsolete("Replaced with Lighting.Skybox")]
@@ -243,7 +267,7 @@ public sealed partial class Environment : Instance
 
 	public void RegisterSpawnPoint(Entity spawnpoint)
 	{
-		SpawnPoints.Add(spawnpoint);
+		if (!SpawnPoints.Contains(spawnpoint)) SpawnPoints.Add(spawnpoint);
 	}
 
 	public void UnregisterSpawnPoint(Entity spawnpoint)

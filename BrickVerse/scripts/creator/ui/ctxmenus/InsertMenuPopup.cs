@@ -5,9 +5,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -43,17 +45,20 @@ public partial class InsertMenuPopup : PopupPanel
 			"Mesh",
 			"EditableMesh",
 			"Seat",
+			"VehicleSeat",
 			"Model",
 			"Folder",
 			"Text3D",
 			"Image3D",
 			"Decal",
+			"Attachment",
+			"SurfaceAppearance",
 			"Camera",
 			"TerrainMaterial",
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-			new() { "InteractionPrompt", "NetworkEvent", "BindableEvent" },
+		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -67,8 +72,9 @@ public partial class InsertMenuPopup : PopupPanel
 			"ColorValue",
 			"InstanceValue",
 		},
-		[new() { Title = "Effects" }] = new() { "Particles" },
-		[new() { Title = "Audio" }] = new() { "Sound" },
+		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
+		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
+		[new() { Title = "Audio" }] = new() { "Sound", "SoundGroup" },
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
 			"Accessory",
@@ -86,7 +92,12 @@ public partial class InsertMenuPopup : PopupPanel
 		*/
 		[new() { Title = "Lighting Effects", RecommendOn = [typeof(Lighting)] }] = new()
 		{
+			"BloomEffect",
+			"AmbientOcclusionEffect",
 			"ColorAdjustModifier",
+			"ColorCorrectionEffect",
+			"FogEffect",
+			"TonemapEffect",
 		},
 		[
 			new()
@@ -102,11 +113,13 @@ public partial class InsertMenuPopup : PopupPanel
 			"UILabel",
 			"UIButton",
 			"UIImage",
+			"UIVideoFrame",
 			"UITextInput",
 			"UIHLayout",
 			"UIVLayout",
 			"UIHFlow",
 			"UIVFlow",
+			"UIGradient",
 			"UIGridLayout",
 			"UIScrollView",
 			"UIViewport",
@@ -139,7 +152,10 @@ public partial class InsertMenuPopup : PopupPanel
 
 	[Export]
 	public Control ItemContainer = null!;
+	[Export]
+	public ScrollContainer ItemScroll = null!;
 	private Button? _bottomFix;
+	private InsertPopupItem? _firstItem;
 
 	private Control? _dummyFocus;
 
@@ -165,11 +181,17 @@ public partial class InsertMenuPopup : PopupPanel
 
 	private void OnSearchboxGUIInput(InputEvent @event)
 	{
-		if (@event is InputEventKey key)
+		if (@event is InputEventKey { Pressed: true } key)
 		{
 			if (key.Keycode == Key.Down)
 			{
-				_bottomFix?.GrabFocus();
+				_firstItem?.GrabFocus();
+				SearchBox.AcceptEvent();
+			}
+			else if ((key.Keycode == Key.Enter || key.Keycode == Key.KpEnter) && _firstItem != null)
+			{
+				OnInsert(_firstItem.Classname);
+				SearchBox.AcceptEvent();
 			}
 		}
 	}
@@ -190,12 +212,31 @@ public partial class InsertMenuPopup : PopupPanel
 		string? query = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 		InsertPopupItem? previousItem = null;
 		InsertPopupItem? firstItem = null;
+		_firstItem = null;
 
 		_bottomFix?.QueueFree();
 		_bottomFix = new() { Visible = false };
 		ItemContainer.AddChild(_bottomFix);
 
 		List<(ItemKey cat, List<string> filtered)> toProcess = [];
+		HashSet<string> categorized = insertItems.Values
+			.SelectMany(static items => items)
+			.ToHashSet(StringComparer.Ordinal);
+		List<string> uncategorized = typeof(Instance).Assembly.GetTypes()
+			.Where(static type => type.IsClass
+				&& !type.IsAbstract
+				&& typeof(Instance).IsAssignableFrom(type)
+				&& type.IsDefined(typeof(InstantiableAttribute), false)
+				&& !type.IsDefined(typeof(InternalAttribute), false))
+			.Select(static type => type.Name)
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
+				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
+			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
+				|| name is not nameof(TerrainGrass))
+			.Where(name => !categorized.Contains(name)
+				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
+			.OrderBy(static name => name, StringComparer.Ordinal)
+			.ToList();
 
 		// Process recommended
 		foreach (KeyValuePair<ItemKey, SubItems> kv in insertItems)
@@ -210,6 +251,10 @@ public partial class InsertMenuPopup : PopupPanel
 					: subItems
 						.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase))
 						.ToList();
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
+				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
+			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass))
+				filtered.RemoveAll(name => name is nameof(TerrainGrass));
 
 			// If none matched, skip this category
 			if (filtered.Count == 0)
@@ -233,6 +278,9 @@ public partial class InsertMenuPopup : PopupPanel
 				toProcess.Add((category, filtered));
 			}
 		}
+
+		if (uncategorized.Count > 0)
+			toProcess.Add((new ItemKey { Title = "Other" }, uncategorized));
 
 		// Process categories
 		foreach (var (cat, filtered) in toProcess)
@@ -262,10 +310,13 @@ public partial class InsertMenuPopup : PopupPanel
 
 		if (firstItem != null)
 		{
+			_firstItem = firstItem;
 			SearchBox.FocusNeighborBottom = firstItem.GetPath();
 			_bottomFix!.FocusNeighborBottom = firstItem.GetPath();
 			firstItem.FocusNeighborTop = SearchBox.GetPath();
 		}
+
+		ItemScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 0);
 	}
 
 	private void OnSearchTextChanged(string newText)
@@ -297,6 +348,9 @@ public partial class InsertMenuPopup : PopupPanel
 					break;
 				case Light:
 					parentTo = World.Current.Lighting;
+					break;
+				case GUI:
+					parentTo = World.Current.PlayerGUI;
 					break;
 				case UIField when instance is not GUI:
 					{

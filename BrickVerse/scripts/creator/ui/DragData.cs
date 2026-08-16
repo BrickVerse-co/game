@@ -14,6 +14,7 @@ namespace BrickVerse.Creator.UI;
 [MemoryPackUnion(0, typeof(InstanceDragData))]
 [MemoryPackUnion(1, typeof(FileDragData))]
 [MemoryPackUnion(2, typeof(DragData))]
+[MemoryPackUnion(3, typeof(ToolboxAssetDragData))]
 public partial interface IDragDataUnion
 {
 }
@@ -56,6 +57,14 @@ public partial class FileDragData : DragData, IDragDataUnion
 }
 
 [MemoryPackable]
+public partial class ToolboxAssetDragData : DragData, IDragDataUnion
+{
+	public string AssetID = "";
+	public string AssetName = "";
+	public int AssetType;
+}
+
+[MemoryPackable]
 public partial class DragData : IDragDataUnion
 {
 	public DragType DragType;
@@ -75,5 +84,6 @@ public enum DragType
 {
 	None,
 	File,
-	Instance
+	Instance,
+	ToolboxAsset
 }

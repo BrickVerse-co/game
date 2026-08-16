@@ -123,6 +123,21 @@ public sealed partial class CreatorHistory : Instance
 		_currentAction = null;
 	}
 
+	/// <summary>Records an operation which has already completed, such as an asynchronous geometry bake.</summary>
+	public void RecordAppliedAction(string title, BVCallback redo, BVCallback undo)
+	{
+		ArgumentNullException.ThrowIfNull(redo);
+		ArgumentNullException.ThrowIfNull(undo);
+		_undoStack.Push(new HistoryAction
+		{
+			Title = title,
+			DoCallbacks = [redo],
+			UndoCallbacks = [undo],
+		});
+		_redoStack.Clear();
+		CreatorService.Interface.StatusBar?.SetStatus(title);
+	}
+
 	/// <summary>
 	/// Group the instances and add to history
 	/// </summary>

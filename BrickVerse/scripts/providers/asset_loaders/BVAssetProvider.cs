@@ -80,6 +80,16 @@ public class BVAssetProvider : IAssetProvider
 					item.Resource = font;
 					return item;
 				}
+			case ResourceType.Video:
+				{
+					string directory = "user://asset_cache/videos";
+					DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(directory));
+					string filePath = directory.PathJoin(item.ID + ".ogv");
+					using Godot.FileAccess file = Godot.FileAccess.Open(filePath, Godot.FileAccess.ModeFlags.Write);
+					file.StoreBuffer(buffer);
+					item.Resource = new VideoStreamTheora { File = filePath };
+					return item;
+				}
 			case ResourceType.Texture:
 			case ResourceType.AssetThumbnail:
 			case ResourceType.UniverseThumbnail:

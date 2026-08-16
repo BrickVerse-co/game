@@ -11,6 +11,7 @@ using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -22,7 +23,7 @@ namespace BrickVerse.Scripting.Luau;
 
 public class LuaMetatable : LuaObject
 {
-	private static readonly Dictionary<OverloadKey, (MethodInfo? methodInfo, bool hasParams)> _overloadCache = [];
+	private static readonly ConcurrentDictionary<OverloadKey, (MethodInfo? methodInfo, bool hasParams)> _overloadCache = [];
 
 	public LuaState Lua = null!;
 	[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicMethods)]
@@ -148,6 +149,13 @@ public class LuaMetatable : LuaObject
 			return 1;
 		}
 
+		string? requestedMember = state.Type(2) == LuaType.String ? state.ToString(2) : null;
+		if (ParallelLuauContext.IsParallel && targetObject is Instance &&
+			!IsParallelSafeMember(requestedMember, script))
+		{
+			throw new InvalidOperationException($"DataModel member '{requestedMember ?? "index"}' is not available during parallel execution. Call task.synchronize() first.");
+		}
+
 		if (targetObject is Instance instance)
 		{
 			LuaType t = state.Type(2);
@@ -213,6 +221,8 @@ public class LuaMetatable : LuaObject
 		// Handle Object.New for NetworkedObjects
 		if (key == "New")
 		{
+			if (ParallelLuauContext.IsParallel && TargetType.IsAssignableTo(typeof(Instance)))
+				throw new InvalidOperationException("DataModel instances cannot be created during parallel execution. Call task.synchronize() first.");
 			if (TargetType.IsDefined(typeof(InstantiableAttribute)))
 			{
 				int newFunc(IntPtr L)
@@ -361,6 +371,15 @@ public class LuaMetatable : LuaObject
 		return 1;
 	}
 
+	private bool IsParallelSafeMember(string? memberName, Script script)
+	{
+		if (string.IsNullOrEmpty(memberName)) return false;
+		PropertyInfo? property = ScriptService.GetScriptPropertyOfName(TargetType, memberName, script.Compatibility);
+		if (property?.IsDefined(typeof(ParallelSafeAttribute)) == true) return true;
+		return ScriptService.ResolveMethods(TargetType, memberName, script.Compatibility).Methods
+			.Any(method => method.IsDefined(typeof(ParallelSafeAttribute)));
+	}
+
 	public virtual int NewIndex(IntPtr L)
 	{
 		LuaState state = LuaState.FromIntPtr(L);
@@ -373,6 +392,9 @@ public class LuaMetatable : LuaObject
 			state.PushNil();
 			return 1;
 		}
+
+		if (ParallelLuauContext.IsParallel && targetObject is Instance)
+			throw new InvalidOperationException("DataModel properties cannot be changed during parallel execution. Call task.synchronize() first.");
 
 		string? key = state.ToString(2);
 

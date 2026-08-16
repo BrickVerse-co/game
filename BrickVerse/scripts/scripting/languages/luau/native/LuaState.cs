@@ -5,6 +5,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -25,29 +26,36 @@ public partial class LuaState : IDisposable
 	public const int LUA_REGISTRYINDEX = -LUAI_MAXCSTACK - 2000;
 	public const int LUA_ENVIRONINDEX = -LUAI_MAXCSTACK - 2001;
 	public const int LUA_GLOBALSINDEX = -LUAI_MAXCSTACK - 2002;
-	private static readonly Lock _lock = new();
+	private static readonly ConcurrentDictionary<IntPtr, object> DomainLocks = [];
+	private readonly object _lock;
 
 	public IntPtr State => _state;
 	public LuaState? Parent => _parent;
 	public bool IsAlive => !_disposed && State != IntPtr.Zero && (Status() == LuaStatus.OK || Status() == LuaStatus.Yield);
 	public bool Loaded { get; set; } = false;
+	internal object SyncRoot => _lock;
+	internal object DomainKey => _lock;
 
 	private static readonly Dictionary<LuaUserdataDestructor, GCHandle> _pinnedDestructors = [];
-	private static readonly Dictionary<IntPtr, LuaFunction> _pinnedFunctions = [];
+	private static readonly object _pinnedDestructorLock = new();
+	private static readonly ConcurrentDictionary<IntPtr, LuaFunction> _pinnedFunctions = [];
 
 	public LuaState()
 	{
+		_lock = new object();
 		lock (_lock)
 		{
 			_state = NativeBindings.luaL_newstate();
 			if (_state == IntPtr.Zero)
 				throw new InvalidOperationException("Failed to create LuaState state");
+			DomainLocks[_state] = _lock;
 		}
 	}
 
 	public LuaState(IntPtr state)
 	{
 		_state = state;
+		_lock = DomainLocks.GetOrAdd(state, static _ => new object());
 	}
 
 	public static LuaState FromIntPtr(IntPtr state)
@@ -108,6 +116,8 @@ public partial class LuaState : IDisposable
 	{
 		_state = thread;
 		_parent = parent;
+		_lock = parent._lock;
+		DomainLocks[thread] = _lock;
 	}
 
 	public void OpenLibs()
@@ -437,7 +447,7 @@ public partial class LuaState : IDisposable
 		IntPtr handlePtr = Marshal.ReadIntPtr(ud);
 		if (handlePtr == IntPtr.Zero) return;
 		GCHandle handle = GCHandle.FromIntPtr(handlePtr);
-		_pinnedFunctions.Remove(handlePtr);
+		_pinnedFunctions.TryRemove(handlePtr, out _);
 
 		if (handle.IsAllocated)
 		{
@@ -692,9 +702,10 @@ public partial class LuaState : IDisposable
 	{
 		lock (_lock)
 		{
-			if (!_pinnedDestructors.ContainsKey(dtor))
+			lock (_pinnedDestructorLock)
 			{
-				_pinnedDestructors[dtor] = GCHandle.Alloc(dtor);
+				if (!_pinnedDestructors.ContainsKey(dtor))
+					_pinnedDestructors[dtor] = GCHandle.Alloc(dtor);
 			}
 			return NativeBindings.lua_newuserdatadtor(_state, size, dtor);
 		}
@@ -799,6 +810,8 @@ public partial class LuaState : IDisposable
 		{
 			if (!_disposed && _state != IntPtr.Zero)
 			{
+				foreach (KeyValuePair<IntPtr, object> entry in DomainLocks)
+					if (ReferenceEquals(entry.Value, _lock)) DomainLocks.TryRemove(entry.Key, out _);
 				NativeBindings.lua_close(_state);
 				_state = IntPtr.Zero;
 				_disposed = true;

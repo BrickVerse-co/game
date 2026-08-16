@@ -11,7 +11,7 @@ namespace BrickVerse.Client.UI;
 
 public partial class UIGameMenu : Control
 {
-	public Vector2 GameMenuSize = new(960, 524);
+	public Vector2 GameMenuSize = new(1120, 640);
 	private readonly Dictionary<GameMenuViewEnum, UIMenuViewBase> _loadedViews = [];
 	private UIMenuViewBase? _currentView = null;
 
@@ -19,6 +19,21 @@ public partial class UIGameMenu : Control
 	[Export] private Control _viewContainer = null!;
 	[Export] private Control _firstFocus = null!;
 	[Export] private Control _gameMenuPanel = null!;
+	[Export] private Label _gameTitle = null!;
+	[Export] private Label _viewTitle = null!;
+	[Export] private Button _resumeButton = null!;
+	[Export] private Button _leaveButton = null!;
+	[Export] private Button _closeButton = null!;
+	[Export] private Control _contentPanel = null!;
+	[Export] private Button _inviteFriendsButton = null!;
+	[Export] private Button _controlsButton = null!;
+	[Export] private Button _moreButton = null!;
+	[Export] private Control _navigationPanel = null!;
+	[Export] private Control _contentHeader = null!;
+	[Export] private Button _contentCloseButton = null!;
+	[Export] private Button _screenshotButton = null!;
+	[Export] private Button _respawnButton = null!;
+	private readonly List<Button> _railButtons = [];
 
 	public bool IsShowing = false;
 
@@ -30,6 +45,58 @@ public partial class UIGameMenu : Control
 	public override void _Ready()
 	{
 		Visible = false;
+		if (_resumeButton != _closeButton) _resumeButton.Pressed += HideMenu;
+		_closeButton.Pressed += HideMenu;
+		_leaveButton.Pressed += LeaveGame;
+		_inviteFriendsButton.Pressed += CopyInviteLink;
+		_controlsButton.Pressed += OpenSettings;
+		_moreButton.Pressed += OpenOverview;
+		_contentCloseButton.Pressed += CloseContent;
+		_screenshotButton.Pressed += TakeScreenshot;
+		_respawnButton.Pressed += Respawn;
+		Resized += RefreshSize;
+		_railButtons.AddRange([_inviteFriendsButton, _controlsButton]);
+		_railButtons.AddRange(_tabButtons);
+	}
+
+	public override void _ExitTree()
+	{
+		if (_resumeButton != _closeButton) _resumeButton.Pressed -= HideMenu;
+		_closeButton.Pressed -= HideMenu;
+		_leaveButton.Pressed -= LeaveGame;
+		_inviteFriendsButton.Pressed -= CopyInviteLink;
+		_controlsButton.Pressed -= OpenSettings;
+		_moreButton.Pressed -= OpenOverview;
+		_contentCloseButton.Pressed -= CloseContent;
+		_screenshotButton.Pressed -= TakeScreenshot;
+		_respawnButton.Pressed -= Respawn;
+		Resized -= RefreshSize;
+		base._ExitTree();
+	}
+
+	private void LeaveGame() => CoreUI.Root.Entry?.LeaveGame();
+	private void TakeScreenshot() { HideMenu(); CoreUI.Root.Capture.TakePhoto(); }
+	private void Respawn() { if (!CoreUI.Service.CanRespawn) return; HideMenu(); CoreUI.Root.Players.LocalPlayer.Kill(); }
+	private void CopyInviteLink()
+	{
+		if (CoreUI.Root.IsLocalTest)
+		{
+			CoreUI.NotificationCenter.FireMessage("Publish the experience before inviting friends.", "Invite unavailable");
+			return;
+		}
+		DisplayServer.ClipboardSet($"https://brickverse.gg/worlds/{CoreUI.Root.WorldID}");
+		CoreUI.NotificationCenter.FireMessage("The experience link was copied to your clipboard.", "Invite friends");
+	}
+	private void OpenSettings()
+	{
+		SwitchView(GameMenuViewEnum.Settings);
+		if (_loadedViews.TryGetValue(GameMenuViewEnum.Settings, out UIMenuViewBase? view) && view is UIMenuSettings settings)
+			settings.SwitchToGameSettings();
+	}
+	private void OpenOverview() => SwitchView(GameMenuViewEnum.Overview);
+	private void CloseContent()
+	{
+		_currentView?.HideView(); _contentPanel.Visible = false; _navigationPanel.Visible = true; _firstFocus.GrabFocus();
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -67,30 +134,27 @@ public partial class UIGameMenu : Control
 		_firstFocus.GrabFocus();
 		IsShowingChanged?.Invoke(IsShowing);
 		CoreUIRoot.Singleton.Root.Input.IsMenuOpened = true;
-		SwitchView(GameMenuViewEnum.Overview);
+		_gameTitle.Text = string.IsNullOrWhiteSpace(CoreUI.Root.UniverseName) ? (CoreUI.Root.IsLocalTest ? "Local Playtest" : "BrickVerse Experience") : CoreUI.Root.UniverseName;
+		_respawnButton.Disabled = !CoreUI.Service.CanRespawn;
+		_contentPanel.Visible = false;
+		_navigationPanel.Visible = true;
 		RefreshSize();
 	}
 
 	private void RefreshSize()
 	{
-		Rect2 rect = GetViewportRect();
-		if (rect.Size.X < GameMenuSize.X)
-		{
-			_gameMenuPanel.Size = new(rect.Size.X, _gameMenuPanel.Size.Y);
-		}
-		else
-		{
-			_gameMenuPanel.Size = new(GameMenuSize.X, _gameMenuPanel.Size.Y);
-		}
-		if (rect.Size.Y < GameMenuSize.Y)
-		{
-			_gameMenuPanel.Size = new(_gameMenuPanel.Size.X, rect.Size.Y);
-		}
-		else
-		{
-			_gameMenuPanel.Size = new(_gameMenuPanel.Size.X, GameMenuSize.Y);
-		}
-		_gameMenuPanel.SetDeferred(Control.PropertyName.AnchorsPreset, (int)LayoutPreset.Center);
+		// The redesigned shell is anchor-driven so it remains full-height at every resolution.
+		// Reset only the animation translation; changing Size here would fight those anchors.
+		_gameMenuPanel.Position = Vector2.Zero;
+		Vector2 viewport = GetViewportRect().Size;
+		bool narrow = viewport.X < 850;
+		if (_contentPanel.Visible) _navigationPanel.Visible = !narrow;
+		_contentHeader.Visible = narrow && _contentPanel.Visible;
+		Control header = GetNode<Control>("Shell/Navigation/Margin/Layout/Header");
+		bool compact = viewport.Y < 620;
+		header.CustomMinimumSize = new Vector2(0, 48);
+		float buttonHeight = compact ? Mathf.Clamp((viewport.Y - 190f) / Mathf.Max(1, _railButtons.Count), 34f, 52f) : 52f;
+		foreach (Button button in _railButtons) button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, buttonHeight);
 	}
 
 	public void HideMenu()
@@ -151,6 +215,11 @@ public partial class UIGameMenu : Control
 
 		// Show the new view
 		view.Menu = this;
+		_contentPanel.Visible = true;
+		bool narrow = GetViewportRect().Size.X < 850;
+		_navigationPanel.Visible = !narrow;
+		_contentHeader.Visible = narrow;
+		_viewTitle.Text = switchTo switch { GameMenuViewEnum.Overview => "Overview", GameMenuViewEnum.Players => "Players", GameMenuViewEnum.Report => "Safety & Report", GameMenuViewEnum.Settings => "Settings", _ => "Menu" };
 		view.ShowView();
 		view.Visible = true;
 		ViewChanged?.Invoke(switchTo);

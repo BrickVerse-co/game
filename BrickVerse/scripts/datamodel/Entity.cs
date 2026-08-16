@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Attributes;
+using System.Collections.Generic;
 
 namespace BrickVerse.Datamodel;
 
@@ -13,6 +14,10 @@ public abstract partial class Entity : RigidBody
 	internal const uint CameraClipCollisionLayerMask = 1u << 5;
 
 	private bool _isSpawn = false;
+	private bool _isNegated = false;
+#if CREATOR
+	private Node3D? _negateHighlight;
+#endif
 
 	private Color _color = new(1, 1, 1);
 	private bool _castShadows = true;
@@ -50,6 +55,24 @@ public abstract partial class Entity : RigidBody
 	}
 
 	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool IsNegated
+	{
+		get => _isNegated;
+		set
+		{
+			if (_isNegated == value)
+			{
+				return;
+			}
+
+			_isNegated = value;
+			OnNegatedChanged();
+			UpdateNegateHighlight();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(false)]
 	public bool IsSpawn
 	{
 		get => _isSpawn;
@@ -77,6 +100,40 @@ public abstract partial class Entity : RigidBody
 	{
 		base.Init();
 		UpdateCamLayer();
+		UpdateNegateHighlight();
+	}
+
+	internal virtual (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry() => [];
+	internal virtual void OnNegatedChanged() { }
+	protected Color GetVisualColor(Color color) => _isNegated ? new Color(color, Mathf.Min(color.A, 0.48f)) : color;
+
+	internal void UpdateNegateHighlight()
+	{
+#if CREATOR
+		if (_negateHighlight != null && GodotObject.IsInstanceValid(_negateHighlight))
+		{
+			_negateHighlight.QueueFree();
+			_negateHighlight = null;
+		}
+		if (!_isNegated || GDNode3D == null || !GodotObject.IsInstanceValid(GDNode3D)) return;
+
+		_negateHighlight = new Node3D { Name = "NegateHighlight" };
+		GDNode3D.AddChild(_negateHighlight, false, Node.InternalMode.Back);
+		StandardMaterial3D material = new()
+		{
+			AlbedoColor = new Color(1f, 0.04f, 0.04f, 0.38f),
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+			NoDepthTest = true,
+			CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+		};
+		Transform3D inverse = GDNode3D.GlobalTransform.AffineInverse();
+		foreach ((Godot.Mesh mesh, Transform3D transform) in GetBooleanGeometry())
+		{
+			MeshInstance3D overlay = new() { Mesh = mesh, MaterialOverride = material, Transform = inverse * transform };
+			_negateHighlight.AddChild(overlay);
+		}
+#endif
 	}
 
 	public override void PreDelete()

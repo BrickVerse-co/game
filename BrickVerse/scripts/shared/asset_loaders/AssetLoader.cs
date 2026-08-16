@@ -128,6 +128,7 @@ public enum ResourceType
 	Prefab,
 	Animation,
 	Plugin,
+	Video,
 
 	UniverseThumbnail,
 	GuildIcon,

@@ -1,0 +1,22 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- UGC Shader: a rendered 3D part with a visible surface effect -->
+
+  <!-- Top face -->
+  <path d="M24 6L40 14.5L24 23L8 14.5L24 6Z" fill="#FF8A1F"/>
+
+  <!-- Left face -->
+  <path d="M8 14.5L24 23V41L8 32.5V14.5Z" fill="#E96500"/>
+
+  <!-- Right / shaded face -->
+  <path d="M40 14.5L24 23V41L40 32.5V14.5Z" fill="#FF7900"/>
+
+  <!-- Bright shader band flowing over the rendered surface -->
+  <path d="M10.5 13.3C14.6 11.7 17.2 11.8 20.5 13.4C23.5 14.9 26.4 15.1 29.3 13.8C32.4 12.4 35.1 12.5 38 14.1L32.8 16.9C30.2 15.7 28 15.7 25.6 16.8C22.3 18.3 18.7 18.1 15.4 16.4C13.7 15.6 12.1 15.3 10.5 15.6V13.3Z" fill="#FFE0B8"/>
+
+  <!-- Effect continuing down the model face -->
+  <path d="M24 27.2L29.5 24.3V28.5L24 31.4V27.2Z" fill="#FFD19A"/>
+  <path d="M24 33.2L35.5 27.1V31.1L24 37.2V33.2Z" fill="#FFD19A"/>
+
+  <!-- Shader sparkle / highlight -->
+  <path d="M35.2 6.6C35.49 5.8 36.62 5.8 36.91 6.6L37.22 7.45C37.31 7.7 37.51 7.9 37.76 7.99L38.61 8.3C39.41 8.59 39.41 9.72 38.61 10.01L37.76 10.32C37.51 10.41 37.31 10.61 37.22 10.86L36.91 11.71C36.62 12.51 35.49 12.51 35.2 11.71L34.89 10.86C34.8 10.61 34.6 10.41 34.35 10.32L33.5 10.01C32.7 9.72 32.7 8.59 33.5 8.3L34.35 7.99C34.6 7.9 34.8 7.7 34.89 7.45L35.2 6.6Z" fill="#FFF1DD"/>
+</svg>

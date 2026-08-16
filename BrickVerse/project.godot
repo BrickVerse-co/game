@@ -36,6 +36,15 @@ config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+boot_splash/image="uid://bs34jgixa1n2r"
+config/icon="uid://cq8damlft1wll"
+config/macos_native_icon="res://assets/textures/logo/client/mac.icns"
+config/windows_native_icon="res://assets/textures/logo/logo.ico"
+boot_splash/minimum_display_time=650
+
+[audio]
+
+driver/enable_input=true
 run/flush_stdout_on_print=true
 boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
 boot_splash/use_filter=false
@@ -44,17 +53,6 @@ config/icon="uid://y1tgfxo86kip"
 config/macos_native_icon="res://assets/textures/logo/logo.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
 boot_splash/minimum_display_time=3000
-
-[xr]
-
-openxr/enabled=false
-openxr/enabled.xr=true
-openxr/startup_alert=false
-openxr/default_action_map="res://openxr_action_map.tres"
-openxr/form_factor=0
-openxr/view_configuration=1
-openxr/reference_space=1
-shaders/enabled=true
 
 [autoload]
 
@@ -488,3 +486,12 @@ environment/defaults/default_clear_color=Color(0.15, 0.15, 0.15, 1)
 occlusion_culling/use_occlusion_culling=true
 mesh_lod/lod_change/threshold_pixels=0.0
 lights_and_shadows/positional_shadow/atlas_size.mobile=512
+
+[xr]
+
+openxr/form_factor=0
+openxr/view_configuration=1
+openxr/reference_space=1
+openxr/startup_alert=false
+shaders/enabled=true
+openxr/enabled.xr=true

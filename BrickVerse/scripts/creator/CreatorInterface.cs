@@ -357,7 +357,7 @@ public partial class CreatorInterface : Control, IScriptObject
 				{
 					LoadOverlay?.Hide();
 					bool yes = await PromptConfirmation(
-						"This file is in a legacy format. To edit it, you must convert it to a Polytoria project. Convert now?"
+						"This file is in a legacy format. To edit it, you must convert it to a BrickVerse project. Convert now?"
 					);
 
 					if (yes)
@@ -850,6 +850,11 @@ public partial class CreatorInterface : Control, IScriptObject
 	public void OpenUploadSoundMenu()
 	{
 		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Sound);
+	}
+
+	public void OpenUploadVideoMenu()
+	{
+		OpenMediaUploadMenu(MediaUploadPopup.MediaKind.Video);
 	}
 
 	private void OpenMediaUploadMenu(MediaUploadPopup.MediaKind kind)

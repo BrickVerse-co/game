@@ -63,7 +63,6 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private double _runtimeViewportForceSyncElapsed;
 	private double _popupStackSyncElapsed;
 	private bool _creatorPromotedForPopup;
-	private bool _runtimeViewportInteractionActive = true;
 	private double _studioPresenceHeartbeatElapsed;
 	private MessageRuntimeDeviceEmulation? _deviceEmulation;
 
@@ -289,14 +288,6 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton { Pressed: true } mouseButton
-			&& _primaryRuntimeClientProcess.HasValue)
-		{
-			WorldContainer? worldContainer = Tabs.Singleton?.CurrentWorldContainer;
-			_runtimeViewportInteractionActive = worldContainer != null
-				&& worldContainer.GetGlobalRect().HasPoint(mouseButton.Position);
-			_runtimeViewportSyncElapsed = double.MaxValue;
-		}
 		base._UnhandledInput(@event);
 	}
 
@@ -334,6 +325,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	private void SyncPrimaryClientViewport(double delta)
 	{
 		if (!_primaryRuntimeClientProcess.HasValue) return;
+		if (CreatorSettingsService.Instance.Get<PlayTestPresentationEnum>(CreatorSettingKeys.Creator.PlayTestPresentation) != PlayTestPresentationEnum.Attached) return;
 
 		_runtimeViewportSyncElapsed += delta;
 		_runtimeViewportForceSyncElapsed += delta;
@@ -342,10 +334,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		bool forceSync = _runtimeViewportForceSyncElapsed >= 0.5;
 
 		Rect2I? rect = GetCurrentWorldViewportScreenRect();
-		bool visible = rect.HasValue
-			&& GetWindow().Mode != Window.ModeEnum.Minimized
-			&& Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true
-			&& _runtimeViewportInteractionActive;
+		bool visible = rect.HasValue && GetWindow().Mode != Window.ModeEnum.Minimized && Tabs.Singleton?.CurrentWorldContainer?.IsVisibleInTree() == true;
+		// Do not minimize the runtime when Creator temporarily loses the world tab,
+		// focus, or a popup covers it. Resume geometry syncing when it is visible again.
+		if (!visible) return;
 
 		Rect2I? effectiveRect = rect ?? _lastRuntimeViewportRect;
 		if (!forceSync && rect.HasValue && rect == _lastRuntimeViewportRect && visible == _lastRuntimeViewportVisible) return;
@@ -1058,12 +1050,14 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		List<string> args = ["--log-file", "user://logs/server.log", "-solo", placeFilePath, "-entry", entryPath, "-debug", $"127.0.0.1:{DebugServer.Port}", "-debug-id", debugID, "-port", port.ToString()];
 
-		Rect2I? viewportRect = GetCurrentWorldViewportScreenRect();
+		PlayTestPresentationEnum presentation = CreatorSettingsService.Instance.Get<PlayTestPresentationEnum>(CreatorSettingKeys.Creator.PlayTestPresentation);
+		Rect2I? viewportRect = presentation == PlayTestPresentationEnum.Attached ? GetCurrentWorldViewportScreenRect() : null;
 		if (!isSubplace && viewportRect.HasValue)
 		{
 			Rect2I rect = viewportRect.Value;
 			args.Add($"-ltrect={rect.Position.X},{rect.Position.Y},{rect.Size.X},{rect.Size.Y}");
 		}
+		if (!isSubplace) args.Add($"-ltmode={presentation.ToString().ToLowerInvariant()}");
 
 		if (spawnPos != null)
 		{
@@ -1118,11 +1112,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		CloseRuntimeDebugWindows();
 		if (!LocalTestActive) return;
-		foreach (int item in LocalTestProcesses)
-		{
-			OS.Kill(item);
-		}
+
+		int[] processes = [.. LocalTestProcesses];
 		DebugServer.SendTerminateProgram();
+		// Runtime instances shut down cooperatively so server scripts receive
+		// PlayerRemoved. A short timeout retains the old force-stop guarantee.
+		await Globals.Singleton.WaitAsync(0.5f);
+		foreach (int item in processes)
+		{
+			if (OS.IsProcessRunning(item)) OS.Kill(item);
+		}
 	}
 
 	public static void MigrateCoordinates(World root)

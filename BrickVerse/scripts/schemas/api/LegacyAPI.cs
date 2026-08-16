@@ -566,6 +566,8 @@ public struct APIV3WorldInfo
 
 public struct APIV3UniverseInfo
 {
+	[JsonPropertyName("antiCheatEnabled")]
+	public bool? AntiCheatEnabled { get; set; }
 	[JsonPropertyName("id")]
 	public string Id { get; set; }
 
@@ -712,6 +714,8 @@ public struct APIPlaceRating
 
 public struct APIPlaceInfo
 {
+	[JsonPropertyName("antiCheatEnabled")]
+	public bool AntiCheatEnabled { get; set; }
 	[JsonPropertyName("id")]
 	public long Id { get; set; }
 

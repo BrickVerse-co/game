@@ -179,6 +179,7 @@ public partial class CreatorEntry : Node
 				"MESH" => CreateMeshAsset(root, assetId, name),
 				"TEXTURE" => CreateTextureAsset(root, assetId, name),
 				"SOUND" => CreateSoundAsset(root, assetId, name),
+				"VIDEO" => CreateVideoAsset(root, assetId, name),
 				"FONT" => CreateFontLabel(root, assetId, name),
 				_ => throw new NotSupportedException($"{assetType} assets cannot be inserted into a world."),
 			};
@@ -234,6 +235,16 @@ public partial class CreatorEntry : Node
 		asset.AudioID = assetId;
 		sound.Audio = asset;
 		return sound;
+	}
+
+	private static UIVideoFrame CreateVideoAsset(World root, string assetId, string name)
+	{
+		UIVideoFrame video = root.New<UIVideoFrame>();
+		video.Name = name;
+		BVVideoAsset asset = root.New<BVVideoAsset>();
+		asset.VideoID = assetId;
+		video.Video = asset;
+		return video;
 	}
 
 	private static UILabel CreateFontLabel(World root, string assetId, string name)
