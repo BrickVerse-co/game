@@ -3,6 +3,7 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Scripting;
 using Godot;
 namespace BrickVerse.Datamodel;
+
 [Instantiable]
 public sealed partial class UIVideoFrame : UIField
 {

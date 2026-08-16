@@ -88,11 +88,11 @@ public sealed partial class TerrainGrass : Instance
 	{
 		SurfaceTool st = new(); st.Begin(Godot.Mesh.PrimitiveType.Triangles); int segments = 4;
 		for (int cross = 0; cross < 2; cross++) for (int segment = 0; segment < segments; segment++)
-		{
-			float y0 = (float)segment / segments, y1 = (float)(segment + 1) / segments, w0 = _width * (1 - y0), w1 = _width * (1 - y1);
-			Vector3 side = cross == 0 ? Vector3.Right : Vector3.Back; Vector3 a = -side * w0 + Vector3.Up * (_height * y0), b = side * w0 + Vector3.Up * (_height * y0), c = side * w1 + Vector3.Up * (_height * y1), d = -side * w1 + Vector3.Up * (_height * y1);
-			Add(st, a, new(0, y0)); Add(st, b, new(1, y0)); Add(st, c, new(1, y1)); Add(st, a, new(0, y0)); Add(st, c, new(1, y1)); Add(st, d, new(0, y1));
-		}
+			{
+				float y0 = (float)segment / segments, y1 = (float)(segment + 1) / segments, w0 = _width * (1 - y0), w1 = _width * (1 - y1);
+				Vector3 side = cross == 0 ? Vector3.Right : Vector3.Back; Vector3 a = -side * w0 + Vector3.Up * (_height * y0), b = side * w0 + Vector3.Up * (_height * y0), c = side * w1 + Vector3.Up * (_height * y1), d = -side * w1 + Vector3.Up * (_height * y1);
+				Add(st, a, new(0, y0)); Add(st, b, new(1, y0)); Add(st, c, new(1, y1)); Add(st, a, new(0, y0)); Add(st, c, new(1, y1)); Add(st, d, new(0, y1));
+			}
 		st.GenerateNormals(); ArrayMesh mesh = st.Commit(); mesh.SurfaceSetMaterial(0, _material); return mesh;
 	}
 	private static void Add(SurfaceTool st, Vector3 vertex, Vector2 uv) { st.SetUV(uv); st.AddVertex(vertex); }
