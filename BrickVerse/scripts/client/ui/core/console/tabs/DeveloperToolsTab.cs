@@ -114,7 +114,11 @@ public sealed partial class DeveloperToolsTab : MarginContainer
 		foreach (var sample in samples)
 			text.Append($"[cell]{Escape(sample.Path)}[/cell][cell]{sample.Calls:N0}[/cell][cell]{sample.TotalMilliseconds:0.000}[/cell][cell]{sample.AverageMilliseconds:0.000}[/cell][cell]{sample.MaximumMilliseconds:0.000}[/cell][cell]{sample.LastMilliseconds:0.000}[/cell]");
 		text.Append("[/table]\n").Append(samples.Length).Append(" profiled scripts; ")
-			.Append(root.GetDescendants().OfType<DatamodelScript>().Count()).Append(" scripts in DataModel.");
+			.Append(root.GetDescendants().OfType<DatamodelScript>().Count()).Append(" scripts in DataModel.\n")
+			.Append("Parallel Luau: ").Append(ParallelLuauScheduler.DomainCount).Append(" Actor domains, ")
+			.Append(ParallelLuauScheduler.WorkerLimit).Append(" workers, ")
+			.Append(ParallelLuauScheduler.CompletedCount).Append('/').Append(ParallelLuauScheduler.ScheduledCount)
+			.Append(" work items completed.");
 		return text.ToString();
 	}
 

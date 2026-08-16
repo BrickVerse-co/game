@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
 using BrickVerse.Scripting.Luau;
 using BrickVerse.Shared;
 using System;
@@ -18,6 +19,8 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 	public Action<object?[]> TargetAction = target;
 	public IScriptLanguageProvider LangProvider = null!;
 	public Script? FromScript;
+	internal bool InvokeInParallel;
+	internal Actor? ParallelActor;
 	private bool _disposed = false;
 	public bool Disposed => _disposed;
 
@@ -33,6 +36,12 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 	public void InvokeDirect(object?[] args)
 	{
 		if (_disposed) return;
+		if (InvokeInParallel && ParallelActor != null)
+		{
+			Actor actor = ParallelActor;
+			_ = ParallelLuauScheduler.Schedule(actor, () => TargetAction.Invoke(args));
+			return;
+		}
 		BV.CallOnMainThread(() =>
 		{
 			TargetAction.Invoke(args);
