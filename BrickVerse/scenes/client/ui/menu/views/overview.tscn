@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://rexrfg8koq8j"]
+[gd_scene format=3 uid="uid://rexrfg8koq8j"]
 
 [ext_resource type="Texture2D" uid="uid://b4v43t5eftodu" path="res://assets/textures/client/placeholder/place_thumbnail.png" id="1_thumb"]
 [ext_resource type="Script" uid="uid://d06tb0mewhy0u" path="res://scripts/client/ui/menu/views/UIMenuOverview.cs" id="2_script"]
@@ -19,7 +19,7 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="Overview" type="ScrollContainer" node_paths=PackedStringArray("_placeTypeLabel", "_placeNameLabel", "_placeCreatorLabel", "_placeThumbnailRect", "_statPlayerImage", "_statPlayerNameLabel", "_statTimePlayedLabel", "_statPlayerCountLabel", "_statInstanceCountLabel", "_reportButton", "FirstFocus")]
+[node name="Overview" type="ScrollContainer" unique_id=484354775 node_paths=PackedStringArray("_placeTypeLabel", "_placeNameLabel", "_placeCreatorLabel", "_placeThumbnailRect", "_statPlayerImage", "_statPlayerNameLabel", "_statTimePlayedLabel", "_statPlayerCountLabel", "_statInstanceCountLabel", "_reportButton", "FirstFocus")]
 offset_right = 760.0
 offset_bottom = 560.0
 horizontal_scroll_mode = 0
@@ -36,12 +36,12 @@ _statInstanceCountLabel = NodePath("Content/SessionCard/Margin/Session/Details/I
 _reportButton = NodePath("Content/Hero/Report")
 FirstFocus = NodePath("Content/Hero/Report")
 
-[node name="Content" type="VBoxContainer" parent="."]
+[node name="Content" type="VBoxContainer" parent="." unique_id=933179648]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
-[node name="Hero" type="TextureRect" parent="Content"]
+[node name="Hero" type="TextureRect" parent="Content" unique_id=1056613223]
 self_modulate = Color(0.72, 0.72, 0.72, 1)
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
@@ -49,7 +49,7 @@ texture = ExtResource("1_thumb")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Shade" type="ColorRect" parent="Content/Hero"]
+[node name="Shade" type="ColorRect" parent="Content/Hero" unique_id=1158564311]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,7 +59,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.015, 0.02, 0.025, 0.48)
 
-[node name="PlaceInfo" type="VBoxContainer" parent="Content/Hero"]
+[node name="PlaceInfo" type="VBoxContainer" parent="Content/Hero" unique_id=1903888961]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -70,25 +70,25 @@ offset_right = -90.0
 offset_bottom = -18.0
 grow_vertical = 0
 
-[node name="PlaceType" type="Label" parent="Content/Hero/PlaceInfo"]
+[node name="PlaceType" type="Label" parent="Content/Hero/PlaceInfo" unique_id=1251340720]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.9, 0.92, 1)
 theme_override_font_sizes/font_size = 13
 text = "SHOWCASE"
 
-[node name="PlaceName" type="Label" parent="Content/Hero/PlaceInfo"]
+[node name="PlaceName" type="Label" parent="Content/Hero/PlaceInfo" unique_id=813562135]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Experience"
 text_overrun_behavior = 3
 
-[node name="PlaceCreator" type="Label" parent="Content/Hero/PlaceInfo"]
+[node name="PlaceCreator" type="Label" parent="Content/Hero/PlaceInfo" unique_id=1221770704]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.82, 1)
 theme_override_font_sizes/font_size = 14
 text = "By Creator"
 
-[node name="Report" type="Button" parent="Content/Hero"]
+[node name="Report" type="Button" parent="Content/Hero" unique_id=720300022]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -102,80 +102,80 @@ offset_bottom = -14.0
 grow_horizontal = 0
 grow_vertical = 0
 tooltip_text = "Report this experience"
-flat = true
 icon = ExtResource("4_flag")
+flat = true
 expand_icon = true
 
-[node name="SessionCard" type="PanelContainer" parent="Content"]
+[node name="SessionCard" type="PanelContainer" parent="Content" unique_id=763095837]
 custom_minimum_size = Vector2(0, 142)
 layout_mode = 2
 theme_override_styles/panel = SubResource("card")
 
-[node name="Margin" type="MarginContainer" parent="Content/SessionCard"]
+[node name="Margin" type="MarginContainer" parent="Content/SessionCard" unique_id=1323051130]
 layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 16
 
-[node name="Session" type="HBoxContainer" parent="Content/SessionCard/Margin"]
+[node name="Session" type="HBoxContainer" parent="Content/SessionCard/Margin" unique_id=2112798566]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="Avatar" type="TextureRect" parent="Content/SessionCard/Margin/Session"]
+[node name="Avatar" type="TextureRect" parent="Content/SessionCard/Margin/Session" unique_id=1204320140]
 custom_minimum_size = Vector2(104, 104)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Details" type="VBoxContainer" parent="Content/SessionCard/Margin/Session"]
+[node name="Details" type="VBoxContainer" parent="Content/SessionCard/Margin/Session" unique_id=111460032]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="PlayerName" type="Label" parent="Content/SessionCard/Margin/Session/Details"]
+[node name="PlayerName" type="Label" parent="Content/SessionCard/Margin/Session/Details" unique_id=1437598459]
 layout_mode = 2
 theme_override_font_sizes/font_size = 21
 text = "Player"
 
-[node name="Time" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details"]
+[node name="Time" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details" unique_id=784709107]
 layout_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Time"]
+[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Time" unique_id=1750318727]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("3_clock")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Time"]
+[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Time" unique_id=978828106]
 layout_mode = 2
 text = "Playing for 0m"
 
-[node name="Players" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details"]
+[node name="Players" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details" unique_id=357315005]
 layout_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Players"]
+[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Players" unique_id=1952914095]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("5_users")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Players"]
+[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Players" unique_id=775320054]
 layout_mode = 2
 text = "1 player in this server"
 
-[node name="Instances" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details"]
+[node name="Instances" type="HBoxContainer" parent="Content/SessionCard/Margin/Session/Details" unique_id=420839104]
 layout_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Instances"]
+[node name="Icon" type="TextureRect" parent="Content/SessionCard/Margin/Session/Details/Instances" unique_id=1659711496]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("6_cube")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Instances"]
+[node name="Value" type="Label" parent="Content/SessionCard/Margin/Session/Details/Instances" unique_id=1285227919]
 layout_mode = 2
 text = "0 instances"
