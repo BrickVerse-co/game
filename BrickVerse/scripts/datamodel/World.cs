@@ -111,6 +111,8 @@ public sealed partial class World : Instance
 	public ServerHidden ServerHidden => FindChild<ServerHidden>("ServerHidden")!;
 	public PlayerGUI PlayerGUI => FindChild<PlayerGUI>("PlayerGUI")!;
 	public ChatService Chat => FindChild<ChatService>("Chat")!;
+	public VoiceChatService VoiceChat => FindChild<VoiceChatService>("VoiceChatService")!;
+	public GameSettingsService GameSettings => FindChild<GameSettingsService>("GameSettings")!;
 	public InputService Input => FindChild<InputService>("Input")!;
 	public VRService VRService => FindChild<VRService>("VRService")!;
 	public FilterService Filter => FindChild<FilterService>("Filter")!;
@@ -134,6 +136,7 @@ public sealed partial class World : Instance
 	public PathfindingService Pathfinding => FindChild<PathfindingService>("PathfindingService")!;
 	public AdService Ads => FindChild<AdService>("AdService")!;
 	public GeometryService Geometry => FindChild<GeometryService>("GeometryService")!;
+	internal AntiCheatService AntiCheat => FindChild<AntiCheatService>("AntiCheat")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
 #endif
@@ -718,6 +721,22 @@ public sealed partial class World : Instance
 			chatService.NetworkParent = this;
 		}
 
+		VoiceChatService? voiceChatService = FindChild<VoiceChatService>("VoiceChatService");
+		if (voiceChatService == null)
+		{
+			voiceChatService = Globals.LoadInstance<VoiceChatService>(Root);
+			voiceChatService.NameOverride = "VoiceChatService";
+			voiceChatService.NetworkParent = this;
+		}
+
+		GameSettingsService? gameSettingsService = FindChild<GameSettingsService>("GameSettings");
+		if (gameSettingsService == null)
+		{
+			gameSettingsService = Globals.LoadInstance<GameSettingsService>(Root);
+			gameSettingsService.NameOverride = "GameSettings";
+			gameSettingsService.NetworkParent = this;
+		}
+
 		FilterService? filterService = FindChild<FilterService>("Filter");
 
 		if (filterService == null)
@@ -769,6 +788,14 @@ public sealed partial class World : Instance
 			geometryService = Globals.LoadInstance<GeometryService>(Root);
 			geometryService.NameOverride = "GeometryService";
 			geometryService.NetworkParent = this;
+		}
+
+		AntiCheatService? antiCheatService = FindChild<AntiCheatService>("AntiCheat");
+		if (antiCheatService == null)
+		{
+			antiCheatService = Globals.LoadInstance<AntiCheatService>(Root);
+			antiCheatService.NameOverride = "AntiCheat";
+			antiCheatService.NetworkParent = this;
 		}
 
 		CoreUIService? coreUIService = FindChild<CoreUIService>("CoreUI");

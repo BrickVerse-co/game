@@ -15,7 +15,7 @@ public sealed partial class TerrainGrass : Instance
 	private MultiMeshInstance3D _renderer = null!;
 	private ShaderMaterial _material = null!;
 	private string _serialisedCoverage = "";
-	private float _density = 1.2f, _height = 1.4f, _width = 0.13f, _heightVariation = 0.35f, _windStrength = 0.28f, _windSpeed = 1.5f, _drawDistance = 180f;
+	private float _density = 1.2f, _height = 1.4f, _width = 0.13f, _heightVariation = 0.35f, _drawDistance = 180f;
 	private Color _baseColor = new("327a32"), _tipColor = new("83c95b");
 	private bool _deformToSurface = true;
 	private float _surfaceOffset = -0.1f, _paintDensityScale = 1f, _paintHeightScale = 1f, _paintWidthScale = 1f;
@@ -28,8 +28,6 @@ public sealed partial class TerrainGrass : Instance
 	[Editable, ScriptProperty] public float HeightVariation { get => _heightVariation; set { _heightVariation = Mathf.Clamp(value, 0, 1); UpdateShader(); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public Color BaseColor { get => _baseColor; set { _baseColor = value; UpdateShader(); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public Color TipColor { get => _tipColor; set { _tipColor = value; UpdateShader(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty] public float WindStrength { get => _windStrength; set { _windStrength = Mathf.Clamp(value, 0, 3); UpdateShader(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty] public float WindSpeed { get => _windSpeed; set { _windSpeed = Mathf.Clamp(value, 0, 10); UpdateShader(); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public float DrawDistance { get => _drawDistance; set { _drawDistance = Mathf.Clamp(value, 8, 1000); Refresh(); OnPropertyChanged(); } }
 	[Editable, ScriptProperty, DefaultValue(true)] public bool DeformToSurface { get => _deformToSurface; set { _deformToSurface = value; Refresh(); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public float SurfaceOffset { get => _surfaceOffset; set { _surfaceOffset = Mathf.Clamp(value, -2f, 2f); Refresh(); OnPropertyChanged(); } }
@@ -44,6 +42,8 @@ public sealed partial class TerrainGrass : Instance
 		_renderer = new MultiMeshInstance3D { Name = "GrassRenderer" }; GDNode.AddChild(_renderer, false, Node.InternalMode.Back);
 		_material = new ShaderMaterial { Shader = new Shader { Code = ShaderCode } }; UpdateShader(); Refresh();
 	}
+
+	public override void Process(double delta) { UpdateShader(); base.Process(delta); }
 
 	[ScriptMethod]
 	public void Paint(Vector3 position, Vector3 normal, float radius, float strength = 1)
@@ -94,7 +94,7 @@ public sealed partial class TerrainGrass : Instance
 		st.GenerateNormals(); ArrayMesh mesh = st.Commit(); mesh.SurfaceSetMaterial(0, _material); return mesh;
 	}
 	private static void Add(SurfaceTool st, Vector3 vertex, Vector2 uv) { st.SetUV(uv); st.AddVertex(vertex); }
-	private void UpdateShader() { if (_material == null) return; _material.SetShaderParameter("base_color", _baseColor); _material.SetShaderParameter("tip_color", _tipColor); _material.SetShaderParameter("height_variation", _heightVariation); _material.SetShaderParameter("wind_strength", _windStrength); _material.SetShaderParameter("wind_speed", _windSpeed); }
+	private void UpdateShader() { if (_material == null) return; _material.SetShaderParameter("base_color", _baseColor); _material.SetShaderParameter("tip_color", _tipColor); _material.SetShaderParameter("height_variation", _heightVariation); Vector3 wind = Root?.Environment?.WindDirection ?? Vector3.Right; _material.SetShaderParameter("wind_direction", new Vector2(wind.X, wind.Z).Normalized()); _material.SetShaderParameter("wind_strength", Root?.Environment?.WindStrength ?? 0.28f); _material.SetShaderParameter("wind_speed", Root?.Environment?.WindSpeed ?? 1.5f); }
 
 	private void Encode()
 	{
@@ -118,5 +118,5 @@ public sealed partial class TerrainGrass : Instance
 		catch { _blades.Clear(); }
 	}
 
-	private const string ShaderCode = "shader_type spatial; render_mode cull_disabled; uniform vec4 base_color : source_color; uniform vec4 tip_color : source_color; uniform float height_variation=0.35; uniform float wind_strength=0.28; uniform float wind_speed=1.5; varying float blade_y; varying vec4 blade_tint; void vertex(){ blade_y=UV.y; blade_tint=COLOR; float h=(1.0+(INSTANCE_CUSTOM.x-0.5)*height_variation)*INSTANCE_CUSTOM.y; VERTEX.y*=h; VERTEX.xz*=INSTANCE_CUSTOM.z; float wave=sin(TIME*wind_speed+INSTANCE_CUSTOM.x*19.0); VERTEX.x+=wave*wind_strength*UV.y*UV.y; } void fragment(){ vec4 gradient=mix(base_color,tip_color,blade_y)*blade_tint; ALBEDO=gradient.rgb; ALPHA=gradient.a; ROUGHNESS=0.9; }";
+	private const string ShaderCode = "shader_type spatial; render_mode cull_disabled; uniform vec4 base_color : source_color; uniform vec4 tip_color : source_color; uniform float height_variation=0.35; uniform vec2 wind_direction=vec2(1.0,0.0); uniform float wind_strength=0.28; uniform float wind_speed=1.5; varying float blade_y; varying vec4 blade_tint; void vertex(){ blade_y=UV.y; blade_tint=COLOR; float h=(1.0+(INSTANCE_CUSTOM.x-0.5)*height_variation)*INSTANCE_CUSTOM.y; VERTEX.y*=h; VERTEX.xz*=INSTANCE_CUSTOM.z; vec3 world=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz; float wave=sin(TIME*wind_speed+dot(world.xz,wind_direction)*0.12+INSTANCE_CUSTOM.x*19.0); VERTEX.xz+=vec2(wave)*wind_direction*wind_strength*UV.y*UV.y; } void fragment(){ vec4 gradient=mix(base_color,tip_color,blade_y)*blade_tint; ALBEDO=gradient.rgb; ALPHA=gradient.a; ROUGHNESS=0.9; }";
 }

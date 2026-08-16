@@ -36,6 +36,10 @@ config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+
+[audio]
+
+driver/enable_input=true
 run/flush_stdout_on_print=true
 boot_splash/bg_color=Color(0.07683588, 0.0768358, 0.0768358, 1)
 boot_splash/use_filter=false

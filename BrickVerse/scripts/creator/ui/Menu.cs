@@ -303,7 +303,7 @@ public sealed partial class Menu : PanelContainer
 					Icon = "lock",
 					KeyShortcut = new()
 					{
-						Events = [new InputEventKey() { CtrlPressed = true, Keycode = Key.L }],
+						Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.L }],
 					},
 					Pressed = () =>
 					{

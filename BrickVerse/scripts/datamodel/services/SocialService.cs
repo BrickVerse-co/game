@@ -25,6 +25,7 @@ namespace BrickVerse.Datamodel.Services;
 public sealed partial class SocialService : Instance
 {
 	private readonly BVHttpClient _client = new();
+	private readonly Dictionary<string, (bool Blocked, DateTime Expires)> _blockCache = [];
 	public readonly Dictionary<string, FileLinkAsset> FileLinks = [];
 
 	public void LocalSendFriendshipRequest(Player recipient, FriendshipRequestType req)
@@ -112,6 +113,14 @@ public sealed partial class SocialService : Instance
 			return;
 		}
 
+		if (req == FriendshipRequestType.Block)
+		{
+			using HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/world/server/social/blocks"));
+			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
+			using HttpResponseMessage response = await _client.SendAsync(msg); response.EnsureSuccessStatusCode();
+			_blockCache[BlockCacheKey(senderID, recipientID)] = (true, DateTime.UtcNow.AddSeconds(20)); return;
+		}
+
 		throw new NotSupportedException("Unsupported relationship type");
 	}
 
@@ -125,6 +134,20 @@ public sealed partial class SocialService : Instance
 		return doc.RootElement.TryGetProperty("areFriends", out JsonElement areFriends)
 			&& areFriends.ValueKind == JsonValueKind.True;
 	}
+
+	public async Task<bool> WebIsBlockedEitherWay(string userId, string otherUserId)
+	{
+		if (Root.IsLocalTest) return false;
+		string key = BlockCacheKey(userId, otherUserId);
+		if (_blockCache.TryGetValue(key, out var cached) && cached.Expires > DateTime.UtcNow) return cached.Blocked;
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
+		string data = await _client.GetStringAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/social/is-blocked?userId={Uri.EscapeDataString(userId)}&otherUserId={Uri.EscapeDataString(otherUserId)}"));
+		using JsonDocument doc = JsonDocument.Parse(data);
+		bool result = doc.RootElement.TryGetProperty("blocked", out JsonElement blocked) && blocked.ValueKind == JsonValueKind.True;
+		_blockCache[key] = (result, DateTime.UtcNow.AddSeconds(20)); return result;
+	}
+
+	private static string BlockCacheKey(string first, string second) => string.CompareOrdinal(first, second) <= 0 ? first + ":" + second : second + ":" + first;
 
 	public enum FriendshipRequestType
 	{

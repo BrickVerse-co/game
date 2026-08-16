@@ -64,6 +64,8 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		{
 			AddIconItem("ungroup", "Ungroup", 32);
 		}
+		if (Targets.OfType<Dynamic>().Count() >= 2)
+			AddIconItem("link", "Weld Selection", 36);
 
 		Entity[] geometryTargets = [.. Targets.OfType<Entity>()];
 		if (CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling) && geometryTargets.Length > 0)
@@ -255,6 +257,18 @@ public partial class ExplorerItemContextMenu : ContextMenu
 					};
 					separate();
 					context.History.RecordAppliedAction("Separate union", new BVCallback((_) => separate()), new BVCallback((_) => restore()));
+					break;
+				}
+			case 36: // Weld Selection
+				{
+					Dynamic[] dynamics = [.. targets.OfType<Dynamic>()]; if (dynamics.Length < 2) break;
+					List<Instance> welds = [];
+					for (int i = 1; i < dynamics.Length; i++)
+					{
+						Weld weld = context.Root.New<Weld>(); weld.Name = $"{dynamics[0].Name}_{dynamics[i].Name}_Weld"; weld.Part0 = dynamics[0]; weld.Part1 = dynamics[i]; welds.Add(weld);
+					}
+					context.History.CreateInstances([.. welds], dynamics[0]);
+					CreatorService.Interface.StatusBar?.SetStatus($"Created {welds.Count} weld{(welds.Count == 1 ? "" : "s")}");
 					break;
 				}
 			case 39: // Publish

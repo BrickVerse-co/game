@@ -204,8 +204,8 @@ public partial class TerrainEditor : Control
 		AddGrassNumber(global, "Height", 0.05, 12, 0.05, existing?.BladeHeight ?? 1.4, (grass, value) => grass.BladeHeight = value);
 		AddGrassNumber(global, "Width", 0.01, 3, 0.01, existing?.BladeWidth ?? 0.13, (grass, value) => grass.BladeWidth = value);
 		AddGrassNumber(global, "Surface inset", -2, 2, 0.01, existing?.SurfaceOffset ?? -0.1, (grass, value) => grass.SurfaceOffset = value);
-		AddGrassNumber(global, "Wind strength", 0, 3, 0.05, existing?.WindStrength ?? 0.28, (grass, value) => grass.WindStrength = value);
-		AddGrassNumber(global, "Wind speed", 0, 10, 0.1, existing?.WindSpeed ?? 1.5, (grass, value) => grass.WindSpeed = value);
+		AddGrassNumber(global, "Wind strength", 0, 10, 0.05, CurrentTerrain?.Root.Environment.WindStrength ?? 0.28, (grass, value) => grass.Root.Environment.WindStrength = value);
+		AddGrassNumber(global, "Wind speed", 0, 20, 0.1, CurrentTerrain?.Root.Environment.WindSpeed ?? 1.5, (grass, value) => grass.Root.Environment.WindSpeed = value);
 		AddGrassColor(global, "Base color", existing?.BaseColor ?? new Color("327a32"), (grass, color) => grass.BaseColor = color);
 		AddGrassColor(global, "Tip color", existing?.TipColor ?? new Color("83c95b"), (grass, color) => grass.TipColor = color);
 		CheckButton conform = new() { Text = "Conform blades to surface", ButtonPressed = existing?.DeformToSurface ?? true }; conform.Toggled += value => GetGrassLayer(true)!.DeformToSurface = value; global.AddChild(conform);

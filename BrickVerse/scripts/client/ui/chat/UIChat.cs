@@ -8,6 +8,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -47,6 +48,9 @@ public partial class UIChat : Control
 	private readonly Vector2 _minSize = new(400, 240);
 
 	private Tween? _resizeHandleTween;
+	private Button? _quickChatButton;
+	private Button? _voiceChatButton;
+	private PopupMenu? _commandAutocomplete;
 
 	private const float MaxChatWidthValue = 1000f;
 	private float MaxChatWidth => Mathf.Clamp(GetViewportRect().Size.X * 0.45f, _minSize.X, MaxChatWidthValue);
@@ -56,8 +60,17 @@ public partial class UIChat : Control
 		ConnectSignals();
 		InitializeEmojiPicker();
 		ConfigureChatAccess();
+		CreateVoiceChatButton();
 
 		ClampToViewport();
+	}
+
+	private void CreateVoiceChatButton()
+	{
+		if (!LocalPlayer.CanVoiceChat || _voiceChatButton != null) return;
+		_voiceChatButton = new Button { Text = "Mic Off", ToggleMode = true, TooltipText = "Voice uses the active game connection and is not routed through BrickVerse's privacy proxy." };
+		_chatFieldPanel.AddChild(_voiceChatButton);
+		_voiceChatButton.Toggled += enabled => { Root.VoiceChat.SetMicrophoneEnabled(enabled); _voiceChatButton.Text = enabled ? "Mic On" : "Mic Off"; };
 	}
 
 	private void ConnectSignals()
@@ -90,8 +103,9 @@ public partial class UIChat : Control
 	{
 		if (LocalPlayer.IsAgeRestricted)
 		{
-			_chatFieldPanel.Visible = false;
+			_chatFieldPanel.Visible = LocalPlayer.CanQuickChat;
 			SetChatControlsEnabled(false);
+			CreateQuickChatButton();
 			return;
 		}
 
@@ -104,10 +118,42 @@ public partial class UIChat : Control
 			);
 
 			SetChatControlsEnabled(false);
+			CreateQuickChatButton();
 			return;
 		}
 
 		SetChatControlsEnabled(true);
+	}
+
+	private void CreateQuickChatButton()
+	{
+		if (!LocalPlayer.CanQuickChat || _quickChatButton != null) return;
+		_quickChatButton = new Button { Text = "Quick Chat", TooltipText = "Choose a safe preset phrase", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+		_chatFieldPanel.AddChild(_quickChatButton);
+		_quickChatButton.Pressed += () =>
+		{
+			PopupPanel wheel = new() { Size = new Vector2I(460, 460), Title = "Quick Chat" };
+			Control surface = new() { CustomMinimumSize = new Vector2(460, 460) }; wheel.AddChild(surface);
+			void Populate(string titleText, IReadOnlyList<(string Label, int Value)> items, System.Action<int> selected)
+			{
+				foreach (Node child in surface.GetChildren()) child.QueueFree();
+				Vector2 center = new(230, 230); float radius = 155f;
+				for (int i = 0; i < items.Count; i++)
+				{
+					int value = items[i].Value; float angle = -Mathf.Pi / 2f + Mathf.Tau * i / items.Count;
+					Button choice = new() { Text = items[i].Label, Size = new Vector2(145, 48), Position = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius - new Vector2(72.5f, 24f) };
+					choice.Pressed += () => selected(value); surface.AddChild(choice);
+				}
+				Label title = new() { Text = titleText, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Position = center - new Vector2(55, 32), Size = new Vector2(110, 64) }; surface.AddChild(title);
+			}
+			void ShowGroups() => Populate("QUICK\nCHAT", QuickChatCatalog.Groups.Select((group, index) => (group.Name, index)).ToArray(), groupIndex =>
+			{
+				QuickChatCatalog.Group group = QuickChatCatalog.Groups[groupIndex]; int offset = QuickChatCatalog.Groups.Take(groupIndex).Sum(item => item.Phrases.Length);
+				Populate(group.Name.ToUpperInvariant(), group.Phrases.Select((phrase, index) => (phrase, offset + index)).ToArray(), phraseIndex => { Root.Chat.SendQuickChat(phraseIndex); wheel.Hide(); wheel.QueueFree(); });
+			});
+			ShowGroups(); AddChild(wheel);
+			Vector2I viewportSize = (Vector2I)GetViewportRect().Size; wheel.Popup(new Rect2I((viewportSize - wheel.Size) / 2, wheel.Size));
+		};
 	}
 
 	private void SetChatControlsEnabled(bool enabled)
@@ -230,6 +276,7 @@ public partial class UIChat : Control
 		// Handle commands
 		if (text.StartsWith('/'))
 		{
+			if (Root.Chat.TryExecuteLocalCommand(text)) return;
 			string[] cmd = text.Split(' ');
 
 			if (cmd[0] == "/spectator")
@@ -243,9 +290,11 @@ public partial class UIChat : Control
 				return;
 			}
 
-			string emoteName = cmd[0][1..];
-			Root.Players.LocalPlayer.PlayEmote(emoteName);
-			return;
+			bool routedChat = cmd[0] is "/w" or "/whisper" or "/t" or "/team" or "/channel";
+			bool serverCommand = routedChat
+				|| Root.Chat.GetCommandSuggestions(cmd[0]).Any(item => item.Equals(cmd[0], System.StringComparison.OrdinalIgnoreCase));
+			if (!serverCommand) { Root.Players.LocalPlayer.PlayEmote(cmd[0][1..]); return; }
+			if (!routedChat) { Root.Chat.SendChatMessage(text); return; }
 		}
 
 		RecordEmojisFromText(text);
@@ -282,7 +331,7 @@ public partial class UIChat : Control
 
 	private void OnNewChatMessage(Player from, string msg)
 	{
-		if (from == World.Current!.Players.LocalPlayer)
+		if (from == World.Current!.Players.LocalPlayer && _pendingMessages.Count > 0)
 		{
 			UIChatLabel label = _pendingMessages.Dequeue();
 			label.IsPending = false;
@@ -294,6 +343,7 @@ public partial class UIChat : Control
 
 	private void OnMessageDeclined()
 	{
+		if (_pendingMessages.Count == 0) return;
 		UIChatLabel label = _pendingMessages.Dequeue();
 		label.IsDeclined = true;
 	}
@@ -439,6 +489,19 @@ public partial class UIChat : Control
 			return;
 
 		int cursorPos = _chatField.CaretColumn;
+		if (newText.StartsWith('/') && !newText[..Mathf.Min(cursorPos, newText.Length)].Contains(' '))
+		{
+			string[] suggestions = Root.Chat.GetCommandSuggestions(newText[..cursorPos]).ToArray();
+			if (suggestions.Length > 0)
+			{
+				_commandAutocomplete?.QueueFree(); _commandAutocomplete = new PopupMenu();
+				for (int i = 0; i < suggestions.Length; i++) _commandAutocomplete.AddItem(suggestions[i], i);
+				_commandAutocomplete.IdPressed += id => { _chatField.Text = suggestions[(int)id] + " "; _chatField.CaretColumn = _chatField.Text.Length; _commandAutocomplete?.Hide(); };
+				AddChild(_commandAutocomplete); Vector2I at = (Vector2I)(_chatField.GlobalPosition + new Vector2(0, _chatField.Size.Y)); _commandAutocomplete.Popup(new Rect2I(at, Vector2I.Zero));
+				return;
+			}
+		}
+		_commandAutocomplete?.Hide();
 
 		int colonIdx = -1;
 		int pending = -1;

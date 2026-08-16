@@ -27,6 +27,10 @@ public struct APIValidateResponse
 
 	[JsonPropertyName("canChat")]
 	public bool CanChat { get; set; }
+	[JsonPropertyName("canQuickChat")]
+	public bool CanQuickChat { get; set; }
+	[JsonPropertyName("canVoiceChat")]
+	public bool CanVoiceChat { get; set; }
 
 	[JsonPropertyName("chatRestrictionReason")]
 	public string? ChatRestrictionReason { get; set; }

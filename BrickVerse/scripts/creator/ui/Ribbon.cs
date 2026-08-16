@@ -103,6 +103,8 @@ public sealed partial class Ribbon : PanelContainer
 			"../Splitter/Center/BottomTabs/Tabs");
 		TabContainer rightTabs = GetNode<TabContainer>(
 			"../Splitter/Right/RightTabs");
+		if (rightTabs.GetNodeOrNull<BrickVerse.Creator.TeamCreate.TeamChatDock>("Team Chat") == null)
+			rightTabs.AddChild(new BrickVerse.Creator.TeamCreate.TeamChatDock());
 
 		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
 		terrainButton.Pressed += () =>

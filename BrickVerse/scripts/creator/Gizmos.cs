@@ -556,7 +556,15 @@ public sealed partial class Gizmos : Node
 
 		if (Selected.Count > 0)
 		{
-			if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToggleTransformOrientation, Key.L))
+			if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.L })
+			{
+				Dynamic[] targets = [.. Selected]; Transform3D[] before = targets.Select(target => target.GetGlobalTransform()).ToArray();
+				_history.NewAction("Align selection to world axes");
+				_history.AddDoCallback(new((_) => { foreach (Dynamic target in targets) target.Rotation = Vector3.Zero; }));
+				_history.AddUndoCallback(new((_) => { for (int i = 0; i < targets.Length; i++) targets[i].SetGlobalTransform(before[i]); }));
+				_history.CommitAction(); CreatorService.Interface.StatusBar?.SetStatus("Aligned selection to world axes");
+			}
+			else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToggleTransformOrientation, Key.L))
 			{
 				TransformOrientationEnum nextOrientation = CreatorService.Interface.TransformOrientation == TransformOrientationEnum.Global
 					? TransformOrientationEnum.Local

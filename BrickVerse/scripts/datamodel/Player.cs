@@ -83,6 +83,10 @@ public sealed partial class Player : NPC
 
 	[SyncVar]
 	public bool CanChat { get; set; } = false;
+	[SyncVar]
+	public bool CanQuickChat { get; set; } = false;
+	[ScriptProperty, SyncVar]
+	public bool CanVoiceChat { get; internal set; } = false;
 
 	[SyncVar]
 	public string ChatRestrictionReason { get; set; } = "";
@@ -858,6 +862,7 @@ public sealed partial class Player : NPC
 
 	private async void OnPlayerDied()
 	{
+		PlayDeathSound();
 		if (IsLocal)
 		{
 			UnequipTool();
@@ -868,6 +873,20 @@ public sealed partial class Player : NPC
 		// Respawn on client
 		await Globals.Singleton.WaitAsync(RespawnTime);
 		Respawn();
+	}
+
+	private void PlayDeathSound()
+	{
+		const int sampleRate = 22050; const float duration = 0.42f; int samples = (int)(sampleRate * duration); byte[] data = new byte[samples * 2];
+		Random random = new(Name.GetHashCode());
+		for (int i = 0; i < samples; i++)
+		{
+			float time = (float)i / sampleRate, envelope = Mathf.Pow(1f - time / duration, 2f);
+			float tone = Mathf.Sin(Mathf.Tau * (150f - time * 190f) * time) * 0.65f + ((float)random.NextDouble() * 2f - 1f) * 0.15f;
+			short sample = (short)(Mathf.Clamp(tone * envelope, -1f, 1f) * short.MaxValue); data[i * 2] = (byte)(sample & 255); data[i * 2 + 1] = (byte)((sample >> 8) & 255);
+		}
+		AudioStreamPlayer3D player = new() { Stream = new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits, MixRate = sampleRate, Stereo = false, Data = data }, VolumeDb = -4, MaxDistance = 55 };
+		GDNode3D.AddChild(player, false, Node.InternalMode.Back); player.Finished += player.QueueFree; player.Play();
 	}
 
 	// Emit when network has received LocalPlayer, This can also be used to initialize localplayer
