@@ -264,7 +264,11 @@ public partial class MobileUI : Control
 			Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
 			if (app is ClientEntry ce)
 			{
-				ClientEntry.ClientEntryData entryData = new() { Token = res.Token };
+				ClientEntry.ClientEntryData entryData = new()
+				{
+					Token = res.Token,
+					ReturnToAppShell = true
+				};
 				ce.Entry(entryData);
 			}
 		}
