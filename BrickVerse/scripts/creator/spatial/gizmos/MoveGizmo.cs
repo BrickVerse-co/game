@@ -186,8 +186,11 @@ public partial class MoveGizmo : Node, IGizmo
 			if (btn.ButtonIndex != MouseButton.Left) return;
 			if (btn.Pressed)
 			{
-				if (_currentAxis == MoveGizmoAxis.None) return;
 				if (!Visible) return;
+				// Do not trust hover state cached by the last mouse-motion event. The
+				// tool or selection may have changed while the pointer stayed still.
+				UpdateAxis(rayOrigin, rayNormal);
+				if (_currentAxis == MoveGizmoAxis.None) return;
 
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;

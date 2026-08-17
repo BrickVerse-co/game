@@ -137,8 +137,11 @@ public partial class ResizeGizmo : Node, IGizmo
 			if (btn.ButtonIndex != MouseButton.Left) return;
 			if (btn.Pressed)
 			{
-				if (_currentAxis == ResizeGizmoAxis.None) return;
 				if (!Visible) return;
+				// Re-pick on mouse-down so a stale handle cannot start resizing
+				// after changing tools or selection without moving the pointer.
+				UpdateAxis(rayOrigin, rayNormal);
+				if (_currentAxis == ResizeGizmoAxis.None) return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;

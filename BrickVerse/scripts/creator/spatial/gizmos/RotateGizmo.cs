@@ -197,8 +197,11 @@ public partial class RotateGizmo : Node, IGizmo
 			if (btn.ButtonIndex != MouseButton.Left) return;
 			if (btn.Pressed)
 			{
-				if (_currentAxis == RotateGizmoAxis.None) return;
 				if (!Visible) return;
+				// Re-pick on mouse-down so a remembered axis from a previous tool
+				// activation cannot begin an unrelated drag.
+				UpdateAxis(rayOrigin, rayNormal, cameraNormal);
+				if (_currentAxis == RotateGizmoAxis.None) return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
