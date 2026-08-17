@@ -1,6 +1,297 @@
 [gd_scene format=3 uid="uid://c2tql65t73ak5"]
 
-[ext_resource type="Script" uid="uid://cfxp8qsyv0dbl" path="res://scripts/shared/AppEntry.cs" id="1_ycj4g"]
+[ext_resource type="Script" uid="uid://ddteg5jy2s1ny" path="res://scripts/shared/BootSplash.cs" id="1_splash"]
+[ext_resource type="Texture2D" uid="uid://dwqjb7jgqqk0v" path="res://assets/textures/logo/light_long.png" id="2_brickverse"]
+[ext_resource type="Texture2D" uid="uid://bmqkyisqjbf87" path="res://assets/textures/logo/godot_engine.svg" id="3_godot"]
+[ext_resource type="Texture2D" uid="uid://dghqbp2busvo2" path="res://assets/textures/logo/metagames-w.png" id="4_metagames"]
+[ext_resource type="AudioStream" uid="uid://umjqex5d1h2d" path="res://assets/audio/built-in/lucadialessandro-calm-ambient-intro-490646.mp3" id="5_intro"]
 
-[node name="AppEntry" type="Node" unique_id=1181157848]
-script = ExtResource("1_ycj4g")
+[sub_resource type="StyleBoxFlat" id="StyleBackground"]
+bg_color = Color(0.025, 0.035, 0.05, 1)
+
+[sub_resource type="Gradient" id="GradientBackgroundWash"]
+offsets = PackedFloat32Array(0, 0.42, 1)
+colors = PackedColorArray(0.055, 0.25, 0.42, 0.34, 0.035, 0.11, 0.2, 0.16, 0.025, 0.035, 0.05, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTextureBackgroundWash"]
+gradient = SubResource("GradientBackgroundWash")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleAmbientRing"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.18, 0.58, 0.86, 0.055)
+corner_radius_top_left = 500
+corner_radius_top_right = 500
+corner_radius_bottom_right = 500
+corner_radius_bottom_left = 500
+
+[sub_resource type="StyleBoxFlat" id="StyleGlowOne"]
+bg_color = Color(0.04, 0.42, 0.72, 0.11)
+corner_radius_top_left = 320
+corner_radius_top_right = 320
+corner_radius_bottom_right = 320
+corner_radius_bottom_left = 320
+
+[sub_resource type="StyleBoxFlat" id="StyleGlowTwo"]
+bg_color = Color(0.32, 0.14, 0.62, 0.08)
+corner_radius_top_left = 260
+corner_radius_top_right = 260
+corner_radius_bottom_right = 260
+corner_radius_bottom_left = 260
+
+[node name="BootSplash" type="Control" unique_id=1504901542 node_paths=PackedStringArray("_content", "_brickVerseStage", "_metaGamesStage", "_godotStage", "_creditsStage", "_copyright", "_glowOne", "_glowTwo", "_ambientRingOuter", "_ambientRingInner", "_blackOverlay", "_introAudio")]
+z_index = 4096
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_splash")
+_content = NodePath("Content")
+_brickVerseStage = NodePath("Content/Center/BrickVerseStage")
+_metaGamesStage = NodePath("Content/Center/MetaGamesStage")
+_godotStage = NodePath("Content/Center/GodotStage")
+_creditsStage = NodePath("Content/Center/CreditsStage")
+_copyright = NodePath("Content/Center/CreditsStage/Copyright")
+_glowOne = NodePath("GlowOne")
+_glowTwo = NodePath("GlowTwo")
+_ambientRingOuter = NodePath("AmbientRingOuter")
+_ambientRingInner = NodePath("AmbientRingInner")
+_blackOverlay = NodePath("TransitionLayer/BlackOverlay")
+_introAudio = NodePath("IntroAudio")
+
+[node name="IntroAudio" type="AudioStreamPlayer" parent="." unique_id=349855807]
+stream = ExtResource("5_intro")
+volume_db = -4.0
+
+[node name="Background" type="Panel" parent="." unique_id=1853821883]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBackground")
+
+[node name="BackgroundWash" type="TextureRect" parent="." unique_id=630885084]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTextureBackgroundWash")
+expand_mode = 1
+
+[node name="AmbientRingOuter" type="Panel" parent="." unique_id=1113313024]
+modulate = Color(1, 1, 1, 0.65)
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -470.0
+offset_right = 470.0
+offset_bottom = 470.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleAmbientRing")
+
+[node name="AmbientRingInner" type="Panel" parent="." unique_id=2069227939]
+modulate = Color(1, 1, 1, 0.55)
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -335.0
+offset_top = -335.0
+offset_right = 335.0
+offset_bottom = 335.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleAmbientRing")
+
+[node name="GlowOne" type="Panel" parent="." unique_id=1473181160]
+modulate = Color(1, 1, 1, 0.8)
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -320.0
+offset_right = 120.0
+offset_bottom = 220.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleGlowOne")
+
+[node name="GlowTwo" type="Panel" parent="." unique_id=2062018226]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -120.0
+offset_right = 400.0
+offset_bottom = 300.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleGlowTwo")
+
+[node name="Content" type="Control" parent="." unique_id=628300250]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="Content" unique_id=1845512953]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 28.0
+offset_right = -28.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BrickVerseStage" type="VBoxContainer" parent="Content/Center" unique_id=1549727637]
+custom_minimum_size = Vector2(520, 190)
+layout_mode = 2
+theme_override_constants/separation = 26
+alignment = 1
+
+[node name="Logo" type="TextureRect" parent="Content/Center/BrickVerseStage" unique_id=126501244]
+custom_minimum_size = Vector2(520, 105)
+layout_mode = 2
+texture = ExtResource("2_brickverse")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Tagline" type="Label" parent="Content/Center/BrickVerseStage" unique_id=1864877462]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.77, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "PLAY • CREATE • CONNECT"
+horizontal_alignment = 1
+
+[node name="MetaGamesStage" type="VBoxContainer" parent="Content/Center" unique_id=737172029]
+visible = false
+custom_minimum_size = Vector2(460, 205)
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="Caption" type="Label" parent="Content/Center/MetaGamesStage" unique_id=1718586947]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "A META GAMES PLATFORM"
+horizontal_alignment = 1
+
+[node name="Logo" type="TextureRect" parent="Content/Center/MetaGamesStage" unique_id=350285220]
+custom_minimum_size = Vector2(460, 120)
+layout_mode = 2
+texture = ExtResource("4_metagames")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GodotStage" type="VBoxContainer" parent="Content/Center" unique_id=1864951827]
+visible = false
+custom_minimum_size = Vector2(430, 210)
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="Caption" type="Label" parent="Content/Center/GodotStage" unique_id=1712813945]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "POWERED BY"
+horizontal_alignment = 1
+
+[node name="Logo" type="TextureRect" parent="Content/Center/GodotStage" unique_id=1080432939]
+custom_minimum_size = Vector2(430, 115)
+layout_mode = 2
+texture = ExtResource("3_godot")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EngineNote" type="Label" parent="Content/Center/GodotStage" unique_id=140210065]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.73, 1)
+theme_override_font_sizes/font_size = 14
+text = "Free and open-source technology"
+horizontal_alignment = 1
+
+[node name="CreditsStage" type="VBoxContainer" parent="Content/Center" unique_id=488942378]
+visible = false
+custom_minimum_size = Vector2(650, 210)
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Copyright" type="Label" parent="Content/Center/CreditsStage" unique_id=914520492]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.95, 0.98, 1)
+theme_override_font_sizes/font_size = 21
+text = "© 2026 Meta Games, LLC. All rights reserved."
+horizontal_alignment = 1
+
+[node name="Acknowledgement" type="Label" parent="Content/Center/CreditsStage" unique_id=1052464691]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.7, 0.79, 1)
+theme_override_font_sizes/font_size = 16
+text = "Godot Engine and its logo are used under CC BY 4.0.
+BrickVerse includes open-source software from contributors around the world."
+horizontal_alignment = 1
+
+[node name="Licenses" type="Label" parent="Content/Center/CreditsStage" unique_id=1696160283]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.58, 0.72, 1)
+theme_override_font_sizes/font_size = 14
+text = "Full acknowledgements and licenses are available in Settings."
+horizontal_alignment = 1
+
+[node name="SkipHint" type="Label" parent="Content" unique_id=79791087]
+modulate = Color(1, 1, 1, 0.42)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -48.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 13
+text = "Press any key to continue"
+horizontal_alignment = 1
+
+[node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=114956458]
+layer = 1024
+
+[node name="BlackOverlay" type="ColorRect" parent="TransitionLayer" unique_id=862038060]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

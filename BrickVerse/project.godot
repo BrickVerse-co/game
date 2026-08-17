@@ -37,10 +37,11 @@ config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 boot_splash/image="uid://bs34jgixa1n2r"
+boot_splash/show_image=false
 config/icon="uid://cq8damlft1wll"
 config/macos_native_icon="res://assets/textures/logo/client/mac.icns"
 config/windows_native_icon="res://assets/textures/logo/logo.ico"
-boot_splash/minimum_display_time=650
+boot_splash/minimum_display_time=0
 
 [audio]
 
