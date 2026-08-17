@@ -25,7 +25,7 @@ public partial class ResizeGizmo : Node, IGizmo
 	private StandardMaterial3D[] _gizmoColor = new StandardMaterial3D[6];
 	private StandardMaterial3D[] _gizmoHoverColor = new StandardMaterial3D[6];
 
-	private Camera3D GDCamera => RootGizmos!.Root.Environment.CurrentGDCamera!;
+	private Camera3D GDCamera => RootGizmos!.ActiveCamera;
 	private ResizeGizmoAxis _currentAxis = ResizeGizmoAxis.None;
 
 	private bool _isMouseDragging;

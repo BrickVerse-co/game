@@ -803,7 +803,11 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public void OpenAnimationEditor(string? filePath)
 	{
-		PopupWindow(new AnimationEditorWindow(filePath));
+		AnimationEditorWindow editor = Globals.CreateInstanceFromScene<AnimationEditorWindow>(
+			"res://scenes/creator/popups/animation_editor.tscn"
+		);
+		editor.InitialFilePath = filePath;
+		PopupWindow(editor);
 	}
 
 	public void OpenUploadMeshMenu()

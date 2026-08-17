@@ -6,10 +6,12 @@ using Godot;
 using MemoryPack;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
+using BrickVerse.Formats;
 using BrickVerse.Networking;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using System.Collections.Generic;
+using BrickVerse.Scripting;
 
 namespace BrickVerse.Datamodel;
 
@@ -42,6 +44,12 @@ public partial class Animator : Instance
 	private bool _queuePostAnimationImport = false;
 	private readonly HashSet<string> _impluseOneShots = [];
 	private int _customAnimCounter = 0;
+	private readonly Dictionary<AnimationTrack, string> _loadedTracks = [];
+	private AnimationTrack? _currentTrack;
+
+	[ScriptProperty] public AnimationTrack? CurrentTrack => _currentTrack;
+	[ScriptProperty] public BVSignal<AnimationTrack> AnimationPlayed { get; private set; } = new();
+	[ScriptProperty] public BVSignal<AnimationTrack> AnimationStopped { get; private set; } = new();
 
 	public float BlendSpeed = 10f;
 
@@ -116,6 +124,10 @@ public partial class Animator : Instance
 	public override void PreDelete()
 	{
 		Root?.Network?.PeerPreInit -= OnPeerPreInit;
+		CompleteCurrentTrack(false);
+		foreach (AnimationTrack track in _loadedTracks.Keys)
+			track.Bind(null, "");
+		_loadedTracks.Clear();
 		AnimationList.Clear();
 		base.PreDelete();
 	}
@@ -208,6 +220,7 @@ public partial class Animator : Instance
 	public override void Process(double delta)
 	{
 		base.Process(delta);
+		UpdateCurrentTrackState();
 		if (_dynBlend == null || AnimationTree == null)
 			return;
 		if (!Node.IsInstanceValid(AnimationTree)) return;
@@ -245,6 +258,167 @@ public partial class Animator : Instance
 				_currentOneShot = null;
 			}
 		}
+	}
+
+	private void UpdateCurrentTrackState()
+	{
+		if (_currentTrack == null || !_currentTrack.IsPlaying || AnimPlay == null) return;
+		float position = (float)AnimPlay.CurrentAnimationPosition;
+		_currentTrack.UpdatePlayback(position, true);
+		bool stateEnded = _dynPlayback != null && _dynPlayback.GetCurrentNode().ToString() == "End";
+		if (_currentTrack.LoopMode == "None" && (stateEnded || position >= _currentTrack.Length - 0.002f))
+			CompleteCurrentTrack(true);
+	}
+
+	[ScriptMethod]
+	public AnimationTrack LoadAnimation(AnimationTrack track)
+	{
+		if (track == null) throw new System.ArgumentNullException(nameof(track));
+		if (track.IsDeleted) throw new System.InvalidOperationException("Cannot load a deleted AnimationTrack.");
+		if (track.Root != Root) throw new System.InvalidOperationException("AnimationTrack must belong to the same World as the Animator.");
+		if (_dynTrack == null || AnimationTree == null)
+			throw new System.InvalidOperationException("Animator is not initialized yet.");
+		RegisterAnimationTrack(track);
+		return track;
+	}
+
+	[ScriptMethod]
+	public bool IsAnimationLoaded(AnimationTrack track) => track != null && _loadedTracks.ContainsKey(track);
+
+	[ScriptMethod]
+	public void UnloadAnimation(AnimationTrack track)
+	{
+		if (track == null || !_loadedTracks.Remove(track, out string? animationKey)) return;
+		if (_currentTrack == track)
+		{
+			InternalStopAnimation();
+			CompleteCurrentTrack(false);
+			if (HasAuthority) Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
+		}
+		string nodeKey = animationKey.Replace('/', '_');
+		if (_dynTrack.HasNode(nodeKey)) _dynTrack.RemoveNode(nodeKey);
+		AnimationList.Remove(animationKey);
+		string libraryKey = TrackLibraryKey(track);
+		if (AnimPlay.HasAnimationLibrary(libraryKey)) AnimPlay.RemoveAnimationLibrary(libraryKey);
+		if (AnimationTree.HasAnimationLibrary(libraryKey)) AnimationTree.RemoveAnimationLibrary(libraryKey);
+		track.Bind(null, "");
+	}
+
+	internal void InvalidateAnimationTrack(AnimationTrack track) => UnloadAnimation(track);
+
+	private static string TrackLibraryKey(AnimationTrack track) =>
+		"track_" + track.NetworkedObjectID.Replace('-', '_');
+
+	private string RegisterAnimationTrack(AnimationTrack track)
+	{
+		if (_loadedTracks.TryGetValue(track, out string? existing)) return existing;
+		BVAnimationClip clip = track.GetClip() ?? throw new System.InvalidOperationException("AnimationTrack has no valid animation data.");
+		string libraryKey = TrackLibraryKey(track);
+		string animationKey = "track/" + track.NetworkedObjectID;
+		AnimationLibrary library = BVAnimationFormat.ToLibrary(clip);
+		Godot.Animation animation = library.GetAnimation(clip.Name);
+		PreprocessAnimation(animation);
+		if (AnimPlay.HasAnimationLibrary(libraryKey)) AnimPlay.RemoveAnimationLibrary(libraryKey);
+		AnimPlay.AddAnimationLibrary(libraryKey, library);
+		if (AnimationTree.HasAnimationLibrary(libraryKey)) AnimationTree.RemoveAnimationLibrary(libraryKey);
+		AnimationTree.AddAnimationLibrary(libraryKey, library);
+		ImportAnimationRaw(animationKey, libraryKey + "/" + clip.Name, animation.LoopMode);
+		_loadedTracks[track] = animationKey;
+		track.Bind(this, animationKey);
+		return animationKey;
+	}
+
+	[ScriptMethod]
+	public void PlayAnimationTrack(AnimationTrack track)
+	{
+		string key = RegisterAnimationTrack(track);
+		if (_currentTrack != null && _currentTrack != track) CompleteCurrentTrack(false);
+		_currentTrack = track;
+		track.NotifyPlayed();
+		AnimationPlayed.Invoke(track);
+		AnimPlay.SpeedScale = track.Speed;
+		InternalPlayAnimation(key);
+		if (HasAuthority) Rpc(nameof(NetPlayAnimationTrack), track.NetworkedObjectID, track.Speed);
+	}
+
+	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
+	private async void NetPlayAnimationTrack(string trackId, float speed)
+	{
+		AnimationTrack? track = (AnimationTrack?)await Root.WaitForNetObjectAsync(trackId);
+		if (track == null) return;
+		string key = RegisterAnimationTrack(track);
+		track.AdjustSpeed(speed);
+		if (_currentTrack != null && _currentTrack != track) CompleteCurrentTrack(false);
+		_currentTrack = track;
+		track.NotifyPlayed();
+		AnimationPlayed.Invoke(track);
+		AnimPlay.SpeedScale = track.Speed;
+		InternalPlayAnimation(key);
+	}
+
+	[ScriptMethod]
+	public void StopAnimationTrack(AnimationTrack track)
+	{
+		if (track == null || _currentTrack != track) return;
+		InternalStopAnimation();
+		CompleteCurrentTrack(false);
+		if (HasAuthority) Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
+	}
+
+	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
+	private void NetStopAnimationTrack(string trackId)
+	{
+		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		InternalStopAnimation();
+		CompleteCurrentTrack(false);
+	}
+
+	internal void SeekAnimationTrack(AnimationTrack track, float seconds)
+	{
+		if (_currentTrack != track) return;
+		float position = Mathf.Clamp(seconds, 0, track.Length);
+		AnimPlay.Seek(position, true);
+		track.UpdatePlayback(position, true);
+		if (HasAuthority) Rpc(nameof(NetSeekAnimationTrack), track.NetworkedObjectID, position);
+	}
+
+	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
+	private void NetSeekAnimationTrack(string trackId, float seconds)
+	{
+		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		float position = Mathf.Clamp(seconds, 0, _currentTrack.Length);
+		AnimPlay.Seek(position, true);
+		_currentTrack.UpdatePlayback(position, true);
+	}
+
+	internal void SetAnimationTrackSpeed(AnimationTrack track, float speed)
+	{
+		if (_currentTrack != track) return;
+		AnimPlay.SpeedScale = speed;
+		if (HasAuthority) Rpc(nameof(NetSetAnimationTrackSpeed), track.NetworkedObjectID, speed);
+	}
+
+	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
+	private void NetSetAnimationTrackSpeed(string trackId, float speed)
+	{
+		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		_currentTrack.AdjustSpeed(speed);
+		AnimPlay.SpeedScale = _currentTrack.Speed;
+	}
+
+	private void CompleteCurrentTrack(bool ended)
+	{
+		if (_currentTrack == null) return;
+		AnimationTrack track = _currentTrack;
+		_currentTrack = null;
+		_isPlaying = false;
+		if (ended)
+		{
+			_currentAnimation = "";
+			_targetDynBlendValue = 0f;
+		}
+		track.NotifyStopped(ended);
+		AnimationStopped.Invoke(track);
 	}
 
 	// NOTE: This is disabled until we find a better solution to animations
@@ -479,6 +653,8 @@ public partial class Animator : Instance
 	[ScriptMethod]
 	public void PlayAnimation(string animationKey)
 	{
+		if (_currentTrack != null && _currentTrack.RuntimeKey != animationKey)
+			CompleteCurrentTrack(false);
 		InternalPlayAnimation(animationKey);
 
 		if (HasAuthority)
@@ -546,8 +722,9 @@ public partial class Animator : Instance
 	public void StopAnimation()
 	{
 		// If dynblend value is already none, return
-		if (_targetDynBlendValue == 0) return;
+		if (_targetDynBlendValue == 0 && _currentTrack == null) return;
 		InternalStopAnimation();
+		CompleteCurrentTrack(false);
 
 		if (HasAuthority)
 		{

@@ -25,7 +25,7 @@ public partial class RotateGizmo : Node, IGizmo
 	private ArrayMesh[] _rotateGizmo = new ArrayMesh[4];
 	private MeshInstance3D[] _rotateGizmoInstance = new MeshInstance3D[4];
 
-	private Camera3D GDCamera => RootGizmos!.Root.Environment.CurrentGDCamera!;
+	private Camera3D GDCamera => RootGizmos!.ActiveCamera;
 	private RotateGizmoAxis _currentAxis = RotateGizmoAxis.None;
 
 	private ShaderMaterial[] _rotateColor = new ShaderMaterial[3];

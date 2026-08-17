@@ -278,27 +278,35 @@ public partial class CreatorEntry : Node
 
 	private static async Task InitializeAuthAsync(string? launchToken)
 	{
-		// Keep auth/network work off the startup path so creator UI can render immediately.
-		if (launchToken != null)
+		CreatorAPI.IsAuthenticationChecking = true;
+		try
 		{
+			// Keep auth/network work off the startup path so creator UI can render immediately.
+			if (launchToken != null)
+			{
+				try
+				{
+					await CreatorAPI.LoginWithToken(launchToken, true);
+					return;
+				}
+				catch (Exception error)
+				{
+					BV.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+				}
+			}
+
 			try
 			{
-				await CreatorAPI.LoginWithToken(launchToken, true);
-				return;
+				await CreatorAPI.SetupAuth();
 			}
 			catch (Exception error)
 			{
-				BV.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+				BV.PrintErr("CreatorEntry: Auth setup failed: ", error.Message);
 			}
 		}
-
-		try
+		finally
 		{
-			await CreatorAPI.SetupAuth();
-		}
-		catch (Exception error)
-		{
-			BV.PrintErr("CreatorEntry: Auth setup failed: ", error.Message);
+			CreatorAPI.IsAuthenticationChecking = false;
 		}
 	}
 
