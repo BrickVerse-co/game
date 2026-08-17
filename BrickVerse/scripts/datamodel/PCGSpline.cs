@@ -127,7 +127,10 @@ public sealed partial class PCGSpline : Dynamic
 			if (placement.Template.Clone(Parent) is not Dynamic clone) continue;
 			clone.Name = placement.Template.Name + "_Spline";
 			clone.SetGlobalTransform(GDNode3D.GlobalTransform * placement.Transform * placement.Template.GDNode3D.Transform);
-			clone.CreatorInserted(); baked.Add(clone);
+#if CREATOR
+			clone.CreatorInserted();
+#endif
+			baked.Add(clone);
 		}
 		return [.. baked];
 	}
