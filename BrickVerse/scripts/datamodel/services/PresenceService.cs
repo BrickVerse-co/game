@@ -100,13 +100,19 @@ public sealed partial class PresenceService : Instance
 	public override void Ready()
 	{
 		base.Ready();
-		SetupIntegrations();
-		ResetTimer();
-
 		Root.Players.PlayerAdded.Connect((_) => { QueueUpdatePresence(); });
 		Root.Players.PlayerRemoved.Connect((_) => { QueueUpdatePresence(); });
 		Root.WorldInfoReady += OnWorldInfoReady;
 		Root.WorldMediaReady += OnWorldMediaReady;
+
+		// Subscribe before Discord is initialized so a fast production metadata
+		// response cannot be missed between the initial activity and these hooks.
+		if (Root.WorldMedia is { Length: > 0 })
+			_imageURL = Root.WorldMedia[0].Url;
+
+		SetupIntegrations();
+		ResetTimer();
+		QueueUpdatePresence();
 	}
 
 	private void OnWorldInfoReady(APIPlaceInfo _)
@@ -170,6 +176,8 @@ public sealed partial class PresenceService : Instance
 		_updateDirty = true;
 	}
 
+	internal void RefreshActivity() => QueueUpdatePresence();
+
 #if CREATOR
 	public static void SetCreatorActivity(string detailedDetails, string? detailedState = null)
 	{
@@ -203,13 +211,12 @@ public sealed partial class PresenceService : Instance
 
 	private void OnDiscordActivityJoin(string secret)
 	{
-		string[] values = secret.Split(':', 2);
-		if (values.Length == 0 || !long.TryParse(values[0], out long worldId)) return;
-
-		string url = Globals.MainEndpoint.PathJoin($"/worlds/{worldId}");
-		if (values.Length == 2 && !string.IsNullOrWhiteSpace(values[1]))
-			url += "?serverId=" + Uri.EscapeDataString(values[1]);
-		OS.ShellOpen(url);
+		if (!Uri.TryCreate(secret, UriKind.Absolute, out Uri? joinUri)
+			|| !Uri.TryCreate(Globals.MainEndpoint, UriKind.Absolute, out Uri? mainUri)
+			|| joinUri.Scheme != Uri.UriSchemeHttps
+			|| !joinUri.Host.Equals(mainUri.Host, StringComparison.OrdinalIgnoreCase)
+			|| joinUri.AbsolutePath != "/join-game") return;
+		OS.ShellOpen(joinUri.AbsoluteUri);
 	}
 
 	private void DisposeDiscord()
@@ -224,10 +231,12 @@ public sealed partial class PresenceService : Instance
 		string details;
 		string largeText = "Testing...";
 
-		if (Root.WorldInfo.HasValue)
+		string loadedWorldName = Root.WorldInfo?.Name
+			?? (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : string.Empty);
+		if (!string.IsNullOrWhiteSpace(loadedWorldName))
 		{
-			details = $"Playing {Root.WorldInfo.Value.Name}";
-			largeText = Root.WorldInfo.Value.Name;
+			details = $"Playing {loadedWorldName}";
+			largeText = loadedWorldName;
 		}
 		else
 		{
@@ -247,17 +256,25 @@ public sealed partial class PresenceService : Instance
 			details = _creatorDetails;
 		}
 
+		bool hasCapacity = Root.Players.MaxPlayers <= 0
+			|| Root.Players.MaxPlayers > Root.Players.PlayersCount;
 		bool canJoin = Root.SessionType != World.SessionTypeEnum.Creator
 			&& Root.WorldID > 0
 			&& !string.IsNullOrWhiteSpace(Root.ServerID)
-			&& Root.Players.MaxPlayers > Root.Players.PlayersCount;
+			&& hasCapacity;
 		string partyId = canJoin ? $"{Root.WorldID}:{Root.ServerID}" : "";
+		string siteRoot = Globals.MainEndpoint.TrimEnd('/');
+		string worldJoinUrl = $"{siteRoot}/join-game?worldId={Uri.EscapeDataString(Root.WorldID.ToString())}";
+		string serverJoinUrl = $"{siteRoot}/join-game?serverId={Uri.EscapeDataString(Root.ServerID)}";
+		string playerState = Root.Players.MaxPlayers > 0
+			? $"{Root.Players.PlayersCount}/{Root.Players.MaxPlayers} players"
+			: $"{Root.Players.PlayersCount} players";
 
 		Discord.Activity activity = new()
 		{
 			State = Root.SessionType == World.SessionTypeEnum.Creator
 				? _creatorState
-				: _state != null ? FilterService.Filter(_state) : "",
+				: _state != null ? FilterService.Filter(_state) : playerState,
 			Details = details,
 			Timestamps =
 			{
@@ -282,13 +299,15 @@ public sealed partial class PresenceService : Instance
 			},
 			Secrets =
 			{
-				Join = canJoin ? partyId : "",
+				Match = Root.SessionType != World.SessionTypeEnum.Creator && Root.WorldID > 0 ? worldJoinUrl : "",
+				Join = canJoin ? serverJoinUrl : "",
 			},
 			Instance = true
 		};
 
-		_activityManager.UpdateActivity(activity, (result) =>
+		_activityManager.UpdateActivity(activity, result =>
 		{
+			if (result != Result.Ok) BV.PrintErr($"Discord activity update failed: {result}");
 		});
 	}
 

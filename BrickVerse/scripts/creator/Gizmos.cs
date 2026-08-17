@@ -25,6 +25,11 @@ public sealed partial class Gizmos : Node
 	private readonly Dictionary<Dynamic, SelectionBox> _selectionBoxes = [];
 
 	private Camera3D _camera = null!;
+	public Camera3D? CameraOverride { get; set; }
+	public ToolModeEnum? ToolModeOverride { get; set; }
+	public bool SuppressSelectionInput { get; set; }
+	public Camera3D ActiveCamera => CameraOverride ?? Root.Environment.CurrentGDCamera!;
+	private ToolModeEnum ActiveToolMode => ToolModeOverride ?? CreatorService.Interface.ToolMode;
 	private bool _isDraggingDyn;
 	private bool _isDragPending;
 	private bool _duplicatedOnCurrentDrag;
@@ -69,6 +74,7 @@ public sealed partial class Gizmos : Node
 	public void Attach(World game)
 	{
 		Root = game;
+		_history = Root.CreatorContext.History;
 		game.Loaded.Once(() =>
 		{
 			_history = Root.CreatorContext.History;
@@ -406,10 +412,10 @@ public sealed partial class Gizmos : Node
 	{
 		bool selectionValid = Selected.Count > 0;
 
-		Move.Visible = CreatorService.Interface.ToolMode == ToolModeEnum.Move && selectionValid;
-		Rotate.Visible = CreatorService.Interface.ToolMode == ToolModeEnum.Rotate && selectionValid;
+		Move.Visible = ActiveToolMode == ToolModeEnum.Move && selectionValid;
+		Rotate.Visible = ActiveToolMode == ToolModeEnum.Rotate && selectionValid;
 
-		if (CreatorService.Interface.ToolMode == ToolModeEnum.Scale && selectionValid)
+		if (ActiveToolMode == ToolModeEnum.Scale && selectionValid)
 		{
 			bool singlePartSelected = Selected.Count == 1 && Selected[0] is Part;
 			Resize.Visible = singlePartSelected;
@@ -488,6 +494,7 @@ public sealed partial class Gizmos : Node
 
 	public override void _Input(InputEvent @event)
 	{
+		if (SuppressSelectionInput) return;
 		if (!Root.CreatorContext.IsViewportFocused) { return; }
 		ToolModeEnum toolMode = CreatorService.Interface.ToolMode;
 

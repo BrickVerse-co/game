@@ -6,6 +6,7 @@
 [ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="3_semibold"]
 [ext_resource type="FontFile" uid="uid://brlqij14aeyxy" path="res://assets/fonts/Montserrat-Medium.ttf" id="5_7v16m"]
 [ext_resource type="FontFile" uid="uid://bcqd3fm44o8nd" path="res://assets/fonts/Montserrat-Regular.ttf" id="6_frk4r"]
+[ext_resource type="Script" path="res://scripts/creator/ui/splash/AuthSpinner.cs" id="7_spinner"]
 
 [sub_resource type="Gradient" id="Gradient_dim"]
 colors = PackedColorArray(0, 0, 0, 0.68, 0, 0, 0, 0.92)
@@ -146,10 +147,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -238.0
-offset_right = 260.0
-offset_bottom = 238.0
+offset_left = -230.0
+offset_top = -190.0
+offset_right = 230.0
+offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Style_card")
@@ -159,7 +160,7 @@ clip_children = 1
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 146.0
+offset_bottom = 104.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("Style_hero")
 
@@ -176,6 +177,7 @@ expand_mode = 1
 stretch_mode = 6
 
 [node name="Close" type="Button" parent="Card/Hero" unique_id=1715707458]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -194,13 +196,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 146.0
+offset_top = 104.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 24
+theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_bottom = 20
 
 [node name="Content" type="VBoxContainer" parent="Card/Body" unique_id=793194153]
 layout_mode = 2
@@ -211,17 +213,42 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("3_semibold")
 theme_override_font_sizes/font_size = 26
-text = "Sign in to continue"
+text = "Signing you in"
+
+[node name="Stage" type="Label" parent="Card/Body/Content" unique_id=116345642]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.68, 1, 1)
+theme_override_fonts/font = ExtResource("3_semibold")
+theme_override_font_sizes/font_size = 12
+text = "SECURE SESSION"
 
 [node name="Description" type="Label" parent="Card/Body/Content" unique_id=212651210]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.68)
 theme_override_fonts/font = ExtResource("5_7v16m")
 theme_override_font_sizes/font_size = 15
-text = "BrickVerse Creator needs your account before you can create, open, or publish projects. Your browser will open a secure BrickVerse login page."
+text = "Checking your saved session and refreshing it securely when needed."
 autowrap_mode = 3
 
+[node name="Loading" type="HBoxContainer" parent="Card/Body/Content" unique_id=90613521]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Spinner" type="Control" parent="Card/Body/Content/Loading" unique_id=90613522]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+script = ExtResource("7_spinner")
+
+[node name="Label" type="Label" parent="Card/Body/Content/Loading" unique_id=90613523]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.62)
+theme_override_fonts/font = ExtResource("5_7v16m")
+theme_override_font_sizes/font_size = 14
+text = "Checking authentication"
+
 [node name="InfoBox" type="PanelContainer" parent="Card/Body/Content" unique_id=381102790]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_info")
 
@@ -238,11 +265,12 @@ custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 
 [node name="Actions" type="HBoxContainer" parent="Card/Body/Content" unique_id=2078659453]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="SignIn" type="Button" parent="Card/Body/Content/Actions" unique_id=1348416927]
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -257,7 +285,7 @@ theme_override_styles/hover = SubResource("Style_primary_hover")
 text = "Sign in with BrickVerse"
 
 [node name="Cancel" type="Button" parent="Card/Body/Content/Actions" unique_id=326893615]
-custom_minimum_size = Vector2(120, 46)
+custom_minimum_size = Vector2(110, 42)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.78)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 0.78)

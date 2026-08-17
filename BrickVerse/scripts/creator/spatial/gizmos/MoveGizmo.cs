@@ -29,7 +29,7 @@ public partial class MoveGizmo : Node, IGizmo
 	public Gizmos? RootGizmos { get; set; }
 	private ArrayMesh[] _moveGizmo = new ArrayMesh[6];
 	private MeshInstance3D[] _moveGizmoInstance = new MeshInstance3D[6];
-	private Camera3D GDCamera => RootGizmos!.Root.Environment.CurrentGDCamera!;
+	private Camera3D GDCamera => RootGizmos!.ActiveCamera;
 	private MoveGizmoAxis _currentAxis = MoveGizmoAxis.None;
 	private StandardMaterial3D[] _gizmoColor = new StandardMaterial3D[6];
 	private StandardMaterial3D[] _gizmoHoverColor = new StandardMaterial3D[6];

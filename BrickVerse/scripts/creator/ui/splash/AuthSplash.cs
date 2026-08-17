@@ -16,8 +16,13 @@ public partial class AuthSplash : Panel
 	[Export] private Label _titleLabel = null!;
 	[Export] private Label _descriptionLabel = null!;
 	[Export] private Label _infoTextLabel = null!;
+	[Export] private Label _stageLabel = null!;
+	[Export] private Control _loadingView = null!;
+	[Export] private Control _infoBox = null!;
+	[Export] private Control _actions = null!;
 
 	private bool _reopeningLogin;
+	private bool _showingChecking;
 
 	public override void _Ready()
 	{
@@ -27,6 +32,10 @@ public partial class AuthSplash : Panel
 		_titleLabel ??= GetNodeOrNull<Label>("Card/Body/Content/Title")!;
 		_descriptionLabel ??= GetNodeOrNull<Label>("Card/Body/Content/Description")!;
 		_infoTextLabel ??= GetNodeOrNull<Label>("Card/Body/Content/InfoBox/InfoText")!;
+		_stageLabel ??= GetNodeOrNull<Label>("Card/Body/Content/Stage")!;
+		_loadingView ??= GetNodeOrNull<Control>("Card/Body/Content/Loading")!;
+		_infoBox ??= GetNodeOrNull<Control>("Card/Body/Content/InfoBox")!;
+		_actions ??= GetNodeOrNull<Control>("Card/Body/Content/Actions")!;
 
 		Visible = !CreatorAPI.IsUserAuthenticated;
 		MouseFilter = MouseFilterEnum.Stop;
@@ -41,8 +50,18 @@ public partial class AuthSplash : Panel
 
 		if (CreatorAPI.IsUserAuthenticated)
 			HideSplash();
+		else if (CreatorAPI.IsAuthenticationChecking)
+			SetCheckingState();
 		else
 			SetWaitingState();
+		SetProcess(true);
+	}
+
+	public override void _Process(double delta)
+	{
+		if (!Visible) return;
+		if (CreatorAPI.IsUserAuthenticated) { HideSplash(); return; }
+		if (_showingChecking && !CreatorAPI.IsAuthenticationChecking) { SetWaitingState(); return; }
 	}
 
 	public override void _ExitTree()
@@ -64,7 +83,7 @@ public partial class AuthSplash : Panel
 		}
 
 		Visible = true;
-		SetWaitingState();
+		if (CreatorAPI.IsAuthenticationChecking) SetCheckingState(); else SetWaitingState();
 	}
 
 	public void HideSplash()
@@ -112,18 +131,44 @@ public partial class AuthSplash : Panel
 
 	private void SetWaitingState()
 	{
-		_titleLabel.Text = "Waiting for sign in";
-		_descriptionLabel.Text = "Your browser should open the secure BrickVerse login page. After signing in, return to Creator.";
-		_infoTextLabel.Text = "This window will close automatically once your account is authenticated.";
+		_showingChecking = false;
+		_closeButton.Visible = true;
+		_loadingView.Visible = false;
+		_infoBox.Visible = true;
+		_actions.Visible = true;
+		_stageLabel.Text = "SIGN IN REQUIRED";
+		_titleLabel.Text = "Finish signing in";
+		_descriptionLabel.Text = "Continue in the secure BrickVerse browser page, then return to Creator.";
+		_infoTextLabel.Text = "Creator will continue automatically when your account is ready.";
 
+		_signInButton.Visible = true;
 		_signInButton.Text = "Open login again";
 		_signInButton.Disabled = _reopeningLogin;
 		_cancelButton.Text = "Exit Creator";
 	}
 
+	private void SetCheckingState()
+	{
+		_showingChecking = true;
+		_closeButton.Visible = false;
+		_loadingView.Visible = true;
+		_infoBox.Visible = false;
+		_actions.Visible = false;
+		_stageLabel.Text = "SECURE SESSION";
+		_titleLabel.Text = "Signing you in";
+		_descriptionLabel.Text = "Checking your saved session and refreshing it securely when needed.";
+	}
+
 	private void SetErrorState(string message)
 	{
 		Visible = true;
+		_showingChecking = false;
+		_closeButton.Visible = true;
+		_loadingView.Visible = false;
+		_infoBox.Visible = true;
+		_actions.Visible = true;
+		_stageLabel.Text = "AUTHENTICATION PROBLEM";
+		_signInButton.Visible = true;
 
 		_titleLabel.Text = "Sign in required";
 		_descriptionLabel.Text = string.IsNullOrWhiteSpace(message)

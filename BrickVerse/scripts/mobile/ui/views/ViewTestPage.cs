@@ -49,6 +49,7 @@ public partial class ViewTestPage : MobileViewBase
 		{
 			ClientEntry.ClientEntryData entryData = new()
 			{
+				ReturnToAppShell = true,
 				ConnectAddress = _launchOptions.ConnectAddress
 			};
 			ce.Entry(entryData);

@@ -78,6 +78,7 @@ public static class CreatorAPI
 	}
 
 	public static bool IsUserAuthenticated { get; private set; }
+	public static bool IsAuthenticationChecking { get; internal set; }
 
 	static CreatorAPI()
 	{

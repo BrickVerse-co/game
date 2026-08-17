@@ -24,6 +24,12 @@ public partial class AppEntry : Node
 		bool isCreator = cmdargs.ContainsKey("creator");
 		bool isLtChild = cmdargs.ContainsKey("ltchild");
 		bool isSolo = cmdargs.ContainsKey("solo");
+		bool isStandaloneClientShell = OS.HasFeature("client")
+			&& !Globals.IsServerBuild
+			&& !OS.HasFeature("creator")
+			&& !OS.HasFeature("renderer")
+			&& !isCreator
+			&& cmdargs.Count == 0;
 
 		if (cmdargs.TryGetValue("wait", out string? waitTime))
 		{
@@ -68,7 +74,7 @@ public partial class AppEntry : Node
 		{
 			entry = AppEntryEnum.Creator;
 		}
-		if (Globals.UsesMobileUI)
+		if (Globals.UsesMobileUI || isStandaloneClientShell)
 		{
 			entry = AppEntryEnum.MobileUI;
 		}

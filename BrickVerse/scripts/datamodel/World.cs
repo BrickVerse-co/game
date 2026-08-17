@@ -51,6 +51,7 @@ public sealed partial class World : Instance
 	private static World? _current;
 	private long _universeID = 0;
 	private long _worldID = 0;
+	private string _serverID = string.Empty;
 	private string _worldName = "";
 	private string _universeName = "";
 	private string _universeDescription = "";
@@ -192,6 +193,7 @@ public sealed partial class World : Instance
 			{
 				FetchWorldInfo();
 			}
+			FindChild<PresenceService>("Presence")?.RefreshActivity();
 		}
 	}
 
@@ -219,7 +221,15 @@ public sealed partial class World : Instance
 	public string UniverseDescription { get => _universeDescription; internal set { _universeDescription = value; OnPropertyChanged(); } }
 
 	[ScriptProperty]
-	public string ServerID { get; internal set; } = string.Empty;
+	public string ServerID
+	{
+		get => _serverID;
+		internal set
+		{
+			_serverID = value;
+			FindChild<PresenceService>("Presence")?.RefreshActivity();
+		}
+	}
 
 	[ScriptProperty]
 	public decimal UpTime { get; private set; } = 0;

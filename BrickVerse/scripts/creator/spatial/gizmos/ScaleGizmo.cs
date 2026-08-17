@@ -23,7 +23,7 @@ public partial class ScaleGizmo : Node, IGizmo
 	private ArrayMesh[] _scaleGizmo = new ArrayMesh[3];
 	private MeshInstance3D[] _scaleGizmoInstance = new MeshInstance3D[3];
 
-	private Camera3D GDCamera => RootGizmos!.Root.Environment.CurrentGDCamera!;
+	private Camera3D GDCamera => RootGizmos!.ActiveCamera;
 	private ScaleGizmoAxis _currentAxis = ScaleGizmoAxis.None;
 
 	private StandardMaterial3D[] _gizmoColor = new StandardMaterial3D[3];

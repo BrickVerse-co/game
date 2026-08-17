@@ -66,6 +66,7 @@ public sealed partial class ClientEntry : Node3D
 	private APIClientAuthResponseMessage? _clientConnectionInfo;
 	private string? _debugServerAddress;
 	private int? _debugServerPort;
+	private bool _returnToAppShell;
 
 	public ClientEntry()
 	{
@@ -76,6 +77,7 @@ public sealed partial class ClientEntry : Node3D
 	public async void Entry(ClientEntryData? entryData = null)
 	{
 		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		_returnToAppShell = Globals.UsesMobileUI || entryData?.ReturnToAppShell == true;
 
 		try
 		{
@@ -574,8 +576,8 @@ public sealed partial class ClientEntry : Node3D
 			APIServerListenResponse listenResponse = await ClientAuthAPI.SendServerListen();
 			LogServerListenResponse(listenResponse);
 
-			Root.WorldID = listenResponse.WorldID;
 			Root.ServerID = listenResponse.ServerID;
+			Root.WorldID = listenResponse.WorldID;
 
 			BV.Print("Listen sent ", stopwatch.ElapsedMilliseconds, "ms");
 
@@ -671,8 +673,8 @@ public sealed partial class ClientEntry : Node3D
 			_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
 			LogClientConnectionInfo(_clientConnectionInfo);
 
-			Root.WorldID = _clientConnectionInfo.WorldID;
 			Root.ServerID = _clientConnectionInfo.ServerID;
+			Root.WorldID = _clientConnectionInfo.WorldID;
 			NetworkService.IsProd = true;
 
 			StartServerStatusPolling();
@@ -789,7 +791,7 @@ public sealed partial class ClientEntry : Node3D
 
 	public void LeaveGame()
 	{
-		if (Globals.UsesMobileUI)
+		if (_returnToAppShell)
 		{
 			NetworkService?.DisconnectSelf("Left game");
 			Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.MobileUI);
@@ -978,5 +980,6 @@ public sealed partial class ClientEntry : Node3D
 		public bool? TestIsServer;
 		public string? TestWorldPath;
 		public string? TestDebugID;
+		public bool ReturnToAppShell;
 	}
 }
