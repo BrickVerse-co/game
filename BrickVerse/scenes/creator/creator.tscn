@@ -49,7 +49,6 @@
 [ext_resource type="Texture2D" uid="uid://dwqjb7jgqqk0v" path="res://assets/textures/logo/light_long.png" id="37_raaus"]
 [ext_resource type="PackedScene" uid="uid://dccewf7osrg82" path="res://scenes/creator/popups/search/search.tscn" id="38_ce354"]
 [ext_resource type="PackedScene" uid="uid://ddwx3b7wcb46f" path="res://scenes/creator/tabs/forge_chat.tscn" id="38_r1hsb"]
-[ext_resource type="Texture2D" uid="uid://dsctyc3b08xsp" path="res://assets/textures/ui-icons/messages.svg" id="39_5xx7o"]
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
 [ext_resource type="PackedScene" path="res://scenes/creator/docks/asset-manager/asset_manager.tscn" id="41_asset_manager"]
@@ -59,6 +58,7 @@
 [ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
 [ext_resource type="Texture2D" uid="uid://d2bki8a2bbea7" path="res://assets/textures/ui-icons/tools.svg" id="48_toolbox"]
 [ext_resource type="Texture2D" uid="uid://0oxaq8x81vax" path="res://assets/textures/ui-icons/keyboard.svg" id="49_input"]
+[ext_resource type="Texture2D" uid="uid://oil6h1xmdmrf" path="res://assets/textures/datamodel/ForgeRobotChat-White.svg" id="49_ww661"]
 [ext_resource type="Texture2D" uid="uid://dnrf2lr7agcg1" path="res://assets/textures/creator/ribbon/shapes/shapes.svg" id="50_shapes"]
 
 [sub_resource type="StyleBoxFlat" id="TopBarSurface"]
@@ -847,37 +847,6 @@ text = "Shapes"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="Forge" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1588466449]
-custom_minimum_size = Vector2(58, 54)
-layout_mode = 2
-tooltip_text = "Open Forge AI Chat"
-
-[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=103690314]
-modulate = Color(0, 0.592157, 1, 1)
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 5.0
-offset_bottom = -22.0
-mouse_filter = 2
-texture = ExtResource("39_5xx7o")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=287239862]
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -20.0
-offset_bottom = -2.0
-grow_vertical = 0
-text = "Forge AI"
-horizontal_alignment = 1
-vertical_alignment = 2
-
 [node name="Terrain" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1189380056]
 custom_minimum_size = Vector2(60, 54)
 layout_mode = 2
@@ -999,6 +968,37 @@ offset_top = -20.0
 offset_bottom = -2.0
 grow_vertical = 0
 text = "Inputs"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Forge" type="Button" parent="GUI/Ribbon/Buttons/QuickActions" unique_id=1588466449]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Open Forge AI Chat"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=103690314]
+modulate = Color(0, 0.5921569, 1, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("49_ww661")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/QuickActions/Forge" unique_id=287239862]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+grow_vertical = 0
+text = "Forge AI"
 horizontal_alignment = 1
 vertical_alignment = 2
 
@@ -1693,13 +1693,14 @@ layout_mode = 2
 theme_override_colors/font_selected_color = Color(0, 0.5921569, 1, 1)
 theme_override_colors/icon_selected_color = Color(0, 0.5921569, 1, 1)
 theme_override_constants/icon_max_width = 12
-current_tab = 0
+current_tab = 1
 tab_0/title = "Inspector"
 tab_0/icon = ExtResource("36_5ay1h")
 tab_1/title = "Forge - AI Chat"
-tab_1/icon = ExtResource("39_5xx7o")
+tab_1/icon = ExtResource("49_ww661")
 
 [node name="Explorer" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs" unique_id=75943773]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
@@ -1726,7 +1727,6 @@ custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]
-visible = false
 layout_mode = 2
 metadata/_tab_name = "Forge - AI Chat"
 

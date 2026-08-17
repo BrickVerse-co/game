@@ -12,10 +12,9 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
+using BrickVerse.Utils;
 using Godot;
 using Mesh = Godot.Mesh;
-using BrickVerse.Utils;
-
 #if CREATOR
 using BrickVerse.Creator.Properties;
 using BrickVerse.Datamodel.Creator;
@@ -27,12 +26,20 @@ namespace BrickVerse.Shared;
 public sealed partial class Globals : Node
 {
 #if DEBUG
-	public const string MainEndpoint = "http://localhost:3000";
-	public const string ApiEndpoint = "http://localhost:3001/api";
+	private const bool UseLocalServer = true;
 #else
-public const string MainEndpoint = "https://brickverse.gg";
-public const string ApiEndpoint = "https://api.brickverse.gg/api";
+	private const bool UseLocalServer = false;
 #endif
+
+	private static readonly bool UseProdApi = OS.HasFeature("use-prod-api");
+
+	public static readonly string MainEndpoint =
+		UseLocalServer && !UseProdApi ? "http://localhost:3000" : "https://brickverse.gg";
+
+	public static readonly string ApiEndpoint =
+		UseLocalServer && !UseProdApi
+			? "http://localhost:3001/api"
+			: "https://api.brickverse.gg/api";
 
 	public const float AlphaThreshold = 0.025f;
 	public const string TestUserIdStart = "2";
@@ -83,7 +90,8 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	public const float MobileScale = 2.5f;
 	public static string AppVersion { get; private set; } = "";
 	public static string BuildCommit { get; private set; } = "";
-	public static string ShortBuildCommit => BuildCommit.Length > 8 ? BuildCommit[..8] : BuildCommit;
+	public static string ShortBuildCommit =>
+		BuildCommit.Length > 8 ? BuildCommit[..8] : BuildCommit;
 	public static string MajorAppVersion { get; private set; } = "2";
 	public static Node? CurrentAppEntryNode { get; private set; }
 	public static AppEntryEnum CurrentAppEntry { get; private set; }
@@ -129,7 +137,10 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 	/// Check if this build is a mobile build
 	/// </summary>
 	public static bool IsMobileBuild { get; private set; } = false;
-	public static bool IsXRLaunch => OS.HasFeature("xr") || ReadCmdArgs().TryGetValue("xr-mode", out string? mode) && mode.Equals("on", StringComparison.OrdinalIgnoreCase);
+	public static bool IsXRLaunch =>
+		OS.HasFeature("xr")
+		|| ReadCmdArgs().TryGetValue("xr-mode", out string? mode)
+			&& mode.Equals("on", StringComparison.OrdinalIgnoreCase);
 	public static bool UsesMobileUI => OS.HasFeature("mobile-ui") || IsXRLaunch;
 
 	/// <summary>
@@ -172,7 +183,6 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 		IsServerBuild = OS.HasFeature("server");
 		IsInGDEditor = OS.HasFeature("editor");
 		IsMobileBuild = OS.HasFeature("mobile");
-
 		GDAvailable = true;
 
 		AppVersion = (string)ProjectSettings.GetSetting("application/config/version");
@@ -184,10 +194,12 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 			BuildCommit = ResolveLocalGitCommit();
 #endif
 
-		if (OS.IsDebugBuild()) AppVersion += "+dev";
+		if (OS.IsDebugBuild())
+			AppVersion += "+dev";
 
 		BV.Print($"BrickVerse v{AppVersion}");
-		if (!string.IsNullOrWhiteSpace(BuildCommit)) BV.Print($"Build commit: {BuildCommit}");
+		if (!string.IsNullOrWhiteSpace(BuildCommit))
+			BV.Print($"Build commit: {BuildCommit}");
 		BV.Print("https://brickverse.gg/");
 		BV.Print("-- System Info --");
 		BV.Print("OS Name: ", OS.GetName() + " " + OS.GetVersionAlias());
@@ -240,7 +252,8 @@ public const string ApiEndpoint = "https://api.brickverse.gg/api";
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 			};
-			if (!process.Start()) return "";
+			if (!process.Start())
+				return "";
 			string output = process.StandardOutput.ReadToEnd().Trim();
 			process.WaitForExit(1500);
 			return process.ExitCode == 0 ? output : "";

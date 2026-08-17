@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ddwx3b7wcb46f"]
 
 [ext_resource type="Script" uid="uid://7yfe1c8ir6fn" path="res://scripts/creator/ui/docks/forge-ai-chat/ForgeTab.cs" id="1_tlbl1"]
+[ext_resource type="Texture2D" uid="uid://bjgnnsksa835r" path="res://assets/textures/datamodel/ForgeRobotChat.svg" id="2_0fpnu"]
 [ext_resource type="Texture2D" uid="uid://dhw3qjol775ji" path="res://assets/textures/creator/checked.svg" id="2_t02xu"]
 [ext_resource type="Texture2D" uid="uid://b3fg26m8pei4s" path="res://assets/textures/creator/unchecked.svg" id="3_0fpnu"]
 [ext_resource type="Texture2D" uid="uid://dbcumhwkqrv6y" path="res://assets/textures/creator/submenu.png" id="4_mp2nf"]
@@ -757,6 +758,11 @@ Window/styles/embedded_border = SubResource("WindowBorder")
 Window/styles/embedded_unfocused_border = SubResource("WindowUnfocused")
 
 [node name="Forge" type="VBoxContainer" unique_id=756313943]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 0
 script = ExtResource("1_tlbl1")
 metadata/_tab_name = "Forge"
@@ -848,12 +854,13 @@ theme_override_constants/separation = 14
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Mark" type="Label" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=114383542]
+[node name="Mark" type="TextureRect" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=114383542]
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.16, 0.62, 0.96, 1)
-theme_override_font_sizes/font_size = 24
-text = "◆"
-horizontal_alignment = 1
+size_flags_horizontal = 4
+texture = ExtResource("2_0fpnu")
+expand_mode = 3
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="ChatScroll/ChatMargin/Messages/Welcome" unique_id=1246676832]
 layout_mode = 2

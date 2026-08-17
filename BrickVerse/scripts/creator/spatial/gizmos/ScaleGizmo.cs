@@ -173,8 +173,11 @@ public partial class ScaleGizmo : Node, IGizmo
 			if (btn.ButtonIndex != MouseButton.Left) return;
 			if (btn.Pressed)
 			{
-				if (_currentAxis == ScaleGizmoAxis.None) return;
 				if (!Visible) return;
+				// Re-pick on mouse-down; cached hover state can outlive a tool or
+				// selection change when the pointer has not moved.
+				UpdateAxis(rayOrigin, rayNormal);
+				if (_currentAxis == ScaleGizmoAxis.None) return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
