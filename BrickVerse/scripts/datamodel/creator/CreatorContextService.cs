@@ -17,6 +17,7 @@ public sealed partial class CreatorContextService : Instance
 {
 	internal Camera Freelook = null!;
 	internal Gizmos Gizmos = null!;
+	internal PCGSplineEditor SplineEditor = null!;
 
 	public bool IsViewportFocused
 	{
@@ -52,6 +53,10 @@ public sealed partial class CreatorContextService : Instance
 		Gizmos = new() { Name = "Gizmos" };
 		Gizmos.Attach(Root);
 		GDNode.AddChild(Gizmos, false, Node.InternalMode.Front);
+
+		SplineEditor = new() { Name = "PCGSplineEditor" };
+		SplineEditor.Attach(Root);
+		GDNode.AddChild(SplineEditor, false, Node.InternalMode.Front);
 
 		GUIOverlay = Globals.LoadInstance<CreatorGUI>(Root);
 		GUIOverlay.NetworkParent = this;

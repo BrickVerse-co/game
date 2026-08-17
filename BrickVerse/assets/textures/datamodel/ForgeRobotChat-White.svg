@@ -1,0 +1,27 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Forge all-white variant — transparent background -->
+
+  <!-- Antenna -->
+  <rect x="22.5" y="4" width="3" height="6" rx="1.5" fill="#FFFFFF"/>
+  <circle cx="24" cy="4" r="2.5" fill="#FFFFFF"/>
+
+  <!-- Eyes are transparent cutouts so the entire SVG uses white only -->
+  <mask id="forge-eyes">
+    <rect width="48" height="48" fill="white"/>
+    <rect x="15.5" y="20" width="5.5" height="10" rx="2.75"
+          transform="rotate(-10 15.5 20)" fill="black"/>
+    <rect x="27.5" y="19" width="5.5" height="10" rx="2.75"
+          transform="rotate(-10 27.5 19)" fill="black"/>
+  </mask>
+
+  <!-- Repaint body through eye mask to create transparent eye holes -->
+  <path d="M24 8
+           C13.507 8 5 16.507 5 27
+           C5 37.493 13.507 46 24 46
+           C29.233 46 33.975 43.884 37.412 40.462
+           L43 42
+           L41.184 36.696
+           C42.986 33.874 44 30.547 44 27
+           C44 16.507 35.493 8 24 8Z"
+        fill="#FFFFFF" mask="url(#forge-eyes)"/>
+</svg>
