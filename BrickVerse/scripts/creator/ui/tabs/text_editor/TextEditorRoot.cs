@@ -95,6 +95,7 @@ public partial class TextEditorRoot : Node
 	private LuaCompletionService? _completion = null!;
 
 	private Godot.Timer _autoCompleteTimer = null!;
+	private Godot.Timer _autoSaveTimer = null!;
 	private Godot.Timer _hoverTimer = null!;
 	private PopupPanel _hoverPopup = null!;
 	private RichTextLabel _hoverText = null!;
@@ -118,6 +119,7 @@ public partial class TextEditorRoot : Node
 
 	public override async void _ExitTree()
 	{
+		AutoSaveNow();
 		ExternalFileChanged -= ReloadFromDiskIfCurrent;
 		_hoverCts?.Cancel();
 		_hoverCts?.Dispose();
@@ -135,6 +137,10 @@ public partial class TextEditorRoot : Node
 		ExternalFileChanged += ReloadFromDiskIfCurrent;
 		AddChild(_autoCompleteTimer = new());
 		_autoCompleteTimer.OneShot = true;
+		AddChild(_autoSaveTimer = new());
+		_autoSaveTimer.OneShot = true;
+		_autoSaveTimer.WaitTime = 0.75;
+		_autoSaveTimer.Timeout += AutoSaveNow;
 		_autoCompleteTimer.Timeout += OnCompletionRequest;
 		AddChild(_hoverTimer = new());
 		_hoverTimer.OneShot = true;
@@ -240,6 +246,10 @@ public partial class TextEditorRoot : Node
 		if (e.Key == CreatorSettingKeys.CodeEditor.HoverDocumentation
 			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.HoverDocumentation))
 			HideHoverDocumentation();
+
+		if (e.Key == CreatorSettingKeys.CodeEditor.AutoSave
+			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave))
+			_autoSaveTimer.Stop();
 	}
 
 	private void ApplyIndentSettings()
@@ -942,12 +952,36 @@ public partial class TextEditorRoot : Node
 		File.WriteAllText(Container.TargetFilePathAbsolute, CodeEditor.Text);
 	}
 
+	public async void SaveDocument()
+	{
+		if (Container.CodeCompletion == FileTypeEnum.Lua
+			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.FormatOnSave))
+			await FormatRangeAsync(0, CodeEditor.GetLineCount() - 1, "document");
+		Save();
+		Saved = true;
+		SavedChanged?.Invoke(true);
+		CreatorService.Interface.StatusBar?.SetStatus("Text file saved to " + Container.TargetFilePath + " at " + DateTime.Now.ToString("HH:mm:ss"));
+	}
+
+	public void OpenFind() => _finder.Open(CodeEditor.GetSelectedText());
+
+	private void AutoSaveNow()
+	{
+		if (!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave) || Saved)
+			return;
+		Save();
+		Saved = true;
+		SavedChanged?.Invoke(true);
+	}
+
 	private async void OnCodeEditTextChanged()
 	{
 		CodeEditor.SetInlineSuggestion(string.Empty);
 		string curText = CodeEditor.Text;
 		Saved = false;
 		SavedChanged?.Invoke(false);
+		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave))
+			_autoSaveTimer.Start();
 		if (_completion != null)
 		{
 			await _completion.UpdateScriptChangeAsync(Container.TargetFilePathAbsolute, curText);

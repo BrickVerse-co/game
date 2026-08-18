@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -25,6 +26,16 @@ public sealed partial class Ribbon : PanelContainer
 	private Button _rotateButton = null!;
 	private Button _scaleButton = null!;
 	private Button _brushButton = null!;
+	private HBoxContainer _quickActions = null!;
+	private HBoxContainer _codeEditorActions = null!;
+	private Button _formatButton = null!;
+	private Button _saveButton = null!;
+	private Button _findButton = null!;
+	private Button _moreActionsButton = null!;
+	private PopupMenu _actionsPopup = null!;
+	private readonly Dictionary<long, Button> _overflowActions = [];
+	private bool _showingCodeActions;
+	private bool _updatingOverflow;
 
 	public override void _Ready()
 	{
@@ -36,6 +47,15 @@ public sealed partial class Ribbon : PanelContainer
 		_scaleButton = _container.GetNode<Button>("Scale");
 		_brushButton = _container.GetNode<Button>("Brush");
 		_brushButton.GuiInput += OnBrushGuiInput;
+		_quickActions = _container.GetNode<HBoxContainer>("QuickActions");
+		_codeEditorActions = _container.GetNode<HBoxContainer>("CodeEditorActions");
+		_formatButton = _codeEditorActions.GetNode<Button>("Format");
+		_saveButton = _codeEditorActions.GetNode<Button>("Save");
+		_findButton = _codeEditorActions.GetNode<Button>("Find");
+		_moreActionsButton = _container.GetNode<Button>("More");
+		_formatButton.Pressed += FormatActiveDocument;
+		_saveButton.Pressed += SaveActiveDocument;
+		_findButton.Pressed += FindInActiveDocument;
 
 		Button colorButton = _container.GetNode<Button>("Color");
 		Control paintColorView = _container.GetNode<Control>("Paint/Color");
@@ -52,7 +72,8 @@ public sealed partial class Ribbon : PanelContainer
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
 		{
-			ColorPicker.Singleton.SwitchTo(colorButton, colorPreview.BgColor, value =>
+			Button anchor = colorButton.Visible ? colorButton : _moreActionsButton;
+			ColorPicker.Singleton.SwitchTo(anchor, colorPreview.BgColor, value =>
 			{
 				colorPreview.BgColor = value;
 				paintColorView.Modulate = value;
@@ -88,9 +109,12 @@ public sealed partial class Ribbon : PanelContainer
 
 		materialButton.Pressed += () =>
 		{
+			Vector2 popupPosition = materialButton.Visible
+				? materialPopupSpawn.GlobalPosition
+				: _moreActionsButton.GlobalPosition + new Vector2(0, _moreActionsButton.Size.Y);
 			Rect2I rect = new()
 			{
-				Position = (Vector2I)materialPopupSpawn.GlobalPosition,
+				Position = (Vector2I)popupPosition,
 				Size = materialPopup.Size
 			};
 			materialPopup.Popup(rect);
@@ -109,7 +133,13 @@ public sealed partial class Ribbon : PanelContainer
 		TabContainer rightTabs = GetNode<TabContainer>(
 			"../Splitter/Right/RightTabs");
 		if (rightTabs.GetNodeOrNull<BrickVerse.Creator.TeamCreate.TeamChatDock>("Team Chat") == null)
-			rightTabs.AddChild(new BrickVerse.Creator.TeamCreate.TeamChatDock());
+		{
+			Node teamChat = GD.Load<PackedScene>("res://scenes/creator/docks/team_chat_dock.tscn").Instantiate();
+			rightTabs.AddChild(teamChat);
+			int teamChatIndex = rightTabs.GetTabCount() - 1;
+			rightTabs.SetTabTitle(teamChatIndex, "Team Chat");
+			rightTabs.SetTabIcon(teamChatIndex, GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg"));
+		}
 
 		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
 		terrainButton.Pressed += () =>
@@ -120,8 +150,103 @@ public sealed partial class Ribbon : PanelContainer
 		animatorButton.Pressed += CreatorService.Interface.OpenAnimationEditor;
 		toolboxButton.Pressed += () => leftTabs.CurrentTab = 0;
 		inputManagerButton.Pressed += CreatorService.Interface.OpenInputManager;
+		SetupRibbonOverflow();
+		_container.Resized += QueueOverflowUpdate;
+		Tabs.Singleton.CurrentControlChanged += OnCurrentControlChanged;
+		OnCurrentControlChanged(Tabs.Singleton.CurrentControl);
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
+	}
+
+	private static TextEditor.TextEditorContainer? ActiveTextEditor() => Tabs.Singleton?.CurrentControl as TextEditor.TextEditorContainer;
+
+	private void FormatActiveDocument() => ActiveTextEditor()?.EditorRoot.FormatDocument();
+	private void SaveActiveDocument() => ActiveTextEditor()?.EditorRoot.SaveDocument();
+	private void FindInActiveDocument() => ActiveTextEditor()?.EditorRoot.OpenFind();
+
+	private void SetupRibbonOverflow()
+	{
+		_actionsPopup = new PopupMenu { Name = "RibbonActionsPopup" };
+		_moreActionsButton.AddChild(_actionsPopup);
+		_actionsPopup.IdPressed += id =>
+		{
+			if (!_overflowActions.TryGetValue(id, out Button? button)) return;
+			if (button.ToggleMode) button.ButtonPressed = true;
+			button.EmitSignal(BaseButton.SignalName.Pressed);
+		};
+		_moreActionsButton.Pressed += () =>
+		{
+			_actionsPopup.Position = (Vector2I)(_moreActionsButton.GlobalPosition + new Vector2(0, _moreActionsButton.Size.Y));
+			_actionsPopup.Popup();
+		};
+	}
+
+	private void QueueOverflowUpdate()
+	{
+		if (IsInsideTree()) CallDeferred(MethodName.UpdateRibbonOverflow);
+	}
+
+	private void UpdateRibbonOverflow()
+	{
+		if (_updatingOverflow || !IsInstanceValid(_container)) return;
+		_updatingOverflow = true;
+		_quickActions.Visible = !_showingCodeActions;
+		_codeEditorActions.Visible = _showingCodeActions;
+
+		List<Button> candidates = [];
+		foreach (Node child in _container.GetChildren())
+		{
+			if (child is Button button && button != _moreActionsButton) candidates.Add(button);
+		}
+		HBoxContainer contextual = _showingCodeActions ? _codeEditorActions : _quickActions;
+		foreach (Node child in contextual.GetChildren())
+		{
+			if (child is Button button) candidates.Add(button);
+		}
+		foreach (Button button in candidates) button.Visible = true;
+		_moreActionsButton.Visible = false;
+
+		float used = 4f;
+		foreach (Node child in _container.GetChildren())
+		{
+			if (child is VSeparator separator && separator.Visible)
+				used += Mathf.Max(separator.GetCombinedMinimumSize().X, 1f) + 4f;
+		}
+		foreach (Button button in candidates) used += Mathf.Max(button.CustomMinimumSize.X, button.GetCombinedMinimumSize().X) + 4f;
+
+		float available = Mathf.Max(0f, _container.Size.X - 8f);
+		List<Button> hidden = [];
+		if (used > available)
+		{
+			used += Mathf.Max(_moreActionsButton.CustomMinimumSize.X, 48f) + 4f;
+			for (int i = candidates.Count - 1; i >= 0 && used > available; i--)
+			{
+				Button button = candidates[i];
+				button.Visible = false;
+				hidden.Insert(0, button);
+				used -= Mathf.Max(button.CustomMinimumSize.X, button.GetCombinedMinimumSize().X) + 4f;
+			}
+			_moreActionsButton.Visible = hidden.Count > 0;
+		}
+
+		_actionsPopup.Clear();
+		_overflowActions.Clear();
+		long id = 0;
+		foreach (Button button in hidden)
+		{
+			string label = button.GetNodeOrNull<Label>("Label")?.Text ?? (!string.IsNullOrWhiteSpace(button.Text) ? button.Text : button.Name);
+			Texture2D? icon = button.GetNodeOrNull<TextureRect>("Icon")?.Texture ?? button.Icon;
+			if (icon != null) _actionsPopup.AddIconItem(icon, label, (int)id);
+			else _actionsPopup.AddItem(label, (int)id);
+			_overflowActions[id++] = button;
+		}
+		_updatingOverflow = false;
+	}
+
+	private void OnCurrentControlChanged(Control? control)
+	{
+		_showingCodeActions = control is TextEditor.TextEditorContainer;
+		QueueOverflowUpdate();
 	}
 
 	private void PopulateShapesMenu(Button button)
@@ -151,7 +276,8 @@ public sealed partial class Ribbon : PanelContainer
 		popup.IdPressed += id => { if (entries.TryGetValue((int)id, out var entry)) InsertShape(entry.Shape, entry.Icosphere, entry.Name); };
 		button.Pressed += () =>
 		{
-			popup.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+			Control anchor = button.Visible ? button : _moreActionsButton;
+			popup.Position = (Vector2I)(anchor.GlobalPosition + new Vector2(0, anchor.Size.Y));
 			popup.Popup();
 		};
 	}
@@ -177,13 +303,17 @@ public sealed partial class Ribbon : PanelContainer
 			? hit.Value.Position + hit.Value.Normal * (entity.CalculateBounds().Size.Y / 2f)
 			: world.CreatorContext.Freelook.GetPlacementPosition();
 		if (CreatorService.Interface.MoveSnapEnabled) entity.Position = entity.Position.Snap(CreatorService.Interface.MoveSnapping);
+		CreatorBuildEffects.Emit(entity as Dynamic);
 		world.CreatorContext.Selections.SelectOnly(entity);
+		CreatorSoundEffects.PlayPlace();
 		world.Container?.GrabFocus();
 	}
 
 	public override void _ExitTree()
 	{
 		if (IsInstanceValid(_brushButton)) _brushButton.GuiInput -= OnBrushGuiInput;
+		if (IsInstanceValid(_container)) _container.Resized -= QueueOverflowUpdate;
+		if (Tabs.Singleton != null) Tabs.Singleton.CurrentControlChanged -= OnCurrentControlChanged;
 		base._ExitTree();
 	}
 

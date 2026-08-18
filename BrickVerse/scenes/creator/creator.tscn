@@ -36,6 +36,7 @@
 [ext_resource type="Script" uid="uid://dsmyuj4u8d0kx" path="res://scripts/creator/ui/StatusBar.cs" id="26_xdd36"]
 [ext_resource type="PackedScene" uid="uid://c0dcwpeyvcmot" path="res://scenes/creator/docks/filebrowser/file_browser.tscn" id="27_4n5gq"]
 [ext_resource type="Texture2D" uid="uid://cma54623spmlg" path="res://assets/textures/ui-icons/search.svg" id="29_4fw2t"]
+[ext_resource type="Texture2D" uid="uid://x86cmssitfqr" path="res://assets/textures/ui-icons/save.svg" id="29_code_save"]
 [ext_resource type="PackedScene" uid="uid://ca8ul4i0eiuch" path="res://scenes/creator/splash/startup_splash.tscn" id="30_8cbqn"]
 [ext_resource type="Script" uid="uid://c5celm4bxr4vy" path="res://scripts/creator/ui/docks/bottombar/console/DebugConsole.cs" id="30_bc04q"]
 [ext_resource type="Texture2D" uid="uid://cy32wmdvvyir7" path="res://assets/textures/ui-icons/code.svg" id="30_obxwt"]
@@ -1001,6 +1002,128 @@ grow_vertical = 0
 text = "Forge AI"
 horizontal_alignment = 1
 vertical_alignment = 2
+
+[node name="CodeEditorActions" type="HBoxContainer" parent="GUI/Ribbon/Buttons" unique_id=1086854934]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Format" type="Button" parent="GUI/Ribbon/Buttons/CodeEditorActions" unique_id=2109903734]
+custom_minimum_size = Vector2(68, 54)
+layout_mode = 2
+tooltip_text = "Format Document (Ctrl+Shift+F)"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format"]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("30_obxwt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+text = "Format"
+horizontal_alignment = 1
+
+[node name="Save" type="Button" parent="GUI/Ribbon/Buttons/CodeEditorActions" unique_id=735050526]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Save Document (Ctrl+S)"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save"]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("29_code_save")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+text = "Save"
+horizontal_alignment = 1
+
+[node name="Find" type="Button" parent="GUI/Ribbon/Buttons/CodeEditorActions" unique_id=2093872101]
+custom_minimum_size = Vector2(58, 54)
+layout_mode = 2
+tooltip_text = "Find in Document (Ctrl+F)"
+ 
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find"]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+texture = ExtResource("29_4fw2t")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+text = "Find"
+horizontal_alignment = 1
+
+[node name="More" type="Button" parent="GUI/Ribbon/Buttons" unique_id=1469430634]
+visible = false
+custom_minimum_size = Vector2(48, 54)
+layout_mode = 2
+tooltip_text = "More ribbon actions"
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/More"]
+modulate = Color(0, 0.592157, 1, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 7.0
+offset_bottom = -24.0
+mouse_filter = 2
+texture = ExtResource("26_4n5gq")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/More"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_bottom = -2.0
+text = "More"
+horizontal_alignment = 1
 
 [node name="WorkspaceBackground" type="ColorRect" parent="GUI" unique_id=1864683286]
 layout_mode = 1

@@ -51,6 +51,9 @@ public partial class ForgeTab : VBoxContainer
 	private LineEdit _apiKeyEdit = null!;
 	private LineEdit _modelEdit = null!;
 	private CheckBox _storeKeyCheck = null!;
+	private CheckBox _streamResponsesCheck = null!;
+	private HSlider _temperatureSlider = null!;
+	private SpinBox _maxContextSpin = null!;
 	private Button _testButton = null!;
 	private Button _saveButton = null!;
 
@@ -75,6 +78,9 @@ public partial class ForgeTab : VBoxContainer
 		_apiKeyEdit = GetNode<LineEdit>("ProviderSettings/Margin/Layout/ApiKey");
 		_modelEdit = GetNode<LineEdit>("ProviderSettings/Margin/Layout/Model");
 		_storeKeyCheck = GetNode<CheckBox>("ProviderSettings/Margin/Layout/StoreKey");
+		_streamResponsesCheck = GetNode<CheckBox>("ProviderSettings/Margin/Layout/StreamResponses");
+		_temperatureSlider = GetNode<HSlider>("ProviderSettings/Margin/Layout/Advanced/Temperature");
+		_maxContextSpin = GetNode<SpinBox>("ProviderSettings/Margin/Layout/Advanced/MaxContext");
 		_testButton = GetNode<Button>("ProviderSettings/Margin/Layout/Buttons/Test");
 		_saveButton = GetNode<Button>("ProviderSettings/Margin/Layout/Buttons/Save");
 
@@ -139,6 +145,8 @@ public partial class ForgeTab : VBoxContainer
 		GetNode<Button>("ChatScroll/ChatMargin/Messages/Suggestions/Script").Pressed += async () => await SendSuggestionAsync("Create a day and night cycle");
 		GetNode<Button>("ChatScroll/ChatMargin/Messages/Suggestions/Explain").Pressed += async () => await SendSuggestionAsync("Explain the selected script");
 		GetNode<Button>("ChatScroll/ChatMargin/Messages/Suggestions/Fix").Pressed += async () => await SendSuggestionAsync("Fix errors from the Console");
+		GetNode<Button>("ChatScroll/ChatMargin/Messages/Suggestions/Refactor").Pressed += async () => await SendSuggestionAsync("Refactor the selected script for clarity, performance, and maintainability without changing its behavior");
+		GetNode<Button>("ChatScroll/ChatMargin/Messages/Suggestions/Document").Pressed += async () => await SendSuggestionAsync("Document the selected script with concise comments and usage notes");
 	}
 
 	private void OnContextPopupIdPressed(long id)
@@ -308,7 +316,7 @@ public partial class ForgeTab : VBoxContainer
 			}
 		}
 
-		return builder.ToString().Trim();
+		return TrimForContext(builder.ToString(), Mathf.Clamp(_settings.MaxContextCharacters, 2000, 64000));
 	}
 
 	private static string TrimForContext(string text, int maxChars)
@@ -401,6 +409,9 @@ public partial class ForgeTab : VBoxContainer
 			ApiKey = _apiKeyEdit.Text.Trim(),
 			Model = _modelEdit.Text.Trim(),
 			StoreKey = _storeKeyCheck.ButtonPressed,
+			StreamResponses = _streamResponsesCheck.ButtonPressed,
+			Temperature = (float)_temperatureSlider.Value,
+			MaxContextCharacters = (int)_maxContextSpin.Value,
 		};
 	}
 
@@ -411,6 +422,9 @@ public partial class ForgeTab : VBoxContainer
 		_apiKeyEdit.Text = settings.ApiKey;
 		_modelEdit.Text = settings.Model;
 		_storeKeyCheck.ButtonPressed = settings.StoreKey;
+		_streamResponsesCheck.ButtonPressed = settings.StreamResponses;
+		_temperatureSlider.Value = settings.Temperature;
+		_maxContextSpin.Value = settings.MaxContextCharacters;
 	}
 
 	private void UpdateComposerProviderSelection()

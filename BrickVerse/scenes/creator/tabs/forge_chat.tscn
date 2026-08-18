@@ -918,6 +918,32 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
 text = "Repair  ·  Console errors"
 alignment = 0
 
+[node name="Refactor" type="Button" parent="ChatScroll/ChatMargin/Messages/Suggestions"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.803922, 0.858824, 0.92549, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_g6jqh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Refactor  ·  Improve selected script"
+alignment = 0
+
+[node name="Document" type="Button" parent="ChatScroll/ChatMargin/Messages/Suggestions"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.803922, 0.858824, 0.92549, 1)
+theme_override_colors/font_hover_color = Color(0.941176, 0.968627, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_g6jqh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_t02xu")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7dw3e")
+text = "Document  ·  Add comments and usage notes"
+alignment = 0
+
 [node name="ActivityCard" type="PanelContainer" parent="ChatScroll/ChatMargin/Messages" unique_id=2098707496]
 visible = false
 layout_mode = 2
@@ -1082,10 +1108,10 @@ transparent_bg = true
 oversampling_override = 1.0
 title = "Forge Settings"
 initial_position = 1
-size = Vector2i(540, 570)
+size = Vector2i(560, 690)
 visible = false
 transparent = true
-min_size = Vector2i(440, 470)
+min_size = Vector2i(460, 600)
 theme = SubResource("Theme_xj1pa")
 theme_override_icons/close = ExtResource("9_2y7sd")
 
@@ -1179,6 +1205,50 @@ placeholder_text = "Model ID"
 layout_mode = 2
 button_pressed = true
 text = "Remember key on this device"
+
+[node name="StreamResponses" type="CheckBox" parent="ProviderSettings/Margin/Layout"]
+layout_mode = 2
+button_pressed = true
+text = "Stream responses when supported"
+
+[node name="AdvancedLabel" type="Label" parent="ProviderSettings/Margin/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67451, 0.741176, 0.823529, 1)
+theme_override_font_sizes/font_size = 10
+text = "Generation controls"
+
+[node name="Advanced" type="GridContainer" parent="ProviderSettings/Margin/Layout"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 8
+
+[node name="TemperatureLabel" type="Label" parent="ProviderSettings/Margin/Layout/Advanced"]
+layout_mode = 2
+text = "Temperature"
+tooltip_text = "Lower values are more deterministic; higher values are more creative."
+
+[node name="Temperature" type="HSlider" parent="ProviderSettings/Margin/Layout/Advanced"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 2.0
+step = 0.05
+value = 0.2
+tooltip_text = "Creativity and randomness"
+
+[node name="ContextLabel" type="Label" parent="ProviderSettings/Margin/Layout/Advanced"]
+layout_mode = 2
+text = "Context characters"
+tooltip_text = "Maximum amount of Creator context sent with each request."
+
+[node name="MaxContext" type="SpinBox" parent="ProviderSettings/Margin/Layout/Advanced"]
+layout_mode = 2
+min_value = 2000.0
+max_value = 64000.0
+step = 1000.0
+value = 12000.0
+suffix = " chars"
 
 [node name="Privacy" type="Label" parent="ProviderSettings/Margin/Layout" unique_id=160876829]
 layout_mode = 2
