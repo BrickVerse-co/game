@@ -5,6 +5,7 @@
 using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
 using Godot;
 using System;
 using System.Collections.Generic;
@@ -95,6 +96,7 @@ public partial class ForgeTab : VBoxContainer
 
 		_settings = ForgeProviderSettingsStore.Load();
 		_conversations.AddRange(ForgeConversationStore.Load().OrderByDescending(static chat => chat.UpdatedAt));
+		if (_settings.Provider == ForgeProviderKind.ForgeFree) _ = MergeRemoteConversationsAsync();
 		Root = World.Current;
 
 		_wireSuggestionButtons();
@@ -954,7 +956,29 @@ public partial class ForgeTab : VBoxContainer
 		_activeConversation.Model = _settings.Model;
 		_activeConversation.UpdatedAt = DateTime.UtcNow;
 		ForgeConversationStore.Save(_conversations);
+		if (_settings.Provider == ForgeProviderKind.ForgeFree) _ = ForgeConversationStore.SaveRemoteAsync(_activeConversation);
 		RefreshHistoryMenu();
+	}
+
+	private async Task MergeRemoteConversationsAsync()
+	{
+		try
+		{
+			List<ForgeConversation> remote = await ForgeConversationStore.LoadRemoteAsync();
+			foreach (ForgeConversation chat in remote)
+			{
+				int localIndex = _conversations.FindIndex(local => local.Id == chat.Id);
+				if (localIndex >= 0)
+				{
+					if (chat.UpdatedAt > _conversations[localIndex].UpdatedAt) _conversations[localIndex] = chat;
+				}
+				else _conversations.Add(chat);
+			}
+			_conversations.Sort(static (left, right) => right.UpdatedAt.CompareTo(left.UpdatedAt));
+			ForgeConversationStore.Save(_conversations);
+			RefreshHistoryMenu();
+		}
+		catch (Exception ex) { BV.PrintErr("Forge history sync failed: ", ex.Message); }
 	}
 
 	private void RefreshHistoryMenu()
