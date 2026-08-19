@@ -1877,11 +1877,25 @@ vertical_alignment = 1
 text_overrun_behavior = 3
 max_lines_visible = 1
 
-[node name="LogoWatermark" type="Sprite2D" parent="GUI/Footer" unique_id=478732043]
+[node name="LogoWatermark" type="TextureRect" parent="GUI" unique_id=478732043]
 modulate = Color(1, 1, 1, 0.078431375)
-position = Vector2(1094, 11.999997)
-scale = Vector2(0.06784158, 0.07012199)
+z_index = 2
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -118.0
+offset_top = -21.0
+offset_right = -8.0
+offset_bottom = -3.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
 texture = ExtResource("37_raaus")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="ColorPicker" type="PanelContainer" parent="GUI" unique_id=1902970917]
 visible = false
