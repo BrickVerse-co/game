@@ -10,6 +10,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -379,7 +380,6 @@ public partial class InsertMenuPopup : PopupPanel
 
 		World.Current.CreatorContext.History.CreateInstances([instance], parentTo);
 		World.Current.CreatorContext.Selections.SelectOnly(instance);
-
 		if (instance is Dynamic dyn)
 		{
 			Datamodel.Environment.RayResult? hit =
@@ -401,7 +401,9 @@ public partial class InsertMenuPopup : PopupPanel
 			{
 				dyn.Position = dyn.Position.Snap(CreatorService.Interface.MoveSnapping);
 			}
+			CreatorBuildEffects.Emit(dyn);
 		}
+		CreatorSoundEffects.PlayPlace();
 
 		QueueFree();
 	}

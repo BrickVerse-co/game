@@ -1,0 +1,109 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/teamcreate/TeamChatDock.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/team-create.svg" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="header"]
+bg_color = Color(0.027, 0.039, 0.055, 1)
+border_width_bottom = 1
+border_color = Color(0.11, 0.15, 0.20, 1)
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="composer"]
+bg_color = Color(0.027, 0.039, 0.055, 1)
+border_width_top = 1
+border_color = Color(0.11, 0.15, 0.20, 1)
+
+[node name="Team Chat" type="VBoxContainer"]
+custom_minimum_size = Vector2(250, 0)
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+script = ExtResource("1")
+metadata/_tab_name = "Team Chat"
+
+[node name="Header" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_override_styles/panel = SubResource("header")
+
+[node name="Row" type="HBoxContainer" parent="Header"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="Icon" type="TextureRect" parent="Header/Row"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+modulate = Color(0.1, 0.65, 1, 1)
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Copy" type="VBoxContainer" parent="Header/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Header/Row/Copy"]
+layout_mode = 2
+text = "Team Chat"
+theme_override_font_sizes/font_size = 14
+
+[node name="Status" type="Label" parent="Header/Row/Copy"]
+layout_mode = 2
+text = "●  Live collaboration"
+theme_override_colors/font_color = Color(0.27, 0.82, 0.48, 1)
+theme_override_font_sizes/font_size = 10
+
+[node name="MessagesScroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="MessagesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Messages" type="VBoxContainer" parent="MessagesScroll/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Empty" type="Label" parent="MessagesScroll/Margin/Messages"]
+layout_mode = 2
+text = "No messages yet.\nSay hello to your collaborators."
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.46, 0.53, 0.62, 1)
+autowrap_mode = 2
+
+[node name="Composer" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_override_styles/panel = SubResource("composer")
+
+[node name="Margin" type="MarginContainer" parent="Composer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 9
+
+[node name="Row" type="HBoxContainer" parent="Composer/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Input" type="LineEdit" parent="Composer/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Message collaborators…"
+max_length = 1000
+
+[node name="Send" type="Button" parent="Composer/Margin/Row"]
+custom_minimum_size = Vector2(58, 36)
+layout_mode = 2
+disabled = true
+text = "Send"

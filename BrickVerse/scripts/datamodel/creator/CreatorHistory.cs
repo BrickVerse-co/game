@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
+using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -36,6 +37,7 @@ public sealed partial class CreatorHistory : Instance
 
 		_redoStack.Push(action);
 		CreatorService.Interface.StatusBar?.SetStatus("Undo " + action.Title);
+		CreatorSoundEffects.PlayUndo();
 	}
 
 	public void Redo()
@@ -54,6 +56,7 @@ public sealed partial class CreatorHistory : Instance
 
 		_undoStack.Push(action);
 		CreatorService.Interface.StatusBar?.SetStatus("Redo " + action.Title);
+		CreatorSoundEffects.PlayRedo();
 	}
 
 	[ScriptMethod]
@@ -239,6 +242,12 @@ public sealed partial class CreatorHistory : Instance
 			}
 		}));
 		CommitAction();
+		CreatorSoundEffects.PlayDuplicate();
+		if (child != null)
+		{
+			foreach (Instance duplicate in child)
+				CreatorBuildEffects.Emit(duplicate as Dynamic);
+		}
 	}
 
 	public void DeleteInstances(Instance[] instances)
@@ -290,6 +299,7 @@ public sealed partial class CreatorHistory : Instance
 		}));
 
 		CommitAction();
+		CreatorSoundEffects.PlayDelete();
 		Timer t = new();
 		GDNode.AddChild(t, @internal: Node.InternalMode.Back);
 

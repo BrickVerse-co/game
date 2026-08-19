@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Spatial;
 using BrickVerse.Creator.UI;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Interfaces;
@@ -70,6 +71,7 @@ public sealed partial class Gizmos : Node
 	private Transform3D _pivotStart;
 	private CreatorHistory _history = null!;
 	private Vector3 _lastMoveMotion = Vector3.Zero;
+	private Basis _lastRotateFeedbackBasis;
 
 	public void Attach(World game)
 	{
@@ -191,6 +193,7 @@ public sealed partial class Gizmos : Node
 	{
 		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
+		CreatorSoundEffects.PlayScale();
 	}
 
 	private void OnScaleDragStarted()
@@ -248,6 +251,7 @@ public sealed partial class Gizmos : Node
 	{
 		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
+		CreatorSoundEffects.PlayScale();
 		_initialRelativeTransforms.Clear();
 	}
 
@@ -255,6 +259,7 @@ public sealed partial class Gizmos : Node
 	{
 		IsTransformingSelected = true;
 		_pivotStart = GetSelectionPivot();
+		_lastRotateFeedbackBasis = _pivotStart.Basis;
 		_initialRelativeTransforms.Clear();
 
 		// Store each object's transform relative to pivot
@@ -271,6 +276,11 @@ public sealed partial class Gizmos : Node
 	private void OnRotateDragged(Basis basis)
 	{
 		basis = SnapBasis(basis, _pivotStart.Basis, CreatorService.Interface.RotateSnapping);
+		if (!_lastRotateFeedbackBasis.IsEqualApprox(basis))
+		{
+			_lastRotateFeedbackBasis = basis;
+			CreatorSoundEffects.PlayRotate();
+		}
 
 		Transform3D rotatedPivot = new(basis, _pivotStart.Origin);
 
@@ -322,6 +332,7 @@ public sealed partial class Gizmos : Node
 		}
 		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
+		CreatorSoundEffects.PlayMove();
 	}
 
 	private void OnMoveDragStarted()
@@ -644,6 +655,7 @@ public sealed partial class Gizmos : Node
 					_isDraggingDyn = false;
 					IsTransformingSelected = false;
 					CommitHistoryTransform(DragSelected);
+					CreatorSoundEffects.PlayMove();
 				}
 				_selectDragStartTransforms.Clear();
 				DragSelected.Clear();
@@ -691,10 +703,11 @@ public sealed partial class Gizmos : Node
 						Root.CreatorContext.Selections.SelectOnly(targetDyn);
 					}
 
+					// Directly dragging the selected geometry is only a selection/move
+					// interaction. Rotate and Scale must require their gizmo handles so a
+					// click-drag on the part cannot accidentally translate it.
 					bool canDirectDrag = toolMode == ToolModeEnum.Select
-						|| toolMode == ToolModeEnum.Move
-						|| toolMode == ToolModeEnum.Rotate
-						|| toolMode == ToolModeEnum.Scale;
+						|| toolMode == ToolModeEnum.Move;
 
 					if (canDirectDrag)
 					{

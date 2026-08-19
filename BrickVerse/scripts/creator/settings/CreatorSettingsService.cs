@@ -57,6 +57,7 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		["CodeEditor.InlineSuggestions"] = CreatorSettingKeys.CodeEditor.InlineSuggestions,
 		["CodeEditor.HoverDocumentation"] = CreatorSettingKeys.CodeEditor.HoverDocumentation,
 		["CodeEditor.FormatOnSave"] = CreatorSettingKeys.CodeEditor.FormatOnSave,
+		["CodeEditor.AutoSave"] = CreatorSettingKeys.CodeEditor.AutoSave,
 		["Graphics.VSync"] = SharedSettingKeys.Display.VSync,
 		["Graphics.RenderingMethod"] = SharedSettingKeys.Graphics.RenderingMethod,
 		["Popups.CloseModelWarning"] = CreatorSettingKeys.Popups.CloseModelWarning,

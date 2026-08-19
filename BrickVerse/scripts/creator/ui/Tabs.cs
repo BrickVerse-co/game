@@ -18,6 +18,7 @@ namespace BrickVerse.Creator.UI;
 
 public sealed partial class Tabs : Control
 {
+	public event Action<Control?>? CurrentControlChanged;
 	private Control? _currentControl;
 
 	[Export]
@@ -30,7 +31,11 @@ public sealed partial class Tabs : Control
 			_currentControl?.Visible = false;
 
 			_currentControl = value;
-			if (value == null) return;
+			if (value == null)
+			{
+				CurrentControlChanged?.Invoke(null);
+				return;
+			}
 
 			if (!_controlToIdx.TryGetValue(value, out var idx))
 			{
@@ -54,7 +59,17 @@ public sealed partial class Tabs : Control
 			{
 				World.Current = tec.TargetSession.OpenedWorlds[0];
 			}
+			if (value is TextEditorContainer)
+			{
+				// Terrain editing consumes viewport input while its bottom dock is open.
+				// Return to Output before the code editor takes focus so the terrain
+				// brush cannot continue handling clicks or keyboard shortcuts behind it.
+				TabContainer? bottomTabs = GetNodeOrNull<TabContainer>("../BottomTabs/Tabs");
+				if (bottomTabs != null && bottomTabs.CurrentTab != 0)
+					bottomTabs.CurrentTab = 0;
+			}
 			RefreshCreatorPresence();
+			CurrentControlChanged?.Invoke(value);
 		}
 	}
 
@@ -258,7 +273,7 @@ public sealed partial class Tabs : Control
 		control.QueueFree();
 		if (_tabBar.TabCount == 0)
 		{
-			_currentControl = null;
+			CurrentControl = null;
 			World.Current = null;
 		}
 		UpdateTabBar();

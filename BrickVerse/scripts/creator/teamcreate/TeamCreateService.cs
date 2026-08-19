@@ -71,6 +71,13 @@ public sealed partial class TeamCreateService : Node
 	public bool ShowCameraAvatars => _showCameraAvatars;
 	public event Action<string, string>? TeamChatMessage;
 
+	public string ResolveChatUsername(string userId)
+	{
+		if (userId == _localUserId && !string.IsNullOrWhiteSpace(CreatorAPI.Username)) return CreatorAPI.Username;
+		TeamCreateMember? member = _members.FirstOrDefault(item => item.UserId == userId);
+		return !string.IsNullOrWhiteSpace(member?.Username) ? member.Username : "Unknown member";
+	}
+
 	public void SendTeamChat(string message)
 	{
 		message = (message ?? "").Trim(); if (!Connected || message.Length == 0) return; if (message.Length > 300) message = message[..300];

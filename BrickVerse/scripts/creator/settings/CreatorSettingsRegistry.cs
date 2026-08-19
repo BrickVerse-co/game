@@ -33,6 +33,37 @@ public static class CreatorSettingsRegistry
 		SharedSettingsRegistry.AddSharedTo(defs);
 
 		// Creator
+		defs.Add(CreatorSettingKeys.Creator.SoundEffectsEnabled,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.SoundEffectsEnabled,
+				SectionKey = "creator",
+				Label = "Creator Sound Effects",
+				Description = "Play feedback sounds for placing parts and other Creator actions.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Creator.BuildParticlesEnabled,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.BuildParticlesEnabled,
+				SectionKey = "creator",
+				Label = "Build Particles",
+				Description = "Show a small brick-like particle burst when placing or duplicating objects.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Creator.SoundEffectsVolume,
+			new SettingDef<float> { Key = CreatorSettingKeys.Creator.SoundEffectsVolume, SectionKey = "creator", Label = "Sound Effects Volume", Description = "Master volume for Creator feedback sounds.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 75f, MinValue = 0f, MaxValue = 100f, Step = 1f });
+		defs.Add(CreatorSettingKeys.Creator.BuildSoundVolume,
+			new SettingDef<float> { Key = CreatorSettingKeys.Creator.BuildSoundVolume, SectionKey = "creator", Label = "Building Sounds Volume", Description = "Volume for placing, transforming, deleting, undoing, and redoing.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 85f, MinValue = 0f, MaxValue = 100f, Step = 1f });
+		defs.Add(CreatorSettingKeys.Creator.UiSoundVolume,
+			new SettingDef<float> { Key = CreatorSettingKeys.Creator.UiSoundVolume, SectionKey = "creator", Label = "UI and Hover Volume", Description = "Volume for buttons, mouse hover feedback, and modal transitions.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 55f, MinValue = 0f, MaxValue = 100f, Step = 1f });
+
 		defs.Add(CreatorSettingKeys.Creator.OpenWebAfterPublish,
 			new SettingDef<bool>
 			{
@@ -484,6 +515,18 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = false
+			});
+
+		defs.Add(CreatorSettingKeys.CodeEditor.AutoSave,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.CodeEditor.AutoSave,
+				SectionKey = "code_editor",
+				Label = "Auto Save",
+				Description = "Automatically save built-in code editor changes after you stop typing.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
 			});
 
 		defs.Add(CreatorSettingKeys.CodeEditor.IndentationMode,

@@ -34,6 +34,8 @@ public static class CreatorAPI
 		"worlds",
 		"manage_assets", // manage owned assets (create/update models)
 		"publish_worlds", // manage owned worlds (create/update worlds)
+		"read_forge_ai",
+		"manage_forge_ai"
 	};
 
 	private const string AuthorizePath = "/oauth/authorize";
