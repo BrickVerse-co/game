@@ -74,17 +74,36 @@ public partial class ViewAvatarPage : MobileViewBase
 		try
 		{
 			using JsonDocument appearances = await BVAPI.GetJson("/v3/character/appearances");
-			if (appearances.RootElement.TryGetProperty("appearances", out JsonElement list))
-				foreach (JsonElement appearance in list.EnumerateArray()) if (appearance.TryGetProperty("isEquipped", out JsonElement equipped) && equipped.ValueKind == JsonValueKind.True)
-					{
-						_appearanceId = appearance.GetProperty("id").ToString();
-						if (appearance.TryGetProperty("accessories", out JsonElement accessories)) foreach (JsonElement accessory in accessories.EnumerateArray()) _equipped.Add(accessory.ValueKind == JsonValueKind.Object && accessory.TryGetProperty("id", out JsonElement id) ? id.ToString() : accessory.ToString());
-					}
+			if (appearances.RootElement.TryGetProperty("appearances", out JsonElement list) && list.ValueKind == JsonValueKind.Array)
+			{
+				JsonElement? first = null;
+				bool foundEquipped = false;
+				foreach (JsonElement appearance in list.EnumerateArray())
+				{
+					first ??= appearance.Clone();
+					if (!appearance.TryGetProperty("isEquipped", out JsonElement equipped) || equipped.ValueKind != JsonValueKind.True) continue;
+					ReadAppearance(appearance);
+					foundEquipped = true;
+					break;
+				}
+				if (!foundEquipped && first.HasValue)
+				{
+					string firstId = first.Value.GetProperty("id").ToString();
+					using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Post, $"/v3/character/appearance/{Uri.EscapeDataString(firstId)}/equip");
+					ReadAppearance(first.Value);
+				}
+				else if (!foundEquipped && !first.HasValue)
+				{
+					using JsonDocument created = await BVAPI.SendJson(HttpMethod.Patch, "/v3/character/appearance", "{\"isEquipped\":true}");
+					if (created.RootElement.TryGetProperty("appearance", out JsonElement appearance)) ReadAppearance(appearance);
+				}
+			}
 			using JsonDocument inventory = await BVAPI.GetJson("/v3/marketplace/inventory?limit=50");
 			foreach (JsonElement owned in inventory.RootElement.GetProperty("items").EnumerateArray())
 			{
 				JsonElement item = owned.GetProperty("item");
-				_inventory.Add((item.GetProperty("id").ToString(), item.GetProperty("name").GetString() ?? "Item", item.GetProperty("type").GetString() ?? "Accessory"));
+				string itemId = owned.TryGetProperty("itemId", out JsonElement ownedItemId) ? ownedItemId.ToString() : item.GetProperty("id").ToString();
+				_inventory.Add((itemId, item.GetProperty("name").GetString() ?? "Item", item.GetProperty("type").GetString() ?? "Accessory"));
 			}
 			_previewModel?.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id, false);
 			_savedEquipped.Clear(); _savedEquipped.UnionWith(_equipped);
@@ -108,6 +127,9 @@ public partial class ViewAvatarPage : MobileViewBase
 			card.Pressed += () =>
 			{
 				if (!_equipped.Add(id)) _equipped.Remove(id);
+				else if (IsSingleSlot(type))
+					foreach (var other in _inventory)
+						if (other.Id != id && IsSameSlot(type, other.Type)) _equipped.Remove(other.Id);
 				_dirty = !_equipped.SetEquals(_savedEquipped);
 				RenderInventory();
 				_status.Text = $"{_equipped.Count} items selected • {(_dirty ? "Unsaved changes" : "Saved")}";
@@ -116,6 +138,20 @@ public partial class ViewAvatarPage : MobileViewBase
 			};
 		}
 	}
+
+	private void ReadAppearance(JsonElement appearance)
+	{
+		_appearanceId = appearance.GetProperty("id").ToString();
+		if (!appearance.TryGetProperty("accessories", out JsonElement accessories) || accessories.ValueKind != JsonValueKind.Array) return;
+		foreach (JsonElement accessory in accessories.EnumerateArray())
+			_equipped.Add(accessory.ValueKind == JsonValueKind.Object && accessory.TryGetProperty("id", out JsonElement id) ? id.ToString() : accessory.ToString());
+	}
+
+	private static bool IsSingleSlot(string type) => type.Equals("Shirt", StringComparison.OrdinalIgnoreCase)
+		|| type.Equals("Pants", StringComparison.OrdinalIgnoreCase)
+		|| type.Equals("Face", StringComparison.OrdinalIgnoreCase);
+
+	private static bool IsSameSlot(string left, string right) => left.Equals(right, StringComparison.OrdinalIgnoreCase);
 
 	private void Discard()
 	{

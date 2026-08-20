@@ -22,12 +22,12 @@ content_margin_right = 16.0
 content_margin_bottom = 16.0
 
 [sub_resource type="StyleBoxFlat" id="field"]
-bg_color = Color(0.055, 0.11, 0.18, 1)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.13, 0.24, 0.36, 1)
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -36,14 +36,14 @@ content_margin_left = 14.0
 content_margin_right = 14.0
 
 [sub_resource type="StyleBoxFlat" id="chip"]
-bg_color = Color(0.09, 0.18, 0.28, 1)
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxFlat" id="category_idle"]
-bg_color = Color(0.065, 0.13, 0.21, 1)
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
 border_width_left = 3
 border_width_right = 3
 border_color = Color(0, 0, 0, 0)
@@ -57,10 +57,12 @@ corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxFlat" id="category_selected"]
-bg_color = Color(0.13, 0.38, 0.7, 1)
-border_width_left = 3
-border_width_right = 3
-border_color = Color(0, 0, 0, 0)
+bg_color = Color(0.0431373, 0.14902, 0.219608, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.592157, 1, 1)
 content_margin_left = 14.0
 content_margin_top = 10.0
 content_margin_right = 14.0
@@ -200,13 +202,13 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "Discover worlds"
+theme_override_font_sizes/font_size = 32
+text = "Find your next game"
 
 [node name="Subtitle" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
-modulate = Color(0.71, 0.76, 0.83, 1)
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 layout_mode = 2
-text = "Find your next favorite experience"
+text = "Explore experiences picked for you"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=658400945]
 visible = false
@@ -229,7 +231,7 @@ size_flags_vertical = 3
 [node name="Search" type="LineEdit" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-placeholder_text = "Search worlds"
+placeholder_text = "Search games"
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field")
 
@@ -275,7 +277,7 @@ popup/item_6/text = "Horror"
 popup/item_6/id = 6
 
 [node name="Status" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
-modulate = Color(0.71, 0.76, 0.83, 1)
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 layout_mode = 2
 text = "Loading worlds…"
 horizontal_alignment = 1

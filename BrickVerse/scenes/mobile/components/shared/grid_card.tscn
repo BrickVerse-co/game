@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
-bg_color = Color(0.055, 0.105, 0.17, 0.96)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
@@ -16,7 +16,7 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="image"]
-bg_color = Color(0.09, 0.16, 0.24, 1)
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -90,7 +90,7 @@ stretch_mode = 5
 [node name="Meta" type="Label" parent="Content/Copy/Price"]
 layout_mode = 2
 mouse_filter = 2
-modulate = Color(0.62, 0.86, 1, 1)
+modulate = Color(0, 0.592157, 1, 1)
 text = "Meta"
 
 [node name="DetailRow" type="HBoxContainer" parent="Content/Copy"]
@@ -102,7 +102,7 @@ theme_override_constants/separation = 4
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-modulate = Color(0.72, 0.77, 0.84, 1)
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 theme_override_font_sizes/font_size = 13
 text = "Detail"
 autowrap_mode = 3

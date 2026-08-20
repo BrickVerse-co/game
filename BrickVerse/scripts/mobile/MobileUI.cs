@@ -306,10 +306,15 @@ public partial class MobileUI : Control
 				MobileViewEnum.Home => "res://scenes/mobile/views/home.tscn",
 				MobileViewEnum.Worlds => "res://scenes/mobile/views/worlds.tscn",
 				MobileViewEnum.PlaceInfo => "res://scenes/mobile/views/place_info.tscn",
+				MobileViewEnum.Search => "res://scenes/mobile/views/search.tscn",
+				MobileViewEnum.AddFriend => "res://scenes/mobile/views/add_friend.tscn",
+				MobileViewEnum.GuildDetail => "res://scenes/mobile/views/guild_detail.tscn",
+				MobileViewEnum.ParentalControls => "res://scenes/mobile/views/parental_controls.tscn",
 				MobileViewEnum.RecordDetail => "res://scenes/mobile/views/record_detail.tscn",
 				MobileViewEnum.MarketplaceItem => "res://scenes/mobile/views/marketplace_item.tscn",
 				MobileViewEnum.Avatar => "res://scenes/mobile/views/avatar.tscn",
-				MobileViewEnum.Guilds or MobileViewEnum.Profile or MobileViewEnum.Settings
+				MobileViewEnum.Guilds => "res://scenes/mobile/views/guilds.tscn",
+				MobileViewEnum.Profile or MobileViewEnum.Settings
 					or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Notifications
 					or MobileViewEnum.Friends or MobileViewEnum.FriendRequests or MobileViewEnum.Marketplace
 					or MobileViewEnum.Transactions or MobileViewEnum.Upgrade
@@ -380,7 +385,10 @@ public enum MobileViewEnum
 	Store,
 	Dev,
 	PlaceInfo,
+	Search,
+	AddFriend,
 	Guilds,
+	GuildDetail,
 	Profile,
 	Settings,
 	Forum,
@@ -393,4 +401,5 @@ public enum MobileViewEnum
 	Upgrade,
 	RecordDetail,
 	MarketplaceItem,
+	ParentalControls,
 }

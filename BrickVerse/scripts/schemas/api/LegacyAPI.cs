@@ -562,6 +562,18 @@ public struct APIV3WorldInfo
 
 	[JsonPropertyName("maxPlayers")]
 	public int MaxPlayers { get; set; }
+
+	[JsonPropertyName("totalLikes")]
+	public int TotalLikes { get; set; }
+
+	[JsonPropertyName("totalDislikes")]
+	public int TotalDislikes { get; set; }
+
+	[JsonPropertyName("isLikedBy")]
+	public bool IsLikedBy { get; set; }
+
+	[JsonPropertyName("isDislikedBy")]
+	public bool IsDislikedBy { get; set; }
 }
 
 public struct APIV3UniverseInfo
@@ -579,6 +591,12 @@ public struct APIV3UniverseInfo
 
 	[JsonPropertyName("genre")]
 	public string Genre { get; set; }
+
+	[JsonPropertyName("minAgeBand")]
+	public string MinAgeBand { get; set; }
+
+	[JsonPropertyName("contentWarnings")]
+	public string[] ContentWarnings { get; set; }
 
 	[JsonPropertyName("creatorId")]
 	public string CreatorId { get; set; }
@@ -763,6 +781,18 @@ public struct APIPlaceInfo
 
 	[JsonPropertyName("rating")]
 	public APIPlaceRating Rating { get; set; }
+
+	[JsonPropertyName("isLikedBy")]
+	public bool IsLikedBy { get; set; }
+
+	[JsonPropertyName("isDislikedBy")]
+	public bool IsDislikedBy { get; set; }
+
+	[JsonPropertyName("ageRating")]
+	public string AgeRating { get; set; }
+
+	[JsonPropertyName("contentWarnings")]
+	public string[] ContentWarnings { get; set; }
 
 	[JsonPropertyName("accessType")]
 	public string AccessType { get; set; }

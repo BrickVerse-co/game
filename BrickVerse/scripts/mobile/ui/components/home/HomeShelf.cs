@@ -17,6 +17,7 @@ public partial class HomeShelf : VBoxContainer
 	private PackedScene _friendCardScene = null!;
 	private PackedScene _skeletonScene = null!;
 	private PackedScene _friendSkeletonScene = null!;
+	private PackedScene _addFriendScene = null!;
 
 	public override void _Ready()
 	{
@@ -24,6 +25,7 @@ public partial class HomeShelf : VBoxContainer
 		_friendCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/user_headshot_card.tscn");
 		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/skeleton_card.tscn");
 		_friendSkeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/friend_skeleton.tscn");
+		_addFriendScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/add_friend_card.tscn");
 		BVMobileAuthAPI.UserAuthenticated += user => _ = LoadAsync();
 		if (BVMobileAuthAPI.IsAuthenticated) _ = LoadAsync();
 		else Visible = false;
@@ -54,6 +56,13 @@ public partial class HomeShelf : VBoxContainer
 			{
 				if (!IsInstanceValid(items) || !IsInstanceValid(count)) return;
 				ClearChildren(items);
+				if (!RecentWorlds)
+				{
+					Button addFriend = _addFriendScene.Instantiate<Button>();
+					addFriend.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.AddFriend);
+					MobileMotion.Bind(addFriend);
+					items.AddChild(addFriend);
+				}
 				count.Text = RecentWorlds ? "Continue Playing" : $"Friends Online ({records.GetArrayLength()})";
 			});
 			foreach (JsonElement record in records.EnumerateArray())
@@ -108,7 +117,7 @@ public partial class HomeShelf : VBoxContainer
 					});
 				}
 			}
-			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = records.GetArrayLength() > 0; });
+			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = RecentWorlds ? records.GetArrayLength() > 0 : true; });
 		}
 		catch (Exception exception)
 		{

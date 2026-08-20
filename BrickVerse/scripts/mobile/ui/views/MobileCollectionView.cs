@@ -35,6 +35,8 @@ public partial class MobileCollectionView : MobileViewBase
 	private PackedScene _forumCardScene = null!;
 	private PackedScene _notificationCardScene = null!;
 	private PackedScene _adBannerScene = null!;
+	private PackedScene _friendCardScene = null!;
+	private PackedScene _friendSkeletonScene = null!;
 	private VBoxContainer _promoHost = null!;
 	private TabBar _category = null!;
 	private Button _previous = null!;
@@ -71,6 +73,8 @@ public partial class MobileCollectionView : MobileViewBase
 		_forumCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/forum/forum_card.tscn");
 		_notificationCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/notification_card.tscn");
 		_adBannerScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/ad_banner.tscn");
+		_friendCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/user_headshot_card.tscn");
+		_friendSkeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/friend_skeleton.tscn");
 		_promoHost = GetNode<VBoxContainer>("Layout/PromoHost");
 		_category = GetNode<TabBar>("Layout/Category");
 		_category.TabChanged += selected => { ResetPagination(); _ = LoadAsync(); };
@@ -98,10 +102,11 @@ public partial class MobileCollectionView : MobileViewBase
 		if (_view == MobileViewEnum.Profile) _profileUserId = requestedProfileId;
 		bool forumReset = _view == MobileViewEnum.Forum && args is MobileViewEnum && _forumCategoryId != null;
 		if (_view == MobileViewEnum.Forum && args is MobileViewEnum) { _forumCategoryId = null; _forumCategoryName = ""; }
-		bool grid = _view is MobileViewEnum.Guilds or MobileViewEnum.Marketplace or MobileViewEnum.Store;
+		bool grid = _view is MobileViewEnum.Friends or MobileViewEnum.Guilds or MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		_listItems.Visible = !grid;
 		_gridItems.Visible = grid;
 		_items = grid ? _gridItems : _listItems;
+		UpdateGridColumns();
 		ResetPagination();
 		_title.Text = _view == MobileViewEnum.Forum && _forumCategoryId != null ? _forumCategoryName : TitleFor(_view);
 		_search.Visible = _view is MobileViewEnum.Friends or MobileViewEnum.Guilds or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Marketplace or MobileViewEnum.Store;
@@ -133,7 +138,7 @@ public partial class MobileCollectionView : MobileViewBase
 		int version = ++_loadVersion;
 		_state.Text = "Loading…";
 		ClearItems();
-		for (int index = 0; index < 6; index++) _items.AddChild(_skeletonScene.Instantiate());
+		for (int index = 0; index < 6; index++) _items.AddChild((_view == MobileViewEnum.Friends ? _friendSkeletonScene : _skeletonScene).Instantiate());
 		try
 		{
 			if (_view is MobileViewEnum.Settings or MobileViewEnum.Upgrade or MobileViewEnum.Dev)
@@ -190,7 +195,7 @@ public partial class MobileCollectionView : MobileViewBase
 		if (_view == MobileViewEnum.Notifications)
 			AddAsyncAction("Mark all as read", async () => { using (await BVAPI.SendJson(System.Net.Http.HttpMethod.Post, "/v3/social/notifications/read-all")) { } await LoadAsync(); });
 		else if (_view == MobileViewEnum.FriendRequests) AddInfo("Review incoming requests below.");
-		else if (_view == MobileViewEnum.Guilds) AddInfo("Discover communities and open a guild to see its details.");
+		else if (_view == MobileViewEnum.Guilds) { }
 		else if (_view == MobileViewEnum.Forum && _forumCategoryId != null)
 			AddAction("‹ All forum categories", () => { _forumCategoryId = null; _forumCategoryName = ""; _title.Text = "Forum"; _ = LoadAsync(); });
 		else if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) { }
@@ -207,6 +212,7 @@ public partial class MobileCollectionView : MobileViewBase
 			AddDestination("Events", MobileViewEnum.Events);
 			AddDestination("Notifications", MobileViewEnum.Notifications);
 			AddDestination("Friend requests", MobileViewEnum.FriendRequests);
+			AddDestination("Parental controls", MobileViewEnum.ParentalControls);
 			AddDestination("Transactions", MobileViewEnum.Transactions);
 			AddDestination("Upgrade", MobileViewEnum.Upgrade);
 			AddDestination("Settings", MobileViewEnum.Settings);
@@ -246,10 +252,18 @@ public partial class MobileCollectionView : MobileViewBase
 		{
 			JsonElement user = record.TryGetProperty("user", out JsonElement nestedUser) ? nestedUser : record;
 			string userId = FirstString(user, "id") ?? "";
+			if (string.IsNullOrWhiteSpace(userId)) return;
 			string username = FirstString(user, "username", "name") ?? "Unknown user";
-			string status = FirstString(record, "state", "status") ?? "Friend";
-			MobileListCard friend = CreateListCard(username, status.Equals("ACCEPTED", StringComparison.OrdinalIgnoreCase) ? "Friend" : status, "Tap to view profile");
-			friend.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, userId);
+			string presence = FirstString(record, "presence", "presenceState", "state") ?? FirstString(user, "presence", "presenceState", "state") ?? "OFFLINE";
+			if (presence.Equals("ACCEPTED", StringComparison.OrdinalIgnoreCase)) presence = "OFFLINE";
+			UserHeadshotCard friend = _friendCardScene.Instantiate<UserHeadshotCard>();
+			friend.UserID = userId;
+			friend.InitialUsername = username;
+			friend.InitialPresence = presence;
+			friend.IsVerified = user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
+			friend.IsAdmin = user.TryGetProperty("isStaff", out JsonElement staff) && staff.ValueKind == JsonValueKind.True;
+			_gridItems.AddChild(friend);
+			MobileMotion.Enter(friend, _gridItems.GetChildCount() - 1);
 			return;
 		}
 		if (_view == MobileViewEnum.Notifications)
@@ -385,7 +399,7 @@ public partial class MobileCollectionView : MobileViewBase
 		else if (_view == MobileViewEnum.Guilds) imageUrl = "res://assets/textures/ui-icons/users-group.svg";
 		MobileListCard card = CreateListCard(name, meta, Trim(description, 90), imageUrl);
 		card.SetVerified(record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
-		card.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(name, meta, description, imageUrl, _view, id));
+		card.Pressed += () => MobileUI.Singleton.SwitchTo(_view == MobileViewEnum.Guilds ? MobileViewEnum.GuildDetail : MobileViewEnum.RecordDetail, new MobileRecordDetailArgs(name, meta, description, imageUrl, _view, id));
 	}
 
 	private void AddProfileRecord(JsonElement record)
@@ -610,7 +624,8 @@ public partial class MobileCollectionView : MobileViewBase
 	private void UpdateGridColumns()
 	{
 		float available = GetViewportRect().Size.X - 32f;
-		_gridItems.Columns = Mathf.Clamp(Mathf.FloorToInt((available + 10f) / 190f), 2, 4);
+		float targetWidth = _view == MobileViewEnum.Friends ? 118f : 190f;
+		_gridItems.Columns = Mathf.Clamp(Mathf.FloorToInt((available + 10f) / targetWidth), 2, _view == MobileViewEnum.Friends ? 6 : 4);
 	}
 	private void ClearItems() { ClearContainer(_listItems); ClearContainer(_gridItems); }
 	private static void ClearContainer(Node container)

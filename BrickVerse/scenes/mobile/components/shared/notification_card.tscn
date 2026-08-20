@@ -4,12 +4,12 @@
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/messages.svg" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
-bg_color = Color(0.065, 0.125, 0.2, 1)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.12, 0.23, 0.34, 1)
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
@@ -20,7 +20,7 @@ content_margin_right = 12.0
 content_margin_bottom = 12.0
 
 [sub_resource type="StyleBoxFlat" id="icon"]
-bg_color = Color(0.12, 0.3, 0.5, 1)
+bg_color = Color(0.0431373, 0.14902, 0.219608, 1)
 corner_radius_top_left = 22
 corner_radius_top_right = 22
 corner_radius_bottom_right = 22

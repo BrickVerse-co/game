@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
-bg_color = Color(0.055, 0.11, 0.18, 1)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
@@ -111,6 +111,6 @@ text = "About"
 autowrap_mode = 3
 
 [node name="Joined" type="Label" parent="."]
-modulate = Color(0.71, 0.76, 0.83, 1)
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 layout_mode = 2
 text = ""

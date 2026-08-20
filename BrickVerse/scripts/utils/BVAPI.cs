@@ -293,6 +293,16 @@ public static class BVAPI
 			MaxPlayers = info.World.MaxPlayers,
 			Visits = info.World.TotalVisits,
 			Playing = info.World.TotalPlayers,
+			Rating = new APIPlaceRating
+			{
+				Likes = info.World.TotalLikes,
+				Dislikes = info.World.TotalDislikes,
+				Percent = info.World.TotalLikes + info.World.TotalDislikes == 0 ? "0" : Math.Round(info.World.TotalLikes * 100d / (info.World.TotalLikes + info.World.TotalDislikes)).ToString(),
+			},
+			IsLikedBy = info.World.IsLikedBy,
+			IsDislikedBy = info.World.IsDislikedBy,
+			AgeRating = info.Universe.MinAgeBand,
+			ContentWarnings = info.Universe.ContentWarnings ?? [],
 		};
 	}
 
