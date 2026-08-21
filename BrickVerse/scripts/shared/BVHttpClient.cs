@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -16,9 +17,21 @@ namespace BrickVerse.Shared;
 
 public partial class BVHttpClient
 {
+	// Android's .NET HTTP transport is unreliable in some Godot builds.
+	// Register a native JSON POST bridge once during mobile startup and every
+	// BVHttpClient caller can keep using the normal PostAsync/SendAsync API.
+	public static Func<
+		HttpRequestMessage,
+		CancellationToken,
+		Task<HttpResponseMessage>
+	>? NativeSender { get; set; }
+
+	// Let .NET select the appropriate HTTP transport for the current platform.
+	// This is especially important on Android, where forcing SocketsHttpHandler
+	// bypasses the platform-specific handler/runtime configuration.
 	private static readonly System.Net.Http.HttpClient _httpClient = new()
 	{
-		Timeout = TimeSpan.FromMinutes(10),
+		Timeout = TimeSpan.FromSeconds(30),
 	};
 	public Dictionary<string, string> DefaultRequestHeaders { get; } = [];
 	public Func<CancellationToken, Task>? BeforeRequestAsync { get; set; }
@@ -50,10 +63,7 @@ public partial class BVHttpClient
 		content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
 		{
 			Name = QuoteFormValue(name, nameof(name)),
-			FileName = QuoteFormValue(
-				System.IO.Path.GetFileName(fileName),
-				nameof(fileName)
-			),
+			FileName = QuoteFormValue(System.IO.Path.GetFileName(fileName), nameof(fileName)),
 		};
 		return content;
 	}
@@ -83,6 +93,12 @@ public partial class BVHttpClient
 			await BeforeRequestAsync(cancellationToken);
 
 		ApplyDefaultHeaders(msg);
+
+		if (Godot.OS.HasFeature("android") && NativeSender != null)
+		{
+			return await NativeSender(msg, cancellationToken);
+		}
+
 		return await _httpClient.SendAsync(
 			msg,
 			HttpCompletionOption.ResponseHeadersRead,
@@ -125,12 +141,16 @@ public partial class BVHttpClient
 		return await response.Content.ReadAsByteArrayAsync();
 	}
 
-	public async Task<HttpResponseMessage> PostAsync(string url, HttpContent content)
+	public async Task<HttpResponseMessage> PostAsync(
+		string url,
+		HttpContent content,
+		CancellationToken cancellationToken = default
+	)
 	{
 		using HttpRequestMessage msg = new(HttpMethod.Post, url) { Content = content };
 		try
 		{
-			return await SendAsync(msg);
+			return await SendAsync(msg, cancellationToken);
 		}
 		finally
 		{

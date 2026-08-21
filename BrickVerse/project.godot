@@ -36,6 +36,7 @@ config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+boot_splash/bg_color="#213e61"
 boot_splash/show_image=false
 boot_splash/image="uid://bs34jgixa1n2r"
 config/icon="uid://cq8damlft1wll"
@@ -71,10 +72,12 @@ build/commit=""
 
 [debug]
 
+settings/stdout/verbose_stdout=true
 file_logging/log_path="user://logs/brickverseapp.log"
 
 [display]
 
+window/size/mode=2
 window/subwindows/embed_subwindows=false
 window/handheld/orientation=1
 window/vsync/vsync_mode=0
@@ -87,7 +90,7 @@ project/solution_directory="../"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg", "res://addons/godot-iap/plugin.cfg", "res://addons/brickverse-webview/plugin.cfg")
+enabled=PackedStringArray("res://addons/PolytoriaExportPlugin/plugin.cfg", "res://addons/godot-iap/plugin.cfg")
 
 [gui]
 

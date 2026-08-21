@@ -34,7 +34,8 @@ func refresh_products() -> void:
 	cubes_request.skus = CUBE_SKUS
 	cubes_request.type = Types.ProductQueryType.IN_APP
 	var subscriptions_request = Types.ProductRequest.new()
-	subscriptions_request.skus = [ASTRO_PRODUCT_ID]
+	var subscription_skus: Array[String] = [ASTRO_PRODUCT_ID]
+	subscriptions_request.skus = subscription_skus
 	subscriptions_request.type = Types.ProductQueryType.SUBS
 	var result: Array = await GodotIapPlugin.fetch_products(cubes_request)
 	result.append_array(await GodotIapPlugin.fetch_products(subscriptions_request))
