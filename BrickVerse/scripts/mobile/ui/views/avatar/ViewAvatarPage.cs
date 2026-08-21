@@ -123,7 +123,7 @@ public partial class ViewAvatarPage : MobileViewBase
 			if (!string.IsNullOrWhiteSpace(filter) && !type.Contains(filter, StringComparison.OrdinalIgnoreCase)) continue;
 			if (!string.IsNullOrWhiteSpace(query) && !name.Contains(query, StringComparison.OrdinalIgnoreCase) && !type.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
 			MobileListCard card = _cardScene.Instantiate<MobileListCard>();
-			_grid.AddChild(card); card.Configure(name, _equipped.Contains(id) ? "Equipped" : type, "Tap to toggle", "marketplace-item://" + id);
+			_grid.AddChild(card); card.Configure(name, _equipped.Contains(id) ? "Equipped" : type, "", "marketplace-item://" + id); CompactCard(card);
 			card.Pressed += () =>
 			{
 				if (!_equipped.Add(id)) _equipped.Remove(id);
@@ -137,6 +137,16 @@ public partial class ViewAvatarPage : MobileViewBase
 				_previewModel?.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id, false);
 			};
 		}
+	}
+
+	private static void CompactCard(MobileListCard card)
+	{
+		card.CustomMinimumSize = new Vector2(112, 168);
+		Control imagePanel = card.GetNode<Control>("Content/ImagePanel"); imagePanel.CustomMinimumSize = new Vector2(0, 104);
+		card.GetNode<Control>("Content/ImagePanel/Image").CustomMinimumSize = new Vector2(0, 104);
+		card.GetNode<Label>("Content/Copy/Title").AddThemeFontSizeOverride("font_size", 12);
+		card.GetNode<Label>("Content/Copy/Price/Meta").AddThemeFontSizeOverride("font_size", 11);
+		card.GetNode<Control>("Content/Copy/DetailRow").Visible = false;
 	}
 
 	private void ReadAppearance(JsonElement appearance)
@@ -185,6 +195,7 @@ public partial class ViewAvatarPage : MobileViewBase
 		GetNode<SubViewport>("Layout/Preview/ViewportContainer/Viewport").AddChild(_previewModel.GDNode);
 		_previewModel.InitEntry();
 		_previewModel.Position = Vector3.Zero;
+		GetNode<Camera3D>("Layout/Preview/ViewportContainer/Viewport/Camera").Current = true;
 	}
 
 	private async void OnPreviewLoaded()

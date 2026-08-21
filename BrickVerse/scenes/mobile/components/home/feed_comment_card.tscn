@@ -11,10 +11,10 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-content_margin_left = 14.0
-content_margin_top = 11.0
-content_margin_right = 14.0
-content_margin_bottom = 11.0
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
 
 [node name="CommentCard" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 72)

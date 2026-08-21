@@ -1,116 +1,97 @@
-[gd_scene load_steps=4 format=3]
-
+[gd_scene load_steps=5 format=3]
 [ext_resource type="Script" path="res://scripts/mobile/ui/components/profile/MobileProfileSummary.cs" id="1"]
-[ext_resource type="Texture2D" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="2"]
-[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="3"]
-
 [sub_resource type="StyleBoxFlat" id="card"]
 bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-content_margin_left = 16.0
-content_margin_top = 16.0
-content_margin_right = 16.0
-content_margin_bottom = 16.0
-
+[sub_resource type="StyleBoxFlat" id="mode_idle"]
+bg_color = Color(0.101961, 0.117647, 0.141176, 0.96)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+[sub_resource type="StyleBoxFlat" id="mode_selected"]
+bg_color = Color(0, 0.592157, 1, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 [node name="ProfileSummary" type="VBoxContainer"]
 size_flags_horizontal = 3
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 script = ExtResource("1")
-
-[node name="Identity" type="PanelContainer" parent="."]
+[node name="Showcase" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
+clip_contents = true
 theme_override_styles/panel = SubResource("card")
-
-[node name="Content" type="HBoxContainer" parent="Identity"]
+[node name="Bodyshot" type="TextureRect" parent="Showcase"]
 layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="Avatar" type="TextureRect" parent="Identity/Content"]
-custom_minimum_size = Vector2(104, 104)
-layout_mode = 2
-size_flags_horizontal = 0
-texture = ExtResource("2")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="Copy" type="VBoxContainer" parent="Identity/Content"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="NameRow" type="HBoxContainer" parent="Identity/Content/Copy"]
-layout_mode = 2
-[node name="Username" type="Label" parent="Identity/Content/Copy/NameRow"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "Username"
-[node name="Verified" type="TextureRect" parent="Identity/Content/Copy/NameRow"]
+[node name="Preview3D" type="SubViewportContainer" parent="Showcase"]
 visible = false
-custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
-texture = ExtResource("3")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Status" type="Label" parent="Identity/Content/Copy"]
-modulate = Color(0.62, 0.86, 1, 1)
+stretch = true
+[node name="Viewport" type="SubViewport" parent="Showcase/Preview3D"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(512, 512)
+render_target_update_mode = 4
+[node name="Camera" type="Camera3D" parent="Showcase/Preview3D/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 8)
+projection = 1
+size = 6.5
+[node name="KeyLight" type="DirectionalLight3D" parent="Showcase/Preview3D/Viewport"]
+rotation_degrees = Vector3(-35, -30, 0)
+light_energy = 1.25
+[node name="FillLight" type="OmniLight3D" parent="Showcase/Preview3D/Viewport"]
+position = Vector3(-3, 4, 4)
+omni_range = 12.0
+light_energy = 0.8
+[node name="Mode" type="HBoxContainer" parent="Showcase"]
+z_index = 10
+layout_mode = 1
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 104.0
+offset_bottom = 48.0
+theme_override_constants/separation = 2
+[node name="TwoD" type="Button" parent="Showcase/Mode"]
+custom_minimum_size = Vector2(44, 36)
 layout_mode = 2
-text = "BrickVerse member"
-
-[node name="Stats" type="HBoxContainer" parent="."]
+text = "2D"
+theme_override_styles/normal = SubResource("mode_selected")
+theme_override_styles/hover = SubResource("mode_selected")
+[node name="ThreeD" type="Button" parent="Showcase/Mode"]
+custom_minimum_size = Vector2(44, 36)
 layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="Visits" type="VBoxContainer" parent="Stats"]
-layout_mode = 2
-size_flags_horizontal = 3
-[node name="Value" type="Label" parent="Stats/Visits"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "0"
-horizontal_alignment = 1
-[node name="Label" type="Label" parent="Stats/Visits"]
-layout_mode = 2
-text = "Visits"
-horizontal_alignment = 1
-
-[node name="Views" type="VBoxContainer" parent="Stats"]
-layout_mode = 2
-size_flags_horizontal = 3
-[node name="Value" type="Label" parent="Stats/Views"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "0"
-horizontal_alignment = 1
-[node name="Label" type="Label" parent="Stats/Views"]
-layout_mode = 2
-text = "Views"
-horizontal_alignment = 1
-
-[node name="Posts" type="VBoxContainer" parent="Stats"]
-layout_mode = 2
-size_flags_horizontal = 3
-[node name="Value" type="Label" parent="Stats/Posts"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "0"
-horizontal_alignment = 1
-[node name="Label" type="Label" parent="Stats/Posts"]
-layout_mode = 2
-text = "Forum posts"
-horizontal_alignment = 1
-
+text = "3D"
+theme_override_styles/normal = SubResource("mode_idle")
+theme_override_styles/hover = SubResource("mode_idle")
 [node name="About" type="PanelContainer" parent="."]
 layout_mode = 2
 theme_override_styles/panel = SubResource("card")
-[node name="Description" type="Label" parent="About"]
+[node name="Padding" type="MarginContainer" parent="About"]
 layout_mode = 2
-text = "About"
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+[node name="Description" type="Label" parent="About/Padding"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.686275, 0.733333, 1)
+text = "No description provided."
 autowrap_mode = 3
-
-[node name="Joined" type="Label" parent="."]
-modulate = Color(0.65098, 0.686275, 0.733333, 1)
+[node name="Stats" type="GridContainer" parent="."]
 layout_mode = 2
-text = ""
+columns = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8

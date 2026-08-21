@@ -109,6 +109,7 @@ public partial class MobileCollectionView : MobileViewBase
 		UpdateGridColumns();
 		ResetPagination();
 		_title.Text = _view == MobileViewEnum.Forum && _forumCategoryId != null ? _forumCategoryName : TitleFor(_view);
+		_state.Visible = _view != MobileViewEnum.Profile;
 		_search.Visible = _view is MobileViewEnum.Friends or MobileViewEnum.Guilds or MobileViewEnum.Forum or MobileViewEnum.Events or MobileViewEnum.Marketplace or MobileViewEnum.Store;
 		_search.PlaceholderText = $"Search {TitleFor(_view).ToLowerInvariant()}";
 		foreach (Node child in _promoHost.GetChildren()) child.QueueFree();
@@ -179,7 +180,7 @@ public partial class MobileCollectionView : MobileViewBase
 			_nextCursor = document.RootElement.TryGetProperty("nextCursor", out JsonElement cursor) && cursor.ValueKind == JsonValueKind.String ? cursor.GetString() : null;
 			_hasNextPage = !string.IsNullOrWhiteSpace(_nextCursor) || ReadHasNextPage(document.RootElement);
 			foreach (JsonElement record in records) AddRecord(record);
-			_state.Text = records.Count == 0 ? "Nothing to show yet." : $"{records.Count} shown";
+			_state.Text = _view == MobileViewEnum.Profile ? "" : records.Count == 0 ? "Nothing to show yet." : $"{records.Count} shown";
 			UpdatePagination();
 		}
 		catch (Exception exception)
@@ -199,7 +200,7 @@ public partial class MobileCollectionView : MobileViewBase
 		else if (_view == MobileViewEnum.Forum && _forumCategoryId != null)
 			AddAction("‹ All forum categories", () => { _forumCategoryId = null; _forumCategoryName = ""; _title.Text = "Forum"; _ = LoadAsync(); });
 		else if (_view is MobileViewEnum.Marketplace or MobileViewEnum.Store) { }
-		else if (_view == MobileViewEnum.Profile && _profileUserId == BVMobileAuthAPI.CurrentUserInfo.Id) AddDestination("Edit account settings", MobileViewEnum.Settings);
+		else if (_view == MobileViewEnum.Profile) { }
 	}
 
 	private void BuildAccountActions()
@@ -458,16 +459,14 @@ public partial class MobileCollectionView : MobileViewBase
 	private void BuildProfileSummary(JsonElement record)
 	{
 		JsonElement stats = record.TryGetProperty("statistics", out JsonElement statistics) ? statistics : default;
+		_title.Text = FirstString(record, "username", "name") ?? "Profile";
 		MobileProfileSummary summary = _profileSummaryScene.Instantiate<MobileProfileSummary>();
 		_items.AddChild(summary);
 		summary.Configure(
 		FirstString(record, "id") ?? BVMobileAuthAPI.CurrentUserInfo.Id,
-		FirstString(record, "username", "name") ?? "Profile",
-		(FirstString(record, "status") ?? "BrickVerse member").Replace('_', ' '),
 		FirstString(record, "description") ?? "No description provided.",
-		ReadNumber(stats, "visits"), ReadNumber(stats, "profileViews"), ReadNumber(stats, "forumPosts"),
-		FirstString(record, "createdAt") ?? "",
-		record.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True);
+		ReadNumber(stats, "visits"), ReadNumber(stats, "profileViews"), ReadNumber(stats, "forumPosts"), ReadNumber(stats, "friends"), ReadNumber(stats, "followers"), ReadNumber(stats, "following"),
+		FirstString(record, "createdAt") ?? "", FirstString(record, "lastSeenAt") ?? "", FirstString(record, "bodyshotUrl") ?? "");
 		BuildProfileActions(record);
 	}
 
@@ -475,6 +474,7 @@ public partial class MobileCollectionView : MobileViewBase
 	{
 		string userId = FirstString(record, "id") ?? "";
 		bool ownProfile = userId == BVMobileAuthAPI.CurrentUserInfo.Id;
+		AddAsyncAction("View equipped avatar items", () => ShowEquippedItems(userId));
 		if (!ownProfile)
 		{
 			AddAction("Add friend / Manage friendship", () => Open($"/users/{Uri.EscapeDataString(userId)}"));
@@ -485,22 +485,62 @@ public partial class MobileCollectionView : MobileViewBase
 				if (long.TryParse(worldId, out long placeId)) AddAction("Join game", () => MobileUI.Singleton.LaunchGame(placeId));
 			}
 		}
+		if (record.TryGetProperty("socialLinks", out JsonElement socialLinks) && socialLinks.ValueKind == JsonValueKind.Array && socialLinks.GetArrayLength() > 0)
+		{
+			AddInfo("Social links");
+			ScrollContainer socialScroll = new() { HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 48) };
+			HBoxContainer chips = new(); chips.AddThemeConstantOverride("separation", 8); socialScroll.AddChild(chips); _items.AddChild(socialScroll);
+			foreach (JsonElement social in socialLinks.EnumerateArray())
+			{
+				string provider = FirstString(social, "provider") ?? "Social";
+				string label = FirstString(social, "displayName", "username") ?? provider;
+				string url = FirstString(social, "profileUrl") ?? "";
+				if (!string.IsNullOrWhiteSpace(url))
+				{
+					Button chip = new() { Text = label, Icon = PlatformIcon(provider), CustomMinimumSize = new Vector2(0, 42) }; chip.AddThemeConstantOverride("icon_max_width", 19);
+					StyleBoxFlat style = new() { BgColor = Color.FromHtml("1A1E24"), BorderColor = Color.FromHtml("272C34"), BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1, ContentMarginLeft = 14, ContentMarginRight = 14, CornerRadiusTopLeft = 21, CornerRadiusTopRight = 21, CornerRadiusBottomLeft = 21, CornerRadiusBottomRight = 21 };
+					chip.AddThemeStyleboxOverride("normal", style); chip.AddThemeStyleboxOverride("hover", style); chip.Pressed += () => ConfirmExternalLink(url, provider); chips.AddChild(chip); MobileMotion.Bind(chip);
+				}
+			}
+		}
 		if (record.TryGetProperty("achievements", out JsonElement achievements) && achievements.ValueKind == JsonValueKind.Array)
 		{
 			AddInfo("Achievements");
+			GridContainer grid = new() { Columns = 4, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+			grid.AddThemeConstantOverride("h_separation", 10); grid.AddThemeConstantOverride("v_separation", 10); _items.AddChild(grid);
 			foreach (JsonElement achievement in achievements.EnumerateArray().Take(8))
 			{
-				string icon = FirstString(achievement, "iconUrl", "thumbnailUrl", "icon") ?? "";
-				if (icon.StartsWith('/')) icon = Globals.MainEndpoint.PathJoin(icon);
-				else if (!string.IsNullOrWhiteSpace(icon) && !icon.StartsWith("http", StringComparison.OrdinalIgnoreCase)) icon = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + icon);
-				if (string.IsNullOrWhiteSpace(icon))
-				{
-					string iconId = FirstString(achievement, "iconId", "assetId") ?? "";
-					if (!string.IsNullOrWhiteSpace(iconId)) icon = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + iconId);
-				}
-				CreateListCard(FirstString(achievement, "name") ?? "Achievement", "Earned", Trim(FirstString(achievement, "description") ?? "", 100), icon);
+				Button badge = new() { TooltipText = FirstString(achievement, "description") ?? "Earned achievement", CustomMinimumSize = new Vector2(112, 132), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+				StyleBoxFlat badgeStyle = new() { BgColor = Color.FromHtml("14171C"), BorderColor = Color.FromHtml("33404D"), BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1, CornerRadiusTopLeft = 12, CornerRadiusTopRight = 12, CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12 }; badge.AddThemeStyleboxOverride("normal", badgeStyle); badge.AddThemeStyleboxOverride("hover", badgeStyle);
+				VBoxContainer content = new() { MouseFilter = Control.MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center }; content.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect); content.OffsetLeft = 10; content.OffsetTop = 10; content.OffsetRight = -10; content.OffsetBottom = -10; content.AddThemeConstantOverride("separation", 7); TextureRect icon = new() { CustomMinimumSize = new Vector2(76, 76), MouseFilter = Control.MouseFilterEnum.Ignore, Texture = GD.Load<Texture2D>("res://assets/textures/client/placeholder/achievement.png"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered }; content.AddChild(icon); Label name = new() { Text = FirstString(achievement, "name") ?? "Achievement", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Center, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, MouseFilter = Control.MouseFilterEnum.Ignore }; name.AddThemeFontSizeOverride("font_size", 12); content.AddChild(name); badge.AddChild(content);
+				grid.AddChild(badge); MobileMotion.Bind(badge); string iconUrl = FirstString(achievement, "icon", "iconUrl") ?? ""; if (iconUrl.StartsWith('/')) iconUrl = Globals.MainEndpoint.PathJoin(iconUrl); LoadProfileImage(icon, iconUrl);
 			}
 		}
+	}
+
+	private static Texture2D? PlatformIcon(string provider) { string key = provider.ToLowerInvariant(); if (key is not ("discord" or "github" or "steam" or "x")) return null; return GD.Load<Texture2D>($"res://assets/textures/client/ui/brands/{key}.svg"); }
+	private static void LoadProfileImage(TextureRect target, string url) { if (string.IsNullOrWhiteSpace(url)) return; WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = url }, resource => { if (IsInstanceValid(target)) target.Texture = (Texture2D)resource; }); }
+	private void ConfirmExternalLink(string url, string provider)
+	{
+		ConfirmationDialog warning = new() { Title = "Leave BrickVerse?", DialogText = $"You’re opening {provider} outside BrickVerse. External sites have their own privacy and safety policies.", OkButtonText = "Continue", CancelButtonText = "Stay here", Exclusive = true };
+		warning.Confirmed += () => { OS.ShellOpen(url); warning.QueueFree(); }; warning.Canceled += warning.QueueFree; AddChild(warning); warning.PopupCentered();
+	}
+
+	private async System.Threading.Tasks.Task ShowEquippedItems(string userId)
+	{
+		AcceptDialog dialog = new() { Title = "Equipped avatar items", Size = new Vector2I(640, 700), Exclusive = true };
+		ScrollContainer scroll = new() { OffsetLeft = 18, OffsetTop = 18, OffsetRight = 622, OffsetBottom = 620 }; GridContainer list = new() { Columns = 3, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; list.AddThemeConstantOverride("h_separation", 10); list.AddThemeConstantOverride("v_separation", 10); scroll.AddChild(list); dialog.AddChild(scroll); AddChild(dialog);
+		try
+		{
+			BrickVerse.Schemas.API.APIAvatarResponse avatar = await BVAPI.GetUserAvatarFromID(userId);
+			if (avatar.Assets.Length == 0) list.AddChild(new Label { Text = "No avatar items equipped.", HorizontalAlignment = HorizontalAlignment.Center });
+			foreach (BrickVerse.Schemas.API.APIAvatarAsset item in avatar.Assets)
+			{
+				MobileListCard card = _gridCardScene.Instantiate<MobileListCard>(); card.CustomMinimumSize = new Vector2(170, 220); card.Configure(string.IsNullOrWhiteSpace(item.Name) ? "Avatar item" : item.Name, item.Type, "Equipped", string.IsNullOrWhiteSpace(item.Thumbnail) ? "marketplace-item://" + item.ID : item.Thumbnail); card.Pressed += () => { dialog.QueueFree(); MobileUI.Singleton.SwitchTo(MobileViewEnum.MarketplaceItem, item.ID); }; list.AddChild(card);
+			}
+			dialog.PopupCenteredRatio(0.88f);
+		}
+		catch (Exception exception) { dialog.QueueFree(); OS.Alert(exception.Message, "Could not load equipped items"); }
 	}
 
 	private void BuildTransactionCard(JsonElement record)

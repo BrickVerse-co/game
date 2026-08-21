@@ -18,6 +18,7 @@ public partial class HomeShelf : VBoxContainer
 	private PackedScene _skeletonScene = null!;
 	private PackedScene _friendSkeletonScene = null!;
 	private PackedScene _addFriendScene = null!;
+	private PackedScene _browseWorldsScene = null!;
 
 	public override void _Ready()
 	{
@@ -26,6 +27,7 @@ public partial class HomeShelf : VBoxContainer
 		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/skeleton_card.tscn");
 		_friendSkeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/friend_skeleton.tscn");
 		_addFriendScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/add_friend_card.tscn");
+		_browseWorldsScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/browse_worlds_card.tscn");
 		BVMobileAuthAPI.UserAuthenticated += user => _ = LoadAsync();
 		if (BVMobileAuthAPI.IsAuthenticated) _ = LoadAsync();
 		else Visible = false;
@@ -56,7 +58,13 @@ public partial class HomeShelf : VBoxContainer
 			{
 				if (!IsInstanceValid(items) || !IsInstanceValid(count)) return;
 				ClearChildren(items);
-				if (!RecentWorlds)
+				if (RecentWorlds)
+				{
+					Button browse = _browseWorldsScene.Instantiate<Button>();
+					browse.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Worlds);
+					MobileMotion.Bind(browse); items.AddChild(browse);
+				}
+				else
 				{
 					Button addFriend = _addFriendScene.Instantiate<Button>();
 					addFriend.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.AddFriend);
@@ -117,12 +125,20 @@ public partial class HomeShelf : VBoxContainer
 					});
 				}
 			}
-			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = RecentWorlds ? records.GetArrayLength() > 0 : true; });
+			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = true; });
 		}
 		catch (Exception exception)
 		{
 			BV.PrintErr("Could not load home shelf: ", exception);
-			await RunOnMainThread(() => { if (IsInstanceValid(this)) Visible = false; });
+			await RunOnMainThread(() =>
+			{
+				if (!IsInstanceValid(this)) return;
+				if (!RecentWorlds) { Visible = false; return; }
+				ClearChildren(items);
+				Button browse = _browseWorldsScene.Instantiate<Button>();
+				browse.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Worlds);
+				MobileMotion.Bind(browse); items.AddChild(browse); Visible = true;
+			});
 		}
 	}
 

@@ -21,7 +21,8 @@ public partial class FeedComposer : AcceptDialog
 	public void Open()
 	{
 		_editor.Text = "";
-		PopupCentered(new Vector2I(380, 280));
+		Vector2 viewport = GetViewport().GetVisibleRect().Size;
+		PopupCentered(new Vector2I(Math.Min(460, (int)viewport.X - 32), Math.Min(340, (int)viewport.Y - 48)));
 		_editor.GrabFocus();
 	}
 

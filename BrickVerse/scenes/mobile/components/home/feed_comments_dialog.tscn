@@ -37,20 +37,22 @@ corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
 [node name="FeedCommentsDialog" type="AcceptDialog"]
-title = "Comments"
+title = ""
 size = Vector2i(620, 700)
 ok_button_text = "Close"
 exclusive = true
+borderless = true
+transparent_bg = true
 theme = ExtResource("2")
 theme_override_styles/panel = SubResource("dialog")
 script = ExtResource("1")
 
 [node name="Layout" type="VBoxContainer" parent="."]
-offset_left = 16.0
-offset_top = 20.0
-offset_right = 604.0
-offset_bottom = 630.0
-theme_override_constants/separation = 12
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 596.0
+offset_bottom = 622.0
+theme_override_constants/separation = 16
 
 [node name="Scroll" type="ScrollContainer" parent="Layout"]
 layout_mode = 2

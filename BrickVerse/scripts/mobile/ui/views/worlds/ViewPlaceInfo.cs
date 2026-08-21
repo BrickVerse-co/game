@@ -45,6 +45,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 
 	public override void _Ready()
 	{
+		CallDeferred(MethodName.ForceInitialLayout);
 		_playButton.Pressed += OnPlayButtonPressed;
 		_backButton.Pressed += CloseToWorlds;
 		_creatorNameLabel.Pressed += OpenCreator;
@@ -54,8 +55,12 @@ public partial class ViewPlaceInfo : MobileViewBase
 		MobileMotion.Bind(_playButton);
 		MobileMotion.Bind(_backButton);
 		_contentPanel = GetNode<Control>("ScrollContainer/VBoxContainer/PanelContainer");
+		_playLabel = _playButton.GetNode<Label>("HBoxContainer/Label");
+		_playButton.Reparent(GetNode<VBoxContainer>("ScrollContainer/VBoxContainer/PanelContainer/Layout"));
+		_playButton.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopWide);
+		_playButton.CustomMinimumSize = new Vector2(0, 56);
+		GetNode<ScrollContainer>("ScrollContainer").OffsetBottom = 0;
 		_loadingSkeleton = GetNode<Control>("LoadingSkeleton");
-		_playLabel = GetNode<Label>("Play/HBoxContainer/Label");
 		_unavailableNotice = GetNode<Label>("ScrollContainer/VBoxContainer/PanelContainer/Layout/UnavailableNotice");
 		GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Report").Pressed += () => MobileReportDialog.Open(this, "universe", _placeInfo.UniverseId.ToString());
 	}
@@ -91,6 +96,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_unavailableNotice.Visible = false;
 		_loadingSkeleton.Visible = true;
 		PulseSkeleton();
+		CallDeferred(MethodName.ForceInitialLayout);
 
 		try
 		{
@@ -101,9 +107,9 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_descriptionLabel.SetMarkdown(string.IsNullOrWhiteSpace(_placeInfo.Description) ? "No description provided." : _placeInfo.Description);
 			await LoadPlayPermission();
 			HideSkeleton();
-			_playersLabel.Text = $"◉ {_placeInfo.Playing:N0} playing";
-			_visitsLabel.Text = $"◇ {_placeInfo.Visits:N0} visits";
-			_capacityLabel.Text = $"♙ {_placeInfo.MaxPlayers:N0} max";
+			_playersLabel.Text = $"{_placeInfo.Playing:N0} playing";
+			_visitsLabel.Text = $"{_placeInfo.Visits:N0} visits";
+			_capacityLabel.Text = $"{_placeInfo.MaxPlayers:N0} max";
 			UpdateRatingDisplay();
 			string thumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(_placeInfo.UniverseId);
 			if (!string.IsNullOrWhiteSpace(thumbnailUrl))
@@ -116,6 +122,13 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_descriptionLabel.SetMarkdown("This world could not be loaded. Please try again.");
 			BV.PrintErr(exception);
 		}
+	}
+
+	private void ForceInitialLayout()
+	{
+		GetNode<Control>("ScrollContainer/VBoxContainer/Control").CustomMinimumSize = new Vector2(0, 240);
+		GetNode<Container>("ScrollContainer/VBoxContainer").QueueSort();
+		GetNode<ScrollContainer>("ScrollContainer").QueueSort();
 	}
 
 	private void UpdateRatingDisplay()
@@ -174,6 +187,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 			? reasonNode.GetString() ?? "" : "";
 		_playButton.Disabled = !canPlay;
 		_playLabel.Text = canPlay ? "Play" : "Unavailable";
+		_playLabel.Visible = !canPlay;
 		_unavailableNotice.Visible = !canPlay && !string.IsNullOrWhiteSpace(reason);
 		_unavailableNotice.Text = reason;
 	}
@@ -201,18 +215,12 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_thumbnailRect.PivotOffset = _thumbnailRect.Size / 2f;
 		_thumbnailRect.Scale = new Vector2(1.1f, 1.1f);
 		_thumbnailRect.Modulate = new Color(1, 1, 1, 0);
-		Vector2 contentTarget = _contentPanel.Position;
-		_contentPanel.Position = contentTarget + new Vector2(0, 44);
 		_contentPanel.Modulate = new Color(1, 1, 1, 0);
-		Vector2 playTarget = _playButton.Position;
-		_playButton.Position = playTarget + new Vector2(0, 28);
 		_playButton.Modulate = new Color(1, 1, 1, 0);
 		Tween tween = CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
 		tween.TweenProperty(_thumbnailRect, "scale", Vector2.One, 0.42);
 		tween.TweenProperty(_thumbnailRect, "modulate:a", 1f, 0.3);
-		tween.TweenProperty(_contentPanel, "position", contentTarget, 0.36).SetDelay(0.06);
 		tween.TweenProperty(_contentPanel, "modulate:a", 1f, 0.28).SetDelay(0.06);
-		tween.TweenProperty(_playButton, "position", playTarget, 0.34).SetDelay(0.12);
 		tween.TweenProperty(_playButton, "modulate:a", 1f, 0.25).SetDelay(0.12);
 	}
 
@@ -223,7 +231,6 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_backButton.Disabled = true;
 		Tween tween = CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
 		tween.TweenProperty(_thumbnailRect, "scale", new Vector2(1.06f, 1.06f), 0.18);
-		tween.TweenProperty(_contentPanel, "position:y", 32f, 0.18);
 		tween.TweenProperty(_contentPanel, "modulate:a", 0f, 0.16);
 		tween.Chain().TweenCallback(Callable.From(() => MobileUI.Singleton.SwitchTo(MobileViewEnum.Worlds)));
 	}

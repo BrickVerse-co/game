@@ -1,6 +1,30 @@
-[gd_scene format=3]
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://resources/themes/mobile.tres" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="dialog"]
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
 [node name="PurchaseDialog" type="ConfirmationDialog"]
 title = "Purchase item"
 initial_position = 2
-size = Vector2i(380, 220)
+size = Vector2i(420, 240)
 ok_button_text = "Buy"
+exclusive = true
+borderless = true
+transparent_bg = true
+theme = ExtResource("1")
+theme_override_styles/panel = SubResource("dialog")

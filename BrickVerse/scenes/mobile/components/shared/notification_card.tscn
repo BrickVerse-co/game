@@ -9,25 +9,29 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.152941, 0.172549, 0.203922, 1)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
+border_color = Color(0.152941, 0.172549, 0.203922, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
 
 [sub_resource type="StyleBoxFlat" id="icon"]
 bg_color = Color(0.0431373, 0.14902, 0.219608, 1)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 7.0
+content_margin_top = 7.0
+content_margin_right = 7.0
+content_margin_bottom = 7.0
 
 [node name="NotificationCard" type="Button"]
-custom_minimum_size = Vector2(0, 102)
+custom_minimum_size = Vector2(0, 78)
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("card")
 theme_override_styles/hover = SubResource("card")
@@ -39,23 +43,24 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = -12.0
+offset_left = 10.0
+offset_top = 9.0
+offset_right = -10.0
+offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="IconPanel" type="PanelContainer" parent="Content"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("icon")
 
 [node name="Icon" type="TextureRect" parent="Content/IconPanel"]
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("2")
@@ -65,38 +70,43 @@ stretch_mode = 5
 [node name="Copy" type="VBoxContainer" parent="Content"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
 mouse_filter = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 2
 
 [node name="Header" type="HBoxContainer" parent="Content/Copy"]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="Content/Copy/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "Notification"
 text_overrun_behavior = 3
 
 [node name="Time" type="Label" parent="Content/Copy/Header"]
-modulate = Color(0.68, 0.75, 0.82, 1)
+modulate = Color(0.58, 0.64, 0.71, 1)
 layout_mode = 2
 mouse_filter = 2
+theme_override_font_sizes/font_size = 11
 text = "Now"
 
 [node name="Message" type="Label" parent="Content/Copy"]
-modulate = Color(0.78, 0.82, 0.87, 1)
+modulate = Color(0.72, 0.76, 0.82, 1)
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 2
+theme_override_font_sizes/font_size = 12
 text = "Notification details"
 autowrap_mode = 3
 max_lines_visible = 2
 text_overrun_behavior = 3
 
 [node name="Unread" type="ColorRect" parent="Content"]
-custom_minimum_size = Vector2(5, 5)
+custom_minimum_size = Vector2(4, 4)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
