@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://df8xl1871aod7" path="res://assets/textures/mobile/loader.png" id="2_fn01a"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_387td"]
-bg_color = Color(0, 0, 0, 0.49803922)
+bg_color = Color(0, 0, 0, 0.6784314)
 
 [sub_resource type="Animation" id="Animation_387td"]
 length = 0.001
@@ -172,7 +172,7 @@ texture = ExtResource("2_fn01a")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Title" type="Label" parent="."]
+[node name="Title" type="Label" parent="." unique_id=105915247]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -189,7 +189,7 @@ theme_override_font_sizes/font_size = 21
 text = "Loading"
 horizontal_alignment = 1
 
-[node name="Status" type="Label" parent="."]
+[node name="Status" type="Label" parent="." unique_id=1633552303]
 modulate = Color(1, 1, 1, 0.72)
 layout_mode = 1
 anchors_preset = 8
@@ -207,7 +207,7 @@ text = "Please wait…"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Elapsed" type="Label" parent="."]
+[node name="Elapsed" type="Label" parent="." unique_id=1967298375]
 modulate = Color(1, 1, 1, 0.48)
 layout_mode = 1
 anchors_preset = 8

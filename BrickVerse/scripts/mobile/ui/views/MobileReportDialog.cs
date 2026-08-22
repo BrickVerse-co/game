@@ -23,6 +23,7 @@ public partial class MobileReportDialog : Window
 		_description = GetNode<TextEdit>("Layout/Description");
 		_status = GetNode<Label>("Layout/Status");
 		_submit = GetNode<Button>("Layout/Actions/Submit");
+		GetNode<Button>("Layout/Header/Close").Pressed += QueueFree;
 		GetNode<Button>("Layout/Actions/Cancel").Pressed += QueueFree;
 		_submit.Pressed += Submit;
 		CloseRequested += QueueFree;

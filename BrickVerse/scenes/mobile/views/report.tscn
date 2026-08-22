@@ -27,6 +27,7 @@ initial_position = 1
 size = Vector2i(390, 430)
 min_size = Vector2i(320, 380)
 transparent_bg = true
+borderless = true
 unresizable = true
 script = ExtResource("1")
 
@@ -50,10 +51,22 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="Layout"]
+[node name="Header" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 26
 text = "Submit a report"
+
+[node name="Close" type="Button" parent="Layout/Header"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+text = "×"
+flat = true
+theme_override_font_sizes/font_size = 26
 
 [node name="Help" type="Label" parent="Layout"]
 layout_mode = 2

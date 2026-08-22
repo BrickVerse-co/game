@@ -498,6 +498,12 @@ public partial class MobileCollectionView : MobileViewBase
 				if (!string.IsNullOrWhiteSpace(url))
 				{
 					Button chip = new() { Text = label, Icon = PlatformIcon(provider), CustomMinimumSize = new Vector2(0, 42) }; chip.AddThemeConstantOverride("icon_max_width", 19);
+					Color iconColor = Color.FromHtml("E8ECF2");
+					chip.AddThemeColorOverride("icon_normal_color", iconColor);
+					chip.AddThemeColorOverride("icon_hover_color", iconColor);
+					chip.AddThemeColorOverride("icon_pressed_color", iconColor);
+					chip.AddThemeColorOverride("icon_focus_color", iconColor);
+					chip.AddThemeColorOverride("icon_disabled_color", Color.FromHtml("7E8794"));
 					StyleBoxFlat style = new() { BgColor = Color.FromHtml("1A1E24"), BorderColor = Color.FromHtml("272C34"), BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1, ContentMarginLeft = 14, ContentMarginRight = 14, CornerRadiusTopLeft = 21, CornerRadiusTopRight = 21, CornerRadiusBottomLeft = 21, CornerRadiusBottomRight = 21 };
 					chip.AddThemeStyleboxOverride("normal", style); chip.AddThemeStyleboxOverride("hover", style); chip.Pressed += () => ConfirmExternalLink(url, provider); chips.AddChild(chip); MobileMotion.Bind(chip);
 				}
@@ -522,8 +528,25 @@ public partial class MobileCollectionView : MobileViewBase
 	private static void LoadProfileImage(TextureRect target, string url) { if (string.IsNullOrWhiteSpace(url)) return; WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = url }, resource => { if (IsInstanceValid(target)) target.Texture = (Texture2D)resource; }); }
 	private void ConfirmExternalLink(string url, string provider)
 	{
-		ConfirmationDialog warning = new() { Title = "Leave BrickVerse?", DialogText = $"You’re opening {provider} outside BrickVerse. External sites have their own privacy and safety policies.", OkButtonText = "Continue", CancelButtonText = "Stay here", Exclusive = true };
-		warning.Confirmed += () => { OS.ShellOpen(url); warning.QueueFree(); }; warning.Canceled += warning.QueueFree; AddChild(warning); warning.PopupCentered();
+		ConfirmationDialog warning = _purchaseDialogScene.Instantiate<ConfirmationDialog>();
+		warning.Title = "Leave BrickVerse?";
+		warning.DialogText =
+			$"You’re opening {provider} outside BrickVerse. External sites have their own privacy and safety policies.";
+		warning.OkButtonText = "Continue";
+		warning.CancelButtonText = "Stay here";
+		warning.Confirmed += () =>
+		{
+			OS.ShellOpen(url);
+			warning.QueueFree();
+		};
+		warning.Canceled += warning.QueueFree;
+		warning.CloseRequested += warning.QueueFree;
+		AddChild(warning);
+
+		Vector2I viewportSize = (Vector2I)GetViewport().GetVisibleRect().Size;
+		int width = Math.Clamp(viewportSize.X - 32, 280, 420);
+		int height = Math.Clamp(viewportSize.Y - 64, 220, 260);
+		warning.PopupCentered(new Vector2I(width, height));
 	}
 
 	private async System.Threading.Tasks.Task ShowEquippedItems(string userId)

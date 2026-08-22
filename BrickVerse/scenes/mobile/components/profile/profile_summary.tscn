@@ -56,7 +56,11 @@ light_energy = 1.25
 position = Vector3(-3, 4, 4)
 omni_range = 12.0
 light_energy = 0.8
-[node name="Mode" type="HBoxContainer" parent="Showcase"]
+[node name="Overlay" type="Control" parent="Showcase"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Mode" type="HBoxContainer" parent="Showcase/Overlay"]
 z_index = 10
 layout_mode = 1
 offset_left = 10.0
@@ -64,15 +68,17 @@ offset_top = 10.0
 offset_right = 104.0
 offset_bottom = 48.0
 theme_override_constants/separation = 2
-[node name="TwoD" type="Button" parent="Showcase/Mode"]
+[node name="TwoD" type="Button" parent="Showcase/Overlay/Mode"]
 custom_minimum_size = Vector2(44, 36)
 layout_mode = 2
+mouse_filter = 0
 text = "2D"
 theme_override_styles/normal = SubResource("mode_selected")
 theme_override_styles/hover = SubResource("mode_selected")
-[node name="ThreeD" type="Button" parent="Showcase/Mode"]
+[node name="ThreeD" type="Button" parent="Showcase/Overlay/Mode"]
 custom_minimum_size = Vector2(44, 36)
 layout_mode = 2
+mouse_filter = 0
 text = "3D"
 theme_override_styles/normal = SubResource("mode_idle")
 theme_override_styles/hover = SubResource("mode_idle")
