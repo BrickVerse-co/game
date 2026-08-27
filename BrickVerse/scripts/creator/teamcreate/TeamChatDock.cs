@@ -4,6 +4,7 @@ namespace BrickVerse.Creator.TeamCreate;
 
 public sealed partial class TeamChatDock : VBoxContainer
 {
+	private static readonly PackedScene MessageScene = GD.Load<PackedScene>("res://scenes/creator/components/team_chat_message.tscn");
 	private VBoxContainer _messages = null!;
 	private LineEdit _input = null!;
 	private Label _emptyState = null!;
@@ -33,15 +34,9 @@ public sealed partial class TeamChatDock : VBoxContainer
 	{
 		_emptyState.Hide();
 		string username = TeamCreateService.Instance?.ResolveChatUsername(sender) ?? "Unknown member";
-		PanelContainer card = new();
-		StyleBoxFlat surface = new() { BgColor = new Color("101925"), CornerRadiusTopLeft = 7, CornerRadiusTopRight = 7, CornerRadiusBottomLeft = 7, CornerRadiusBottomRight = 7, ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 8, ContentMarginBottom = 8 };
-		card.AddThemeStyleboxOverride("panel", surface);
-		VBoxContainer content = new(); card.AddChild(content);
-		Label author = new() { Text = username, Modulate = new Color("38a9ff") };
-		author.AddThemeFontSizeOverride("font_size", 11);
-		content.AddChild(author);
-		content.AddChild(new Label { Text = message, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+		TeamChatMessage card = MessageScene.Instantiate<TeamChatMessage>();
 		_messages.AddChild(card);
+		card.Setup(username, message, TeamCreateService.Instance?.ResolveChatHeadshot(sender) ?? "");
 		CallDeferred(MethodName.ScrollToLatest);
 	}
 

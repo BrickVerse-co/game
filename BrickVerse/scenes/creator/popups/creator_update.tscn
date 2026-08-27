@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://cio6btmjok6na"]
 
-[ext_resource type="Script" path="res://scripts/creator/ui/popups/CreatorUpdatePopup.cs" id="1"]
+[ext_resource type="Script" uid="uid://pjh2klrb8oo7" path="res://scripts/creator/ui/popups/CreatorUpdatePopup.cs" id="1"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_jymxy"]
 
 [sub_resource type="StyleBoxFlat" id="Surface"]
 bg_color = Color(0.039, 0.052, 0.071, 1)
@@ -14,12 +15,14 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="CreatorUpdate" type="Window" node_paths=PackedStringArray("_version", "_neverShow", "_later", "_update", "_download")]
+[node name="CreatorUpdate" type="Window" unique_id=1582749149 node_paths=PackedStringArray("_version", "_neverShow", "_later", "_update", "_download")]
+oversampling_override = 1.0
 title = "Creator Update Available"
+position = Vector2i(0, 34)
 size = Vector2i(560, 330)
-min_size = Vector2i(500, 300)
 transient = true
-exclusive = false
+min_size = Vector2i(500, 300)
+theme = ExtResource("1_jymxy")
 script = ExtResource("1")
 _version = NodePath("Surface/Margin/Layout/Version")
 _neverShow = NodePath("Surface/Margin/Layout/NeverShow")
@@ -27,7 +30,7 @@ _later = NodePath("Surface/Margin/Layout/Actions/Later")
 _update = NodePath("Surface/Margin/Layout/Actions/Update")
 _download = NodePath("Surface/Margin/Layout/Download")
 
-[node name="Surface" type="PanelContainer" parent="."]
+[node name="Surface" type="PanelContainer" parent="." unique_id=213185645]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -35,57 +38,58 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Surface")
 
-[node name="Margin" type="MarginContainer" parent="Surface"]
+[node name="Margin" type="MarginContainer" parent="Surface" unique_id=177990775]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 22
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 20
 
-[node name="Layout" type="VBoxContainer" parent="Surface/Margin"]
+[node name="Layout" type="VBoxContainer" parent="Surface/Margin" unique_id=630447590]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="Surface/Margin/Layout"]
+[node name="Title" type="Label" parent="Surface/Margin/Layout" unique_id=1074329691]
 layout_mode = 2
 theme_override_font_sizes/font_size = 23
 text = "A new Creator version is available"
 
-[node name="Description" type="Label" parent="Surface/Margin/Layout"]
+[node name="Description" type="Label" parent="Surface/Margin/Layout" unique_id=588974518]
 layout_mode = 2
 text = "Update or repair Creator through the BrickVerse Installer. Save your current work before updating."
 autowrap_mode = 2
 
-[node name="Version" type="Label" parent="Surface/Margin/Layout"]
+[node name="Version" type="Label" parent="Surface/Margin/Layout" unique_id=98302319]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.73, 0.9, 1)
-text = "Installed\nAvailable"
+text = "Installed
+Available"
 
-[node name="NeverShow" type="CheckBox" parent="Surface/Margin/Layout"]
+[node name="NeverShow" type="CheckBox" parent="Surface/Margin/Layout" unique_id=1208831530]
 layout_mode = 2
 text = "Don't show update notifications again"
 
-[node name="Spacer" type="Control" parent="Surface/Margin/Layout"]
+[node name="Spacer" type="Control" parent="Surface/Margin/Layout" unique_id=1842719868]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Download" type="Button" parent="Surface/Margin/Layout"]
+[node name="Download" type="Button" parent="Surface/Margin/Layout" unique_id=1157038851]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Download installer instead"
 flat = true
 
-[node name="Actions" type="HBoxContainer" parent="Surface/Margin/Layout"]
+[node name="Actions" type="HBoxContainer" parent="Surface/Margin/Layout" unique_id=1790012199]
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 8
+alignment = 2
 
-[node name="Later" type="Button" parent="Surface/Margin/Layout/Actions"]
+[node name="Later" type="Button" parent="Surface/Margin/Layout/Actions" unique_id=1205502180]
 custom_minimum_size = Vector2(100, 38)
 layout_mode = 2
 text = "Later"
 
-[node name="Update" type="Button" parent="Surface/Margin/Layout/Actions"]
+[node name="Update" type="Button" parent="Surface/Margin/Layout/Actions" unique_id=413282014]
 custom_minimum_size = Vector2(180, 38)
 layout_mode = 2
-text = "Open Installer"
+text = "Restart to Update"

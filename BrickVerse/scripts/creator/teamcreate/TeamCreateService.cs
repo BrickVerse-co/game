@@ -70,6 +70,7 @@ public sealed partial class TeamCreateService : Node
 	public string LocalUserId => _localUserId;
 	public bool ShowCameraAvatars => _showCameraAvatars;
 	public event Action<string, string>? TeamChatMessage;
+	public event Action? StateChanged;
 
 	public string ResolveChatUsername(string userId)
 	{
@@ -77,6 +78,9 @@ public sealed partial class TeamCreateService : Node
 		TeamCreateMember? member = _members.FirstOrDefault(item => item.UserId == userId);
 		return !string.IsNullOrWhiteSpace(member?.Username) ? member.Username : "Unknown member";
 	}
+
+	public string ResolveChatHeadshot(string userId) =>
+		_members.FirstOrDefault(item => item.UserId == userId)?.HeadshotUrl ?? "";
 
 	public void SendTeamChat(string message)
 	{
@@ -295,6 +299,7 @@ public sealed partial class TeamCreateService : Node
 			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + token;
 
 			_enabled = await FetchTeamCreateEnabled();
+			StateChanged?.Invoke();
 			if (!_enabled) return;
 
 			using HttpResponseMessage response = await SendJson(
@@ -322,6 +327,7 @@ public sealed partial class TeamCreateService : Node
 		{
 			_joining = false;
 			_window?.Refresh();
+			StateChanged?.Invoke();
 		}
 	}
 
@@ -641,6 +647,7 @@ public sealed partial class TeamCreateService : Node
 		UnobserveAll();
 		ClearCameraAvatars();
 		CreatorService.Interface.StatusBar?.SetStatus("Team Create was disabled");
+		StateChanged?.Invoke();
 	}
 
 	private void ReadSession(JsonElement session)
@@ -655,6 +662,7 @@ public sealed partial class TeamCreateService : Node
 				UserId = member.GetProperty("userId").GetString() ?? "",
 				Username = member.GetProperty("username").GetString() ?? "Unknown",
 				IsVerified = member.TryGetProperty("isVerified", out JsonElement verified) && verified.GetBoolean(),
+				HeadshotUrl = member.TryGetProperty("headshotUrl", out JsonElement headshot) ? headshot.GetString() ?? "" : "",
 			};
 			if (member.TryGetProperty("camera", out JsonElement camera))
 			{
@@ -669,6 +677,7 @@ public sealed partial class TeamCreateService : Node
 		}
 		RefreshCameraAvatars();
 		_window?.Refresh();
+		StateChanged?.Invoke();
 	}
 
 	private void RefreshCameraAvatars()
@@ -1249,6 +1258,7 @@ public sealed class TeamCreateMember
 	public string UserId { get; init; } = "";
 	public string Username { get; init; } = "";
 	public bool IsVerified { get; init; }
+	public string HeadshotUrl { get; init; } = "";
 	public TeamCreateCamera? Camera { get; set; }
 }
 

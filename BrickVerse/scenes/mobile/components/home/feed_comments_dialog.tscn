@@ -37,9 +37,9 @@ corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
 [node name="FeedCommentsDialog" type="AcceptDialog"]
-title = ""
+title = "Thread"
 size = Vector2i(620, 700)
-ok_button_text = "Close"
+ok_button_text = "Done"
 exclusive = true
 borderless = true
 transparent_bg = true
@@ -48,11 +48,11 @@ theme_override_styles/panel = SubResource("dialog")
 script = ExtResource("1")
 
 [node name="Layout" type="VBoxContainer" parent="."]
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 596.0
-offset_bottom = 622.0
-theme_override_constants/separation = 16
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 606.0
+offset_bottom = 636.0
+theme_override_constants/separation = 10
 
 [node name="Scroll" type="ScrollContainer" parent="Layout"]
 layout_mode = 2

@@ -36,6 +36,7 @@ public partial class ViewAvatarPage : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("Layout"), 1180f);
 		_grid = GetNode<GridContainer>("Layout/Scroll/Grid");
 		_category = GetNode<TabBar>("Layout/Category");
 		_status = GetNode<Label>("Layout/Status");

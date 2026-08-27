@@ -11,6 +11,7 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using System;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -142,7 +143,15 @@ public sealed partial class CaptureService : Instance
 
 		byte[] screenshotBytes = CurrentPhoto.GetImage().SavePngToBuffer();
 
-		await CapturePublisher.Publish(screenshotBytes, caption, true);
+		string gameName = !string.IsNullOrWhiteSpace(Root.UniverseName)
+			? Root.UniverseName
+			: (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : "BrickVerse");
+		string gameTag = Regex.Replace(gameName.Trim(), @"[^\p{L}\p{N}_]+", "_").Trim('_');
+		string automaticCaption = $"Captured in #{(string.IsNullOrWhiteSpace(gameTag) ? "BrickVerse" : gameTag)} 🎮";
+		string feedCaption = string.IsNullOrWhiteSpace(caption)
+			? automaticCaption
+			: $"{caption.Trim()}\n\n{automaticCaption}";
+		await CapturePublisher.Publish(screenshotBytes, feedCaption, true);
 	}
 
 	public void ViewCurrentPhoto()

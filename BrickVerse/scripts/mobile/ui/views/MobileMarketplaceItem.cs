@@ -35,6 +35,8 @@ public partial class MobileMarketplaceItem : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("Layout"), 1040f);
+		ApplyResponsiveMaxWidth(GetNode<Control>("LoadingSkeleton"), 1040f);
 		_preview = GetNode<TextureRect>("Layout/PreviewFrame/Padding/Preview");
 		_buy = GetNode<Button>("Layout/Buy");
 		_previewToggle = GetNode<Button>("Layout/PreviewFrame/Overlay/PreviewToggle");

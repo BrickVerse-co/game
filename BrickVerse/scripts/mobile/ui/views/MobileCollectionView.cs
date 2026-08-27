@@ -53,6 +53,7 @@ public partial class MobileCollectionView : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("Layout"), 1180f);
 		_title = GetNode<Label>("Layout/Header/Title");
 		_search = GetNode<LineEdit>("Layout/Search");
 		_listItems = GetNode<VBoxContainer>("Layout/Scroll/Content/Items");
@@ -545,7 +546,14 @@ public partial class MobileCollectionView : MobileViewBase
 
 		Vector2I viewportSize = (Vector2I)GetViewport().GetVisibleRect().Size;
 		int width = Math.Clamp(viewportSize.X - 32, 280, 420);
-		int height = Math.Clamp(viewportSize.Y - 64, 220, 260);
+		int height = Math.Clamp(viewportSize.Y - 64, 230, 280);
+		warning.MinSize = new Vector2I(Math.Min(280, width), 0);
+		warning.MaxSize = new Vector2I(width, height);
+		warning.Unresizable = true;
+		Label message = warning.GetLabel();
+		message.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		message.CustomMinimumSize = Vector2.Zero;
+		message.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		warning.PopupCentered(new Vector2I(width, height));
 	}
 

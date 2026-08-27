@@ -46,7 +46,7 @@ public sealed partial class CreatorUpdatePopup : Window
 		_version.Text = $"Installed: {GetInstalledVersion()}\nAvailable: {_release.Version}"
 			+ (_release.BuildNumber.HasValue ? $" (build {_release.BuildNumber})" : "");
 		_later.Pressed += Close;
-		_update.Pressed += () => { SavePreference(); OS.ShellOpen("brickverse://installer?product=creator"); Close(); };
+		_update.Pressed += RestartToUpdate;
 		_download.Pressed += () => OS.ShellOpen("https://brickverse.gg/download");
 		CloseRequested += Close;
 	}
@@ -55,6 +55,13 @@ public sealed partial class CreatorUpdatePopup : Window
 	{
 		string version = ProjectSettings.GetSetting("brickverse/build/version", "").AsString();
 		return string.IsNullOrWhiteSpace(version) ? Globals.AppVersion : version;
+	}
+
+	private void RestartToUpdate()
+	{
+		SavePreference();
+		OS.ShellOpen("brickverse://installer?product=creator&action=update&restart=true");
+		GetTree().CreateTimer(0.25).Timeout += () => GetTree().Quit();
 	}
 
 	private void Close()

@@ -165,6 +165,7 @@ public sealed partial class ScriptService : Instance
 			{ "Http", root.Http },
 			{ "Insert", root.Insert },
 			{ "Purchases", root.Purchases },
+			{ "Localization", root.Localization },
 			{ "Capture", root.Capture },
 			{ "Presence", root.Presence },
 			{ "Preferences", root.Preferences },

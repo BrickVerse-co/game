@@ -1,42 +1,89 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="1_avatar"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/feed/verified-user.svg" id="2_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/comments.svg" id="3_reply"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/heart.svg" id="4_like"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/dots.svg" id="5_more"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
-bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.152941, 0.172549, 0.203922, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-content_margin_left = 16.0
-content_margin_top = 14.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
+content_margin_left = 8.0
+content_margin_top = 12.0
+content_margin_right = 8.0
+content_margin_bottom = 12.0
 
 [node name="CommentCard" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = SubResource("card")
 
-[node name="Content" type="VBoxContainer" parent="."]
+[node name="Layout" type="HBoxContainer" parent="."]
 layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Avatar" type="TextureRect" parent="Layout"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+texture = ExtResource("1_avatar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Content" type="VBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="Author" type="Label" parent="Content"]
+[node name="Header" type="HBoxContainer" parent="Layout/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Author" type="Label" parent="Layout/Content/Header"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 text = "Username"
 
-[node name="Body" type="Label" parent="Content"]
+[node name="Verified" type="TextureRect" parent="Layout/Content/Header"]
+visible = false
+custom_minimum_size = Vector2(17, 17)
+layout_mode = 2
+texture = ExtResource("2_verified")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Time" type="Label" parent="Layout/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
+theme_override_font_sizes/font_size = 13
+text = "@user · Just now"
+text_overrun_behavior = 3
+
+[node name="More" type="Button" parent="Layout/Content/Header"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+icon = ExtResource("5_more")
+flat = true
+
+[node name="Body" type="Label" parent="Layout/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 text = "Comment"
 autowrap_mode = 3
 
-[node name="Time" type="Label" parent="Content"]
-modulate = Color(0.65098, 0.686275, 0.733333, 1)
+[node name="Actions" type="HBoxContainer" parent="Layout/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Just now"
+theme_override_constants/separation = 22
+
+[node name="Reply" type="Button" parent="Layout/Content/Actions"]
+layout_mode = 2
+icon = ExtResource("3_reply")
+text = "Reply"
+flat = true
+
+[node name="Like" type="Button" parent="Layout/Content/Actions"]
+layout_mode = 2
+icon = ExtResource("4_like")
+text = "0"
+flat = true

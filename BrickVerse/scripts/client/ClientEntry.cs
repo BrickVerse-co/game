@@ -22,6 +22,7 @@ using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
+using BrickVerse.Providers.CapturePublish;
 using Godot;
 #if CREATOR
 using BrickVerse.Creator.Utils;
@@ -366,6 +367,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private void CreateCoreServices(bool isServer)
 	{
+		if (!isServer) CaptureService.CapturePublisher = new FeedCapturePublisher();
 		ClientSettingsService settings = new() { Name = "ClientSettings", Entry = this };
 
 		AddChild(settings, true, InternalMode.Front);

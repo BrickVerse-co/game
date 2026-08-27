@@ -125,8 +125,11 @@ internal sealed partial class AntiCheatService : Instance
 			state.ConsecutiveSpeedSamples++;
 			// Network replication can deliver one movement update as a burst. Only
 			// score speed that remains impossible across a full second of samples.
-			if (state.ConsecutiveSpeedSamples >= 5 && state.ConsecutiveSpeedSamples % 5 == 0)
-				Flag(player, state, "sustained impossible horizontal speed", 2.5f);
+
+			// Disabled for now, as it is too aggressive and can be triggered by network jitter.
+
+			// if (state.ConsecutiveSpeedSamples >= 5 && state.ConsecutiveSpeedSamples % 5 == 0)
+				// Flag(player, state, "sustained impossible horizontal speed", 2.5f);
 		}
 		else state.ConsecutiveSpeedSamples = 0;
 
@@ -179,7 +182,7 @@ internal sealed partial class AntiCheatService : Instance
 		if (state.Score >= EnforcementScore)
 		{
 			state.EnforcementRequested = true;
-			player.Kick("Connection closed after repeated invalid client behavior.");
+			player.Kick("You have been removed from the server for violating the game's anti-cheat policy. Please contact the game owner if you believe this is an error.");
 		}
 	}
 

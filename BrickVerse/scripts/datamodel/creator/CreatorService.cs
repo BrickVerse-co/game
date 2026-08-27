@@ -845,6 +845,11 @@ public sealed partial class CreatorService : Node, IScriptObject
 			Interface.OpenInputManager();
 			return;
 		}
+		else if (pathRelative == Globals.ProjectLocalizationName)
+		{
+			BrickVerse.Creator.UI.Popups.CreatorDataToolsWindow.Open(1);
+			return;
+		}
 
 		PreferredEditorEnum userPref = CreatorSettingsService.Instance.Get<PreferredEditorEnum>(CreatorSettingKeys.CodeEditor.PreferredEditor);
 

@@ -137,6 +137,9 @@
 		     IsMobile=true before this group is evaluated; resetting it here
 		     excluded every scripts/mobile/**/*.cs file from NativeAOT exports. -->
 		<IsCreator Condition="'$(IsCreator)' == ''">false</IsCreator>
+		<!-- The normal desktop client launches the shared app shell, so it must
+		     compile the mobile/app UI too. Only specialized builds opt out. -->
+		<IsMobile Condition="'$(IsMobile)' == '' And '$(BV_BUILD_TARGET)' != 'CREATOR' And '$(BV_BUILD_TARGET)' != 'SERVER' And '$(BV_BUILD_TARGET)' != 'RENDERER'">true</IsMobile>
 		<IsMobile Condition="'$(IsMobile)' == ''">false</IsMobile>
 		<IsCreator Condition="'$(BV_BUILD_TARGET)' == 'CREATOR'">true</IsCreator>
 		<IsMobile Condition="'$(BV_BUILD_TARGET)' == 'MOBILE'">true</IsMobile>

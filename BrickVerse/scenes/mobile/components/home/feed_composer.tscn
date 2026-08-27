@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/mobile/ui/components/home/feed/FeedComposer.cs" id="1"]
 [ext_resource type="Theme" path="res://resources/themes/mobile.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/x.svg" id="3_close"]
 
 [sub_resource type="StyleBoxFlat" id="dialog"]
 bg_color = Color(0.101961, 0.117647, 0.141176, 1)
@@ -55,3 +56,14 @@ theme_override_colors/font_placeholder_color = Color(0.411765, 0.45098, 0.505882
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("editor")
 theme_override_styles/focus = SubResource("editor")
+
+[node name="CloseButton" type="Button" parent="."]
+offset_left = 410.0
+offset_top = 8.0
+offset_right = 450.0
+offset_bottom = 48.0
+mouse_default_cursor_shape = 2
+tooltip_text = "Cancel post"
+icon = ExtResource("3_close")
+flat = true
+expand_icon = true

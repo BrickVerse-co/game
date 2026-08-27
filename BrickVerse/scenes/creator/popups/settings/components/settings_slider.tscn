@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/settings/components/SettingsSliderUI.cs" id="1"]
+
+[node name="SettingsSlider" type="HBoxContainer"]
+custom_minimum_size = Vector2(220, 34)
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+script = ExtResource("1")
+
+[node name="Slider" type="HSlider" parent="."]
+custom_minimum_size = Vector2(126, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Value" type="SpinBox" parent="."]
+custom_minimum_size = Vector2(76, 34)
+layout_mode = 2
+alignment = 1
+select_all_on_focus = true

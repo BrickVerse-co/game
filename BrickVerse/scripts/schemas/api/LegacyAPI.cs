@@ -1034,6 +1034,9 @@ public struct APIFeedPostAuthor
 
 	[JsonPropertyName("isVerified")]
 	public bool IsVerified { get; set; }
+
+	[JsonPropertyName("isBrandAccount")]
+	public bool IsBrandAccount { get; set; }
 }
 
 public struct APIFeedPostComment
@@ -1057,7 +1060,7 @@ public struct APIFeedPostComment
 public struct APIFeedPostData
 {
 	[JsonPropertyName("id")]
-	public long Id { get; set; }
+	public string Id { get; set; }
 
 	[JsonPropertyName("content")]
 	public string Content { get; set; }
@@ -1077,14 +1080,29 @@ public struct APIFeedPostData
 	[JsonPropertyName("replyCount")]
 	public int ReplyCount { get; set; }
 
+	[JsonPropertyName("repostCount")]
+	public int RepostCount { get; set; }
+
+	[JsonPropertyName("viewCount")]
+	public int ViewCount { get; set; }
+
 	[JsonPropertyName("isLiked")]
 	public bool IsLiked { get; set; }
+
+	[JsonPropertyName("isReposted")]
+	public bool IsReposted { get; set; }
+
+	[JsonPropertyName("isBookmarked")]
+	public bool IsBookmarked { get; set; }
 
 	[JsonPropertyName("placeName")]
 	public string? PlaceName { get; set; }
 
 	[JsonPropertyName("mediaUrl")]
 	public string? MediaUrl { get; set; }
+
+	[JsonPropertyName("headshotUrl")]
+	public string? HeadshotUrl { get; set; }
 
 	[JsonPropertyName("reportURL")]
 	public string ReportURL { get; set; }

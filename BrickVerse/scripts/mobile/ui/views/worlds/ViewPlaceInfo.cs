@@ -45,6 +45,8 @@ public partial class ViewPlaceInfo : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("ScrollContainer"), 1120f, 0f);
+		ApplyResponsiveMaxWidth(GetNode<Control>("LoadingSkeleton"), 1120f, 0f);
 		CallDeferred(MethodName.ForceInitialLayout);
 		_playButton.Pressed += OnPlayButtonPressed;
 		_backButton.Pressed += CloseToWorlds;

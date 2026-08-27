@@ -15,7 +15,10 @@ public partial class FeedComposer : AcceptDialog
 	public override void _Ready()
 	{
 		_editor = GetNode<TextEdit>("Editor");
+		GetNode<Button>("CloseButton").Pressed += Hide;
 		Confirmed += Submit;
+		Canceled += Hide;
+		CloseRequested += Hide;
 	}
 
 	public void Open()

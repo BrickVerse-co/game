@@ -23,6 +23,8 @@ namespace BrickVerse.Schemas.Debugger;
 [MemoryPackUnion(12, typeof(MessageRuntimeRename))]
 [MemoryPackUnion(13, typeof(MessageRuntimeViewportRect))]
 [MemoryPackUnion(14, typeof(MessageRuntimeDeviceEmulation))]
+[MemoryPackUnion(15, typeof(MessageRuntimeDiagnosticsRequest))]
+[MemoryPackUnion(16, typeof(MessageRuntimeDiagnostics))]
 public partial interface IDebugMessage
 {
 }
@@ -159,4 +161,26 @@ public partial class MessageRuntimeDeviceEmulation : IDebugMessage
 	public float HeadYaw;
 	public float HeadHeight = 1.7f;
 	public float HandSpread = 0.45f;
+}
+
+[MemoryPackable]
+public partial class MessageRuntimeDiagnosticsRequest : IDebugMessage { }
+
+[MemoryPackable]
+public partial class MessageRuntimeDiagnostics : IDebugMessage
+{
+	public double Fps;
+	public double FrameTimeMs;
+	public double PhysicsTimeMs;
+	public long StaticMemoryBytes;
+	public long VideoMemoryBytes;
+	public int NodeCount;
+	public int ObjectCount;
+	public int DrawCalls;
+	public int Active3DObjects;
+	public string[] Scripts = [];
+	public bool IsServer;
+	public string NetworkMode = "Offline";
+	public int Players;
+	public int PingMs;
 }

@@ -18,6 +18,7 @@ namespace BrickVerse.Creator.UI.Components;
 
 public partial class SettingsPropertyUI : Control
 {
+	private const string SliderScenePath = "res://scenes/creator/popups/settings/components/settings_slider.tscn";
 	[Export] private Label _propNameLabel = null!;
 	[Export] private Control _propContainer = null!;
 
@@ -58,7 +59,17 @@ public partial class SettingsPropertyUI : Control
 		}
 
 		Type valueType = SettingDef.ValueType;
-		IProperty input = Globals.LoadProperty(valueType);
+		IProperty input;
+		if (SettingDef.ControlKind == SettingControlKind.Slider)
+		{
+			SettingsSliderUI slider = GD.Load<PackedScene>(SliderScenePath).Instantiate<SettingsSliderUI>();
+			slider.Configure(SettingDef);
+			input = slider;
+		}
+		else
+		{
+			input = Globals.LoadProperty(valueType);
+		}
 
 		input.PropertyType = valueType;
 		_propContainer.AddChild((Node)input);
@@ -70,6 +81,8 @@ public partial class SettingsPropertyUI : Control
 			sp.AllowGreater = false;
 			sp.AllowLesser = false;
 		}
+		if (input is Button button)
+			button.Alignment = HorizontalAlignment.Right;
 
 		((Control)input).SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 

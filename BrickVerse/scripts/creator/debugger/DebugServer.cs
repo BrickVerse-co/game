@@ -34,6 +34,7 @@ public class DebugServer
 	public event Action<int, bool>? RuntimeConnected;
 	public event Action<int>? RuntimeDisconnected;
 	public event Action<int, MessageRuntimeSnapshot>? RuntimeSnapshotReceived;
+	public event Action<int, MessageRuntimeDiagnostics>? RuntimeDiagnosticsReceived;
 	public event Action<int, MessageLogDispatch>? RuntimeLogReceived;
 
 	public void Start()
@@ -139,6 +140,11 @@ public class DebugServer
 				BV.CallOnMainThread(() => RuntimeSnapshotReceived?.Invoke(runtime.ProcessID, snapshot));
 			}
 		}
+		else if (msg is MessageRuntimeDiagnostics diagnostics)
+		{
+			if (_clientToData.TryGetValue(from, out ClientData runtime))
+				BV.CallOnMainThread(() => RuntimeDiagnosticsReceived?.Invoke(runtime.ProcessID, diagnostics));
+		}
 		else if (msg is MessageNewServerRequest req)
 		{
 			if (_clientToData.TryGetValue(from, out ClientData cdata))
@@ -220,6 +226,9 @@ public class DebugServer
 
 	public void RequestRuntimeSnapshot(int processId) =>
 		SendToProcess(processId, new MessageRuntimeSnapshotRequest());
+
+	public void RequestRuntimeDiagnostics(int processId) =>
+		SendToProcess(processId, new MessageRuntimeDiagnosticsRequest());
 
 	public void SetRuntimeProperty(int processId, string objectId, string propertyName, string value) =>
 		SendToProcess(processId, new MessageRuntimePropertySet

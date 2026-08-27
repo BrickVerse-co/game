@@ -41,3 +41,4 @@ vertical_alignment = 1
 [node name="PropContainer" type="Control" parent="Margin/Row"]
 custom_minimum_size = Vector2(220, 34)
 layout_mode = 2
+size_flags_horizontal = 0

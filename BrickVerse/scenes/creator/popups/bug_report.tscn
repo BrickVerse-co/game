@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://d1b83bdygnjr7"]
 
-[ext_resource type="Script" path="res://scripts/creator/ui/popups/BugReportPopup.cs" id="1"]
+[ext_resource type="Script" uid="uid://ca710o004biwb" path="res://scripts/creator/ui/popups/BugReportPopup.cs" id="1"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_17s0r"]
 
 [sub_resource type="StyleBoxFlat" id="Surface"]
 bg_color = Color(0.039, 0.052, 0.071, 1)
@@ -14,11 +15,14 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="BugReport" type="Window" node_paths=PackedStringArray("_title", "_area", "_description", "_steps", "_expected", "_actual", "_includeSystem", "_validation", "_cancel", "_continue")]
+[node name="BugReport" type="Window" unique_id=517424013 node_paths=PackedStringArray("_title", "_area", "_description", "_steps", "_expected", "_actual", "_includeSystem", "_validation", "_cancel", "_continue")]
+oversampling_override = 1.0
 title = "Report a Creator Bug"
+position = Vector2i(0, 34)
 size = Vector2i(720, 720)
-min_size = Vector2i(620, 620)
 transient = true
+min_size = Vector2i(620, 620)
+theme = ExtResource("1_17s0r")
 script = ExtResource("1")
 _title = NodePath("Surface/Margin/Layout/Scroll/Form/Title")
 _area = NodePath("Surface/Margin/Layout/Scroll/Form/Area")
@@ -31,7 +35,7 @@ _validation = NodePath("Surface/Margin/Layout/Validation")
 _cancel = NodePath("Surface/Margin/Layout/Actions/Cancel")
 _continue = NodePath("Surface/Margin/Layout/Actions/Continue")
 
-[node name="Surface" type="PanelContainer" parent="."]
+[node name="Surface" type="PanelContainer" parent="." unique_id=890672453]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -39,113 +43,115 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Surface")
 
-[node name="Margin" type="MarginContainer" parent="Surface"]
+[node name="Margin" type="MarginContainer" parent="Surface" unique_id=617273429]
 layout_mode = 2
 theme_override_constants/margin_left = 22
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 22
 theme_override_constants/margin_bottom = 18
 
-[node name="Layout" type="VBoxContainer" parent="Surface/Margin"]
+[node name="Layout" type="VBoxContainer" parent="Surface/Margin" unique_id=362741468]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Heading" type="Label" parent="Surface/Margin/Layout"]
+[node name="Heading" type="Label" parent="Surface/Margin/Layout" unique_id=1715771166]
 layout_mode = 2
 theme_override_font_sizes/font_size = 23
 text = "Report a Creator bug"
 
-[node name="Help" type="Label" parent="Surface/Margin/Layout"]
+[node name="Help" type="Label" parent="Surface/Margin/Layout" unique_id=1699675855]
 layout_mode = 2
 text = "Describe the issue here. Creator will prepare a GitHub issue for you to review before submitting; your GitHub account is never shared with BrickVerse."
 autowrap_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="Surface/Margin/Layout"]
+[node name="Scroll" type="ScrollContainer" parent="Surface/Margin/Layout" unique_id=257268091]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Form" type="VBoxContainer" parent="Surface/Margin/Layout/Scroll"]
+[node name="Form" type="VBoxContainer" parent="Surface/Margin/Layout/Scroll" unique_id=1775262493]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 7
 
-[node name="TitleLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="TitleLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=1619154945]
 layout_mode = 2
 text = "Short summary *"
 
-[node name="Title" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Title" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form" unique_id=203605886]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 placeholder_text = "Example: Creator crashes when duplicating terrain"
 max_length = 120
 
-[node name="AreaLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="AreaLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=1026271771]
 layout_mode = 2
 text = "Area"
 
-[node name="Area" type="OptionButton" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Area" type="OptionButton" parent="Surface/Margin/Layout/Scroll/Form" unique_id=1701630937]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="DescriptionLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="DescriptionLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=389734453]
 layout_mode = 2
 text = "What happened? *"
 
-[node name="Description" type="TextEdit" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Description" type="TextEdit" parent="Surface/Margin/Layout/Scroll/Form" unique_id=65996799]
 custom_minimum_size = Vector2(0, 105)
 layout_mode = 2
 placeholder_text = "Describe the problem and when it started."
 wrap_mode = 1
 
-[node name="StepsLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="StepsLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=1235444518]
 layout_mode = 2
 text = "Steps to reproduce *"
 
-[node name="Steps" type="TextEdit" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Steps" type="TextEdit" parent="Surface/Margin/Layout/Scroll/Form" unique_id=750724958]
 custom_minimum_size = Vector2(0, 105)
 layout_mode = 2
-placeholder_text = "1. Open…\n2. Select…\n3. Observe…"
+placeholder_text = "1. Open…
+2. Select…
+3. Observe…"
 wrap_mode = 1
 
-[node name="ExpectedLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="ExpectedLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=1153703684]
 layout_mode = 2
 text = "Expected behavior"
 
-[node name="Expected" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Expected" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form" unique_id=556553467]
 layout_mode = 2
 placeholder_text = "What should have happened?"
 
-[node name="ActualLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="ActualLabel" type="Label" parent="Surface/Margin/Layout/Scroll/Form" unique_id=993801299]
 layout_mode = 2
 text = "Actual behavior"
 
-[node name="Actual" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="Actual" type="LineEdit" parent="Surface/Margin/Layout/Scroll/Form" unique_id=96815824]
 layout_mode = 2
 placeholder_text = "What happened instead?"
 
-[node name="IncludeSystem" type="CheckBox" parent="Surface/Margin/Layout/Scroll/Form"]
+[node name="IncludeSystem" type="CheckBox" parent="Surface/Margin/Layout/Scroll/Form" unique_id=159414245]
 layout_mode = 2
 button_pressed = true
 text = "Include Creator version and system information"
 
-[node name="Validation" type="Label" parent="Surface/Margin/Layout"]
+[node name="Validation" type="Label" parent="Surface/Margin/Layout" unique_id=554581362]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.38, 0.38, 1)
 autowrap_mode = 2
 
-[node name="Actions" type="HBoxContainer" parent="Surface/Margin/Layout"]
+[node name="Actions" type="HBoxContainer" parent="Surface/Margin/Layout" unique_id=112671333]
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 8
+alignment = 2
 
-[node name="Cancel" type="Button" parent="Surface/Margin/Layout/Actions"]
+[node name="Cancel" type="Button" parent="Surface/Margin/Layout/Actions" unique_id=1127965100]
 custom_minimum_size = Vector2(100, 38)
 layout_mode = 2
 text = "Cancel"
 
-[node name="Continue" type="Button" parent="Surface/Margin/Layout/Actions"]
+[node name="Continue" type="Button" parent="Surface/Margin/Layout/Actions" unique_id=1792535852]
 custom_minimum_size = Vector2(190, 38)
 layout_mode = 2
 text = "Review on GitHub"

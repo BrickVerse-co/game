@@ -180,6 +180,10 @@ public class DebugAgent
 		{
 			BV.CallOnMainThread(() => World.Current?.Input.ApplyCreatorEmulation(emulation));
 		}
+		else if (msg is MessageRuntimeDiagnosticsRequest)
+		{
+			BV.CallOnMainThread(async () => await SendRuntimeDiagnostics());
+		}
 	}
 
 	public async Task SendMessage(IDebugMessage msg)
@@ -230,6 +234,36 @@ public class DebugAgent
 		}).ToArray();
 
 		await SendMessage(new MessageRuntimeSnapshot { Objects = objects });
+	}
+
+	private async Task SendRuntimeDiagnostics()
+	{
+		World? world = World.Current;
+		if (world == null) return;
+		Instance[] instances = [world, .. world.GetDescendants()];
+		string[] scripts = instances
+			.Where(instance => instance.ClassName.EndsWith("Script", StringComparison.OrdinalIgnoreCase))
+			.Select(instance => $"{instance.Name} [{instance.ClassName}]")
+			.OrderBy(name => name)
+			.ToArray();
+		int ping = world.Players.LocalPlayer?.NetworkPing ?? 0;
+		await SendMessage(new MessageRuntimeDiagnostics
+		{
+			Fps = Performance.GetMonitor(Performance.Monitor.TimeFps),
+			FrameTimeMs = Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d,
+			PhysicsTimeMs = Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000d,
+			StaticMemoryBytes = (long)Performance.GetMonitor(Performance.Monitor.MemoryStatic),
+			VideoMemoryBytes = (long)Performance.GetMonitor(Performance.Monitor.RenderVideoMemUsed),
+			NodeCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount),
+			ObjectCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectCount),
+			DrawCalls = (int)Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame),
+			Active3DObjects = (int)Performance.GetMonitor(Performance.Monitor.RenderTotalObjectsInFrame),
+			Scripts = scripts,
+			IsServer = world.Network.IsServer,
+			NetworkMode = world.Network.NetworkMode.ToString(),
+			Players = world.Players.PlayersCount,
+			PingMs = ping,
+		});
 	}
 
 	private static void SetRuntimeProperty(MessageRuntimePropertySet change)

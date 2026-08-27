@@ -6,6 +6,7 @@
 [ext_resource type="FontFile" uid="uid://bcqd3fm44o8nd" path="res://assets/fonts/Montserrat-Regular.ttf" id="4_t7da0"]
 [ext_resource type="Texture2D" uid="uid://doxoiftxoxbxh" path="res://assets/textures/creator/tree-arrow-expanded.svg" id="5_tree_expanded"]
 [ext_resource type="Texture2D" uid="uid://b8ijuju13o60y" path="res://assets/textures/creator/tree-arrow-collapsed.svg" id="6_tree_collapsed"]
+[ext_resource type="Texture2D" uid="uid://eh73dq328feq" path="res://assets/textures/creator/close.svg" id="7_4lhb5"]
 [ext_resource type="Texture2D" uid="uid://loo0e1dnrcbq" path="res://assets/textures/creator/tree-arrow-collapsed-mirrored.svg" id="7_tree_collapsed_mirrored"]
 
 [sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
@@ -473,5 +474,7 @@ Window/colors/title_outline_modulate = Color(0, 0, 0, 0)
 Window/constants/title_height = 34
 Window/constants/title_outline_size = 0
 Window/font_sizes/title_font_size = 12
+Window/icons/close = ExtResource("7_4lhb5")
+Window/icons/close_pressed = ExtResource("7_4lhb5")
 Window/styles/embedded_border = SubResource("WindowBorder")
 Window/styles/embedded_unfocused_border = SubResource("WindowUnfocused")
