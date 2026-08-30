@@ -149,9 +149,7 @@ public partial class CreatorInterface : Control, IScriptObject
 				cacheMode: ResourceLoader.CacheMode.IgnoreDeep
 			)
 			: _creatorTheme;
-		LastFilePromptFolder = System.Environment.GetFolderPath(
-			System.Environment.SpecialFolder.MyDocuments
-		);
+		LastFilePromptFolder = CreatorService.DefaultProjectsAbsolutePath;
 
 		Theme = _creatorTheme;
 

@@ -32,6 +32,8 @@ public sealed partial class CreatorService : Node, IScriptObject
 {
 	public const string BrickVerseFolderName = "BrickVerse/";
 	public const string CloudWorldProjectsFolderName = "BrickVerseCreator/My Worlds";
+	public const string DefaultProjectsPath = "user://creator/projects";
+	public static string DefaultProjectsAbsolutePath => ProjectSettings.GlobalizePath(DefaultProjectsPath);
 	public string? PendingModelImportPath { get; set; }
 
 	private long _localTestIDCounter = 0;
@@ -80,11 +82,6 @@ public sealed partial class CreatorService : Node, IScriptObject
 		AddChild(Interface);
 		AddChild(new TeamCreateService());
 
-		string polyFolder = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), BrickVerseFolderName);
-		if (!Directory.Exists(polyFolder))
-		{
-			Directory.CreateDirectory(polyFolder);
-		}
 	}
 
 	public override void _Ready()
@@ -463,10 +460,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				string safeProjectName = projectName.SanitizeFileName().Trim();
 				if (string.IsNullOrWhiteSpace(safeProjectName)) safeProjectName = "World";
 				string projectFolderName = $"{safeProjectName}-{parsedWorldId}";
-				string projectsRoot = Path.Join(
-					System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments),
-					CloudWorldProjectsFolderName
-				);
+				string projectsRoot = DefaultProjectsAbsolutePath;
 				string projectFolderPath = Path.Join(projectsRoot, projectFolderName);
 
 				bool promptForLocation = CreatorSettingsService.Instance.Get<bool>(
