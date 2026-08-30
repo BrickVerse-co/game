@@ -26,18 +26,24 @@ public sealed partial class DeveloperToolsTab : MarginContainer
 
 	public override void _Ready()
 	{
-		AddThemeConstantOverride("margin_left", 10);
-		AddThemeConstantOverride("margin_top", 10);
-		AddThemeConstantOverride("margin_right", 10);
-		AddThemeConstantOverride("margin_bottom", 10);
+		AddThemeConstantOverride("margin_left", 16);
+		AddThemeConstantOverride("margin_top", 14);
+		AddThemeConstantOverride("margin_right", 16);
+		AddThemeConstantOverride("margin_bottom", 16);
 		VBoxContainer layout = new();
+		layout.AddThemeConstantOverride("separation", 10);
 		AddChild(layout);
 
 		HBoxContainer toolbar = new();
 		layout.AddChild(toolbar);
-		Label title = new() { Text = Mode.ToString(), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		toolbar.AddChild(title);
-		Button refresh = new() { Text = "Refresh" };
+		VBoxContainer heading = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		Label title = new() { Text = Mode.ToString() };
+		title.AddThemeFontSizeOverride("font_size", 20);
+		Label subtitle = new() { Text = ModeDescription(), Modulate = new Color(0.68f, 0.72f, 0.76f) };
+		heading.AddChild(title);
+		heading.AddChild(subtitle);
+		toolbar.AddChild(heading);
+		Button refresh = new() { Text = "Refresh", CustomMinimumSize = new Vector2(92, 34) };
 		refresh.Pressed += Refresh;
 		toolbar.AddChild(refresh);
 
@@ -71,9 +77,30 @@ public sealed partial class DeveloperToolsTab : MarginContainer
 			SizeFlagsVertical = SizeFlags.ExpandFill,
 			ScrollActive = true,
 		};
+		_output.AddThemeStyleboxOverride("normal", new StyleBoxFlat
+		{
+			BgColor = new Color(0.035f, 0.04f, 0.05f, 0.92f),
+			CornerRadiusTopLeft = 8,
+			CornerRadiusTopRight = 8,
+			CornerRadiusBottomLeft = 8,
+			CornerRadiusBottomRight = 8,
+			ContentMarginLeft = 12,
+			ContentMarginTop = 10,
+			ContentMarginRight = 12,
+			ContentMarginBottom = 10,
+		});
 		layout.AddChild(_output);
 		Refresh();
 	}
+
+	private string ModeDescription() => Mode switch
+	{
+		ToolMode.Performance => "Live rendering and engine timing",
+		ToolMode.Scripts => "Luau execution and scheduler profiling",
+		ToolMode.Memory => "Runtime allocations and asset cache usage",
+		ToolMode.Network => "Connection and session diagnostics",
+		_ => "Run client-side Luau for development and testing",
+	};
 
 	public override void _Process(double delta)
 	{

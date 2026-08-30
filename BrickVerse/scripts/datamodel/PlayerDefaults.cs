@@ -27,6 +27,7 @@ public sealed partial class PlayerDefaults : HiddenBase
 	private bool _useBubbleChat;
 	private bool _autoLoadAppearance;
 	private bool _loadAppearanceTools;
+	private bool _allowDeveloperFreecam;
 	private Player.PlayerMovementModeEnum _movementMode;
 
 	[Editable, ScriptProperty]
@@ -224,6 +225,20 @@ public sealed partial class PlayerDefaults : HiddenBase
 		}
 	}
 
+	/// <summary>
+	/// Allows platform administrators and this universe's developer to use the in-game free camera.
+	/// </summary>
+	[Editable, ScriptProperty]
+	public bool AllowDeveloperFreecam
+	{
+		get => _allowDeveloperFreecam;
+		set
+		{
+			_allowDeveloperFreecam = value;
+			OnPropertyChanged();
+		}
+	}
+
 	[Editable, ScriptProperty]
 	public Player.PlayerMovementModeEnum MovementMode
 	{
@@ -263,6 +278,7 @@ public sealed partial class PlayerDefaults : HiddenBase
 		UseBubbleChat = true;
 		AutoLoadAppearance = true;
 		LoadAppearanceTools = true;
+		AllowDeveloperFreecam = true;
 		MovementMode = Player.PlayerMovementModeEnum.Default;
 	}
 }

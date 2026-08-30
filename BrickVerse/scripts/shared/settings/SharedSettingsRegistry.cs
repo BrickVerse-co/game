@@ -349,10 +349,10 @@ public static class SharedSettingsRegistry
 					ValueKind = SettingValueKind.Int,
 					ControlKind = SettingControlKind.Dropdown,
 					RequiresRestart = true,
-					DefaultValue = 5,
+					DefaultValue = 10,
 					Options =
 					[
-						new() { Value = 5, Label = "Default (5)" },
+						new() { Value = 10, Label = "Default (10)" },
 						new() { Value = 15, Label = "Fast (15)" },
 						new() { Value = 30, Label = "Aggressive (30)" },
 						new() { Value = 60, Label = "SPEED (60)" },
