@@ -5,9 +5,15 @@
 [ext_resource type="Texture2D" uid="uid://wlrvgtw6qeuw" path="res://assets/textures/mobile/home/headerbg_color.png" id="3_2b3aw"]
 [ext_resource type="PackedScene" uid="uid://baoot5bioy8p6" path="res://scenes/mobile/ui/success_gradient.tscn" id="4_vkmeh"]
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="5_e6spv"]
-[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/chevron-left.svg" id="6_back"]
+[ext_resource type="Texture2D" uid="uid://c60spvojllrt4" path="res://assets/textures/ui-icons/chevron-left.svg" id="6_back"]
 [ext_resource type="PackedScene" path="res://scenes/mobile/components/shared/markdown.tscn" id="7_markdown"]
-[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/user-circle.svg" id="8_creator"]
+[ext_resource type="Texture2D" uid="uid://0s4gs7ygxle6" path="res://assets/textures/ui-icons/user-circle.svg" id="8_creator"]
+[ext_resource type="Texture2D" uid="uid://bsabbdtmjil3w" path="res://assets/textures/ui-icons/users-three.svg" id="9_players"]
+[ext_resource type="Texture2D" uid="uid://c4ibc8nmxx8o4" path="res://assets/textures/ui-icons/eye.svg" id="10_visits"]
+[ext_resource type="Texture2D" uid="uid://d37pfa7iddo6t" path="res://assets/textures/ui-icons/gauge.svg" id="11_capacity"]
+[ext_resource type="Texture2D" uid="uid://b1gwo4nfmof5f" path="res://assets/textures/ui-icons/thumbs-up.svg" id="12_like"]
+[ext_resource type="Texture2D" uid="uid://dxhaboxfki2lq" path="res://assets/textures/ui-icons/thumbs-down.svg" id="13_dislike"]
+[ext_resource type="Texture2D" uid="uid://b723rf2mv3taw" path="res://assets/textures/ui-icons/flag.svg" id="14_report"]
 
 [sub_resource type="Gradient" id="Gradient_w46nw"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -23,31 +29,112 @@ content_margin_top = 16.0
 content_margin_right = 16.0
 content_margin_bottom = 16.0
 
+[sub_resource type="StyleBoxFlat" id="stat_chip"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="rating_button"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="rating_button_hover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.129412, 0.14902, 0.180392, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.188235, 0.211765, 0.247059, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="report_button"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.345098, 0.0784314, 0.0941176, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.784314, 0.192157, 0.235294, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="report_button_hover"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.431373, 0.0941176, 0.113725, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.878431, 0.25098, 0.294118, 0.88)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ub80p"]
+bg_color = Color(0.207843, 0.788235, 0.470588, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_axuuk"]
-bg_color = Color(0.6, 0.6, 0.6, 0.6784314)
+bg_color = Color(0.207843, 0.788235, 0.470588, 0.82)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="loading_background"]
-bg_color = Color(0.12941177, 0.24313726, 0.38039216, 1)
+bg_color = Color(0.0509804, 0.0588235, 0.0705882, 1)
 
-[node name="Control" type="ColorRect" unique_id=882536811 node_paths=PackedStringArray("_playButton", "_genreLabel", "_placeNameLabel", "_creatorNameLabel", "_thumbnailRect", "_thumbnailGradient", "_descriptionLabel", "_statsLabel", "_backButton")]
+[node name="Control" type="ColorRect" unique_id=882536811 node_paths=PackedStringArray("_playButton", "_genreLabel", "_placeNameLabel", "_creatorNameLabel", "_thumbnailRect", "_thumbnailGradient", "_descriptionLabel", "_playersLabel", "_visitsLabel", "_capacityLabel", "_ratingLabel", "_likeButton", "_dislikeButton", "_ageRatingLabel", "_warningsLabel", "_backButton")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -768.0
+offset_right = 0.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_fkwcp")
-color = Color(0.12941177, 0.24313726, 0.38039216, 1)
+color = Color(0.0509804, 0.0588235, 0.0705882, 1)
 script = ExtResource("2_o0lns")
 _playButton = NodePath("Play")
 _genreLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Layout/HBoxContainer/Label")
@@ -56,10 +143,19 @@ _creatorNameLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layou
 _thumbnailRect = NodePath("ScrollContainer/VBoxContainer/Control/TextureRect2")
 _thumbnailGradient = NodePath("ScrollContainer/VBoxContainer/Control/TextureRect2/TextureRect")
 _descriptionLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Description")
-_statsLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats")
+_playersLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Players/Content/Label")
+_visitsLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Visits/Content/Label")
+_capacityLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Capacity/Content/Label")
+_ratingLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Header/Rating")
+_likeButton = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Actions/Like")
+_dislikeButton = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Actions/Dislike")
+_ageRatingLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/AgeRating")
+_warningsLabel = NodePath("ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Warnings")
 _backButton = NodePath("Back")
 
-[node name="Back" type="Button" parent="."]
+[node name="Back" type="Button" parent="." unique_id=1165753591]
+top_level = true
+z_index = 100
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 1
 anchors_preset = 1
@@ -70,28 +166,25 @@ offset_top = 16.0
 offset_right = -16.0
 offset_bottom = 64.0
 grow_horizontal = 0
-icon = ExtResource("6_back")
-mouse_filter = 0
-text = "←"
 theme_override_font_sizes/font_size = 24
-z_index = 100
-top_level = true
+text = "←"
+icon = ExtResource("6_back")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1116018527]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_bottom = -92.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=1508638074]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
 
 [node name="Control" type="Panel" parent="ScrollContainer/VBoxContainer" unique_id=194862004]
-custom_minimum_size = Vector2(0, 225)
+custom_minimum_size = Vector2(0, 240)
 clip_contents = true
 layout_mode = 2
 mouse_filter = 1
@@ -108,7 +201,7 @@ expand_mode = 1
 stretch_mode = 6
 
 [node name="TextureRect" type="TextureRect" parent="ScrollContainer/VBoxContainer/Control/TextureRect2" unique_id=1034406600]
-modulate = Color(0.12919998, 0.24206008, 0.38, 1)
+modulate = Color(0.0509804, 0.0588235, 0.0705882, 1)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -126,7 +219,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_0s7as")
 
 [node name="Layout" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer" unique_id=900607788]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
 [node name="Layout" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=2078253147]
 layout_mode = 2
@@ -145,7 +238,7 @@ text = "Genre"
 [node name="Label3" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Layout" unique_id=2087641446]
 layout_mode = 2
 theme_override_constants/line_spacing = -8
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
 text = "Place Name"
 autowrap_mode = 3
 
@@ -154,23 +247,146 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "By Username"
 icon = ExtResource("8_creator")
-icon_max_width = 18
 flat = true
 alignment = 0
 
 [node name="TextureRect" type="TextureRect" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Layout" unique_id=1956159128]
 layout_mode = 2
 
-[node name="Stats" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+[node name="Stats" type="HFlowContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=418957555]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.71, 0.76, 0.83, 1)
-text = "0 playing • 0 visits"
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="Players" type="PanelContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats" unique_id=1307657146]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/panel = SubResource("stat_chip")
+
+[node name="Content" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Players" unique_id=1526163338]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Players/Content" unique_id=703987196]
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 2
+texture = ExtResource("9_players")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Players/Content" unique_id=576344487]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.960784, 0.968627, 0.980392, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 playing"
+
+[node name="Visits" type="PanelContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats" unique_id=1312969281]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/panel = SubResource("stat_chip")
+
+[node name="Content" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Visits" unique_id=838943558]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Visits/Content" unique_id=1060525835]
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 2
+texture = ExtResource("10_visits")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Visits/Content" unique_id=1620090178]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.960784, 0.968627, 0.980392, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 visits"
+
+[node name="Capacity" type="PanelContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats" unique_id=742973694]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/panel = SubResource("stat_chip")
+
+[node name="Content" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Capacity" unique_id=297868520]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Capacity/Content" unique_id=1842612743]
+custom_minimum_size = Vector2(15, 15)
+layout_mode = 2
+texture = ExtResource("11_capacity")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/Stats/Capacity/Content" unique_id=781062817]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.960784, 0.968627, 0.980392, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 max"
+
+[node name="GameRating" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=959642092]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating" unique_id=1489711686]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Header" unique_id=1967412327]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 19
+text = "Game Rating"
+
+[node name="Rating" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Header" unique_id=169207421]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.686275, 0.733333, 1)
+text = "No ratings"
+
+[node name="Actions" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating" unique_id=2053540070]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Like" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Actions" unique_id=816527479]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("rating_button")
+theme_override_styles/pressed = SubResource("rating_button_hover")
+theme_override_styles/hover = SubResource("rating_button_hover")
+text = "0"
+icon = ExtResource("12_like")
+
+[node name="Dislike" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating/Actions" unique_id=1265034199]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("rating_button")
+theme_override_styles/pressed = SubResource("rating_button_hover")
+theme_override_styles/hover = SubResource("rating_button_hover")
+text = "0"
+icon = ExtResource("13_dislike")
+
+[node name="AgeRating" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating" unique_id=1923370451]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.686275, 0.733333, 1)
+text = "Age rating: Rating Pending"
+
+[node name="Warnings" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout/GameRating" unique_id=1298711612]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.686275, 0.733333, 1)
+text = "Content descriptors: None"
 autowrap_mode = 3
 
-[node name="Description" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" instance=ExtResource("7_markdown")]
+[node name="Description" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=1584033546 instance=ExtResource("7_markdown")]
 layout_mode = 2
+focus_mode = 2
 
-[node name="UnavailableNotice" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+[node name="UnavailableNotice" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=1037218329]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.48, 0.48, 1)
@@ -178,79 +394,42 @@ theme_override_font_sizes/font_size = 16
 text = "You cannot access this experience."
 autowrap_mode = 3
 
-[node name="Report" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout"]
+[node name="Report" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/Layout" unique_id=152651566]
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.62, 0.64, 1)
+theme_override_colors/font_hover_color = Color(1, 0.78, 0.79, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("report_button")
+theme_override_styles/pressed = SubResource("report_button_hover")
+theme_override_styles/hover = SubResource("report_button_hover")
 text = "Report this world"
-flat = true
+icon = ExtResource("14_report")
 
 [node name="Play" type="Button" parent="." unique_id=1628177988]
 clip_children = 1
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -76.0
-offset_right = -20.0
+offset_top = -72.0
+offset_right = -16.0
 offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_ub80p")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_axuuk")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ub80p")
-
-[node name="LoadingSkeleton" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_bottom = -92.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-z_index = 50
-theme_override_styles/panel = SubResource("loading_background")
-
-[node name="Layout" type="VBoxContainer" parent="LoadingSkeleton"]
-layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="Hero" type="ColorRect" parent="LoadingSkeleton/Layout"]
-custom_minimum_size = Vector2(0, 225)
-layout_mode = 2
-color = Color(0.16, 0.29, 0.42, 1)
-
-[node name="Padding" type="MarginContainer" parent="LoadingSkeleton/Layout"]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_right = 16
-
-[node name="Lines" type="VBoxContainer" parent="LoadingSkeleton/Layout/Padding"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="Title" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
-custom_minimum_size = Vector2(250, 34)
-layout_mode = 2
-color = Color(0.22, 0.35, 0.48, 1)
-
-[node name="Creator" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
-custom_minimum_size = Vector2(150, 20)
-layout_mode = 2
-color = Color(0.2, 0.32, 0.45, 1)
-
-[node name="Description" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines"]
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-color = Color(0.18, 0.3, 0.43, 1)
+theme_override_styles/disabled = SubResource("StyleBoxFlat_axuuk")
 
 [node name="TextureRect" parent="Play" unique_id=2058874076 instance=ExtResource("4_vkmeh")]
+modulate = Color(0.91764706, 1, 0.9372549, 0.47058824)
 layout_mode = 1
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Play" unique_id=478733318]
-modulate = Color(0, 0, 0, 0.7647059)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -261,7 +440,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="TextureRect" type="TextureRect" parent="Play/HBoxContainer" unique_id=1015192304]
-custom_minimum_size = Vector2(24, 0)
+custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 texture = ExtResource("5_e6spv")
 expand_mode = 1
@@ -269,7 +448,52 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="Play/HBoxContainer" unique_id=1278878899]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "Play"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="LoadingSkeleton" type="PanelContainer" parent="." unique_id=1677137175]
+z_index = 50
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -92.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("loading_background")
+
+[node name="Layout" type="VBoxContainer" parent="LoadingSkeleton" unique_id=1388426149]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Hero" type="ColorRect" parent="LoadingSkeleton/Layout" unique_id=819623385]
+custom_minimum_size = Vector2(0, 225)
+layout_mode = 2
+color = Color(0.16, 0.29, 0.42, 1)
+
+[node name="Padding" type="MarginContainer" parent="LoadingSkeleton/Layout" unique_id=234981316]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="Lines" type="VBoxContainer" parent="LoadingSkeleton/Layout/Padding" unique_id=631295643]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines" unique_id=843021221]
+custom_minimum_size = Vector2(250, 34)
+layout_mode = 2
+color = Color(0.22, 0.35, 0.48, 1)
+
+[node name="Creator" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines" unique_id=1135707166]
+custom_minimum_size = Vector2(150, 20)
+layout_mode = 2
+color = Color(0.2, 0.32, 0.45, 1)
+
+[node name="Description" type="ColorRect" parent="LoadingSkeleton/Layout/Padding/Lines" unique_id=134300334]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+color = Color(0.18, 0.3, 0.43, 1)

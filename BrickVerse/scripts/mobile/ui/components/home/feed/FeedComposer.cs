@@ -15,13 +15,17 @@ public partial class FeedComposer : AcceptDialog
 	public override void _Ready()
 	{
 		_editor = GetNode<TextEdit>("Editor");
+		GetNode<Button>("CloseButton").Pressed += Hide;
 		Confirmed += Submit;
+		Canceled += Hide;
+		CloseRequested += Hide;
 	}
 
 	public void Open()
 	{
 		_editor.Text = "";
-		PopupCentered(new Vector2I(380, 280));
+		Vector2 viewport = GetViewport().GetVisibleRect().Size;
+		PopupCentered(new Vector2I(Math.Min(460, (int)viewport.X - 32), Math.Min(340, (int)viewport.Y - 48)));
 		_editor.GrabFocus();
 	}
 

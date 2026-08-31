@@ -562,6 +562,18 @@ public struct APIV3WorldInfo
 
 	[JsonPropertyName("maxPlayers")]
 	public int MaxPlayers { get; set; }
+
+	[JsonPropertyName("totalLikes")]
+	public int TotalLikes { get; set; }
+
+	[JsonPropertyName("totalDislikes")]
+	public int TotalDislikes { get; set; }
+
+	[JsonPropertyName("isLikedBy")]
+	public bool IsLikedBy { get; set; }
+
+	[JsonPropertyName("isDislikedBy")]
+	public bool IsDislikedBy { get; set; }
 }
 
 public struct APIV3UniverseInfo
@@ -579,6 +591,12 @@ public struct APIV3UniverseInfo
 
 	[JsonPropertyName("genre")]
 	public string Genre { get; set; }
+
+	[JsonPropertyName("minAgeBand")]
+	public string MinAgeBand { get; set; }
+
+	[JsonPropertyName("contentWarnings")]
+	public string[] ContentWarnings { get; set; }
 
 	[JsonPropertyName("creatorId")]
 	public string CreatorId { get; set; }
@@ -763,6 +781,18 @@ public struct APIPlaceInfo
 
 	[JsonPropertyName("rating")]
 	public APIPlaceRating Rating { get; set; }
+
+	[JsonPropertyName("isLikedBy")]
+	public bool IsLikedBy { get; set; }
+
+	[JsonPropertyName("isDislikedBy")]
+	public bool IsDislikedBy { get; set; }
+
+	[JsonPropertyName("ageRating")]
+	public string AgeRating { get; set; }
+
+	[JsonPropertyName("contentWarnings")]
+	public string[] ContentWarnings { get; set; }
 
 	[JsonPropertyName("accessType")]
 	public string AccessType { get; set; }
@@ -1004,6 +1034,9 @@ public struct APIFeedPostAuthor
 
 	[JsonPropertyName("isVerified")]
 	public bool IsVerified { get; set; }
+
+	[JsonPropertyName("isBrandAccount")]
+	public bool IsBrandAccount { get; set; }
 }
 
 public struct APIFeedPostComment
@@ -1027,7 +1060,7 @@ public struct APIFeedPostComment
 public struct APIFeedPostData
 {
 	[JsonPropertyName("id")]
-	public long Id { get; set; }
+	public string Id { get; set; }
 
 	[JsonPropertyName("content")]
 	public string Content { get; set; }
@@ -1047,14 +1080,29 @@ public struct APIFeedPostData
 	[JsonPropertyName("replyCount")]
 	public int ReplyCount { get; set; }
 
+	[JsonPropertyName("repostCount")]
+	public int RepostCount { get; set; }
+
+	[JsonPropertyName("viewCount")]
+	public int ViewCount { get; set; }
+
 	[JsonPropertyName("isLiked")]
 	public bool IsLiked { get; set; }
+
+	[JsonPropertyName("isReposted")]
+	public bool IsReposted { get; set; }
+
+	[JsonPropertyName("isBookmarked")]
+	public bool IsBookmarked { get; set; }
 
 	[JsonPropertyName("placeName")]
 	public string? PlaceName { get; set; }
 
 	[JsonPropertyName("mediaUrl")]
 	public string? MediaUrl { get; set; }
+
+	[JsonPropertyName("headshotUrl")]
+	public string? HeadshotUrl { get; set; }
 
 	[JsonPropertyName("reportURL")]
 	public string ReportURL { get; set; }

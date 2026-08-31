@@ -25,7 +25,8 @@ public partial class TerrainEditor : Control
 		Flatten,
 		Grow,
 		Erode,
-		Grass
+		Grass,
+		Water
 	}
 
 	private enum BrushShape
@@ -64,13 +65,17 @@ public partial class TerrainEditor : Control
 	[Export] private CheckButton _continuousCheck = null!;
 	[Export] private Button _clearButton = null!;
 	[Export] private Label _statusLabel = null!;
+	[Export] private Button _waterButton = null!;
+	[Export] private TerrainWaterSettingsPanel _waterSettings = null!;
+	[Export] private Button _grassButton = null!;
+	[Export] private TerrainGrassSettingsPanel _grassSettings = null!;
+	[Export] private FileDialog _heightmapDialog = null!;
+	[Export] private TerrainGenerateDialog _generateDialog = null!;
 	[Export] private bool _enabledByDefault = true;
 	[Export(PropertyHint.Range, "0,2,1")] private int _defaultShapeId;
 	[Export(PropertyHint.Range, "0,255,1")] private int _defaultMaterialId = 1;
 
 	private readonly Dictionary<Button, TerrainTool> _toolButtons = [];
-	private Button? _grassButton;
-	private VBoxContainer? _grassSettings;
 
 	private TerrainTool _tool = TerrainTool.Add;
 	private BrushShape _shape = BrushShape.Sphere;
@@ -100,6 +105,8 @@ public partial class TerrainEditor : Control
 			? _materialOption.GetItemId(_materialOption.Selected)
 			: 0;
 	private Terrain? CurrentTerrain => CreatorService.CurrentGame?.Terrain;
+	private bool IsWaterMaterial => CurrentTerrain?.GetMaterial(MaterialIndex)?.Kind == TerrainMaterialKind.Water;
+	private bool IsWaterBrush => IsWaterMaterial && _tool is TerrainTool.Add or TerrainTool.Remove;
 
 	public override void _Ready()
 	{
@@ -110,19 +117,38 @@ public partial class TerrainEditor : Control
 		_toolButtons[_flattenButton] = TerrainTool.Flatten;
 		_toolButtons[_growButton] = TerrainTool.Grow;
 		_toolButtons[_erodeButton] = TerrainTool.Erode;
+		_toolButtons[_grassButton] = TerrainTool.Grass;
 		foreach ((Button button, TerrainTool tool) in _toolButtons)
 		{
 			button.Pressed += () => SelectTool(tool);
 		}
 		CreatorBetaFeatures.FeatureChanged += OnBetaFeatureChanged;
+		// Water is selected from the terrain material palette and drawn with the
+		// normal Add/Remove tools. Keep advanced settings out of the basic flow.
+		_waterButton.Visible = false;
+		_waterSettings.Visible = false;
+		_waterSettings.ResolveWater = GetWaterLayer;
+		_waterSettings.SetStatus = message => UpdateStatus(message);
+		_waterSettings.EditModeChanged = () => { RebuildPreviewMesh(); UpdateStatus(); };
+		_waterSettings.RefreshFromLayer();
+		_grassSettings.ResolveGrass = GetGrassLayer;
+		_grassSettings.RefreshFromLayer();
 		SetGrassBetaEnabled(CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass));
 
 		_shapeOption.ItemSelected += OnShapeSelected;
-		_materialOption.ItemSelected += _ => UpdateStatus();
+		_materialOption.ItemSelected += _ =>
+		{
+			if (IsWaterMaterial && _tool is TerrainTool.Paint or TerrainTool.Flatten)
+				SelectTool(TerrainTool.Add);
+			UpdatePreviewColor();
+			UpdateStatus();
+		};
 		_enabledCheck.Toggled += OnEnabledToggled;
 		_clearButton.Pressed += OnClearPressed;
 		_importButton.Pressed += OpenHeightmapDialog;
 		_generateButton.Pressed += OpenGenerateDialog;
+		_heightmapDialog.FileSelected += OnHeightmapSelected;
+		_generateDialog.GenerateRequested = GenerateTerrain;
 
 		BindRangeControls(_sizeSlider, _sizeSpinBox, OnBrushSettingsChanged);
 		BindRangeControls(_strengthSlider, _strengthSpinBox, OnBrushSettingsChanged);
@@ -142,6 +168,14 @@ public partial class TerrainEditor : Control
 		SelectTool(TerrainTool.Add);
 		ApplyEditorDefaults();
 		UpdateStatus();
+	}
+
+	private TerrainWater? GetWaterLayer(bool create)
+	{
+		Terrain? terrain = CurrentTerrain; if (terrain == null) return null;
+		TerrainWater? water = terrain.GetChildrenOfClass<TerrainWater>().FirstOrDefault();
+		if (water == null && create) water = terrain.New<TerrainWater>(terrain);
+		return water;
 	}
 
 	public override void _ExitTree()
@@ -167,68 +201,9 @@ public partial class TerrainEditor : Control
 
 	private void SetGrassBetaEnabled(bool enabled)
 	{
-		if (enabled && _grassButton == null)
-		{
-			_grassButton = new Button { Text = "Grass", ToggleMode = true, TooltipText = "Paint skinned grass; hold Shift to erase" };
-			_grassButton.Pressed += () => SelectTool(TerrainTool.Grass);
-			_erodeButton.GetParent().AddChild(_grassButton);
-			_toolButtons[_grassButton] = TerrainTool.Grass;
-			CreateGrassSettingsPanel();
-		}
-		else if (!enabled && _grassButton != null)
-		{
-			if (_tool == TerrainTool.Grass) SelectTool(TerrainTool.Add);
-			_toolButtons.Remove(_grassButton);
-			_grassButton.QueueFree();
-			_grassButton = null;
-			_grassSettings?.QueueFree();
-			_grassSettings = null;
-		}
-	}
-
-	private void CreateGrassSettingsPanel()
-	{
-		if (_grassSettings != null) return;
-		HBoxContainer top = GetNode<HBoxContainer>("Layout/Scroll/Top");
-		_grassSettings = new VBoxContainer { Name = "GrassSettings", CustomMinimumSize = new Vector2(520, 0), Visible = _tool == TerrainTool.Grass };
-		top.AddChild(_grassSettings);
-		_grassSettings.AddChild(new Label { Text = "SKINNED GRASS (BETA)", Modulate = new Color("a1a8b8") });
-		PanelContainer card = new(); _grassSettings.AddChild(card);
-		MarginContainer margin = new(); margin.AddThemeConstantOverride("margin_left", 10); margin.AddThemeConstantOverride("margin_top", 8); margin.AddThemeConstantOverride("margin_right", 10); margin.AddThemeConstantOverride("margin_bottom", 8); card.AddChild(margin);
-		HBoxContainer columns = new(); columns.AddThemeConstantOverride("separation", 16); margin.AddChild(columns);
-		VBoxContainer global = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; global.AddThemeConstantOverride("separation", 5); columns.AddChild(global);
-		VBoxContainer local = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; local.AddThemeConstantOverride("separation", 5); columns.AddChild(local);
-		TerrainGrass? existing = GetGrassLayer(false);
-		global.AddChild(new Label { Text = "Global layer", Modulate = new Color("72c96b") });
-		AddGrassNumber(global, "Density", 0.05, 8, 0.05, existing?.Density ?? 1.2, (grass, value) => grass.Density = value);
-		AddGrassNumber(global, "Height", 0.05, 12, 0.05, existing?.BladeHeight ?? 1.4, (grass, value) => grass.BladeHeight = value);
-		AddGrassNumber(global, "Width", 0.01, 3, 0.01, existing?.BladeWidth ?? 0.13, (grass, value) => grass.BladeWidth = value);
-		AddGrassNumber(global, "Surface inset", -2, 2, 0.01, existing?.SurfaceOffset ?? -0.1, (grass, value) => grass.SurfaceOffset = value);
-		AddGrassNumber(global, "Wind strength", 0, 10, 0.05, CurrentTerrain?.Root.Environment.WindStrength ?? 0.28, (grass, value) => grass.Root.Environment.WindStrength = value);
-		AddGrassNumber(global, "Wind speed", 0, 20, 0.1, CurrentTerrain?.Root.Environment.WindSpeed ?? 1.5, (grass, value) => grass.Root.Environment.WindSpeed = value);
-		AddGrassColor(global, "Base color", existing?.BaseColor ?? new Color("327a32"), (grass, color) => grass.BaseColor = color);
-		AddGrassColor(global, "Tip color", existing?.TipColor ?? new Color("83c95b"), (grass, color) => grass.TipColor = color);
-		CheckButton conform = new() { Text = "Conform blades to surface", ButtonPressed = existing?.DeformToSurface ?? true }; conform.Toggled += value => GetGrassLayer(true)!.DeformToSurface = value; global.AddChild(conform);
-		local.AddChild(new Label { Text = "Paint-at-location", Modulate = new Color("6ac2ff") });
-		AddGrassNumber(local, "Density", 0.05, 8, 0.05, existing?.PaintDensityScale ?? 1, (grass, value) => grass.PaintDensityScale = value);
-		AddGrassNumber(local, "Height", 0.05, 8, 0.05, existing?.PaintHeightScale ?? 1, (grass, value) => grass.PaintHeightScale = value);
-		AddGrassNumber(local, "Width", 0.05, 8, 0.05, existing?.PaintWidthScale ?? 1, (grass, value) => grass.PaintWidthScale = value);
-		AddGrassColor(local, "Tint", existing?.PaintColor ?? Colors.White, (grass, color) => grass.PaintColor = color);
-		local.AddChild(new Label { Text = "Local values are stored on newly painted blades. Hold Shift while painting to erase.", AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color("9aa8ba") });
-	}
-
-	private void AddGrassNumber(VBoxContainer parent, string label, double min, double max, double step, double initial, Action<TerrainGrass, float> apply)
-	{
-		HBoxContainer row = new(); row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(105, 0), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-		SpinBox input = new() { MinValue = min, MaxValue = max, Step = step, Value = initial, CustomMinimumSize = new Vector2(90, 0) };
-		input.ValueChanged += value => apply(GetGrassLayer(true)!, (float)value); row.AddChild(input); parent.AddChild(row);
-	}
-
-	private void AddGrassColor(VBoxContainer parent, string label, Color initial, Action<TerrainGrass, Color> apply)
-	{
-		HBoxContainer row = new(); row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(105, 0), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-		ColorPickerButton input = new() { Color = initial, CustomMinimumSize = new Vector2(90, 28) };
-		input.ColorChanged += color => apply(GetGrassLayer(true)!, color); row.AddChild(input); parent.AddChild(row);
+		if (!enabled && _tool == TerrainTool.Grass) SelectTool(TerrainTool.Add);
+		_grassButton.Visible = enabled;
+		_grassSettings.Visible = enabled && _tool == TerrainTool.Grass;
 	}
 
 	private TerrainGrass? GetGrassLayer(bool create)
@@ -303,15 +278,19 @@ public partial class TerrainEditor : Control
 			button.SetPressedNoSignal(mappedTool == tool);
 		}
 
-		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Paint or TerrainTool.Flatten;
+		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Remove or TerrainTool.Paint or TerrainTool.Flatten;
 		_materialOption.Disabled = !materialEnabled;
 
 		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Flatten or TerrainTool.Grow or TerrainTool.Erode or TerrainTool.Grass;
 		_strengthSlider.Editable = strengthEnabled;
 		_strengthSpinBox.Editable = strengthEnabled;
+		_shapeOption.Disabled = false;
 
 		UpdatePreviewColor();
-		if (_grassSettings != null) _grassSettings.Visible = tool == TerrainTool.Grass;
+		_grassSettings.Visible = tool == TerrainTool.Grass;
+		_waterSettings.Visible = false;
+		if (tool == TerrainTool.Grass) _grassSettings.RefreshFromLayer();
+		RebuildPreviewMesh();
 		UpdateStatus();
 	}
 
@@ -361,6 +340,13 @@ public partial class TerrainEditor : Control
 		{
 			terrain.GetChildrenOfClass<TerrainGrass>().FirstOrDefault()?.Clear();
 			UpdateStatus("Grass coverage cleared.");
+			return;
+		}
+		if (IsWaterMaterial)
+		{
+			TerrainWater? water = GetWaterLayer(false);
+			if (water == null) UpdateStatus("No water layer exists.");
+			else { water.ClearVoxelWater(); UpdateStatus("Terrain water cleared."); }
 			return;
 		}
 		terrain.Clear();
@@ -426,6 +412,7 @@ public partial class TerrainEditor : Control
 		}
 
 		_drawing = true;
+		if (IsWaterBrush) GetWaterLayer(true)?.BeginVoxelEdit();
 		_hasLastAppliedPosition = false;
 		_lastApplyAtMs = 0.0;
 		_savedAutoSerialise = terrain.AutoSerialise;
@@ -441,6 +428,7 @@ public partial class TerrainEditor : Control
 
 		_drawing = false;
 		_hasLastAppliedPosition = false;
+		if (IsWaterBrush) GetWaterLayer(false)?.EndVoxelEdit();
 
 		Terrain? terrain = CurrentTerrain;
 
@@ -488,7 +476,17 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		ApplyBrush(terrain, _brushPosition);
+		try
+		{
+			ApplyBrush(terrain, _brushPosition);
+		}
+		catch (Exception error)
+		{
+			UpdateStatus("Terrain edit failed: " + error.Message);
+			BV.PrintErr("Terrain editor brush failed: ", error);
+			FinishStroke();
+			return;
+		}
 		_lastAppliedPosition = _brushPosition;
 		_hasLastAppliedPosition = true;
 		_lastApplyAtMs = nowMs;
@@ -503,11 +501,13 @@ public partial class TerrainEditor : Control
 		switch (_tool)
 		{
 			case TerrainTool.Add:
-				ApplyAdd(terrain, position, size, radius, material);
+				if (IsWaterMaterial) ApplyWater(position, size, radius, true);
+				else ApplyAdd(terrain, position, size, radius, material);
 				break;
 
 			case TerrainTool.Remove:
-				ApplyRemove(terrain, position, size, radius);
+				if (IsWaterMaterial) ApplyWater(position, size, radius, false);
+				else ApplyRemove(terrain, position, size, radius);
 				break;
 
 			case TerrainTool.Paint:
@@ -543,7 +543,49 @@ public partial class TerrainEditor : Control
 				if (Input.IsKeyPressed(Key.Shift)) grass.Erase(position, radius);
 				else grass.Paint(position, _brushNormal, radius, BrushStrength);
 				break;
+
+			case TerrainTool.Water:
+				TerrainWater? water = GetWaterLayer(true);
+				if (water == null) break;
+				switch (_waterSettings.EditMode)
+				{
+					case TerrainWaterSettingsPanel.WaterEditMode.AddWater:
+						if (_shape == BrushShape.Block) water.FillWaterBlock(position, Vector3.One * size); else if (_shape == BrushShape.Cylinder) water.FillWaterCylinder(position, size, radius); else water.FillWaterBall(position, radius);
+						UpdateStatus($"Painted voxel water · {water.GetWaterCellCount():N0} cells."); break;
+					case TerrainWaterSettingsPanel.WaterEditMode.DrainWater:
+						if (_shape == BrushShape.Block) water.DrainWaterBlock(position, Vector3.One * size); else if (_shape == BrushShape.Cylinder) water.DrainWaterCylinder(position, size, radius); else water.DrainWaterBall(position, radius);
+						UpdateStatus($"Drained voxel water · {water.GetWaterCellCount():N0} cells remain."); break;
+					case TerrainWaterSettingsPanel.WaterEditMode.SetOceanLevel:
+						water.OceanEnabled = true; water.WaterLevel = position.Y; UpdateStatus($"Ocean level set to {position.Y:0.##}."); break;
+					case TerrainWaterSettingsPanel.WaterEditMode.AddDryVolume:
+						water.AddExclusionBox(position, Vector3.One * Mathf.Max(size, 4), .25f); UpdateStatus($"Added dry volume #{water.GetExclusionCount()}."); break;
+					case TerrainWaterSettingsPanel.WaterEditMode.RemoveDryVolume:
+						UpdateStatus(water.RemoveExclusionAt(position) ? "Dry volume removed." : "No dry volume found here."); break;
+				}
+				break;
 		}
+	}
+
+	private void ApplyWater(Vector3 position, float size, float radius, bool add)
+	{
+		TerrainWater? water = GetWaterLayer(true);
+		if (water == null) return;
+		if (_shape == BrushShape.Block)
+		{
+			if (add) water.FillWaterBlock(position, Vector3.One * size);
+			else water.DrainWaterBlock(position, Vector3.One * size);
+		}
+		else if (_shape == BrushShape.Cylinder)
+		{
+			if (add) water.FillWaterCylinder(position, size, radius);
+			else water.DrainWaterCylinder(position, size, radius);
+		}
+		else
+		{
+			if (add) water.FillWaterBall(position, radius);
+			else water.DrainWaterBall(position, radius);
+		}
+		UpdateStatus(add ? "Water added." : "Water removed.");
 	}
 
 	private void ApplyFlatten(
@@ -570,34 +612,20 @@ public partial class TerrainEditor : Control
 
 	private void OpenHeightmapDialog()
 	{
-		FileDialog dialog = new()
+		_heightmapDialog.PopupCenteredRatio(0.72f);
+	}
+
+	private void OnHeightmapSelected(string path)
+	{
+		try
 		{
-			Title = "Import Terrain Heightmap",
-			Access = FileDialog.AccessEnum.Filesystem,
-			FileMode = FileDialog.FileModeEnum.OpenFile,
-			UseNativeDialog = true,
-			Filters =
-			[
-				"*.png, *.jpg, *.jpeg, *.webp, *.exr ; Heightmap Images",
-				"*.r16, *.raw ; 16-bit RAW Heightmaps",
-			],
-		};
-		dialog.FileSelected += path =>
+			ImportHeightmap(path);
+		}
+		catch (Exception error)
 		{
-			try
-			{
-				ImportHeightmap(path);
-			}
-			catch (Exception error)
-			{
-				UpdateStatus("Heightmap import failed: " + error.Message);
-				BV.PrintErr("Terrain heightmap import failed: ", error);
-			}
-			dialog.QueueFree();
-		};
-		dialog.Canceled += dialog.QueueFree;
-		AddChild(dialog);
-		dialog.PopupCenteredRatio(0.72f);
+			UpdateStatus("Heightmap import failed: " + error.Message);
+			BV.PrintErr("Terrain heightmap import failed: ", error);
+		}
 	}
 
 	private void ImportHeightmap(string path)
@@ -651,80 +679,7 @@ public partial class TerrainEditor : Control
 
 	private void OpenGenerateDialog()
 	{
-		ConfirmationDialog dialog = new()
-		{
-			Title = "Generate Terrain",
-			OkButtonText = "Generate",
-			MinSize = new Vector2I(430, 390),
-		};
-		VBoxContainer content = new();
-		content.AddThemeConstantOverride("separation", 10);
-		dialog.AddChild(content);
-
-		OptionButton preset = AddDialogOption(content, "Terrain type", ["Rolling Hills", "Mountains", "Islands", "Canyons"]);
-		SpinBox size = AddDialogSpin(content, "World size", 64, 512, 16, 256);
-		SpinBox height = AddDialogSpin(content, "Maximum height", 8, 256, 4, 96);
-		SpinBox detail = AddDialogSpin(content, "Feature size", 8, 128, 2, 48);
-		SpinBox seed = AddDialogSpin(content, "Seed", 0, int.MaxValue, 1, Random.Shared.Next(1, int.MaxValue));
-		CheckButton replace = new() { Text = "Replace existing terrain", ButtonPressed = true };
-		content.AddChild(replace);
-		Label hint = new()
-		{
-			Text = "Generation uses the selected terrain material and is saved with the world.",
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-		};
-		content.AddChild(hint);
-
-		dialog.Confirmed += () =>
-		{
-			GenerateTerrain(
-				preset.Selected,
-				(int)size.Value,
-				(float)height.Value,
-				(float)detail.Value,
-				(int)seed.Value,
-				replace.ButtonPressed);
-			dialog.QueueFree();
-		};
-		dialog.Canceled += dialog.QueueFree;
-		AddChild(dialog);
-		dialog.PopupCentered();
-	}
-
-	private static OptionButton AddDialogOption(
-		VBoxContainer parent,
-		string label,
-		string[] items)
-	{
-		Label title = new() { Text = label };
-		parent.AddChild(title);
-		OptionButton option = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		foreach (string item in items) option.AddItem(item);
-		parent.AddChild(option);
-		return option;
-	}
-
-	private static SpinBox AddDialogSpin(
-		VBoxContainer parent,
-		string label,
-		double minimum,
-		double maximum,
-		double step,
-		double value)
-	{
-		HBoxContainer row = new();
-		row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2(150, 0) });
-		SpinBox spin = new()
-		{
-			MinValue = minimum,
-			MaxValue = maximum,
-			Step = step,
-			Value = value,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-		};
-		row.AddChild(spin);
-		parent.AddChild(row);
-		return spin;
+		_generateDialog.Open();
 	}
 
 	private void GenerateTerrain(
@@ -881,6 +836,12 @@ public partial class TerrainEditor : Control
 		Vector3 rayOrigin = camera.ProjectRayOrigin(mousePosition);
 		Vector3 rayDirection = camera.ProjectRayNormal(mousePosition).Normalized();
 		Vector3 rayEnd = rayOrigin + rayDirection * 10000.0f;
+		TerrainWater? editableWater = IsWaterBrush ? GetWaterLayer(false) : null;
+		bool pickExistingWater = IsWaterMaterial && _tool == TerrainTool.Remove;
+		if (pickExistingWater && editableWater != null && editableWater.TryRaycast(rayOrigin, rayDirection, 10000, out Vector3 waterHit, out Vector3 waterNormal))
+		{
+			_brushPosition = waterHit; _brushNormal = waterNormal; _hasBrushHit = true; return;
+		}
 
 		if (terrain != null &&
 			terrain.TryRaycast(
@@ -928,7 +889,8 @@ public partial class TerrainEditor : Control
 		if (_tool == TerrainTool.Add &&
 			Mathf.Abs(rayDirection.Y) > 0.0001f)
 		{
-			float distance = -rayOrigin.Y / rayDirection.Y;
+			float planeHeight = IsWaterMaterial ? GetWaterLayer(false)?.WaterLevel ?? 0 : 0;
+			float distance = (planeHeight - rayOrigin.Y) / rayDirection.Y;
 
 			if (distance >= 0.0f)
 			{
@@ -978,6 +940,14 @@ public partial class TerrainEditor : Control
 		for (int index = 0; index < _materialOption.ItemCount; index++)
 		{
 			int slot = _materialOption.GetItemId(index);
+			if (CurrentTerrain?.GetMaterial(slot)?.Kind == TerrainMaterialKind.Water)
+			{
+				Texture2D waterIcon = GD.Load<Texture2D>("res://assets/textures/datamodel/TerrainWater.svg");
+				_materialOption.SetItemIcon(index, waterIcon);
+				popup.SetItemIcon(index, waterIcon);
+				popup.SetItemIconMaxWidth(index, 12);
+				continue;
+			}
 			TerrainMaterial? terrainMaterial = CurrentTerrain?.GetMaterial(slot);
 			Texture2D icon = LoadMaterialIcon(terrainMaterial);
 			_materialOption.SetItemIcon(index, icon);
@@ -991,7 +961,7 @@ public partial class TerrainEditor : Control
 		string signature = string.Join(
 			"|",
 			CurrentTerrain?.GetMaterials().Select(
-				material => $"{material.ObjectID}:{material.Slot}:{material.Name}:{material.Surface}:{material.Color}"
+				material => $"{material.ObjectID}:{material.Slot}:{material.Name}:{material.Kind}:{material.Surface}:{material.Color}"
 			) ?? []
 		);
 		if (_materialSignature == signature)
@@ -1236,7 +1206,9 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		_previewMaterial.AlbedoColor = _tool switch
+		_previewMaterial.AlbedoColor = IsWaterMaterial
+			? new Color(0.1f, 0.72f, 0.95f, 0.28f)
+			: _tool switch
 		{
 			TerrainTool.Remove => new Color(1.0f, 0.25f, 0.25f, 0.32f),
 			TerrainTool.Paint => new Color(1.0f, 0.72f, 0.2f, 0.32f),
@@ -1244,6 +1216,7 @@ public partial class TerrainEditor : Control
 			TerrainTool.Flatten => new Color(0.35f, 0.85f, 0.95f, 0.32f),
 			TerrainTool.Grow => new Color(0.3f, 0.9f, 0.5f, 0.32f),
 			TerrainTool.Erode => new Color(1.0f, 0.45f, 0.35f, 0.32f),
+			TerrainTool.Water => new Color(0.1f, 0.72f, 0.95f, 0.28f),
 			_ => new Color(0.25f, 0.7f, 1.0f, 0.32f)
 		};
 	}
@@ -1289,7 +1262,6 @@ public partial class TerrainEditor : Control
 			? string.Empty
 			: $" · Material {_materialOption.GetItemText(_materialOption.Selected)}";
 
-		_statusLabel.Text =
-			$"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · Interval {BrushIntervalMs:0}ms";
+		_statusLabel.Text = $"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · Interval {BrushIntervalMs:0}ms";
 	}
 }

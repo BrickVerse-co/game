@@ -9,6 +9,9 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
 using BrickVerse.Schemas.API;
 using System;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 #if CREATOR
 using BrickVerse.Creator.Settings;
 #endif
@@ -19,6 +22,7 @@ namespace BrickVerse.Datamodel.Services;
 public sealed partial class PresenceService : Instance
 {
 	private const long DiscordAppID = 871308379992260629;
+	private const int LocalPresenceRelayPort = 45837;
 	private string? _state;
 	private BVImageAsset? _coverImage;
 	private ActivityManager? _activityManager;
@@ -226,8 +230,6 @@ public sealed partial class PresenceService : Instance
 
 	private void UpdateDiscord()
 	{
-		if (_activityManager == null) return;
-
 		string details;
 		string largeText = "Testing...";
 
@@ -305,10 +307,66 @@ public sealed partial class PresenceService : Instance
 			Instance = true
 		};
 
+		RelayBrickVersePresence(
+			details,
+			activity.State,
+			activity.Assets.LargeImage,
+			activity.Assets.LargeText,
+			activity.Assets.SmallImage,
+			activity.Assets.SmallText,
+			partyId,
+			Root.Players.PlayersCount,
+			Root.Players.MaxPlayers,
+			canJoin ? serverJoinUrl : ""
+		);
+
+		if (_activityManager == null) return;
+
 		_activityManager.UpdateActivity(activity, result =>
 		{
 			if (result != Result.Ok) BV.PrintErr($"Discord activity update failed: {result}");
 		});
+	}
+
+	private void RelayBrickVersePresence(
+		string details,
+		string state,
+		string largeImage,
+		string largeText,
+		string smallImage,
+		string smallText,
+		string partyId,
+		int partySize,
+		int partyMax,
+		string joinSecret)
+	{
+		try
+		{
+			var payload = new
+			{
+				source = "brickverse-client",
+				applicationId = DiscordAppID.ToString(),
+				applicationName = Root.SessionType == World.SessionTypeEnum.Creator
+					? "BrickVerse Creator"
+					: "BrickVerse",
+				details,
+				state,
+				assets = new { largeImage, largeText, smallImage, smallText },
+				party = new { id = partyId, size = new[] { partySize, partyMax } },
+				secrets = new { join = joinSecret },
+				timestamps = new
+				{
+					start = DateTimeOffset.FromUnixTimeSeconds(_startTime).UtcDateTime.ToString("O")
+				}
+			};
+			byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload));
+			using UdpClient client = new();
+			client.Send(bytes, bytes.Length, "127.0.0.1", LocalPresenceRelayPort);
+		}
+		catch
+		{
+			// Guild Chat is optional; absence of its local listener is expected.
+		}
 	}
 
 	private void DiscordTick()

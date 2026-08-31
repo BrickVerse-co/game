@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" role="img" aria-label="Verified brand badge">
+  <defs>
+    <linearGradient id="goldOuter" x1="4.2" y1="2.2" x2="18.1" y2="20.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6e63a"/><stop offset=".50" stop-color="#d0910d"/><stop offset=".70" stop-color="#c87a00"/><stop offset="1" stop-color="#f4ea2f"/>
+    </linearGradient>
+    <linearGradient id="goldInner" x1="5.0" y1="3.2" x2="16.8" y2="18.9" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fae981"/><stop offset=".42" stop-color="#e6bb26"/><stop offset="1" stop-color="#d79b12"/>
+    </linearGradient>
+  </defs>
+  <path d="M13.324 3.848 11 1.6 8.676 3.848 5.475 3.395 4.916 6.579 2.06 8.095 3.48 11 2.06 13.904 4.916 15.42 5.475 18.604 8.676 18.152 11 20.4 13.324 18.152 16.525 18.604 17.084 15.42 19.94 13.904 18.52 11 19.94 8.095 17.084 6.579 16.525 3.395Z" fill="url(#goldOuter)"/>
+  <path d="M13.101 4.533 11 2.5 8.899 4.533 6.004 4.123 5.499 7.003 2.916 8.373 4.2 11 2.916 13.627 5.499 14.997 6.004 17.877 8.899 17.467 11 19.5 13.101 17.467 15.996 17.877 16.501 14.997 19.084 13.627 17.8 11 19.084 8.373 16.501 7.003 15.996 4.123Z" fill="url(#goldInner)"/>
+  <path d="M6.18 11.42 9.57 14.81 15.43 8.42 14.08 7.18 9.51 12.16 7.47 10.12Z" fill="#111111"/>
+</svg>

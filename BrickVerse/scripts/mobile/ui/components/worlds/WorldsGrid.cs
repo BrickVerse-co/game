@@ -78,6 +78,7 @@ public partial class WorldsGrid : Control
 					Genre = ReadString(item, "genre", "All"),
 					Playing = ReadInt(item, "totalPlayers", "playing"),
 					Visits = ReadInt(item, "totalVisits", "visits"),
+					Rating = ReadDouble(item, "rating", "likeRatio"),
 				};
 				string thumbnailId = FindPrimaryThumbnailId(item);
 				card.ThumbnailUrl = await BVAPI.ResolveThumbnailUrl("ASSET", thumbnailId);
@@ -127,6 +128,15 @@ public partial class WorldsGrid : Control
 		foreach (string name in names)
 			if (item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int number)) return number;
 		return 0;
+	}
+	private static double? ReadDouble(JsonElement item, params string[] names)
+	{
+		foreach (string name in names)
+		{
+			if (!item.TryGetProperty(name, out JsonElement value) || !value.TryGetDouble(out double number)) continue;
+			return number > 1d ? number / 100d : number;
+		}
+		return null;
 	}
 	private static string FindPrimaryThumbnailId(JsonElement item)
 	{

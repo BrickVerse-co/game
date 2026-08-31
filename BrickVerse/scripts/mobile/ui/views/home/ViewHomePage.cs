@@ -30,10 +30,16 @@ public partial class ViewHomePage : MobileViewBase
 		_bodyshot = GetNode<TextureRect>("ScrollContainer/VBoxContainer/Control/TextureRect");
 		Button terms = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Terms");
 		Button privacy = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Privacy");
+		Button search = GetNode<Button>("TopActions/Search");
+		Button notifications = GetNode<Button>("TopActions/Notifications");
+		search.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Search);
+		notifications.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Notifications, MobileViewEnum.Notifications);
 		terms.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/terms/terms-of-service");
 		privacy.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/privacy/privacy-policy");
 		MobileMotion.Bind(terms);
 		MobileMotion.Bind(privacy);
+		MobileMotion.Bind(search);
+		MobileMotion.Bind(notifications);
 		if (BVMobileAuthAPI.IsAuthenticated) LoadView();
 	}
 

@@ -6,22 +6,49 @@
 [ext_resource type="Texture2D" uid="uid://c52ki0xeowsgk" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="3_vmni1"]
 [ext_resource type="Texture2D" uid="uid://duq1w7g3l6kml" path="res://assets/textures/ui-icons/heart-filled.svg" id="5_vmni1"]
 [ext_resource type="Texture2D" uid="uid://c4kjeilc8dstc" path="res://assets/textures/ui-icons/comments.svg" id="6_uiikp"]
-[ext_resource type="Texture2D" path="res://assets/textures/client/ui/VerifiedBadge.png" id="7_verified"]
+[ext_resource type="Texture2D" path="res://assets/textures/client/ui/feed/verified-user.svg" id="7_verified"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/heart.svg" id="8_heart_outline"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/arrow-clockwise.svg" id="9_repost"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/eye.svg" id="10_views"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/book.svg" id="11_bookmark"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/external-link.svg" id="12_share"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/dots.svg" id="13_more"]
+
+[sub_resource type="StyleBoxFlat" id="feed_surface"]
+bg_color = Color(0.0352941, 0.0392157, 0.0470588, 1)
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="media_surface"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [node name="FeedCard" type="PanelContainer" unique_id=1622089533 node_paths=PackedStringArray("_usernameLabel", "_postDateLabel", "_locationLabel", "_contentLabel", "_pfpRect", "_mediaRect", "_likeLabel", "_commentLabel")]
 clip_contents = true
 size_flags_horizontal = 3
 size_flags_vertical = 0
-mouse_filter = 2
+mouse_default_cursor_shape = 2
 theme = ExtResource("1_h6ftl")
+theme_override_styles/panel = SubResource("feed_surface")
 script = ExtResource("1_vxup8")
 _usernameLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer/Label")
 _postDateLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer/Label2")
 _locationLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer/Label3")
 _contentLabel = NodePath("HBoxContainer/VBoxContainer/Label3")
 _pfpRect = NodePath("HBoxContainer/Control/TextureRect/TextureRect2")
-_mediaRect = NodePath("HBoxContainer/VBoxContainer/Media")
+_mediaRect = NodePath("HBoxContainer/VBoxContainer/MediaFrame/Media")
 _likeLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer/Label")
 _commentLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2/Label")
 
@@ -29,17 +56,17 @@ _commentLabel = NodePath("HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContain
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_override_constants/separation = 16
+theme_override_constants/separation = 11
 
 [node name="Control" type="Control" parent="HBoxContainer" unique_id=1478856190]
-custom_minimum_size = Vector2(50, 0)
+custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
 
 [node name="TextureRect" type="Panel" parent="HBoxContainer/Control" unique_id=1956849348]
 clip_children = 1
 layout_mode = 1
-offset_right = 50.0
-offset_bottom = 50.0
+offset_right = 44.0
+offset_bottom = 44.0
 theme_override_styles/panel = ExtResource("2_h6ftl")
 
 [node name="TextureRect2" type="TextureRect" parent="HBoxContainer/Control/TextureRect" unique_id=854332420]
@@ -60,11 +87,12 @@ theme_override_constants/separation = 4
 [node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer" unique_id=1538329227]
 clip_contents = true
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
 
 [node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=867952205]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 15
 text = "mawji"
 [node name="Verified" type="TextureRect" parent="HBoxContainer/VBoxContainer/HBoxContainer"]
 visible = false
@@ -77,56 +105,116 @@ stretch_mode = 5
 [node name="Label2" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=940951789]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.5019608)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Just now"
 
 [node name="Label3" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1172311074]
-custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.5019608)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Just now"
 text_overrun_behavior = 4
 
+[node name="Spacer" type="Control" parent="HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MoreButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("13_more")
+flat = true
+expand_icon = true
+
 [node name="Label3" type="Label" parent="HBoxContainer/VBoxContainer" unique_id=1839125975]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "Content Content Content Content Content Content Content Content Content Content Content Content Content Content "
 autowrap_mode = 3
 
-[node name="Media" type="TextureRect" parent="HBoxContainer/VBoxContainer" unique_id=1231194857]
+[node name="MediaFrame" type="PanelContainer" parent="HBoxContainer/VBoxContainer"]
 visible = false
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+clip_contents = true
+theme_override_styles/panel = SubResource("media_surface")
+
+[node name="Media" type="TextureRect" parent="HBoxContainer/VBoxContainer/MediaFrame" unique_id=1231194857]
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/VBoxContainer" unique_id=1438341140]
 layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 8
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=1191138764]
+[node name="Repost" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="LikeButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1287021592]
+[node name="Button" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Repost"]
 layout_mode = 2
 action_mode = 0
-icon = ExtResource("8_heart_outline")
+icon = ExtResource("9_repost")
 flat = true
 
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer" unique_id=1222054684]
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Repost"]
 layout_mode = 2
 text = "0"
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2" unique_id=767609104]
+[node name="Reply" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="CommentButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=400473791]
+[node name="CommentButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Reply" unique_id=400473791]
 layout_mode = 2
 action_mode = 0
 icon = ExtResource("6_uiikp")
 flat = true
 
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/HBoxContainer2" unique_id=1875331284]
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Reply" unique_id=1875331284]
 layout_mode = 2
 text = "0"
+
+[node name="Like" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LikeButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Like" unique_id=1287021592]
+layout_mode = 2
+action_mode = 0
+icon = ExtResource("8_heart_outline")
+flat = true
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Like" unique_id=1222054684]
+layout_mode = 2
+text = "0"
+
+[node name="Views" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Icon" type="TextureRect" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Views"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("10_views")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer/HBoxContainer2/Views"]
+layout_mode = 2
+text = "0"
+
+[node name="BookmarkButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("11_bookmark")
+flat = true
+
+[node name="ShareButton" type="Button" parent="HBoxContainer/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("12_share")
+flat = true

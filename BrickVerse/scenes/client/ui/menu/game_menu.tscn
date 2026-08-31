@@ -112,6 +112,12 @@ corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="content_clear"]
 bg_color = Color(0.055, 0.06, 0.065, 0.97)
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.2, 0.24, 1)
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
 
 [sub_resource type="Animation" id="reset"]
 length = 0.001
@@ -138,18 +144,6 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("Shell:position")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(0, 0)]
 }
 
 [sub_resource type="Animation" id="appear"]
@@ -178,18 +172,6 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("Shell:position")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.2),
-"transitions": PackedFloat32Array(0.35, 1),
-"update": 0,
-"values": [Vector2(-28, 0), Vector2(0, 0)]
 }
 
 [sub_resource type="Animation" id="disappear"]

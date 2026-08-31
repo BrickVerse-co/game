@@ -22,12 +22,7 @@ public partial class MobileRecordDetail : MobileViewBase
 	private Label _repliesTitle = null!;
 	private VBoxContainer _replies = null!;
 	private PackedScene _replyScene = null!;
-	private PackedScene _memberCardScene = null!;
-	private VBoxContainer _guildMembers = null!;
-	private HFlowContainer _guildMemberCards = null!;
-	private Button _loadMoreMembers = null!;
 	private string _guildId = "";
-	private int _memberPage = 1;
 	private bool _isGuildMember;
 	private string _guildJoinType = "PUBLIC";
 	private Button _guildPrimary = null!;
@@ -43,21 +38,19 @@ public partial class MobileRecordDetail : MobileViewBase
 		_repliesTitle = GetNode<Label>("Layout/Scroll/Content/RepliesTitle");
 		_replies = GetNode<VBoxContainer>("Layout/Scroll/Content/Replies");
 		_replyScene = GD.Load<PackedScene>("res://scenes/mobile/components/forum/forum_reply.tscn");
-		_memberCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/user_headshot_card.tscn");
-		_guildMembers = GetNode<VBoxContainer>("Layout/Scroll/Content/GuildMembers");
-		_guildMemberCards = GetNode<HFlowContainer>("Layout/Scroll/Content/GuildMembers/Cards");
-		_loadMoreMembers = GetNode<Button>("Layout/Scroll/Content/GuildMembers/LoadMore");
-		_loadMoreMembers.Pressed += () => { _memberPage++; _ = LoadGuildMemberCards(_guildId, true); };
 		HBoxContainer guildActions = GetNode<HBoxContainer>("Layout/Actions");
 		_guildPrimary = guildActions.GetNode<Button>("Primary");
 		_guildMembersButton = guildActions.GetNode<Button>("Members");
 		_guildManage = guildActions.GetNode<Button>("Manage");
+		Button guildReport = guildActions.GetNode<Button>("Report");
 		MobileMotion.Bind(_guildPrimary);
 		MobileMotion.Bind(_guildMembersButton);
 		MobileMotion.Bind(_guildManage);
+		MobileMotion.Bind(guildReport);
 		_guildPrimary.Pressed += OnGuildPrimaryPressed;
-		_guildMembersButton.Pressed += () => { _memberPage = 1; _ = LoadGuildMemberCards(_guildId, false); };
+		_guildMembersButton.Pressed += () => GuildMembersDialog.Open(this, _guildId);
 		_guildManage.Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/guilds/{_guildId}/settings"));
+		guildReport.Pressed += () => MobileReportDialog.Open(this, "guild", _guildId);
 		_image = GetNode<TextureRect>("Layout/Image");
 		_guildLogo = GetNode<TextureRect>("Layout/GuildLogo");
 		GetNode<Button>("Layout/Header/Back").Pressed += () => MobileUI.Singleton.SwitchTo(_returnView, _returnView);
@@ -73,14 +66,12 @@ public partial class MobileRecordDetail : MobileViewBase
 		_description.SetMarkdown(string.IsNullOrWhiteSpace(detail.Description) ? "No description provided." : detail.Description);
 		_repliesTitle.Visible = false;
 		_replies.Visible = false;
-		_guildMembers.Visible = false;
-		ClearChildren(_guildMemberCards);
 		foreach (Node child in _replies.GetChildren()) child.QueueFree();
 		_image.Visible = !string.IsNullOrWhiteSpace(detail.ImageUrl);
 		_guildLogo.Visible = false;
 		if (_image.Visible) _ = LoadImage(detail.ImageUrl);
 		if (detail.ReturnView == MobileViewEnum.Forum && !string.IsNullOrWhiteSpace(detail.Id)) _ = LoadForumThread(detail.Id);
-		else if (detail.ReturnView == MobileViewEnum.Guilds && !string.IsNullOrWhiteSpace(detail.Id)) _ = LoadGuild(detail.Id);
+		else if (MobileUI.Singleton.CurrentView == MobileViewEnum.GuildDetail && !string.IsNullOrWhiteSpace(detail.Id)) _ = LoadGuild(detail.Id);
 	}
 
 	private async System.Threading.Tasks.Task LoadGuild(string id)
@@ -153,35 +144,6 @@ public partial class MobileRecordDetail : MobileViewBase
 			if (_isGuildMember) UpdateGuildPrimary();
 		}
 		catch (Exception exception) { OS.Alert(exception.Message, "Guild"); _guildPrimary.Disabled = false; }
-	}
-
-	private async System.Threading.Tasks.Task LoadGuildMembers(string id)
-	{
-		using JsonDocument document = await BVAPI.GetJson($"/v3/social/guilds/{Uri.EscapeDataString(id)}/members?limit=25&page=1");
-		StringBuilder body = new("## Members\n\n");
-		if (document.RootElement.TryGetProperty("members", out JsonElement members) && members.ValueKind == JsonValueKind.Array)
-			foreach (JsonElement member in members.EnumerateArray()) body.AppendLine($"- **{Nested(member, "user", "username") ?? "Member"}** — {Nested(member, "rank", "name") ?? "Member"}");
-		_description.SetMarkdown(body.ToString());
-	}
-
-	private async System.Threading.Tasks.Task LoadGuildMemberCards(string id, bool append)
-	{
-		using JsonDocument document = await BVAPI.GetJson($"/v3/social/guilds/{Uri.EscapeDataString(id)}/members?limit=12&page={_memberPage}");
-		if (!append) ClearChildren(_guildMemberCards);
-		if (document.RootElement.TryGetProperty("members", out JsonElement members) && members.ValueKind == JsonValueKind.Array)
-			foreach (JsonElement member in members.EnumerateArray())
-			{
-				string userId = member.TryGetProperty("user", out JsonElement user) ? Read(user, "id") ?? "" : "";
-				if (string.IsNullOrWhiteSpace(userId)) continue;
-				UserHeadshotCard card = _memberCardScene.Instantiate<UserHeadshotCard>();
-				card.UserID = userId;
-				card.InitialUsername = Nested(member, "user", "username") ?? "Member";
-				card.TooltipText = "Rank: " + (Nested(member, "rank", "name") ?? "Member");
-				_guildMemberCards.AddChild(card);
-			}
-		_guildMembers.Visible = true;
-		_loadMoreMembers.Visible = document.RootElement.TryGetProperty("pagination", out JsonElement pagination)
-			&& pagination.TryGetProperty("hasNextPage", out JsonElement next) && next.ValueKind == JsonValueKind.True;
 	}
 
 	private static void ClearChildren(Node parent)

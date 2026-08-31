@@ -1,0 +1,122 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/docks/bottombar/terrain-editor/TerrainGrassSettingsPanel.cs" id="1"]
+
+[node name="GrassSettings" type="VBoxContainer"]
+custom_minimum_size = Vector2(620, 0)
+theme_override_constants/separation = 4
+script = ExtResource("1")
+[node name="Title" type="Label" parent="."]
+theme_override_colors/font_color = Color(0.63, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "SKINNED GRASS (BETA)"
+[node name="Card" type="PanelContainer" parent="."]
+size_flags_vertical = 3
+[node name="Margin" type="MarginContainer" parent="Card"]
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+[node name="Columns" type="HBoxContainer" parent="Card/Margin"]
+theme_override_constants/separation = 16
+[node name="Global" type="VBoxContainer" parent="Card/Margin/Columns"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+[node name="Heading" type="Label" parent="Card/Margin/Columns/Global"]
+theme_override_colors/font_color = Color(0.447, 0.788, 0.42, 1)
+text = "Global layer"
+[node name="Density" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Density  "
+min_value = 0.05
+max_value = 8.0
+step = 0.05
+value = 1.2
+[node name="Height" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Height  "
+min_value = 0.05
+max_value = 12.0
+step = 0.05
+value = 1.4
+[node name="Width" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Width  "
+min_value = 0.01
+max_value = 3.0
+step = 0.01
+value = 0.13
+[node name="Inset" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Surface inset  "
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+value = -0.1
+[node name="WindStrength" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Wind strength  "
+max_value = 10.0
+step = 0.05
+value = 0.28
+[node name="WindSpeed" type="SpinBox" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+prefix = "Wind speed  "
+max_value = 20.0
+step = 0.1
+value = 1.5
+[node name="Colors" type="HBoxContainer" parent="Card/Margin/Columns/Global"]
+[node name="BaseLabel" type="Label" parent="Card/Margin/Columns/Global/Colors"]
+size_flags_horizontal = 3
+text = "Base / tip"
+[node name="BaseColor" type="ColorPickerButton" parent="Card/Margin/Columns/Global/Colors"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 28)
+color = Color(0.196, 0.478, 0.196, 1)
+[node name="TipColor" type="ColorPickerButton" parent="Card/Margin/Columns/Global/Colors"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 28)
+color = Color(0.514, 0.788, 0.357, 1)
+[node name="Conform" type="CheckButton" parent="Card/Margin/Columns/Global"]
+unique_name_in_owner = true
+button_pressed = true
+text = "Conform blades to surface"
+[node name="Paint" type="VBoxContainer" parent="Card/Margin/Columns"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+[node name="Heading" type="Label" parent="Card/Margin/Columns/Paint"]
+theme_override_colors/font_color = Color(0.416, 0.761, 1, 1)
+text = "Paint-at-location"
+[node name="PaintDensity" type="SpinBox" parent="Card/Margin/Columns/Paint"]
+unique_name_in_owner = true
+prefix = "Density  "
+min_value = 0.05
+max_value = 8.0
+step = 0.05
+value = 1.0
+[node name="PaintHeight" type="SpinBox" parent="Card/Margin/Columns/Paint"]
+unique_name_in_owner = true
+prefix = "Height  "
+min_value = 0.05
+max_value = 8.0
+step = 0.05
+value = 1.0
+[node name="PaintWidth" type="SpinBox" parent="Card/Margin/Columns/Paint"]
+unique_name_in_owner = true
+prefix = "Width  "
+min_value = 0.05
+max_value = 8.0
+step = 0.05
+value = 1.0
+[node name="Tint" type="HBoxContainer" parent="Card/Margin/Columns/Paint"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Paint/Tint"]
+size_flags_horizontal = 3
+text = "Tint"
+[node name="PaintColor" type="ColorPickerButton" parent="Card/Margin/Columns/Paint/Tint"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 28)
+color = Color(1, 1, 1, 1)
+[node name="Help" type="Label" parent="Card/Margin/Columns/Paint"]
+text = "Local values are stored on newly painted blades. Hold Shift while painting to erase."
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.604, 0.659, 0.729, 1)

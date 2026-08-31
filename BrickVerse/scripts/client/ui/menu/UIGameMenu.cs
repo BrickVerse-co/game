@@ -143,11 +143,11 @@ public partial class UIGameMenu : Control
 
 	private void RefreshSize()
 	{
-		// The redesigned shell is anchor-driven so it remains full-height at every resolution.
-		// Reset only the animation translation; changing Size here would fight those anchors.
-		_gameMenuPanel.Position = Vector2.Zero;
 		Vector2 viewport = GetViewportRect().Size;
 		bool narrow = viewport.X < 850;
+		float inset = narrow ? 8f : 24f;
+		_gameMenuPanel.Position = new Vector2(inset, inset);
+		_gameMenuPanel.Size = new Vector2(Mathf.Max(0, viewport.X - inset * 2), Mathf.Max(0, viewport.Y - inset * 2));
 		if (_contentPanel.Visible) _navigationPanel.Visible = !narrow;
 		_contentHeader.Visible = narrow && _contentPanel.Visible;
 		Control header = GetNode<Control>("Shell/Navigation/Margin/Layout/Header");

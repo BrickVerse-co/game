@@ -91,7 +91,7 @@ public partial class MobileAdBanner : Button
 				return true;
 			case "guilds":
 				if (!string.IsNullOrWhiteSpace(id))
-					MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail,
+					MobileUI.Singleton.SwitchTo(MobileViewEnum.GuildDetail,
 						new MobileRecordDetailArgs("Loading guild…", "Guild", "Loading guild details…", "", MobileViewEnum.Guilds, id));
 				else MobileUI.Singleton.SwitchTo(MobileViewEnum.Guilds, MobileViewEnum.Guilds);
 				return true;

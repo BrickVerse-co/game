@@ -1,6 +1,7 @@
 <Project Sdk="Godot.NET.Sdk/4.7.0">
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
+		<RuntimeIdentifiers>android-arm64;android-x64;ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<InvariantGlobalization>true</InvariantGlobalization>
@@ -83,13 +84,13 @@
 		the x86_64 Android emulator target.
 	-->
 	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'android-arm64'">
-		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-arm64\10.0.1\runtimes\android-arm64\native\libSystem.Security.Cryptography.Native.Android.so"
+		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-arm64\10.0.9\runtimes\android-arm64\native\libSystem.Security.Cryptography.Native.Android.so"
 			Link="libSystem.Security.Cryptography.Native.Android.so"
 			CopyToOutputDirectory="Always"
 			CopyToPublishDirectory="Always" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'android-x64'">
-		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-x64\10.0.1\runtimes\android-x64\native\libSystem.Security.Cryptography.Native.Android.so"
+		<None Include="$(NuGetPackageRoot)microsoft.netcore.app.runtime.nativeaot.android-x64\10.0.9\runtimes\android-x64\native\libSystem.Security.Cryptography.Native.Android.so"
 			Link="libSystem.Security.Cryptography.Native.Android.so"
 			CopyToOutputDirectory="Always"
 			CopyToPublishDirectory="Always" />
@@ -137,6 +138,9 @@
 		     IsMobile=true before this group is evaluated; resetting it here
 		     excluded every scripts/mobile/**/*.cs file from NativeAOT exports. -->
 		<IsCreator Condition="'$(IsCreator)' == ''">false</IsCreator>
+		<!-- The normal desktop client launches the shared app shell, so it must
+		     compile the mobile/app UI too. Only specialized builds opt out. -->
+		<IsMobile Condition="'$(IsMobile)' == '' And '$(BV_BUILD_TARGET)' != 'CREATOR' And '$(BV_BUILD_TARGET)' != 'SERVER' And '$(BV_BUILD_TARGET)' != 'RENDERER'">true</IsMobile>
 		<IsMobile Condition="'$(IsMobile)' == ''">false</IsMobile>
 		<IsCreator Condition="'$(BV_BUILD_TARGET)' == 'CREATOR'">true</IsCreator>
 		<IsMobile Condition="'$(BV_BUILD_TARGET)' == 'MOBILE'">true</IsMobile>

@@ -1,0 +1,51 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/plus.svg" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="circle"]
+bg_color = Color(0.101961, 0.117647, 0.141176, 1)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
+
+[node name="AddFriend" type="Button"]
+custom_minimum_size = Vector2(110, 136)
+flat = true
+tooltip_text = "Find friends"
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Circle" type="PanelContainer" parent="Layout"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("circle")
+
+[node name="Center" type="CenterContainer" parent="Layout/Circle"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Layout/Circle/Center"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Add friend"
+horizontal_alignment = 1

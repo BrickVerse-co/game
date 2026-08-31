@@ -1,0 +1,322 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/docks/bottombar/terrain-editor/TerrainWaterSettingsPanel.cs" id="1"]
+
+[node name="WaterSettings" type="VBoxContainer"]
+custom_minimum_size = Vector2(960, 0)
+theme_override_constants/separation = 4
+script = ExtResource("1")
+
+[node name="Title" type="Label" parent="."]
+theme_override_colors/font_color = Color(0.494, 0.855, 0.949, 1)
+theme_override_font_sizes/font_size = 11
+text = "TERRAIN WATER"
+
+[node name="Card" type="PanelContainer" parent="."]
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="Card"]
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Columns" type="HBoxContainer" parent="Card/Margin"]
+theme_override_constants/separation = 18
+
+[node name="Surface" type="VBoxContainer" parent="Card/Margin/Columns"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="Heading" type="Label" parent="Card/Margin/Columns/Surface"]
+theme_override_colors/font_color = Color(0.396, 0.8, 0.91, 1)
+text = "Surface & shoreline"
+
+[node name="Appearance" type="VBoxContainer" parent="Card/Margin/Columns"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+[node name="Heading" type="Label" parent="Card/Margin/Columns/Appearance"]
+theme_override_colors/font_color = Color(0.32, 0.8, 0.72, 1)
+text = "Material & optics"
+
+[node name="EditMode" type="OptionButton" parent="Card/Margin/Columns/Surface"]
+unique_name_in_owner = true
+tooltip_text = "Choose what the viewport brush does"
+item_count = 5
+popup/item_0/text = "Add voxel water"
+popup/item_1/text = "Drain voxel water"
+popup/item_1/id = 1
+popup/item_2/text = "Set ocean level"
+popup/item_2/id = 2
+popup/item_3/text = "Add dry volume"
+popup/item_3/id = 3
+popup/item_4/text = "Remove dry volume"
+popup/item_4/id = 4
+
+[node name="Enabled" type="CheckButton" parent="Card/Margin/Columns/Surface"]
+unique_name_in_owner = true
+button_pressed = true
+text = "Render water"
+
+[node name="OceanEnabled" type="CheckButton" parent="Card/Margin/Columns/Surface"]
+unique_name_in_owner = true
+text = "Large ocean surface"
+
+[node name="CellSize" type="SpinBox" parent="Card/Margin/Columns/Surface"]
+unique_name_in_owner = true
+tooltip_text = "Voxel resolution. Smaller cells look smoother but use more memory."
+prefix = "Voxel size  "
+min_value = 1.0
+max_value = 32.0
+step = 1.0
+value = 4.0
+
+[node name="LevelRow" type="HBoxContainer" parent="Card/Margin/Columns/Surface"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Surface/LevelRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Level"
+[node name="Level" type="SpinBox" parent="Card/Margin/Columns/Surface/LevelRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = -4096.0
+max_value = 4096.0
+step = 0.25
+
+[node name="WidthRow" type="HBoxContainer" parent="Card/Margin/Columns/Surface"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Surface/WidthRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Width"
+[node name="Width" type="SpinBox" parent="Card/Margin/Columns/Surface/WidthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = 8.0
+max_value = 32768.0
+step = 8.0
+value = 2048.0
+
+[node name="DepthRow" type="HBoxContainer" parent="Card/Margin/Columns/Surface"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Surface/DepthRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Depth"
+[node name="Depth" type="SpinBox" parent="Card/Margin/Columns/Surface/DepthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = 8.0
+max_value = 32768.0
+step = 8.0
+value = 2048.0
+
+[node name="ShoreRow" type="HBoxContainer" parent="Card/Margin/Columns/Surface"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Surface/ShoreRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Shore foam"
+[node name="Shoreline" type="SpinBox" parent="Card/Margin/Columns/Surface/ShoreRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = 0.05
+max_value = 100.0
+step = 0.1
+value = 3.5
+
+[node name="OpacityRow" type="HBoxContainer" parent="Card/Margin/Columns/Surface"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Surface/OpacityRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Opacity"
+[node name="Opacity" type="SpinBox" parent="Card/Margin/Columns/Surface/OpacityRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = 0.05
+max_value = 1.0
+step = 0.01
+value = 0.72
+
+[node name="ShallowRow" type="HBoxContainer" parent="Card/Margin/Columns/Appearance"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Appearance/ShallowRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Shallow"
+[node name="Shallow" type="ColorPickerButton" parent="Card/Margin/Columns/Appearance/ShallowRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 28)
+color = Color(0.196, 0.659, 0.78, 1)
+
+[node name="DeepRow" type="HBoxContainer" parent="Card/Margin/Columns/Appearance"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Appearance/DeepRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Deep"
+[node name="Deep" type="ColorPickerButton" parent="Card/Margin/Columns/Appearance/DeepRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 28)
+color = Color(0.027, 0.341, 0.49, 1)
+
+[node name="FoamRow" type="HBoxContainer" parent="Card/Margin/Columns/Appearance"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Appearance/FoamRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Foam"
+[node name="Foam" type="ColorPickerButton" parent="Card/Margin/Columns/Appearance/FoamRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 28)
+color = Color(0.875, 0.988, 1, 1)
+
+[node name="Waves" type="VBoxContainer" parent="Card/Margin/Columns"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="Heading" type="Label" parent="Card/Margin/Columns/Waves"]
+theme_override_colors/font_color = Color(0.482, 0.624, 1, 1)
+text = "Wave spectrum"
+
+[node name="Preset" type="OptionButton" parent="Card/Margin/Columns/Waves"]
+unique_name_in_owner = true
+tooltip_text = "Apply a tuned water material and wave preset"
+item_count = 5
+popup/item_0/text = "Appearance preset…"
+popup/item_1/text = "Calm lake"
+popup/item_1/id = 1
+popup/item_2/text = "Open ocean"
+popup/item_2/id = 2
+popup/item_3/text = "Rough sea"
+popup/item_3/id = 3
+popup/item_4/text = "Storm"
+popup/item_4/id = 4
+
+[node name="Roughness" type="SpinBox" parent="Card/Margin/Columns/Appearance"]
+unique_name_in_owner = true
+prefix = "Roughness  "
+max_value = 1.0
+step = 0.01
+value = 0.12
+[node name="Refraction" type="SpinBox" parent="Card/Margin/Columns/Appearance"]
+unique_name_in_owner = true
+prefix = "Refraction  "
+max_value = 0.25
+step = 0.005
+value = 0.035
+[node name="NormalStrength" type="SpinBox" parent="Card/Margin/Columns/Appearance"]
+unique_name_in_owner = true
+prefix = "Surface detail  "
+max_value = 4.0
+step = 0.05
+value = 0.7
+[node name="TextureScale" type="SpinBox" parent="Card/Margin/Columns/Appearance"]
+unique_name_in_owner = true
+prefix = "Texture scale  "
+min_value = 0.001
+max_value = 2.0
+step = 0.005
+value = 0.035
+[node name="FoamAmount" type="SpinBox" parent="Card/Margin/Columns/Appearance"]
+unique_name_in_owner = true
+prefix = "Foam amount  "
+max_value = 2.0
+step = 0.05
+value = 0.65
+
+[node name="WaveHeightRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/WaveHeightRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Height"
+[node name="WaveHeight" type="SpinBox" parent="Card/Margin/Columns/Waves/WaveHeightRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+max_value = 128.0
+step = 0.05
+value = 0.45
+
+[node name="WaveLengthRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/WaveLengthRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Length"
+[node name="WaveLength" type="SpinBox" parent="Card/Margin/Columns/Waves/WaveLengthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = 0.25
+max_value = 2048.0
+step = 0.25
+value = 18.0
+
+[node name="WaveSpeedRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/WaveSpeedRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Speed"
+[node name="WaveSpeed" type="SpinBox" parent="Card/Margin/Columns/Waves/WaveSpeedRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = -50.0
+max_value = 50.0
+step = 0.05
+value = 1.4
+
+[node name="SteepnessRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/SteepnessRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Steepness"
+[node name="Steepness" type="SpinBox" parent="Card/Margin/Columns/Waves/SteepnessRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+max_value = 1.0
+step = 0.01
+value = 0.3
+
+[node name="DirectionXRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/DirectionXRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Direction X"
+[node name="DirectionX" type="SpinBox" parent="Card/Margin/Columns/Waves/DirectionXRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="DirectionZRow" type="HBoxContainer" parent="Card/Margin/Columns/Waves"]
+[node name="Label" type="Label" parent="Card/Margin/Columns/Waves/DirectionZRow"]
+custom_minimum_size = Vector2(105, 0)
+size_flags_horizontal = 3
+text = "Direction Z"
+[node name="DirectionZ" type="SpinBox" parent="Card/Margin/Columns/Waves/DirectionZRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+min_value = -1.0
+max_value = 1.0
+step = 0.05
+value = 0.25
+
+[node name="SelectWater" type="Button" parent="Card/Margin/Columns/Waves"]
+unique_name_in_owner = true
+text = "Create water layer"
+[node name="ClearExclusions" type="Button" parent="Card/Margin/Columns/Waves"]
+unique_name_in_owner = true
+tooltip_text = "Remove every ship/interior exclusion from this water layer"
+text = "Clear dry volumes"
+[node name="ClearVoxels" type="Button" parent="Card/Margin/Columns/Waves"]
+unique_name_in_owner = true
+tooltip_text = "Remove all painted voxel water, leaving the optional ocean"
+text = "Clear voxel water"
+[node name="RemoveWater" type="Button" parent="Card/Margin/Columns/Waves"]
+unique_name_in_owner = true
+modulate = Color(1, 0.612, 0.612, 1)
+text = "Remove water layer"
+[node name="Help" type="Label" parent="Card/Margin/Columns/Waves"]
+text = "Add and Drain paint true 3D water cells for lakes, rivers, waterfalls, and caves. Ocean Level controls the large sea. Dry volumes keep water out of hulls and interiors."
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.604, 0.659, 0.729, 1)
+
+[node name="RemoveConfirmation" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Remove Terrain Water"
+dialog_text = "Remove the water layer and all of its dry exclusion volumes?"
+ok_button_text = "Remove"

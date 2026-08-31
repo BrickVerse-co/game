@@ -9,6 +9,8 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using System;
+using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 
 namespace BrickVerse.Mobile.UI;
@@ -22,7 +24,14 @@ public partial class ViewPlaceInfo : MobileViewBase
 	[Export] private TextureRect _thumbnailRect = null!;
 	[Export] private Control _thumbnailGradient = null!;
 	[Export] private MobileMarkdown _descriptionLabel = null!;
-	[Export] private Label _statsLabel = null!;
+	[Export] private Label _playersLabel = null!;
+	[Export] private Label _visitsLabel = null!;
+	[Export] private Label _capacityLabel = null!;
+	[Export] private Label _ratingLabel = null!;
+	[Export] private Button _likeButton = null!;
+	[Export] private Button _dislikeButton = null!;
+	[Export] private Label _ageRatingLabel = null!;
+	[Export] private Label _warningsLabel = null!;
 	[Export] private Button _backButton = null!;
 
 	private long _worldID;
@@ -36,17 +45,26 @@ public partial class ViewPlaceInfo : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("ScrollContainer"), 1120f, 0f);
+		ApplyResponsiveMaxWidth(GetNode<Control>("LoadingSkeleton"), 1120f, 0f);
+		CallDeferred(MethodName.ForceInitialLayout);
 		_playButton.Pressed += OnPlayButtonPressed;
 		_backButton.Pressed += CloseToWorlds;
 		_creatorNameLabel.Pressed += OpenCreator;
+		_likeButton.Pressed += ToggleLike;
+		_dislikeButton.Pressed += ToggleDislike;
 		_backButton.Text = "";
 		MobileMotion.Bind(_playButton);
 		MobileMotion.Bind(_backButton);
 		_contentPanel = GetNode<Control>("ScrollContainer/VBoxContainer/PanelContainer");
+		_playLabel = _playButton.GetNode<Label>("HBoxContainer/Label");
+		_playButton.Reparent(GetNode<VBoxContainer>("ScrollContainer/VBoxContainer/PanelContainer/Layout"));
+		_playButton.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopWide);
+		_playButton.CustomMinimumSize = new Vector2(0, 56);
+		GetNode<ScrollContainer>("ScrollContainer").OffsetBottom = 0;
 		_loadingSkeleton = GetNode<Control>("LoadingSkeleton");
-		_playLabel = GetNode<Label>("Play/HBoxContainer/Label");
 		_unavailableNotice = GetNode<Label>("ScrollContainer/VBoxContainer/PanelContainer/Layout/UnavailableNotice");
-		GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=world&id={_worldID}"));
+		GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Report").Pressed += () => MobileReportDialog.Open(this, "universe", _placeInfo.UniverseId.ToString());
 	}
 
 	private void OpenCreator()
@@ -54,7 +72,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 		if (_placeInfo.Creator.Id <= 0) return;
 		string creatorId = _placeInfo.Creator.Id.ToString();
 		if (_placeInfo.Creator.Type.Equals("GUILD", StringComparison.OrdinalIgnoreCase))
-			MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail,
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.GuildDetail,
 				new MobileRecordDetailArgs(_placeInfo.Creator.Name, "World creator", "View this guild and its worlds in BrickVerse.", _placeInfo.Creator.Thumbnail, MobileViewEnum.PlaceInfo, creatorId));
 		else MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, creatorId);
 	}
@@ -80,6 +98,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_unavailableNotice.Visible = false;
 		_loadingSkeleton.Visible = true;
 		PulseSkeleton();
+		CallDeferred(MethodName.ForceInitialLayout);
 
 		try
 		{
@@ -90,7 +109,10 @@ public partial class ViewPlaceInfo : MobileViewBase
 			_descriptionLabel.SetMarkdown(string.IsNullOrWhiteSpace(_placeInfo.Description) ? "No description provided." : _placeInfo.Description);
 			await LoadPlayPermission();
 			HideSkeleton();
-			_statsLabel.Text = $"{_placeInfo.Playing:N0} playing  •  {_placeInfo.Visits:N0} visits  •  {_placeInfo.MaxPlayers:N0} max players";
+			_playersLabel.Text = $"{_placeInfo.Playing:N0} playing";
+			_visitsLabel.Text = $"{_placeInfo.Visits:N0} visits";
+			_capacityLabel.Text = $"{_placeInfo.MaxPlayers:N0} max";
+			UpdateRatingDisplay();
 			string thumbnailUrl = await BVAPI.GetUniverseThumbnailUrl(_placeInfo.UniverseId);
 			if (!string.IsNullOrWhiteSpace(thumbnailUrl))
 				WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = thumbnailUrl }, resource => { if (IsInstanceValid(_thumbnailRect)) _thumbnailRect.Texture = (Texture2D)resource; });
@@ -104,6 +126,60 @@ public partial class ViewPlaceInfo : MobileViewBase
 		}
 	}
 
+	private void ForceInitialLayout()
+	{
+		GetNode<Control>("ScrollContainer/VBoxContainer/Control").CustomMinimumSize = new Vector2(0, 240);
+		GetNode<Container>("ScrollContainer/VBoxContainer").QueueSort();
+		GetNode<ScrollContainer>("ScrollContainer").QueueSort();
+	}
+
+	private void UpdateRatingDisplay()
+	{
+		int total = _placeInfo.Rating.Likes + _placeInfo.Rating.Dislikes;
+		int percent = total == 0 ? 0 : Mathf.RoundToInt(_placeInfo.Rating.Likes * 100f / total);
+		_ratingLabel.Text = total == 0 ? "No ratings" : $"{percent}% • {total:N0} ratings";
+		_likeButton.Text = $"{(_placeInfo.IsLikedBy ? "▲" : "△")} {_placeInfo.Rating.Likes:N0}";
+		_dislikeButton.Text = $"{(_placeInfo.IsDislikedBy ? "▼" : "▽")} {_placeInfo.Rating.Dislikes:N0}";
+		_likeButton.Modulate = _placeInfo.IsLikedBy ? Color.FromHtml("#35C978") : Colors.White;
+		_dislikeButton.Modulate = _placeInfo.IsDislikedBy ? Color.FromHtml("#ED5C5C") : Colors.White;
+		_ageRatingLabel.Text = "Age rating: " + (_placeInfo.AgeRating switch { "ALL_AGES" => "All Ages", "AGE_9_PLUS" => "9+", "AGE_13_PLUS" => "13+", "AGE_17_PLUS" => "17+", _ => "Rating Pending" });
+		_warningsLabel.Text = _placeInfo.ContentWarnings is { Length: > 0 }
+			? "Content descriptors: " + string.Join(", ", _placeInfo.ContentWarnings.Select(warning => warning.Replace('_', ' ').ToLowerInvariant()))
+			: "Content descriptors: None";
+	}
+
+	private async void ToggleLike()
+	{
+		bool removing = _placeInfo.IsLikedBy;
+		try
+		{
+			using JsonDocument _ = await BVAPI.SendJson(removing ? HttpMethod.Delete : HttpMethod.Post, $"/v3/world/rating/{_placeInfo.UniverseId}/{_placeInfo.Id}/like");
+			APIPlaceRating rating = _placeInfo.Rating;
+			rating.Likes = Math.Max(0, rating.Likes + (removing ? -1 : 1));
+			if (!removing && _placeInfo.IsDislikedBy) { rating.Dislikes = Math.Max(0, rating.Dislikes - 1); _placeInfo.IsDislikedBy = false; }
+			_placeInfo.Rating = rating;
+			_placeInfo.IsLikedBy = !removing;
+			UpdateRatingDisplay();
+		}
+		catch (Exception exception) { OS.Alert(exception.Message, "Rating failed"); }
+	}
+
+	private async void ToggleDislike()
+	{
+		bool removing = _placeInfo.IsDislikedBy;
+		try
+		{
+			using JsonDocument _ = await BVAPI.SendJson(removing ? HttpMethod.Delete : HttpMethod.Post, $"/v3/world/rating/{_placeInfo.UniverseId}/{_placeInfo.Id}/dislike");
+			APIPlaceRating rating = _placeInfo.Rating;
+			rating.Dislikes = Math.Max(0, rating.Dislikes + (removing ? -1 : 1));
+			if (!removing && _placeInfo.IsLikedBy) { rating.Likes = Math.Max(0, rating.Likes - 1); _placeInfo.IsLikedBy = false; }
+			_placeInfo.Rating = rating;
+			_placeInfo.IsDislikedBy = !removing;
+			UpdateRatingDisplay();
+		}
+		catch (Exception exception) { OS.Alert(exception.Message, "Rating failed"); }
+	}
+
 	private async System.Threading.Tasks.Task LoadPlayPermission()
 	{
 		using JsonDocument document = await BVAPI.GetJson($"/v3/universe/{_placeInfo.UniverseId}/permissions");
@@ -113,6 +189,7 @@ public partial class ViewPlaceInfo : MobileViewBase
 			? reasonNode.GetString() ?? "" : "";
 		_playButton.Disabled = !canPlay;
 		_playLabel.Text = canPlay ? "Play" : "Unavailable";
+		_playLabel.Visible = !canPlay;
 		_unavailableNotice.Visible = !canPlay && !string.IsNullOrWhiteSpace(reason);
 		_unavailableNotice.Text = reason;
 	}
@@ -140,17 +217,12 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_thumbnailRect.PivotOffset = _thumbnailRect.Size / 2f;
 		_thumbnailRect.Scale = new Vector2(1.1f, 1.1f);
 		_thumbnailRect.Modulate = new Color(1, 1, 1, 0);
-		_contentPanel.Position = new Vector2(0, 44);
 		_contentPanel.Modulate = new Color(1, 1, 1, 0);
-		Vector2 playTarget = _playButton.Position;
-		_playButton.Position = playTarget + new Vector2(0, 28);
 		_playButton.Modulate = new Color(1, 1, 1, 0);
 		Tween tween = CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
 		tween.TweenProperty(_thumbnailRect, "scale", Vector2.One, 0.42);
 		tween.TweenProperty(_thumbnailRect, "modulate:a", 1f, 0.3);
-		tween.TweenProperty(_contentPanel, "position:y", 0f, 0.36).SetDelay(0.06);
 		tween.TweenProperty(_contentPanel, "modulate:a", 1f, 0.28).SetDelay(0.06);
-		tween.TweenProperty(_playButton, "position", playTarget, 0.34).SetDelay(0.12);
 		tween.TweenProperty(_playButton, "modulate:a", 1f, 0.25).SetDelay(0.12);
 	}
 
@@ -161,7 +233,6 @@ public partial class ViewPlaceInfo : MobileViewBase
 		_backButton.Disabled = true;
 		Tween tween = CreateTween().SetParallel().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
 		tween.TweenProperty(_thumbnailRect, "scale", new Vector2(1.06f, 1.06f), 0.18);
-		tween.TweenProperty(_contentPanel, "position:y", 32f, 0.18);
 		tween.TweenProperty(_contentPanel, "modulate:a", 0f, 0.16);
 		tween.Chain().TweenCallback(Callable.From(() => MobileUI.Singleton.SwitchTo(MobileViewEnum.Worlds)));
 	}

@@ -53,6 +53,7 @@ public sealed partial class Player : NPC
 	private bool _allowAnimationWhileMoving = false;
 	private bool _showNametagToLocalPlayer = true;
 	private bool _showNametagToOtherPlayers = true;
+	private bool _waitingForEnvironmentCollision;
 	private PlayerMovementModeEnum _movementMode = PlayerMovementModeEnum.Default;
 	private Team? _team;
 	private Color _chatColorBeforeTeam;
@@ -686,6 +687,13 @@ public sealed partial class Player : NPC
 
 	public override void PhysicsProcess(double delta)
 	{
+		if (_waitingForEnvironmentCollision && EnvironmentCollisionIsReady())
+		{
+			_waitingForEnvironmentCollision = false;
+			Velocity = Vector3.Zero;
+			Anchored = false;
+		}
+
 		base.PhysicsProcess(delta);
 
 		if (Root.SessionType != World.SessionTypeEnum.Client || !IsLocal || !IsReady) { return; }
@@ -827,7 +835,7 @@ public sealed partial class Player : NPC
 			}
 		}
 
-		if (@event.IsActionPressed("toggle_freecam") && (IsAdmin || IsCreator))
+		if (@event.IsActionPressed("toggle_freecam") && Root.PlayerDefaults.AllowDeveloperFreecam && (IsAdmin || IsCreator))
 		{
 			if (Root.Environment.CurrentCamera?.Mode == Camera.CameraModeEnum.Free)
 			{
@@ -1126,9 +1134,18 @@ public sealed partial class Player : NPC
 		WrapToSpawnPoint();
 
 		Health = MaxHealth;
-		Anchored = false;
+		Velocity = Vector3.Zero;
+		_waitingForEnvironmentCollision = !EnvironmentCollisionIsReady();
+		Anchored = _waitingForEnvironmentCollision;
 
 		Rpc(nameof(NetRespawned));
+	}
+
+	private bool EnvironmentCollisionIsReady()
+	{
+		return !Root.Environment.GetDescendants()
+			.OfType<Mesh>()
+			.Any(mesh => !mesh.IsDeleted && mesh.CanCollide && mesh.Loading);
 	}
 
 	private void CopyInventory()

@@ -225,6 +225,17 @@ public sealed partial class Menu : PanelContainer
 				},
 				new MenuButtonItem()
 				{
+					Text = "Close Place",
+					Icon = "x",
+					RequireGameOpen = true,
+					KeyShortcut = new()
+					{
+						Events = [new InputEventKey() { Keycode = Key.F4 }],
+					},
+					Pressed = () => Tabs.Singleton.CloseCurrentPlace(),
+				},
+				new MenuButtonItem()
+				{
 					Text = "Exit",
 					Icon = "door-exit",
 					Pressed = () =>
@@ -491,6 +502,11 @@ public sealed partial class Menu : PanelContainer
 		_menus.Add(
 			new() { Title = "Tools" },
 			[
+				new MenuButtonItem() { Text = "Data Store Explorer", Icon = "database", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(0) },
+				new MenuButtonItem() { Text = "Localization Manager", Icon = "translate", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(1) },
+				new MenuButtonItem() { Text = "Scene History & Diff", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(2) },
+				new MenuButtonItem() { Text = "Particle Editor", Icon = "play-filled", RequireGameOpen = true, Pressed = ParticleEditorWindow.Open },
+				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
 					Text = "Play Test",

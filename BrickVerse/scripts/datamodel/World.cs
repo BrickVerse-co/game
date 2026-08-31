@@ -126,6 +126,7 @@ public sealed partial class World : Instance
 	public HttpService Http => FindChild<HttpService>("Http")!;
 	public InsertService Insert => FindChild<InsertService>("Insert")!;
 	public PurchasesService Purchases => FindChild<PurchasesService>("Purchases")!;
+	public LocalizationService Localization => FindChild<LocalizationService>("Localization")!;
 	public TweenService Tween => FindChild<TweenService>("Tween")!;
 	public CaptureService Capture => FindChild<CaptureService>("Capture")!;
 	public PresenceService Presence => FindChild<PresenceService>("Presence")!;
@@ -862,6 +863,14 @@ public sealed partial class World : Instance
 			purchasesService = Globals.LoadInstance<PurchasesService>(Root);
 			purchasesService.NameOverride = "Purchases";
 			purchasesService.NetworkParent = this;
+		}
+
+		LocalizationService? localizationService = FindChild<LocalizationService>("Localization");
+		if (localizationService == null)
+		{
+			localizationService = Globals.LoadInstance<LocalizationService>(Root);
+			localizationService.NameOverride = "Localization";
+			localizationService.NetworkParent = this;
 		}
 
 		TweenService? tweenService = FindChild<TweenService>("Tween");

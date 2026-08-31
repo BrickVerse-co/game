@@ -170,6 +170,10 @@ public partial class FileBrowserTab : Control
 		{
 			iconPath = "input.json";
 		}
+		if (relativePath == Globals.ProjectLocalizationName)
+		{
+			iconPath = "translate";
+		}
 
 		icon = GD.Load<Texture2D>(FileBrowserIconsPath.PathJoin(iconPath) + ".svg");
 		item.SetIcon(0, icon);

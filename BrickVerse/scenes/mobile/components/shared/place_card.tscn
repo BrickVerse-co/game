@@ -6,44 +6,81 @@
 [ext_resource type="StyleBox" uid="uid://bwksp3bsrvcf6" path="res://resources/styles/card_rounded.tres" id="2_5tsn4"]
 [ext_resource type="Texture2D" uid="uid://f8k4hb5wuttg" path="res://assets/textures/ui-icons/thumb-up.svg" id="2_15fv3"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j26d1"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
-bg_color = Color(0.055, 0.105, 0.17, 0.98)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.12, 0.24, 0.36, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_hover"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0941176, 0.109804, 0.133333, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.227451, 0.266667, 0.329412, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip"]
+content_margin_left = 7.0
+content_margin_top = 3.0
+content_margin_right = 7.0
+content_margin_bottom = 3.0
+bg_color = Color(0.117647, 0.133333, 0.160784, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.180392, 0.203922, 0.243137, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
 
 [node name="PlaceCard" type="Button" unique_id=658224702 node_paths=PackedStringArray("_iconRect", "_gameTitleLabel", "_playingLabel", "_ratingLabel")]
-custom_minimum_size = Vector2(220, 228)
+custom_minimum_size = Vector2(220, 210)
 offset_right = 220.0
-offset_bottom = 228.0
+offset_bottom = 210.0
 mouse_filter = 1
-theme_override_styles/normal = SubResource("StyleBoxFlat_j26d1")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_j26d1")
-theme_override_styles/hover = SubResource("StyleBoxFlat_j26d1")
+theme_override_styles/normal = SubResource("StyleBoxFlat_card")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_card")
+theme_override_styles/hover = SubResource("StyleBoxFlat_card_hover")
 script = ExtResource("1_uc8wn")
 _iconRect = NodePath("Layout/IconContainer/Icon")
-_gameTitleLabel = NodePath("Layout/Layout/PlaceTitle")
-_playingLabel = NodePath("Layout/Layout/Stats/Playing/PlayingLabel")
-_ratingLabel = NodePath("Layout/Layout/Stats/Rating/RatingLabel")
+_gameTitleLabel = NodePath("Layout/Content/PlaceTitle")
+_playingLabel = NodePath("Layout/Content/Stats/PlayingChip/Playing/PlayingLabel")
+_ratingLabel = NodePath("Layout/Content/Stats/RatingChip/Rating/RatingLabel")
 
 [node name="Layout" type="VBoxContainer" parent="." unique_id=1973093464]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 212.0
-offset_bottom = 220.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 7
 
 [node name="IconContainer" type="Panel" parent="Layout" unique_id=1369013359]
 clip_children = 1
@@ -64,54 +101,75 @@ texture = ExtResource("1_87myo")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Layout" type="VBoxContainer" parent="Layout" unique_id=1893859134]
+[node name="Content" type="VBoxContainer" parent="Layout"]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 5
 
-[node name="PlaceTitle" type="Label" parent="Layout/Layout" unique_id=2025598818]
-custom_minimum_size = Vector2(0, 40)
+[node name="PlaceTitle" type="Label" parent="Layout/Content" unique_id=2025598818]
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.960784, 0.968627, 0.980392, 1)
 theme_override_font_sizes/font_size = 16
 text = "Prop Hunt"
 autowrap_mode = 3
 clip_text = true
 text_overrun_behavior = 3
+max_lines_visible = 1
 
-[node name="Stats" type="HBoxContainer" parent="Layout/Layout" unique_id=1101027159]
+[node name="Stats" type="HBoxContainer" parent="Layout/Content" unique_id=1101027159]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
-[node name="Playing" type="HBoxContainer" parent="Layout/Layout/Stats" unique_id=522718687]
+[node name="PlayingChip" type="PanelContainer" parent="Layout/Content/Stats"]
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 
-[node name="TextureRect" type="TextureRect" parent="Layout/Layout/Stats/Playing" unique_id=553315437]
-custom_minimum_size = Vector2(16, 0)
+[node name="Playing" type="HBoxContainer" parent="Layout/Content/Stats/PlayingChip" unique_id=522718687]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="TextureRect" type="TextureRect" parent="Layout/Content/Stats/PlayingChip/Playing" unique_id=553315437]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 texture = ExtResource("1_wbc8c")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlayingLabel" type="Label" parent="Layout/Layout/Stats/Playing" unique_id=985451450]
+[node name="PlayingLabel" type="Label" parent="Layout/Content/Stats/PlayingChip/Playing" unique_id=985451450]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.760784, 0.788235, 0.831373, 1)
+theme_override_font_sizes/font_size = 13
 text = "3"
+vertical_alignment = 1
 
-[node name="Rating" type="HBoxContainer" parent="Layout/Layout/Stats" unique_id=2008177505]
+[node name="RatingChip" type="PanelContainer" parent="Layout/Content/Stats"]
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 
-[node name="TextureRect" type="TextureRect" parent="Layout/Layout/Stats/Rating" unique_id=1211289069]
-custom_minimum_size = Vector2(16, 0)
+[node name="Rating" type="HBoxContainer" parent="Layout/Content/Stats/RatingChip" unique_id=2008177505]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="TextureRect" type="TextureRect" parent="Layout/Content/Stats/RatingChip/Rating" unique_id=1211289069]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 texture = ExtResource("2_15fv3")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="RatingLabel" type="Label" parent="Layout/Layout/Stats/Rating" unique_id=760625489]
+[node name="RatingLabel" type="Label" parent="Layout/Content/Stats/RatingChip/Rating" unique_id=760625489]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.760784, 0.788235, 0.831373, 1)
+theme_override_font_sizes/font_size = 13
 text = "84%"
+vertical_alignment = 1

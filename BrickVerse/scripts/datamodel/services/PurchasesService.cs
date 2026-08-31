@@ -157,6 +157,41 @@ public sealed partial class PurchasesService : Instance
 		return doc.RootElement.TryGetProperty("userOwns", out JsonElement owns) && owns.GetBoolean();
 	}
 
+	[ScriptMethod]
+	public async Task<bool> IsTrialAsync(Player player, long entitlementID)
+	{
+		ServerGuard();
+		using JsonDocument status = await GetOwnershipStatus(player, entitlementID);
+		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial) && trial.GetBoolean();
+	}
+
+	[ScriptMethod]
+	public async Task<string> GetTrialEndsAtAsync(Player player, long entitlementID)
+	{
+		ServerGuard();
+		using JsonDocument status = await GetOwnershipStatus(player, entitlementID);
+		return status.RootElement.TryGetProperty("trialEndsAt", out JsonElement ends) && ends.ValueKind == JsonValueKind.String ? ends.GetString() ?? "" : "";
+	}
+
+	[ScriptMethod]
+	public async Task<bool> IsGameTrialAsync(Player player)
+	{
+		ServerGuard();
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
+		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/trial-status?userId={player.UserID}"));
+		response.EnsureSuccessStatusCode();
+		using JsonDocument status = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial) && trial.GetBoolean();
+	}
+
+	private async Task<JsonDocument> GetOwnershipStatus(Player player, long entitlementID)
+	{
+		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
+		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/ownership?entitlementId={entitlementID}&userId={player.UserID}"));
+		response.EnsureSuccessStatusCode();
+		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+	}
+
 	private void SendPurchaseRes(bool status)
 	{
 		RpcId(1, nameof(NetRecvPurchaseRes), _currentPurchaseRef, status);

@@ -4,12 +4,12 @@
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/folder.svg" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
-bg_color = Color(0.055, 0.11, 0.18, 1)
+bg_color = Color(0.0784314, 0.0901961, 0.109804, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.13, 0.27, 0.4, 1)
+border_color = Color(0.152941, 0.172549, 0.203922, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -63,7 +63,7 @@ theme_override_font_sizes/font_size = 13
 text = "0 threads • 0 replies"
 
 [node name="Detail" type="Label" parent="Content/Copy"]
-modulate = Color(0.7, 0.74, 0.8, 1)
+modulate = Color(0.65098, 0.686275, 0.733333, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Latest activity"

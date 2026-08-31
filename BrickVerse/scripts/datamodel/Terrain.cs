@@ -93,16 +93,17 @@ public sealed partial class Terrain : Instance
 	private Color _concreteColor = new(0.74f, 0.74f, 0.72f, 1.0f);
 	private Color _brickColor = new(0.70f, 0.32f, 0.27f, 1.0f);
 
-	private static readonly (string Name, Part.PartMaterialEnum Surface, Color Color)[] DefaultMaterials =
+	private static readonly (string Name, Part.PartMaterialEnum Surface, Color Color, TerrainMaterialKind Kind)[] DefaultMaterials =
 	[
-		("Base", Part.PartMaterialEnum.SmoothPlastic, new Color(0.92f, 0.92f, 0.92f, 1.0f)),
-		("Grass", Part.PartMaterialEnum.Grass, new Color(0.55f, 0.78f, 0.42f, 1.0f)),
-		("Stone", Part.PartMaterialEnum.Stone, new Color(0.70f, 0.72f, 0.74f, 1.0f)),
-		("Sand", Part.PartMaterialEnum.Sand, new Color(0.90f, 0.82f, 0.60f, 1.0f)),
-		("Dirt", Part.PartMaterialEnum.Dirt, new Color(0.52f, 0.40f, 0.30f, 1.0f)),
-		("Snow", Part.PartMaterialEnum.Snow, new Color(0.96f, 0.98f, 1.00f, 1.0f)),
-		("Concrete", Part.PartMaterialEnum.Concrete, new Color(0.74f, 0.74f, 0.72f, 1.0f)),
-		("Brick", Part.PartMaterialEnum.Brick, new Color(0.70f, 0.32f, 0.27f, 1.0f)),
+		("Base", Part.PartMaterialEnum.SmoothPlastic, new Color(0.92f, 0.92f, 0.92f, 1.0f), TerrainMaterialKind.Solid),
+		("Grass", Part.PartMaterialEnum.Grass, new Color(0.55f, 0.78f, 0.42f, 1.0f), TerrainMaterialKind.Solid),
+		("Stone", Part.PartMaterialEnum.Stone, new Color(0.70f, 0.72f, 0.74f, 1.0f), TerrainMaterialKind.Solid),
+		("Sand", Part.PartMaterialEnum.Sand, new Color(0.90f, 0.82f, 0.60f, 1.0f), TerrainMaterialKind.Solid),
+		("Dirt", Part.PartMaterialEnum.Dirt, new Color(0.52f, 0.40f, 0.30f, 1.0f), TerrainMaterialKind.Solid),
+		("Snow", Part.PartMaterialEnum.Snow, new Color(0.96f, 0.98f, 1.00f, 1.0f), TerrainMaterialKind.Solid),
+		("Concrete", Part.PartMaterialEnum.Concrete, new Color(0.74f, 0.74f, 0.72f, 1.0f), TerrainMaterialKind.Solid),
+		("Brick", Part.PartMaterialEnum.Brick, new Color(0.70f, 0.32f, 0.27f, 1.0f), TerrainMaterialKind.Solid),
+		("Water", Part.PartMaterialEnum.SmoothPlastic, new Color(0.10f, 0.65f, 0.88f, 0.72f), TerrainMaterialKind.Water),
 	];
 
 	/// <summary>
@@ -501,8 +502,23 @@ public sealed partial class Terrain : Instance
 
 	private void EnsureDefaultMaterials()
 	{
-		if (GetChildrenOfClass<TerrainMaterial>().Length > 0)
+		TerrainMaterial[] existingMaterials = GetChildrenOfClass<TerrainMaterial>();
+		if (existingMaterials.Length > 0)
 		{
+			if (!existingMaterials.Any(material => material.Kind == TerrainMaterialKind.Water))
+			{
+				int slot = FindAvailableMaterialSlot();
+				if (slot >= 0)
+				{
+					var definition = DefaultMaterials[^1];
+					TerrainMaterial water = New<TerrainMaterial>(this);
+					water.Name = definition.Name;
+					water.Slot = slot;
+					water.Surface = definition.Surface;
+					water.Color = definition.Color;
+					water.Kind = TerrainMaterialKind.Water;
+				}
+			}
 			NotifyMaterialChanged();
 			return;
 		}
@@ -525,7 +541,8 @@ public sealed partial class Terrain : Instance
 			material.Name = definition.Name;
 			material.Slot = slot;
 			material.Surface = definition.Surface;
-			material.Color = migratedColors[slot];
+			material.Color = slot < migratedColors.Length ? migratedColors[slot] : definition.Color;
+			material.Kind = definition.Kind;
 		}
 		NotifyMaterialChanged();
 	}

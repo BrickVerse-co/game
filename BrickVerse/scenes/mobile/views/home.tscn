@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://4jodg5v8ee3v" path="res://scenes/mobile/components/home/continue.tscn" id="5_xq0dv"]
 [ext_resource type="PackedScene" uid="uid://08fes6sp4lwp" path="res://scenes/mobile/components/home/feed.tscn" id="6_5xsir"]
 [ext_resource type="PackedScene" path="res://scenes/mobile/components/home/ad_banner.tscn" id="7_ad"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/search.svg" id="8_search"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/bell.svg" id="9_bell"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_syfjb"]
 viewport_path = NodePath("PlayerModel")
@@ -31,6 +33,36 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_c7vr6")
 script = ExtResource("2_12s5c")
+
+[node name="TopActions" type="HBoxContainer" parent="."]
+top_level = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -112.0
+offset_top = 18.0
+offset_right = -16.0
+offset_bottom = 62.0
+grow_horizontal = 0
+theme_override_constants/separation = 4
+z_index = 20
+mouse_filter = 1
+
+[node name="Search" type="Button" parent="TopActions"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+icon = ExtResource("8_search")
+icon_max_width = 20
+flat = true
+
+[node name="Notifications" type="Button" parent="TopActions"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+icon = ExtResource("9_bell")
+icon_max_width = 20
+tooltip_text = "Notifications"
+flat = true
 
 [node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1290369963]
 layout_mode = 1

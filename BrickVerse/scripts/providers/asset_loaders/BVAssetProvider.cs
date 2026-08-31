@@ -5,9 +5,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using BrickVerse.Client.WebAPI;
@@ -24,8 +27,17 @@ namespace BrickVerse.Providers.AssetLoaders;
 
 public class BVAssetProvider : IAssetProvider
 {
+	private static readonly TimeSpan DiskCacheLifetime = TimeSpan.FromHours(12);
+	private static readonly TimeSpan DiskCacheRetention = TimeSpan.FromDays(14);
+	private const long MaxDiskCacheBytes = 2L * 1024 * 1024 * 1024;
+	private static readonly string DiskCacheDirectory = ProjectSettings.GlobalizePath("user://asset_cache/raw");
 	private readonly BVHttpClient _client = new();
 	private static readonly ConcurrentDictionary<(ResourceType Type, string Id), string> DirectAssetUrls = new();
+
+	public BVAssetProvider()
+	{
+		_ = Task.Run(CleanDiskCache);
+	}
 
 	public static void RegisterDirectAssetUrl(ResourceType type, string? id, string? url)
 	{
@@ -39,7 +51,7 @@ public class BVAssetProvider : IAssetProvider
 		byte[] buffer;
 		try
 		{
-			buffer = await GetResourceBuffer(url, item.Type);
+			buffer = await GetResourceBuffer(url, item.Type, item.ID);
 		}
 		catch (Exception exception) when (item.Type == ResourceType.Mesh)
 		{
@@ -425,7 +437,7 @@ public class BVAssetProvider : IAssetProvider
 		return Globals.ApiEndpoint.PathJoin("/v3/world/client/asset/" + id);
 	}
 
-	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType)
+	private async Task<byte[]> GetResourceBuffer(string url, ResourceType itemType, string assetId)
 	{
 		bool requiresAuthorization = url.Contains("/v3/world/", StringComparison.OrdinalIgnoreCase);
 
@@ -433,6 +445,10 @@ public class BVAssetProvider : IAssetProvider
 		{
 			await WaitForAssetAuthorizationAsync(url);
 		}
+
+		string cachePath = GetDiskCachePath(itemType, assetId);
+		byte[]? diskCached = await ReadFreshDiskCache(cachePath);
+		if (diskCached != null) return diskCached;
 
 		for (int attempt = 0; attempt < 2; attempt++)
 		{
@@ -468,11 +484,71 @@ public class BVAssetProvider : IAssetProvider
 				if (!response.IsSuccessStatusCode)
 					throw CreateAssetRequestException(request, response.StatusCode);
 
-				return await response.Content.ReadAsByteArrayAsync();
+				byte[] downloaded = await response.Content.ReadAsByteArrayAsync();
+				await WriteDiskCache(cachePath, downloaded);
+				return downloaded;
 			}
 		}
 
 		throw new HttpRequestException("Asset request failed after authorization retry.");
+	}
+
+	private static string GetDiskCachePath(ResourceType type, string assetId)
+	{
+		byte[] keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{type}:{assetId}"));
+		return Path.Combine(DiskCacheDirectory, Convert.ToHexString(keyBytes).ToLowerInvariant() + ".bin");
+	}
+
+	private static async Task<byte[]?> ReadFreshDiskCache(string cachePath)
+	{
+		try
+		{
+			FileInfo info = new(cachePath);
+			if (!info.Exists || DateTime.UtcNow - info.LastWriteTimeUtc > DiskCacheLifetime) return null;
+			byte[] data = await File.ReadAllBytesAsync(cachePath);
+			return data.Length > 0 ? data : null;
+		}
+		catch { return null; }
+	}
+
+	private static async Task WriteDiskCache(string cachePath, byte[] data)
+	{
+		if (data.Length == 0) return;
+		try
+		{
+			Directory.CreateDirectory(DiskCacheDirectory);
+			string temporary = cachePath + ".tmp";
+			await File.WriteAllBytesAsync(temporary, data);
+			File.Move(temporary, cachePath, true);
+		}
+		catch (Exception exception)
+		{
+			BV.PrintWarn("Could not write asset disk cache: ", exception.Message);
+		}
+	}
+
+	private static void CleanDiskCache()
+	{
+		try
+		{
+			Directory.CreateDirectory(DiskCacheDirectory);
+			FileInfo[] files = new DirectoryInfo(DiskCacheDirectory)
+				.GetFiles("*.bin")
+				.OrderByDescending(file => file.LastWriteTimeUtc)
+				.ToArray();
+			long retainedBytes = 0;
+			foreach (FileInfo file in files)
+			{
+				bool expired = DateTime.UtcNow - file.LastWriteTimeUtc > DiskCacheRetention;
+				bool overLimit = retainedBytes + file.Length > MaxDiskCacheBytes;
+				if (expired || overLimit) file.Delete();
+				else retainedBytes += file.Length;
+			}
+		}
+		catch (Exception exception)
+		{
+			BV.PrintWarn("Could not clean asset disk cache: ", exception.Message);
+		}
 	}
 
 	private static HttpRequestException CreateAssetRequestException(

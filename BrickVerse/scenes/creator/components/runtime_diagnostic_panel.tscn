@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3]
+[sub_resource type="StyleBoxFlat" id="panel"]
+bg_color = Color(0.0902, 0.1098, 0.1451, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+[node name="DiagnosticPanel" type="MarginContainer"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+[node name="Content" type="RichTextLabel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/normal = SubResource("panel")
+bbcode_enabled = true
+scroll_active = true
+selection_enabled = true

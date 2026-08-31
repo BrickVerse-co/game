@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://caw4cwjypfmg2" path="res://assets/textures/ui-icons/dots.svg" id="4"]
 
 [sub_resource type="StyleBoxFlat" id="Normal"]
-bg_color = Color(0.0431373, 0.054902, 0.0745098, 1)
+bg_color = Color(0.042009167, 0.048637517, 0.054235443, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -31,11 +31,11 @@ corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxEmpty" id="Empty"]
 
-[node name="RecentPlaceCard" type="Button" node_paths=PackedStringArray("_placeTitleLabel", "_recentOpenLabel", "_pathLabel", "_thumbnail", "_menuLabel")]
+[node name="RecentPlaceCard" type="Button" unique_id=29892322 node_paths=PackedStringArray("_placeTitleLabel", "_recentOpenLabel", "_pathLabel", "_thumbnail", "_menuLabel")]
 custom_minimum_size = Vector2(300, 220)
 theme_override_styles/normal = SubResource("Normal")
-theme_override_styles/hover = SubResource("Hover")
 theme_override_styles/pressed = SubResource("Hover")
+theme_override_styles/hover = SubResource("Hover")
 theme_override_styles/focus = SubResource("Empty")
 script = ExtResource("1")
 _placeTitleLabel = NodePath("Card/Info/Body/TitleRow/Title")
@@ -44,7 +44,7 @@ _pathLabel = NodePath("Card/Info/Body/Path")
 _thumbnail = NodePath("Card/Preview/Thumbnail")
 _menuLabel = NodePath("Card/Preview/Menu")
 
-[node name="Card" type="VBoxContainer" parent="."]
+[node name="Card" type="VBoxContainer" parent="." unique_id=2078908598]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -58,13 +58,13 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 0
 
-[node name="Preview" type="Control" parent="Card"]
+[node name="Preview" type="Control" parent="Card" unique_id=965252147]
 clip_children = 1
 custom_minimum_size = Vector2(0, 142)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Thumbnail" type="TextureRect" parent="Card/Preview"]
+[node name="Thumbnail" type="TextureRect" parent="Card/Preview" unique_id=560620626]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -76,9 +76,11 @@ texture = ExtResource("2")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Shade" type="ColorRect" parent="Card/Preview"]
+[node name="Shade" type="ColorRect" parent="Card/Preview" unique_id=1649633307]
+visible = false
 layout_mode = 1
 anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -46.0
@@ -87,7 +89,7 @@ grow_vertical = 0
 mouse_filter = 2
 color = Color(0, 0, 0, 0.42)
 
-[node name="Menu" type="MenuButton" parent="Card/Preview"]
+[node name="Menu" type="MenuButton" parent="Card/Preview" unique_id=2003192840]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -98,12 +100,11 @@ offset_right = -8.0
 offset_bottom = 42.0
 grow_horizontal = 0
 icon = ExtResource("4")
-flat = true
 item_count = 1
 popup/item_0/text = "Remove from Recents"
 popup/item_0/id = 91
 
-[node name="Info" type="MarginContainer" parent="Card"]
+[node name="Info" type="MarginContainer" parent="Card" unique_id=1224549015]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
@@ -112,16 +113,16 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="Body" type="VBoxContainer" parent="Card/Info"]
+[node name="Body" type="VBoxContainer" parent="Card/Info" unique_id=2050593115]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="TitleRow" type="HBoxContainer" parent="Card/Info/Body"]
+[node name="TitleRow" type="HBoxContainer" parent="Card/Info/Body" unique_id=1839465717]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Title" type="Label" parent="Card/Info/Body/TitleRow"]
+[node name="Title" type="Label" parent="Card/Info/Body/TitleRow" unique_id=1309997525]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.929412, 0.94902, 0.980392, 1)
@@ -130,12 +131,13 @@ text = "World title"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Opened" type="HBoxContainer" parent="Card/Info/Body"]
+[node name="Opened" type="HBoxContainer" parent="Card/Info/Body" unique_id=246117998]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 5
 
-[node name="Icon" type="TextureRect" parent="Card/Info/Body/Opened"]
+[node name="Icon" type="TextureRect" parent="Card/Info/Body/Opened" unique_id=1184009687]
+modulate = Color(0.5137255, 0.5803922, 0.6745098, 1)
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
 mouse_filter = 2
@@ -143,13 +145,13 @@ texture = ExtResource("3")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Time" type="Label" parent="Card/Info/Body/Opened"]
+[node name="Time" type="Label" parent="Card/Info/Body/Opened" unique_id=838280815]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.513726, 0.580392, 0.67451, 1)
 theme_override_font_sizes/font_size = 12
 text = "2 hours ago"
 
-[node name="Path" type="Label" parent="Card/Info/Body"]
+[node name="Path" type="Label" parent="Card/Info/Body" unique_id=151647261]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.356863, 0.419608, 0.509804, 1)
 theme_override_font_sizes/font_size = 11

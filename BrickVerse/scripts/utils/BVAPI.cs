@@ -142,7 +142,16 @@ public static class BVAPI
 		APIV3WorldRoot worldInfo = await GetWorldRootFromID(req.PlaceID);
 		onStatus?.Invoke("Finding a server", "Looking for an available server near you…");
 		string platform = Globals.IsXRLaunch ? "VR" : Globals.IsMobileBuild ? "MOBILE" : "PC";
-		string requestJson = $"{{\"universeId\":{JsonSerializer.Serialize(worldInfo.Universe.Id)},\"worldId\":{JsonSerializer.Serialize(worldInfo.World.Id)},\"platform\":{JsonSerializer.Serialize(platform)}}}";
+		APIV3JoinWorldRequest joinRequest = new()
+		{
+			UniverseId = worldInfo.Universe.Id,
+			WorldId = worldInfo.World.Id,
+			Platform = platform,
+		};
+		string requestJson = JsonSerializer.Serialize(
+			joinRequest,
+			APIGenerationContext.Default.APIV3JoinWorldRequest
+		);
 		using JsonDocument queued = await SendJson(HttpMethod.Post, "/v3/world/join", requestJson);
 		onStatus?.Invoke("Joining world", queued.RootElement.TryGetProperty("message", out JsonElement queuedMessage) ? queuedMessage.GetString() ?? "Your join request is queued." : "Your join request is queued.");
 		if (queued.RootElement.TryGetProperty("joinToken", out JsonElement immediateToken) && immediateToken.ValueKind == JsonValueKind.String)
@@ -293,6 +302,16 @@ public static class BVAPI
 			MaxPlayers = info.World.MaxPlayers,
 			Visits = info.World.TotalVisits,
 			Playing = info.World.TotalPlayers,
+			Rating = new APIPlaceRating
+			{
+				Likes = info.World.TotalLikes,
+				Dislikes = info.World.TotalDislikes,
+				Percent = info.World.TotalLikes + info.World.TotalDislikes == 0 ? "0" : Math.Round(info.World.TotalLikes * 100d / (info.World.TotalLikes + info.World.TotalDislikes)).ToString(),
+			},
+			IsLikedBy = info.World.IsLikedBy,
+			IsDislikedBy = info.World.IsDislikedBy,
+			AgeRating = info.Universe.MinAgeBand,
+			ContentWarnings = info.Universe.ContentWarnings ?? [],
 		};
 	}
 

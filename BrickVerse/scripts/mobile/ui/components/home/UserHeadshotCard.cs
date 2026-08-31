@@ -56,16 +56,22 @@ public partial class UserHeadshotCard : PanelContainer
 		Label dot = presence.GetNode<Label>("Dot");
 		Label text = presence.GetNode<Label>("Text");
 		Button join = GetNode<Button>("Join");
-		string state = InitialPresence.ToUpperInvariant();
+		string state = NormalizePresence(InitialPresence);
 		presence.Visible = true;
 		text.Text = state == "PLAYING" ? "Playing" : state == "ONLINE" ? "Online" : "Offline";
-		dot.Modulate = state == "PLAYING" ? Color.FromHtml("#31a8ff") : state == "ONLINE" ? Color.FromHtml("#59e680") : Color.FromHtml("#7b8794");
+		dot.SelfModulate = state == "PLAYING" ? Color.FromHtml("#0097FF") : state == "ONLINE" ? Color.FromHtml("#35C978") : Color.FromHtml("#697381");
 		join.Visible = state == "PLAYING" && JoinWorldID > 0;
 		if (join.Visible)
 		{
 			MobileMotion.Bind(join);
 			join.Pressed += () => MobileUI.Singleton.LaunchGame(JoinWorldID);
 		}
+	}
+
+	private static string NormalizePresence(string? presence)
+	{
+		string state = (presence ?? "").Trim().ToUpperInvariant();
+		return state is "PLAYING" or "IN_GAME" ? "PLAYING" : state is "ONLINE" or "ACTIVE" ? "ONLINE" : "OFFLINE";
 	}
 
 	private void OnIconLoaded(Resource resource)
@@ -143,8 +149,12 @@ public partial class UserHeadshotCard : PanelContainer
 		PopupPanel sheet = GD.Load<PackedScene>("res://scenes/mobile/components/home/friend_actions.tscn").Instantiate<PopupPanel>();
 		GetTree().Root.AddChild(sheet);
 		sheet.GetNode<Label>("Layout/Name").Text = string.IsNullOrWhiteSpace(_userData.Username) ? InitialUsername : _userData.Username;
+		string state = NormalizePresence(InitialPresence);
+		Label status = sheet.GetNode<Label>("Layout/Status");
+		status.Text = state == "PLAYING" ? "Playing" : state == "ONLINE" ? "Online" : "Offline";
+		status.SelfModulate = state == "PLAYING" ? Color.FromHtml("#0097FF") : state == "ONLINE" ? Color.FromHtml("#35C978") : Color.FromHtml("#697381");
 		sheet.GetNode<Button>("Layout/ViewProfile").Pressed += () => { sheet.QueueFree(); MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, UserID); };
-		sheet.GetNode<Button>("Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=user&id={Uri.EscapeDataString(UserID)}"));
+		sheet.GetNode<Button>("Layout/Report").Pressed += () => { sheet.QueueFree(); MobileReportDialog.Open(this, "user", UserID); };
 		sheet.GetNode<Button>("Layout/Close").Pressed += sheet.QueueFree;
 		Vector2 viewport = GetViewport().GetVisibleRect().Size;
 		Vector2 cardPosition = GetGlobalRect().Position;

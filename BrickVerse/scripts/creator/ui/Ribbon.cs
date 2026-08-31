@@ -9,6 +9,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using BrickVerse.Creator.TeamCreate;
 using System;
 using System.Collections.Generic;
 
@@ -36,6 +37,8 @@ public sealed partial class Ribbon : PanelContainer
 	private readonly Dictionary<long, Button> _overflowActions = [];
 	private bool _showingCodeActions;
 	private bool _updatingOverflow;
+	private TabContainer? _rightTabs;
+	private int _teamChatIndex = -1;
 
 	public override void _Ready()
 	{
@@ -140,6 +143,10 @@ public sealed partial class Ribbon : PanelContainer
 			rightTabs.SetTabTitle(teamChatIndex, "Team Chat");
 			rightTabs.SetTabIcon(teamChatIndex, GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg"));
 		}
+		_rightTabs = rightTabs;
+		_teamChatIndex = rightTabs.GetNode<TeamChatDock>("Team Chat").GetIndex();
+		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged += RefreshTeamChatTab;
+		RefreshTeamChatTab();
 
 		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
 		terrainButton.Pressed += () =>
@@ -314,7 +321,16 @@ public sealed partial class Ribbon : PanelContainer
 		if (IsInstanceValid(_brushButton)) _brushButton.GuiInput -= OnBrushGuiInput;
 		if (IsInstanceValid(_container)) _container.Resized -= QueueOverflowUpdate;
 		if (Tabs.Singleton != null) Tabs.Singleton.CurrentControlChanged -= OnCurrentControlChanged;
+		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged -= RefreshTeamChatTab;
 		base._ExitTree();
+	}
+
+	private void RefreshTeamChatTab()
+	{
+		if (_rightTabs == null || _teamChatIndex < 0) return;
+		bool visible = TeamCreateService.Instance?.TeamCreateEnabled == true;
+		_rightTabs.SetTabHidden(_teamChatIndex, !visible);
+		if (!visible && _rightTabs.CurrentTab == _teamChatIndex) _rightTabs.CurrentTab = 0;
 	}
 
 	private void OnBrushGuiInput(InputEvent inputEvent)

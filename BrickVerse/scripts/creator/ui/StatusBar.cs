@@ -31,6 +31,7 @@ public partial class StatusBar : Control
 		_versionLabel.TooltipText = string.IsNullOrWhiteSpace(Globals.BuildCommit)
 			? "Build commit unavailable"
 			: $"Git commit: {Globals.BuildCommit}";
+		_ = UpdateBuildStatusAsync();
 
 #if CREATOR
 		CreatorAPI.UserAuthenticated += UpdateUserDisplay;
@@ -40,6 +41,36 @@ public partial class StatusBar : Control
 #endif
 
 		base._Ready();
+	}
+
+	private async System.Threading.Tasks.Task UpdateBuildStatusAsync()
+	{
+		try
+		{
+			using SystemNetHttp.HttpResponseMessage response = await _http.GetAsync(
+				Globals.MainEndpoint.PathJoin("/api/v3/build-status")
+			);
+			if (!response.IsSuccessStatusCode || !IsInstanceValid(_versionLabel)) return;
+
+			using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(
+				await response.Content.ReadAsStringAsync()
+			);
+			System.Text.Json.JsonElement creator = document.RootElement.GetProperty("services").GetProperty("creator");
+			string latest = creator.TryGetProperty("latestCommit", out System.Text.Json.JsonElement latestNode)
+				&& latestNode.ValueKind == System.Text.Json.JsonValueKind.String
+				? latestNode.GetString() ?? ""
+				: "";
+			string installed = Globals.BuildCommit;
+			bool known = !string.IsNullOrWhiteSpace(installed) && !string.IsNullOrWhiteSpace(latest);
+			bool current = known && (installed.StartsWith(latest) || latest.StartsWith(installed));
+			string badge = !known ? "Unknown" : current ? "Latest" : "Outdated";
+			_versionLabel.Text += $"  •  {badge}";
+			_versionLabel.TooltipText += $"\nLatest commit: {(string.IsNullOrWhiteSpace(latest) ? "unavailable" : latest)}";
+		}
+		catch (System.Exception error)
+		{
+			BV.PrintWarn("Could not check Creator build status: ", error.Message);
+		}
 	}
 
 

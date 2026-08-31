@@ -48,6 +48,7 @@ public sealed partial class Globals : Node
 	public const string ProjectMetaFileName = "project.bvxl";
 	public const string ProjectIndexName = "file-lock.json";
 	public const string ProjectInputMapName = "input.json";
+	public const string ProjectLocalizationName = "localization.json";
 	public const string ModelFileExtension = "model";
 	public static readonly string[] ScriptFileExtensions = ["lua", "luau"];
 #endif

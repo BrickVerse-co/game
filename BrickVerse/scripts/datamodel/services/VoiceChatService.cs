@@ -68,7 +68,6 @@ public sealed partial class VoiceChatService : Instance
 		Root.Players.PlayerRemoved.Connect(OnPlayerRemoved);
 		if (!Root.Network.IsServer)
 		{
-			InitializeCodec();
 			Root.Input.GodotInputEvent += OnInput;
 			SetProcess(true);
 		}
@@ -95,6 +94,8 @@ public sealed partial class VoiceChatService : Instance
 	[ScriptMethod]
 	public void SetMicrophoneEnabled(bool enabled)
 	{
+		if (enabled && !_initialized && Root.Players.LocalPlayer?.CanVoiceChat == true)
+			InitializeCodec();
 		if (!_initialized || Root.Players.LocalPlayer?.CanVoiceChat != true) enabled = false;
 		_microphoneEnabled = enabled; if (_microphoneToggle != null) _microphoneToggle.ButtonPressed = enabled;
 		if (!enabled) AudioServer.SetInputDeviceActive(false);

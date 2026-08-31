@@ -35,6 +35,8 @@ public partial class MobileMarketplaceItem : MobileViewBase
 
 	public override void _Ready()
 	{
+		ApplyResponsiveMaxWidth(GetNode<Control>("Layout"), 1040f);
+		ApplyResponsiveMaxWidth(GetNode<Control>("LoadingSkeleton"), 1040f);
 		_preview = GetNode<TextureRect>("Layout/PreviewFrame/Padding/Preview");
 		_buy = GetNode<Button>("Layout/Buy");
 		_previewToggle = GetNode<Button>("Layout/PreviewFrame/Overlay/PreviewToggle");
@@ -57,7 +59,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 		MobileMotion.Bind(GetNode<Button>("Layout/Header/Back"));
 		GetNode<Button>("Layout/Header/Back").Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Store, MobileViewEnum.Store);
 		_buy.Pressed += Buy;
-		GetNode<Button>("Layout/Report").Pressed += () => OS.ShellOpen(Globals.MainEndpoint.PathJoin($"/report?type=marketplace_item&id={Uri.EscapeDataString(_itemId)}"));
+		GetNode<Button>("Layout/Report").Pressed += () => MobileReportDialog.Open(this, "marketplace_item", _itemId);
 		GetNode<Button>("Layout/Creator/Name").Pressed += OpenCreator;
 	}
 
@@ -105,7 +107,7 @@ public partial class MobileMarketplaceItem : MobileViewBase
 		string creatorId = Read("creatorId", "");
 		if (string.IsNullOrWhiteSpace(creatorId)) return;
 		if (Read("creatorType", "USER").Equals("GUILD", StringComparison.OrdinalIgnoreCase))
-			MobileUI.Singleton.SwitchTo(MobileViewEnum.RecordDetail,
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.GuildDetail,
 				new MobileRecordDetailArgs(Read("creatorName", "Guild"), "Marketplace creator", "View this guild and its creations in BrickVerse.", "", MobileViewEnum.Store, creatorId));
 		else MobileUI.Singleton.SwitchTo(MobileViewEnum.Profile, creatorId);
 	}

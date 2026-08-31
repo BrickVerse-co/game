@@ -6,11 +6,18 @@
 [ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="4_ptac7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gg42m"]
-bg_color = Color(0, 0, 0, 0.78431374)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.045, 0.05, 0.06, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.24, 0.29, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 18
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hkv5e"]
 
@@ -42,6 +49,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 44.0
+offset_left = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 current_tab = 0
@@ -65,7 +76,6 @@ selection_enabled = true
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 204.0
 offset_bottom = 44.0
 grow_horizontal = 2
 theme_override_constants/margin_left = 8
@@ -76,7 +86,14 @@ theme_override_constants/margin_bottom = 8
 [node name="HBoxContainer" type="HBoxContainer" parent="Control" unique_id=1641022196]
 layout_mode = 2
 mouse_filter = 2
-alignment = 2
+
+[node name="Title" type="Label" parent="Control/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.82, 0.87, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+text = "Developer Console"
+vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="Control/HBoxContainer" unique_id=809142051]
 custom_minimum_size = Vector2(24, 0)

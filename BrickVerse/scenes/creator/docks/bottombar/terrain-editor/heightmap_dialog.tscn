@@ -1,0 +1,9 @@
+[gd_scene format=3]
+[node name="HeightmapDialog" type="FileDialog"]
+title = "Import Terrain Heightmap"
+initial_position = 2
+size = Vector2i(900, 650)
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.png, *.jpg, *.jpeg, *.webp, *.exr ; Heightmap Images", "*.r16, *.raw ; 16-bit RAW Heightmaps")
+use_native_dialog = true

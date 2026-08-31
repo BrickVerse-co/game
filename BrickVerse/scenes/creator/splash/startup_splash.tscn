@@ -1,38 +1,93 @@
 [gd_scene format=3 uid="uid://ca8ul4i0eiuch"]
 
 [ext_resource type="Script" uid="uid://coebd024evsv2" path="res://scripts/creator/ui/splash/StartupSplash.cs" id="1"]
-[ext_resource type="Texture2D" uid="uid://cogra4uai3pt0" path="res://assets/textures/creator/banner/creator_code_bg.png" id="2"]
-[ext_resource type="Texture2D" uid="uid://y1tgfxo86kip" path="res://assets/textures/logo/logo.png" id="2_iwf2e"]
-[ext_resource type="Texture2D" uid="uid://t1wbfpo66r4e" path="res://assets/textures/creator/close_x2.svg" id="3"]
-[ext_resource type="Texture2D" uid="uid://panwma2xj7yu" path="res://assets/textures/ui-icons/home.svg" id="3_c5srf"]
-[ext_resource type="Texture2D" uid="uid://cym4kvy4h2vh5" path="res://assets/textures/ui-icons/plus.svg" id="4"]
-[ext_resource type="Texture2D" uid="uid://r8cp3jxk5mmy" path="res://assets/textures/ui-icons/book.svg" id="4_gfw8c"]
-[ext_resource type="Texture2D" uid="uid://bq1iu50it1cw2" path="res://assets/textures/ui-icons/folder.svg" id="5"]
-[ext_resource type="Texture2D" uid="uid://q41v5u10ix88" path="res://assets/textures/ui-icons/users.svg" id="5_t474c"]
-[ext_resource type="Texture2D" uid="uid://co60jcrmb4bkb" path="res://assets/textures/ui-icons/settings.svg" id="6"]
-[ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="7"]
-[ext_resource type="Script" uid="uid://5ta4sgcddjrk" path="res://scripts/creator/ui/splash/components/RecentPlaceList.cs" id="8"]
-[ext_resource type="Texture2D" uid="uid://deii1n7ji6sj0" path="res://assets/textures/ui-icons/play.svg" id="8_ef2c1"]
-[ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="9"]
+[ext_resource type="Texture2D" uid="uid://b3sjmxnxgp4tg" path="res://assets/textures/logo/brickverse_blue.png" id="2_8840e"]
+[ext_resource type="Texture2D" uid="uid://panwma2xj7yu" path="res://assets/textures/ui-icons/home.svg" id="3_home"]
+[ext_resource type="Texture2D" uid="uid://r8cp3jxk5mmy" path="res://assets/textures/ui-icons/book.svg" id="4_book"]
+[ext_resource type="Texture2D" uid="uid://cym4kvy4h2vh5" path="res://assets/textures/ui-icons/plus.svg" id="4_plus"]
+[ext_resource type="Texture2D" uid="uid://bq1iu50it1cw2" path="res://assets/textures/ui-icons/folder.svg" id="5_folder"]
+[ext_resource type="Texture2D" uid="uid://q41v5u10ix88" path="res://assets/textures/ui-icons/users.svg" id="5_users"]
+[ext_resource type="Texture2D" uid="uid://co60jcrmb4bkb" path="res://assets/textures/ui-icons/settings.svg" id="6_settings"]
+[ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="7_cube"]
+[ext_resource type="Texture2D" uid="uid://8pnjtnn5sm2" path="res://assets/textures/client/ui/menu_button/bv/close.png" id="7_sm8h3"]
+[ext_resource type="Texture2D" uid="uid://deii1n7ji6sj0" path="res://assets/textures/ui-icons/play.svg" id="8_play"]
+[ext_resource type="Script" uid="uid://5ta4sgcddjrk" path="res://scripts/creator/ui/splash/components/RecentPlaceList.cs" id="8_recents"]
+[ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="9_loader"]
+[ext_resource type="Script" uid="uid://dfcrs0npafan5" path="res://scripts/creator/ui/CreatorToolbarUserChip.cs" id="10_user_chip"]
+[ext_resource type="FontFile" uid="uid://bcqd3fm44o8nd" path="res://assets/fonts/Montserrat-Regular.ttf" id="11_regular"]
+[ext_resource type="FontFile" uid="uid://uhvraicn27bd" path="res://assets/fonts/Montserrat-SemiBold.ttf" id="12_semibold"]
+[ext_resource type="FontFile" uid="uid://m4xop7hv7qhg" path="res://assets/fonts/Montserrat-Bold.ttf" id="13_bold"]
+[ext_resource type="Texture2D" uid="uid://d2efj51sdi6ov" path="res://assets/textures/ui-icons/planet.svg" id="15_8840e"]
 
-[sub_resource type="StyleBoxFlat" id="Background"]
-bg_color = Color(0.0235294, 0.0313726, 0.0431373, 1)
+[sub_resource type="StyleBoxFlat" id="RootBackground"]
+bg_color = Color(0.027, 0.029, 0.035, 1)
 
-[sub_resource type="StyleBoxFlat" id="Header"]
-bg_color = Color(0.0313726, 0.0431373, 0.0588235, 0.98)
+[sub_resource type="StyleBoxFlat" id="TopBar"]
+bg_color = Color(0.032, 0.034, 0.041, 1)
 border_width_bottom = 1
-border_color = Color(0.109804, 0.145098, 0.196078, 1)
+border_color = Color(1, 1, 1, 0.14)
 
-[sub_resource type="StyleBoxFlat" id="NavButtonHover"]
+[sub_resource type="StyleBoxFlat" id="IconButton"]
+bg_color = Color(1, 1, 1, 0.045)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.16)
+border_blend = true
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="IconButtonHover"]
+bg_color = Color(1, 1, 1, 0.09)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.59, 1, 0.62)
+border_blend = true
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="CloseButton"]
+bg_color = Color(0.92, 0.16, 0.16, 0.92)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="CloseButtonHover"]
+bg_color = Color(1, 0.22, 0.22, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Sidebar"]
+bg_color = Color(0.029, 0.031, 0.038, 1)
+border_width_right = 1
+border_color = Color(1, 1, 1, 0.15)
+
+[sub_resource type="StyleBoxFlat" id="NavSelected"]
 content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
-bg_color = Color(0.0784314, 0.105882, 0.145098, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+bg_color = Color(0, 0.43, 0.76, 0.19)
+border_width_left = 3
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.59, 1, 0.9)
+border_blend = true
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="NavButton"]
 content_margin_left = 12.0
@@ -40,356 +95,519 @@ content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
 bg_color = Color(0, 0, 0, 0)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="Hero"]
-bg_color = Color(0.0352941, 0.0509804, 0.0745098, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.117647, 0.180392, 0.258824, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0, 0, 0, 0.28)
-shadow_size = 8
+[sub_resource type="StyleBoxFlat" id="NavButtonHover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0.055)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.15)
+border_blend = true
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="Primary"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.00392157, 0.529412, 0.972549, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="PrimaryHover"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.0862745, 0.619608, 1, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="Secondary"]
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.0705882, 0.0941176, 0.129412, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.14902, 0.196078, 0.266667, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="SecondaryHover"]
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.0901961, 0.12549, 0.176471, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.00392157, 0.529412, 0.972549, 0.72)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="SectionPanel"]
-bg_color = Color(0.0313726, 0.0431373, 0.0588235, 0.72)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.101961, 0.137255, 0.184314, 1)
+[sub_resource type="StyleBoxFlat" id="PrimaryAction"]
+content_margin_left = 17.0
+content_margin_top = 14.0
+content_margin_right = 17.0
+content_margin_bottom = 14.0
+bg_color = Color(0, 0.5058824, 0.9882353, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[sub_resource type="StyleBoxFlat" id="Footer"]
-bg_color = Color(0.027451, 0.0392157, 0.054902, 0.9)
-border_width_top = 1
-border_color = Color(0.101961, 0.137255, 0.184314, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
+[sub_resource type="StyleBoxFlat" id="PrimaryActionHover"]
+content_margin_left = 17.0
+content_margin_top = 14.0
+content_margin_right = 17.0
+content_margin_bottom = 14.0
+bg_color = Color(0, 0.31222725, 0.63020426, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[node name="StartupSplash" type="Panel" unique_id=187716805 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_tutorialButton", "_closeButton", "_homeButton", "_learnButton", "_communityButton", "_docsButton", "_supportButton", "_versionNumber", "_banner")]
+[sub_resource type="StyleBoxFlat" id="ActionCard"]
+content_margin_left = 18.0
+content_margin_top = 15.0
+content_margin_right = 18.0
+content_margin_bottom = 15.0
+bg_color = Color(0.062, 0.065, 0.077, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.17)
+border_blend = true
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="ActionCardHover"]
+content_margin_left = 18.0
+content_margin_top = 15.0
+content_margin_right = 18.0
+content_margin_bottom = 15.0
+bg_color = Color(0.082, 0.086, 0.102, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.59, 1, 0.62)
+border_blend = true
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="HeroPanel"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.16)
+border_blend = true
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxEmpty" id="Empty"]
+
+[sub_resource type="StyleBoxFlat" id="WorldPanel"]
+bg_color = Color(0.038, 0.041, 0.049, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.16)
+border_blend = true
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="StartupSplash" type="Panel" unique_id=187716805 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_tutorialButton", "_closeButton", "_homeButton", "_learnButton", "_communityButton", "_docsButton", "_supportButton", "_recentWorldsScroll", "_versionNumber", "_page")]
 z_index = 50
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("Background")
+theme_override_styles/panel = SubResource("RootBackground")
 script = ExtResource("1")
-_newButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/New")
-_openButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/Open")
-_recentsButton = NodePath("Page/Layout/SectionHeader/RecentIcon")
-_settingsButton = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/SettingsDisplay")
-_tutorialButton = NodePath("Page/Layout/Hero/HeroMargin/HeroContent/Actions/Tutorial")
-_closeButton = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/CloseDisplay")
-_homeButton = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/Nav/Home")
-_learnButton = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/Nav/Learn")
-_communityButton = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/Nav/Community")
-_docsButton = NodePath("Page/Layout/Footer/Margin/Row/Docs")
-_supportButton = NodePath("Page/Layout/Footer/Margin/Row/Support")
-_versionNumber = NodePath("Page/Layout/Header/HeaderMargin/HeaderRow/VersionDisplay")
-_banner = NodePath("Page/Layout/Hero/Banner")
+_newButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/QuickStart/New")
+_openButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/QuickStart/Open")
+_recentsButton = NodePath("Page/Body/Main/MainMargin/MainContent/RecentHeader/RecentIcon")
+_settingsButton = NodePath("Page/TopBar/TopMargin/TopRow/SettingsDisplay")
+_tutorialButton = NodePath("Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Actions/Tutorial")
+_closeButton = NodePath("Page/TopBar/TopMargin/TopRow/CloseDisplay")
+_homeButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Home")
+_learnButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Learn")
+_communityButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Community")
+_docsButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/BottomLinks/Docs")
+_supportButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/BottomLinks/Support")
+_recentWorldsScroll = NodePath("Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll")
+_versionNumber = NodePath("Page/TopBar/TopMargin/TopRow/VersionDisplay")
+_page = NodePath("Page")
 
-[node name="Page" type="MarginContainer" parent="." unique_id=1557068037]
+[node name="Page" type="VBoxContainer" parent="." unique_id=1557068037]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="Page" unique_id=1845220522]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_styles/panel = SubResource("TopBar")
+
+[node name="TopMargin" type="MarginContainer" parent="Page/TopBar" unique_id=972536097]
+layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 0
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
 
-[node name="Layout" type="VBoxContainer" parent="Page" unique_id=1815990014]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="Header" type="PanelContainer" parent="Page/Layout" unique_id=166595103]
-custom_minimum_size = Vector2(0, 58)
-layout_mode = 2
-theme_override_styles/panel = SubResource("Header")
-
-[node name="HeaderMargin" type="MarginContainer" parent="Page/Layout/Header" unique_id=1369588703]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
-
-[node name="HeaderRow" type="HBoxContainer" parent="Page/Layout/Header/HeaderMargin" unique_id=1876064134]
+[node name="TopRow" type="HBoxContainer" parent="Page/TopBar/TopMargin" unique_id=401839969]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Brand" type="HBoxContainer" parent="Page/Layout/Header/HeaderMargin/HeaderRow" unique_id=1221404270]
+[node name="Brand" type="HBoxContainer" parent="Page/TopBar/TopMargin/TopRow" unique_id=542706629]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 11
+theme_override_constants/separation = 12
 
-[node name="Logo" type="TextureRect" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Brand" unique_id=791000589]
-custom_minimum_size = Vector2(38, 38)
+[node name="Logo" type="TextureRect" parent="Page/TopBar/TopMargin/TopRow/Brand" unique_id=664065469]
+custom_minimum_size = Vector2(225, 40)
 layout_mode = 2
-texture = ExtResource("2_iwf2e")
+texture = ExtResource("2_8840e")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Product" type="VBoxContainer" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Brand" unique_id=2007992390]
+[node name="AuthenticatedUser" type="HBoxContainer" parent="Page/TopBar/TopMargin/TopRow" unique_id=130156785]
 layout_mode = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 8
+script = ExtResource("10_user_chip")
 
-[node name="Title" type="Label" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Brand/Product" unique_id=1952813242]
+[node name="VersionDisplay" type="Label" parent="Page/TopBar/TopMargin/TopRow" unique_id=1719381507]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.94902, 0.968627, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "Creator"
-
-[node name="Subtitle" type="Label" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Brand/Product" unique_id=1248083354]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.431373, 0.505882, 0.607843, 1)
-theme_override_font_sizes/font_size = 11
-text = "CREATE  •  BUILD  •  PUBLISH"
-
-[node name="Nav" type="HBoxContainer" parent="Page/Layout/Header/HeaderMargin/HeaderRow" unique_id=1049304374]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="Home" type="Button" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Nav" unique_id=1977819926]
-layout_mode = 2
-tooltip_text = "Home"
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.87451, 0.917647, 0.980392, 1)
-theme_override_styles/normal = SubResource("NavButtonHover")
-theme_override_styles/hover = SubResource("NavButtonHover")
-text = "Home"
-icon = ExtResource("3_c5srf")
-
-[node name="Learn" type="Button" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Nav" unique_id=864211385]
-layout_mode = 2
-tooltip_text = "Open BrickVerse documentation"
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.603922, 0.67451, 0.772549, 1)
-theme_override_styles/normal = SubResource("NavButton")
-theme_override_styles/hover = SubResource("NavButtonHover")
-text = "Learn"
-icon = ExtResource("4_gfw8c")
-
-[node name="Community" type="Button" parent="Page/Layout/Header/HeaderMargin/HeaderRow/Nav" unique_id=1600810877]
-layout_mode = 2
-tooltip_text = "Open the BrickVerse community"
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.603922, 0.67451, 0.772549, 1)
-theme_override_styles/normal = SubResource("NavButton")
-theme_override_styles/hover = SubResource("NavButtonHover")
-text = "Community"
-icon = ExtResource("5_t474c")
-
-[node name="VersionDisplay" type="Label" parent="Page/Layout/Header/HeaderMargin/HeaderRow" unique_id=1143830706]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.470588, 0.568627, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.55, 0.56, 0.61, 0.7)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 10
 text = "v1.0.0"
 vertical_alignment = 1
 
-[node name="SettingsDisplay" type="Button" parent="Page/Layout/Header/HeaderMargin/HeaderRow" unique_id=479279392]
-custom_minimum_size = Vector2(38, 38)
+[node name="SettingsDisplay" type="Button" parent="Page/TopBar/TopMargin/TopRow" unique_id=290071471]
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
-tooltip_text = "Creator settings"
-icon = ExtResource("6")
-flat = true
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("IconButton")
+theme_override_styles/pressed = SubResource("IconButtonHover")
+theme_override_styles/hover = SubResource("IconButtonHover")
+icon = ExtResource("6_settings")
+icon_alignment = 1
 
-[node name="CloseDisplay" type="Button" parent="Page/Layout/Header/HeaderMargin/HeaderRow" unique_id=486854776]
-custom_minimum_size = Vector2(38, 38)
+[node name="CloseDisplay" type="Button" parent="Page/TopBar/TopMargin/TopRow" unique_id=2024620134]
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
-tooltip_text = "Close home"
-icon = ExtResource("3")
-flat = true
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("CloseButton")
+theme_override_styles/pressed = SubResource("CloseButtonHover")
+theme_override_styles/hover = SubResource("CloseButtonHover")
+icon = ExtResource("7_sm8h3")
+icon_alignment = 1
+expand_icon = true
 
-[node name="Hero" type="PanelContainer" parent="Page/Layout" unique_id=28654156]
-clip_children = 1
-custom_minimum_size = Vector2(0, 215)
+[node name="Body" type="HBoxContainer" parent="Page" unique_id=774608228]
 layout_mode = 2
-theme_override_styles/panel = SubResource("Hero")
+size_flags_vertical = 3
+theme_override_constants/separation = 0
 
-[node name="Banner" type="TextureRect" parent="Page/Layout/Hero" unique_id=1354589662]
-modulate = Color(1, 1, 1, 0.28)
+[node name="Sidebar" type="PanelContainer" parent="Page/Body" unique_id=1339032565]
+custom_minimum_size = Vector2(248, 0)
 layout_mode = 2
-mouse_filter = 2
-texture = ExtResource("2")
-expand_mode = 1
-stretch_mode = 6
+theme_override_styles/panel = SubResource("Sidebar")
 
-[node name="Tint" type="ColorRect" parent="Page/Layout/Hero" unique_id=774424473]
+[node name="SidebarMargin" type="MarginContainer" parent="Page/Body/Sidebar" unique_id=1287538863]
 layout_mode = 2
-mouse_filter = 2
-color = Color(0.0117647, 0.0392157, 0.0745098, 0.56)
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
 
-[node name="HeroMargin" type="MarginContainer" parent="Page/Layout/Hero" unique_id=2127255248]
-layout_mode = 2
-theme_override_constants/margin_left = 34
-theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 34
-theme_override_constants/margin_bottom = 28
-
-[node name="HeroContent" type="VBoxContainer" parent="Page/Layout/Hero/HeroMargin" unique_id=1079605043]
+[node name="SidebarContent" type="VBoxContainer" parent="Page/Body/Sidebar/SidebarMargin" unique_id=850405224]
 layout_mode = 2
 theme_override_constants/separation = 10
-alignment = 1
 
-[node name="Eyebrow" type="Label" parent="Page/Layout/Hero/HeroMargin/HeroContent" unique_id=124149105]
+[node name="WorkspaceLabel" type="Label" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=1841062801]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.145098, 0.686275, 1, 1)
+theme_override_colors/font_color = Color(0.57, 0.58, 0.64, 0.8)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 10
+text = "WORKSPACE"
+
+[node name="Nav" type="VBoxContainer" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=481558925]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Home" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav" unique_id=1259495082]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.98, 0.98, 0.99, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
 theme_override_font_sizes/font_size = 12
-text = "BRICKVERSE CREATOR"
+theme_override_styles/normal = SubResource("NavSelected")
+theme_override_styles/pressed = SubResource("NavSelected")
+theme_override_styles/hover = SubResource("NavSelected")
+text = "Home"
+icon = ExtResource("3_home")
+alignment = 0
 
-[node name="Welcome" type="Label" parent="Page/Layout/Hero/HeroMargin/HeroContent" unique_id=453125362]
+[node name="Learn" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav" unique_id=1219211036]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.976471, 0.988235, 1, 1)
-theme_override_font_sizes/font_size = 30
-text = "Bring your next world to life."
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.77, 0.78, 0.82, 0.9)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("NavButton")
+theme_override_styles/pressed = SubResource("NavButtonHover")
+theme_override_styles/hover = SubResource("NavButtonHover")
+text = "Learn"
+icon = ExtResource("4_book")
+alignment = 0
 
-[node name="Description" type="Label" parent="Page/Layout/Hero/HeroMargin/HeroContent" unique_id=269808865]
+[node name="Community" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav" unique_id=276275264]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.698039, 0.764706, 0.854902, 1)
-theme_override_font_sizes/font_size = 14
-text = "Start something new, open an existing project, or continue from your recent work."
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.77, 0.78, 0.82, 0.9)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("NavButton")
+theme_override_styles/pressed = SubResource("NavButtonHover")
+theme_override_styles/hover = SubResource("NavButtonHover")
+text = "Community"
+icon = ExtResource("5_users")
+alignment = 0
 
-[node name="Actions" type="HBoxContainer" parent="Page/Layout/Hero/HeroMargin/HeroContent" unique_id=347035519]
+[node name="NavSpacer" type="Control" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=1477464709]
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
-theme_override_constants/separation = 10
 
-[node name="New" type="Button" parent="Page/Layout/Hero/HeroMargin/HeroContent/Actions" unique_id=11644169]
+[node name="QuickLabel" type="Label" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=601058004]
 layout_mode = 2
-theme_override_styles/normal = SubResource("Primary")
-theme_override_styles/pressed = SubResource("PrimaryHover")
-theme_override_styles/hover = SubResource("PrimaryHover")
-text = "New world"
-icon = ExtResource("4")
+theme_override_colors/font_color = Color(0.57, 0.58, 0.64, 0.8)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 10
+text = "QUICK START"
 
-[node name="Open" type="Button" parent="Page/Layout/Hero/HeroMargin/HeroContent/Actions" unique_id=1616028715]
-layout_mode = 2
-theme_override_styles/normal = SubResource("Secondary")
-theme_override_styles/pressed = SubResource("SecondaryHover")
-theme_override_styles/hover = SubResource("SecondaryHover")
-text = "Open project"
-icon = ExtResource("5")
-
-[node name="Tutorial" type="Button" parent="Page/Layout/Hero/HeroMargin/HeroContent/Actions" unique_id=1291601961]
-layout_mode = 2
-theme_override_styles/normal = SubResource("Secondary")
-theme_override_styles/pressed = SubResource("SecondaryHover")
-theme_override_styles/hover = SubResource("SecondaryHover")
-text = "Start tutorial"
-icon = ExtResource("8_ef2c1")
-
-[node name="SectionHeader" type="HBoxContainer" parent="Page/Layout" unique_id=1584890051]
+[node name="QuickStart" type="VBoxContainer" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=2051869946]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="RecentIcon" type="Button" parent="Page/Layout/SectionHeader" unique_id=509704665]
-custom_minimum_size = Vector2(28, 28)
+[node name="New" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/QuickStart" unique_id=1421680066]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-tooltip_text = "Show recent worlds"
+focus_mode = 0
 mouse_default_cursor_shape = 2
-icon = ExtResource("7")
-flat = true
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("PrimaryAction")
+theme_override_styles/pressed = SubResource("PrimaryActionHover")
+theme_override_styles/hover = SubResource("PrimaryActionHover")
+text = "New world"
+icon = ExtResource("4_plus")
+alignment = 0
 
-[node name="Title" type="Label" parent="Page/Layout/SectionHeader" unique_id=1693574898]
+[node name="Open" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/QuickStart" unique_id=987463256]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.91, 0.92, 0.95, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("ActionCard")
+theme_override_styles/pressed = SubResource("ActionCardHover")
+theme_override_styles/hover = SubResource("ActionCardHover")
+text = "Open project"
+icon = ExtResource("5_folder")
+alignment = 0
+
+[node name="Fill" type="Control" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=770410167]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BottomLinks" type="VBoxContainer" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=1604422572]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Docs" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/BottomLinks" unique_id=1375248645]
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.62, 0.63, 0.68, 0.9)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("NavButton")
+theme_override_styles/hover = SubResource("NavButtonHover")
+text = "Documentation"
+alignment = 0
+
+[node name="Support" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/BottomLinks" unique_id=657780577]
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.62, 0.63, 0.68, 0.9)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("NavButton")
+theme_override_styles/hover = SubResource("NavButtonHover")
+text = "Support"
+alignment = 0
+
+[node name="StatusRow" type="HBoxContainer" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent" unique_id=896538555]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="StatusDot" type="Label" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/StatusRow" unique_id=968239567]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.86, 0.56, 1)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 9
+text = "●"
+
+[node name="Status" type="Label" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/StatusRow" unique_id=979945059]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.51, 0.56, 0.8)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 10
+text = "Creator ready"
+
+[node name="Main" type="Control" parent="Page/Body" unique_id=210883103]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.917647, 0.945098, 0.984314, 1)
-theme_override_font_sizes/font_size = 18
+size_flags_vertical = 3
+
+[node name="MainMargin" type="MarginContainer" parent="Page/Body/Main" unique_id=1729767355]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 34
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 34
+theme_override_constants/margin_bottom = 24
+
+[node name="MainContent" type="VBoxContainer" parent="Page/Body/Main/MainMargin" unique_id=759455557]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Hero" type="PanelContainer" parent="Page/Body/Main/MainMargin/MainContent" unique_id=202663842]
+custom_minimum_size = Vector2(0, 156)
+layout_mode = 2
+theme_override_styles/panel = SubResource("HeroPanel")
+
+[node name="HeroMargin" type="MarginContainer" parent="Page/Body/Main/MainMargin/MainContent/Hero" unique_id=1480296877]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 22
+
+[node name="HeroLayout" type="HBoxContainer" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin" unique_id=262165362]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Copy" type="VBoxContainer" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout" unique_id=904654843]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 7
+alignment = 1
+
+[node name="Eyebrow" type="Label" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Copy" unique_id=493508637]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.12, 0.66, 1, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 10
+text = "WELCOME TO CREATOR"
+
+[node name="Welcome" type="Label" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Copy" unique_id=1794668977]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.99, 0.99, 1, 1)
+theme_override_fonts/font = ExtResource("13_bold")
+theme_override_font_sizes/font_size = 24
+text = "What will you build today?"
+autowrap_mode = 2
+
+[node name="Description" type="Label" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Copy" unique_id=1925073322]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.73, 0.78, 0.9)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 12
+text = "Create a new world, continue a recent project, or jump into the Creator guide."
+autowrap_mode = 2
+
+[node name="Actions" type="VBoxContainer" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout" unique_id=1073884930]
+custom_minimum_size = Vector2(176, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Tutorial" type="Button" parent="Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Actions" unique_id=397408862]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 0.97, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("ActionCard")
+theme_override_styles/pressed = SubResource("ActionCardHover")
+theme_override_styles/hover = SubResource("ActionCardHover")
+text = "Creator guide"
+icon = ExtResource("8_play")
+alignment = 0
+
+[node name="RecentHeader" type="HBoxContainer" parent="Page/Body/Main/MainMargin/MainContent" unique_id=1457835458]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="RecentIcon" type="Button" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader" unique_id=324618479]
+custom_minimum_size = Vector2(24, 32)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("Empty")
+theme_override_styles/pressed = SubResource("Empty")
+theme_override_styles/hover = SubResource("Empty")
+icon = ExtResource("15_8840e")
+
+[node name="HeaderCopy" type="VBoxContainer" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader" unique_id=1316991511]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader/HeaderCopy" unique_id=1090245935]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.96, 0.98, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 15
 text = "Recent worlds"
-vertical_alignment = 1
 
-[node name="Hint" type="Label" parent="Page/Layout/SectionHeader" unique_id=1063980043]
+[node name="Hint" type="Label" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader/HeaderCopy" unique_id=533348777]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.435294, 0.501961, 0.592157, 1)
-text = "Pick up where you left off"
-vertical_alignment = 1
+theme_override_colors/font_color = Color(0.55, 0.56, 0.61, 0.78)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 10
+text = "Continue where you left off"
 
-[node name="WorldPanel" type="PanelContainer" parent="Page/Layout" unique_id=1596016866]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SectionPanel")
-
-[node name="WorldMargin" type="MarginContainer" parent="Page/Layout/WorldPanel" unique_id=1818918239]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
-
-[node name="WorldArea" type="Control" parent="Page/Layout/WorldPanel/WorldMargin" unique_id=1276709639]
+[node name="WorldPanel" type="PanelContainer" parent="Page/Body/Main/MainMargin/MainContent" unique_id=1631406805]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("WorldPanel")
 
-[node name="Scroll" type="ScrollContainer" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea" unique_id=1466281046]
+[node name="WorldMargin" type="MarginContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel" unique_id=947004974]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="WorldArea" type="Control" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin" unique_id=386429849]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea" unique_id=1982768508]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -399,23 +617,23 @@ grow_vertical = 2
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
 
-[node name="GridMargin" type="MarginContainer" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Scroll" unique_id=2135828262]
+[node name="GridMargin" type="MarginContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll" unique_id=1904296195]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="List" type="HFlowContainer" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Scroll/GridMargin" unique_id=911328693 node_paths=PackedStringArray("_loader", "_noProjectsView")]
+[node name="List" type="HFlowContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll/GridMargin" unique_id=1533745526 node_paths=PackedStringArray("_loader", "_noProjectsView")]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 16
-script = ExtResource("8")
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+script = ExtResource("8_recents")
 _loader = NodePath("../../../Overlay/Loader")
 _noProjectsView = NodePath("../../../Overlay/NoRecents")
 
-[node name="Overlay" type="Control" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea" unique_id=1638157222]
+[node name="Overlay" type="Control" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea" unique_id=521661821]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -424,7 +642,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Loader" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Overlay" unique_id=529338180 instance=ExtResource("9")]
+[node name="Loader" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Overlay" unique_id=98462581 instance=ExtResource("9_loader")]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -439,7 +657,7 @@ offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="NoRecents" type="VBoxContainer" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Overlay" unique_id=1802369732]
+[node name="NoRecents" type="VBoxContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Overlay" unique_id=1342397220]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -447,71 +665,38 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 5
 alignment = 1
 
-[node name="Title" type="Label" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Overlay/NoRecents" unique_id=1840340384]
+[node name="Icon" type="TextureRect" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Overlay/NoRecents" unique_id=1579986445]
+modulate = Color(0.52, 0.54, 0.61, 0.62)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.745098, 0.792157, 0.862745, 1)
-theme_override_font_sizes/font_size = 18
-text = "No recent worlds yet"
+size_flags_horizontal = 4
+texture = ExtResource("7_cube")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Overlay/NoRecents" unique_id=1160199618]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.83, 0.87, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 14
+text = "Nothing here yet"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="Page/Layout/WorldPanel/WorldMargin/WorldArea/Overlay/NoRecents" unique_id=1602789054]
+[node name="Hint" type="Label" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Overlay/NoRecents" unique_id=454438048]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.435294, 0.501961, 0.592157, 1)
-text = "Create a world or open an existing project to get started."
-horizontal_alignment = 1
-
-[node name="Footer" type="PanelContainer" parent="Page/Layout" unique_id=1433322098]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_styles/panel = SubResource("Footer")
-
-[node name="Margin" type="MarginContainer" parent="Page/Layout/Footer" unique_id=396022109]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 9
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 9
-
-[node name="Row" type="HBoxContainer" parent="Page/Layout/Footer/Margin" unique_id=1433912863]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="StatusDot" type="Label" parent="Page/Layout/Footer/Margin/Row" unique_id=1395904386]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.235294, 0.819608, 0.509804, 1)
-text = "●"
-vertical_alignment = 1
-
-[node name="Status" type="Label" parent="Page/Layout/Footer/Margin/Row" unique_id=1152920036]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.52549, 0.6, 0.698039, 1)
-text = "Creator is ready"
-vertical_alignment = 1
-
-[node name="Docs" type="Button" parent="Page/Layout/Footer/Margin/Row" unique_id=1484936438]
-layout_mode = 2
-tooltip_text = "Open documentation"
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.52549, 0.6, 0.698039, 1)
-theme_override_styles/normal = SubResource("NavButton")
-theme_override_styles/hover = SubResource("NavButtonHover")
-text = "Documentation"
-
-[node name="Support" type="Button" parent="Page/Layout/Footer/Margin/Row" unique_id=186057483]
-layout_mode = 2
-tooltip_text = "Open support"
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.52549, 0.6, 0.698039, 1)
-theme_override_styles/normal = SubResource("NavButton")
-theme_override_styles/hover = SubResource("NavButtonHover")
-text = "Support"
-
-[node name="Copyright" type="Label" parent="Page/Layout/Footer/Margin/Row" unique_id=1450477906]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.337255, 0.396078, 0.482353, 1)
+theme_override_colors/font_color = Color(0.53, 0.54, 0.59, 0.82)
+theme_override_fonts/font = ExtResource("11_regular")
 theme_override_font_sizes/font_size = 11
+text = "Create a world or open a project and it will appear here."
+horizontal_alignment = 1
+
+[node name="Copyright" type="Label" parent="Page/Body/Main/MainMargin/MainContent" unique_id=2146916958]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41, 0.42, 0.47, 0.56)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 9
 text = "© Meta Games LLC"
-vertical_alignment = 1
+horizontal_alignment = 2

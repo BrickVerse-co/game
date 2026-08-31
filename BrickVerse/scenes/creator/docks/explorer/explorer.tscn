@@ -2,42 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dx8iy8t8pouw5" path="res://scripts/creator/ui/Explorer.cs" id="2_a6sm1"]
 
-[sub_resource type="FontVariation" id="FontVariation_Header"]
-variation_opentype = {
-2003265652: 700
-}
-
-[sub_resource type="StyleBoxFlat" id="HeaderPanel"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.0470588, 0.0666667, 0.0901961, 1)
-border_width_left = 2
-border_width_bottom = 1
-border_color = Color(0.00392157, 0.529412, 0.972549, 0.88)
-
-[sub_resource type="Theme" id="HeaderTheme"]
-Label/colors/font_color = Color(0.87451, 0.909804, 0.952941, 1)
-Label/font_sizes/font_size = 12
-Label/fonts/font = SubResource("FontVariation_Header")
-PanelContainer/styles/panel = SubResource("HeaderPanel")
-
-[sub_resource type="StyleBoxFlat" id="DockContent"]
-content_margin_left = 7.0
-content_margin_top = 7.0
-content_margin_right = 7.0
-content_margin_bottom = 7.0
-bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
-
-[sub_resource type="StyleBoxEmpty" id="Empty"]
-
-[sub_resource type="Theme" id="ExplorerTheme"]
-TabContainer/constants/side_margin = 0
-TabContainer/styles/panel = SubResource("DockContent")
-TabContainer/styles/tabbar_background = SubResource("Empty")
-PanelContainer/styles/panel = SubResource("Empty")
-
 [node name="Explorer" type="VBoxContainer" unique_id=63511104]
 size_flags_vertical = 3
 mouse_filter = 2
@@ -47,10 +11,11 @@ theme_override_constants/separation = 0
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("HeaderTheme")
+theme_type_variation = &"CreatorDockHeaderAccentPanel"
 
 [node name="Label" type="Label" parent="Header" unique_id=716894610]
 layout_mode = 2
+theme_type_variation = &"CreatorDockHeaderLabel"
 text = "Explorer"
 vertical_alignment = 1
 
@@ -59,5 +24,5 @@ layout_mode = 2
 size_flags_vertical = 3
 tabs_visible = false
 deselect_enabled = true
-theme = SubResource("ExplorerTheme")
+theme_type_variation = &"CreatorDockTabs"
 script = ExtResource("2_a6sm1")
