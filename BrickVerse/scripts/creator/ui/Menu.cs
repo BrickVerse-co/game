@@ -225,6 +225,17 @@ public sealed partial class Menu : PanelContainer
 				},
 				new MenuButtonItem()
 				{
+					Text = "Close Place",
+					Icon = "x",
+					RequireGameOpen = true,
+					KeyShortcut = new()
+					{
+						Events = [new InputEventKey() { Keycode = Key.F4 }],
+					},
+					Pressed = () => Tabs.Singleton.CloseCurrentPlace(),
+				},
+				new MenuButtonItem()
+				{
 					Text = "Exit",
 					Icon = "door-exit",
 					Pressed = () =>

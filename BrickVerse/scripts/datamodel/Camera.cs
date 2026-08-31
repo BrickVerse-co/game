@@ -21,6 +21,7 @@ public sealed partial class Camera : Dynamic
 	public const float DefaultZoomDistance = 10.0f;
 	public const float DefaultScrollSensitivity = 15.0f;
 	private const float TrackpadPinchZoomSensitivity = 0.75f;
+	private const float TrackpadScrollZoomSensitivity = 0.1f;
 	private const float TrackpadPanSensitivity = 10.0f;
 
 	// override default +Z forward orientation as that would be incorrect for the camera
@@ -731,32 +732,6 @@ public sealed partial class Camera : Dynamic
 		if (Root.Environment.CurrentCamera != this) return;
 
 		if (!Root.Input.IsGameFocused) return;
-		if (@event is InputEventMouseButton btnEvent2)
-		{
-			if (btnEvent2.Pressed)
-			{
-				// Handle scroll events
-				switch (btnEvent2.ButtonIndex)
-				{
-					case MouseButton.WheelUp:
-						_targetZoom -= ScrollSensitivity / 5;
-						break;
-
-					case MouseButton.WheelDown:
-						_targetZoom += ScrollSensitivity / 5;
-						break;
-				}
-			}
-		}
-		else if (@event is InputEventMagnifyGesture magnifyGesture)
-		{
-			ZoomByMagnifyGesture(magnifyGesture);
-		}
-		else if (@event is InputEventPanGesture panGesture)
-		{
-			RotateByPanGesture(panGesture);
-		}
-
 		if (Mode == CameraModeEnum.Scripted) return;
 
 		if (Mode == CameraModeEnum.Free)
@@ -814,6 +789,21 @@ public sealed partial class Camera : Dynamic
 			{
 				RotateCamera(mouseEvent.Relative);
 			}
+		}
+		else if (@event is InputEventMagnifyGesture magnifyGesture)
+		{
+			ZoomByMagnifyGesture(magnifyGesture);
+		}
+		else if (@event is InputEventPanGesture panGesture)
+		{
+			HandlePanGesture(panGesture);
+		}
+		else if (@event is InputEventMouseButton mouseButton
+			&& mouseButton.Pressed
+			&& Mode == CameraModeEnum.Follow
+			&& (mouseButton.ButtonIndex == MouseButton.WheelUp || mouseButton.ButtonIndex == MouseButton.WheelDown))
+		{
+			ZoomByMouseWheel(mouseButton.ButtonIndex);
 		}
 	}
 
@@ -925,12 +915,54 @@ public sealed partial class Camera : Dynamic
 		LimitZoomDistance();
 	}
 
-	private void RotateByPanGesture(InputEventPanGesture panGesture)
+	private void HandlePanGesture(InputEventPanGesture panGesture)
 	{
-		if (Mode != CameraModeEnum.Follow) return;
 		if (Root.Input.IsTouchscreen) return;
 
-		RotateCamera(-panGesture.Delta * TrackpadPanSensitivity);
+		if (Mode == CameraModeEnum.Free)
+		{
+			if (!_isMouseCaptured && !Mathf.IsZeroApprox(panGesture.Delta.Y))
+			{
+				Position += Forward * (-panGesture.Delta.Y * _moveSpeed * TrackpadScrollZoomSensitivity);
+			}
+			return;
+		}
+
+		if (Mode != CameraModeEnum.Follow) return;
+
+		ZoomByScrollGesture(panGesture.Delta.Y);
+
+		Vector2 rotationDelta = new(panGesture.Delta.X, 0);
+		if (!Mathf.IsZeroApprox(rotationDelta.X))
+		{
+			RotateCamera(-rotationDelta * TrackpadPanSensitivity);
+		}
+	}
+
+	private void ZoomByScrollGesture(float scrollDelta)
+	{
+		if (Mathf.IsZeroApprox(scrollDelta)) return;
+
+		_targetZoom += scrollDelta * TrackpadScrollZoomSensitivity;
+		LimitZoomDistance();
+	}
+
+	private void ZoomByMouseWheel(MouseButton button)
+	{
+		if (button == MouseButton.WheelUp)
+		{
+			_targetZoom -= ScrollSensitivity / 5;
+		}
+		else if (button == MouseButton.WheelDown)
+		{
+			_targetZoom += ScrollSensitivity / 5;
+		}
+		else
+		{
+			return;
+		}
+
+		LimitZoomDistance();
 	}
 
 	private void RotateCamera(Vector2 delta)

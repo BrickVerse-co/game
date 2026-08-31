@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
@@ -510,6 +511,23 @@ public sealed partial class Tabs : Control
 		return _orderedControls
 			.OfType<WorldContainer>()
 			.ToList();
+	}
+
+	public async void CloseCurrentPlace()
+	{
+		World? currentWorld = World.Current;
+		if (currentWorld == null) return;
+
+		WorldContainer? currentPlace = _orderedControls
+			.OfType<WorldContainer>()
+			.FirstOrDefault(container => container.World == currentWorld);
+		if (currentPlace == null) return;
+
+		await Remove(currentPlace);
+		if (_orderedControls.OfType<WorldContainer>().Any()) return;
+
+		World.Current = null;
+		StartupSplash.Singleton.Open();
 	}
 
 	public string WorldContainerToTabTitle(WorldContainer wc)

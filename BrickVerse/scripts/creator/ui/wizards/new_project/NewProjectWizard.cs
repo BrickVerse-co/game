@@ -103,7 +103,7 @@ public partial class NewProjectWizard : Control
 		Visible = true;
 		_oldNameText = DefaultProjectName;
 		_projectNameEdit.Text = DefaultProjectName;
-		_projectPathEdit.Text = Path.Join(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), CreatorService.BrickVerseFolderName, DefaultProjectName).SanitizePath();
+		_projectPathEdit.Text = Path.Join(CreatorService.DefaultProjectsAbsolutePath, DefaultProjectName).SanitizePath();
 	}
 
 	public void Back()
