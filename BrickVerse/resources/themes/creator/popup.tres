@@ -1,14 +1,25 @@
 [gd_resource type="Theme" format=3 uid="uid://dbxwtosagdk2p"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2djn8"]
-bg_color = Color(0.211765, 0.211765, 0.211765, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
+[sub_resource type="StyleBoxFlat" id="PopupPanel"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0784314, 0.0784314, 0.0901961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.196078, 0.196078, 0.227451, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 16
+shadow_offset = Vector2(0, 6)
 [resource]
 default_font_size = 14
-LineEdit/colors/font_color = Color(1, 1, 1, 1)
+LineEdit/colors/font_color = Color(0.92, 0.92, 0.95, 1)
+LineEdit/colors/caret_color = Color(0, 0.592157, 1, 1)
 LineEdit/constants/caret_width = 1
-PopupPanel/styles/panel = SubResource("StyleBoxFlat_2djn8")
+PopupPanel/styles/panel = SubResource("PopupPanel")

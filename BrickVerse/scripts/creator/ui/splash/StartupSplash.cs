@@ -13,7 +13,6 @@ namespace BrickVerse.Creator.UI.Splashes;
 
 public partial class StartupSplash : Control
 {
-	private const string BannersLocation = "res://assets/textures/creator/banner/";
 	private const string LearnUrl = "https://developers.brickverse.gg";
 	private const string CommunityUrl = "https://brickverse.gg/forum";
 	private const string SupportUrl = "https://brickverse.gg/help";
@@ -31,7 +30,7 @@ public partial class StartupSplash : Control
 	[Export] private Button _supportButton = null!;
 	[Export] private ScrollContainer _recentWorldsScroll = null!;
 	[Export] private Label _versionNumber = null!;
-	[Export] private TextureRect _banner = null!;
+	[Export] private MarginContainer _page = null!;
 
 	public static StartupSplash Singleton { get; private set; } = null!;
 
@@ -56,25 +55,26 @@ public partial class StartupSplash : Control
 		_supportButton.Pressed += () => OpenExternalUrl(SupportUrl);
 
 		_versionNumber.Text = $"v{Globals.AppVersion.TrimStart('v')}";
-		LoadRandomBanner();
+		GetViewport().SizeChanged += UpdateResponsiveLayout;
+		UpdateResponsiveLayout();
 		base._Ready();
 	}
 
-	private void LoadRandomBanner()
+	public override void _ExitTree()
 	{
-		string[] banners = ResourceLoader.ListDirectory(BannersLocation);
-		if (banners.Length == 0)
-		{
-			GD.PushWarning($"No startup banners were found in {BannersLocation}");
-			return;
-		}
+		if (GetViewport() != null)
+			GetViewport().SizeChanged -= UpdateResponsiveLayout;
+		base._ExitTree();
+	}
 
-		string randomized = ArrayUtils.GetRandom(banners);
-		Texture2D? texture = GD.Load<Texture2D>(BannersLocation.PathJoin(randomized));
-		if (texture != null)
-		{
-			_banner.Texture = texture;
-		}
+	private void UpdateResponsiveLayout()
+	{
+		Vector2 viewport = GetViewportRect().Size;
+		float width = Mathf.Round(Mathf.Min(Mathf.Max(viewport.X - 32, 320), 1800));
+		float left = Mathf.Round((viewport.X - width) * .5f);
+		_page.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+		_page.Position = new Vector2(left, 0);
+		_page.Size = new Vector2(width, Mathf.Round(viewport.Y));
 	}
 
 	private static void OpenExternalUrl(string url)

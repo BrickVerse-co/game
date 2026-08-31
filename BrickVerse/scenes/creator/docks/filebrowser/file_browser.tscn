@@ -1,25 +1,12 @@
 [gd_scene format=3 uid="uid://c0dcwpeyvcmot"]
 
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_6l2e8"]
 [ext_resource type="Script" uid="uid://d2ov1gcf4ccdq" path="res://scripts/creator/ui/FileBrowser.cs" id="1_lnpe1"]
-
-[sub_resource type="StyleBoxFlat" id="DockContent"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
-
-[sub_resource type="StyleBoxEmpty" id="Empty"]
-
-[sub_resource type="Theme" id="FileBrowserTheme"]
-TabContainer/constants/side_margin = 0
-TabContainer/styles/tabbar_background = SubResource("Empty")
-TabContainer/styles/panel = SubResource("DockContent")
-PanelContainer/styles/panel = SubResource("Empty")
 
 [node name="FileBrowser" type="VBoxContainer" unique_id=1200544874]
 size_flags_vertical = 3
 mouse_filter = 2
+theme = ExtResource("1_6l2e8")
 theme_override_constants/separation = 0
 
 [node name="Header" type="Control" parent="." unique_id=430200614]
@@ -37,5 +24,4 @@ size_flags_vertical = 3
 tabs_visible = false
 switch_on_drag_hover = false
 deselect_enabled = true
-theme = SubResource("FileBrowserTheme")
 script = ExtResource("1_lnpe1")

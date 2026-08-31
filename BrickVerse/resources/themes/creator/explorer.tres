@@ -1,93 +1,83 @@
 [gd_resource type="Theme" format=3 uid="uid://csq2v8fh8jqlu"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lineedit_normal"]
-content_margin_left = 6.0
-content_margin_top = 3.0
-content_margin_right = 6.0
-content_margin_bottom = 3.0
-bg_color = Color(0.055, 0.058, 0.064, 1)
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.0745098, 0.0745098, 0.0823529, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.18, 0.20, 0.23, 1)
+border_color = Color(0.176471, 0.176471, 0.203922, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tab_panel"]
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_cursor"]
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tree_focus"]
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tree_hovered"]
-content_margin_left = 2.0
-content_margin_top = 1.0
-content_margin_right = 2.0
-content_margin_bottom = 1.0
-bg_color = Color(0.145, 0.155, 0.17, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
+content_margin_left = 4.0
+content_margin_top = 2.0
+content_margin_right = 4.0
+content_margin_bottom = 2.0
+bg_color = Color(0.117647, 0.117647, 0.133333, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tree_selected"]
-content_margin_left = 2.0
-content_margin_top = 1.0
-content_margin_right = 2.0
-content_margin_bottom = 1.0
-bg_color = Color(0.055, 0.235, 0.405, 0.78)
+content_margin_left = 4.0
+content_margin_top = 2.0
+content_margin_right = 4.0
+content_margin_bottom = 2.0
+bg_color = Color(0, 0.592157, 1, 0.16)
 border_width_left = 2
-border_color = Color(0.13299999, 0.58235013, 0.95, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
+border_color = Color(0, 0.592157, 1, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tree_hovered_selected"]
-content_margin_left = 2.0
-content_margin_top = 1.0
-content_margin_right = 2.0
-content_margin_bottom = 1.0
-bg_color = Color(0.07, 0.30, 0.52, 0.86)
+content_margin_left = 4.0
+content_margin_top = 2.0
+content_margin_right = 4.0
+content_margin_bottom = 2.0
+bg_color = Color(0, 0.592157, 1, 0.23)
 border_width_left = 2
-border_color = Color(0.13299999, 0.58235013, 0.95, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
+border_color = Color(0, 0.592157, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tree_panel"]
-
 [resource]
 resource_name = "ExplorerTheme"
-
+LineEdit/colors/font_color = Color(0.9, 0.9, 0.93, 1)
+LineEdit/colors/font_placeholder_color = Color(0.48, 0.48, 0.53, 1)
+LineEdit/colors/caret_color = Color(0, 0.592157, 1, 1)
 LineEdit/font_sizes/font_size = 12
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_focus")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_lineedit_normal")
-
 PopupMenu/font_sizes/font_size = 12
-
 TabContainer/styles/panel = SubResource("StyleBoxEmpty_tab_panel")
-
-Tree/colors/font_color = Color(0.78, 0.80, 0.84, 1)
-Tree/colors/font_hovered_color = Color(0.90, 0.92, 0.96, 1)
-Tree/colors/font_selected_color = Color(0.94, 0.97, 1, 1)
-Tree/colors/guide_color = Color(0.24, 0.26, 0.30, 0.55)
+Tree/colors/font_color = Color(0.78, 0.78, 0.82, 1)
+Tree/colors/font_hovered_color = Color(0.94, 0.94, 0.97, 1)
+Tree/colors/font_selected_color = Color(0.98, 0.98, 1, 1)
+Tree/colors/guide_color = Color(0.28, 0.28, 0.32, 0.45)
 Tree/constants/button_margin = 0
 Tree/constants/children_hl_line_width = 1
 Tree/constants/draw_guides = 0
 Tree/constants/h_separation = 4
 Tree/constants/icon_margin = 3
 Tree/constants/icon_max_width = 14
-Tree/constants/inner_item_margin_bottom = 0
-Tree/constants/inner_item_margin_left = 0
-Tree/constants/inner_item_margin_right = 0
-Tree/constants/inner_item_margin_top = 0
+Tree/constants/inner_item_margin_bottom = 1
+Tree/constants/inner_item_margin_left = 2
+Tree/constants/inner_item_margin_right = 2
+Tree/constants/inner_item_margin_top = 1
 Tree/constants/item_margin = 0
 Tree/constants/v_separation = 1
 Tree/font_sizes/font_size = 12

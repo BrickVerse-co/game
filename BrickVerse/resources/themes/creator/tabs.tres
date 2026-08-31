@@ -1,55 +1,55 @@
 [gd_resource type="Theme" format=3 uid="uid://bx8eei233777s"]
-
 [ext_resource type="Texture2D" uid="uid://eh73dq328feq" path="res://assets/textures/creator/close.svg" id="1_030fu"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_030fu"]
-draw_center = false
-border_width_left = 2
-border_width_right = 2
+[sub_resource type="StyleBoxEmpty" id="TabFocus"]
+[sub_resource type="StyleBoxFlat" id="TabSelected"]
+content_margin_left = 11.0
+content_margin_top = 7.0
+content_margin_right = 11.0
+content_margin_bottom = 7.0
+bg_color = Color(0.0862745, 0.0862745, 0.0980392, 1)
 border_width_bottom = 2
-border_color = Color(0.12941177, 0.5882353, 0.9529412, 1)
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-expand_margin_left = 1.0
-expand_margin_right = 1.0
-expand_margin_bottom = 1.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_suxfw"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-content_margin_bottom = 2.0
-bg_color = Color(0.11764706, 0.11764706, 0.11764706, 1)
-border_width_top = 2
-border_color = Color(0.129412, 0.588235, 0.952941, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_57nwh"]
-bg_color = Color(0.0862745, 0.0862745, 0.0862745, 1)
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_smqtq"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6y6ru"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.14902, 0.14902, 0.14902, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_po7xu"]
-bg_color = Color(0.0862745, 0.0862745, 0.0862745, 1)
-
+border_color = Color(0, 0.592157, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+[sub_resource type="StyleBoxFlat" id="TabHovered"]
+content_margin_left = 11.0
+content_margin_top = 7.0
+content_margin_right = 11.0
+content_margin_bottom = 7.0
+bg_color = Color(0.117647, 0.117647, 0.133333, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+[sub_resource type="StyleBoxFlat" id="TabUnselected"]
+content_margin_left = 11.0
+content_margin_top = 7.0
+content_margin_right = 11.0
+content_margin_bottom = 7.0
+bg_color = Color(0.0627451, 0.0627451, 0.0705882, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.0627451, 0.0627451, 0.0705882, 1)
+border_width_top = 1
+border_color = Color(0.145098, 0.145098, 0.168627, 1)
+[sub_resource type="StyleBoxFlat" id="TabBarBackground"]
+bg_color = Color(0.0509804, 0.0509804, 0.0588235, 1)
+border_width_bottom = 1
+border_color = Color(0.145098, 0.145098, 0.168627, 1)
 [resource]
 resource_name = "TabsTheme"
 default_font_size = 0
 TabBar/icons/close = ExtResource("1_030fu")
-TabBar/styles/tab_focus = SubResource("StyleBoxFlat_030fu")
-TabBar/styles/tab_selected = SubResource("StyleBoxFlat_suxfw")
+TabBar/styles/tab_focus = SubResource("TabFocus")
+TabContainer/colors/font_selected_color = Color(0.96, 0.96, 0.98, 1)
+TabContainer/colors/font_hovered_color = Color(0.9, 0.9, 0.94, 1)
+TabContainer/colors/font_unselected_color = Color(0.58, 0.58, 0.63, 1)
 TabContainer/constants/icon_max_width = 18
 TabContainer/constants/icon_separation = 6
 TabContainer/constants/side_margin = 0
 TabContainer/constants/tab_separation = 2
-TabContainer/styles/panel = SubResource("StyleBoxFlat_57nwh")
-TabContainer/styles/tab_focus = SubResource("StyleBoxEmpty_smqtq")
-TabContainer/styles/tab_hovered = SubResource("StyleBoxFlat_6y6ru")
-TabContainer/styles/tab_selected = SubResource("StyleBoxFlat_suxfw")
-TabContainer/styles/tab_unselected = SubResource("StyleBoxFlat_6y6ru")
-TabContainer/styles/tabbar_background = SubResource("StyleBoxFlat_po7xu")
+TabContainer/styles/panel = SubResource("Panel")
+TabContainer/styles/tab_focus = SubResource("TabFocus")
+TabContainer/styles/tab_hovered = SubResource("TabHovered")
+TabContainer/styles/tab_selected = SubResource("TabSelected")
+TabContainer/styles/tab_unselected = SubResource("TabUnselected")
+TabContainer/styles/tabbar_background = SubResource("TabBarBackground")

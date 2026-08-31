@@ -55,8 +55,13 @@ public partial class InsertMenuPopup : PopupPanel
 			"Attachment",
 			"SurfaceAppearance",
 			"Camera",
-			"TerrainMaterial",
 			"PCGSpline",
+		},
+		[new() { Title = "Terrain", RecommendOn = [typeof(Terrain)] }] = new()
+		{
+			"TerrainMaterial",
+			"TerrainGrass",
+			"TerrainWater",
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =

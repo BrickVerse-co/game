@@ -44,7 +44,11 @@
 [ext_resource type="Texture2D" uid="uid://csq85i1uhtwg6" path="res://assets/textures/ui-icons/mountain.svg" id="31_tgxt6"]
 [ext_resource type="PackedScene" uid="uid://cvxoyotxeotax" path="res://scenes/creator/docks/explorer/explorer.tscn" id="32_4fw2t"]
 [ext_resource type="Texture2D" uid="uid://qilqxrwdlhjp" path="res://assets/textures/ui-icons/script.svg" id="32_cyxfl"]
+[ext_resource type="PackedScene" path="res://scenes/creator/docks/bottombar/terrain-editor/generate_dialog.tscn" id="32_generate_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/creator/docks/bottombar/terrain-editor/grass_settings.tscn" id="32_grass_settings"]
+[ext_resource type="PackedScene" path="res://scenes/creator/docks/bottombar/terrain-editor/heightmap_dialog.tscn" id="32_heightmap_dialog"]
 [ext_resource type="Script" uid="uid://6otbi1akgf8g" path="res://scripts/creator/ui/docks/bottombar/terrain-editor/TerrainEditor.cs" id="32_raaus"]
+[ext_resource type="PackedScene" path="res://scenes/creator/docks/bottombar/terrain-editor/water_settings.tscn" id="32_water_settings"]
 [ext_resource type="PackedScene" uid="uid://duq8icfg2fwo0" path="res://scenes/creator/docks/properties/properties.tscn" id="34_bc04q"]
 [ext_resource type="Texture2D" uid="uid://4ifji13knxu3" path="res://assets/textures/ui-icons/cube.svg" id="36_5ay1h"]
 [ext_resource type="Texture2D" uid="uid://dwqjb7jgqqk0v" path="res://assets/textures/logo/light_long.png" id="37_raaus"]
@@ -53,7 +57,7 @@
 [ext_resource type="PackedScene" uid="uid://dauvdi8d2yqpy" path="res://scenes/creator/wizard/introduction_wizard.tscn" id="39_dfqoe"]
 [ext_resource type="PackedScene" uid="uid://b7voaj38vy8xd" path="res://scenes/creator/docks/bottombar/console_filters.tscn" id="40_console_filters"]
 [ext_resource type="PackedScene" path="res://scenes/creator/docks/asset-manager/asset_manager.tscn" id="41_asset_manager"]
-[ext_resource type="PackedScene" uid="uid://cuo86h56emn31" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
+[ext_resource type="PackedScene" uid="uid://ltl1q6r3gov0" path="res://scenes/creator/splash/auth_required.tscn" id="42_ce354"]
 [ext_resource type="Script" uid="uid://c4sy8d4vhmgo3" path="res://scripts/creator/ui/CreatorResponsiveLayout.cs" id="45_responsive"]
 [ext_resource type="Script" uid="uid://dfk832jm6qtwy" path="res://scripts/creator/ui/docks/bottombar/console/ConsoleExecutor.cs" id="46_console_executor"]
 [ext_resource type="Texture2D" uid="uid://d1p4i1s2grbk6" path="res://assets/textures/ui-icons/route.svg" id="47_animator"]
@@ -61,15 +65,6 @@
 [ext_resource type="Texture2D" uid="uid://0oxaq8x81vax" path="res://assets/textures/ui-icons/keyboard.svg" id="49_input"]
 [ext_resource type="Texture2D" uid="uid://oil6h1xmdmrf" path="res://assets/textures/datamodel/ForgeRobotChat-White.svg" id="49_ww661"]
 [ext_resource type="Texture2D" uid="uid://dnrf2lr7agcg1" path="res://assets/textures/creator/ribbon/shapes/shapes.svg" id="50_shapes"]
-
-[sub_resource type="StyleBoxFlat" id="TopBarSurface"]
-content_margin_left = 8.0
-content_margin_top = 0.0
-content_margin_right = 8.0
-content_margin_bottom = 0.0
-bg_color = Color(0.0352941, 0.0470588, 0.0627451, 1)
-border_width_bottom = 1
-border_color = Color(0.12549, 0.164706, 0.211765, 1)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ce354"]
 load_path = "res://.godot/imported/boot.png-28724752f4f95ee94ae7ba92c3ee1281.ctex"
@@ -81,7 +76,7 @@ content_margin_left = 8.0
 content_margin_top = 5.0
 content_margin_right = 8.0
 content_margin_bottom = 5.0
-bg_color = Color(0.8198105, 0.8562207, 0.9035327, 1)
+bg_color = Color(0, 0.5882353, 0.99607843, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -92,39 +87,21 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ToolbarSurface"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ov4wv"]
 content_margin_left = 8.0
 content_margin_top = 5.0
 content_margin_right = 8.0
 content_margin_bottom = 5.0
-bg_color = Color(0.054902, 0.0745098, 0.0980392, 1)
+bg_color = Color(0.078431375, 0.078431375, 0.09019608, 1)
 border_width_bottom = 1
-border_color = Color(0.12549, 0.164706, 0.211765, 1)
+border_color = Color(0.188235, 0.188235, 0.215686, 1)
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_v0rtd"]
 resource_name = "RibbonGroup"
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_0tvsp"]
 
-[sub_resource type="StyleBoxFlat" id="DockSurface"]
-bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
-
-[sub_resource type="StyleBoxFlat" id="ViewportSurface"]
-bg_color = Color(0.0352941, 0.0470588, 0.0627451, 1)
-
-[sub_resource type="StyleBoxFlat" id="OutputSurface"]
-bg_color = Color(0.0470588, 0.0627451, 0.0823529, 1)
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_9m4jd"]
-
-[sub_resource type="StyleBoxFlat" id="StatusSurface"]
-content_margin_left = 8.0
-content_margin_top = 2.0
-content_margin_right = 8.0
-content_margin_bottom = 2.0
-bg_color = Color(0.0352941, 0.0470588, 0.0627451, 1)
-border_width_top = 1
-border_color = Color(0.12549, 0.164706, 0.211765, 1)
 
 [node name="Creator" type="Node" unique_id=679959250]
 script = ExtResource("1_it5bq")
@@ -144,7 +121,7 @@ script = ExtResource("1_657cn")
 [node name="ResponsiveLayout" type="Node" parent="GUI" unique_id=1655782120]
 script = ExtResource("45_responsive")
 
-[node name="Background" type="ColorRect" parent="GUI" unique_id=1624619683]
+[node name="Background" type="Panel" parent="GUI" unique_id=1624619683]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -152,7 +129,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.0352941, 0.0470588, 0.0627451, 1)
 
 [node name="Menu" type="PanelContainer" parent="GUI" unique_id=1227770931]
 layout_mode = 1
@@ -160,7 +136,7 @@ anchors_preset = -1
 anchor_right = 1.0
 offset_bottom = 36.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("TopBarSurface")
+theme_type_variation = &"CreatorTopBarPanel"
 script = ExtResource("1_qdfx8")
 
 [node name="Layout" type="HBoxContainer" parent="GUI/Menu" unique_id=794089442]
@@ -208,7 +184,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_betaFeaturesBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
+[node name="PlayOptions" type="PanelContainer" parent="GUI/Menu/Layout/Margin/Layout" unique_id=1850775813 node_paths=PackedStringArray("_playBtn", "_playAtCamBtn", "_stopBtn", "_collaborateBtn", "_sessionBtn", "_sessionMembers", "_betaFeaturesBtn", "_internetStatusIcon", "_teamCreateStatusIcon", "_playerCountOption")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2qwc1")
 script = ExtResource("5_c7ht3")
@@ -217,6 +193,7 @@ _playAtCamBtn = NodePath("Layout/PlayAtCam")
 _stopBtn = NodePath("Layout/Stop")
 _collaborateBtn = NodePath("Layout/Collaborate")
 _sessionBtn = NodePath("Layout/Session")
+_sessionMembers = NodePath("Layout/SessionMembers")
 _betaFeaturesBtn = NodePath("Layout/BetaFeatures")
 _internetStatusIcon = NodePath("Layout/InternetStatus")
 _teamCreateStatusIcon = NodePath("Layout/TeamCreateStatus")
@@ -262,6 +239,11 @@ custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
 tooltip_text = "View Team Create session and collaborator cameras"
 text = "Session"
+
+[node name="SessionMembers" type="HBoxContainer" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=232219476]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = -5
 
 [node name="BetaFeatures" type="Button" parent="GUI/Menu/Layout/Margin/Layout/PlayOptions/Layout" unique_id=618285065]
 custom_minimum_size = Vector2(54, 0)
@@ -374,7 +356,8 @@ offset_top = 36.0
 offset_bottom = 110.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("ToolbarSurface")
+theme_type_variation = &"CreatorToolbarPanel"
+theme_override_styles/panel = SubResource("StyleBoxFlat_ov4wv")
 script = ExtResource("2_40iam")
 _ribbonGroup = SubResource("ButtonGroup_v0rtd")
 
@@ -765,8 +748,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 6.0
 offset_top = 6.0
-offset_right = 194.0
-offset_bottom = 426.0
+offset_right = -6.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 auto_width = true
@@ -1013,7 +996,7 @@ custom_minimum_size = Vector2(68, 54)
 layout_mode = 2
 tooltip_text = "Format Document (Ctrl+Shift+F)"
 
-[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format"]
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format" unique_id=309174465]
 modulate = Color(0, 0.592157, 1, 1)
 layout_mode = 1
 anchors_preset = 15
@@ -1021,12 +1004,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 5.0
 offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("30_obxwt")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format"]
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Format" unique_id=2011540813]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -1034,6 +1019,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -20.0
 offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "Format"
 horizontal_alignment = 1
 
@@ -1042,7 +1029,7 @@ custom_minimum_size = Vector2(58, 54)
 layout_mode = 2
 tooltip_text = "Save Document (Ctrl+S)"
 
-[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save"]
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save" unique_id=1339686256]
 modulate = Color(0, 0.592157, 1, 1)
 layout_mode = 1
 anchors_preset = 15
@@ -1050,12 +1037,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 5.0
 offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("29_code_save")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save"]
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Save" unique_id=708951734]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -1063,6 +1052,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -20.0
 offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "Save"
 horizontal_alignment = 1
 
@@ -1070,8 +1061,8 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(58, 54)
 layout_mode = 2
 tooltip_text = "Find in Document (Ctrl+F)"
- 
-[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find"]
+
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find" unique_id=461140792]
 modulate = Color(0, 0.592157, 1, 1)
 layout_mode = 1
 anchors_preset = 15
@@ -1079,12 +1070,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 5.0
 offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("29_4fw2t")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find"]
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/CodeEditorActions/Find" unique_id=163967922]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -1092,6 +1085,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -20.0
 offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "Find"
 horizontal_alignment = 1
 
@@ -1101,7 +1096,7 @@ custom_minimum_size = Vector2(48, 54)
 layout_mode = 2
 tooltip_text = "More ribbon actions"
 
-[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/More"]
+[node name="Icon" type="TextureRect" parent="GUI/Ribbon/Buttons/More" unique_id=6846793]
 modulate = Color(0, 0.592157, 1, 1)
 layout_mode = 1
 anchors_preset = 15
@@ -1109,12 +1104,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 7.0
 offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("26_4n5gq")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/More"]
+[node name="Label" type="Label" parent="GUI/Ribbon/Buttons/More" unique_id=853236368]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -1122,6 +1119,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -20.0
 offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "More"
 horizontal_alignment = 1
 
@@ -1135,7 +1134,7 @@ offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.0313726, 0.0431373, 0.0588235, 1)
+color = Color(0.047058824, 0.047058824, 0.05490196, 1)
 
 [node name="Splitter" type="HSplitContainer" parent="GUI" unique_id=1718208415]
 layout_mode = 1
@@ -1157,7 +1156,7 @@ split_offset = 260
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("DockSurface")
+theme_type_variation = &"CreatorDockPanel"
 
 [node name="Split" type="TabContainer" parent="GUI/Splitter/Left" unique_id=1589463682]
 custom_minimum_size = Vector2(240, 0)
@@ -1263,12 +1262,12 @@ icon_alignment = 1
 [node name="Container" type="PanelContainer" parent="GUI/Splitter/Center/Tabs" unique_id=1955047821]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("ViewportSurface")
+theme_type_variation = &"CreatorViewportPanel"
 
 [node name="BottomTabs" type="PanelContainer" parent="GUI/Splitter/Center" unique_id=198117763]
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("OutputSurface")
+theme_type_variation = &"CreatorOutputPanel"
 
 [node name="Tabs" type="TabContainer" parent="GUI/Splitter/Center/BottomTabs" unique_id=1589727556]
 layout_mode = 2
@@ -1364,9 +1363,9 @@ icon = ExtResource("32_cyxfl")
 
 [node name="ConsoleFilters" parent="GUI/Splitter/Center/BottomTabs/Tabs/Console" unique_id=1370024561 instance=ExtResource("40_console_filters")]
 
-[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_flattenButton", "_growButton", "_erodeButton", "_importButton", "_generateButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel")]
+[node name="Terrain Editor" type="MarginContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs" unique_id=334915006 node_paths=PackedStringArray("_addButton", "_removeButton", "_paintButton", "_smoothButton", "_flattenButton", "_growButton", "_erodeButton", "_importButton", "_generateButton", "_shapeOption", "_materialOption", "_sizeSlider", "_sizeSpinBox", "_strengthSlider", "_strengthSpinBox", "_spacingSlider", "_spacingSpinBox", "_intervalSlider", "_intervalSpinBox", "_spacingFloorSlider", "_spacingFloorSpinBox", "_snapOffsetSlider", "_snapOffsetSpinBox", "_enabledCheck", "_surfaceSnapCheck", "_continuousCheck", "_clearButton", "_statusLabel", "_waterButton", "_waterSettings", "_grassButton", "_grassSettings", "_heightmapDialog", "_generateDialog")]
 visible = false
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(0, 360)
 clip_contents = true
 layout_mode = 2
 theme_override_constants/margin_left = 12
@@ -1402,6 +1401,12 @@ _surfaceSnapCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Surf
 _continuousCheck = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Continuous")
 _clearButton = NodePath("Layout/Scroll/Top/Options/Card/Margin/Content/Clear")
 _statusLabel = NodePath("Layout/Status")
+_waterButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Water")
+_waterSettings = NodePath("Layout/Scroll/Top/WaterSettings")
+_grassButton = NodePath("Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons/Grass")
+_grassSettings = NodePath("Layout/Scroll/Top/GrassSettings")
+_heightmapDialog = NodePath("HeightmapDialog")
+_generateDialog = NodePath("GenerateDialog")
 metadata/_tab_index = 1
 
 [node name="Layout" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor" unique_id=372424487]
@@ -1494,6 +1499,21 @@ custom_minimum_size = Vector2(154, 42)
 layout_mode = 2
 toggle_mode = true
 text = "Erode"
+
+[node name="Water" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=41726514]
+custom_minimum_size = Vector2(154, 42)
+layout_mode = 2
+tooltip_text = "Click to set water level, Shift-click to add a dry volume, or Alt-click to remove one"
+toggle_mode = true
+text = "Water"
+
+[node name="Grass" type="Button" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top/Tools/Card/Margin/Content/Buttons" unique_id=1438983145]
+visible = false
+custom_minimum_size = Vector2(154, 42)
+layout_mode = 2
+tooltip_text = "Paint skinned grass; hold Shift to erase"
+toggle_mode = true
+text = "Grass"
 
 [node name="Brush" type="VBoxContainer" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=1573421257]
 custom_minimum_size = Vector2(320, 0)
@@ -1798,17 +1818,30 @@ layout_mode = 2
 size_flags_vertical = 3
 text = "Clear All Terrain"
 
+[node name="WaterSettings" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=1150538792 instance=ExtResource("32_water_settings")]
+visible = false
+layout_mode = 2
+
+[node name="GrassSettings" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout/Scroll/Top" unique_id=664011844 instance=ExtResource("32_grass_settings")]
+visible = false
+layout_mode = 2
+
 [node name="Status" type="Label" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor/Layout" unique_id=331984099]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.64, 0.7, 1)
 text = "Tool: Add   •   Shape: Sphere   •   Size: 16   •   Strength: 50%"
 text_overrun_behavior = 3
 
+[node name="HeightmapDialog" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor" unique_id=1198376141 instance=ExtResource("32_heightmap_dialog")]
+title = "Open a File"
+
+[node name="GenerateDialog" parent="GUI/Splitter/Center/BottomTabs/Tabs/Terrain Editor" unique_id=516785012 instance=ExtResource("32_generate_dialog")]
+
 [node name="Right" type="PanelContainer" parent="GUI/Splitter" unique_id=528512110]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("DockSurface")
+theme_type_variation = &"CreatorDockPanel"
 
 [node name="RightTabs" type="TabContainer" parent="GUI/Splitter/Right" unique_id=2060552461]
 custom_minimum_size = Vector2(310, 0)
@@ -1816,14 +1849,13 @@ layout_mode = 2
 theme_override_colors/font_selected_color = Color(0, 0.5921569, 1, 1)
 theme_override_colors/icon_selected_color = Color(0, 0.5921569, 1, 1)
 theme_override_constants/icon_max_width = 12
-current_tab = 1
+current_tab = 0
 tab_0/title = "Inspector"
 tab_0/icon = ExtResource("36_5ay1h")
 tab_1/title = "Forge - AI Chat"
 tab_1/icon = ExtResource("49_ww661")
 
 [node name="Explorer" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs" unique_id=75943773]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
@@ -1850,6 +1882,7 @@ custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]
+visible = false
 layout_mode = 2
 metadata/_tab_name = "Forge - AI Chat"
 
@@ -1861,7 +1894,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -24.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StatusSurface")
+theme_type_variation = &"CreatorStatusPanel"
 script = ExtResource("26_xdd36")
 _titleLabel = NodePath("Labels/Status")
 _versionLabel = NodePath("../Menu/Layout/ProductName")

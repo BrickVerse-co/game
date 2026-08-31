@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111115"/>
+      <stop offset="0.58" stop-color="#101116"/>
+      <stop offset="1" stop-color="#0c0e13"/>
+    </linearGradient>
+
+    <radialGradient id="leftGlow" cx="0.02" cy="0.94" r="0.72">
+      <stop offset="0" stop-color="#4d8dff" stop-opacity="0.72"/>
+      <stop offset="0.26" stop-color="#2f6dde" stop-opacity="0.34"/>
+      <stop offset="0.62" stop-color="#173665" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#101116" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="rightGlow" cx="1" cy="0.36" r="0.62">
+      <stop offset="0" stop-color="#4c8eff" stop-opacity="0.72"/>
+      <stop offset="0.28" stop-color="#2e69d9" stop-opacity="0.34"/>
+      <stop offset="0.67" stop-color="#17325e" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#101116" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="leftLine" x1="0" y1="1" x2="0.9" y2="0.28">
+      <stop offset="0" stop-color="#87b7ff" stop-opacity="0.62"/>
+      <stop offset="0.48" stop-color="#4c87f4" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#284d96" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="rightLine" x1="1" y1="0.25" x2="0.45" y2="0.58">
+      <stop offset="0" stop-color="#77adff" stop-opacity="0.72"/>
+      <stop offset="0.42" stop-color="#4f8df6" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#274d8e" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#base)"/>
+  <rect width="1920" height="1080" fill="url(#leftGlow)"/>
+  <rect width="1920" height="1080" fill="url(#rightGlow)"/>
+
+  <!-- Left floor-style perspective grid -->
+  <g fill="none" stroke="url(#leftLine)" stroke-width="1.55" stroke-linecap="round">
+    <path d="M-80 1085 C165 1000 405 835 735 590"/>
+    <path d="M-80 1030 C160 955 405 800 735 590"/>
+    <path d="M-80 974 C155 915 408 760 735 590"/>
+    <path d="M-80 919 C160 875 413 722 735 590"/>
+    <path d="M-80 864 C170 838 420 684 735 590"/>
+    <path d="M-80 810 C187 800 432 648 735 590"/>
+    <path d="M-80 758 C205 765 446 620 735 590"/>
+    <path d="M-80 709 C228 732 467 602 735 590"/>
+
+    <path d="M15 1080 L735 590"/>
+    <path d="M145 1080 L735 590"/>
+    <path d="M282 1080 L735 590"/>
+    <path d="M430 1080 L735 590"/>
+    <path d="M590 1080 L735 590"/>
+    <path d="M760 1080 L735 590"/>
+    <path d="M950 1080 L735 590" opacity="0.42"/>
+  </g>
+
+  <!-- Right wall / horizon-style perspective grid -->
+  <g fill="none" stroke="url(#rightLine)" stroke-width="1.55" stroke-linecap="round">
+    <path d="M1280 560 C1510 500 1715 380 1985 205"/>
+    <path d="M1280 585 C1518 540 1730 430 1985 270"/>
+    <path d="M1280 612 C1525 582 1742 485 1985 342"/>
+    <path d="M1280 642 C1532 626 1750 548 1985 422"/>
+    <path d="M1280 676 C1538 675 1758 614 1985 510"/>
+    <path d="M1280 716 C1545 732 1766 686 1985 606"/>
+    <path d="M1280 762 C1550 798 1775 770 1985 710"/>
+    <path d="M1280 815 C1558 870 1785 860 1985 825"/>
+    <path d="M1280 875 C1566 949 1795 958 1985 950"/>
+
+    <path d="M1280 560 L1920 150"/>
+    <path d="M1280 560 L1920 240"/>
+    <path d="M1280 560 L1920 335"/>
+    <path d="M1280 560 L1920 438"/>
+    <path d="M1280 560 L1920 548"/>
+    <path d="M1280 560 L1920 666"/>
+    <path d="M1280 560 L1920 792"/>
+    <path d="M1280 560 L1920 930"/>
+    <path d="M1280 560 L1920 1080"/>
+  </g>
+
+
+  <g fill="none" stroke="#4f8df6" stroke-width="0.85" opacity="0.19">
+    <path d="M-60 1055 C180 970 420 820 735 590"/>
+    <path d="M-60 1002 C176 930 422 780 735 590"/>
+    <path d="M-60 947 C178 892 425 741 735 590"/>
+    <path d="M-60 892 C186 854 430 704 735 590"/>
+    <path d="M-60 837 C198 818 438 668 735 590"/>
+    <path d="M1290 571 C1515 520 1724 405 1985 235"/>
+    <path d="M1290 598 C1521 560 1738 460 1985 306"/>
+    <path d="M1290 628 C1528 606 1748 519 1985 384"/>
+    <path d="M1290 661 C1534 653 1756 578 1985 468"/>
+    <path d="M1290 698 C1541 705 1764 642 1985 558"/>
+    <path d="M1290 741 C1548 765 1772 713 1985 657"/>
+    <path d="M1290 790 C1555 832 1780 792 1985 765"/>
+  </g>
+
+  <!-- Small intersection glints -->
+  <g fill="#8eb8ff">
+    <circle cx="104" cy="1006" r="1.7" opacity="0.55"/>
+    <circle cx="258" cy="916" r="1.5" opacity="0.44"/>
+    <circle cx="438" cy="802" r="1.5" opacity="0.38"/>
+    <circle cx="1630" cy="454" r="1.7" opacity="0.52"/>
+    <circle cx="1773" cy="366" r="1.5" opacity="0.48"/>
+    <circle cx="1835" cy="739" r="1.6" opacity="0.40"/>
+  </g>
+
+  <!-- Keep the center behind the login card quiet and dark. -->
+  <rect x="500" y="90" width="930" height="900" rx="180" fill="#0d0e12" opacity="0.10"/>
+</svg>

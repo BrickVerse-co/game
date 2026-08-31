@@ -1,16 +1,10 @@
 [gd_scene format=3 uid="uid://bfh6n2s5op0nu"]
 
 [ext_resource type="Script" uid="uid://c8ij1usmtljxn" path="res://scripts/creator/ui/docks/toolbox/Toolbox.cs" id="1_akuy4"]
+[ext_resource type="Theme" uid="uid://ba5b14cxxnwe1" path="res://resources/themes/creator/creator.tres" id="1_q1vt0"]
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="2_h1wj5"]
 [ext_resource type="Texture2D" uid="uid://c60spvojllrt4" path="res://assets/textures/ui-icons/chevron-left.svg" id="3_n2m24"]
 [ext_resource type="Texture2D" uid="uid://yd5kv6j4l3hp" path="res://assets/textures/ui-icons/chevron-right.svg" id="4_q1vt0"]
-
-[sub_resource type="StyleBoxFlat" id="ToolboxSurface"]
-content_margin_left = 10.0
-content_margin_top = 9.0
-content_margin_right = 10.0
-content_margin_bottom = 9.0
-bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
 
 [node name="Toolbox" type="VBoxContainer" unique_id=1950152327]
 anchors_preset = 15
@@ -20,6 +14,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
 mouse_filter = 2
+theme = ExtResource("1_q1vt0")
 theme_override_constants/separation = 0
 
 [node name="Header" type="Control" parent="." unique_id=808583813]
@@ -35,7 +30,7 @@ text = "Toolbox"
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_styles/panel = SubResource("ToolboxSurface")
+theme_type_variation = &"CreatorToolboxPanel"
 script = ExtResource("1_akuy4")
 _typeOption = NodePath("Container/Options/Type")
 _filterOption = NodePath("Container/Options/Filter")
@@ -54,10 +49,10 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 7
 
-[node name="SectionLabel" type="Label" parent="Content/Container"]
+[node name="SectionLabel" type="Label" parent="Content/Container" unique_id=1333754680]
 custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+theme_type_variation = &"CreatorMutedLabel"
 theme_override_font_sizes/font_size = 9
 text = "ASSET MARKETPLACE"
 vertical_alignment = 1
@@ -104,23 +99,35 @@ popup/item_4/id = 4
 popup/item_5/text = "Price: High"
 popup/item_5/id = 5
 
-[node name="Category" type="OptionButton" parent="Content/Container"]
+[node name="Category" type="OptionButton" parent="Content/Container" unique_id=2086147754]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 selected = 0
 item_count = 12
 popup/item_0/text = "All categories"
+popup/item_0/id = 0
 popup/item_1/text = "Characters & Creatures"
+popup/item_1/id = 1
 popup/item_2/text = "Nature & Plants"
+popup/item_2/id = 2
 popup/item_3/text = "Buildings & Architecture"
+popup/item_3/id = 3
 popup/item_4/text = "Weapons & Combat"
+popup/item_4/id = 4
 popup/item_5/text = "Vehicles"
+popup/item_5/id = 5
 popup/item_6/text = "Environments"
+popup/item_6/id = 6
 popup/item_7/text = "Sci-Fi"
+popup/item_7/id = 7
 popup/item_8/text = "Animations"
+popup/item_8/id = 8
 popup/item_9/text = "Gameplay Features"
+popup/item_9/id = 9
 popup/item_10/text = "Engine Tools"
+popup/item_10/id = 10
 popup/item_11/text = "Materials"
+popup/item_11/id = 11
 
 [node name="Search" type="LineEdit" parent="Content/Container" unique_id=650306327]
 custom_minimum_size = Vector2(0, 30)
@@ -131,7 +138,7 @@ context_menu_enabled = false
 select_all_on_focus = true
 caret_blink = true
 
-[node name="Author" type="LineEdit" parent="Content/Container"]
+[node name="Author" type="LineEdit" parent="Content/Container" unique_id=432616944]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 placeholder_text = "Filter by author name or ID..."
@@ -169,7 +176,6 @@ size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 9
-alignment = 0
 
 [node name="Loader" parent="Content/Container/Control" unique_id=116749580 instance=ExtResource("2_h1wj5")]
 visible = false
@@ -202,7 +208,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+theme_type_variation = &"CreatorMutedLabel"
 text = "No assets found"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -224,7 +230,7 @@ expand_icon = true
 [node name="Label" type="Label" parent="Content/Container/Pagination" unique_id=248314019]
 custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.560784, 0.623529, 0.701961, 1)
+theme_type_variation = &"CreatorMutedLabel"
 theme_override_font_sizes/font_size = 10
 text = "Page 1 of 1"
 horizontal_alignment = 1

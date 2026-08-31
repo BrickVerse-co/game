@@ -62,6 +62,7 @@ public static class CreatorAPI
 	public static event Action<AuthenticatedUserProfile?>? AuthenticatedProfileUpdated;
 	public static event Action<ToolbarIdentity?>? ToolbarIdentityUpdated;
 	public static event Action<string>? AuthenticationFailed;
+	public static event Action? AuthenticationCleared;
 
 	public struct AuthenticatedUserProfile
 	{
@@ -148,7 +149,7 @@ public static class CreatorAPI
 								"CreatorAPI: Failed to refresh expired token, prompting login"
 							);
 							ClearAuth();
-							await PromptLogin();
+							await PromptLogin(false);
 							return;
 						}
 					}
@@ -159,7 +160,7 @@ public static class CreatorAPI
 							"CreatorAPI: Token expired and no refresh token available, prompting login"
 						);
 						ClearAuth();
-						await PromptLogin();
+						await PromptLogin(false);
 						return;
 					}
 				}
@@ -180,7 +181,7 @@ public static class CreatorAPI
 			BV.Print("CreatorAPI: No stored session found or session is invalid");
 		}
 
-		await PromptLogin();
+		await PromptLogin(false);
 	}
 
 	public static void SetToken(string token)
@@ -199,7 +200,7 @@ public static class CreatorAPI
 		BVAPI.SetAuthToken(Token);
 	}
 
-	public static async Task PromptLogin()
+	public static async Task PromptLogin(bool openUrl = true)
 	{
 		CreatorAuthServer.StartServer();
 
@@ -220,9 +221,69 @@ public static class CreatorAPI
 			+ $"&code_challenge={Uri.EscapeDataString(codeChallenge)}"
 			+ "&code_challenge_method=S256";
 
-		OS.ShellOpen(authorizeUrl);
+		if (openUrl)
+		{
+			OS.ShellOpen(authorizeUrl);
+		}
 
 		await Task.CompletedTask;
+	}
+
+	public sealed record QuickSignInRequest(string Token, DateTimeOffset ExpiresAt, string VerificationUrl, byte[] QrPng);
+
+	public static async Task<QuickSignInRequest> CreateQuickSignInAsync()
+	{
+		string url = Globals.ApiEndpoint.PathJoin("/v3/auth/quick-signin/create?client=creator");
+		using HttpResponseMessage response = await _oauthClient.PostAsync(url, new ByteArrayContent([]));
+		string body = await response.Content.ReadAsStringAsync();
+		if (!response.IsSuccessStatusCode)
+			throw new HttpRequestException($"Could not start quick sign-in: {(int)response.StatusCode} {body}");
+
+		using JsonDocument document = JsonDocument.Parse(body);
+		JsonElement root = document.RootElement;
+		string token = GetString(root, "token");
+		string verificationUrl = GetString(root, "verificationUrl");
+		string qrCode = GetString(root, "qrCode");
+		string expiresAtText = GetString(root, "expiresAt");
+		if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(qrCode))
+			throw new InvalidOperationException("Quick sign-in response was incomplete.");
+
+		int comma = qrCode.IndexOf(',');
+		byte[] qrPng = Convert.FromBase64String(comma >= 0 ? qrCode[(comma + 1)..] : qrCode);
+		DateTimeOffset expiresAt = DateTimeOffset.TryParse(expiresAtText, out DateTimeOffset parsed)
+			? parsed
+			: DateTimeOffset.UtcNow.AddMinutes(5);
+		return new QuickSignInRequest(token, expiresAt, verificationUrl, qrPng);
+	}
+
+	public static async Task<bool> TryCompleteQuickSignInAsync(string token)
+	{
+		string escaped = Uri.EscapeDataString(token);
+		using HttpResponseMessage validation = await _oauthClient.PostAsync(
+			Globals.ApiEndpoint.PathJoin($"/v3/auth/quick-signin/{escaped}/validate"),
+			new ByteArrayContent([])
+		);
+		string validationBody = await validation.Content.ReadAsStringAsync();
+		if (!validation.IsSuccessStatusCode) return false;
+		using (JsonDocument document = JsonDocument.Parse(validationBody))
+		{
+			if (!document.RootElement.TryGetProperty("canLogin", out JsonElement canLogin) || !canLogin.GetBoolean())
+				return false;
+		}
+
+		using HttpResponseMessage login = await _oauthClient.PostAsync(
+			Globals.ApiEndpoint.PathJoin($"/v3/auth/quick-signin/{escaped}/login"),
+			new ByteArrayContent([])
+		);
+		string loginBody = await login.Content.ReadAsStringAsync();
+		if (!login.IsSuccessStatusCode)
+			throw new HttpRequestException($"Quick sign-in failed: {(int)login.StatusCode} {loginBody}");
+		using JsonDocument loginDocument = JsonDocument.Parse(loginBody);
+		string accessToken = GetString(loginDocument.RootElement, "token");
+		if (string.IsNullOrWhiteSpace(accessToken))
+			throw new InvalidOperationException("Quick sign-in did not return a token.");
+		await LoginWithToken(accessToken, true);
+		return true;
 	}
 
 	private static readonly string DiscoveryUrl = new Uri(
@@ -948,6 +1009,7 @@ public static class CreatorAPI
 		DeleteStoredToken();
 		AuthenticatedProfileUpdated?.Invoke(null);
 		ToolbarIdentityUpdated?.Invoke(null);
+		AuthenticationCleared?.Invoke();
 	}
 
 	public static Task<CreatorPlaceItem[]> GetUserWorlds(string userId)

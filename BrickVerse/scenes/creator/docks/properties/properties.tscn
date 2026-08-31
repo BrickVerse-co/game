@@ -2,37 +2,6 @@
 
 [ext_resource type="Script" uid="uid://ck1wafcqw3h2k" path="res://scripts/creator/ui/docks/properties/Properties.cs" id="1_n0wlv"]
 
-[sub_resource type="FontVariation" id="FontVariation_Header"]
-variation_opentype = {
-2003265652: 700
-}
-
-[sub_resource type="StyleBoxFlat" id="HeaderPanel"]
-content_margin_left = 10.0
-content_margin_top = 7.0
-content_margin_right = 10.0
-content_margin_bottom = 7.0
-bg_color = Color(0.0666667, 0.0901961, 0.121569, 1)
-border_width_bottom = 1
-border_color = Color(0.12549, 0.164706, 0.211765, 1)
-
-[sub_resource type="Theme" id="HeaderTheme"]
-Label/colors/font_color = Color(0.827451, 0.866667, 0.917647, 1)
-Label/font_sizes/font_size = 11
-Label/fonts/font = SubResource("FontVariation_Header")
-PanelContainer/styles/panel = SubResource("HeaderPanel")
-
-[sub_resource type="StyleBoxFlat" id="DockContent"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.0588235, 0.0784314, 0.105882, 1)
-
-[sub_resource type="Theme" id="PropertiesTheme"]
-ScrollContainer/styles/panel = SubResource("DockContent")
-TabContainer/styles/panel = SubResource("DockContent")
-
 [node name="Properties" type="VBoxContainer" unique_id=2034223215]
 size_flags_vertical = 3
 mouse_filter = 2
@@ -42,10 +11,11 @@ theme_override_constants/separation = 0
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 mouse_filter = 2
-theme = SubResource("HeaderTheme")
+theme_type_variation = &"CreatorDockHeaderPanel"
 
 [node name="Label" type="Label" parent="Header" unique_id=1729874311]
 layout_mode = 2
+theme_type_variation = &"CreatorDockHeaderLabel"
 text = "Properties"
 vertical_alignment = 1
 
@@ -54,5 +24,5 @@ layout_mode = 2
 size_flags_vertical = 3
 tabs_visible = false
 deselect_enabled = true
-theme = SubResource("PropertiesTheme")
+theme_type_variation = &"CreatorDockTabs"
 script = ExtResource("1_n0wlv")

@@ -20,6 +20,7 @@ public sealed partial class TerrainMaterial : Instance
 	public const int MaximumSlots = 16;
 
 	private int _slot;
+	private TerrainMaterialKind _kind;
 	private TerrainSurfaceType _surfaceType;
 	private Part.PartMaterialEnum _surface = Part.PartMaterialEnum.SmoothPlastic;
 	private Color _color = Colors.White;
@@ -49,6 +50,19 @@ public sealed partial class TerrainMaterial : Instance
 				);
 			}
 			_slot = validated;
+			OnPropertyChanged();
+			NotifyTerrain();
+		}
+	}
+
+	[Editable, ScriptProperty, SyncVar, BrickVerse.Attributes.DefaultValueAttribute(TerrainMaterialKind.Solid)]
+	public TerrainMaterialKind Kind
+	{
+		get => _kind;
+		set
+		{
+			if (_kind == value) return;
+			_kind = value;
 			OnPropertyChanged();
 			NotifyTerrain();
 		}
@@ -276,4 +290,11 @@ public enum TerrainSurfaceType
 {
 	BuiltIn,
 	Custom,
+}
+
+[ScriptEnum]
+public enum TerrainMaterialKind
+{
+	Solid,
+	Water,
 }

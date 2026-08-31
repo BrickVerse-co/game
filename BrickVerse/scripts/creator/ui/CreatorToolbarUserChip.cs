@@ -63,12 +63,12 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		menu.AddSeparator();
 		menu.AddItem("Copy user ID", MenuCopyUserId);
 		menu.AddSeparator();
-		menu.AddItem("Sign out", MenuSignOut);
+		menu.AddItem("Log out", MenuSignOut);
 		menu.IdPressed += OnMenuIdPressed;
 
 		_avatar = new TextureRect
 		{
-			MouseFilter = MouseFilterEnum.Ignore,
+			MouseFilter = MouseFilterEnum.Stop,
 			CustomMinimumSize = new(AvatarSize, AvatarSize),
 			SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
 			SizeFlagsVertical = SizeFlags.ShrinkBegin,
@@ -78,6 +78,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			TextureFilter = CanvasItem.TextureFilterEnum.Linear,
 		};
 		_avatar.Material = CreateCircleMaskMaterial();
+		_avatar.GuiInput += OnAvatarGuiInput;
 
 		_badge = new TextureRect
 		{
@@ -91,6 +92,15 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		AddChild(_badge);
 		AddChild(_avatar);
 		AddChild(_usernameMenu);
+	}
+
+	private void OnAvatarGuiInput(InputEvent inputEvent)
+	{
+		if (inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+		{
+			_usernameMenu.ShowPopup();
+			AcceptEvent();
+		}
 	}
 
 	private void BindEvents()

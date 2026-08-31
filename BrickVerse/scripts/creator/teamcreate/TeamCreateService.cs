@@ -13,6 +13,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -29,6 +30,14 @@ public sealed partial class TeamCreateService : Node
 	private const double ConnectivityInterval = 5.0;
 	private const int MaxChangesPerBatch = 100;
 	private const int MaxChangeBatchBytes = 240 * 1024;
+	private const double FileScanInterval = 0.75;
+	private const int FileChunkBytes = 96 * 1024;
+	private const int MaxReplicatedFileBytes = 8 * 1024 * 1024;
+	private static readonly HashSet<string> ReplicatedFileExtensions = new(StringComparer.OrdinalIgnoreCase)
+	{
+		".bvxw", ".bvworld", ".bvxm", ".bvmodel", ".model", ".luau", ".lua",
+		".json", ".xml", ".md", ".txt", ".bvxl",
+	};
 
 	public static TeamCreateService? Instance { get; private set; }
 
@@ -36,6 +45,10 @@ public sealed partial class TeamCreateService : Node
 	private readonly Dictionary<string, Observation> _observed = [];
 	private readonly Dictionary<string, JsonObject> _pendingChanges = [];
 	private readonly List<TeamCreateMember> _members = [];
+	private readonly Dictionary<string, ProjectFileState> _projectFiles = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, IncomingFileTransfer> _incomingFiles = [];
+	private readonly Dictionary<string, string> _latestTransferByPath = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _pendingFileConfirmations = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, Node3D> _cameraAvatars = [];
 	private long _universeId;
 	private string _memberId = "";
@@ -50,6 +63,8 @@ public sealed partial class TeamCreateService : Node
 	private double _flushElapsed;
 	private double _heartbeatElapsed;
 	private double _rescanElapsed;
+	private double _fileScanElapsed;
+	private bool _projectFileSnapshotReady;
 	private double _reconnectElapsed;
 	private double _connectivityElapsed = ConnectivityInterval;
 	private bool _connectivityRequestActive;
@@ -141,11 +156,17 @@ public sealed partial class TeamCreateService : Node
 		_flushElapsed += delta;
 		_heartbeatElapsed += delta;
 		_rescanElapsed += delta;
+		_fileScanElapsed += delta;
 
 		if (_rescanElapsed >= RescanInterval)
 		{
 			_rescanElapsed = 0;
 			ObserveWorld();
+		}
+		if (_fileScanElapsed >= FileScanInterval)
+		{
+			_fileScanElapsed = 0;
+			ScanProjectFiles();
 		}
 		if (_flushElapsed >= FlushInterval && _pendingChanges.Count > 0)
 		{
@@ -253,6 +274,7 @@ public sealed partial class TeamCreateService : Node
 		_localUserId = "";
 		_members.Clear();
 		_pendingChanges.Clear();
+		ResetProjectFileSync();
 		StopFollowing();
 		UnobserveAll();
 		ClearCameraAvatars();
@@ -291,6 +313,7 @@ public sealed partial class TeamCreateService : Node
 			_members.Clear();
 			_followMemberId = "";
 			_pendingChanges.Clear();
+			ResetProjectFileSync();
 			_initialObservationComplete = false;
 			_manualDisconnect = false;
 			ClearCameraAvatars();
@@ -643,6 +666,7 @@ public sealed partial class TeamCreateService : Node
 		_memberId = "";
 		_members.Clear();
 		_pendingChanges.Clear();
+		ResetProjectFileSync();
 		StopFollowing();
 		UnobserveAll();
 		ClearCameraAvatars();
@@ -821,6 +845,274 @@ public sealed partial class TeamCreateService : Node
 		_cameraAvatars.Clear();
 	}
 
+	private void ResetProjectFileSync()
+	{
+		_projectFiles.Clear();
+		_incomingFiles.Clear();
+		_latestTransferByPath.Clear();
+		_pendingFileConfirmations.Clear();
+		_projectFileSnapshotReady = false;
+		_fileScanElapsed = 0;
+	}
+
+	private void ScanProjectFiles()
+	{
+		CreatorSession? session = World.Current?.LinkedSession;
+		if (session == null || !Directory.Exists(session.ProjectFolderPath)) return;
+		Dictionary<string, ProjectFileState> current = new(StringComparer.OrdinalIgnoreCase);
+		try
+		{
+			foreach (string absolute in Directory.EnumerateFiles(session.ProjectFolderPath, "*", SearchOption.AllDirectories))
+			{
+				string path = Path.GetRelativePath(session.ProjectFolderPath, absolute).Replace('\\', '/');
+				if (!IsSafeProjectFilePath(path)) continue;
+				FileInfo info = new(absolute);
+				if (info.Length > MaxReplicatedFileBytes) continue;
+				if (_projectFiles.TryGetValue(path, out ProjectFileState? previous)
+					&& previous.Length == info.Length
+					&& previous.LastWriteUtcTicks == info.LastWriteTimeUtc.Ticks)
+				{
+					current[path] = previous;
+					continue;
+				}
+
+				byte[] data = File.ReadAllBytes(absolute);
+				string sha256 = Convert.ToHexString(SHA256.HashData(data));
+				ProjectFileState state = new(info.Length, info.LastWriteTimeUtc.Ticks, sha256);
+				current[path] = state;
+				if (_projectFileSnapshotReady && (previous == null || previous.Sha256 != sha256))
+					QueueProjectFile(path, data, sha256);
+			}
+
+			if (_projectFileSnapshotReady)
+			{
+				foreach (string deleted in _projectFiles.Keys.Except(current.Keys, StringComparer.OrdinalIgnoreCase))
+				{
+					string filePrefix = "file:" + deleted + ":";
+					foreach (string key in _pendingChanges.Keys.Where(key => key.StartsWith(filePrefix, StringComparison.OrdinalIgnoreCase)).ToArray())
+						_pendingChanges.Remove(key);
+					QueueChange("file-delete:" + deleted, new JsonObject
+					{
+						["kind"] = "file_delete",
+						["id"] = "",
+						["path"] = deleted,
+					});
+				}
+			}
+			_projectFiles.Clear();
+			foreach ((string path, ProjectFileState state) in current) _projectFiles[path] = state;
+			_projectFileSnapshotReady = true;
+		}
+		catch (Exception error)
+		{
+			BV.PrintWarn("Could not scan Team Create project files: ", error.Message);
+		}
+	}
+
+	private void QueueProjectFile(string path, byte[] data, string sha256)
+	{
+		string keyPrefix = "file:" + path + ":";
+		foreach (string key in _pendingChanges.Keys.Where(key => key.StartsWith(keyPrefix, StringComparison.OrdinalIgnoreCase)).ToArray())
+			_pendingChanges.Remove(key);
+		_pendingChanges.Remove("file-delete:" + path);
+		string transferId = Guid.NewGuid().ToString("N");
+		int chunkCount = Math.Max(1, (data.Length + FileChunkBytes - 1) / FileChunkBytes);
+		for (int index = 0; index < chunkCount; index++)
+		{
+			int offset = index * FileChunkBytes;
+			int length = Math.Min(FileChunkBytes, data.Length - offset);
+			QueueChange(keyPrefix + index, new JsonObject
+			{
+				["kind"] = "file_chunk",
+				["id"] = "",
+				["path"] = path,
+				["transferId"] = transferId,
+				["index"] = index,
+				["count"] = chunkCount,
+				["length"] = data.Length,
+				["sha256"] = sha256,
+				["data"] = Convert.ToBase64String(data, offset, length),
+			});
+		}
+	}
+
+	private void ApplyProjectFileChange(JsonElement change, string kind)
+	{
+		CreatorSession? session = World.Current?.LinkedSession;
+		if (session == null || !change.TryGetProperty("path", out JsonElement pathNode)) return;
+		string path = pathNode.GetString()?.Replace('\\', '/') ?? "";
+		if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string absolute))
+		{
+			BV.PrintWarn("Rejected unsafe Team Create project path: ", path);
+			return;
+		}
+
+		if (kind == "file_delete")
+		{
+			if (string.Equals(path, Globals.ProjectMetaFileName, StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(path, Globals.ProjectInputMapName, StringComparison.OrdinalIgnoreCase))
+			{
+				BV.PrintWarn("Ignored Team Create deletion of protected project file: ", path);
+				return;
+			}
+			if (string.Equals(World.Current?.WorldFilePath, path, StringComparison.OrdinalIgnoreCase))
+			{
+				BV.PrintWarn("Ignored Team Create deletion of the currently open world: ", path);
+				return;
+			}
+			if (File.Exists(absolute)) _ = ConfirmProjectFileDelete(session, path, absolute);
+			return;
+		}
+
+		string transferId = change.GetProperty("transferId").GetString() ?? "";
+		int index = change.GetProperty("index").GetInt32();
+		int count = change.GetProperty("count").GetInt32();
+		int length = change.GetProperty("length").GetInt32();
+		string sha256 = change.GetProperty("sha256").GetString() ?? "";
+		if (transferId.Length != 32 || count < 1
+			|| count > (MaxReplicatedFileBytes + FileChunkBytes - 1) / FileChunkBytes
+			|| index < 0 || index >= count || length < 0 || length > MaxReplicatedFileBytes
+			|| sha256.Length != 64)
+			return;
+
+		if (_latestTransferByPath.TryGetValue(path, out string? latest) && latest != transferId)
+			_incomingFiles.Remove(latest);
+		_latestTransferByPath[path] = transferId;
+		if (!_incomingFiles.TryGetValue(transferId, out IncomingFileTransfer? transfer))
+		{
+			if (_incomingFiles.Count >= 16)
+			{
+				string oldest = _incomingFiles.Keys.First();
+				_latestTransferByPath.Remove(_incomingFiles[oldest].Path);
+				_incomingFiles.Remove(oldest);
+			}
+			transfer = new(path, count, length, sha256);
+			_incomingFiles[transferId] = transfer;
+		}
+		if (transfer.Path != path || transfer.Count != count || transfer.Length != length || transfer.Sha256 != sha256) return;
+		byte[] chunk;
+		try { chunk = Convert.FromBase64String(change.GetProperty("data").GetString() ?? ""); }
+		catch (FormatException) { return; }
+		if (chunk.Length > FileChunkBytes) return;
+		transfer.Chunks[index] = chunk;
+		if (transfer.Chunks.Any(item => item == null)) return;
+
+		byte[] complete = new byte[length];
+		int offset = 0;
+		foreach (byte[]? item in transfer.Chunks)
+		{
+			if (item == null || offset + item.Length > complete.Length) return;
+			Buffer.BlockCopy(item, 0, complete, offset, item.Length);
+			offset += item.Length;
+		}
+		if (offset != length || !Convert.ToHexString(SHA256.HashData(complete)).Equals(sha256, StringComparison.OrdinalIgnoreCase)) return;
+
+		_incomingFiles.Remove(transferId);
+		_latestTransferByPath.Remove(path);
+		if (File.Exists(absolute)) WriteProjectFile(session, path, absolute, transferId, complete, sha256);
+		else _ = ConfirmProjectFileCreate(session, path, absolute, transferId, complete, sha256);
+	}
+
+	private async Task ConfirmProjectFileCreate(
+		CreatorSession session,
+		string path,
+		string absolute,
+		string transferId,
+		byte[] contents,
+		string sha256)
+	{
+		string confirmationKey = "create:" + path;
+		if (!_pendingFileConfirmations.Add(confirmationKey)) return;
+		try
+		{
+			bool approved = await CreatorService.Interface.PromptConfirmation(
+				$"A Team Create collaborator wants to create this project file:\n\n{path}\n\nCreate it on this computer?",
+				"Team Create File Creation",
+				confirmText: "Create File",
+				cancelText: "Reject"
+			);
+			if (!approved || File.Exists(absolute)) return;
+			if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string revalidated)
+				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase))
+				return;
+			WriteProjectFile(session, path, absolute, transferId, contents, sha256);
+		}
+		finally { _pendingFileConfirmations.Remove(confirmationKey); }
+	}
+
+	private async Task ConfirmProjectFileDelete(CreatorSession session, string path, string absolute)
+	{
+		string confirmationKey = "delete:" + path;
+		if (!_pendingFileConfirmations.Add(confirmationKey)) return;
+		try
+		{
+			bool approved = await CreatorService.Interface.PromptConfirmation(
+				$"A Team Create collaborator wants to delete this project file:\n\n{path}\n\nDelete it from this computer? This cannot be undone.",
+				"Team Create File Deletion",
+				confirmText: "Delete File",
+				cancelText: "Keep File"
+			);
+			if (!approved || !File.Exists(absolute)) return;
+			if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string revalidated)
+				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase))
+				return;
+			File.Delete(absolute);
+			_projectFiles.Remove(path);
+			session.QueueRescanFolder();
+		}
+		finally { _pendingFileConfirmations.Remove(confirmationKey); }
+	}
+
+	private void WriteProjectFile(
+		CreatorSession session,
+		string path,
+		string absolute,
+		string transferId,
+		byte[] contents,
+		string sha256)
+	{
+		string? directory = Path.GetDirectoryName(absolute);
+		if (directory == null) return;
+		Directory.CreateDirectory(directory);
+		string temporary = Path.Combine(directory, ".teamcreate-" + transferId + ".tmp");
+		try
+		{
+			File.WriteAllBytes(temporary, contents);
+			File.Move(temporary, absolute, true);
+			FileInfo info = new(absolute);
+			_projectFiles[path] = new(info.Length, info.LastWriteTimeUtc.Ticks, sha256);
+			session.QueueRescanFolder();
+		}
+		finally { if (File.Exists(temporary)) File.Delete(temporary); }
+	}
+
+	private static bool IsSafeProjectFilePath(string path)
+	{
+		if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains(':')) return false;
+		string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+		if (parts.Length == 0 || parts.Any(part => part is "." or ".." || part.StartsWith('.'))) return false;
+		return ReplicatedFileExtensions.Contains(Path.GetExtension(path));
+	}
+
+	private static bool TryGetSafeProjectPath(CreatorSession session, string path, out string absolute)
+	{
+		absolute = "";
+		try
+		{
+			absolute = session.GlobalizePath(path);
+			string current = session.ProjectFolderPath;
+			foreach (string part in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
+			{
+				current = Path.Combine(current, part);
+				if ((File.Exists(current) || Directory.Exists(current))
+					&& File.GetAttributes(current).HasFlag(FileAttributes.ReparsePoint))
+					return false;
+			}
+			return true;
+		}
+		catch { return false; }
+	}
+
 	private void ObserveWorld()
 	{
 		World? world = World.Current;
@@ -838,6 +1130,10 @@ public sealed partial class TeamCreateService : Node
 
 	private bool Observe(NetworkedObject item)
 	{
+		// CreatorContext (including its FreeLook camera) is instantiated locally for
+		// each editor. Observing it would relay one collaborator's camera transform
+		// onto every other client because those local instances share object IDs.
+		if (!IsCollaborativeObject(item)) return false;
 		string id = item.NetworkedObjectID;
 		if (string.IsNullOrWhiteSpace(id) || _observed.ContainsKey(id)) return false;
 		Action<string> propertyHandler = property => OnPropertyChanged(item, property ?? "");
@@ -866,7 +1162,12 @@ public sealed partial class TeamCreateService : Node
 
 	private void OnChildAdded(Instance parent, Instance child)
 	{
-		if (_applyingRemote || !Connected || child.Root != World.Current) return;
+		if (_applyingRemote
+			|| !Connected
+			|| child.Root != World.Current
+			|| !IsCollaborativeObject(parent)
+			|| !IsCollaborativeObject(child))
+			return;
 		EnsureCollaborativeIds(child);
 		bool wasObserved = _observed.ContainsKey(child.NetworkedObjectID);
 		Observe(child);
@@ -904,7 +1205,8 @@ public sealed partial class TeamCreateService : Node
 
 	private void QueueCreate(Instance child)
 	{
-		if (string.IsNullOrWhiteSpace(child.NetworkedObjectID)
+		if (!IsCollaborativeObject(child)
+			|| string.IsNullOrWhiteSpace(child.NetworkedObjectID)
 			|| child.Parent == null
 			|| string.IsNullOrWhiteSpace(child.Parent.NetworkedObjectID))
 			return;
@@ -940,7 +1242,11 @@ public sealed partial class TeamCreateService : Node
 
 	private void OnPropertyChanged(NetworkedObject item, string property)
 	{
-		if (_applyingRemote || !Connected || item.Root != World.Current) return;
+		if (_applyingRemote
+			|| !Connected
+			|| item.Root != World.Current
+			|| !IsCollaborativeObject(item))
+			return;
 		if (item is Dynamic dynamic && IsTransformProperty(property))
 		{
 			QueueChange(
@@ -983,20 +1289,30 @@ public sealed partial class TeamCreateService : Node
 			if (sender != _localUserId && message.Length <= 300) TeamChatMessage?.Invoke(sender, message);
 			return;
 		}
+		if (kind is "file_chunk" or "file_delete")
+		{
+			try { ApplyProjectFileChange(change, kind); }
+			catch (Exception error) { BV.PrintErr("Failed to apply Team Create project file change: ", error.Message); }
+			return;
+		}
 		_applyingRemote = true;
 		try
 		{
 			if (kind == "delete")
 			{
-				world.GetNetObjectFromID(id)?.Delete();
+				NetworkedObject? deleted = world.GetNetObjectFromID(id);
+				if (deleted != null && IsCollaborativeObject(deleted)) deleted.Delete();
 				return;
 			}
 			if (kind == "create")
 			{
 				if (world.GetNetObjectFromID(id) != null) return;
 				string className = change.GetProperty("className").GetString() ?? "";
+				if (className == nameof(CreatorContextService)) return;
 				string parentId = change.GetProperty("parentId").GetString() ?? "";
-				if (world.GetNetObjectFromID(parentId) is not Instance parent) return;
+				if (world.GetNetObjectFromID(parentId) is not Instance parent
+					|| !IsCollaborativeObject(parent))
+					return;
 				Instance? created = Globals.LoadInstance<Instance>(
 					className,
 					world,
@@ -1025,11 +1341,12 @@ public sealed partial class TeamCreateService : Node
 			}
 
 			NetworkedObject? target = world.GetNetObjectFromID(id);
-			if (target == null) return;
+			if (target == null || !IsCollaborativeObject(target)) return;
 			if (kind == "reparent" && target is Instance targetInstance)
 			{
 				string parentId = change.GetProperty("parentId").GetString() ?? "";
-				if (world.GetNetObjectFromID(parentId) is Instance newParent)
+				if (world.GetNetObjectFromID(parentId) is Instance newParent
+					&& IsCollaborativeObject(newParent))
 					targetInstance.Parent = newParent;
 				return;
 			}
@@ -1088,6 +1405,11 @@ public sealed partial class TeamCreateService : Node
 		};
 		return await _http.SendAsync(request);
 	}
+
+	private static bool IsCollaborativeObject(NetworkedObject item) =>
+		item is not CreatorContextService
+		&& (item is not Instance instance
+			|| !instance.IsDescendantOfClass<CreatorContextService>());
 
 	private static bool IsTransformProperty(string property) =>
 		property is "Position" or "Rotation" or "Size"
@@ -1250,6 +1572,17 @@ public sealed partial class TeamCreateService : Node
 		Action DeletedHandler,
 		Action<Instance>? ChildAddedHandler
 	);
+
+	private sealed record ProjectFileState(long Length, long LastWriteUtcTicks, string Sha256);
+
+	private sealed class IncomingFileTransfer(string path, int count, int length, string sha256)
+	{
+		public string Path { get; } = path;
+		public int Count { get; } = count;
+		public int Length { get; } = length;
+		public string Sha256 { get; } = sha256;
+		public byte[]?[] Chunks { get; } = new byte[count][];
+	}
 }
 
 public sealed class TeamCreateMember

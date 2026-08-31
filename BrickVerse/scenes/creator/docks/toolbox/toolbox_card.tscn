@@ -4,70 +4,12 @@
 [ext_resource type="Texture2D" uid="uid://ca1mu3488yl80" path="res://assets/textures/ui-icons/play-filled.svg" id="2_bngdg"]
 [ext_resource type="Texture2D" uid="uid://ds3dnhxrqnyp" path="res://assets/textures/ui-icons/pause-filled.svg" id="3_o5xi3"]
 
-[sub_resource type="StyleBoxFlat" id="CardNormal"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.0705882, 0.0941176, 0.12549, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.12549, 0.164706, 0.211765, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="CardHover"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.0941176, 0.129412, 0.172549, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.00392157, 0.529412, 0.972549, 0.7)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="CardPressed"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.0313726, 0.211765, 0.352941, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.00392157, 0.529412, 0.972549, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="ThumbnailPanel"]
-bg_color = Color(0.0352941, 0.0470588, 0.0627451, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
 [node name="ToolboxCard" type="Button" unique_id=554432727 node_paths=PackedStringArray("_thumbnailRect", "_nameLabel", "_byLabel", "_audioPreView", "_playButton")]
 custom_minimum_size = Vector2(104, 146)
 offset_right = 104.0
 offset_bottom = 146.0
 flat = false
-theme_override_styles/normal = SubResource("CardNormal")
-theme_override_styles/hover = SubResource("CardHover")
-theme_override_styles/pressed = SubResource("CardPressed")
-theme_override_styles/focus = SubResource("CardHover")
+theme_type_variation = &"CreatorToolboxCard"
 script = ExtResource("1_bngdg")
 _thumbnailRect = NodePath("Panel/MarginContainer/TextureRect")
 _nameLabel = NodePath("VBoxContainer/Label")
@@ -83,7 +25,7 @@ offset_top = 6.0
 offset_right = 98.0
 offset_bottom = 100.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("ThumbnailPanel")
+theme_type_variation = &"CreatorToolboxThumbnailPanel"
 
 [node name="MarginContainer" type="MarginContainer" parent="Panel" unique_id=1134450936]
 layout_mode = 1
@@ -150,7 +92,7 @@ text_overrun_behavior = 3
 [node name="Label2" type="Label" parent="VBoxContainer" unique_id=1281878823]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.439216, 0.501961, 0.580392, 1)
+theme_type_variation = &"CreatorMutedLabel"
 theme_override_font_sizes/font_size = 9
 text = "By Hello"
 clip_text = true
