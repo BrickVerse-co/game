@@ -1,0 +1,8 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- trigger volume -->
+  <path d="M9 14L24 7L39 14V34L24 41L9 34V14Z" fill="#F05252" fill-opacity=".28" stroke="#F05252" stroke-width="3"/>
+  <path d="M9 14L24 21L39 14M24 21V41" stroke="#FF9A9A" stroke-width="2.2" opacity=".9"/>
+  <!-- continuous damage -->
+  <path d="M26 11L17 26H23L20 37L31 21H25L26 11Z" fill="#C93434"/>
+  <path d="M27 13L20 24H25L23 31L29 22H25L27 13Z" fill="#FF9A9A"/>
+</svg>

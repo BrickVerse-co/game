@@ -1,0 +1,238 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/creator/ui/popups/CommandPalettePopup.cs" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/creator/creator.tres" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="Surface"]
+bg_color = Color(0.0627, 0.0627, 0.0706, 0.985)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.18, 0.21, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="SearchNormal"]
+bg_color = Color(0.094, 0.094, 0.105, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.20, 0.20, 0.23, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 12.0
+content_margin_right = 10.0
+
+[sub_resource type="StyleBoxFlat" id="SearchFocus"]
+bg_color = Color(0.105, 0.105, 0.118, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.592, 1, 0.82)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 12.0
+content_margin_right = 10.0
+shadow_color = Color(0, 0.592, 1, 0.12)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="ResultsBg"]
+bg_color = Color(0.047, 0.047, 0.055, 0.52)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.15, 0.17, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="ResultSelected"]
+bg_color = Color(0.075, 0.30, 0.47, 0.92)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="ResultHover"]
+bg_color = Color(0.14, 0.14, 0.16, 0.82)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="FooterKey"]
+bg_color = Color(0.12, 0.12, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.20, 0.20, 0.23, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+
+[node name="CommandPalette" type="Window" node_paths=PackedStringArray("_search", "_results", "_description", "_count")]
+title = "Command Palette"
+initial_position = 2
+size = Vector2i(640, 420)
+min_size = Vector2i(520, 320)
+transient = true
+unresizable = true
+borderless = true
+transparent_bg = true
+theme = ExtResource("2")
+script = ExtResource("1")
+_search = NodePath("Margin/Layout/Search")
+_results = NodePath("Margin/Layout/Results")
+_description = NodePath("Margin/Layout/Footer/Description")
+_count = NodePath("Margin/Layout/Footer/Count")
+
+[node name="Surface" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Surface")
+
+[node name="Margin" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 28.0
+offset_right = -30.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Margin/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.72, 0.76, 1)
+theme_override_font_sizes/font_size = 12
+text = "COMMAND PALETTE"
+
+[node name="Shortcut" type="Label" parent="Margin/Layout/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.42, 0.46, 1)
+theme_override_font_sizes/font_size = 11
+text = "⌘K"
+vertical_alignment = 1
+
+[node name="Search" type="LineEdit" parent="Margin/Layout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.97, 1)
+theme_override_colors/font_placeholder_color = Color(0.45, 0.45, 0.49, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("SearchNormal")
+theme_override_styles/focus = SubResource("SearchFocus")
+placeholder_text = "Search commands…"
+clear_button_enabled = true
+
+[node name="Results" type="ItemList" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.88, 0.88, 0.91, 1)
+theme_override_colors/font_selected_color = Color(1, 1, 1, 1)
+theme_override_colors/guide_color = Color(0, 0, 0, 0)
+theme_override_font_sizes/font_size = 13
+theme_override_constants/v_separation = 2
+theme_override_constants/icon_margin = 8
+theme_override_styles/panel = SubResource("ResultsBg")
+theme_override_styles/selected = SubResource("ResultSelected")
+theme_override_styles/selected_focus = SubResource("ResultSelected")
+theme_override_styles/hovered = SubResource("ResultHover")
+select_mode = 0
+allow_reselect = true
+
+[node name="Separator" type="HSeparator" parent="Margin/Layout"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.10)
+
+[node name="Footer" type="HBoxContainer" parent="Margin/Layout"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Description" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.50, 0.50, 0.55, 1)
+theme_override_font_sizes/font_size = 11
+text_overrun_behavior = 3
+vertical_alignment = 1
+
+[node name="Count" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.44, 0.48, 1)
+theme_override_font_sizes/font_size = 11
+vertical_alignment = 1
+
+[node name="EscKey" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.66, 0.66, 0.70, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("FooterKey")
+text = "esc"
+vertical_alignment = 1
+
+[node name="EscHint" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.40, 0.40, 0.44, 1)
+theme_override_font_sizes/font_size = 10
+text = "close"
+vertical_alignment = 1
+
+[node name="EnterKey" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.66, 0.66, 0.70, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("FooterKey")
+text = "↵"
+vertical_alignment = 1
+
+[node name="EnterHint" type="Label" parent="Margin/Layout/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.40, 0.40, 0.44, 1)
+theme_override_font_sizes/font_size = 10
+text = "run"
+vertical_alignment = 1

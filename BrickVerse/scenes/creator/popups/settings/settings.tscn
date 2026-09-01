@@ -51,7 +51,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="Settings" type="Window" unique_id=268676490 node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit", "_sectionTitle")]
+[node name="Settings" type="Window" unique_id=268676490 node_paths=PackedStringArray("_categoryTree", "_layout", "_settingsSearchEdit", "_keybindSearchEdit", "_sectionTitle", "_sectionDescription", "_resetSectionButton")]
 transparent_bg = true
 oversampling_override = 1.0
 title = "Creator Settings"
@@ -70,6 +70,8 @@ _layout = NodePath("Body/Page/Scroll/PageMargin/Settings")
 _settingsSearchEdit = NodePath("Body/Sidebar/Margin/Layout/SectionSearch")
 _keybindSearchEdit = NodePath("Body/Page/Header/KeybindSearch")
 _sectionTitle = NodePath("Body/Page/Header/SectionTitle")
+_sectionDescription = NodePath("Body/Page/SectionDescription")
+_resetSectionButton = NodePath("Body/Page/Header/ResetSection")
 
 [node name="PopupSurface" type="Panel" parent="." unique_id=708125331]
 anchors_preset = 15
@@ -78,7 +80,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("PopupSurface")
 
 [node name="TitleBar" type="PanelContainer" parent="." unique_id=1909283069]
 custom_minimum_size = Vector2(0, 44)
@@ -87,7 +88,6 @@ anchor_right = 1.0
 offset_bottom = 44.0
 grow_horizontal = 2
 mouse_default_cursor_shape = 13
-theme_override_styles/panel = SubResource("PopupTitleSurface")
 script = SubResource("PopupDragScript")
 
 [node name="Margin" type="MarginContainer" parent="TitleBar" unique_id=2074719686]
@@ -101,7 +101,6 @@ layout_mode = 2
 [node name="Title" type="Label" parent="TitleBar/Margin/Row" unique_id=1889427513]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
 theme_override_font_sizes/font_size = 14
 text = "Creator Settings"
 vertical_alignment = 1
@@ -127,7 +126,6 @@ theme_override_constants/separation = 18
 [node name="Sidebar" type="PanelContainer" parent="Body" unique_id=264050234]
 custom_minimum_size = Vector2(224, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("SidebarSurface")
 
 [node name="Margin" type="MarginContainer" parent="Body/Sidebar" unique_id=1768499000]
 layout_mode = 2
@@ -175,6 +173,17 @@ visible = false
 custom_minimum_size = Vector2(270, 38)
 layout_mode = 2
 placeholder_text = "Search keybinds…"
+
+[node name="ResetSection" type="Button" parent="Body/Page/Header" unique_id=783451001]
+custom_minimum_size = Vector2(116, 38)
+layout_mode = 2
+text = "Reset section"
+
+[node name="SectionDescription" type="Label" parent="Body/Page" unique_id=783451002]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Configure Creator preferences."
+autowrap_mode = 2
 
 [node name="Scroll" type="ScrollContainer" parent="Body/Page" unique_id=1558447267]
 layout_mode = 2

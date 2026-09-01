@@ -31,13 +31,13 @@ public sealed partial class Globals : Node
 	private const bool UseLocalServer = false;
 #endif
 
-	private static readonly bool UseProdApi = OS.HasFeature("use-prod-api");
+	private static bool UseProdApi;
 
-	public static readonly string MainEndpoint =
-		UseLocalServer && !UseProdApi ? "http://localhost:3000" : "https://brickverse.gg";
+	public static string MainEndpoint { get; private set; } =
+		UseLocalServer ? "http://localhost:3000" : "https://brickverse.gg";
 
-	public static readonly string ApiEndpoint =
-		UseLocalServer && !UseProdApi
+	public static string ApiEndpoint { get; private set; } =
+		UseLocalServer
 			? "http://localhost:3001/api"
 			: "https://api.brickverse.gg/api";
 
@@ -139,10 +139,10 @@ public sealed partial class Globals : Node
 	/// </summary>
 	public static bool IsMobileBuild { get; private set; } = false;
 	public static bool IsXRLaunch =>
-		OS.HasFeature("xr")
+		GDAvailable && (OS.HasFeature("xr")
 		|| ReadCmdArgs().TryGetValue("xr-mode", out string? mode)
-			&& mode.Equals("on", StringComparison.OrdinalIgnoreCase);
-	public static bool UsesMobileUI => OS.HasFeature("mobile-ui") || IsXRLaunch;
+			&& mode.Equals("on", StringComparison.OrdinalIgnoreCase));
+	public static bool UsesMobileUI => GDAvailable && (OS.HasFeature("mobile-ui") || IsXRLaunch);
 
 	/// <summary>
 	/// Check if Godot is available, this can be false in unit testing environments
@@ -177,6 +177,9 @@ public sealed partial class Globals : Node
 
 	public override void _EnterTree()
 	{
+		GDAvailable = true;
+		UseProdApi = OS.HasFeature("use-prod-api");
+		ConfigureEndpoints();
 		UseLogRPC = OS.HasFeature("rpclog");
 		UseNetTrace = OS.HasFeature("nettrace");
 		UseNoHttp = OS.HasFeature("nohttp");
@@ -184,8 +187,6 @@ public sealed partial class Globals : Node
 		IsServerBuild = OS.HasFeature("server");
 		IsInGDEditor = OS.HasFeature("editor");
 		IsMobileBuild = OS.HasFeature("mobile");
-		GDAvailable = true;
-
 		AppVersion = (string)ProjectSettings.GetSetting("application/config/version");
 		BuildCommit = ProjectSettings.GetSetting("brickverse/build/commit", "").AsString().Trim();
 		if (string.IsNullOrWhiteSpace(BuildCommit))
@@ -235,6 +236,13 @@ public sealed partial class Globals : Node
 			Directory.CreateDirectory(creatorPath);
 		}
 #endif
+	}
+
+	private static void ConfigureEndpoints()
+	{
+		bool local = UseLocalServer && !UseProdApi;
+		MainEndpoint = local ? "http://localhost:3000" : "https://brickverse.gg";
+		ApiEndpoint = local ? "http://localhost:3001/api" : "https://api.brickverse.gg/api";
 	}
 
 #if CREATOR

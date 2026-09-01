@@ -21,7 +21,8 @@ public sealed partial class AnimationTrack : Instance
 	private float _speed = 1f;
 
 	[ScriptProperty] public bool IsPlaying => _isPlaying;
-	[ScriptProperty] public float TimePosition
+	[ScriptProperty]
+	public float TimePosition
 	{
 		get => _timePosition;
 		set => Seek(value);

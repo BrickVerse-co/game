@@ -72,10 +72,10 @@ public partial class TerrainWaterSettingsPanel : VBoxContainer
 		TerrainWater? water = ResolveWater(true); if (water == null || selected == 0) return;
 		switch (selected)
 		{
-			case 1: water.SetWave(new(1,.2f),.08f,9,.45f,.08f); water.Roughness=.2f; water.NormalStrength=.25f; water.FoamAmount=.2f; break;
-			case 2: water.SetWave(new(1,.25f),.45f,18,1.4f,.3f); water.Roughness=.12f; water.NormalStrength=.7f; water.FoamAmount=.65f; break;
-			case 3: water.SetWave(new(.9f,.4f),1.8f,31,2.2f,.58f); water.Roughness=.16f; water.NormalStrength=1.15f; water.FoamAmount=1.05f; break;
-			case 4: water.SetWave(new(.75f,.65f),4.5f,46,3.4f,.82f); water.Roughness=.22f; water.NormalStrength=1.8f; water.FoamAmount=1.5f; break;
+			case 1: water.SetWave(new(1, .2f), .08f, 9, .45f, .08f); water.Roughness = .2f; water.NormalStrength = .25f; water.FoamAmount = .2f; break;
+			case 2: water.SetWave(new(1, .25f), .45f, 18, 1.4f, .3f); water.Roughness = .12f; water.NormalStrength = .7f; water.FoamAmount = .65f; break;
+			case 3: water.SetWave(new(.9f, .4f), 1.8f, 31, 2.2f, .58f); water.Roughness = .16f; water.NormalStrength = 1.15f; water.FoamAmount = 1.05f; break;
+			case 4: water.SetWave(new(.75f, .65f), 4.5f, 46, 3.4f, .82f); water.Roughness = .22f; water.NormalStrength = 1.8f; water.FoamAmount = 1.5f; break;
 		}
 		RefreshFromLayer(); GetNode<OptionButton>("%Preset").Select(0); SetStatus("Water appearance preset applied.");
 	}

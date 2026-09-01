@@ -10,6 +10,7 @@ using BrickVerse.Creator.UI;
 #endif
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Services;
 using BrickVerse.Formats;
 using BrickVerse.Scripting;
 using BrickVerse.Networking.Synchronizers;
@@ -355,13 +356,28 @@ public partial class Instance : NetworkedObject
 		get => _tags;
 		set
 		{
+			value ??= [];
 			if (_tags.SequenceEqual(value))
 			{
 				return;
 			}
 
-			_tags = value;
+			string[] normalized = value
+				.Select(CollectionService.NormalizeTag)
+				.Distinct(StringComparer.Ordinal)
+				.OrderBy(tag => tag, StringComparer.Ordinal)
+				.ToArray();
+			if (_tags.SequenceEqual(normalized)) return;
+			string[] added = normalized.Except(_tags, StringComparer.Ordinal).ToArray();
+			string[] removed = _tags.Except(normalized, StringComparer.Ordinal).ToArray();
+			_tags = normalized;
 			OnPropertyChanged();
+			CollectionService? collections = Root?.FindChild<CollectionService>("CollectionService");
+			if (collections != null)
+			{
+				foreach (string tag in added) collections.NotifyTagAdded(this, tag);
+				foreach (string tag in removed) collections.NotifyTagRemoved(this, tag);
+			}
 		}
 	}
 
@@ -982,6 +998,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public void AddTag(string tag)
 	{
+		tag = CollectionService.NormalizeTag(tag);
+		if (HasTag(tag)) return;
 		List<string> tags = [.. Tags];
 		tags.Add(tag);
 		Tags = [.. tags];
@@ -990,6 +1008,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public void RemoveTag(string tag)
 	{
+		tag = CollectionService.NormalizeTag(tag);
+		if (!HasTag(tag)) return;
 		List<string> tags = [.. Tags];
 		tags.Remove(tag);
 		Tags = [.. tags];

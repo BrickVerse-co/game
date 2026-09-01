@@ -8,6 +8,9 @@ using BrickVerse.Creator.Managers;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Schemas.API;
+using System;
+using BrickVerse.Creator.Settings;
 
 namespace BrickVerse.Creator.UI.Splashes.Components;
 
@@ -15,6 +18,9 @@ public partial class RecentPlaceCard : Button
 {
 	public ProjectManager.RecentData Data { get; set; }
 	public RecentPlaceList ListUI { get; set; } = null!;
+	public CreatorPlaceItem? CloudWorld { get; set; }
+	public string CloudOwner { get; set; } = "";
+	public bool IsDownloaded { get; set; }
 
 	[Export] private Label _placeTitleLabel = null!;
 	[Export] private Label _recentOpenLabel = null!;
@@ -24,12 +30,19 @@ public partial class RecentPlaceCard : Button
 
 	public override void _Ready()
 	{
-		_placeTitleLabel.Text = Data.PlaceName;
-		_recentOpenLabel.Text = Data.LastOpened.Humanize();
-		_pathLabel.Text = Data.FolderPath;
-		_pathLabel.TooltipText = Data.FolderPath;
+		CreatorPlaceItem? cloud = CloudWorld;
+		_placeTitleLabel.Text = cloud?.Name ?? Data.PlaceName;
+		DateTime activity = cloud?.UpdatedAt ?? cloud?.CreatedAt ?? Data.LastOpened;
+		_recentOpenLabel.Text = cloud.HasValue ? $"Updated {activity.Humanize()}" : Data.LastOpened.Humanize();
+		_pathLabel.Text = cloud.HasValue
+			? IsDownloaded ? $"Downloaded · {Data.FolderPath}" : $"Cloud · {CloudOwner} · Download to edit"
+			: Data.FolderPath;
+		_pathLabel.TooltipText = cloud.HasValue && !IsDownloaded
+			? "This project is in BrickVerse Cloud. Select it to download and begin editing."
+			: Data.FolderPath;
+		_menuLabel.Visible = !string.IsNullOrWhiteSpace(Data.FolderPath);
 
-		string thumbnailUrl = Data.ThumbnailUrl;
+		string thumbnailUrl = cloud?.IconUrl ?? Data.ThumbnailUrl;
 		if (string.IsNullOrWhiteSpace(thumbnailUrl) && Data.IconID is > 0)
 		{
 			thumbnailUrl = Globals.ApiEndpoint.PathJoin(
@@ -68,12 +81,23 @@ public partial class RecentPlaceCard : Button
 		Disabled = true;
 		try
 		{
+			if (CloudWorld.HasValue && string.IsNullOrWhiteSpace(Data.FolderPath)
+				&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ConfirmCloudDownload)
+				&& !await CreatorService.Interface.PromptConfirmation(
+					$"Download '{CloudWorld.Value.Name}' and create a local project?"))
+			{
+				return;
+			}
 			StartupSplash.Singleton.Close();
-			CreatorService.Interface.LoadOverlay?.SetTitle("Opening " + Data.PlaceName);
+			string projectName = CloudWorld?.Name ?? Data.PlaceName;
+			CreatorService.Interface.LoadOverlay?.SetTitle("Opening " + projectName);
 			CreatorService.Interface.LoadOverlay?.SetStatus("Preparing project...");
 			CreatorService.Interface.LoadOverlay?.Show();
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			await CreatorService.Singleton.CreateNewSession(Data.FolderPath);
+			if (!string.IsNullOrWhiteSpace(Data.FolderPath))
+				await CreatorService.Singleton.CreateNewSession(Data.FolderPath);
+			else if (CloudWorld.HasValue)
+				await CreatorService.Singleton.CreateNewSessionByWorldId((CloudWorld.Value.WorldId ?? CloudWorld.Value.Id).ToString());
 		}
 		catch
 		{

@@ -110,7 +110,8 @@ public sealed partial class PCGSpline : Dynamic
 	[ScriptMethod] public Vector3 GetPoint(int index) => (uint)index < (uint)_points.Count ? _points[index] : throw new ArgumentOutOfRangeException(nameof(index));
 	[ScriptMethod] public Vector3 Sample(float alpha) => SampleCurve(Mathf.Clamp(alpha, 0, 1));
 	[ScriptMethod] public Vector3 GetTangent(float alpha) { float epsilon = 0.001f; return (SampleCurve(Mathf.Min(1, alpha + epsilon)) - SampleCurve(Mathf.Max(0, alpha - epsilon))).Normalized(); }
-	[ScriptMethod] public float GetLength()
+	[ScriptMethod]
+	public float GetLength()
 	{
 		if (_points.Count < 2) return 0; int steps = (_closed ? _points.Count : _points.Count - 1) * 32; float length = 0; Vector3 previous = SampleCurve(0);
 		for (int i = 1; i <= steps; i++) { Vector3 current = SampleCurve(i / (float)steps); length += previous.DistanceTo(current); previous = current; }

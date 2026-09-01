@@ -8,6 +8,8 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Splashes.Components;
 
 namespace BrickVerse.Creator.UI.Splashes;
 
@@ -24,6 +26,7 @@ public partial class StartupSplash : Control
 	[Export] private Button _tutorialButton = null!;
 	[Export] private Button _closeButton = null!;
 	[Export] private Button _homeButton = null!;
+	[Export] private Button _cloudButton = null!;
 	[Export] private Button _learnButton = null!;
 	[Export] private Button _communityButton = null!;
 	[Export] private Button _docsButton = null!;
@@ -31,6 +34,8 @@ public partial class StartupSplash : Control
 	[Export] private ScrollContainer _recentWorldsScroll = null!;
 	[Export] private Label _versionNumber = null!;
 	[Export] private MarginContainer _page = null!;
+	[Export] private Control _homePage = null!;
+	[Export] private Control _cloudPage = null!;
 
 	public static StartupSplash Singleton { get; private set; } = null!;
 
@@ -49,6 +54,7 @@ public partial class StartupSplash : Control
 		_closeButton.Pressed += Close;
 
 		_homeButton.Pressed += OnHome;
+		_cloudButton.Pressed += OnCloud;
 		_learnButton.Pressed += () => OpenExternalUrl(LearnUrl);
 		_communityButton.Pressed += () => OpenExternalUrl(CommunityUrl);
 		_docsButton.Pressed += () => OpenExternalUrl(LearnUrl);
@@ -58,6 +64,15 @@ public partial class StartupSplash : Control
 		GetViewport().SizeChanged += UpdateResponsiveLayout;
 		UpdateResponsiveLayout();
 		base._Ready();
+	}
+
+	public override void _UnhandledKeyInput(InputEvent @event)
+	{
+		if (Visible && World.Current != null && @event.IsActionPressed("ui_cancel"))
+		{
+			Close();
+			GetViewport().SetInputAsHandled();
+		}
 	}
 
 	public override void _ExitTree()
@@ -88,7 +103,24 @@ public partial class StartupSplash : Control
 
 	private void OnHome()
 	{
+		SetPage(false);
 		_newButton.GrabFocus();
+	}
+
+	private void OnCloud()
+	{
+		SetPage(true);
+		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen))
+			_cloudPage.GetNodeOrNull<RecentPlaceList>("CloudPanel/Margin/Area/Scroll/GridMargin/List")?.Reload();
+		_cloudButton.GrabFocus();
+	}
+
+	private void SetPage(bool cloud)
+	{
+		_homePage.Visible = !cloud;
+		_cloudPage.Visible = cloud;
+		_homeButton.ButtonPressed = !cloud;
+		_cloudButton.ButtonPressed = cloud;
 	}
 
 	private void OnRecents()
@@ -113,8 +145,17 @@ public partial class StartupSplash : Control
 	public void Open()
 	{
 		_closeButton.Visible = World.Current != null;
+		_closeButton.Text = World.Current != null ? "Close" : "";
+		_closeButton.TooltipText = World.Current != null ? "Return to the open world (Esc)" : "";
 		Visible = true;
+		SetPage(false);
 		_newButton.GrabFocus();
+	}
+
+	public void OpenCloud()
+	{
+		Open();
+		OnCloud();
 	}
 
 	public void Close()

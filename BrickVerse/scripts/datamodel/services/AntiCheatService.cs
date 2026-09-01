@@ -129,7 +129,7 @@ internal sealed partial class AntiCheatService : Instance
 			// Disabled for now, as it is too aggressive and can be triggered by network jitter.
 
 			// if (state.ConsecutiveSpeedSamples >= 5 && state.ConsecutiveSpeedSamples % 5 == 0)
-				// Flag(player, state, "sustained impossible horizontal speed", 2.5f);
+			// Flag(player, state, "sustained impossible horizontal speed", 2.5f);
 		}
 		else state.ConsecutiveSpeedSamples = 0;
 

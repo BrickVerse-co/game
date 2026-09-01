@@ -13,15 +13,15 @@ public static class CreatorSettingsRegistry
 
 	public static readonly IReadOnlyList<SettingSectionDef> Sections =
 	[
-		new() { Key = "creator", Label = "Creator", IconPath = DefaultSectionIcon, SortOrder = 0 },
-		new() { Key = "interface", Label = "Interface", IconPath = DefaultSectionIcon, SortOrder = 1 },
-		new() { Key = "keybinds", Label = "Keybinds", IconPath = DefaultSectionIcon, SortOrder = 2 },
+		new() { Key = "creator", Label = "Creator", Description = "Publishing, cloud projects, sounds, tutorials, and play testing.", IconPath = DefaultSectionIcon, SortOrder = 0 },
+		new() { Key = "interface", Label = "Interface", Description = "Appearance, scaling, snapping, and transform behavior.", IconPath = DefaultSectionIcon, SortOrder = 1 },
+		new() { Key = "keybinds", Label = "Keybinds", Description = "Customize shortcuts for tools and common editing actions.", IconPath = DefaultSectionIcon, SortOrder = 2 },
 		new() { Key = "display", Label = "Display", IconPath = "res://assets/textures/ui-icons/camera.svg", SortOrder = 3 },
 		new() { Key = "graphics", Label = "Graphics", IconPath = "res://assets/textures/ui-icons/mountain.svg", SortOrder = 4 },
 		new() { Key = "post_processing", Label = "Post Processing", IconPath = "res://assets/textures/ui-icons/rocket.svg", SortOrder = 5 },
-		new() { Key = "backup", Label = "Backup", IconPath = DefaultSectionIcon, SortOrder = 6 },
-		new() { Key = "code_editor", Label = "Code Editor", IconPath = DefaultSectionIcon, SortOrder = 7 },
-		new() { Key = "popups", Label = "Popups", IconPath = DefaultSectionIcon, SortOrder = 8 },
+		new() { Key = "backup", Label = "Backup", Description = "Control automatic recovery snapshots and retention.", IconPath = DefaultSectionIcon, SortOrder = 6 },
+		new() { Key = "code_editor", Label = "Code Editor", Description = "Editing, formatting, assistance, and display preferences.", IconPath = DefaultSectionIcon, SortOrder = 7 },
+		new() { Key = "popups", Label = "Confirmations", Description = "Choose which safety prompts and completion messages appear.", IconPath = DefaultSectionIcon, SortOrder = 8 },
 		new() { Key = "advanced", Label = "Advanced", IconPath = DefaultSectionIcon, SortOrder = 9 }
 	];
 
@@ -98,6 +98,30 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = false
+			});
+
+		defs.Add(CreatorSettingKeys.Creator.ConfirmCloudDownload,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.ConfirmCloudDownload,
+				SectionKey = "creator",
+				Label = "Confirm Cloud Downloads",
+				Description = "Ask before downloading a cloud-only world into a new local Creator project.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen,
+				SectionKey = "creator",
+				Label = "Refresh Cloud Projects When Opened",
+				Description = "Fetch the newest personal and editable guild projects whenever the Cloud tab is opened.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
 			});
 
 		defs.Add(CreatorSettingKeys.Creator.ShowInteractiveTutorial,
@@ -755,6 +779,18 @@ public static class CreatorSettingsRegistry
 				SectionKey = "popups",
 				Label = "Close Tab Warning",
 				Description = "Show warning when closing a modified tab.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
+		defs.Add(CreatorSettingKeys.Popups.ClosePlaceWarning,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Popups.ClosePlaceWarning,
+				SectionKey = "popups",
+				Label = "Close Place Warning",
+				Description = "Ask for confirmation when F4 or Close Place closes the active world.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true

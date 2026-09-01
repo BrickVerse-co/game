@@ -1,0 +1,8 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- trigger volume -->
+  <path d="M9 14L24 7L39 14V34L24 41L9 34V14Z" fill="#F59E42" fill-opacity=".26" stroke="#F59E42" stroke-width="3"/>
+  <path d="M9 14L24 21L39 14M24 21V41" stroke="#FFD09A" stroke-width="2.2" opacity=".9"/>
+  <!-- force / acceleration -->
+  <path d="M15 27H31" stroke="#C96B1D" stroke-width="5" stroke-linecap="round"/>
+  <path d="M27 21L34 27L27 33" stroke="#FFD09A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

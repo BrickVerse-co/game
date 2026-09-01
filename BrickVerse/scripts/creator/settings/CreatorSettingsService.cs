@@ -63,6 +63,7 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		["Popups.CloseModelWarning"] = CreatorSettingKeys.Popups.CloseModelWarning,
 		["Popups.MoveFileConfirmation"] = CreatorSettingKeys.Popups.MoveFileConfirmation,
 		["Popups.CloseTabWarning"] = CreatorSettingKeys.Popups.CloseTabWarning,
+		["Popups.ClosePlaceWarning"] = CreatorSettingKeys.Popups.ClosePlaceWarning,
 	};
 
 	protected override string SettingsPath => SettingsPathConst;

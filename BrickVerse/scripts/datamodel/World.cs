@@ -117,6 +117,11 @@ public sealed partial class World : Instance
 	public InputService Input => FindChild<InputService>("Input")!;
 	public VRService VRService => FindChild<VRService>("VRService")!;
 	public FilterService Filter => FindChild<FilterService>("Filter")!;
+	public CollectionService CollectionService => FindChild<CollectionService>("CollectionService")!;
+	public DebrisService Debris => FindChild<DebrisService>("Debris")!;
+	public RunService RunService => FindChild<RunService>("RunService")!;
+	public SchedulerService Scheduler => FindChild<SchedulerService>("Scheduler")!;
+	public ObjectPoolService ObjectPool => FindChild<ObjectPoolService>("ObjectPool")!;
 	public AssetsService Assets => FindChild<AssetsService>("Assets")!;
 	public AchievementsService Achievements => FindChild<AchievementsService>("Achievements")!;
 	public CoreUIService CoreUI => FindChild<CoreUIService>("CoreUI")!;
@@ -755,6 +760,46 @@ public sealed partial class World : Instance
 			filterService = Globals.LoadInstance<FilterService>(Root);
 			filterService.NameOverride = "Filter";
 			filterService.NetworkParent = this;
+		}
+
+		CollectionService? collectionService = FindChild<CollectionService>("CollectionService");
+		if (collectionService == null)
+		{
+			collectionService = Globals.LoadInstance<CollectionService>(Root);
+			collectionService.NameOverride = "CollectionService";
+			collectionService.NetworkParent = this;
+		}
+
+		DebrisService? debrisService = FindChild<DebrisService>("Debris");
+		if (debrisService == null)
+		{
+			debrisService = Globals.LoadInstance<DebrisService>(Root);
+			debrisService.NameOverride = "Debris";
+			debrisService.NetworkParent = this;
+		}
+
+		RunService? runService = FindChild<RunService>("RunService");
+		if (runService == null)
+		{
+			runService = Globals.LoadInstance<RunService>(Root);
+			runService.NameOverride = "RunService";
+			runService.NetworkParent = this;
+		}
+
+		SchedulerService? schedulerService = FindChild<SchedulerService>("Scheduler");
+		if (schedulerService == null)
+		{
+			schedulerService = Globals.LoadInstance<SchedulerService>(Root);
+			schedulerService.NameOverride = "Scheduler";
+			schedulerService.NetworkParent = this;
+		}
+
+		ObjectPoolService? objectPoolService = FindChild<ObjectPoolService>("ObjectPool");
+		if (objectPoolService == null)
+		{
+			objectPoolService = Globals.LoadInstance<ObjectPoolService>(Root);
+			objectPoolService.NameOverride = "ObjectPool";
+			objectPoolService.NetworkParent = this;
 		}
 
 #if CREATOR

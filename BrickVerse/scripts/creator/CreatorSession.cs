@@ -45,9 +45,10 @@ public partial class CreatorSession : Node, IDisposable
 
 	private static int _worldSessionCounter = 0;
 
-	private Timer _backupTimer = null!;
+	private Godot.Timer _backupTimer = null!;
 	private bool _vscodeFileWritten = false;
 	private bool _fileScanQueued = false;
+	private bool _backupInProgress;
 
 	private bool _cleanupQueued = false;
 	private bool _disposed = false;
@@ -1043,6 +1044,14 @@ return module";
 
 	public async Task SaveBackup()
 	{
+		if (_backupInProgress) return;
+		_backupInProgress = true;
+		try { await SaveBackupCore(); }
+		finally { _backupInProgress = false; }
+	}
+
+	private async Task SaveBackupCore()
+	{
 		CreatorService.Interface.StatusBar?.SetStatus("Backing up world...");
 
 		string backupFolderPath = BVProjectFolderPath.PathJoin("backups");
@@ -1053,41 +1062,18 @@ return module";
 
 		int maxCount = CreatorSettingsService.Instance.Get<int>(CreatorSettingKeys.Backup.MaxBackupCount);
 
-		// Delete oldest folder
-		List<DirectoryInfo> backupFolders = [.. Directory.GetDirectories(backupFolderPath)
-			.Select(path => new DirectoryInfo(path))
-			.OrderBy(dir => dir.CreationTime)];
-
-		if (backupFolders.Count >= maxCount)
+		ProjectSnapshotManager.SnapshotInfo snapshot = await ProjectSnapshotManager.CreateAsync(ProjectFolderPath, backupFolderPath, stagingFolder =>
 		{
-			DirectoryInfo oldestFolder = backupFolders.First();
-			Directory.Delete(oldestFolder.FullName, true);
-		}
-
-		DateTime time = DateTime.Now;
-		string formattedTime = time.ToString("yyyy-MM-dd-hhmmss");
-
-		string snapshotFolder = backupFolderPath.PathJoin(formattedTime);
-		if (!Directory.Exists(snapshotFolder))
-		{
-			Directory.CreateDirectory(snapshotFolder);
-		}
-
-		foreach (World game in OpenedWorlds)
-		{
-			if (game.WorldFilePath == null) { BV.PrintWarn("Skipping game instance, no linked world file path"); continue; }
-			string fpath = game.WorldFilePath;
-			string writeTo = snapshotFolder + "/" + fpath;
-			string baseDir = writeTo.GetBaseDir();
-
-			if (!Directory.Exists(baseDir))
+			foreach (World game in OpenedWorlds)
 			{
-				Directory.CreateDirectory(baseDir);
+				if (game.WorldFilePath == null) { BV.PrintWarn("Skipping game instance, no linked world file path"); continue; }
+				string writeTo = ProjectSnapshotManager.ResolveInside(stagingFolder, game.WorldFilePath);
+				Directory.CreateDirectory(Path.GetDirectoryName(writeTo)!);
+				PolyFormat.SaveWorldToFile(game, writeTo);
 			}
-
-			PolyFormat.SaveWorldToFile(game, writeTo);
-		}
-		CreatorService.Interface.StatusBar?.SetStatus("World backed up!");
+		});
+		ProjectSnapshotManager.Prune(backupFolderPath, maxCount);
+		CreatorService.Interface.StatusBar?.SetStatus($"Project backed up ({snapshot.FileCount} files)!");
 	}
 
 	public void CreateVSCodeConfig()

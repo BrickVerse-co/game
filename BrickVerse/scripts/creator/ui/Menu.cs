@@ -84,6 +84,14 @@ public sealed partial class Menu : PanelContainer
 			[
 				new MenuButtonItem()
 				{
+					Text = "Command Palette...",
+					Icon = "search",
+					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.P }] },
+					Pressed = CommandPalettePopup.Open,
+				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
 					Text = "What's New",
 					Icon = "star",
 					Pressed = WhatsNewPopup.ShowLatest,
@@ -123,6 +131,13 @@ public sealed partial class Menu : PanelContainer
 					{
 						CreatorService.SaveCurrentFile();
 					},
+				},
+				new MenuButtonItem()
+				{
+					Text = "Save All",
+					Icon = "save",
+					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.S }] },
+					Pressed = () => Tabs.Singleton.SaveAll(),
 				},
 				new MenuButtonItem()
 				{
@@ -276,6 +291,14 @@ public sealed partial class Menu : PanelContainer
 						],
 					},
 					Pressed = CreatorService.Redo,
+				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
+					Text = "Find in Files...",
+					Icon = "search",
+					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.F }] },
+					Pressed = FindInFilesPopup.Open,
 				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()

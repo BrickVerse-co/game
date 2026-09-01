@@ -48,7 +48,9 @@ public static class CreatorSoundEffects
 		if (volumeScale <= .0001f) return;
 		AudioStreamPlayer player = new()
 		{
-			Name = $"Creator{effect}Sfx", Stream = stream, VolumeDb = GetVolume(effect) + Mathf.LinearToDb(volumeScale),
+			Name = $"Creator{effect}Sfx",
+			Stream = stream,
+			VolumeDb = GetVolume(effect) + Mathf.LinearToDb(volumeScale),
 			PitchScale = (float)GD.RandRange(0.975, 1.025)
 		};
 		_activeVoices++;

@@ -17,18 +17,20 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 	private const string FeedUrl = "https://raw.githubusercontent.com/BrickVerse-co/game/main/BrickVerse/assets/creator/whats-new.json";
 	private const string LocalFeedPath = "res://assets/creator/whats-new.json";
 	private const string SeenIdPath = "user://creator/whats-new-seen.txt";
+	private const string ScenePath = "res://scenes/creator/popups/whats_new.tscn";
 	private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
-	private readonly Dictionary _feed;
+	private Dictionary _feed = [];
 
-	private WhatsNewPopup(Dictionary feed)
+	public WhatsNewPopup()
 	{
-		_feed = feed;
 		Title = "What’s New in BrickVerse Creator";
 		MinSize = new Vector2I(620, 500);
 		Size = new Vector2I(760, 640);
 		Unresizable = false;
 	}
+
+	private void SetFeed(Dictionary feed) => _feed = feed;
 
 	public static async void CheckForUpdates()
 	{
@@ -53,7 +55,9 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 				if (seen.GetAsText().Trim() == id) return;
 			}
 
-			CreatorService.Interface.PopupWindow(new WhatsNewPopup(feed));
+			WhatsNewPopup popup = GD.Load<PackedScene>(ScenePath).Instantiate<WhatsNewPopup>();
+			popup.SetFeed(feed);
+			CreatorService.Interface.PopupWindow(popup);
 			if (id.Length > 0)
 			{
 				using Godot.FileAccess seen = Godot.FileAccess.Open(SeenIdPath, Godot.FileAccess.ModeFlags.Write);
@@ -88,7 +92,7 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 
 	public override void _Ready()
 	{
-		MarginContainer margin = new();
+		MarginContainer margin = new() { Name = "ReleaseNotesLayout" };
 		margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		margin.AddThemeConstantOverride("margin_left", 28);
 		margin.AddThemeConstantOverride("margin_right", 28);
@@ -110,7 +114,6 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		layout.AddChild(title);
 
 		Label subtitle = new() { Text = ReadString(_feed, "subtitle"), AutowrapMode = TextServer.AutowrapMode.WordSmart };
-		subtitle.AddThemeColorOverride("font_color", Color.FromHtml("#AEB7C2"));
 		subtitle.AddThemeFontSizeOverride("font_size", 16);
 		layout.AddChild(subtitle);
 		layout.AddChild(new HSeparator());
@@ -128,37 +131,25 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 			{
 				if (sectionValue.VariantType != Variant.Type.Dictionary) continue;
 				Dictionary section = sectionValue.AsGodotDictionary();
-				PanelContainer cardPanel = new();
-				StyleBoxFlat cardStyle = new()
-				{
-					BgColor = Color.FromHtml("#111820"),
-					BorderColor = Color.FromHtml("#263442"),
-					BorderWidthLeft = 1,
-					BorderWidthTop = 1,
-					BorderWidthRight = 1,
-					BorderWidthBottom = 1,
-					CornerRadiusTopLeft = 10,
-					CornerRadiusTopRight = 10,
-					CornerRadiusBottomLeft = 10,
-					CornerRadiusBottomRight = 10,
-					ContentMarginLeft = 16,
-					ContentMarginTop = 14,
-					ContentMarginRight = 16,
-					ContentMarginBottom = 14
-				};
-				cardPanel.AddThemeStyleboxOverride("panel", cardStyle);
+				PanelContainer cardPanel = new() { CustomMinimumSize = new Vector2(0, 116) };
+				MarginContainer cardMargin = new();
+				cardMargin.AddThemeConstantOverride("margin_left", 18);
+				cardMargin.AddThemeConstantOverride("margin_top", 16);
+				cardMargin.AddThemeConstantOverride("margin_right", 18);
+				cardMargin.AddThemeConstantOverride("margin_bottom", 16);
 				RichTextLabel card = new() { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(0, 100) };
 				card.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
 				string heading = EscapeBbcode(ReadString(section, "title", "Update"));
 				string body = EscapeBbcode(ReadString(section, "body"));
-				string text = $"[font_size=19][color=#FFFFFF][b]{heading}[/b][/color][/font_size]\n[color=#B8C0CB]{body}[/color]";
+				string text = $"[font_size=19][b]{heading}[/b][/font_size]\n{body}";
 				if (section.TryGetValue("items", out Variant itemsValue) && itemsValue.VariantType == Variant.Type.Array)
 				{
 					foreach (Variant item in itemsValue.AsGodotArray())
 						text += $"\n[color=#0097FF]•[/color]  {EscapeBbcode(item.AsString())}";
 				}
 				card.Text = text;
-				cardPanel.AddChild(card);
+				cardMargin.AddChild(card);
+				cardPanel.AddChild(cardMargin);
 				content.AddChild(cardPanel);
 			}
 		}
@@ -202,28 +193,7 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 	private static Button CreateActionButton(string text, bool primary)
 	{
 		Button button = new() { Text = text, CustomMinimumSize = new Vector2(148, 40) };
-		StyleBoxFlat style = new()
-		{
-			BgColor = Color.FromHtml(primary ? "#0097FF" : "#172331"),
-			BorderColor = Color.FromHtml(primary ? "#36ACFF" : "#30445A"),
-			BorderWidthLeft = 1,
-			BorderWidthTop = 1,
-			BorderWidthRight = 1,
-			BorderWidthBottom = 1,
-			CornerRadiusTopLeft = 8,
-			CornerRadiusTopRight = 8,
-			CornerRadiusBottomLeft = 8,
-			CornerRadiusBottomRight = 8,
-			ContentMarginLeft = 16,
-			ContentMarginRight = 16,
-			ContentMarginTop = 9,
-			ContentMarginBottom = 9
-		};
-		button.AddThemeStyleboxOverride("normal", style);
-		StyleBoxFlat hover = (StyleBoxFlat)style.Duplicate();
-		hover.BgColor = Color.FromHtml(primary ? "#23A6FF" : "#213247");
-		button.AddThemeStyleboxOverride("hover", hover);
-		button.AddThemeStyleboxOverride("pressed", hover);
+		if (primary) button.AddThemeColorOverride("font_color", Colors.White);
 		return button;
 	}
 

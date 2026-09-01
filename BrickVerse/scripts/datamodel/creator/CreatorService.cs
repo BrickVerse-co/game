@@ -133,10 +133,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 		window.Activate();
 	}
 
-	private void OnCreatorAuthenticated(BrickVerse.Schemas.API.OpenIdUserInfoResponse _)
+	private void OnCreatorAuthenticated(BrickVerse.Schemas.API.OpenIdUserInfoResponse unusedUser)
 	{
 		long worldId = CurrentSession?.Metadata.WorldId ?? 0;
-		CreatorAPI.UpdateStudioPresence(worldId, active: true);
+		_ = CreatorAPI.UpdateStudioPresence(worldId, active: true);
 	}
 
 	public void ShowRuntimeDebugWindows()

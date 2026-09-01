@@ -506,23 +506,23 @@ public sealed partial class TerrainWater : Instance
 				"Water edit is too large. Increase CellSize or use OceanEnabled for oceans."
 			);
 		for (int y = min.Y; y <= max.Y; y++)
-		for (int z = min.Z; z <= max.Z; z++)
-		for (int x = min.X; x <= max.X; x++)
-		{
-			Vector3I c = new(x, y, z);
-			if (!include(c))
-				continue;
-			if (fill)
-			{
-				if (_cells.Count >= MaximumWaterCells)
-					throw new InvalidOperationException(
-						$"TerrainWater supports {MaximumWaterCells:N0} cells."
-					);
-				_cells.Add(c);
-			}
-			else
-				_cells.Remove(c);
-		}
+			for (int z = min.Z; z <= max.Z; z++)
+				for (int x = min.X; x <= max.X; x++)
+				{
+					Vector3I c = new(x, y, z);
+					if (!include(c))
+						continue;
+					if (fill)
+					{
+						if (_cells.Count >= MaximumWaterCells)
+							throw new InvalidOperationException(
+								$"TerrainWater supports {MaximumWaterCells:N0} cells."
+							);
+						_cells.Add(c);
+					}
+					else
+						_cells.Remove(c);
+				}
 		CommitVoxelEdit();
 	}
 
@@ -719,12 +719,12 @@ public sealed partial class TerrainWater : Instance
 		float sum = 0;
 		int count = 0;
 		for (int dz = -1; dz <= 0; dz++)
-		for (int dx = -1; dx <= 0; dx++)
-			if (_columnTops.TryGetValue(new Vector2I(x + dx, z + dz), out int top))
-			{
-				sum += (top + 1) * _cellSize;
-				count++;
-			}
+			for (int dx = -1; dx <= 0; dx++)
+				if (_columnTops.TryGetValue(new Vector2I(x + dx, z + dz), out int top))
+				{
+					sum += (top + 1) * _cellSize;
+					count++;
+				}
 		return count == 0 ? fallback : sum / count;
 	}
 

@@ -10,6 +10,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
+using BrickVerse.Formats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,6 +87,7 @@ public sealed partial class Tabs : Control
 	private TabBar _tabBar = null!;
 	private PanelContainer _tabsContainer = null!;
 	private int _tabContextIndex = -1;
+	private bool _closePlacePending;
 
 	private Button _leftButton = null!, _rightButton = null!;
 	private bool _scrollLeft, _scrollRight;
@@ -247,7 +249,14 @@ public sealed partial class Tabs : Control
 		{
 			if (!(control is TextEditorContainer txt && txt.EditorRoot.Saved))
 			{
-				if (!await CreatorService.Interface.PromptConfirmation("Are you sure you want to close this tab? Any unsaved changes will be lost.", dismissKey: CreatorSettingKeys.Popups.CloseTabWarning)) return;
+				bool isPlace = control is WorldContainer;
+				string message = isPlace
+					? "Close this place? Make sure you have saved or published any changes you want to keep."
+					: "Close this tab? Any unsaved changes will be lost.";
+				string dismissKey = isPlace
+					? CreatorSettingKeys.Popups.ClosePlaceWarning
+					: CreatorSettingKeys.Popups.CloseTabWarning;
+				if (!await CreatorService.Interface.PromptConfirmation(message, dismissKey: dismissKey)) return;
 			}
 
 			if (control is WorldContainer g)
@@ -348,6 +357,17 @@ public sealed partial class Tabs : Control
 				return;
 			}
 
+			if (btn.ButtonIndex == MouseButton.Middle && btn.Pressed)
+			{
+				int tabIndex = _tabBar.GetTabIdxAtPoint(btn.Position);
+				if (tabIndex >= 0 && tabIndex < _orderedControls.Count)
+				{
+					_ = Remove(_orderedControls[tabIndex]);
+					AcceptEvent();
+				}
+				return;
+			}
+
 			if (btn.ButtonIndex == MouseButton.WheelUp)
 			{
 				ScrollTabBar((float)(10 * btn.Factor));
@@ -357,6 +377,27 @@ public sealed partial class Tabs : Control
 				ScrollTabBar((float)(10 * -btn.Factor));
 			}
 		}
+	}
+
+	public override void _UnhandledKeyInput(InputEvent @event)
+	{
+		if (@event is not InputEventKey { Pressed: true, Echo: false } key)
+		{
+			base._UnhandledKeyInput(@event);
+			return;
+		}
+
+		if (key.Keycode == Key.F4)
+		{
+			CloseCurrentPlace();
+			GetViewport().SetInputAsHandled();
+		}
+		else if (key.Keycode == Key.W && key.CtrlPressed && !key.AltPressed)
+		{
+			if (CurrentControl != null) _ = Remove(CurrentControl);
+			GetViewport().SetInputAsHandled();
+		}
+		base._UnhandledKeyInput(@event);
 	}
 
 	private void ShowTabContextMenu(int tabIndex)
@@ -513,8 +554,36 @@ public sealed partial class Tabs : Control
 			.ToList();
 	}
 
+	public void SaveAll()
+	{
+		int savedDocuments = 0;
+		HashSet<CreatorSession> sessions = [];
+		foreach (TextEditorContainer editor in _orderedControls.OfType<TextEditorContainer>())
+		{
+			if (!editor.EditorRoot.Saved)
+			{
+				editor.EditorRoot.SaveDocument();
+				savedDocuments++;
+			}
+			sessions.Add(editor.TargetSession);
+		}
+		foreach (WorldContainer container in _orderedControls.OfType<WorldContainer>())
+		{
+			if (!string.IsNullOrWhiteSpace(container.World.WorldFilePath))
+			{
+				PolyFormat.SaveWorldToFile(container.World,
+					container.World.LinkedSession.GlobalizePath(container.World.WorldFilePath));
+				savedDocuments++;
+			}
+			sessions.Add(container.World.LinkedSession);
+		}
+		foreach (CreatorSession session in sessions) session.Save();
+		CreatorService.Interface.StatusBar?.SetStatus($"Saved {savedDocuments} open document{(savedDocuments == 1 ? "" : "s")}");
+	}
+
 	public async void CloseCurrentPlace()
 	{
+		if (_closePlacePending) return;
 		World? currentWorld = World.Current;
 		if (currentWorld == null) return;
 
@@ -523,11 +592,19 @@ public sealed partial class Tabs : Control
 			.FirstOrDefault(container => container.World == currentWorld);
 		if (currentPlace == null) return;
 
-		await Remove(currentPlace);
-		if (_orderedControls.OfType<WorldContainer>().Any()) return;
+		_closePlacePending = true;
+		try
+		{
+			await Remove(currentPlace);
+			if (_orderedControls.OfType<WorldContainer>().Any()) return;
 
-		World.Current = null;
-		StartupSplash.Singleton.Open();
+			World.Current = null;
+			StartupSplash.Singleton.Open();
+		}
+		finally
+		{
+			_closePlacePending = false;
+		}
 	}
 
 	public string WorldContainerToTabTitle(WorldContainer wc)
