@@ -735,6 +735,162 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		MarkDirty();
 	}
 
+	/// <summary>Transforms all vertices, or only the supplied stable vertex IDs.</summary>
+	[ScriptMethod]
+	public void TransformVertices(Transform3D transform, int[]? vertexIds = null)
+	{
+		ThrowIfDestroyed();
+		int[] targets = vertexIds ?? [.. _vertices.Keys];
+		HashSet<int> selected = [.. targets];
+		foreach (int vertexId in targets)
+		{
+			VertexData vertex = RequireVertex(vertexId);
+			vertex.Position = transform * vertex.Position;
+		}
+
+		Basis normalTransform = transform.Basis.Inverse().Transposed();
+		if (vertexIds == null)
+		{
+			foreach (NormalData normal in _normals.Values)
+				if (!normal.Automatic) normal.Value = SafeNormal(normalTransform * normal.Value);
+		}
+		else
+		{
+			foreach (FaceData face in _faces.Values)
+				for (int corner = 0; corner < 3; corner++)
+					if (selected.Contains(face.Vertices[corner]) && !RequireNormal(face.Normals[corner]).Automatic)
+						face.Normals[corner] = AddNormalRaw(normalTransform * RequireNormal(face.Normals[corner]).Value, automatic: false);
+		}
+		RecalculateAutomaticNormals();
+		MarkDirty();
+	}
+
+	/// <summary>Reverses triangle winding and regenerates normals for the selected faces.</summary>
+	[ScriptMethod]
+	public void FlipFaces(int[]? faceIds = null)
+	{
+		ThrowIfDestroyed();
+		int[] targets = faceIds ?? [.. _faces.Keys];
+		foreach (int faceId in targets)
+		{
+			FaceData face = RequireFace(faceId);
+			(face.Vertices[1], face.Vertices[2]) = (face.Vertices[2], face.Vertices[1]);
+			(face.UVs[1], face.UVs[2]) = (face.UVs[2], face.UVs[1]);
+			(face.Colors[1], face.Colors[2]) = (face.Colors[2], face.Colors[1]);
+			for (int corner = 0; corner < 3; corner++) face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
+		}
+		RecalculateAutomaticNormals();
+		MarkDirty();
+	}
+
+	/// <summary>Projects per-corner UV coordinates onto a fixed local-space plane.</summary>
+	[ScriptMethod]
+	public void ProjectUVs(MeshProjectionPlane plane = MeshProjectionPlane.XZ, float scale = 1f, Vector2 offset = default, int[]? faceIds = null)
+	{
+		ThrowIfDestroyed();
+		if (!float.IsFinite(scale) || Mathf.IsZeroApprox(scale)) throw new ArgumentOutOfRangeException(nameof(scale));
+		foreach (int faceId in faceIds ?? [.. _faces.Keys])
+		{
+			FaceData face = RequireFace(faceId);
+			for (int corner = 0; corner < 3; corner++)
+			{
+				Vector3 position = RequireVertex(face.Vertices[corner]).Position;
+				Vector2 projected = plane switch
+				{
+					MeshProjectionPlane.XY => new(position.X, -position.Y),
+					MeshProjectionPlane.YZ => new(position.Z, -position.Y),
+					_ => new(position.X, position.Z),
+				};
+				face.UVs[corner] = AddUvRaw(projected / scale + offset);
+			}
+		}
+		MarkDirty();
+	}
+
+	/// <summary>Splits every selected triangle into four triangles while interpolating UVs, colors, normals, and skin weights.</summary>
+	[ScriptMethod]
+	public int[] Subdivide(int[]? faceIds = null, int iterations = 1)
+	{
+		RequireTopologyEditable();
+		if (iterations is < 1 or > 6) throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be between 1 and 6.");
+		int[] current = faceIds ?? [.. _faces.Keys];
+		foreach (int id in current) RequireFace(id);
+
+		for (int iteration = 0; iteration < iterations; iteration++)
+		{
+			Dictionary<(int, int), int> midpointVertices = [];
+			List<int> next = [];
+			foreach (int faceId in current)
+			{
+				FaceData source = RequireFace(faceId);
+				int a = source.Vertices[0], b = source.Vertices[1], c = source.Vertices[2];
+				int ab = GetOrCreateMidpoint(a, b, midpointVertices);
+				int bc = GetOrCreateMidpoint(b, c, midpointVertices);
+				int ca = GetOrCreateMidpoint(c, a, midpointVertices);
+
+				int[] uvMid = [InterpolateUv(source.UVs[0], source.UVs[1]), InterpolateUv(source.UVs[1], source.UVs[2]), InterpolateUv(source.UVs[2], source.UVs[0])];
+				int[] colorMid = [InterpolateColor(source.Colors[0], source.Colors[1]), InterpolateColor(source.Colors[1], source.Colors[2]), InterpolateColor(source.Colors[2], source.Colors[0])];
+				int[] normalMid = [InterpolateNormal(source.Normals[0], source.Normals[1]), InterpolateNormal(source.Normals[1], source.Normals[2]), InterpolateNormal(source.Normals[2], source.Normals[0])];
+				_faces.Remove(faceId);
+
+				next.Add(AddFaceRaw([a, ab, ca], [source.Normals[0], normalMid[0], normalMid[2]], [source.UVs[0], uvMid[0], uvMid[2]], [source.Colors[0], colorMid[0], colorMid[2]]));
+				next.Add(AddFaceRaw([ab, b, bc], [normalMid[0], source.Normals[1], normalMid[1]], [uvMid[0], source.UVs[1], uvMid[1]], [colorMid[0], source.Colors[1], colorMid[1]]));
+				next.Add(AddFaceRaw([ca, bc, c], [normalMid[2], normalMid[1], source.Normals[2]], [uvMid[2], uvMid[1], source.UVs[2]], [colorMid[2], colorMid[1], source.Colors[2]]));
+				next.Add(AddFaceRaw([ab, bc, ca], [normalMid[0], normalMid[1], normalMid[2]], [uvMid[0], uvMid[1], uvMid[2]], [colorMid[0], colorMid[1], colorMid[2]]));
+			}
+			current = [.. next];
+		}
+
+		RecalculateAutomaticNormals();
+		MarkDirty();
+		return current;
+	}
+
+	/// <summary>Extrudes a connected face selection and creates walls only around its boundary edges.</summary>
+	[ScriptMethod]
+	public int[] ExtrudeFaces(int[] faceIds, Vector3 offset)
+	{
+		RequireTopologyEditable();
+		if (faceIds == null || faceIds.Length == 0) throw new ArgumentException("At least one face is required.", nameof(faceIds));
+		HashSet<int> selection = [.. faceIds];
+		foreach (int id in selection) RequireFace(id);
+
+		Dictionary<int, int> raisedVertices = [];
+		Dictionary<(int, int), (int Count, int From, int To)> edges = [];
+		foreach (int faceId in selection)
+		{
+			FaceData face = _faces[faceId];
+			for (int corner = 0; corner < 3; corner++)
+			{
+				int from = face.Vertices[corner], to = face.Vertices[(corner + 1) % 3];
+				(int, int) key = from < to ? (from, to) : (to, from);
+				edges[key] = edges.TryGetValue(key, out var edge) ? (edge.Count + 1, edge.From, edge.To) : (1, from, to);
+				if (!raisedVertices.ContainsKey(from)) raisedVertices[from] = DuplicateVertex(from, offset);
+			}
+		}
+
+		foreach (int faceId in selection)
+		{
+			FaceData face = _faces[faceId];
+			for (int corner = 0; corner < 3; corner++) face.Vertices[corner] = raisedVertices[face.Vertices[corner]];
+			for (int corner = 0; corner < 3; corner++) face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
+		}
+
+		List<int> created = [];
+		foreach ((_, var edge) in edges.Where(pair => pair.Value.Count == 1))
+		{
+			int a = edge.From, b = edge.To, ar = raisedVertices[a], br = raisedVertices[b];
+			created.Add(AddTriangle(a, b, br));
+			created.Add(AddTriangle(a, br, ar));
+		}
+		RecalculateAutomaticNormals();
+		MarkDirty();
+		return [.. created];
+	}
+
+	[ScriptEnum]
+	public enum MeshProjectionPlane { XY, XZ, YZ }
+
 	/// <summary>
 	/// Merges vertices within tolerance and returns old/new ID pairs:
 	/// [oldId0, newId0, oldId1, newId1, ...].
@@ -1028,6 +1184,75 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		{
 			Commit();
 		}
+	}
+
+	private int AddFaceRaw(int[] vertices, int[] normals, int[] uvs, int[] colors)
+	{
+		int id = _nextFaceId++;
+		FaceData face = new();
+		Array.Copy(vertices, face.Vertices, 3);
+		Array.Copy(normals, face.Normals, 3);
+		Array.Copy(uvs, face.UVs, 3);
+		Array.Copy(colors, face.Colors, 3);
+		_faces[id] = face;
+		return id;
+	}
+
+	private int AddNormalRaw(Vector3 normal, bool automatic)
+	{
+		int id = _nextNormalId++;
+		_normals[id] = new NormalData { Value = SafeNormal(normal), Automatic = automatic };
+		return id;
+	}
+
+	private int AddUvRaw(Vector2 uv)
+	{
+		int id = _nextUvId++;
+		_uvs[id] = uv;
+		return id;
+	}
+
+	private int AddColorRaw(Color color)
+	{
+		int id = _nextColorId++;
+		_colors[id] = new ColorData { Value = color };
+		return id;
+	}
+
+	private int InterpolateUv(int a, int b) => AddUvRaw((_uvs[a] + _uvs[b]) * 0.5f);
+	private int InterpolateColor(int a, int b) => AddColorRaw(RequireColor(a).Value.Lerp(RequireColor(b).Value, 0.5f));
+	private int InterpolateNormal(int a, int b) => AddNormalRaw(RequireNormal(a).Value + RequireNormal(b).Value, RequireNormal(a).Automatic && RequireNormal(b).Automatic);
+
+	private int GetOrCreateMidpoint(int a, int b, Dictionary<(int, int), int> cache)
+	{
+		(int, int) key = a < b ? (a, b) : (b, a);
+		if (cache.TryGetValue(key, out int existing)) return existing;
+		VertexData first = RequireVertex(a), second = RequireVertex(b);
+		VertexData midpoint = new() { Position = (first.Position + second.Position) * 0.5f };
+		Dictionary<int, float> influences = [];
+		for (int i = 0; i < first.BoneIds.Count; i++) influences[first.BoneIds[i]] = influences.GetValueOrDefault(first.BoneIds[i]) + first.BoneWeights[i] * 0.5f;
+		for (int i = 0; i < second.BoneIds.Count; i++) influences[second.BoneIds[i]] = influences.GetValueOrDefault(second.BoneIds[i]) + second.BoneWeights[i] * 0.5f;
+		foreach ((int boneId, float weight) in influences.OrderByDescending(pair => pair.Value).Take(4))
+		{
+			midpoint.BoneIds.Add(boneId);
+			midpoint.BoneWeights.Add(weight);
+		}
+		NormalizeBoneWeights(midpoint);
+		int id = _nextVertexId++;
+		_vertices[id] = midpoint;
+		cache[key] = id;
+		return id;
+	}
+
+	private int DuplicateVertex(int sourceId, Vector3 offset)
+	{
+		VertexData source = RequireVertex(sourceId);
+		VertexData duplicate = new() { Position = source.Position + offset };
+		duplicate.BoneIds.AddRange(source.BoneIds);
+		duplicate.BoneWeights.AddRange(source.BoneWeights);
+		int id = _nextVertexId++;
+		_vertices[id] = duplicate;
+		return id;
 	}
 
 	private int AddNormalInternal(Vector3 normal, bool automatic)

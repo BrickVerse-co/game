@@ -1,0 +1,10 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- editable voxel grid -->
+<path d="M7 15L24 6L41 15V34L24 43L7 34V15Z" fill="#2D91D8"/>
+<path d="M7 15L24 6L41 15L24 24L7 15Z" fill="#B9E3FF"/>
+<path d="M7 15L24 24V43L7 34V15Z" fill="#6AC2FF"/>
+<path d="M41 15L24 24V43L41 34V15Z" fill="#2D91D8"/>
+<!-- voxel subdivisions -->
+<path d="M15.5 10.5L32.5 19.5M32.5 10.5L15.5 19.5M15.5 19.5V38.5M32.5 19.5V38.5M7 24.5L24 33.5L41 24.5"
+ stroke="white" stroke-opacity=".55" stroke-width="1.7" stroke-linejoin="round"/>
+</svg>

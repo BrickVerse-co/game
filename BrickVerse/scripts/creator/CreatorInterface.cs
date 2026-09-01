@@ -168,7 +168,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		CreatorSettingsService.Instance.Changed += OnSettingChanged;
 		ApplyEditorTransformSettings();
 		ApplyThemeMode();
-		ChildEnteredTree += OnChildEnteredTree;
+		GetTree().NodeAdded += OnSceneTreeNodeAdded;
 		ApplyUIScale();
 		ApplyFullscreen();
 		ApplyVSync();
@@ -181,7 +181,7 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _ExitTree()
 	{
-		ChildEnteredTree -= OnChildEnteredTree;
+		if (GetTree() != null) GetTree().NodeAdded -= OnSceneTreeNodeAdded;
 		CreatorSettingsService.Instance.Changed -= OnSettingChanged;
 		base._ExitTree();
 	}
@@ -253,9 +253,9 @@ public partial class CreatorInterface : Control, IScriptObject
 		ApplyThemeRecursively(this);
 	}
 
-	private void OnChildEnteredTree(Node node)
+	private void OnSceneTreeNodeAdded(Node node)
 	{
-		ApplyThemeRecursively(node);
+		if (node == this || IsAncestorOf(node)) ApplyThemeRecursively(node);
 	}
 
 	private void ApplyThemeRecursively(Node root)
@@ -280,6 +280,67 @@ public partial class CreatorInterface : Control, IScriptObject
 	{
 		_followCursorLabel?.GlobalPosition = GetViewport().GetMousePosition() + new Vector2(10, 10);
 		base._Process(delta);
+	}
+
+	public override void _UnhandledKeyInput(InputEvent @event)
+	{
+		if (@event is not InputEventKey { Pressed: true, Echo: false } key)
+		{
+			base._UnhandledKeyInput(@event);
+			return;
+		}
+		if (key.CtrlPressed && key.ShiftPressed && key.Keycode == Key.P)
+		{
+			CommandPalettePopup.Open();
+			GetViewport().SetInputAsHandled();
+		}
+		else if (key.CtrlPressed && key.ShiftPressed && key.Keycode == Key.F)
+		{
+			FindInFilesPopup.Open();
+			GetViewport().SetInputAsHandled();
+		}
+		else if (key.AltPressed && TryGetBookmarkSlot(key.Keycode, out int slot))
+		{
+			if (key.CtrlPressed) ViewportBookmarkManager.Save(slot);
+			else ViewportBookmarkManager.Recall(slot);
+			GetViewport().SetInputAsHandled();
+		}
+		else if (key.CtrlPressed && key.AltPressed && TryGetTransformAxis(key.Keycode, out SelectionTransformTools.Axis axis))
+		{
+			if (key.ShiftPressed) SelectionTransformTools.Distribute(axis);
+			else SelectionTransformTools.AlignToActive(axis);
+			GetViewport().SetInputAsHandled();
+		}
+		base._UnhandledKeyInput(@event);
+	}
+
+	private static bool TryGetBookmarkSlot(Key key, out int slot)
+	{
+		slot = key switch
+		{
+			Key.Key1 => 1,
+			Key.Key2 => 2,
+			Key.Key3 => 3,
+			Key.Key4 => 4,
+			Key.Key5 => 5,
+			Key.Key6 => 6,
+			Key.Key7 => 7,
+			Key.Key8 => 8,
+			Key.Key9 => 9,
+			_ => 0
+		};
+		return slot > 0;
+	}
+
+	private static bool TryGetTransformAxis(Key key, out SelectionTransformTools.Axis axis)
+	{
+		axis = key switch
+		{
+			Key.X => SelectionTransformTools.Axis.X,
+			Key.Y => SelectionTransformTools.Axis.Y,
+			_ => SelectionTransformTools.Axis.Z,
+		};
+		return key is Key.X or Key.Y or Key.Z;
 	}
 
 	private void ApplyUIScale()

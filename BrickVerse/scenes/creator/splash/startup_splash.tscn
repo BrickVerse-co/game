@@ -201,7 +201,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[node name="StartupSplash" type="Panel" unique_id=187716805 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_tutorialButton", "_closeButton", "_homeButton", "_learnButton", "_communityButton", "_docsButton", "_supportButton", "_recentWorldsScroll", "_versionNumber", "_page")]
+[node name="StartupSplash" type="Panel" unique_id=187716805 node_paths=PackedStringArray("_newButton", "_openButton", "_recentsButton", "_settingsButton", "_tutorialButton", "_closeButton", "_homeButton", "_cloudButton", "_learnButton", "_communityButton", "_docsButton", "_supportButton", "_recentWorldsScroll", "_versionNumber", "_page", "_homePage", "_cloudPage")]
 z_index = 50
 anchors_preset = 15
 anchor_right = 1.0
@@ -217,6 +217,7 @@ _settingsButton = NodePath("Page/TopBar/TopMargin/TopRow/SettingsDisplay")
 _tutorialButton = NodePath("Page/Body/Main/MainMargin/MainContent/Hero/HeroMargin/HeroLayout/Actions/Tutorial")
 _closeButton = NodePath("Page/TopBar/TopMargin/TopRow/CloseDisplay")
 _homeButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Home")
+_cloudButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Cloud")
 _learnButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Learn")
 _communityButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav/Community")
 _docsButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/BottomLinks/Docs")
@@ -224,6 +225,8 @@ _supportButton = NodePath("Page/Body/Sidebar/SidebarMargin/SidebarContent/Bottom
 _recentWorldsScroll = NodePath("Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll")
 _versionNumber = NodePath("Page/TopBar/TopMargin/TopRow/VersionDisplay")
 _page = NodePath("Page")
+_homePage = NodePath("Page/Body/Main/MainMargin/MainContent")
+_cloudPage = NodePath("Page/Body/Main/MainMargin/CloudContent")
 
 [node name="Page" type="VBoxContainer" parent="." unique_id=1557068037]
 layout_mode = 1
@@ -341,8 +344,26 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("NavSelected")
 theme_override_styles/pressed = SubResource("NavSelected")
 theme_override_styles/hover = SubResource("NavSelected")
+toggle_mode = true
+button_pressed = true
 text = "Home"
 icon = ExtResource("3_home")
+alignment = 0
+
+[node name="Cloud" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav" unique_id=783450100]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.77, 0.78, 0.82, 0.9)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("NavButton")
+theme_override_styles/pressed = SubResource("NavSelected")
+theme_override_styles/hover = SubResource("NavButtonHover")
+toggle_mode = true
+text = "Cloud"
+icon = ExtResource("15_8840e")
 alignment = 0
 
 [node name="Learn" type="Button" parent="Page/Body/Sidebar/SidebarMargin/SidebarContent/Nav" unique_id=1219211036]
@@ -591,6 +612,25 @@ theme_override_fonts/font = ExtResource("11_regular")
 theme_override_font_sizes/font_size = 10
 text = "Continue where you left off"
 
+[node name="ProjectSummary" type="Label" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader" unique_id=783450010]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.56, 0.61, 0.78)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 10
+text = "Loading projects…"
+vertical_alignment = 1
+
+[node name="Refresh" type="Button" parent="Page/Body/Main/MainMargin/MainContent/RecentHeader" unique_id=783450011]
+custom_minimum_size = Vector2(82, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("IconButton")
+theme_override_styles/pressed = SubResource("IconButtonHover")
+theme_override_styles/hover = SubResource("IconButtonHover")
+text = "Refresh"
+
 [node name="WorldPanel" type="PanelContainer" parent="Page/Body/Main/MainMargin/MainContent" unique_id=1631406805]
 layout_mode = 2
 size_flags_vertical = 3
@@ -623,7 +663,7 @@ size_flags_horizontal = 3
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="List" type="HFlowContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll/GridMargin" unique_id=1533745526 node_paths=PackedStringArray("_loader", "_noProjectsView")]
+[node name="List" type="HFlowContainer" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea/Scroll/GridMargin" unique_id=1533745526 node_paths=PackedStringArray("_loader", "_noProjectsView", "_summaryLabel", "_refreshButton")]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -632,6 +672,8 @@ theme_override_constants/v_separation = 14
 script = ExtResource("8_recents")
 _loader = NodePath("../../../Overlay/Loader")
 _noProjectsView = NodePath("../../../Overlay/NoRecents")
+_summaryLabel = NodePath("../../../../../../RecentHeader/ProjectSummary")
+_refreshButton = NodePath("../../../../../../RecentHeader/Refresh")
 
 [node name="Overlay" type="Control" parent="Page/Body/Main/MainMargin/MainContent/WorldPanel/WorldMargin/WorldArea" unique_id=521661821]
 layout_mode = 1
@@ -690,7 +732,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.53, 0.54, 0.59, 0.82)
 theme_override_fonts/font = ExtResource("11_regular")
 theme_override_font_sizes/font_size = 11
-text = "Create a world or open a project and it will appear here."
+text = "Create a world, open a local project, or sign in to access BrickVerse Cloud."
 horizontal_alignment = 1
 
 [node name="Copyright" type="Label" parent="Page/Body/Main/MainMargin/MainContent" unique_id=2146916958]
@@ -700,3 +742,205 @@ theme_override_fonts/font = ExtResource("11_regular")
 theme_override_font_sizes/font_size = 9
 text = "© Meta Games LLC"
 horizontal_alignment = 2
+
+[node name="CloudContent" type="VBoxContainer" parent="Page/Body/Main/MainMargin" unique_id=783450101]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CloudHeader" type="HBoxContainer" parent="Page/Body/Main/MainMargin/CloudContent" unique_id=783450102]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Copy" type="VBoxContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudHeader" unique_id=783450103]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="Page/Body/Main/MainMargin/CloudContent/CloudHeader/Copy" unique_id=783450104]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.96, 0.98, 1)
+theme_override_fonts/font = ExtResource("13_bold")
+theme_override_font_sizes/font_size = 22
+text = "Cloud projects"
+
+[node name="Hint" type="Label" parent="Page/Body/Main/MainMargin/CloudContent/CloudHeader/Copy" unique_id=783450105]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.56, 0.61, 0.78)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 11
+text = "Published and unpublished worlds owned by you or guilds you can edit"
+
+[node name="Summary" type="Label" parent="Page/Body/Main/MainMargin/CloudContent/CloudHeader" unique_id=783450106]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.56, 0.61, 0.78)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 10
+text = "Loading projects…"
+vertical_alignment = 1
+
+[node name="Refresh" type="Button" parent="Page/Body/Main/MainMargin/CloudContent/CloudHeader" unique_id=783450107]
+custom_minimum_size = Vector2(82, 36)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("IconButton")
+theme_override_styles/pressed = SubResource("IconButtonHover")
+theme_override_styles/hover = SubResource("IconButtonHover")
+text = "Refresh"
+
+[node name="Filters" type="HBoxContainer" parent="Page/Body/Main/MainMargin/CloudContent" unique_id=783450108]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Search" type="LineEdit" parent="Page/Body/Main/MainMargin/CloudContent/Filters" unique_id=783450109]
+custom_minimum_size = Vector2(280, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search projects, descriptions, or owners…"
+clear_button_enabled = true
+
+[node name="Owner" type="OptionButton" parent="Page/Body/Main/MainMargin/CloudContent/Filters" unique_id=783450110]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+item_count = 1
+popup/item_0/text = "All owners"
+popup/item_0/id = 0
+selected = 0
+
+[node name="Status" type="OptionButton" parent="Page/Body/Main/MainMargin/CloudContent/Filters" unique_id=783450111]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "All projects"
+popup/item_0/id = 0
+popup/item_1/text = "Downloaded"
+popup/item_1/id = 1
+popup/item_2/text = "Cloud only"
+popup/item_2/id = 2
+selected = 0
+
+[node name="Sort" type="OptionButton" parent="Page/Body/Main/MainMargin/CloudContent/Filters" unique_id=783450112]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "Recently updated"
+popup/item_0/id = 0
+popup/item_1/text = "Name"
+popup/item_1/id = 1
+popup/item_2/text = "Newest created"
+popup/item_2/id = 2
+selected = 0
+
+[node name="CloudPanel" type="PanelContainer" parent="Page/Body/Main/MainMargin/CloudContent" unique_id=783450113]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("WorldPanel")
+
+[node name="Margin" type="MarginContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel" unique_id=783450114]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="Area" type="Control" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin" unique_id=783450115]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area" unique_id=783450116]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="GridMargin" type="MarginContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Scroll" unique_id=783450117]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="List" type="HFlowContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Scroll/GridMargin" unique_id=783450118 node_paths=PackedStringArray("_loader", "_noProjectsView", "_summaryLabel", "_refreshButton", "_searchInput", "_ownerFilter", "_statusFilter", "_sortFilter", "_emptyTitle", "_emptyHint")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+script = ExtResource("8_recents")
+_cloudOnly = true
+_loader = NodePath("../../../Overlay/Loader")
+_noProjectsView = NodePath("../../../Overlay/Empty")
+_summaryLabel = NodePath("../../../../../../CloudHeader/Summary")
+_refreshButton = NodePath("../../../../../../CloudHeader/Refresh")
+_searchInput = NodePath("../../../../../../Filters/Search")
+_ownerFilter = NodePath("../../../../../../Filters/Owner")
+_statusFilter = NodePath("../../../../../../Filters/Status")
+_sortFilter = NodePath("../../../../../../Filters/Sort")
+_emptyTitle = NodePath("../../../Overlay/Empty/Title")
+_emptyHint = NodePath("../../../Overlay/Empty/Hint")
+
+[node name="Overlay" type="Control" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area" unique_id=783450119]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Loader" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Overlay" unique_id=783450120 instance=ExtResource("9_loader")]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -30.0
+offset_right = 30.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Empty" type="VBoxContainer" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Overlay" unique_id=783450121]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Overlay/Empty" unique_id=783450122]
+modulate = Color(0.52, 0.54, 0.61, 0.62)
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("15_8840e")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Overlay/Empty" unique_id=783450123]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.83, 0.87, 1)
+theme_override_fonts/font = ExtResource("12_semibold")
+theme_override_font_sizes/font_size = 14
+text = "No cloud projects"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Page/Body/Main/MainMargin/CloudContent/CloudPanel/Margin/Area/Overlay/Empty" unique_id=783450124]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.53, 0.54, 0.59, 0.82)
+theme_override_fonts/font = ExtResource("11_regular")
+theme_override_font_sizes/font_size = 11
+text = "Published and unpublished editable worlds will appear here."
+horizontal_alignment = 1

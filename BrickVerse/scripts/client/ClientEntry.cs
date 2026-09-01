@@ -63,7 +63,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private readonly List<int> _localTestClientProcessIds = [];
 
-	private Timer? _serverStatusPollTimer;
+	private Godot.Timer? _serverStatusPollTimer;
 	private APIClientAuthResponseMessage? _clientConnectionInfo;
 	private string? _debugServerAddress;
 	private int? _debugServerPort;
@@ -704,7 +704,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private void StartServerStatusPolling()
 	{
-		_serverStatusPollTimer = new Timer();
+		_serverStatusPollTimer = new Godot.Timer();
 		AddChild(_serverStatusPollTimer);
 
 		_serverStatusPollTimer.Timeout += PollServerStatus;

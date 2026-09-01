@@ -46,7 +46,7 @@ public partial class PublishPopup : PopupWindowBase
 	private string? _nextCursor;
 	private int _page = 1;
 	private int _fetchGeneration;
-	private Timer _searchDebounce = null!;
+	private Godot.Timer _searchDebounce = null!;
 	public PublishTypeEnum PublishType;
 	public Instance Target = null!;
 
@@ -121,7 +121,7 @@ public partial class PublishPopup : PopupWindowBase
 		parent.AddChild(filters);
 		parent.MoveChild(filters, 0);
 
-		_searchDebounce = new Timer { OneShot = true, WaitTime = 0.3 };
+		_searchDebounce = new Godot.Timer { OneShot = true, WaitTime = 0.3 };
 		AddChild(_searchDebounce);
 		_searchInput.TextChanged += _ => _searchDebounce.Start();
 		_searchDebounce.Timeout += ResetAndFetch;

@@ -1,0 +1,8 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- generic enter/exit tracking volume -->
+  <path d="M9 14L24 7L39 14V34L24 41L9 34V14Z" fill="#9B72F2" fill-opacity=".22" stroke="#9B72F2" stroke-width="3"/>
+  <path d="M9 14L24 21L39 14M24 21V41" stroke="#C9B2FF" stroke-width="2.2" opacity=".9"/>
+  <!-- entering/exiting markers -->
+  <path d="M12 27H20M17 23L21 27L17 31" stroke="#7147CC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36 27H28M31 23L27 27L31 31" stroke="#C9B2FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

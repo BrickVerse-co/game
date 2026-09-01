@@ -7,6 +7,7 @@ using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.Components;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
+using BrickVerse.Datamodel.Creator;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -21,6 +22,8 @@ public sealed partial class SettingsPopup : PopupWindowBase
 	[Export] private LineEdit _settingsSearchEdit = null!;
 	[Export] private LineEdit _keybindSearchEdit = null!;
 	[Export] private Label _sectionTitle = null!;
+	[Export] private Label _sectionDescription = null!;
+	[Export] private Button _resetSectionButton = null!;
 
 	private static readonly Dictionary<string, List<SettingDef>> SectionDefs =
 		CreatorSettingsRegistry.Definitions.Values
@@ -64,6 +67,9 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 			TreeItem ch = root.CreateChild();
 			ch.SetText(0, section.Label);
+			if (!string.IsNullOrWhiteSpace(section.IconPath))
+				ch.SetIcon(0, GD.Load<Texture2D>(section.IconPath));
+			ch.SetTooltipText(0, section.Description);
 			_itemToSectionKey[ch] = section.Key;
 
 			firstSelected ??= ch;
@@ -72,6 +78,7 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		_categoryTree.ItemSelected += OnItemSelected;
 		_settingsSearchEdit.TextChanged += OnSearchChanged;
 		_keybindSearchEdit.TextChanged += OnSearchChanged;
+		_resetSectionButton.Pressed += ResetActiveSection;
 		firstSelected?.Select(0);
 		base._Ready();
 	}
@@ -81,6 +88,7 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		_categoryTree.ItemSelected -= OnItemSelected;
 		_settingsSearchEdit.TextChanged -= OnSearchChanged;
 		_keybindSearchEdit.TextChanged -= OnSearchChanged;
+		_resetSectionButton.Pressed -= ResetActiveSection;
 		base._ExitTree();
 	}
 
@@ -99,7 +107,9 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		}
 
 		_activeSection = sectionKey;
-		_sectionTitle.Text = SortedSections.FirstOrDefault(section => section.Key == sectionKey)?.Label ?? "Settings";
+		SettingSectionDef? section = SortedSections.FirstOrDefault(item => item.Key == sectionKey);
+		_sectionTitle.Text = section?.Label ?? "Settings";
+		_sectionDescription.Text = section?.Description ?? "";
 
 		if (!_sectionUIs.TryGetValue(sectionKey, out var cachedUIs))
 		{
@@ -138,6 +148,13 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 		UpdateSearchVisibility();
 		ApplyFiltersToSection(sectionKey);
+	}
+
+	private async void ResetActiveSection()
+	{
+		if (string.IsNullOrWhiteSpace(_activeSection) || !SectionDefs.TryGetValue(_activeSection, out List<SettingDef>? defs)) return;
+		if (!await CreatorService.Interface.PromptConfirmation($"Reset all {_sectionTitle.Text} settings to their defaults?")) return;
+		foreach (SettingDef def in defs) CreatorSettingsService.Instance.Set<object>(def.Key, def.UntypedDefault);
 	}
 
 	private void OnSearchChanged(string _)

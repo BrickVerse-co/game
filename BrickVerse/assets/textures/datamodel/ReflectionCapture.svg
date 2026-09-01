@@ -1,0 +1,10 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- reflection probe -->
+<circle cx="24" cy="24" r="17" fill="#7147CC"/>
+<path d="M11 24C14.5 17 19 13 24 13C29 13 33.5 17 37 24C33.5 31 29 35 24 35C19 35 14.5 31 11 24Z" fill="#9B72F2"/>
+<path d="M24 13V35" stroke="#C9B2FF" stroke-width="2.5"/>
+<path d="M14 24H34" stroke="#C9B2FF" stroke-width="2.5"/>
+<path d="M18 17C20 19 21 21 21 24C21 27 20 29 18 31M30 17C28 19 27 21 27 24C27 27 28 29 30 31"
+ stroke="#C9B2FF" stroke-width="2" stroke-linecap="round"/>
+<circle cx="19" cy="18" r="3" fill="white" fill-opacity=".75"/>
+</svg>

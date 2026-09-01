@@ -11,7 +11,6 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 {
 	private const int AvatarSize = 24;
 	private const int BadgeSize = 16;
-	private const string DefaultHeadshotUrl = "https://f004.backblazeb2.com/file/brickverse-ugc-public/defaults/headshot.png";
 	private const int MenuSwitchAccount = 0;
 	private const int MenuRefreshIdentity = 1;
 	private const int MenuCopyUserId = 2;
@@ -71,7 +70,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			MouseFilter = MouseFilterEnum.Stop,
 			CustomMinimumSize = new(AvatarSize, AvatarSize),
 			SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-			SizeFlagsVertical = SizeFlags.ShrinkBegin,
+			SizeFlagsVertical = SizeFlags.ShrinkCenter,
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
 			TooltipText = "Authenticated account",
@@ -84,6 +83,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		{
 			MouseFilter = MouseFilterEnum.Ignore,
 			CustomMinimumSize = new(BadgeSize, BadgeSize),
+			SizeFlagsVertical = SizeFlags.ShrinkCenter,
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			Visible = false,
@@ -197,6 +197,16 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 
 	private static string ResolveHeadshotUrl(CreatorAPI.ToolbarIdentity? identity, OpenIdUserInfoResponse? openId)
 	{
+		// The authenticated thumbnail route is authoritative and resolves the
+		// user's current rendered headshot instead of an account-wide fallback.
+		string userId = openId?.Sub ?? CreatorAPI.UserID;
+		if (!string.IsNullOrWhiteSpace(userId) && userId != "0")
+		{
+			return Globals.ApiEndpoint.PathJoin(
+				$"/v3/user/{Uri.EscapeDataString(userId)}/thumbnail?size=48"
+			);
+		}
+
 		if (identity.HasValue && !string.IsNullOrWhiteSpace(identity.Value.HeadshotUrl))
 		{
 			return NormalizeUrl(identity.Value.HeadshotUrl);
@@ -215,7 +225,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			}
 		}
 
-		return DefaultHeadshotUrl;
+		return "";
 	}
 
 	private void UpdateBadge(CreatorAPI.ToolbarIdentity? identity)
@@ -240,22 +250,14 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 	private async System.Threading.Tasks.Task UpdateAvatarAsync(string url)
 	{
 		int requestId = ++_avatarRequestId;
-		await UpdateAvatarTextureAsync(url, requestId, false);
+		await UpdateAvatarTextureAsync(url, requestId);
 	}
 
-	private async System.Threading.Tasks.Task UpdateAvatarTextureAsync(string url, int requestId, bool isFallback)
+	private async System.Threading.Tasks.Task UpdateAvatarTextureAsync(string url, int requestId)
 	{
 		if (string.IsNullOrWhiteSpace(url))
 		{
-			if (!isFallback)
-			{
-				await UpdateAvatarTextureAsync(DefaultHeadshotUrl, requestId, true);
-			}
-			else if (requestId == _avatarRequestId)
-			{
-				_avatar.Texture = null;
-			}
-
+			if (requestId == _avatarRequestId) _avatar.Texture = null;
 			return;
 		}
 
@@ -264,11 +266,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			using SystemNetHttp.HttpResponseMessage response = await _http.GetAsync(url);
 			if (!response.IsSuccessStatusCode || requestId != _avatarRequestId)
 			{
-				if (!isFallback && requestId == _avatarRequestId)
-				{
-					await UpdateAvatarTextureAsync(DefaultHeadshotUrl, requestId, true);
-				}
-
+				if (requestId == _avatarRequestId) _avatar.Texture = null;
 				return;
 			}
 
@@ -287,11 +285,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 
 			if (err != Error.Ok || requestId != _avatarRequestId)
 			{
-				if (!isFallback && requestId == _avatarRequestId)
-				{
-					await UpdateAvatarTextureAsync(DefaultHeadshotUrl, requestId, true);
-				}
-
+				if (requestId == _avatarRequestId) _avatar.Texture = null;
 				return;
 			}
 
@@ -299,14 +293,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		}
 		catch
 		{
-			if (!isFallback && requestId == _avatarRequestId)
-			{
-				await UpdateAvatarTextureAsync(DefaultHeadshotUrl, requestId, true);
-			}
-			else if (requestId == _avatarRequestId)
-			{
-				_avatar.Texture = null;
-			}
+			if (requestId == _avatarRequestId) _avatar.Texture = null;
 		}
 	}
 

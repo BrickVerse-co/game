@@ -20,6 +20,8 @@ public static class CreatorSettingKeys
 		public const string SoundEffectsVolume = "creator.sound_effects_volume";
 		public const string BuildSoundVolume = "creator.build_sound_volume";
 		public const string UiSoundVolume = "creator.ui_sound_volume";
+		public const string ConfirmCloudDownload = "creator.confirm_cloud_download";
+		public const string RefreshCloudProjectsOnOpen = "creator.refresh_cloud_projects_on_open";
 	}
 
 	public static class Interface
@@ -80,6 +82,7 @@ public static class CreatorSettingKeys
 		public const string CloseModelWarning = "popups.close_model_warning";
 		public const string MoveFileConfirmation = "popups.move_file_confirmation";
 		public const string CloseTabWarning = "popups.close_tab_warning";
+		public const string ClosePlaceWarning = "popups.close_place_warning";
 		public const string ExecutorConfirmation = "popups.executor_confirmation";
 		public const string ExecutorSuccess = "popups.executor_success";
 		public const string PrefabScriptWarning = "popups.prefab_script_warning";

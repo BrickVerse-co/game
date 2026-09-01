@@ -1209,16 +1209,16 @@ public partial class TerrainEditor : Control
 		_previewMaterial.AlbedoColor = IsWaterMaterial
 			? new Color(0.1f, 0.72f, 0.95f, 0.28f)
 			: _tool switch
-		{
-			TerrainTool.Remove => new Color(1.0f, 0.25f, 0.25f, 0.32f),
-			TerrainTool.Paint => new Color(1.0f, 0.72f, 0.2f, 0.32f),
-			TerrainTool.Smooth => new Color(0.7f, 0.5f, 1.0f, 0.32f),
-			TerrainTool.Flatten => new Color(0.35f, 0.85f, 0.95f, 0.32f),
-			TerrainTool.Grow => new Color(0.3f, 0.9f, 0.5f, 0.32f),
-			TerrainTool.Erode => new Color(1.0f, 0.45f, 0.35f, 0.32f),
-			TerrainTool.Water => new Color(0.1f, 0.72f, 0.95f, 0.28f),
-			_ => new Color(0.25f, 0.7f, 1.0f, 0.32f)
-		};
+			{
+				TerrainTool.Remove => new Color(1.0f, 0.25f, 0.25f, 0.32f),
+				TerrainTool.Paint => new Color(1.0f, 0.72f, 0.2f, 0.32f),
+				TerrainTool.Smooth => new Color(0.7f, 0.5f, 1.0f, 0.32f),
+				TerrainTool.Flatten => new Color(0.35f, 0.85f, 0.95f, 0.32f),
+				TerrainTool.Grow => new Color(0.3f, 0.9f, 0.5f, 0.32f),
+				TerrainTool.Erode => new Color(1.0f, 0.45f, 0.35f, 0.32f),
+				TerrainTool.Water => new Color(0.1f, 0.72f, 0.95f, 0.28f),
+				_ => new Color(0.25f, 0.7f, 1.0f, 0.32f)
+			};
 	}
 
 	private bool IsMouseBlockedByUi()

@@ -13,7 +13,14 @@ internal static class WavefrontObjImporter
 	private sealed class Surface(string name)
 	{
 		public string Name { get; } = name;
+		public string MaterialName { get; set; } = "";
 		public List<VertexRef[]> Faces { get; } = [];
+	}
+	private sealed class MaterialSpec
+	{
+		public Color Diffuse = Colors.White;
+		public float Opacity = 1f;
+		public string TexturePath = "";
 	}
 
 	public static ArrayMesh Import(string path)
@@ -22,7 +29,9 @@ internal static class WavefrontObjImporter
 		List<Vector2> uvs = [];
 		List<Vector3> normals = [];
 		Dictionary<string, Surface> surfaces = new(StringComparer.OrdinalIgnoreCase);
-		Surface current = GetSurface("default");
+		Dictionary<string, MaterialSpec> materials = new(StringComparer.OrdinalIgnoreCase);
+		string objectName = "default", materialName = "";
+		Surface current = GetSurface();
 
 		foreach (string rawLine in File.ReadLines(path))
 		{
@@ -41,10 +50,17 @@ internal static class WavefrontObjImporter
 				case "vn" when parts.Length >= 4:
 					normals.Add(new Vector3(Parse(parts[1]), Parse(parts[2]), Parse(parts[3])).Normalized());
 					break;
-				case "usemtl":
 				case "g":
 				case "o":
-					current = GetSurface(parts.Length > 1 ? string.Join('_', parts[1..]) : "default");
+					objectName = parts.Length > 1 ? string.Join('_', parts[1..]) : "default";
+					current = GetSurface();
+					break;
+				case "usemtl":
+					materialName = parts.Length > 1 ? string.Join(' ', parts[1..]) : "";
+					current = GetSurface();
+					break;
+				case "mtllib" when parts.Length > 1:
+					for (int i = 1; i < parts.Length; i++) LoadMaterialLibrary(Path.Combine(Path.GetDirectoryName(path) ?? "", parts[i]), materials);
 					break;
 				case "f" when parts.Length >= 4:
 					VertexRef[] face = new VertexRef[parts.Length - 1];
@@ -74,6 +90,8 @@ internal static class WavefrontObjImporter
 			if (needsNormals) tool.GenerateNormals();
 			tool.Index();
 			tool.Commit(mesh);
+			if (!string.IsNullOrWhiteSpace(surface.MaterialName) && materials.TryGetValue(surface.MaterialName, out MaterialSpec? spec))
+				mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, CreateMaterial(spec));
 
 			void Add(VertexRef vertex)
 			{
@@ -87,11 +105,64 @@ internal static class WavefrontObjImporter
 		if (mesh.GetSurfaceCount() == 0) throw new InvalidDataException("The OBJ contains no polygon faces.");
 		return mesh;
 
-		Surface GetSurface(string name)
+		Surface GetSurface()
 		{
-			if (!surfaces.TryGetValue(name, out Surface? surface)) surfaces[name] = surface = new Surface(name);
+			string key = objectName + "\n" + materialName;
+			if (!surfaces.TryGetValue(key, out Surface? surface))
+			{
+				surfaces[key] = surface = new Surface(objectName);
+				surface.MaterialName = materialName;
+			}
 			return surface;
 		}
+	}
+
+	private static void LoadMaterialLibrary(string path, Dictionary<string, MaterialSpec> materials)
+	{
+		if (!File.Exists(path)) return;
+		MaterialSpec? current = null;
+		foreach (string rawLine in File.ReadLines(path))
+		{
+			string line = rawLine.Trim();
+			if (line.Length == 0 || line[0] == '#') continue;
+			string[] parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+			if (parts.Length == 0) continue;
+			switch (parts[0].ToLowerInvariant())
+			{
+				case "newmtl" when parts.Length > 1:
+					string name = string.Join(' ', parts[1..]);
+					materials[name] = current = new MaterialSpec();
+					break;
+				case "kd" when current != null && parts.Length >= 4:
+					current.Diffuse = new Color(Parse(parts[1]), Parse(parts[2]), Parse(parts[3]));
+					break;
+				case "d" when current != null && parts.Length >= 2:
+					current.Opacity = Mathf.Clamp(Parse(parts[1]), 0, 1);
+					break;
+				case "tr" when current != null && parts.Length >= 2:
+					current.Opacity = 1f - Mathf.Clamp(Parse(parts[1]), 0, 1);
+					break;
+				case "map_kd" when current != null && parts.Length >= 2:
+					current.TexturePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path) ?? "", string.Join(' ', parts[1..])));
+					break;
+			}
+		}
+	}
+
+	private static StandardMaterial3D CreateMaterial(MaterialSpec spec)
+	{
+		StandardMaterial3D material = new()
+		{
+			AlbedoColor = new Color(spec.Diffuse, spec.Opacity),
+			Transparency = spec.Opacity < 0.999f ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled,
+			TextureFilter = BaseMaterial3D.TextureFilterEnum.LinearWithMipmapsAnisotropic,
+		};
+		if (!string.IsNullOrWhiteSpace(spec.TexturePath) && File.Exists(spec.TexturePath))
+		{
+			Godot.Image image = Godot.Image.LoadFromFile(spec.TexturePath);
+			if (!image.IsEmpty()) material.AlbedoTexture = ImageTexture.CreateFromImage(image);
+		}
+		return material;
 	}
 
 	private static VertexRef ParseVertex(string value, int positions, int uvs, int normals)

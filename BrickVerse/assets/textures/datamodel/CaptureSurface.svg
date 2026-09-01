@@ -1,0 +1,9 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- planar capture surface -->
+<path d="M7 14L38 9L41 34L10 39L7 14Z" fill="#187FC4"/>
+<path d="M11 17L35 13L37 31L13 35L11 17Z" fill="#35ACFF"/>
+<path d="M14 30L20 23L24 27L29 20L35 28L14 32V30Z" fill="#8ACFFF"/>
+<circle cx="29" cy="18" r="3" fill="white" fill-opacity=".85"/>
+<!-- capture marker -->
+<path d="M5 9H12M5 9V16M43 39H36M43 39V32" stroke="#B9E3FF" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

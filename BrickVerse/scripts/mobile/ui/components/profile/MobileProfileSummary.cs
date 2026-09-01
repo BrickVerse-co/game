@@ -4,6 +4,7 @@ using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Utils;
 using Godot;
 namespace BrickVerse.Mobile.UI;
+
 public partial class MobileProfileSummary : VBoxContainer
 {
 	private BrickversianModel? _model; private string _userId = "";
