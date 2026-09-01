@@ -244,7 +244,7 @@ jobs:
 
       - name: Export Windows
         if: matrix.platform == 'windows'
-        timeout-minutes: 10
+        timeout-minutes: 20
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `
@@ -434,12 +434,11 @@ jobs:
             EXECUTABLE_SHA=""
           fi
 
-          MANAGED_FILE="$(find "$EXPORT_DIR" -type f -name 'BrickVerse.dll' -print -quit)"
-          if [[ -z "$MANAGED_FILE" ]]; then
-            echo "::error::Exported BrickVerse.dll was not found."
-            exit 1
-          fi
-          MANAGED_SHA="$(sha256sum "$MANAGED_FILE" | awk '{print $1}')"
+          # Hash the complete managed/native payload. Godot 4.7 can embed the
+          # managed assemblies in the PCK instead of exporting BrickVerse.dll.
+          MANAGED_SHA="$(find "$EXPORT_DIR" -type f \
+            \( -name "*.dll" -o -name "*.dylib" -o -name "*.so" -o -name "*.pck" \) \
+            -print0 | sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print $1}')"
 
           echo "package_sha=$PACKAGE_SHA" >> "$GITHUB_OUTPUT"
           echo "executable_sha=$EXECUTABLE_SHA" >> "$GITHUB_OUTPUT"

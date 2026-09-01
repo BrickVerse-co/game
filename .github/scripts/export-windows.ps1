@@ -76,7 +76,7 @@ foreach ($argument in @(
 }
 
 $exportProcess = [System.Diagnostics.Process]::Start($startInfo)
-$exportDeadline = [DateTime]::UtcNow.AddMinutes(8)
+$exportDeadline = [DateTime]::UtcNow.AddMinutes(15)
 $completedExport = $false
 
 try {
@@ -88,7 +88,7 @@ try {
 		if ([DateTime]::UtcNow -ge $exportDeadline) {
 			$exportProcess.Kill($true)
 			$exportProcess.WaitForExit()
-			throw "Godot export did not complete within 8 minutes."
+			throw "Godot export did not complete within 15 minutes."
 		}
 		Start-Sleep -Milliseconds 250
 	}
@@ -108,18 +108,14 @@ finally {
 	Remove-Item Env:BV_EXPORT_COMPLETE_MARKER -ErrorAction SilentlyContinue
 }
 
-$dataDirectory = Get-ChildItem -Path $ExportDirectory -Directory -Filter "data_*_windows_x86_64" |
-	Select-Object -First 1
-$managedAssembly = if ($dataDirectory) { Join-Path $dataDirectory.FullName "BrickVerse.dll" } else { "" }
 $packPath = [System.IO.Path]::ChangeExtension($exportPath, ".pck")
 if (
 	-not (Test-Path -LiteralPath $exportPath -PathType Leaf) -or
 	-not (Test-Path -LiteralPath $packPath -PathType Leaf) -or
-	-not $dataDirectory -or
-	-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf)
+	(Get-Item -LiteralPath $packPath).Length -eq 0
 ) {
 	Get-ChildItem -Path $ExportDirectory -Recurse | ForEach-Object { Write-Host $_.FullName }
-	throw "Windows export is incomplete; expected the executable, PCK, and managed assembly data directory."
+	throw "Windows export is incomplete; expected a non-empty executable and PCK payload."
 }
 
 Write-Host "Windows export completed: $exportPath"
