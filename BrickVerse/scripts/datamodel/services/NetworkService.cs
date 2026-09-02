@@ -1246,6 +1246,7 @@ public sealed partial class NetworkService : Instance
 			{
 				plr.IsReady = true;
 				plr.Anchored = false;
+				plr.Team ??= Root.Teams.GetDefaultTeam();
 				plr.Respawn();
 				Root.Players.InvokePlayerAdded(plr);
 				RpcId(peerID, nameof(NetRecvReportReady));

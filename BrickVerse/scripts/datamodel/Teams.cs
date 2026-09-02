@@ -6,6 +6,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
@@ -42,6 +43,11 @@ public sealed partial class Teams : Instance
 		}
 
 		return [.. teams];
+	}
+
+	internal Team? GetDefaultTeam()
+	{
+		return GetTeams().FirstOrDefault(team => team.IsDefault);
 	}
 
 	private void OnChildAdded(Instance instance)

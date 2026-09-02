@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using System.Collections.Generic;
 
 namespace BrickVerse.Datamodel;
@@ -13,6 +14,24 @@ public partial class Team : Instance
 {
 	private string _displayName = "";
 	private Color _color = new(1, 0, 0);
+	private bool _isDefault;
+
+	[ScriptProperty]
+	public BVSignal<Player> PlayerJoined { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Player> PlayerLeft { get; private set; } = new();
+
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool IsDefault
+	{
+		get => _isDefault;
+		set
+		{
+			_isDefault = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue("")]
 	public string DisplayName
@@ -55,4 +74,8 @@ public partial class Team : Instance
 		}
 		return [.. plr];
 	}
+
+	internal void InvokePlayerJoined(Player player) => PlayerJoined.Invoke(player);
+
+	internal void InvokePlayerLeft(Player player) => PlayerLeft.Invoke(player);
 }

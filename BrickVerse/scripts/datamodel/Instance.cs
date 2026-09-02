@@ -469,6 +469,21 @@ public partial class Instance : NetworkedObject
 		return null;
 	}
 
+	/// <summary>Child lookup, optionally including descendants.</summary>
+	[ScriptMethod]
+	public Instance? FindFirstChild(string name, bool recursive = false)
+	{
+		Instance? child = FindChild(name);
+		if (child != null || !recursive) return child;
+
+		foreach (Instance descendant in GetDescendants())
+		{
+			if (descendant.Name == name) return descendant;
+		}
+
+		return null;
+	}
+
 	public T? FindChild<T>(string name) where T : Instance
 	{
 		foreach (Instance child in Children)
@@ -541,6 +556,13 @@ public partial class Instance : NetworkedObject
 		}
 	}
 
+	/// <summary>Alias for WaitChild.</summary>
+	[ScriptMethod]
+	public Task<Instance?> WaitForChild(string name, float? timeoutSec = null)
+	{
+		return WaitChild(name, timeoutSec);
+	}
+
 	public async Task<T?> WaitChild<T>(string name, float? timeoutSec = null) where T : Instance
 	{
 		return (T?)await WaitChild(name, timeoutSec);
@@ -576,6 +598,26 @@ public partial class Instance : NetworkedObject
 			{
 				return child;
 			}
+		}
+
+		return null;
+	}
+
+	[ScriptMethod]
+	public Instance? FindFirstChildOfClass(string className)
+	{
+		string convertedName = XmlFormat.ConvertClassName(className);
+		return GetChildren().FirstOrDefault(child => child.ClassName == convertedName);
+	}
+
+	[ScriptMethod]
+	public Instance? FindFirstChildWhichIsA(string className, bool recursive = false)
+	{
+		foreach (Instance child in GetChildren())
+		{
+			if (child.IsA(className)) return child;
+			if (recursive && child.FindFirstChildWhichIsA(className, true) is Instance descendant)
+				return descendant;
 		}
 
 		return null;
@@ -657,6 +699,43 @@ public partial class Instance : NetworkedObject
 					return parent;
 				currentType = currentType.BaseType;
 			}
+			parent = parent.Parent;
+		}
+		return null;
+	}
+
+	[ScriptMethod]
+	public Instance? FindFirstAncestor(string name)
+	{
+		Instance? parent = Parent;
+		while (parent != null)
+		{
+			if (parent.Name == name) return parent;
+			parent = parent.Parent;
+		}
+		return null;
+	}
+
+	[ScriptMethod]
+	public Instance? FindFirstAncestorOfClass(string className)
+	{
+		string convertedName = XmlFormat.ConvertClassName(className);
+		Instance? parent = Parent;
+		while (parent != null)
+		{
+			if (parent.ClassName == convertedName) return parent;
+			parent = parent.Parent;
+		}
+		return null;
+	}
+
+	[ScriptMethod]
+	public Instance? FindFirstAncestorWhichIsA(string className)
+	{
+		Instance? parent = Parent;
+		while (parent != null)
+		{
+			if (parent.IsA(className)) return parent;
 			parent = parent.Parent;
 		}
 		return null;
@@ -807,6 +886,12 @@ public partial class Instance : NetworkedObject
 	}
 
 	[ScriptMethod]
+	public void ClearAllChildren()
+	{
+		foreach (Instance child in GetChildren()) child.Destroy();
+	}
+
+	[ScriptMethod]
 	public Instance[] GetChildrenOfClass(string className)
 	{
 		List<Instance> instances = [];
@@ -894,6 +979,20 @@ public partial class Instance : NetworkedObject
 			parent = parent.Parent;
 		}
 		return false;
+	}
+
+	[ScriptMethod]
+	public string GetFullName()
+	{
+		List<string> names = [];
+		Instance? current = this;
+		while (current != null)
+		{
+			names.Add(current.Name);
+			current = current.Parent;
+		}
+		names.Reverse();
+		return string.Join('.', names);
 	}
 
 	[ScriptMethod]
