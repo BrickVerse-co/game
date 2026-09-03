@@ -316,10 +316,19 @@ jobs:
 
           $packageSha = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $executableSha = (Get-FileHash -LiteralPath "$exportDirectory\BrickVerse.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          $managedFile = Get-ChildItem -LiteralPath $exportDirectory -Recurse -File -Filter 'BrickVerse.dll' |
-            Select-Object -First 1
-          if (-not $managedFile) { throw "Exported BrickVerse.dll was not found." }
-          $managedSha = (Get-FileHash -LiteralPath $managedFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $managedFiles = @(Get-ChildItem -LiteralPath $exportDirectory -Recurse -File |
+            Where-Object { $_.Extension -in '.dll', '.pck' } |
+            Sort-Object FullName)
+          if ($managedFiles.Count -eq 0) {
+            throw "No managed export payload was found under $exportDirectory. Expected at least one .dll or .pck file."
+          }
+
+          $managedManifest = Join-Path $env:RUNNER_TEMP 'managed-hashes.txt'
+          $managedFiles | ForEach-Object {
+            $fileHash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $($_.FullName)"
+          } | Set-Content -LiteralPath $managedManifest -Encoding utf8NoBOM
+          $managedSha = (Get-FileHash -LiteralPath $managedManifest -Algorithm SHA256).Hash.ToLowerInvariant()
 
           $version = "${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
           $blobPath = "binaries/${{ env.APP }}/windows/${{ env.RELEASE_CHANNEL }}/$version/BrickVerse-Windows.zip"
