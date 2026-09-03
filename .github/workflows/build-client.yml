@@ -121,12 +121,13 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
+            ${{ github.workspace }}/BrickVerse/.godot/editor
             ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/uid_cache.bin
             ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/extension_list.cfg
             ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/global_script_class_cache.cfg
-          key: godot-imports-windows-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg') }}
+          key: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg') }}
           restore-keys: |
-            godot-imports-windows-${{ env.GODOT_VERSION }}-
+            godot-imports-windows-v2-${{ env.GODOT_VERSION }}-
 
       - name: Stamp client build metadata
         shell: pwsh
