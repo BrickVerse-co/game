@@ -182,6 +182,7 @@ public sealed partial class Players : Instance
 		{
 			PeerIDToPlayer.Remove(plr.PeerID);
 			_idToPlayer.Remove(plr.UserID);
+			plr.Team = null;
 			PlayerRemoved.Invoke(plr);
 		}
 	}

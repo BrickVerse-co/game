@@ -120,19 +120,17 @@ jobs:
             exit 1
           fi
           chmod +x "$SERVER_BINARY"
-          DATA_DIR="$(find "$EXPORT_DIR" -maxdepth 1 -type d -name 'data_*_linuxbsd_x86_64' -print -quit)"
-          if [[ -z "$DATA_DIR" ]]; then
-            echo "::error::Godot Mono data directory data_*_linuxbsd_x86_64 is missing."
+          PACK_FILE="$EXPORT_DIR/BrickVerseServer.pck"
+          if [[ ! -s "$PACK_FILE" ]]; then
+            echo "::error::Godot resource pack is missing or empty: $PACK_FILE"
             find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
             exit 1
           fi
-          if ! find "$DATA_DIR" -type f -name 'BrickVerse.dll' -print -quit | grep -q .; then
-            echo "::error::BrickVerse.dll is missing from the Godot Mono data directory."
-            exit 1
-          fi
-          LUAU_VM="$(find "$DATA_DIR" -type f -name 'Luau.VM.so' -print -quit)"
+          # Godot 4.7 may store managed assemblies in the PCK instead of the
+          # legacy data_* directory, so validate the portable export payload.
+          LUAU_VM="$(find "$EXPORT_DIR" -type f -name 'Luau.VM.so' -print -quit)"
           if [[ -z "$LUAU_VM" ]]; then
-            echo "::error::Luau.VM.so is missing from the Godot Mono data directory."
+            echo "::error::Luau.VM.so is missing from the server export."
             exit 1
           fi
 

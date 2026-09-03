@@ -4,10 +4,15 @@ extends EditorPlugin
 const AUTOLOAD_NAME = "GodotIapPlugin"
 
 var _export_plugin: GodotIapExportPlugin
+var _owns_autoload := false
 
 func _enter_tree() -> void:
-	# Add autoload singleton for easy access
-	add_autoload_singleton(AUTOLOAD_NAME, "res://addons/godot-iap/godot_iap.gd")
+	# The application normally declares this singleton in project.godot. Only
+	# create it for projects which use the addon without that declaration, and
+	# never remove a project-owned autoload while the editor is shutting down.
+	if not ProjectSettings.has_setting("autoload/" + AUTOLOAD_NAME):
+		add_autoload_singleton(AUTOLOAD_NAME, "res://addons/godot-iap/godot_iap.gd")
+		_owns_autoload = true
 
 	# Add export plugin for Android
 	_export_plugin = GodotIapExportPlugin.new()
@@ -16,8 +21,9 @@ func _enter_tree() -> void:
 	print("[GodotIap] Plugin enabled")
 
 func _exit_tree() -> void:
-	# Remove autoload singleton
-	remove_autoload_singleton(AUTOLOAD_NAME)
+	if _owns_autoload:
+		remove_autoload_singleton(AUTOLOAD_NAME)
+		_owns_autoload = false
 
 	# Remove export plugin
 	if _export_plugin:

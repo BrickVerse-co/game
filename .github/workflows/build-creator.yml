@@ -231,7 +231,7 @@ jobs:
 
       - name: Export Windows
         if: matrix.platform == 'windows'
-        timeout-minutes: 10
+        timeout-minutes: 20
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `

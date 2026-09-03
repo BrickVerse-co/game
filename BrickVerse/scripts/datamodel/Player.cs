@@ -290,6 +290,8 @@ public sealed partial class Player : NPC
 			_team = value;
 			if (_team != old)
 			{
+				old?.InvokePlayerLeft(this);
+				_team?.InvokePlayerJoined(this);
 				TeamChanged.Invoke(_team);
 				Root.Teams.DispatchTeamUpdate();
 				if (value != null)
