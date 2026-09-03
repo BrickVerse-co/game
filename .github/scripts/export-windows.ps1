@@ -62,50 +62,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $exportPath = Join-Path $ExportDirectory $ExportFile
-$completionMarker = Join-Path $env:RUNNER_TEMP "brickverse-export-$([Guid]::NewGuid().ToString('N')).complete"
-$env:BV_EXPORT_COMPLETE_MARKER = $completionMarker
-$startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-$startInfo.FileName = $godot.FullName
-$startInfo.UseShellExecute = $false
-foreach ($argument in @(
-	"--headless",
-	"--path", $ProjectDirectory,
-	"--export-release", $ExportPreset, $exportPath
-)) {
-	[void]$startInfo.ArgumentList.Add($argument)
-}
-
-$exportProcess = [System.Diagnostics.Process]::Start($startInfo)
-$exportDeadline = [DateTime]::UtcNow.AddMinutes(15)
-$completedExport = $false
-
-try {
-	while (-not $exportProcess.HasExited) {
-		if (Test-Path -LiteralPath $completionMarker -PathType Leaf) {
-			$completedExport = $true
-			break
-		}
-		if ([DateTime]::UtcNow -ge $exportDeadline) {
-			$exportProcess.Kill($true)
-			$exportProcess.WaitForExit()
-			throw "Godot export did not complete within 15 minutes."
-		}
-		Start-Sleep -Milliseconds 250
-	}
-
-	if ($completedExport -and -not $exportProcess.WaitForExit(5000)) {
-		Write-Warning "Godot finished exporting but stalled during shutdown; terminating the editor process."
-		$exportProcess.Kill($true)
-		$exportProcess.WaitForExit()
-	}
-
-	if (-not $completedExport -and $exportProcess.ExitCode -ne 0) {
-		throw "Godot export failed with exit code $($exportProcess.ExitCode)."
-	}
-}
-finally {
-	Remove-Item -LiteralPath $completionMarker -Force -ErrorAction SilentlyContinue
-	Remove-Item Env:BV_EXPORT_COMPLETE_MARKER -ErrorAction SilentlyContinue
+& $godot.FullName --headless --path $ProjectDirectory --export-release $ExportPreset $exportPath
+if ($LASTEXITCODE -ne 0) {
+	throw "Godot export failed with exit code $LASTEXITCODE."
 }
 
 $packPath = [System.IO.Path]::ChangeExtension($exportPath, ".pck")
