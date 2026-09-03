@@ -99,6 +99,35 @@ jobs:
         with:
           dotnet-version: "${{ env.DOTNET_VERSION }}"
 
+      - name: Restore NuGet cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('BrickVerse/**/*.csproj', 'BrickVerse.SourceGen/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore Windows Godot cache
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/godot
+            ~/AppData/Roaming/Godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
+          key: godot-windows-${{ env.GODOT_VERSION }}-${{ env.GODOT_TEMPLATE_VERSION }}
+
+      - name: Restore Windows asset import cache
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
+            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/uid_cache.bin
+            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/extension_list.cfg
+            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/global_script_class_cache.cfg
+          key: godot-imports-windows-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg') }}
+          restore-keys: |
+            godot-imports-windows-${{ env.GODOT_VERSION }}-
+
       - name: Stamp client build metadata
         shell: pwsh
         run: |
@@ -112,13 +141,6 @@ jobs:
           $content = $content -replace '(?m)^build/commit="[^"]*"$', "build/commit=`"$commit`""
           Set-Content -LiteralPath $projectSettings -Value $content -Encoding utf8NoBOM
           Write-Host "Stamped BrickVerse client $version ($channel) commit $commit"
-
-      - name: Restore NuGet cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('BrickVerse/**/*.csproj', 'BrickVerse.SourceGen/**/*.csproj') }}
-          restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore Godot cache
         if: matrix.platform != 'windows'
@@ -232,28 +254,6 @@ jobs:
 
           echo "Export contents:"
           find "$EXPORT_DIR" -maxdepth 3 -type f -print | sort
-
-      - name: Restore Windows Godot cache
-        if: matrix.platform == 'windows'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ runner.temp }}/godot
-            ~/AppData/Roaming/Godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
-          key: godot-windows-${{ env.GODOT_VERSION }}-${{ env.GODOT_TEMPLATE_VERSION }}
-
-      - name: Restore Windows asset import cache
-        if: matrix.platform == 'windows'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
-            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/uid_cache.bin
-            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/extension_list.cfg
-            ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/global_script_class_cache.cfg
-          key: godot-imports-windows-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg') }}
-          restore-keys: |
-            godot-imports-windows-${{ env.GODOT_VERSION }}-
 
       - name: Export Windows
         if: matrix.platform == 'windows'

@@ -56,7 +56,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
-& $godot.FullName --headless --path $ProjectDirectory --import
+& $godot.FullName --headless --editor --path $ProjectDirectory --import
 if ($LASTEXITCODE -ne 0) {
 	throw "Godot import failed with exit code $LASTEXITCODE."
 }
