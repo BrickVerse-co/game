@@ -169,7 +169,7 @@ jobs:
           set -euo pipefail
           dotnet restore "${{ github.workspace }}/${{ env.PROJECT_FILE }}"
           dotnet build "${{ github.workspace }}/${{ env.PROJECT_FILE }}" \
-            --configuration Release \
+            --configuration ExportRelease \
             --no-restore
 
       - name: Import Godot assets

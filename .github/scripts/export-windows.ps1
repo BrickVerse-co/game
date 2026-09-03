@@ -50,7 +50,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw "dotnet restore failed with exit code $LASTEXITCODE."
 }
 
-dotnet build $ProjectFile --configuration Release --no-restore --nologo
+dotnet build $ProjectFile --configuration ExportRelease --no-restore --nologo
 if ($LASTEXITCODE -ne 0) {
 	throw "dotnet build failed with exit code $LASTEXITCODE."
 }
