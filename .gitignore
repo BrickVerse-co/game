@@ -116,3 +116,7 @@ desktop.ini
 
 BrickVerse/builds/
 .fake
+
+# Native plugin backup files created while Godot has a Windows DLL loaded
+/BrickVerse/addons/**/~*.dll
+/BrickVerse/addons/**/*.dll~RF*.TMP
