@@ -10,6 +10,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-DirectoryFingerprint([string]$Directory) {
+	if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+		return $null
+	}
+
+	$files = @(Get-ChildItem -LiteralPath $Directory -Recurse -File)
+	if ($files.Count -eq 0) {
+		return $null
+	}
+
+	$totalLength = ($files | Measure-Object -Property Length -Sum).Sum
+	return "$($files.Count):$totalLength"
+}
+
 $godotArchive = Join-Path $env:RUNNER_TEMP "godot.zip"
 $godotDirectory = Join-Path $env:RUNNER_TEMP "godot"
 $templateArchive = Join-Path $env:RUNNER_TEMP "templates.tpz"
@@ -62,6 +76,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $exportPath = Join-Path $ExportDirectory $ExportFile
+$projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectFile)
+$managedDataDirectory = Join-Path $ExportDirectory "data_${projectName}_windows_x86_64"
+$managedAssembly = Join-Path $managedDataDirectory "$projectName.dll"
 $completionMarker = Join-Path $env:RUNNER_TEMP "brickverse-export-$([Guid]::NewGuid().ToString('N')).complete"
 $env:BV_EXPORT_COMPLETE_MARKER = $completionMarker
 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
@@ -78,12 +95,33 @@ foreach ($argument in @(
 $exportProcess = [System.Diagnostics.Process]::Start($startInfo)
 $exportDeadline = [DateTime]::UtcNow.AddMinutes(15)
 $completedExport = $false
+$lastManagedFingerprint = $null
+$stableManagedPolls = 0
 
 try {
 	while (-not $exportProcess.HasExited) {
 		if (Test-Path -LiteralPath $completionMarker -PathType Leaf) {
-			$completedExport = $true
-			break
+			# EditorExportPlugin._export_end can run before the .NET export plugin has
+			# finished copying its sidecar payload. Do not terminate a stalled Godot
+			# process until the managed directory exists and has stopped changing.
+			$currentFingerprint = Get-DirectoryFingerprint $managedDataDirectory
+			if (
+				$currentFingerprint -and
+				(Test-Path -LiteralPath $managedAssembly -PathType Leaf) -and
+				(Get-Item -LiteralPath $managedAssembly).Length -gt 0
+			) {
+				if ($currentFingerprint -eq $lastManagedFingerprint) {
+					$stableManagedPolls++
+				} else {
+					$lastManagedFingerprint = $currentFingerprint
+					$stableManagedPolls = 0
+				}
+
+				if ($stableManagedPolls -ge 8) {
+					$completedExport = $true
+					break
+				}
+			}
 		}
 		if ([DateTime]::UtcNow -ge $exportDeadline) {
 			$exportProcess.Kill($true)
@@ -113,10 +151,13 @@ $packPath = [System.IO.Path]::ChangeExtension($exportPath, ".pck")
 if (
 	-not (Test-Path -LiteralPath $exportPath -PathType Leaf) -or
 	-not (Test-Path -LiteralPath $packPath -PathType Leaf) -or
-	(Get-Item -LiteralPath $packPath).Length -eq 0
+	(Get-Item -LiteralPath $packPath).Length -eq 0 -or
+	-not (Test-Path -LiteralPath $managedDataDirectory -PathType Container) -or
+	-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf) -or
+	(Get-Item -LiteralPath $managedAssembly).Length -eq 0
 ) {
 	Get-ChildItem -Path $ExportDirectory -Recurse | ForEach-Object { Write-Host $_.FullName }
-	throw "Windows export is incomplete; expected a non-empty executable and PCK payload."
+	throw "Windows export is incomplete; expected a non-empty executable, PCK, and '$([System.IO.Path]::GetFileName($managedDataDirectory))' managed payload."
 }
 
 Write-Host "Windows export completed: $exportPath"
