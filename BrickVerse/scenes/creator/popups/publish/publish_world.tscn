@@ -264,6 +264,20 @@ theme_override_styles/normal = SubResource("FieldBg")
 placeholder_text = "Tell players what this place is about..."
 wrap_mode = 1
 
+[node name="CommitMessageLabel" type="Label" parent="Modal/Body"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_bt5w7")
+theme_override_font_sizes/font_size = 12
+text = "Commit message (optional)"
+
+[node name="CommitMessage" type="LineEdit" parent="Modal/Body"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("FieldBg")
+placeholder_text = "Describe what changed"
+max_length = 160
+
 [node name="PublishAsLabel" type="Label" parent="Modal/Body" unique_id=1828265531]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bt5w7")

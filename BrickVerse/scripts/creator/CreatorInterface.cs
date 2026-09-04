@@ -826,6 +826,31 @@ public partial class CreatorInterface : Control, IScriptObject
 		return await tcs.Task;
 	}
 
+	public async Task<string?> PromptCommitMessage(string defaultMessage = "")
+	{
+		TaskCompletionSource<string?> tcs = new();
+		ConfirmationDialog dialog = new()
+		{
+			Title = "Publish changes",
+			DialogText = "Optionally describe this revision for collaborators.",
+			OkButtonText = "Publish",
+			CancelButtonText = "Cancel",
+		};
+		LineEdit input = new()
+		{
+			PlaceholderText = "Commit message (optional)",
+			Text = defaultMessage,
+			MaxLength = 160,
+			CustomMinimumSize = new Vector2(420, 38),
+		};
+		dialog.AddChild(input);
+		dialog.Confirmed += () => { tcs.TrySetResult(input.Text.Trim()); dialog.QueueFree(); };
+		dialog.Canceled += () => { tcs.TrySetResult(null); dialog.QueueFree(); };
+		PopupWindow(dialog);
+		input.GrabFocus();
+		return await tcs.Task;
+	}
+
 	public void PromptRenameFile(string filePath)
 	{
 		if (CreatorService.CurrentSession == null)
@@ -965,6 +990,9 @@ public partial class CreatorInterface : Control, IScriptObject
 			return;
 		}
 
+		string? commitMessage = await PromptCommitMessage($"Publish {world.WorldName}");
+		if (commitMessage == null) return;
+
 		LoadOverlay?.SetTitle("Publishing world");
 		LoadOverlay?.SetStatus("Saving current changes");
 		LoadOverlay?.Show();
@@ -986,7 +1014,8 @@ public partial class CreatorInterface : Control, IScriptObject
 				packed,
 				world.UniverseID,
 				world.WorldID,
-				true
+				true,
+				commitMessage: commitMessage
 			);
 			if (!response.Success || response.WorldId <= 0 || response.UniverseId <= 0)
 				throw new InvalidDataException("The server returned an invalid publish response.");

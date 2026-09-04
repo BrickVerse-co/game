@@ -1536,7 +1536,8 @@ public static class CreatorAPI
 		long? worldId = 0,
 		bool publish = true,
 		string? creationOwnerId = null,
-		string? creationOwnerType = "USER"
+		string? creationOwnerType = "USER",
+		string? commitMessage = null
 	)
 	{
 		if (!IsUserAuthenticated)
@@ -1551,6 +1552,12 @@ public static class CreatorAPI
 		form.Add(BVHttpClient.FormString("universeId", resolvedUniverseId.ToString()));
 		form.Add(BVHttpClient.FormString("worldId", resolvedWorldId.ToString()));
 		form.Add(BVHttpClient.FormString("publish", publish ? "true" : "false"));
+		form.Add(BVHttpClient.FormString(
+			"commitMessage",
+			string.IsNullOrWhiteSpace(commitMessage)
+				? (publish ? "Publish from BrickVerse Creator" : "Save from BrickVerse Creator")
+				: commitMessage.Trim()
+		));
 
 		if (isNewUniverse)
 		{
