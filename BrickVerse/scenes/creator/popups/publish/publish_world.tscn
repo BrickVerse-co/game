@@ -130,13 +130,13 @@ transparent_bg = true
 oversampling_override = 1.0
 title = "Publish World"
 initial_position = 2
-size = Vector2i(520, 560)
+size = Vector2i(520, 640)
 exclusive = true
 unresizable = true
 borderless = true
 transparent = true
 popup_window = true
-min_size = Vector2i(520, 560)
+min_size = Vector2i(520, 640)
 theme = ExtResource("1_jjpyp")
 script = ExtResource("2_jjpyp")
 
