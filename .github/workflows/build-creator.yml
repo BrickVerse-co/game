@@ -70,6 +70,15 @@ jobs:
           fetch-depth: 1
           submodules: recursive
 
+      - name: Install Godot CEF browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${{ runner.temp }}/godot-cef-v1.15.4.zip"
+          curl --fail --location --retry 3 --output "$archive" "https://github.com/dsh0416/godot-cef/releases/download/v1.15.4/godot_cef-v1.15.4.zip"
+          unzip -q "$archive" "dist/addons/godot_cef/*" -d "${{ runner.temp }}/godot-cef"
+          mkdir -p BrickVerse/addons/godot_cef
+          cp -a "${{ runner.temp }}/godot-cef/dist/addons/godot_cef/." BrickVerse/addons/godot_cef/
       - name: Verify Git LFS assets
         shell: bash
         run: |
