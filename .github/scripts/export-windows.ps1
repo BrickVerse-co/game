@@ -10,20 +10,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Get-DirectoryFingerprint([string]$Directory) {
-	if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
-		return $null
-	}
-
-	$files = @(Get-ChildItem -LiteralPath $Directory -Recurse -File)
-	if ($files.Count -eq 0) {
-		return $null
-	}
-
-	$totalLength = ($files | Measure-Object -Property Length -Sum).Sum
-	return "$($files.Count):$totalLength"
-}
-
 $godotArchive = Join-Path $env:RUNNER_TEMP "godot.zip"
 $godotDirectory = Join-Path $env:RUNNER_TEMP "godot"
 $templateArchive = Join-Path $env:RUNNER_TEMP "templates.tpz"
@@ -70,94 +56,30 @@ if ($LASTEXITCODE -ne 0) {
 }
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
-& $godot.FullName --headless --quiet --editor --path $ProjectDirectory --import
-if ($LASTEXITCODE -ne 0) {
-	throw "Godot import failed with exit code $LASTEXITCODE."
-}
-
 $exportPath = Join-Path $ExportDirectory $ExportFile
-$projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectFile)
-$managedDataDirectory = Join-Path $ExportDirectory "data_${projectName}_windows_x86_64"
-$managedAssembly = Join-Path $managedDataDirectory "$projectName.dll"
-$completionMarker = Join-Path $env:RUNNER_TEMP "brickverse-export-$([Guid]::NewGuid().ToString('N')).complete"
-$env:BV_EXPORT_COMPLETE_MARKER = $completionMarker
-$startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-$startInfo.FileName = $godot.FullName
-$startInfo.UseShellExecute = $false
-foreach ($argument in @(
-	"--headless",
-	"--path", $ProjectDirectory,
-	"--export-release", $ExportPreset, $exportPath
-)) {
-	[void]$startInfo.ArgumentList.Add($argument)
-}
 
-$exportProcess = [System.Diagnostics.Process]::Start($startInfo)
-$exportDeadline = [DateTime]::UtcNow.AddMinutes(15)
-$completedExport = $false
-$lastManagedFingerprint = $null
-$stableManagedPolls = 0
-
-try {
-	while (-not $exportProcess.HasExited) {
-		if (Test-Path -LiteralPath $completionMarker -PathType Leaf) {
-			# EditorExportPlugin._export_end can run before the .NET export plugin has
-			# finished copying its sidecar payload. Do not terminate a stalled Godot
-			# process until the managed directory exists and has stopped changing.
-			$currentFingerprint = Get-DirectoryFingerprint $managedDataDirectory
-			if (
-				$currentFingerprint -and
-				(Test-Path -LiteralPath $managedAssembly -PathType Leaf) -and
-				(Get-Item -LiteralPath $managedAssembly).Length -gt 0
-			) {
-				if ($currentFingerprint -eq $lastManagedFingerprint) {
-					$stableManagedPolls++
-				} else {
-					$lastManagedFingerprint = $currentFingerprint
-					$stableManagedPolls = 0
-				}
-
-				if ($stableManagedPolls -ge 8) {
-					$completedExport = $true
-					break
-				}
-			}
-		}
-		if ([DateTime]::UtcNow -ge $exportDeadline) {
-			$exportProcess.Kill($true)
-			$exportProcess.WaitForExit()
-			throw "Godot export did not complete within 15 minutes."
-		}
-		Start-Sleep -Milliseconds 250
-	}
-
-	if ($completedExport -and -not $exportProcess.WaitForExit(5000)) {
-		Write-Warning "Godot finished exporting but stalled during shutdown; terminating the editor process."
-		$exportProcess.Kill($true)
-		$exportProcess.WaitForExit()
-	}
-
-	if (-not $completedExport -and $exportProcess.ExitCode -ne 0) {
-		throw "Godot export failed with exit code $($exportProcess.ExitCode)."
-	}
-}
-finally {
-	Remove-Item -LiteralPath $completionMarker -Force -ErrorAction SilentlyContinue
-	Remove-Item Env:BV_EXPORT_COMPLETE_MARKER -ErrorAction SilentlyContinue
-	$exportProcess.Dispose()
+& $godot.FullName --headless --path $ProjectDirectory --export-release $ExportPreset $exportPath
+if ($LASTEXITCODE -ne 0) {
+	throw "Godot export failed with exit code $LASTEXITCODE."
 }
 
 $packPath = [System.IO.Path]::ChangeExtension($exportPath, ".pck")
+$requiredNativeLibraries = @(
+	"Luau.VM.dll",
+	"Luau.Compiler.dll",
+	"discord_game_sdk.dll"
+)
+$missingNativeLibraries = @($requiredNativeLibraries | Where-Object {
+	-not (Get-ChildItem -LiteralPath $ExportDirectory -Recurse -File -Filter $_ -ErrorAction SilentlyContinue)
+})
 if (
 	-not (Test-Path -LiteralPath $exportPath -PathType Leaf) -or
 	-not (Test-Path -LiteralPath $packPath -PathType Leaf) -or
 	(Get-Item -LiteralPath $packPath).Length -eq 0 -or
-	-not (Test-Path -LiteralPath $managedDataDirectory -PathType Container) -or
-	-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf) -or
-	(Get-Item -LiteralPath $managedAssembly).Length -eq 0
+	$missingNativeLibraries.Count -gt 0
 ) {
 	Get-ChildItem -Path $ExportDirectory -Recurse | ForEach-Object { Write-Host $_.FullName }
-	throw "Windows export is incomplete; expected a non-empty executable, PCK, and '$([System.IO.Path]::GetFileName($managedDataDirectory))' managed payload."
+	throw "Windows export is incomplete; expected a non-empty executable, PCK, and the required native payload: $($requiredNativeLibraries -join ', ')."
 }
 
 Write-Host "Windows export completed: $exportPath"
