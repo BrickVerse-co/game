@@ -71,7 +71,7 @@ Unregister-ScheduledTask -TaskName godot_remote_debug -Confirm:$false -ErrorActi
 Remove-Item -Recurse -Force '{temp_dir}'"
 dotnet/include_scripts_content=false
 dotnet/include_debug_symbols=false
-dotnet/embed_build_outputs=false
+dotnet/embed_build_outputs=true
 
 [preset.1]
 
@@ -146,7 +146,7 @@ Unregister-ScheduledTask -TaskName godot_remote_debug -Confirm:$false -ErrorActi
 Remove-Item -Recurse -Force '{temp_dir}'"
 dotnet/include_scripts_content=false
 dotnet/include_debug_symbols=false
-dotnet/embed_build_outputs=false
+dotnet/embed_build_outputs=true
 
 [preset.2]
 

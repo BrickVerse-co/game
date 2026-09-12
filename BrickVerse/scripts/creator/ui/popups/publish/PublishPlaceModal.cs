@@ -39,6 +39,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		public PublishOwnerType OwnerType { get; init; }
 		public string OwnerId { get; init; } = "";
 		public string? GuildId { get; init; }
+		public string CommitMessage { get; init; } = "";
 	}
 
 	public event Action<PublishPlaceRequest>? PublishRequested;
@@ -55,6 +56,9 @@ public partial class PublishPlaceModal : PopupWindowBase
 
 	[Export]
 	private TextEdit _descriptionInput = null!;
+
+	[Export]
+	private LineEdit _commitMessageInput = null!;
 
 	[Export]
 	private Button _ownerOption = null!;
@@ -131,7 +135,8 @@ public partial class PublishPlaceModal : PopupWindowBase
 					request.WorldId,
 					true,
 					request.OwnerId,
-					request.OwnerType == PublishOwnerType.Guild ? "guild" : "user"
+					request.OwnerType == PublishOwnerType.Guild ? "guild" : "user",
+					request.CommitMessage
 				);
 
 				if (
@@ -179,6 +184,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_placeNameInput.Text = world.WorldName ?? "A cool planet";
 		_universeNameInput.Text = world.UniverseName ?? "The Universe";
 		_descriptionInput.Text = world.UniverseDescription ?? "A description of the universe.";
+		_commitMessageInput.Text = $"Publish {world.WorldName}";
 
 		CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(
 			limitToEditable: true
@@ -232,6 +238,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_placeNameInput.Editable = !busy;
 		_universeNameInput.Editable = !busy;
 		_descriptionInput.Editable = !busy;
+		_commitMessageInput.Editable = !busy;
 		_ownerOption.Disabled = busy;
 		_guildOption.Disabled = busy;
 
@@ -296,6 +303,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		string worldName = _placeNameInput.Text.Trim();
 		string universeName = _universeNameInput.Text.Trim();
 		string universeDescription = _descriptionInput.Text.Trim();
+		string commitMessage = _commitMessageInput.Text.Trim();
 
 		if (string.IsNullOrWhiteSpace(worldName))
 		{
@@ -354,6 +362,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 				GuildId = guildId,
 				UniverseId = world?.UniverseID ?? 0,
 				WorldId = world?.WorldID ?? 0,
+				CommitMessage = commitMessage,
 			}
 		);
 	}
@@ -364,6 +373,7 @@ public partial class PublishPlaceModal : PopupWindowBase
 		_universeNameInput ??= GetNode<LineEdit>("Modal/Body/UniverseName");
 		_placeNameInput ??= GetNode<LineEdit>("Modal/Body/PlaceName");
 		_descriptionInput ??= GetNode<TextEdit>("Modal/Body/Description");
+		_commitMessageInput ??= GetNode<LineEdit>("Modal/Body/CommitMessage");
 		_ownerOption ??= GetNode<Button>("Modal/Body/Ownership/Personal");
 		_guildOption ??= GetNode<Button>("Modal/Body/Ownership/Guild");
 		_guildDropdown ??= GetNode<OptionButton>("Modal/Body/GuildDropdown");

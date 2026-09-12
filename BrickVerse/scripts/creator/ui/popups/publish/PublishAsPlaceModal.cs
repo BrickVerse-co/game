@@ -659,6 +659,10 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 
 		try
 		{
+			string? commitMessage = await CreatorService.Interface.PromptCommitMessage(
+				_useNewWorld ? $"Create {_world.WorldName}" : $"Publish {_world.WorldName}"
+			);
+			if (commitMessage == null) { SetBusy(false); return; }
 			var loadOverlay = CreatorService.Interface.LoadOverlay;
 			string projectPath = _world.LinkedSession.ProjectFolderPath;
 			CreatorService.SaveCurrentFile();
@@ -678,7 +682,8 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 				target?.WorldId ?? target?.Id ?? 0,
 				true,
 				owner.Id,
-				owner.Type
+				owner.Type,
+				commitMessage
 			);
 
 			if (
@@ -711,7 +716,8 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 					reconciledPacked,
 					publishRes.UniverseId,
 					publishRes.WorldId,
-					true
+					true,
+					commitMessage: $"Reconcile project identity: {commitMessage}"
 				);
 				if (!reconciled.Success)
 					throw new InvalidDataException(
