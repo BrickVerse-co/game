@@ -3,23 +3,23 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using Godot;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
-using BrickVerse.Schemas.API;
 using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Datamodel;
+using Godot;
 using DatamodelMesh = BrickVerse.Datamodel.Mesh;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace BrickVerse.Creator;
 
@@ -53,16 +53,23 @@ public partial class CreatorEntry : Node
 		CreatorService creatorService = new();
 		AddChild(creatorService);
 
-		CreatorSettingsService creatorSettingsService = new()
-		{
-			Name = "CreatorSettingsService"
-		};
+		CreatorSettingsService creatorSettingsService = new() { Name = "CreatorSettingsService" };
 		AddChild(creatorSettingsService, true, InternalMode.Front);
 		creatorSettingsService.Init();
 
-		AssetLoader.Singleton.MaxConcurrentRequests = creatorSettingsService.Get<int>(SharedSettingKeys.Advanced.AssetQueue);
+		AssetLoader.Singleton.MaxConcurrentRequests = creatorSettingsService.Get<int>(
+			SharedSettingKeys.Advanced.AssetQueue
+		);
 
-		creatorSettingsService.AddChild(new GraphicsSettingsApplier { Name = GraphicsSettingsApplier.NodeName, Settings = creatorSettingsService }, true, InternalMode.Front);
+		creatorSettingsService.AddChild(
+			new GraphicsSettingsApplier
+			{
+				Name = GraphicsSettingsApplier.NodeName,
+				Settings = creatorSettingsService,
+			},
+			true,
+			InternalMode.Front
+		);
 
 		GetViewport().GuiEmbedSubwindows = true;
 
@@ -87,7 +94,11 @@ public partial class CreatorEntry : Node
 		cmdargs.TryGetValue("insertAssetId", out _pendingAssetId);
 		cmdargs.TryGetValue("insertAssetType", out _pendingAssetType);
 		if (!string.IsNullOrWhiteSpace(_pendingAssetId))
-			BV.Print("Waiting to insert web asset ", _pendingAssetId, " into an open Creator world.");
+			BV.Print(
+				"Waiting to insert web asset ",
+				_pendingAssetId,
+				" into an open Creator world."
+			);
 
 		// Import legacy world cmd arguments
 		cmdargs.TryGetValue("liin", out string? legacyImportIn);
@@ -95,8 +106,21 @@ public partial class CreatorEntry : Node
 
 		if (legacyImportIn != null && legacyImportOut != null)
 		{
-			BV.Print("Attempting to import legacy world from ", legacyImportIn, " to ", legacyImportOut);
-			_ = ProjectManager.ImportLegacyWorld(legacyImportIn, legacyImportOut, new() { MainWorld = "main.bvxw", ProjectName = new DirectoryInfo(legacyImportOut).Name });
+			BV.Print(
+				"Attempting to import legacy world from ",
+				legacyImportIn,
+				" to ",
+				legacyImportOut
+			);
+			_ = ProjectManager.ImportLegacyWorld(
+				legacyImportIn,
+				legacyImportOut,
+				new()
+				{
+					MainWorld = "main.bvxw",
+					ProjectName = new DirectoryInfo(legacyImportOut).Name,
+				}
+			);
 		}
 	}
 
@@ -110,7 +134,10 @@ public partial class CreatorEntry : Node
 		}
 		catch (Exception error)
 		{
-			BV.PrintErr("CreatorEntry: Auth initialization failed before startup open: ", error.Message);
+			BV.PrintErr(
+				"CreatorEntry: Auth initialization failed before startup open: ",
+				error.Message
+			);
 		}
 
 		if (!string.IsNullOrWhiteSpace(_pendingWorldId))
@@ -150,7 +177,11 @@ public partial class CreatorEntry : Node
 	public override void _Process(double delta)
 	{
 		base._Process(delta);
-		if (!_pendingAssetImportInFlight && !string.IsNullOrWhiteSpace(_pendingAssetId) && World.Current != null)
+		if (
+			!_pendingAssetImportInFlight
+			&& !string.IsNullOrWhiteSpace(_pendingAssetId)
+			&& World.Current != null
+		)
 			_ = InsertPendingAssetAsync();
 		if (!CreatorAPI.IsUserAuthenticated || _sessionValidationInFlight)
 			return;
@@ -171,7 +202,9 @@ public partial class CreatorEntry : Node
 		try
 		{
 			await _authInitializationTask;
-			World root = World.Current ?? throw new InvalidOperationException("Open a world before inserting this asset.");
+			World root =
+				World.Current
+				?? throw new InvalidOperationException("Open a world before inserting this asset.");
 			string name = "Asset" + assetId;
 			Instance? inserted = assetType switch
 			{
@@ -181,7 +214,9 @@ public partial class CreatorEntry : Node
 				"SOUND" => CreateSoundAsset(root, assetId, name),
 				"VIDEO" => CreateVideoAsset(root, assetId, name),
 				"FONT" => CreateFontLabel(root, assetId, name),
-				_ => throw new NotSupportedException($"{assetType} assets cannot be inserted into a world."),
+				_ => throw new NotSupportedException(
+					$"{assetType} assets cannot be inserted into a world."
+				),
 			};
 
 			if (inserted != null)
@@ -291,7 +326,10 @@ public partial class CreatorEntry : Node
 				}
 				catch (Exception error)
 				{
-					BV.PrintErr("CreatorEntry: Launch token login failed, attempting saved session restore: ", error.Message);
+					BV.PrintErr(
+						"CreatorEntry: Launch token login failed, attempting saved session restore: ",
+						error.Message
+					);
 				}
 			}
 
