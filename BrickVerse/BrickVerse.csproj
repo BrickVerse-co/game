@@ -1,7 +1,12 @@
 <Project Sdk="Godot.NET.Sdk/4.7.0">
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
-		<RuntimeIdentifiers>android-arm64;android-x64;ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == ''">android-arm64;android-x64;ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == 'windows'">win-x64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == 'linuxbsd'">linux-x64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == 'macos'">osx-x64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == 'android'">android-arm64;android-x64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(GodotTargetPlatform)' == 'ios'">ios-arm64;iossimulator-arm64</RuntimeIdentifiers>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<InvariantGlobalization>true</InvariantGlobalization>
