@@ -56,9 +56,53 @@ if ($LASTEXITCODE -ne 0) {
 }
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
-& $godot.FullName --headless --quiet --editor --path $ProjectDirectory --import
+$generatedProjectState = @(
+	(Join-Path $ProjectDirectory ".godot\editor"),
+	(Join-Path $ProjectDirectory ".godot\imported"),
+	(Join-Path $ProjectDirectory ".godot\uid_cache.bin"),
+	(Join-Path $ProjectDirectory ".godot\extension_list.cfg"),
+	(Join-Path $ProjectDirectory ".godot\global_script_class_cache.cfg")
+)
+foreach ($path in $generatedProjectState) {
+	Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+& $godot.FullName --headless --editor --path $ProjectDirectory --import
 if ($LASTEXITCODE -ne 0) {
 	throw "Godot import failed with exit code $LASTEXITCODE."
+}
+
+$requiredFontImports = @(
+	@{
+		Source = "assets/fonts/Montserrat-Medium.ttf"
+		Import = "assets/fonts/Montserrat-Medium.ttf.import"
+	},
+	@{
+		Source = "assets/fonts/emoji/twemoji.ttf"
+		Import = "assets/fonts/emoji/twemoji.ttf.import"
+	}
+)
+foreach ($font in $requiredFontImports) {
+	$sourcePath = Join-Path $ProjectDirectory $font.Source
+	$importPath = Join-Path $ProjectDirectory $font.Import
+	if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+		throw "Required font source is missing after checkout: $sourcePath"
+	}
+	if (-not (Test-Path -LiteralPath $importPath -PathType Leaf)) {
+		throw "Required font import metadata is missing: $importPath"
+	}
+
+	$importContents = Get-Content -LiteralPath $importPath -Raw
+	$destinationMatch = [regex]::Match($importContents, 'dest_files=\["([^"]+)"\]')
+	if (-not $destinationMatch.Success) {
+		throw "Godot import metadata does not declare a generated resource: $importPath"
+	}
+
+	$generatedPath = $destinationMatch.Groups[1].Value -replace '^res://', ''
+	$generatedResourcePath = Join-Path $ProjectDirectory ($generatedPath -replace '/', '\\')
+	if (-not (Test-Path -LiteralPath $generatedResourcePath -PathType Leaf)) {
+		throw "Godot did not generate the imported font resource: $generatedResourcePath"
+	}
 }
 
 $exportPath = Join-Path $ExportDirectory $ExportFile
@@ -77,13 +121,12 @@ foreach ($argument in @(
 
 $exportProcess = [System.Diagnostics.Process]::Start($startInfo)
 $exportDeadline = [DateTime]::UtcNow.AddMinutes(15)
-$completedExport = $false
+$completionMarkerSeen = $false
 
 try {
 	while (-not $exportProcess.HasExited) {
 		if (Test-Path -LiteralPath $completionMarker -PathType Leaf) {
-			$completedExport = $true
-			break
+			$completionMarkerSeen = $true
 		}
 		if ([DateTime]::UtcNow -ge $exportDeadline) {
 			$exportProcess.Kill($true)
@@ -93,14 +136,14 @@ try {
 		Start-Sleep -Milliseconds 250
 	}
 
-	if ($completedExport -and -not $exportProcess.WaitForExit(5000)) {
-		Write-Warning "Godot finished exporting but stalled during shutdown; terminating the editor process."
-		$exportProcess.Kill($true)
-		$exportProcess.WaitForExit()
+	$exportProcess.WaitForExit()
+	$exportExitCode = $exportProcess.ExitCode
+	$completionMarkerSeen = $completionMarkerSeen -or (Test-Path -LiteralPath $completionMarker -PathType Leaf)
+	if ($exportExitCode -ne 0) {
+		throw "Godot export failed with exit code $exportExitCode."
 	}
-
-	if (-not $completedExport -and $exportProcess.ExitCode -ne 0) {
-		throw "Godot export failed with exit code $($exportProcess.ExitCode)."
+	if (-not $completionMarkerSeen) {
+		throw "Godot export exited successfully without the export completion marker."
 	}
 }
 finally {
