@@ -229,9 +229,16 @@ jobs:
             ~/AppData/Roaming/Godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
           key: godot-windows-${{ env.GODOT_VERSION }}-${{ env.GODOT_TEMPLATE_VERSION }}
 
+      - name: Restore Windows imported asset cache
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
+          key: godot-imports-windows-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/assets/fonts/**/*.ttf', 'BrickVerse/assets/fonts/**/*.import') }}
+
       - name: Export Windows
         if: matrix.platform == 'windows'
-        timeout-minutes: 20
+        timeout-minutes: 45
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `

@@ -54,11 +54,14 @@ dotnet build $ProjectFile --configuration ExportRelease --no-restore --nologo
 if ($LASTEXITCODE -ne 0) {
 	throw "dotnet build failed with exit code $LASTEXITCODE."
 }
+dotnet build $ProjectFile --configuration Debug --no-restore --nologo
+if ($LASTEXITCODE -ne 0) {
+	throw "dotnet Debug build failed with exit code $LASTEXITCODE."
+}
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
 $generatedProjectState = @(
 	(Join-Path $ProjectDirectory ".godot\editor"),
-	(Join-Path $ProjectDirectory ".godot\imported"),
 	(Join-Path $ProjectDirectory ".godot\uid_cache.bin"),
 	(Join-Path $ProjectDirectory ".godot\extension_list.cfg"),
 	(Join-Path $ProjectDirectory ".godot\global_script_class_cache.cfg")
@@ -67,7 +70,7 @@ foreach ($path in $generatedProjectState) {
 	Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-& $godot.FullName --headless --editor --path $ProjectDirectory --import
+& $godot.FullName --headless --editor --path $ProjectDirectory --import --quit
 if ($LASTEXITCODE -ne 0) {
 	throw "Godot import failed with exit code $LASTEXITCODE."
 }
