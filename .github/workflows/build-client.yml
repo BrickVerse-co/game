@@ -120,7 +120,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
-          key: godot-imports-windows-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/assets/fonts/**/*.ttf', 'BrickVerse/assets/fonts/**/*.import') }}
+          key: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/**/*.import', 'BrickVerse/assets/**/*') }}
 
       - name: Stamp client build metadata
         shell: pwsh
