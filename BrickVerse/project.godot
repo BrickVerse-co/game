@@ -76,6 +76,7 @@ file_logging/log_path="user://logs/brickverseapp.log"
 
 [display]
 
+window/size/mode=3
 window/subwindows/embed_subwindows=false
 window/handheld/orientation=1
 window/vsync/vsync_mode=0

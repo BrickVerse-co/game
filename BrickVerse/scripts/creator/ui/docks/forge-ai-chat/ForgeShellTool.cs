@@ -72,8 +72,8 @@ internal static class ForgeShellTool
             return ("The active project changed while approval was pending. Nothing was executed.", true);
 
         var start = new ProcessStartInfo {
-            FileName = shell == "cmd" ? Path.Combine(System.Environment.SystemDirectory, "cmd.exe")
-                : Path.Combine(System.Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
+            FileName = shell == "cmd" ? Path.Combine(global::System.Environment.SystemDirectory, "cmd.exe")
+                : Path.Combine(global::System.Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
             WorkingDirectory = directory, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true
         };
