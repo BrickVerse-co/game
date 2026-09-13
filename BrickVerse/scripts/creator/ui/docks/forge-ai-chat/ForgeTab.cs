@@ -26,9 +26,24 @@ public partial class ForgeTab : VBoxContainer
 	private TextureRect? _surface;
 	private bool _mousePressed;
 	private string _lastExternalUrl = "";
+	private bool _shuttingDown;
+	private bool _cefInitialized;
 	public World? Root => World.Current;
 
 	public override void _Ready()
+	{
+		try
+		{
+			InitializeBrowser();
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser initialization failed", ex);
+			ShowBrowserError("Forge could not start its embedded browser. Check the Creator console for details.");
+		}
+	}
+
+	private void InitializeBrowser()
 	{
 		MouseFilter = MouseFilterEnum.Ignore;
 		ClipContents = true;
@@ -73,6 +88,7 @@ public partial class ForgeTab : VBoxContainer
 			ShowBrowserError("gdCEF could not initialize: " + _cef.Call("get_error").AsString());
 			return;
 		}
+		_cefInitialized = true;
 		_forgeOrigin = new Uri(ForgeUrl).GetLeftPart(UriPartial.Authority);
 		var settings = new Godot.Collections.Dictionary
 		{
@@ -95,8 +111,20 @@ public partial class ForgeTab : VBoxContainer
 
 	private void OnPageLoaded(long status, Node browser)
 	{
-		if (browser != _browser)
+		if (_shuttingDown || browser != _browser || !IsInstanceValid(browser))
 			return;
+		try
+		{
+			HandlePageLoaded(status, browser);
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser navigation failed", ex);
+		}
+	}
+
+	private void HandlePageLoaded(long status, Node browser)
+	{
 		var currentUrl = browser.Call("get_url").AsString();
 		if (!IsAllowedBrowserLocation(currentUrl))
 		{
@@ -163,21 +191,28 @@ public partial class ForgeTab : VBoxContainer
 
 	private void OnPageFailed(long code, string message, Node browser)
 	{
-		if (browser != _browser || code == -3)
+		if (_shuttingDown || browser != _browser || !IsInstanceValid(browser) || code == -3)
 			return; // CEF reports redirected/cancelled navigations as ERR_ABORTED.
-		var currentUrl = browser.Call("get_url").AsString();
-		if (!IsAllowedBrowserLocation(currentUrl))
+		try
 		{
-			OpenInSystemBrowser(currentUrl);
-			browser.Call("load_url", ForgeUrl);
-			return;
+			var currentUrl = browser.Call("get_url").AsString();
+			if (!IsAllowedBrowserLocation(currentUrl))
+			{
+				OpenInSystemBrowser(currentUrl);
+				browser.Call("load_url", ForgeUrl);
+				return;
+			}
+			ShowBrowserError($"Forge failed to load ({code}): {message}");
 		}
-		ShowBrowserError($"Forge failed to load ({code}): {message}");
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser error handling failed", ex);
+		}
 	}
 
 	public async void ReceiveForgeMessage(string message)
 	{
-		if (_browser == null || !IsInstanceValid(_browser))
+		if (_shuttingDown || _browser == null || !IsInstanceValid(_browser))
 			return;
 		try
 		{
@@ -189,42 +224,64 @@ public partial class ForgeTab : VBoxContainer
 				|| token.GetString() != _bridgeToken
 			)
 				return;
+			var reply = await _mcp.HandleAsync(message, this, _lifetime.Token);
+			if (!_lifetime.IsCancellationRequested && reply != null)
+				Callable.From<string>(SendMcpReply).CallDeferred(reply);
 		}
-		catch (Exception)
+		catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
+		catch (Exception ex)
 		{
-			return;
+			ReportRecoverableError("Forge MCP request failed", ex);
 		}
-		var reply = await _mcp.HandleAsync(message, this, _lifetime.Token);
-		if (
-			!_lifetime.IsCancellationRequested
-			&& reply != null
-			&& _browser != null
-			&& IsInstanceValid(_browser)
-		)
+	}
+
+	private void SendMcpReply(string reply)
+	{
+		if (_shuttingDown || _browser == null || !IsInstanceValid(_browser))
+			return;
+		try
+		{
 			_browser.Call(
 				"execute_javascript",
 				"window.onIpcMessage?.(" + JsonSerializer.Serialize(reply) + ");"
 			);
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge MCP reply failed", ex);
+		}
 	}
 
 	private void ForwardBrowserInput(InputEvent input)
 	{
-		if (_browser == null || _surface == null || !IsVisibleInTree())
+		if (_shuttingDown || _browser == null || !IsInstanceValid(_browser) || _surface == null || !IsVisibleInTree())
 			return;
+		try
+		{
+			ForwardBrowserInputCore(input, _browser, _surface);
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser input failed", ex);
+		}
+	}
+
+	private void ForwardBrowserInputCore(InputEvent input, Node browser, TextureRect surface)
+	{
 		if (input is InputEventMouseMotion motion)
 		{
-			_browser.Call("set_mouse_moved", (long)motion.Position.X, (long)motion.Position.Y);
+			browser.Call("set_mouse_moved", (long)motion.Position.X, (long)motion.Position.Y);
 			if (_mousePressed)
-				_browser.Call("set_mouse_left_down");
+				browser.Call("set_mouse_left_down");
 		}
 		else if (input is InputEventMouseButton mouse)
 		{
-			_surface.GrabFocus();
+			surface.GrabFocus();
 			if (
 				mouse.ButtonIndex == MouseButton.WheelUp
 				|| mouse.ButtonIndex == MouseButton.WheelDown
 			)
-				_browser.Call(
+				browser.Call(
 					"set_mouse_wheel_vertical",
 					mouse.ButtonIndex == MouseButton.WheelUp ? 2L : -2L,
 					mouse.ShiftPressed,
@@ -234,17 +291,17 @@ public partial class ForgeTab : VBoxContainer
 			else if (mouse.ButtonIndex == MouseButton.Left)
 			{
 				_mousePressed = mouse.Pressed;
-				_browser.Call(mouse.Pressed ? "set_mouse_left_down" : "set_mouse_left_up");
+				browser.Call(mouse.Pressed ? "set_mouse_left_down" : "set_mouse_left_up");
 			}
 			else if (mouse.ButtonIndex == MouseButton.Right)
-				_browser.Call(mouse.Pressed ? "set_mouse_right_down" : "set_mouse_right_up");
+				browser.Call(mouse.Pressed ? "set_mouse_right_down" : "set_mouse_right_up");
 			else if (mouse.ButtonIndex == MouseButton.Middle)
-				_browser.Call(mouse.Pressed ? "set_mouse_middle_down" : "set_mouse_middle_up");
+				browser.Call(mouse.Pressed ? "set_mouse_middle_down" : "set_mouse_middle_up");
 		}
-		else if (input is InputEventKey key && _surface.HasFocus())
+		else if (input is InputEventKey key && surface.HasFocus())
 		{
 			var code = key.Unicode != 0 ? key.Unicode : (uint)key.Keycode;
-			_browser.Call(
+			browser.Call(
 				"set_key_pressed",
 				(long)code,
 				key.Pressed,
@@ -257,8 +314,16 @@ public partial class ForgeTab : VBoxContainer
 
 	private void ResizeBrowser()
 	{
-		if (_browser != null && _surface != null && _surface.Size.X > 0 && _surface.Size.Y > 0)
+		if (_shuttingDown || _browser == null || !IsInstanceValid(_browser) || _surface == null || _surface.Size.X <= 0 || _surface.Size.Y <= 0)
+			return;
+		try
+		{
 			_browser.Call("resize", _surface.Size);
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser resize failed", ex);
+		}
 	}
 
 	private void ShowBrowserError(string text)
@@ -281,12 +346,34 @@ public partial class ForgeTab : VBoxContainer
 
 	public override void _ExitTree()
 	{
+		if (_shuttingDown)
+			return;
+		_shuttingDown = true;
 		_lifetime.Cancel();
-		if (_browser != null && IsInstanceValid(_browser))
-			_browser.Call("close");
-		if (_cef != null && IsInstanceValid(_cef))
-			_cef.Call("shutdown");
+		if (_surface != null)
+		{
+			_surface.GuiInput -= ForwardBrowserInput;
+			_surface.Resized -= ResizeBrowser;
+		}
+		_browser = null;
+		try
+		{
+			// GdCEF.shutdown closes every browser and drains its native destruction queue.
+			if (_cefInitialized && _cef != null && IsInstanceValid(_cef))
+				_cef.Call("shutdown");
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser shutdown failed", ex);
+		}
+		_cefInitialized = false;
+		_cef = null;
 		base._ExitTree();
+	}
+
+	private static void ReportRecoverableError(string context, Exception exception)
+	{
+		GD.PrintErr($"{context}: {exception.GetType().Name}: {exception.Message}");
 	}
 
 	public static string GetConsoleSnippet(int maxChars = 2000)

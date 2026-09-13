@@ -13,7 +13,7 @@ internal sealed class ForgeMcpServer
     private ForgeToolExecutor? _executor;
     private bool _initialized;
     private readonly System.Collections.Generic.HashSet<string> _shellRequests = new();
-    private readonly System.Collections.Generic.Dictionary<string, System.Threading.CancellationTokenSource> _runningCommands = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Threading.CancellationTokenSource> _runningCommands = new();
 
     public async System.Threading.Tasks.Task<string?> HandleAsync(string message, Godot.Control owner, System.Threading.CancellationToken lifetime)
     {
@@ -40,13 +40,14 @@ internal sealed class ForgeMcpServer
                     return Error(id, -32600, "Duplicate command request or session limit reached. Reconnect Creator.");
                 using var cancellation = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(lifetime);
                 var key = requestId.GetRawText();
-                _runningCommands.Add(key, cancellation);
+				if (!_runningCommands.TryAdd(key, cancellation))
+					return Error(id, -32600, "Duplicate running command request.");
                 try
                 {
                     var result = await ForgeShellTool.RunAsync(parameters.GetProperty("arguments").Clone(), owner, cancellation.Token);
                     return ToolResult(id, result.Text, result.IsError);
                 }
-                finally { _runningCommands.Remove(key); }
+				finally { _runningCommands.TryRemove(key, out _); }
             }
             return Handle(message);
         }
