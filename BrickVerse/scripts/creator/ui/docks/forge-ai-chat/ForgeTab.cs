@@ -112,10 +112,14 @@ public partial class ForgeTab : VBoxContainer
 			"if(location.origin==="
 			+ JsonSerializer.Serialize(_forgeOrigin)
 			+ "){"
+			+ "const listeners=new Set();"
 			+ "Object.defineProperty(window,'brickverseCreatorToken',{value:"
 			+ JsonSerializer.Serialize(_bridgeToken)
 			+ ",configurable:false});"
-			+ "window.sendIpcMessage=(message)=>window.godotMethods.ReceiveForgeMessage(String(message));}";
+			+ "window.ipcMessage={addListener:(listener)=>listeners.add(listener),removeListener:(listener)=>listeners.delete(listener)};"
+			+ "window.onIpcMessage=(message)=>listeners.forEach((listener)=>listener(String(message)));"
+			+ "window.sendIpcMessage=(message)=>window.godotMethods.ReceiveForgeMessage(String(message));"
+			+ "window.dispatchEvent(new Event('brickverseCreatorReady'));}";
 		browser.Call("execute_javascript", script);
 	}
 
