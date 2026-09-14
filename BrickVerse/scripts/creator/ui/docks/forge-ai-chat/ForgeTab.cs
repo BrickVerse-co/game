@@ -108,6 +108,8 @@ public partial class ForgeTab : VBoxContainer
 			ShowBrowserError("Forge could not register the Creator tooling bridge.");
 			return;
 		}
+		if (!_browser.Call("register_method", this, nameof(ReceiveForgeConsole)).AsBool())
+			GD.PrintErr("Forge could not register CEF console forwarding.");
 		_browser.Connect("on_page_loaded", Callable.From<long, Node>(OnPageLoaded));
 		_browser.Connect("on_page_failed_loading", Callable.From<long, string, Node>(OnPageFailed));
 		Callable.From(ResizeBrowser).CallDeferred();
@@ -150,6 +152,7 @@ public partial class ForgeTab : VBoxContainer
 			+ "window.ipcMessage={addListener:(listener)=>bridge.listeners.add(listener),removeListener:(listener)=>bridge.listeners.delete(listener)};"
 			+ "window.onIpcMessage=(message)=>bridge.listeners.forEach((listener)=>listener(String(message)));"
 			+ "window.sendIpcMessage=(message)=>window.godotMethods.ReceiveForgeMessage(String(message));"
+			+ "if(!window.__brickverseConsoleForwarded){window.__brickverseConsoleForwarded=true;const fmt=(args)=>args.map((v)=>{if(typeof v==='string')return v;try{return JSON.stringify(v)}catch{return String(v)}}).join(' ');for(const level of ['warn','error']){const original=console[level].bind(console);console[level]=(...args)=>{original(...args);try{window.godotMethods.ReceiveForgeConsole(level,fmt(args))}catch{}}}window.addEventListener('error',(e)=>{try{window.godotMethods.ReceiveForgeConsole('error',String(e.message||e.error||'Unhandled page error'))}catch{}});window.addEventListener('unhandledrejection',(e)=>{try{window.godotMethods.ReceiveForgeConsole('error','Unhandled promise rejection: '+fmt([e.reason]))}catch{}});}"
 			+ "window.dispatchEvent(new Event('brickverseCreatorReady'));})();";
 		browser.Call("execute_javascript", script);
 	}
@@ -236,6 +239,16 @@ public partial class ForgeTab : VBoxContainer
 		{
 			ReportRecoverableError("Forge MCP request failed", ex);
 		}
+	}
+
+	public void ReceiveForgeConsole(string level, string message)
+	{
+		if (_shuttingDown || string.IsNullOrWhiteSpace(message)) return;
+		string text = message.Length > 4000 ? message[..4000] + "…" : message;
+		if (level.Equals("error", StringComparison.OrdinalIgnoreCase))
+			BV.PrintErr("Forge Web: ", text);
+		else if (level.Equals("warn", StringComparison.OrdinalIgnoreCase))
+			BV.PrintWarn("Forge Web: ", text);
 	}
 
 	private void SendMcpReply(string reply)

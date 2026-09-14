@@ -44,6 +44,16 @@ All requests are marshalled onto Godot's main thread. The external server expose
 the same inspection, tree, metadata, instance, property, script, diff and rollback
 tools as embedded Forge. World edits retain the same inspect-before-edit guard.
 
+Script creation is one atomic `create_instance` call. Use `ServerScript`,
+`ClientScript`, or `ModuleScript` (`Script` aliases `ServerScript`) and provide the
+final source in the top-level `source` argument. Creator writes the corresponding
+`.server.luau`, `.client.luau`, or `.luau` project file and links the instance.
+If file creation fails, the partially inserted instance and file are removed.
+`edit_script_source` updates the linked file. Deleting a linked Script also moves
+its project file to the recycle bin. `manage_project_file` supports bounded list,
+read, write/create, and recycle-bin deletion for other project files; use the
+script instance tools for scripts so world/file links remain synchronized.
+
 The signed-in web UI registers the discovered tool catalog with the authenticated
 backend. Redis holds user-owned sessions (300-second lease), one outstanding call
 per session and bounded, expiring results. The model loop calls Creator through
