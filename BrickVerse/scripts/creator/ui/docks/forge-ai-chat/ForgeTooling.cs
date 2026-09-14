@@ -746,7 +746,8 @@ internal sealed class ForgeToolExecutor
 			{
 				_root.LinkedSession.RemoveFile(createdScriptFile);
 			}
-		}));
+		}
+		));
 
 		LastEvent = new ForgeToolEvent
 		{
@@ -863,7 +864,8 @@ internal sealed class ForgeToolExecutor
 		{
 			if (existed) _root.IO.WriteTextToPath(path, before);
 			else if (File.Exists(absolutePath)) _root.LinkedSession.RemoveFile(path, toRecycleBin: true);
-		}));
+		}
+		));
 		LastEvent = new ForgeToolEvent
 		{
 			ChangeId = changeId,
@@ -1023,7 +1025,8 @@ internal sealed class ForgeToolExecutor
 		{
 			if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
 				WriteScriptSource(current, before);
-		}));
+		}
+		));
 		_root.CreatorContext.Selections.SelectOnly(script);
 		LastEvent = new ForgeToolEvent
 		{
