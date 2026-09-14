@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
+using BrickVerse.Creator.Managers;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -22,6 +23,12 @@ public sealed partial class Explorer : TabContainer
 	public Explorer()
 	{
 		Singleton = this;
+		CreatorIconRegistry.Changed += RefreshIcons;
+	}
+
+	public override void _ExitTree()
+	{
+		CreatorIconRegistry.Changed -= RefreshIcons;
 	}
 
 	private static readonly Dictionary<Instance, TreeItem> _instanceToItem = [];
@@ -130,10 +137,23 @@ public sealed partial class Explorer : TabContainer
 
 	private static void ApplyCompactTreeItemStyle(TreeItem item, Instance instance)
 	{
-		item.SetIcon(0, Globals.LoadIcon(instance.ClassName));
+		item.SetIcon(0, CreatorIconRegistry.Resolve(instance));
 		item.SetIconMaxWidth(0, ExplorerIconMaxWidth);
 		item.SetCustomMinimumHeight(ExplorerRowHeight);
 		item.SetText(0, instance.Name);
+	}
+
+	public static void RefreshIcon(Instance instance)
+	{
+		if (_instanceToItem.TryGetValue(instance, out TreeItem? item) && GodotObject.IsInstanceValid(item))
+			item.SetIcon(0, CreatorIconRegistry.Resolve(instance));
+	}
+
+	private static void RefreshIcons(CreatorSession session)
+	{
+		foreach ((Instance instance, TreeItem item) in _instanceToItem)
+			if ((instance as World ?? instance.Root)?.LinkedSession == session && GodotObject.IsInstanceValid(item))
+				item.SetIcon(0, CreatorIconRegistry.Resolve(instance));
 	}
 
 	private static bool HasExcludedAncestor(Instance instance)

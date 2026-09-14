@@ -529,7 +529,8 @@ public sealed partial class Menu : PanelContainer
 				new MenuSeperatorItem(),
 				new MenuButtonItem() { Text = "Data Store Explorer", Icon = "database", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(0) },
 				new MenuButtonItem() { Text = "Localization Manager", Icon = "translate", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(1) },
-				new MenuButtonItem() { Text = "Scene History & Diff", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(2) },
+				new MenuButtonItem() { Text = "Instance Icon Manager", Icon = "image-square", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(2) },
+				new MenuButtonItem() { Text = "Scene History & Diff", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(3) },
 				new MenuButtonItem() { Text = "Particle Editor", Icon = "play-filled", RequireGameOpen = true, Pressed = ParticleEditorWindow.Open },
 				new MenuSeperatorItem(),
 				new MenuButtonItem()

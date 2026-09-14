@@ -1,6 +1,10 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 using Godot;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Shared;
 using BrickVerse.Providers.Datastore;
 using System;
 using System.IO;
@@ -16,6 +20,7 @@ public sealed partial class CreatorDataToolsWindow : Window
 	private TabContainer _tabs = null!;
 	private Tree _stores = null!;
 	private Tree _locales = null!;
+	private Tree _icons = null!;
 	private ItemList _snapshots = null!;
 	private RichTextLabel _diff = null!;
 	private string _localizationPath = "";
@@ -43,10 +48,12 @@ public sealed partial class CreatorDataToolsWindow : Window
 		_tabs = GetNode<TabContainer>("Surface/Margin/Tabs");
 		_stores = GetNode<Tree>("Surface/Margin/Tabs/Datastore/Layout/Stores");
 		_locales = GetNode<Tree>("Surface/Margin/Tabs/Localization/Layout/Locales");
+		_icons = GetNode<Tree>("Surface/Margin/Tabs/Icons/Layout/Icons");
 		_snapshots = GetNode<ItemList>("Surface/Margin/Tabs/History/Layout/Split/Snapshots");
 		_diff = GetNode<RichTextLabel>("Surface/Margin/Tabs/History/Layout/Split/Diff");
 		_stores.SetColumnTitle(0, "Store"); _stores.SetColumnTitle(1, "Key / test player"); _stores.SetColumnTitle(2, "Type"); _stores.SetColumnTitle(3, "Value preview");
 		_locales.SetColumnTitle(0, "Locale"); _locales.SetColumnTitle(1, "Key"); _locales.SetColumnTitle(2, "Translation");
+		_icons.SetColumnTitle(0, "Icon"); _icons.SetColumnTitle(1, "Scope"); _icons.SetColumnTitle(2, "Datamodel target"); _icons.SetColumnTitle(3, "Override file");
 		GetNode<Button>("Surface/Margin/Tabs/Datastore/Layout/Toolbar/Refresh").Pressed += RefreshStores;
 		GetNode<Button>("Surface/Margin/Tabs/Datastore/Layout/Toolbar/Edit").Pressed += EditStoreValue;
 		GetNode<Button>("Surface/Margin/Tabs/Datastore/Layout/Toolbar/Add").Pressed += AddStoreValue;
@@ -61,10 +68,17 @@ public sealed partial class CreatorDataToolsWindow : Window
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Add").Pressed += AddLocaleRow;
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Save").Pressed += SaveLocales;
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Reload").Pressed += LoadLocales;
+		GetNode<Button>("Surface/Margin/Tabs/Icons/Layout/Toolbar/Override").Pressed += OverrideSelectedIcon;
+		GetNode<Button>("Surface/Margin/Tabs/Icons/Layout/Toolbar/Reset").Pressed += ResetSelectedIcon;
+		GetNode<Button>("Surface/Margin/Tabs/Icons/Layout/Toolbar/Reload").Pressed += ReloadIcons;
+		GetNode<Button>("Surface/Margin/Tabs/Icons/Layout/Toolbar/Folder").Pressed += OpenIconFolder;
+		CreatorIconRegistry.Changed += OnIconsChanged;
 		_snapshots.ItemSelected += ShowSnapshotDiff;
-		RefreshStores(); LoadLocales(); RefreshSnapshots();
+		RefreshStores(); LoadLocales(); LoadIcons(); RefreshSnapshots();
 		_tabs.CurrentTab = Mathf.Clamp(_initialTab, 0, _tabs.GetTabCount() - 1);
 	}
+
+	public override void _ExitTree() => CreatorIconRegistry.Changed -= OnIconsChanged;
 
 	private void RefreshStores()
 	{
@@ -155,6 +169,80 @@ public sealed partial class CreatorDataToolsWindow : Window
 		if (string.IsNullOrWhiteSpace(_localizationPath)) return; Dictionary<string, Dictionary<string, string>> data = [];
 		for (TreeItem? row = _locales.GetRoot()?.GetFirstChild(); row != null; row = row.GetNext()) { string locale = row.GetText(0).Trim(); string key = row.GetText(1).Trim(); if (locale.Length == 0 || key.Length == 0) continue; if (!data.TryGetValue(locale, out Dictionary<string, string>? entries)) data[locale] = entries = []; entries[key] = row.GetText(2); }
 		Directory.CreateDirectory(Path.GetDirectoryName(_localizationPath)!); File.WriteAllText(_localizationPath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
+	}
+
+	private void LoadIcons()
+	{
+		_icons.Clear();
+		TreeItem root = _icons.CreateItem();
+		CreatorSession? session = CreatorService.CurrentSession;
+		if (session == null) return;
+		foreach (Type type in typeof(Instance).Assembly.GetTypes()
+			.Where(type => type.IsClass && !type.IsAbstract && typeof(Instance).IsAssignableFrom(type)
+				&& !type.IsDefined(typeof(InternalAttribute), false))
+			.OrderBy(type => type.Name, StringComparer.Ordinal))
+		{
+			TreeItem row = root.CreateChild();
+			row.SetIcon(0, CreatorIconRegistry.ResolveClass(session, type.Name)); row.SetIconMaxWidth(0, 22);
+			row.SetText(1, "Global"); row.SetText(2, type.Name);
+			row.SetText(3, CreatorIconRegistry.GetClassOverride(session, type.Name) ?? "Built in");
+			row.SetMetadata(0, $"class:{type.Name}");
+		}
+		World? world = World.Current;
+		if (world == null || world.LinkedSession != session) return;
+		foreach (Instance instance in new[] { world }.Concat(world.GetDescendants())
+			.OrderBy(instance => instance.LuaPath, StringComparer.Ordinal))
+		{
+			string? overridePath = CreatorIconRegistry.GetInstanceOverride(instance);
+			TreeItem row = root.CreateChild();
+			row.SetIcon(0, CreatorIconRegistry.Resolve(instance)); row.SetIconMaxWidth(0, 22);
+			row.SetText(1, "Individual"); row.SetText(2, instance.LuaPath);
+			row.SetText(3, overridePath ?? $"Inherits {instance.ClassName}");
+			row.SetMetadata(0, $"instance:{instance.ObjectID}");
+		}
+	}
+
+	private void ReloadIcons()
+	{
+		if (CreatorService.CurrentSession is CreatorSession session) CreatorIconRegistry.Reload(session);
+	}
+
+	private void OverrideSelectedIcon()
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		string key = _icons.GetSelected()?.GetMetadata(0).AsString() ?? "";
+		if (session == null || key.Length == 0) return;
+		if (key.StartsWith("class:", StringComparison.Ordinal)) CreatorIconRegistry.PromptSetClass(session, key[6..]);
+		else if (FindInstance(key) is Instance instance) CreatorIconRegistry.PromptSetInstance(instance);
+	}
+
+	private void ResetSelectedIcon()
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		string key = _icons.GetSelected()?.GetMetadata(0).AsString() ?? "";
+		if (session == null || key.Length == 0) return;
+		if (key.StartsWith("class:", StringComparison.Ordinal)) CreatorIconRegistry.ClearClass(session, key[6..]);
+		else if (FindInstance(key) is Instance instance) CreatorIconRegistry.ClearInstance(instance);
+	}
+
+	private static Instance? FindInstance(string key)
+	{
+		if (!key.StartsWith("instance:", StringComparison.Ordinal) || World.Current == null) return null;
+		string id = key[9..];
+		return new[] { World.Current }.Concat(World.Current.GetDescendants()).FirstOrDefault(instance => instance.ObjectID == id);
+	}
+
+	private static void OpenIconFolder()
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		if (session == null) return;
+		Directory.CreateDirectory(Path.Combine(session.BVProjectFolderPath, "icons"));
+		OS.ShellShowInFileManager(CreatorIconRegistry.RegistryPath(session));
+	}
+
+	private void OnIconsChanged(CreatorSession session)
+	{
+		if (session == CreatorService.CurrentSession) Callable.From(LoadIcons).CallDeferred();
 	}
 
 
