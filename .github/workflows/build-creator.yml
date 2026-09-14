@@ -71,14 +71,27 @@ jobs:
           submodules: recursive
 
       - name: Install Godot CEF browser runtime
+        if: matrix.platform == 'windows'
         shell: bash
         run: |
           set -euo pipefail
           archive="${{ runner.temp }}/godot-cef-v1.15.4.zip"
+          extract_dir="${{ runner.temp }}/godot-cef"
           curl --fail --location --retry 3 --output "$archive" "https://github.com/dsh0416/godot-cef/releases/download/v1.15.4/godot_cef-v1.15.4.zip"
-          unzip -q "$archive" "dist/addons/godot_cef/*" -d "${{ runner.temp }}/godot-cef"
+          rm -rf "$extract_dir"
+          mkdir -p "$extract_dir"
+          unzip -q "$archive" -d "$extract_dir"
+
+          cef_manifest="$(find "$extract_dir" -type f -name 'godot_cef.gdextension' -print -quit)"
+          if [[ -z "$cef_manifest" ]]; then
+            echo "::error::The Godot CEF archive does not contain godot_cef.gdextension."
+            exit 1
+          fi
+
           mkdir -p BrickVerse/addons/godot_cef
-          cp -a "${{ runner.temp }}/godot-cef/dist/addons/godot_cef/." BrickVerse/addons/godot_cef/
+          cef_root="$(dirname "$cef_manifest")"
+          cp -a "$cef_root/." BrickVerse/addons/godot_cef/
+          test -s BrickVerse/addons/godot_cef/godot_cef.gdextension
       - name: Verify Git LFS assets
         shell: bash
         run: |
