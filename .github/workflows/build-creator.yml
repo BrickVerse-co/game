@@ -25,8 +25,6 @@ env:
   RELEASE_CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'prod' }}
   REGISTRATION_BRANCH: ${{ github.ref_name == 'beta' && 'beta' || 'main' }}
   BV_BUILD_TARGET: CREATOR
-  GDCEF_VERSION: 0.20.0
-  GDCEF_GODOT_VERSION: 4.5
 
 jobs:
   build-creator:
@@ -72,37 +70,6 @@ jobs:
           fetch-depth: 1
           submodules: recursive
 
-      - name: Install Godot CEF browser runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          archive="${{ runner.temp }}/gdcef-${{ env.GDCEF_VERSION }}.zip"
-          extract_dir="${{ runner.temp }}/gdcef"
-          curl --fail --location --retry 3 --output "$archive" \
-            "https://github.com/Lecrapouille/gdcef/releases/download/v${{ env.GDCEF_VERSION }}-godot4/gdcef-${{ env.GDCEF_VERSION }}_godot-${{ env.GDCEF_GODOT_VERSION }}.zip"
-          rm -rf "$extract_dir"
-          mkdir -p "$extract_dir"
-          unzip -q "$archive" -d "$extract_dir"
-
-          cef_manifest="$(find "$extract_dir" -type f -name 'gdcef.gdextension' -print -quit)"
-          if [[ -z "$cef_manifest" ]]; then
-            echo "::error::The gdCEF archive does not contain gdcef.gdextension."
-            exit 1
-          fi
-
-          cef_root="$(dirname "$cef_manifest")"
-          rm -rf BrickVerse/cef_artifacts
-          mkdir -p BrickVerse/cef_artifacts
-          cp -a "$cef_root/." BrickVerse/cef_artifacts/
-          test -s BrickVerse/cef_artifacts/gdcef.gdextension
-          test -d "BrickVerse/cef_artifacts/${{ matrix.platform }}"
-
-          if [[ "${{ matrix.platform }}" == "linux" ]]; then
-            chmod +x BrickVerse/cef_artifacts/linux/*.so BrickVerse/cef_artifacts/linux/gdCefRenderProcess
-          elif [[ "${{ matrix.platform }}" == "macos" ]]; then
-            file BrickVerse/cef_artifacts/macos/libgdcef.dylib | grep -q 'arm64'
-            find BrickVerse/cef_artifacts/macos -type f -path '*/Contents/MacOS/*' -exec chmod +x {} +
-          fi
       - name: Verify Git LFS assets
         shell: bash
         run: |
@@ -282,53 +249,6 @@ jobs:
             -ExportDirectory "${{ github.workspace }}\dist\windows" `
             -ExportPreset "${{ matrix.export_preset }}" `
             -ExportFile "${{ matrix.export_file }}"
-
-      - name: Package and validate gdCEF runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          EXPORT_DIR="${{ github.workspace }}/dist/${{ matrix.platform }}"
-          if [[ "${{ matrix.platform }}" == "macos" ]]; then
-            app_dir="$(find "$EXPORT_DIR" -maxdepth 1 -type d -name '*.app' -print -quit)"
-            if [[ -z "$app_dir" ]]; then
-              echo "::error::Could not locate the exported macOS application bundle."
-              exit 1
-            fi
-            runtime_root="$app_dir/Contents/MacOS/cef_artifacts"
-          else
-            runtime_root="$EXPORT_DIR/cef_artifacts"
-          fi
-
-          rm -rf "$runtime_root"
-          mkdir -p "$runtime_root"
-          cp BrickVerse/cef_artifacts/gdcef.gdextension "$runtime_root/"
-          cp BrickVerse/cef_artifacts/LICENSE BrickVerse/cef_artifacts/VERSION "$runtime_root/"
-          cp -a "BrickVerse/cef_artifacts/${{ matrix.platform }}" "$runtime_root/"
-
-          case "${{ matrix.platform }}" in
-            windows)
-              required=(libgdcef.dll libcef.dll gdCefRenderProcess.exe icudtl.dat resources.pak)
-              ;;
-            linux)
-              chmod +x "$runtime_root/linux/"*.so "$runtime_root/linux/gdCefRenderProcess"
-              required=(libgdcef.so libcef.so gdCefRenderProcess icudtl.dat resources.pak)
-              ;;
-            macos)
-              find "$runtime_root/macos" -type f -path '*/Contents/MacOS/*' -exec chmod +x {} +
-              required=(libgdcef.dylib gdCefRenderProcess.app)
-              ;;
-          esac
-
-          for name in "${required[@]}"; do
-            if [[ ! -e "$runtime_root/${{ matrix.platform }}/$name" ]]; then
-              echo "::error::Exported gdCEF runtime is missing $name for ${{ matrix.platform }}."
-              exit 1
-            fi
-          done
-
-          echo "Packaged gdCEF ${{ env.GDCEF_VERSION }} for ${{ matrix.platform }}."
-
 
       - name: Azure login
         if: matrix.platform == 'windows'
