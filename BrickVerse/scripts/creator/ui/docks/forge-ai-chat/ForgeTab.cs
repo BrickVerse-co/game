@@ -24,7 +24,6 @@ public partial class ForgeTab : VBoxContainer
 	private Node? _cef;
 	private Node? _browser;
 	private TextureRect? _surface;
-	private bool _mousePressed;
 	private string _lastExternalUrl = "";
 	private bool _shuttingDown;
 	private bool _cefInitialized;
@@ -104,6 +103,11 @@ public partial class ForgeTab : VBoxContainer
 			return;
 		}
 		_browser.Name = "ForgeBrowser";
+		if (!_browser.Call("register_method", this, nameof(ReceiveForgeMessage)).AsBool())
+		{
+			ShowBrowserError("Forge could not register the Creator tooling bridge.");
+			return;
+		}
 		_browser.Connect("on_page_loaded", Callable.From<long, Node>(OnPageLoaded));
 		_browser.Connect("on_page_failed_loading", Callable.From<long, string, Node>(OnPageFailed));
 		Callable.From(ResizeBrowser).CallDeferred();
@@ -135,19 +139,18 @@ public partial class ForgeTab : VBoxContainer
 		_lastExternalUrl = "";
 		if (status < 200 || status >= 400)
 			return;
-		browser.Call("register_method", this, nameof(ReceiveForgeMessage));
 		var script =
-			"if(location.origin==="
+			"(()=>{if(location.origin!=="
 			+ JsonSerializer.Serialize(_forgeOrigin)
-			+ "){"
-			+ "const listeners=new Set();"
-			+ "Object.defineProperty(window,'brickverseCreatorToken',{value:"
+			+ ")return;"
+			+ "const bridge=window.__brickverseCreatorBridge??={listeners:new Set()};"
+			+ "if(!window.brickverseCreatorToken)Object.defineProperty(window,'brickverseCreatorToken',{value:"
 			+ JsonSerializer.Serialize(_bridgeToken)
 			+ ",configurable:false});"
-			+ "window.ipcMessage={addListener:(listener)=>listeners.add(listener),removeListener:(listener)=>listeners.delete(listener)};"
-			+ "window.onIpcMessage=(message)=>listeners.forEach((listener)=>listener(String(message)));"
+			+ "window.ipcMessage={addListener:(listener)=>bridge.listeners.add(listener),removeListener:(listener)=>bridge.listeners.delete(listener)};"
+			+ "window.onIpcMessage=(message)=>bridge.listeners.forEach((listener)=>listener(String(message)));"
 			+ "window.sendIpcMessage=(message)=>window.godotMethods.ReceiveForgeMessage(String(message));"
-			+ "window.dispatchEvent(new Event('brickverseCreatorReady'));}";
+			+ "window.dispatchEvent(new Event('brickverseCreatorReady'));})();";
 		browser.Call("execute_javascript", script);
 	}
 
@@ -271,8 +274,6 @@ public partial class ForgeTab : VBoxContainer
 		if (input is InputEventMouseMotion motion)
 		{
 			browser.Call("set_mouse_moved", (long)motion.Position.X, (long)motion.Position.Y);
-			if (_mousePressed)
-				browser.Call("set_mouse_left_down");
 		}
 		else if (input is InputEventMouseButton mouse)
 		{
@@ -289,10 +290,7 @@ public partial class ForgeTab : VBoxContainer
 					mouse.AltPressed
 				);
 			else if (mouse.ButtonIndex == MouseButton.Left)
-			{
-				_mousePressed = mouse.Pressed;
 				browser.Call(mouse.Pressed ? "set_mouse_left_down" : "set_mouse_left_up");
-			}
 			else if (mouse.ButtonIndex == MouseButton.Right)
 				browser.Call(mouse.Pressed ? "set_mouse_right_down" : "set_mouse_right_up");
 			else if (mouse.ButtonIndex == MouseButton.Middle)

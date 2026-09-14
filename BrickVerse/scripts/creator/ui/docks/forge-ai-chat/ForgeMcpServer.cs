@@ -6,7 +6,7 @@ using BrickVerse.Datamodel;
 
 namespace BrickVerse.Creator.UI;
 
-/// <summary>MCP JSON-RPC over the CEF custom transport. Only call on the Godot main thread.</summary>
+/// <summary>Transport-independent Creator MCP protocol core shared by Forge CEF and external HTTP clients. Only call on the Godot main thread.</summary>
 internal sealed class ForgeMcpServer
 {
     private World? _world;
@@ -93,7 +93,7 @@ internal sealed class ForgeMcpServer
                     if (world == null) return ToolResult(id, "Open a world in Creator first.", true);
                     if (!ReferenceEquals(world, _world))
                     {
-                        if (name is not ("get_creator_state" or "list_instantiable_classes" or "search_instances" or "inspect_instance" or "get_script_diff"))
+						if (name is not ("get_creator_state" or "get_world_tree" or "list_instantiable_classes" or "search_instances" or "inspect_instance" or "get_script_diff"))
                             return ToolResult(id, "The active world changed. Inspect the current world before editing.", true);
                         _world = world;
                         _executor = new ForgeToolExecutor(world);
@@ -101,7 +101,7 @@ internal sealed class ForgeMcpServer
                     try
                     {
                         var output = _executor!.Execute(name!, args.TryGetProperty("arguments", out var arguments) ? arguments.GetRawText() : "{}");
-                        return ToolResult(id, output, false);
+                        return ToolResult(id, output, false, _executor.LastEvent);
                     }
                     catch (Exception ex) { return ToolResult(id, ex.Message, true); }
                 default: return Error(id, -32601, "Method not found.");
@@ -112,8 +112,8 @@ internal sealed class ForgeMcpServer
         catch (Exception) { return Error(id, -32602, "Invalid request parameters."); }
     }
 
-    private static string ToolResult(object? id, string text, bool isError) =>
-        JsonSerializer.Serialize(new { jsonrpc = "2.0", id, result = new { content = new[] { new { type = "text", text } }, isError } });
+    private static string ToolResult(object? id, string text, bool isError, ForgeToolEvent? change = null) =>
+        JsonSerializer.Serialize(new { jsonrpc = "2.0", id, result = new { content = new[] { new { type = "text", text } }, isError, structuredContent = change } });
     private static string Error(object? id, int code, string message) =>
         JsonSerializer.Serialize(new { jsonrpc = "2.0", id, error = new { code, message } });
 }

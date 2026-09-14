@@ -35,6 +35,20 @@ internal static class ForgeToolCatalog
 			"""
 		),
 		Create(
+			"get_world_tree",
+			"Inspect the active world hierarchy with stable instance paths, class names, world ID, universe ID, and configurable depth.",
+			"""
+			{
+			  "type": "object",
+			  "properties": {
+			    "max_depth": { "type": "integer", "minimum": 1, "maximum": 12 },
+			    "max_nodes": { "type": "integer", "minimum": 1, "maximum": 1000 }
+			  },
+			  "additionalProperties": false
+			}
+			"""
+		),
+		Create(
 			"list_instantiable_classes",
 			"List classes that Forge can create in the open world.",
 			"""
@@ -178,11 +192,11 @@ internal static class ForgeToolCatalog
 		),
 		Create(
 			"rollback_last_change",
-			"Rollback the most recent Forge change in this request.",
+			"Rollback a specific Forge change by change_id, or the most recent change when omitted.",
 			"""
 			{
 			  "type": "object",
-			  "properties": {},
+			  "properties": { "change_id": { "type": "string" } },
 			  "additionalProperties": false
 			}
 			"""
@@ -240,7 +254,7 @@ internal sealed class ForgeToolExecutor
 		.ToArray();
 
 	private readonly World _root;
-	private readonly Stack<Action> _rollback = new();
+	private readonly List<(string Id, Action Rollback)> _rollback = [];
 	private readonly Dictionary<string, (string Before, string After)> _scriptDiffs = new(
 		StringComparer.OrdinalIgnoreCase
 	);
@@ -259,6 +273,7 @@ internal sealed class ForgeToolExecutor
 		return toolName switch
 		{
 			"get_creator_state" => GetCreatorState(),
+			"get_world_tree" => GetWorldTree(argumentsJson),
 			"list_instantiable_classes" => ListInstantiableClasses(),
 			"search_instances" => SearchInstances(argumentsJson),
 			"inspect_instance" => InspectInstance(argumentsJson),
@@ -268,7 +283,7 @@ internal sealed class ForgeToolExecutor
 			"delete_instance" => DeleteInstance(argumentsJson),
 			"edit_script_source" => EditScriptSource(argumentsJson),
 			"get_script_diff" => GetScriptDiff(argumentsJson),
-			"rollback_last_change" => RollbackLastChange(),
+			"rollback_last_change" => RollbackLastChange(argumentsJson),
 			"run_luau" => "User confirmation is required before Luau can run.",
 			_ => $"Unknown Forge tool: {toolName}",
 		};
@@ -385,6 +400,8 @@ internal sealed class ForgeToolExecutor
 	{
 		StringBuilder builder = new();
 		builder.AppendLine($"Active world: {_root.WorldName.Or(_root.Name)}");
+		builder.AppendLine($"World ID: {_root.WorldID}");
+		builder.AppendLine($"Universe ID: {_root.UniverseID}");
 		builder.AppendLine(
 			$"Selection count: {_root.CreatorContext.Selections.SelectedInstances.Count}"
 		);
@@ -413,6 +430,19 @@ internal sealed class ForgeToolExecutor
 		}
 
 		return builder.ToString().TrimEnd();
+	}
+
+	private string GetWorldTree(string argumentsJson)
+	{
+		int maxDepth = 4;
+		int maxNodes = 200;
+		using JsonDocument document = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+		if (document.RootElement.TryGetProperty("max_depth", out var depth) && depth.TryGetInt32(out var requestedDepth))
+			maxDepth = Math.Clamp(requestedDepth, 1, 12);
+		if (document.RootElement.TryGetProperty("max_nodes", out var nodes) && nodes.TryGetInt32(out var requestedNodes))
+			maxNodes = Math.Clamp(requestedNodes, 1, 1000);
+
+		return $"World: {_root.WorldName.Or(_root.Name)}\nWorld ID: {_root.WorldID}\nUniverse ID: {_root.UniverseID}\n{DescribeWorldOutline(maxDepth, maxNodes)}";
 	}
 
 	private string ListInstantiableClasses()
@@ -669,7 +699,8 @@ internal sealed class ForgeToolExecutor
 			);
 		}
 
-		_rollback.Push(() =>
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () =>
 		{
 			Instance? created = ResolveInstance(createdPath) ?? instance;
 			created?.Delete();
@@ -681,10 +712,11 @@ internal sealed class ForgeToolExecutor
 			{
 				_root.LinkedSession.RemoveFile(createdScriptFile);
 			}
-		});
+		}));
 
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = changeId,
 			ToolName = "create_instance",
 			Title = $"{instance.ClassName} created",
 			Detail = createdPath,
@@ -864,14 +896,16 @@ internal sealed class ForgeToolExecutor
 		WriteScriptSource(script, after);
 		string path = script.LuaPath;
 		_scriptDiffs[path] = (before, after);
-		_rollback.Push(() =>
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () =>
 		{
 			if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
 				WriteScriptSource(current, before);
-		});
+		}));
 		_root.CreatorContext.Selections.SelectOnly(script);
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = changeId,
 			ToolName = "edit_script_source",
 			Title = "Script updated",
 			Detail = path,
@@ -918,13 +952,23 @@ internal sealed class ForgeToolExecutor
 		return diff;
 	}
 
-	private string RollbackLastChange()
+	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+	private string RollbackLastChange(string argumentsJson)
 	{
 		if (_rollback.Count == 0)
 			return "There are no Forge changes to roll back in this request.";
-		_rollback.Pop().Invoke();
+		ForgeRollbackArgs args = JsonSerializer.Deserialize<ForgeRollbackArgs>(argumentsJson) ?? new();
+		int index = string.IsNullOrWhiteSpace(args.ChangeId)
+			? _rollback.Count - 1
+			: _rollback.FindLastIndex(change => change.Id == args.ChangeId);
+		if (index < 0)
+			throw new InvalidOperationException("That Forge change is no longer available to roll back in this Creator session.");
+		var change = _rollback[index];
+		change.Rollback();
+		_rollback.RemoveAt(index);
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = change.Id,
 			ToolName = "rollback_last_change",
 			Title = "Change rolled back",
 			Detail = "Restored the previous state.",

@@ -14,13 +14,35 @@ installs the official pinned archive for all desktop exports. Non-Creator preset
 exclude the addon. Keep CEF dependencies beside the exported app as specified in
 the upstream gdextension. Documentation: https://godotcef.org/api/
 
-## Tool transport
+## Shared MCP server
 
-ForgeMcpServer implements MCP JSON-RPC initialize, ping, tools/list and tools/call
-over Godot CEF custom IPC. This is not a public TCP or stdio listener.
+`ForgeMcpServer` is the single protocol core and `ForgeToolCatalog` is the single
+tool registry. Forge's CEF bridge and the optional Custom MCP HTTP endpoint are
+only transports around that core; do not add tools or policy to either transport.
+The core implements MCP JSON-RPC `initialize`, `ping`, `tools/list`, `tools/call`,
+and cancellation notifications.
+
 World operations run on the Godot main thread using ForgeToolExecutor, including
 its existing history, script diffs and rollback. Changing worlds replaces the
 executor. Direct Luau execution is not advertised. Windows adds run_shell for PowerShell/cmd.
+
+### Connect an external client
+
+1. Open a world in Creator.
+2. Choose **Tools > Custom MCP Server** and select **Start server**.
+3. Choose a client format and use **Copy config**. For Codex, run the copied
+   `codex mcp add brickverse-creator --url "..."` command, or paste the TOML into
+   `~/.codex/config.toml`. For Cursor, merge the copied server entry into its MCP
+   JSON configuration.
+4. Keep Creator open while using the client. Restart the external client if it
+   does not refresh its MCP tool list automatically.
+
+The endpoint uses Streamable HTTP at `/mcp`. It binds to `127.0.0.1` only and
+includes a random session token in the copied URL. The token changes when Creator
+restarts. Do not share the URL. Stop the server from the same window when finished.
+All requests are marshalled onto Godot's main thread. The external server exposes
+the same inspection, tree, metadata, instance, property, script, diff and rollback
+tools as embedded Forge. World edits retain the same inspect-before-edit guard.
 
 The signed-in web UI registers the discovered tool catalog with the authenticated
 backend. Redis holds user-owned sessions (300-second lease), one outstanding call
