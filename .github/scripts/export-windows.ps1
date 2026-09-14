@@ -54,6 +54,12 @@ dotnet build $ProjectFile --configuration ExportRelease --no-restore --nologo
 if ($LASTEXITCODE -ne 0) {
 	throw "dotnet build failed with exit code $LASTEXITCODE."
 }
+
+& $godot.FullName --headless --path $ProjectDirectory --editor --import
+if ($LASTEXITCODE -ne 0) {
+	throw "Godot asset import failed with exit code $LASTEXITCODE."
+}
+
 New-Item -ItemType Directory -Path $ExportDirectory -Force | Out-Null
 
 $exportPath = Join-Path $ExportDirectory $ExportFile
