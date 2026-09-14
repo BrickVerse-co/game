@@ -49,7 +49,13 @@ public class BVAssetProvider : IAssetProvider
 	{
 		string url = GetAssetServeURL(item.ID, item.Type);
 		byte[] buffer;
-		try
+		if (item.ID.StartsWith("temp:", StringComparison.Ordinal))
+		{
+			buffer = BrickVerse.Datamodel.World.Current?.IO.ReadBytesFromID(item.ID)
+				?? throw new FileNotFoundException("The temporary asset is no longer available.", item.ID);
+			url = item.ID;
+		}
+		else try
 		{
 			buffer = await GetResourceBuffer(url, item.Type, item.ID);
 		}
@@ -59,6 +65,9 @@ public class BVAssetProvider : IAssetProvider
 		}
 		item.SizeBytes = buffer.LongLength;
 		item.DirectURL = url;
+		string extension = item.ID.StartsWith("temp:", StringComparison.Ordinal)
+			? Path.GetExtension(BrickVerse.Datamodel.World.Current?.IO.GetPathFromID(item.ID) ?? string.Empty).ToLowerInvariant()
+			: string.Empty;
 
 		switch (item.Type)
 		{
@@ -82,7 +91,12 @@ public class BVAssetProvider : IAssetProvider
 				}
 			case ResourceType.Sound:
 				{
-					item.Resource = AudioStreamOggVorbis.LoadFromBuffer(buffer);
+					item.Resource = extension switch
+					{
+						".mp3" => AudioStreamMP3.LoadFromBuffer(buffer),
+						".wav" => AudioStreamWav.LoadFromBuffer(buffer, []),
+						_ => AudioStreamOggVorbis.LoadFromBuffer(buffer),
+					};
 
 					return item;
 				}
@@ -111,7 +125,15 @@ public class BVAssetProvider : IAssetProvider
 			case ResourceType.GuildBanner:
 				{
 					Image image = new();
-					image.LoadPngFromBuffer(buffer);
+					Error imageError = extension switch
+					{
+						".jpg" or ".jpeg" => image.LoadJpgFromBuffer(buffer),
+						".webp" => image.LoadWebpFromBuffer(buffer),
+						".svg" => image.LoadSvgFromBuffer(buffer),
+						_ => image.LoadPngFromBuffer(buffer),
+					};
+					if (imageError != Error.Ok)
+						throw new InvalidDataException($"Could not decode temporary image {item.ID} ({imageError}).");
 					image.GenerateMipmaps();
 					image.FixAlphaEdges();
 

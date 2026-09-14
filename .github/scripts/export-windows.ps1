@@ -5,10 +5,15 @@ param(
 	[Parameter(Mandatory = $true)][string]$ProjectFile,
 	[Parameter(Mandatory = $true)][string]$ExportDirectory,
 	[Parameter(Mandatory = $true)][string]$ExportPreset,
-	[Parameter(Mandatory = $true)][string]$ExportFile
+	[Parameter(Mandatory = $true)][string]$ExportFile,
+	[string]$BuildTarget = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($BuildTarget) {
+	$env:BV_BUILD_TARGET = $BuildTarget
+}
 
 $godotArchive = Join-Path $env:RUNNER_TEMP "godot.zip"
 $godotDirectory = Join-Path $env:RUNNER_TEMP "godot"

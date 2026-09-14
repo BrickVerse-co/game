@@ -248,7 +248,8 @@ jobs:
             -ProjectFile "${{ github.workspace }}\${{ env.PROJECT_FILE }}" `
             -ExportDirectory "${{ github.workspace }}\dist\windows" `
             -ExportPreset "${{ matrix.export_preset }}" `
-            -ExportFile "${{ matrix.export_file }}"
+            -ExportFile "${{ matrix.export_file }}" `
+            -BuildTarget "CREATOR"
 
       - name: Azure login
         if: matrix.platform == 'windows'

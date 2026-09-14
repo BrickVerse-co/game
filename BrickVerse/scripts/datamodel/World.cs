@@ -146,6 +146,9 @@ public sealed partial class World : Instance
 	internal AntiCheatService AntiCheat => FindChild<AntiCheatService>("AntiCheat")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
+	#if CREATOR
+	public StudioService? StudioService => FindChild<StudioService>("StudioService");
+	#endif
 #endif
 	public Temporary TemporaryContainer => FindChild<Temporary>("Temporary")!;
 
@@ -805,6 +808,14 @@ public sealed partial class World : Instance
 #if CREATOR
 		if (SessionType == SessionTypeEnum.Creator)
 		{
+			StudioService? studioService = FindChild<StudioService>("StudioService");
+			if (studioService == null)
+			{
+				studioService = Globals.LoadInstance<StudioService>(Root);
+				studioService.NameOverride = "StudioService";
+				studioService.NetworkParent = this;
+			}
+
 			CreatorContextService? creatorContext = FindChild<CreatorContextService>("CreatorContext");
 			if (creatorContext == null)
 			{
