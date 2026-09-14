@@ -561,6 +561,21 @@ public sealed class ForgeCreateInstanceArgs
 
 	[JsonPropertyName("properties")]
 	public JsonElement Properties { get; set; }
+
+	[JsonPropertyName("source")]
+	public string? Source { get; set; }
+}
+
+public sealed class ForgeProjectFileArgs
+{
+	[JsonPropertyName("action")]
+	public string Action { get; set; } = string.Empty;
+
+	[JsonPropertyName("path")]
+	public string? Path { get; set; }
+
+	[JsonPropertyName("content")]
+	public string? Content { get; set; }
 }
 
 public sealed class ForgeRunLuauArgs
@@ -609,6 +624,7 @@ public sealed class ForgeEditScriptSourceArgs
 [JsonSerializable(typeof(ForgeSelectInstancesArgs))]
 [JsonSerializable(typeof(ForgeDeleteInstanceArgs))]
 [JsonSerializable(typeof(ForgeCreateInstanceArgs))]
+[JsonSerializable(typeof(ForgeProjectFileArgs))]
 [JsonSerializable(typeof(ForgeSetInstancePropertiesArgs))]
 [JsonSerializable(typeof(ForgeRunLuauArgs))]
 [JsonSerializable(typeof(ForgeEditScriptSourceArgs))]

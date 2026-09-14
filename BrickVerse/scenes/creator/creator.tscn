@@ -748,8 +748,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 6.0
 offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -2.0
+offset_right = 194.0
+offset_bottom = 426.0
 grow_horizontal = 2
 grow_vertical = 2
 auto_width = true
@@ -1856,6 +1856,7 @@ tab_1/title = "Forge - AI Chat"
 tab_1/icon = ExtResource("49_ww661")
 
 [node name="Explorer" type="MarginContainer" parent="GUI/Splitter/Right/RightTabs" unique_id=75943773]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
@@ -1882,9 +1883,9 @@ custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 
 [node name="Forge" parent="GUI/Splitter/Right/RightTabs" unique_id=756313943 instance=ExtResource("38_r1hsb")]
-visible = false
 layout_mode = 2
 metadata/_tab_name = "Forge - AI Chat"
+metadata/_tab_index = 1
 
 [node name="Footer" type="PanelContainer" parent="GUI" unique_id=1811719814 node_paths=PackedStringArray("_titleLabel", "_versionLabel")]
 layout_mode = 1

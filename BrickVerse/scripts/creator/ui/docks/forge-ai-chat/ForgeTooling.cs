@@ -35,6 +35,20 @@ internal static class ForgeToolCatalog
 			"""
 		),
 		Create(
+			"get_world_tree",
+			"Inspect the active world hierarchy with stable instance paths, class names, world ID, universe ID, and configurable depth.",
+			"""
+			{
+			  "type": "object",
+			  "properties": {
+			    "max_depth": { "type": "integer", "minimum": 1, "maximum": 12 },
+			    "max_nodes": { "type": "integer", "minimum": 1, "maximum": 1000 }
+			  },
+			  "additionalProperties": false
+			}
+			"""
+		),
+		Create(
 			"list_instantiable_classes",
 			"List classes that Forge can create in the open world.",
 			"""
@@ -99,7 +113,7 @@ internal static class ForgeToolCatalog
 		),
 		Create(
 			"create_instance",
-			"Create a new instantiable instance under a parent path and optionally set common properties. Script instances are automatically created as project .luau files and linked so they can be opened and edited.",
+			"Create a new instantiable instance under a parent path and optionally set common properties. Use canonical paths returned by search_instances, such as world.ScriptService; slash-form paths are accepted too. For scripts use ServerScript, ClientScript, or ModuleScript (Script aliases ServerScript) and pass source in this same call; Creator creates and links the project .luau file atomically.",
 			"""
 			{
 			  "type": "object",
@@ -107,12 +121,29 @@ internal static class ForgeToolCatalog
 			    "class_name": { "type": "string" },
 			    "parent_path": { "type": "string" },
 			    "name": { "type": "string" },
+			    "source": { "type": "string", "description": "Initial Luau source for a Script instance." },
 			    "properties": {
 			      "type": "object",
 			      "additionalProperties": true
 			    }
 			  },
 			  "required": ["class_name"],
+			  "additionalProperties": false
+			}
+			"""
+		),
+		Create(
+			"manage_project_file",
+			"List, read, create or replace, and delete files inside the open linked Creator project. Prefer create_instance/edit_script_source for scripts so world links stay synchronized.",
+			"""
+			{
+			  "type": "object",
+			  "properties": {
+			    "action": { "type": "string", "enum": ["list", "read", "write", "delete"] },
+			    "path": { "type": "string" },
+			    "content": { "type": "string" }
+			  },
+			  "required": ["action"],
 			  "additionalProperties": false
 			}
 			"""
@@ -178,11 +209,11 @@ internal static class ForgeToolCatalog
 		),
 		Create(
 			"rollback_last_change",
-			"Rollback the most recent Forge change in this request.",
+			"Rollback a specific Forge change by change_id, or the most recent change when omitted.",
 			"""
 			{
 			  "type": "object",
-			  "properties": {},
+			  "properties": { "change_id": { "type": "string" } },
 			  "additionalProperties": false
 			}
 			"""
@@ -240,7 +271,7 @@ internal sealed class ForgeToolExecutor
 		.ToArray();
 
 	private readonly World _root;
-	private readonly Stack<Action> _rollback = new();
+	private readonly List<(string Id, Action Rollback)> _rollback = [];
 	private readonly Dictionary<string, (string Before, string After)> _scriptDiffs = new(
 		StringComparer.OrdinalIgnoreCase
 	);
@@ -259,6 +290,7 @@ internal sealed class ForgeToolExecutor
 		return toolName switch
 		{
 			"get_creator_state" => GetCreatorState(),
+			"get_world_tree" => GetWorldTree(argumentsJson),
 			"list_instantiable_classes" => ListInstantiableClasses(),
 			"search_instances" => SearchInstances(argumentsJson),
 			"inspect_instance" => InspectInstance(argumentsJson),
@@ -267,8 +299,9 @@ internal sealed class ForgeToolExecutor
 			"set_instance_properties" => SetInstanceProperties(argumentsJson),
 			"delete_instance" => DeleteInstance(argumentsJson),
 			"edit_script_source" => EditScriptSource(argumentsJson),
+			"manage_project_file" => ManageProjectFile(argumentsJson),
 			"get_script_diff" => GetScriptDiff(argumentsJson),
-			"rollback_last_change" => RollbackLastChange(),
+			"rollback_last_change" => RollbackLastChange(argumentsJson),
 			"run_luau" => "User confirmation is required before Luau can run.",
 			_ => $"Unknown Forge tool: {toolName}",
 		};
@@ -385,6 +418,8 @@ internal sealed class ForgeToolExecutor
 	{
 		StringBuilder builder = new();
 		builder.AppendLine($"Active world: {_root.WorldName.Or(_root.Name)}");
+		builder.AppendLine($"World ID: {_root.WorldID}");
+		builder.AppendLine($"Universe ID: {_root.UniverseID}");
 		builder.AppendLine(
 			$"Selection count: {_root.CreatorContext.Selections.SelectedInstances.Count}"
 		);
@@ -413,6 +448,19 @@ internal sealed class ForgeToolExecutor
 		}
 
 		return builder.ToString().TrimEnd();
+	}
+
+	private string GetWorldTree(string argumentsJson)
+	{
+		int maxDepth = 4;
+		int maxNodes = 200;
+		using JsonDocument document = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+		if (document.RootElement.TryGetProperty("max_depth", out var depth) && depth.TryGetInt32(out var requestedDepth))
+			maxDepth = Math.Clamp(requestedDepth, 1, 12);
+		if (document.RootElement.TryGetProperty("max_nodes", out var nodes) && nodes.TryGetInt32(out var requestedNodes))
+			maxNodes = Math.Clamp(requestedNodes, 1, 1000);
+
+		return $"World: {_root.WorldName.Or(_root.Name)}\nWorld ID: {_root.WorldID}\nUniverse ID: {_root.UniverseID}\n{DescribeWorldOutline(maxDepth, maxNodes)}";
 	}
 
 	private string ListInstantiableClasses()
@@ -502,7 +550,8 @@ internal sealed class ForgeToolExecutor
 
 		Instance instance =
 			ResolveInstance(args.Path)
-			?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+			?? ResolveScriptByLinkedPath(args.Path)
+			?? throw new InvalidOperationException($"Could not resolve script instance or linked project file '{args.Path}'.");
 		EnsureVisibleCreatorTarget(instance);
 
 		StringBuilder builder = new();
@@ -615,6 +664,8 @@ internal sealed class ForgeToolExecutor
 			) ?? throw new InvalidOperationException("Missing create_instance arguments.");
 
 		string className = args.ClassName.Trim();
+		if (className.Equals("Script", StringComparison.OrdinalIgnoreCase))
+			className = nameof(ServerScript);
 		if (string.IsNullOrWhiteSpace(className))
 		{
 			throw new InvalidOperationException("class_name is required.");
@@ -652,13 +703,26 @@ internal sealed class ForgeToolExecutor
 			? className
 			: args.Name.Trim();
 
-		instance.CreatorInserted();
-		_root.CreatorContext.History.CreateInstances([instance], parentTo);
-
-		string propertyResult = ApplyProperties(instance, args.Properties);
-		string? createdScriptFile = instance is BrickVerse.Datamodel.Script script
-			? CreateAndLinkScriptFile(script)
-			: null;
+		string? createdScriptFile = null;
+		string propertyResult;
+		try
+		{
+			if (instance is BrickVerse.Datamodel.Script initialScript && args.Source != null)
+				initialScript.Source = args.Source;
+			propertyResult = ApplyProperties(instance, args.Properties);
+			createdScriptFile = instance is BrickVerse.Datamodel.Script script
+				? CreateAndLinkScriptFile(script)
+				: null;
+			instance.CreatorInserted();
+			_root.CreatorContext.History.CreateInstances([instance], parentTo);
+		}
+		catch
+		{
+			instance.Delete();
+			if (createdScriptFile != null && _root.LinkedSession != null && File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile)))
+				_root.LinkedSession.RemoveFile(createdScriptFile);
+			throw;
+		}
 		_root.CreatorContext.Selections.SelectOnly(instance);
 
 		string createdPath = instance.LuaPath;
@@ -669,7 +733,8 @@ internal sealed class ForgeToolExecutor
 			);
 		}
 
-		_rollback.Push(() =>
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () =>
 		{
 			Instance? created = ResolveInstance(createdPath) ?? instance;
 			created?.Delete();
@@ -681,10 +746,11 @@ internal sealed class ForgeToolExecutor
 			{
 				_root.LinkedSession.RemoveFile(createdScriptFile);
 			}
-		});
+		}));
 
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = changeId,
 			ToolName = "create_instance",
 			Title = $"{instance.ClassName} created",
 			Detail = createdPath,
@@ -746,9 +812,91 @@ internal sealed class ForgeToolExecutor
 		}
 
 		string source = script.Source;
-		_root.IO.WriteTextToPath(relativePath, source);
-		script.LinkedScript = _root.Assets.GetFileLinkByPath(relativePath);
-		return relativePath;
+		try
+		{
+			_root.IO.WriteTextToPath(relativePath, source);
+			script.LinkedScript = _root.Assets.GetFileLinkByPath(relativePath);
+			return relativePath;
+		}
+		catch
+		{
+			if (File.Exists(_root.LinkedSession.GlobalizePath(relativePath)))
+				_root.LinkedSession.RemoveFile(relativePath);
+			throw;
+		}
+	}
+
+	private string ManageProjectFile(string argumentsJson)
+	{
+		ForgeProjectFileArgs args = JsonSerializer.Deserialize(
+			argumentsJson,
+			ForgeJsonContext.Default.ForgeProjectFileArgs
+		) ?? throw new InvalidOperationException("Missing manage_project_file arguments.");
+		if (_root.LinkedSession == null)
+			throw new InvalidOperationException("Open a linked Creator project first.");
+		string action = args.Action.Trim().ToLowerInvariant();
+		if (action == "list")
+			return string.Join("\n", _root.IO.ListProjectFiles().Take(1000));
+		string path = (args.Path ?? string.Empty).Trim().Replace('\\', '/');
+		if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.StartsWith("../") || path.Contains("/../") || path == "..")
+			throw new InvalidOperationException("A project-relative path is required.");
+		string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
+		if (extension is not ("lua" or "luau" or "json" or "txt"))
+			throw new InvalidOperationException("Forge project-file editing is limited to .lua, .luau, .json, and .txt text files.");
+		return action switch
+		{
+			"read" => _root.IO.ReadTextFromPath(path) ?? throw new FileNotFoundException("Project file not found.", path),
+			"write" => WriteProjectFile(path, args.Content ?? string.Empty),
+			"delete" => DeleteProjectFile(path),
+			_ => throw new InvalidOperationException("action must be list, read, write, or delete."),
+		};
+	}
+
+	private string WriteProjectFile(string path, string content)
+	{
+		string absolutePath = _root.LinkedSession!.GlobalizePath(path);
+		bool existed = File.Exists(absolutePath);
+		string before = existed ? File.ReadAllText(absolutePath) : string.Empty;
+		_root.IO.WriteTextToPath(path, content);
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () =>
+		{
+			if (existed) _root.IO.WriteTextToPath(path, before);
+			else if (File.Exists(absolutePath)) _root.LinkedSession.RemoveFile(path, toRecycleBin: true);
+		}));
+		LastEvent = new ForgeToolEvent
+		{
+			ChangeId = changeId,
+			ToolName = "manage_project_file",
+			Title = existed ? "Project file updated" : "Project file created",
+			Detail = path,
+			InstancePath = path,
+			Diff = BuildUnifiedDiff(before, content),
+			CanRollback = true,
+		};
+		return $"Wrote project file {path} ({content.Length} characters).";
+	}
+
+	private string DeleteProjectFile(string path)
+	{
+		string absolutePath = _root.LinkedSession!.GlobalizePath(path);
+		if (!File.Exists(absolutePath))
+			throw new FileNotFoundException("Project file not found.", path);
+		string before = File.ReadAllText(absolutePath);
+		_root.LinkedSession.RemoveFile(path, toRecycleBin: true);
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () => _root.IO.WriteTextToPath(path, before)));
+		LastEvent = new ForgeToolEvent
+		{
+			ChangeId = changeId,
+			ToolName = "manage_project_file",
+			Title = "Project file deleted",
+			Detail = path,
+			InstancePath = path,
+			Diff = BuildUnifiedDiff(before, string.Empty),
+			CanRollback = true,
+		};
+		return $"Moved project file {path} to the recycle bin.";
 	}
 
 	private static string SanitizeFileName(string name)
@@ -839,8 +987,13 @@ internal sealed class ForgeToolExecutor
 		}
 
 		string path = instance.LuaPath;
+		string? linkedFile = (instance as BrickVerse.Datamodel.Script)?.LinkedScript?.LinkedPath;
 		instance.Delete();
-		return $"Deleted {path}.";
+		if (linkedFile != null && _root.LinkedSession != null && File.Exists(_root.LinkedSession.GlobalizePath(linkedFile)))
+			_root.LinkedSession.RemoveFile(linkedFile, toRecycleBin: true);
+		return linkedFile == null
+			? $"Deleted {path}."
+			: $"Deleted {path} and moved its linked project file {linkedFile} to the recycle bin.";
 	}
 
 	[RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
@@ -852,7 +1005,8 @@ internal sealed class ForgeToolExecutor
 			?? throw new InvalidOperationException("Missing edit_script_source arguments.");
 		Instance instance =
 			ResolveInstance(args.Path)
-			?? throw new InvalidOperationException($"Could not resolve path '{args.Path}'.");
+			?? ResolveScriptByLinkedPath(args.Path)
+			?? throw new InvalidOperationException($"Could not resolve script instance or linked project file '{args.Path}'.");
 		EnsureVisibleCreatorTarget(instance);
 		if (instance is not BrickVerse.Datamodel.Script script)
 			throw new InvalidOperationException($"'{args.Path}' is not a Script.");
@@ -864,14 +1018,16 @@ internal sealed class ForgeToolExecutor
 		WriteScriptSource(script, after);
 		string path = script.LuaPath;
 		_scriptDiffs[path] = (before, after);
-		_rollback.Push(() =>
+		string changeId = Guid.NewGuid().ToString("N");
+		_rollback.Add((changeId, () =>
 		{
 			if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
 				WriteScriptSource(current, before);
-		});
+		}));
 		_root.CreatorContext.Selections.SelectOnly(script);
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = changeId,
 			ToolName = "edit_script_source",
 			Title = "Script updated",
 			Detail = path,
@@ -918,13 +1074,23 @@ internal sealed class ForgeToolExecutor
 		return diff;
 	}
 
-	private string RollbackLastChange()
+	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+	private string RollbackLastChange(string argumentsJson)
 	{
 		if (_rollback.Count == 0)
 			return "There are no Forge changes to roll back in this request.";
-		_rollback.Pop().Invoke();
+		ForgeRollbackArgs args = JsonSerializer.Deserialize<ForgeRollbackArgs>(argumentsJson) ?? new();
+		int index = string.IsNullOrWhiteSpace(args.ChangeId)
+			? _rollback.Count - 1
+			: _rollback.FindLastIndex(change => change.Id == args.ChangeId);
+		if (index < 0)
+			throw new InvalidOperationException("That Forge change is no longer available to roll back in this Creator session.");
+		var change = _rollback[index];
+		change.Rollback();
+		_rollback.RemoveAt(index);
 		LastEvent = new ForgeToolEvent
 		{
+			ChangeId = change.Id,
 			ToolName = "rollback_last_change",
 			Title = "Change rolled back",
 			Detail = "Restored the previous state.",
@@ -939,21 +1105,32 @@ internal sealed class ForgeToolExecutor
 		StringBuilder diff = new();
 		diff.AppendLine("--- before");
 		diff.AppendLine("+++ after");
-		int count = Math.Max(oldLines.Length, newLines.Length);
-		for (int i = 0; i < count; i++)
+		if ((long)oldLines.Length * newLines.Length > 1_000_000)
 		{
-			string? oldLine = i < oldLines.Length ? oldLines[i] : null;
-			string? newLine = i < newLines.Length ? newLines[i] : null;
-			if (oldLine == newLine)
+			foreach (string line in oldLines) diff.AppendLine("-" + line);
+			foreach (string line in newLines) diff.AppendLine("+" + line);
+			return diff.ToString().TrimEnd();
+		}
+		int[,] lcs = new int[oldLines.Length + 1, newLines.Length + 1];
+		for (int oldIndex = oldLines.Length - 1; oldIndex >= 0; oldIndex--)
+			for (int newIndex = newLines.Length - 1; newIndex >= 0; newIndex--)
+				lcs[oldIndex, newIndex] = oldLines[oldIndex] == newLines[newIndex]
+					? lcs[oldIndex + 1, newIndex + 1] + 1
+					: Math.Max(lcs[oldIndex + 1, newIndex], lcs[oldIndex, newIndex + 1]);
+		int i = 0;
+		int j = 0;
+		while (i < oldLines.Length || j < newLines.Length)
+		{
+			if (i < oldLines.Length && j < newLines.Length && oldLines[i] == newLines[j])
 			{
-				if (oldLine != null)
-					diff.AppendLine(" " + oldLine);
-				continue;
+				diff.AppendLine(" " + oldLines[i]);
+				i++;
+				j++;
 			}
-			if (oldLine != null)
-				diff.AppendLine("-" + oldLine);
-			if (newLine != null)
-				diff.AppendLine("+" + newLine);
+			else if (j < newLines.Length && (i == oldLines.Length || lcs[i, j + 1] >= lcs[i + 1, j]))
+				diff.AppendLine("+" + newLines[j++]);
+			else
+				diff.AppendLine("-" + oldLines[i++]);
 		}
 		return diff.ToString().TrimEnd();
 	}
@@ -998,18 +1175,53 @@ internal sealed class ForgeToolExecutor
 			return null;
 		}
 
-		string normalized = path.Trim();
-		if (string.Equals(normalized, "world", StringComparison.OrdinalIgnoreCase))
+		string normalized = path.Trim().Replace('\\', '/').Trim('/');
+		if (
+			string.Equals(normalized, "world", StringComparison.OrdinalIgnoreCase)
+			|| string.Equals(normalized, "root", StringComparison.OrdinalIgnoreCase)
+		)
 		{
 			return _root;
 		}
 
-		if (normalized.StartsWith("world.", StringComparison.OrdinalIgnoreCase))
+		if (
+			normalized.StartsWith("world.", StringComparison.OrdinalIgnoreCase)
+			|| normalized.StartsWith("world/", StringComparison.OrdinalIgnoreCase)
+		)
 		{
 			normalized = normalized[6..];
 		}
+		else if (
+			normalized.StartsWith("root.", StringComparison.OrdinalIgnoreCase)
+			|| normalized.StartsWith("root/", StringComparison.OrdinalIgnoreCase)
+		)
+		{
+			normalized = normalized[5..];
+		}
+
+		// LuaPath is dot-delimited, but LLMs and external MCP clients commonly
+		// provide filesystem/Godot-style paths. Normalize both to the same form.
+		normalized = string.Join(
+			'.',
+			normalized.Split(['.', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+		);
+		if (string.IsNullOrWhiteSpace(normalized))
+			return _root;
 
 		return _root.FindDescendant(normalized);
+	}
+
+	private BrickVerse.Datamodel.Script? ResolveScriptByLinkedPath(string? path)
+	{
+		if (string.IsNullOrWhiteSpace(path)) return null;
+		string normalized = path.Trim().Replace('\\', '/');
+		return _root.GetDescendants()
+			.OfType<BrickVerse.Datamodel.Script>()
+			.FirstOrDefault(script => string.Equals(
+				script.LinkedScript?.LinkedPath?.Replace('\\', '/'),
+				normalized,
+				StringComparison.OrdinalIgnoreCase
+			));
 	}
 
 	private static string FormatInstanceSummary(Instance instance)

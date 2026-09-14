@@ -120,3 +120,11 @@ BrickVerse/builds/
 # Native plugin backup files created while Godot has a Windows DLL loaded
 /BrickVerse/addons/**/~*.dll
 /BrickVerse/addons/**/*.dll~RF*.TMP
+
+# Downloaded CEF runtime; install with bin_scripts/install-gdcef.ps1
+/BrickVerse/addons/godot_cef/
+/BrickVerse/cef_artifacts/
+/godot_cef*.zip
+/BrickVerse/godot_cef*.zip
+/gdcef*.zip
+/BrickVerse/gdcef*.zip
