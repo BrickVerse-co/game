@@ -9,7 +9,7 @@ using System;
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
-[Obsolete("BindableEvent is deprecated; use LocalNetworkEvent instead.", false)]
+[System.Obsolete("BindableEvent is deprecated; use LocalNetworkEvent instead.", false)]
 public sealed partial class BindableEvent : Instance
 {
 	[ScriptProperty] public BVSignal Invoked { get; private set; } = new();

@@ -147,6 +147,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		GetNode<Button>("Editor/Toolbar/Publish").Pressed += OpenPublish;
 		GetNode<Button>("Editor/Main/Tracks/Actions/Position").Pressed += () => AddTrack("position");
 		GetNode<Button>("Editor/Main/Tracks/Actions/Rotation").Pressed += () => AddTrack("rotation");
+		GetNode<Button>("Editor/Main/Tracks/Actions/Scale").Pressed += () => AddTrack("scale");
 		GetNode<Button>("Editor/Main/Tracks/Actions/Delete").Pressed += DeleteTrack;
 		GetNode<Button>("Editor/Main/Workspace/Playback/Stop").Pressed += StopPlayback;
 		_play.Pressed += TogglePlayback;
@@ -1387,11 +1388,14 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	{
 		PushUndo();
 		int components = channel == "rotation" ? 4 : 3;
-		float[] value = channel == "rotation" ? [0, 0, 0, 1] : channel == "scale" ? [1, 1, 1] : [0, 0, 0];
+		float[] value = ReadSelectedBoneValue(channel);
+		string path = _previewSkeleton != null && _boneChoice.Selected >= 0
+			? "Poly/Skeleton3D:" + _previewSkeleton.GetBoneName(_boneChoice.Selected)
+			: "Poly/Skeleton3D:Bone";
 		_clip.Tracks.Add(
 			new BVAnimationTrack
 			{
-				Path = "Poly/Skeleton3D:Bone",
+				Path = path,
 				Channel = channel,
 				Keys = [new BVAnimationKey { Time = 0, Value = value.Take(components).ToArray() }],
 			}
@@ -1417,12 +1421,37 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 			return;
 		PushUndo();
 		BVAnimationTrack track = _clip.Tracks[_selectedTrack];
-		float[] value = track.Channel == "rotation" ? [0, 0, 0, 1] : track.Channel == "scale" ? [1, 1, 1] : [0, 0, 0];
-		track.Keys.Add(new BVAnimationKey { Time = Math.Min(_clip.Length, track.Keys.Last().Time + 0.1), Value = value });
+		float time = Math.Clamp((float)_playhead.Value, 0, _clip.Length);
+		int existing = track.Keys.FindIndex(key => Mathf.IsEqualApprox(key.Time, time));
+		if (existing >= 0)
+		{
+			_selectedKey = existing;
+			_status.Text = "A keyframe already exists at the playhead.";
+			RefreshKeys();
+			return;
+		}
+		float[] value = ReadSelectedBoneValue(track.Channel);
+		track.Keys.Add(new BVAnimationKey { Time = time, Value = value });
 		track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
-		_selectedKey = track.Keys.Count - 1;
+		_selectedKey = track.Keys.FindIndex(key => Mathf.IsEqualApprox(key.Time, time));
 		RefreshKeys();
 	}
+
+	private float[] ReadSelectedBoneValue(string channel)
+	{
+		if (_previewSkeleton == null || _boneChoice.Selected < 0 || _boneChoice.Selected >= _previewSkeleton.GetBoneCount())
+			return channel == "rotation" ? [0, 0, 0, 1] : channel == "scale" ? [1, 1, 1] : [0, 0, 0];
+		int bone = _boneChoice.Selected;
+		return channel switch
+		{
+			"rotation" => QuaternionValue(_previewSkeleton.GetBonePoseRotation(bone)),
+			"scale" => Vector3Value(_previewSkeleton.GetBonePoseScale(bone)),
+			_ => Vector3Value(_previewSkeleton.GetBonePosePosition(bone)),
+		};
+	}
+
+	private static float[] QuaternionValue(Quaternion value) => [value.X, value.Y, value.Z, value.W];
+	private static float[] Vector3Value(Vector3 value) => [value.X, value.Y, value.Z];
 
 	private void DeleteKey()
 	{
@@ -1465,13 +1494,18 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		BVAnimationTrack track = _clip.Tracks[_selectedTrack];
 		if (_selectedKey >= track.Keys.Count)
 			return;
-		PushUndo();
 		BVAnimationKey key = track.Keys[_selectedKey];
-		key.Time = Math.Clamp(_time.Value, 0, _clip.Length);
-		key.Transition = (float)_transition.Value;
+		float time = Math.Clamp((float)_time.Value, 0, _clip.Length);
 		int components = track.Channel == "rotation" ? 4 : 3;
-		key.Value = _values.Take(components).Select(field => (float)field.Value).ToArray();
+		float transition = (float)_transition.Value;
+		float[] value = _values.Take(components).Select(field => (float)field.Value).ToArray();
+		if (Mathf.IsEqualApprox(key.Time, time) && Mathf.IsEqualApprox(key.Transition, transition) && key.Value.SequenceEqual(value)) return;
+		PushUndo();
+		key.Time = time;
+		key.Transition = transition;
+		key.Value = value;
 		track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
+		_selectedKey = track.Keys.IndexOf(key);
 		RefreshKeys(false);
 	}
 
@@ -1584,6 +1618,12 @@ public sealed partial class AnimationTimeline : Control
 	public int SelectedTrack { get; set; } = -1;
 	public int SelectedKey { get; set; } = -1;
 
+	public override void _Notification(int what)
+	{
+		if (what == NotificationResized)
+			QueueRedraw();
+	}
+
 	public override void _Draw()
 	{
 		DrawRect(new Rect2(Vector2.Zero, Size), new Color("171b22"));
@@ -1591,18 +1631,27 @@ public sealed partial class AnimationTimeline : Control
 			return;
 		const float left = 150;
 		float width = Math.Max(1, Size.X - left - 12);
+		DrawRect(new Rect2(0, 0, Size.X, 23), new Color("202732"));
+		DrawLine(new Vector2(left, 0), new Vector2(left, Size.Y), new Color(1, 1, 1, 0.16f));
+		DrawString(ThemeDB.FallbackFont, new Vector2(8, 15), "Tracks", HorizontalAlignment.Left, -1, 11, new Color(1, 1, 1, 0.7f));
+		int majorStep = Clip.Length <= 10 ? 1 : Clip.Length <= 30 ? 5 : 10;
 		for (int second = 0; second <= Math.Ceiling(Clip.Length); second++)
 		{
 			float x = left + width * second / Clip.Length;
-			DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), new Color(1, 1, 1, 0.12f));
-			DrawString(ThemeDB.FallbackFont, new Vector2(x + 3, 15), second + "s", HorizontalAlignment.Left, -1, 11, new Color(1, 1, 1, 0.65f));
+			bool major = second % majorStep == 0;
+			DrawLine(new Vector2(x, 23), new Vector2(x, Size.Y), new Color(1, 1, 1, major ? 0.12f : 0.05f));
+			if (major)
+				DrawString(ThemeDB.FallbackFont, new Vector2(x + 3, 15), second + "s", HorizontalAlignment.Left, -1, 10, new Color(1, 1, 1, 0.7f));
 		}
 		float rowHeight = Math.Max(22, (Size.Y - 22) / Math.Max(1, Clip.Tracks.Count));
 		for (int trackIndex = 0; trackIndex < Clip.Tracks.Count; trackIndex++)
 		{
 			BVAnimationTrack track = Clip.Tracks[trackIndex];
 			float y = 24 + trackIndex * rowHeight;
-			DrawString(ThemeDB.FallbackFont, new Vector2(6, y + 14), track.Channel + "  " + track.Path.GetFile(), HorizontalAlignment.Left, 138, 11, Colors.LightGray);
+			if (trackIndex == SelectedTrack)
+				DrawRect(new Rect2(0, y, Size.X, rowHeight), new Color(0.08f, 0.32f, 0.5f, 0.22f));
+			DrawString(ThemeDB.FallbackFont, new Vector2(8, y + 14), track.Path.GetFile(), HorizontalAlignment.Left, 136, 10, Colors.LightGray);
+			DrawString(ThemeDB.FallbackFont, new Vector2(8, y + rowHeight - 6), track.Channel, HorizontalAlignment.Left, 136, 9, new Color(0.55f, 0.65f, 0.75f));
 			DrawLine(new Vector2(left, y + rowHeight), new Vector2(Size.X, y + rowHeight), new Color(1, 1, 1, 0.08f));
 			for (int keyIndex = 0; keyIndex < track.Keys.Count; keyIndex++)
 			{
@@ -1615,7 +1664,8 @@ public sealed partial class AnimationTimeline : Control
 				DrawColoredPolygon(diamond, selected ? new Color("ffd166") : new Color("32a9ff"));
 			}
 		}
-		float playheadX = left + width * (float)(Playhead / Clip.Length);
+		float playheadX = left + width * Math.Clamp((float)(Playhead / Clip.Length), 0, 1);
+		DrawColoredPolygon([new Vector2(playheadX - 6, 0), new Vector2(playheadX + 6, 0), new Vector2(playheadX, 7)], new Color("ff5b62"));
 		DrawLine(new Vector2(playheadX, 0), new Vector2(playheadX, Size.Y), new Color("ff5b62"), 2);
 	}
 }

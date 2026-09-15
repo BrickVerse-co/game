@@ -215,6 +215,10 @@ text = "+ Position"
 layout_mode = 2
 text = "+ Rotation"
 
+[node name="Scale" type="Button" parent="Editor/Main/Tracks/Actions" unique_id=1458835675]
+layout_mode = 2
+text = "+ Scale"
+
 [node name="Delete" type="Button" parent="Editor/Main/Tracks/Actions" unique_id=2068075198]
 layout_mode = 2
 text = "Delete"
