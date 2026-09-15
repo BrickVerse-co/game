@@ -247,6 +247,31 @@ modulate = Color(0.6078, 0.6549, 0.7216, 1)
 layout_mode = 2
 text = "Compare the current project against automatic Creator snapshots."
 
+[node name="Toolbar" type="HBoxContainer" parent="Surface/Margin/Tabs/History/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BackupNow" type="Button" parent="Surface/Margin/Tabs/History/Layout/Toolbar"]
+layout_mode = 2
+text = "Back up now"
+
+[node name="Refresh" type="Button" parent="Surface/Margin/Tabs/History/Layout/Toolbar"]
+layout_mode = 2
+text = "Refresh"
+
+[node name="Rollback" type="Button" parent="Surface/Margin/Tabs/History/Layout/Toolbar"]
+layout_mode = 2
+text = "Restore selected"
+
+[node name="Spacer" type="Control" parent="Surface/Margin/Tabs/History/Layout/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Hint" type="Label" parent="Surface/Margin/Tabs/History/Layout/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"CreatorMutedLabel"
+text = "Restores files after making a safety backup"
+
 [node name="Split" type="HSplitContainer" parent="Surface/Margin/Tabs/History/Layout" unique_id=1781303056]
 layout_mode = 2
 size_flags_vertical = 3
@@ -302,3 +327,7 @@ placeholder_text = "{
 [node name="DeleteConfirm" type="ConfirmationDialog" parent="." unique_id=7787004]
 title = "Delete data store key?"
 dialog_text = "This permanently deletes the selected local/test key."
+
+[node name="RestoreConfirm" type="ConfirmationDialog" parent="."]
+title = "Restore project backup"
+dialog_text = "Restore the selected backup? Creator will save a safety backup first."

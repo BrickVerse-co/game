@@ -12,6 +12,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Collections.Generic;
+using BrickVerse.Creator.LSP.Schemas;
+using DatamodelScript = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -33,6 +35,10 @@ public sealed partial class CreatorDataToolsWindow : Window
 	private string _editingKey = "";
 	private ConfirmationDialog _valueEditor = null!;
 	private ConfirmationDialog _deleteConfirm = null!;
+	private ConfirmationDialog _restoreConfirm = null!;
+	private Tree _collisionMatrix = null!;
+	private Tree _analysis = null!;
+	private Tree _scriptActivity = null!;
 
 	public static void Open(int tab = 0)
 	{
@@ -63,8 +69,10 @@ public sealed partial class CreatorDataToolsWindow : Window
 		GetNode<Button>("Surface/Margin/Tabs/Datastore/Layout/Pager/Next").Pressed += () => { _storePage++; RefreshStores(); };
 		_valueEditor = GetNode<ConfirmationDialog>("ValueEditor");
 		_deleteConfirm = GetNode<ConfirmationDialog>("DeleteConfirm");
+		_restoreConfirm = GetNode<ConfirmationDialog>("RestoreConfirm");
 		_valueEditor.Confirmed += SaveStoreValue;
 		_deleteConfirm.Confirmed += DeleteStoreValue;
+		_restoreConfirm.Confirmed += RestoreSelectedSnapshot;
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Add").Pressed += AddLocaleRow;
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Save").Pressed += SaveLocales;
 		GetNode<Button>("Surface/Margin/Tabs/Localization/Layout/Toolbar/Reload").Pressed += LoadLocales;
@@ -74,6 +82,10 @@ public sealed partial class CreatorDataToolsWindow : Window
 		GetNode<Button>("Surface/Margin/Tabs/Icons/Layout/Toolbar/Folder").Pressed += OpenIconFolder;
 		CreatorIconRegistry.Changed += OnIconsChanged;
 		_snapshots.ItemSelected += ShowSnapshotDiff;
+		GetNode<Button>("Surface/Margin/Tabs/History/Layout/Toolbar/BackupNow").Pressed += BackupNow;
+		GetNode<Button>("Surface/Margin/Tabs/History/Layout/Toolbar/Refresh").Pressed += RefreshSnapshots;
+		GetNode<Button>("Surface/Margin/Tabs/History/Layout/Toolbar/Rollback").Pressed += () => { if (_snapshots.IsAnythingSelected()) _restoreConfirm.PopupCentered(); };
+		BuildCollisionGroupsTab(); BuildDiagnosticsTab();
 		RefreshStores(); LoadLocales(); LoadIcons(); RefreshSnapshots();
 		_tabs.CurrentTab = Mathf.Clamp(_initialTab, 0, _tabs.GetTabCount() - 1);
 	}
@@ -252,6 +264,28 @@ public sealed partial class CreatorDataToolsWindow : Window
 		foreach (string dir in Directory.GetDirectories(path).OrderByDescending(value => value)) { int index = _snapshots.AddItem(Path.GetFileName(dir)); _snapshots.SetItemMetadata(index, dir); }
 	}
 
+	private async void BackupNow()
+	{
+		if (CreatorService.CurrentSession is not CreatorSession session) return;
+		await session.SaveBackup(); RefreshSnapshots();
+	}
+
+	private async void RestoreSelectedSnapshot()
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		int[] selected = _snapshots.GetSelectedItems();
+		if (session == null || selected.Length == 0) return;
+		try
+		{
+			await session.SaveBackup();
+			string snapshot = _snapshots.GetItemMetadata(selected[0]).AsString();
+			await ProjectSnapshotManager.RestoreAsync(snapshot, session.ProjectFolderPath);
+			CreatorService.Interface.StatusBar?.SetStatus("Backup restored. Reopen the project to reload every restored world and script.");
+			RefreshSnapshots(); ShowSnapshotDiff(selected[0]);
+		}
+		catch (Exception ex) { OS.Alert(ex.Message, "Could not restore backup"); }
+	}
+
 	private void ShowSnapshotDiff(long index)
 	{
 		CreatorSession? session = CreatorService.CurrentSession; if (session == null) return; string snapshot = _snapshots.GetItemMetadata((int)index).AsString(); List<string> lines = [];
@@ -262,6 +296,65 @@ public sealed partial class CreatorDataToolsWindow : Window
 	}
 
 	private static bool HashesMatch(string a, string b) => SHA256.HashData(File.ReadAllBytes(a)).SequenceEqual(SHA256.HashData(File.ReadAllBytes(b)));
+
+	private void BuildCollisionGroupsTab()
+	{
+		MarginContainer page = new() { Name = "Collision Groups" }; page.AddThemeConstantOverride("margin_left", 12); page.AddThemeConstantOverride("margin_top", 12); page.AddThemeConstantOverride("margin_right", 12); page.AddThemeConstantOverride("margin_bottom", 12); _tabs.AddChild(page);
+		VBoxContainer layout = new(); page.AddChild(layout);
+		Label title = new() { Text = "Collision Groups Editor" }; title.AddThemeFontSizeOverride("font_size", 23); layout.AddChild(title);
+		Label subtitle = new() { Text = "Control which physics layers collide. Changes apply to every object assigned to each layer.", ThemeTypeVariation = "CreatorMutedLabel" }; layout.AddChild(subtitle);
+		Button refresh = new() { Text = "Refresh from world", CustomMinimumSize = new Vector2(140, 30) }; refresh.Pressed += RefreshCollisionMatrix; layout.AddChild(refresh);
+		_collisionMatrix = new Tree { Columns = 9, ColumnTitlesVisible = true, HideRoot = true, SizeFlagsVertical = Control.SizeFlags.ExpandFill }; layout.AddChild(_collisionMatrix);
+		_collisionMatrix.SetColumnTitle(0, "Group / layer"); for (int i = 1; i <= 8; i++) { _collisionMatrix.SetColumnTitle(i, i.ToString()); _collisionMatrix.SetColumnExpand(i, false); _collisionMatrix.SetColumnCustomMinimumWidth(i, 48); }
+		_collisionMatrix.ItemEdited += ApplyCollisionMatrixEdit; RefreshCollisionMatrix();
+	}
+
+	private void RefreshCollisionMatrix()
+	{
+		if (_collisionMatrix == null) return; _collisionMatrix.Clear(); TreeItem root = _collisionMatrix.CreateItem();
+		Physical[] physicals = World.Current == null ? [] : World.Current.GetDescendants().OfType<Physical>().ToArray();
+		for (int layer = 0; layer < 8; layer++)
+		{
+			TreeItem row = root.CreateChild(); int members = physicals.Count(item => (item.CollisionLayers & (1u << layer)) != 0); row.SetText(0, $"Layer {layer + 1}  ({members} objects)"); row.SetMetadata(0, layer);
+			for (int target = 0; target < 8; target++) { row.SetCellMode(target + 1, TreeItem.TreeCellMode.Check); bool collides = physicals.Where(item => (item.CollisionLayers & (1u << layer)) != 0).DefaultIfEmpty().All(item => item == null || (item.CollisionMask & (1u << target)) != 0); row.SetChecked(target + 1, collides); row.SetEditable(target + 1, true); }
+		}
+	}
+
+	private void ApplyCollisionMatrixEdit()
+	{
+		TreeItem? row = _collisionMatrix.GetEdited(); int column = _collisionMatrix.GetEditedColumn(); if (row == null || column < 1 || World.Current == null) return;
+		int layer = (int)row.GetMetadata(0); int target = column - 1; bool enabled = row.IsChecked(column);
+		foreach (Physical item in World.Current.GetDescendants().OfType<Physical>().Where(item => (item.CollisionLayers & (1u << layer)) != 0)) item.SetCollisionMask(target + 1, enabled);
+		foreach (Physical item in World.Current.GetDescendants().OfType<Physical>().Where(item => (item.CollisionLayers & (1u << target)) != 0)) item.SetCollisionMask(layer + 1, enabled);
+		RefreshCollisionMatrix();
+	}
+
+	private void BuildDiagnosticsTab()
+	{
+		MarginContainer page = new() { Name = "Diagnostics" }; page.AddThemeConstantOverride("margin_left", 12); page.AddThemeConstantOverride("margin_top", 12); page.AddThemeConstantOverride("margin_right", 12); page.AddThemeConstantOverride("margin_bottom", 12); _tabs.AddChild(page);
+		VBoxContainer layout = new(); page.AddChild(layout); HBoxContainer header = new(); layout.AddChild(header);
+		Label title = new() { Text = "Script diagnostics", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; title.AddThemeFontSizeOverride("font_size", 23); header.AddChild(title);
+		Button refresh = new() { Text = "Refresh", CustomMinimumSize = new Vector2(90, 30) }; refresh.Pressed += RefreshDiagnostics; header.AddChild(refresh);
+		TabContainer views = new() { SizeFlagsVertical = Control.SizeFlags.ExpandFill }; layout.AddChild(views);
+		_analysis = new Tree { Name = "Analysis", Columns = 4, ColumnTitlesVisible = true, HideRoot = true }; _analysis.SetColumnTitle(0, "Severity"); _analysis.SetColumnTitle(1, "File"); _analysis.SetColumnTitle(2, "Line"); _analysis.SetColumnTitle(3, "Message"); _analysis.SetColumnExpand(0, false); _analysis.SetColumnCustomMinimumWidth(0, 100); _analysis.SetColumnExpand(2, false); _analysis.SetColumnCustomMinimumWidth(2, 60); _analysis.ItemActivated += OpenDiagnostic; views.AddChild(_analysis);
+		_scriptActivity = new Tree { Name = "Script Activity", Columns = 4, ColumnTitlesVisible = true, HideRoot = true }; _scriptActivity.SetColumnTitle(0, "Script"); _scriptActivity.SetColumnTitle(1, "Type"); _scriptActivity.SetColumnTitle(2, "Source"); _scriptActivity.SetColumnTitle(3, "Location"); views.AddChild(_scriptActivity);
+		RefreshDiagnostics();
+	}
+
+	private void RefreshDiagnostics()
+	{
+		if (_analysis == null || _scriptActivity == null) return; _analysis.Clear(); _scriptActivity.Clear(); TreeItem analysisRoot = _analysis.CreateItem(); TreeItem activityRoot = _scriptActivity.CreateItem(); CreatorSession? session = CreatorService.CurrentSession;
+		if (session?.LuaCompletion != null) foreach ((string file, List<LspDiagnostic> diagnostics) in session.LuaCompletion.Diagnostics) foreach (LspDiagnostic diagnostic in diagnostics)
+		{
+			TreeItem row = analysisRoot.CreateChild(); int severity = diagnostic.Severity ?? 3; row.SetText(0, severity switch { 1 => "Error", 2 => "Warning", 4 => "Hint", _ => "Information" }); row.SetText(1, Path.GetRelativePath(session.ProjectFolderPath, file)); row.SetText(2, (diagnostic.Range.Start.Line + 1).ToString()); row.SetText(3, diagnostic.Message); row.SetMetadata(0, file); row.SetMetadata(1, diagnostic.Range.Start.Line + 1);
+		}
+		if (World.Current != null) foreach (DatamodelScript script in World.Current.GetDescendants().OfType<DatamodelScript>().OrderBy(script => script.LuaPath)) { TreeItem row = activityRoot.CreateChild(); row.SetText(0, script.Name); row.SetText(1, script.ClassName); row.SetText(2, $"{script.Source.Length:N0} characters"); row.SetText(3, script.LuaPath); }
+	}
+
+	private void OpenDiagnostic()
+	{
+		TreeItem? row = _analysis.GetSelected(); if (row == null) return; string path = row.GetMetadata(0).AsString(); int line = (int)row.GetMetadata(1); if (CreatorService.CurrentSession is CreatorSession session) CreatorService.OpenFile(Path.GetRelativePath(session.ProjectFolderPath, path), line);
+	}
 	private static string SerializeValue(object? value, bool indented) => JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = indented });
 	private static string ValueType(object? value) => value switch { null => "null", string => "string", bool => "boolean", byte or short or int or long or float or double or decimal => "number", System.Collections.IDictionary => "object", System.Collections.IEnumerable => "array", _ => value.GetType().Name };
 	private static object? ParseJson(string json) { using JsonDocument doc = JsonDocument.Parse(json); return ReadJson(doc.RootElement); }

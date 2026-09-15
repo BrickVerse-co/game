@@ -26,8 +26,8 @@ public partial class StatusBar : Control
 		CreatorService.Interface.StatusBar = this;
 		string commit = Globals.ShortBuildCommit;
 		_versionLabel.Text = string.IsNullOrWhiteSpace(commit)
-			? $"BrickVerse Creator {Globals.AppVersion}"
-			: $"BrickVerse Creator {Globals.AppVersion}  •  {commit}";
+			? $"{Globals.AppVersion}"
+			: $"{Globals.AppVersion}  •  {commit}";
 		_versionLabel.TooltipText = string.IsNullOrWhiteSpace(Globals.BuildCommit)
 			? "Build commit unavailable"
 			: $"Git commit: {Globals.BuildCommit}";

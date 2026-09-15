@@ -90,6 +90,28 @@ public static class ProjectSnapshotManager
 		foreach (DirectoryInfo stale in snapshots.Skip(keepCount)) stale.Delete(recursive: true);
 	}
 
+	public static async Task RestoreAsync(string snapshotPath, string projectRoot)
+	{
+		SnapshotInfo validation = await ValidateAsync(snapshotPath);
+		if (!validation.Valid) throw new InvalidDataException("The selected backup failed checksum validation.");
+		projectRoot = Path.GetFullPath(projectRoot);
+		snapshotPath = Path.GetFullPath(snapshotPath);
+		foreach (string current in Directory.EnumerateFiles(projectRoot, "*", SearchOption.AllDirectories).ToArray())
+		{
+			string relative = Path.GetRelativePath(projectRoot, current).Replace('\\', '/');
+			if (relative.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase) || relative.StartsWith(".git/", StringComparison.OrdinalIgnoreCase) || relative.StartsWith(".godot/", StringComparison.OrdinalIgnoreCase)) continue;
+			if (!File.Exists(ResolveInside(snapshotPath, relative))) File.Delete(current);
+		}
+		foreach (string source in Directory.EnumerateFiles(snapshotPath, "*", SearchOption.AllDirectories))
+		{
+			string relative = Path.GetRelativePath(snapshotPath, source);
+			if (Path.GetFileName(source) == ManifestName) continue;
+			string destination = ResolveInside(projectRoot, relative);
+			Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+			File.Copy(source, destination, overwrite: true);
+		}
+	}
+
 	public static string ResolveInside(string root, string relativePath)
 	{
 		string fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
@@ -120,6 +142,7 @@ public static class ProjectSnapshotManager
 		string relative = Path.GetRelativePath(projectRoot, path).Replace('\\', '/');
 		return relative.StartsWith(".git/", StringComparison.OrdinalIgnoreCase)
 			|| relative.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase)
+			|| relative.StartsWith(".godot/", StringComparison.OrdinalIgnoreCase)
 			|| relative.Contains("/.godot/", StringComparison.OrdinalIgnoreCase);
 	}
 

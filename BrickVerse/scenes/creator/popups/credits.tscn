@@ -15,7 +15,7 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.10)
+border_color = Color(1, 1, 1, 0.1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
@@ -51,6 +51,22 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
+[sub_resource type="StyleBoxFlat" id="VersionChipStyle"]
+content_margin_left = 7.0
+content_margin_top = 3.0
+content_margin_right = 7.0
+content_margin_bottom = 3.0
+bg_color = Color(0, 0.592, 1, 0.1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.592, 1, 0.25)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [sub_resource type="StyleBoxFlat" id="SectionStyle"]
 content_margin_left = 14.0
 content_margin_top = 12.0
@@ -67,28 +83,23 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="VersionChipStyle"]
-content_margin_left = 7.0
-content_margin_top = 3.0
-content_margin_right = 7.0
-content_margin_bottom = 3.0
-bg_color = Color(0, 0.592, 1, 0.10)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0, 0.592, 1, 0.25)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
 [sub_resource type="StyleBoxFlat" id="DoneNormal"]
 content_margin_left = 15.0
 content_margin_top = 7.0
 content_margin_right = 15.0
 content_margin_bottom = 7.0
 bg_color = Color(0, 0.592, 1, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="DonePressed"]
+content_margin_left = 15.0
+content_margin_top = 7.0
+content_margin_right = 15.0
+content_margin_bottom = 7.0
+bg_color = Color(0, 0.5, 0.88, 1)
 corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
@@ -105,34 +116,24 @@ corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
 
-[sub_resource type="StyleBoxFlat" id="DonePressed"]
-content_margin_left = 15.0
-content_margin_top = 7.0
-content_margin_right = 15.0
-content_margin_bottom = 7.0
-bg_color = Color(0, 0.50, 0.88, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-
 [node name="Credits" type="Window" unique_id=1607974302 node_paths=PackedStringArray("_versionLabel")]
 transparent_bg = true
 oversampling_override = 1.0
 title = "About BrickVerse Creator"
 initial_position = 2
 size = Vector2i(620, 450)
+transient = true
 exclusive = true
+unresizable = true
 borderless = true
 transparent = true
-minimize_disabled = true
-maximize_disabled = true
+popup_window = true
 min_size = Vector2i(540, 400)
 theme = ExtResource("1_theme")
 script = ExtResource("2_script")
 _versionLabel = NodePath("Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow/VersionChip/VersionLabel")
 
-[node name="Root" type="MarginContainer" parent="."]
+[node name="Root" type="MarginContainer" parent="." unique_id=1127420598]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -143,23 +144,23 @@ theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 18
 
-[node name="Card" type="PanelContainer" parent="Root"]
+[node name="Card" type="PanelContainer" parent="Root" unique_id=894764520]
 layout_mode = 2
 theme_override_styles/panel = SubResource("WindowStyle")
 
-[node name="Layout" type="VBoxContainer" parent="Root/Card"]
+[node name="Layout" type="VBoxContainer" parent="Root/Card" unique_id=1626285845]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="Header" type="PanelContainer" parent="Root/Card/Layout"]
+[node name="Header" type="PanelContainer" parent="Root/Card/Layout" unique_id=1814142430]
 layout_mode = 2
 theme_override_styles/panel = SubResource("HeaderStyle")
 
-[node name="HeaderRow" type="HBoxContainer" parent="Root/Card/Layout/Header"]
+[node name="HeaderRow" type="HBoxContainer" parent="Root/Card/Layout/Header" unique_id=1304234181]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="Root/Card/Layout/Header/HeaderRow"]
+[node name="Title" type="Label" parent="Root/Card/Layout/Header/HeaderRow" unique_id=69299881]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.88)
@@ -167,121 +168,121 @@ theme_override_font_sizes/font_size = 13
 text = "About BrickVerse Creator"
 vertical_alignment = 1
 
-[node name="CloseButton" type="Button" parent="Root/Card/Layout/Header/HeaderRow"]
+[node name="CloseButton" type="Button" parent="Root/Card/Layout/Header/HeaderRow" unique_id=818389507]
+modulate = Color(1, 1, 1, 0.68)
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 focus_mode = 0
-modulate = Color(1, 1, 1, 0.68)
 icon = ExtResource("3_close")
 flat = true
 
-[node name="BodyScroll" type="ScrollContainer" parent="Root/Card/Layout"]
+[node name="BodyScroll" type="ScrollContainer" parent="Root/Card/Layout" unique_id=964152429]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Body" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll"]
+[node name="Body" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll" unique_id=524031466]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="BodyMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body"]
+[node name="BodyMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body" unique_id=2065060952]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 14
 
-[node name="Overview" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin"]
+[node name="Overview" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin" unique_id=864708934]
 layout_mode = 2
 theme_override_styles/panel = SubResource("HeroStyle")
 
-[node name="HeroContent" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview"]
+[node name="HeroContent" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview" unique_id=710597317]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="LogoWrap" type="CenterContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent"]
+[node name="LogoWrap" type="CenterContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent" unique_id=766045350]
 custom_minimum_size = Vector2(132, 72)
 layout_mode = 2
 
-[node name="Logo" type="TextureRect" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/LogoWrap"]
+[node name="Logo" type="TextureRect" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/LogoWrap" unique_id=842005975]
 custom_minimum_size = Vector2(124, 36)
 layout_mode = 2
 texture = ExtResource("4_logo")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TextBlock" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent"]
+[node name="TextBlock" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent" unique_id=1793662310]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="ProductName" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock"]
+[node name="ProductName" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=1409663700]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.94)
 theme_override_font_sizes/font_size = 18
 text = "BrickVerse Creator"
 
-[node name="Description" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock"]
+[node name="Description" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=550079162]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 0.50)
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
 theme_override_font_sizes/font_size = 11
 text = "Build, test, and publish immersive worlds with BrickVerse Creator."
 autowrap_mode = 3
 
-[node name="VersionRow" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock"]
+[node name="VersionRow" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock" unique_id=146261141]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="VersionText" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow"]
+[node name="VersionText" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow" unique_id=1866280754]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.34)
 theme_override_font_sizes/font_size = 10
 text = "Version"
 vertical_alignment = 1
 
-[node name="VersionChip" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow"]
+[node name="VersionChip" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow" unique_id=1736591006]
 layout_mode = 2
 theme_override_styles/panel = SubResource("VersionChipStyle")
 
-[node name="VersionLabel" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow/VersionChip"]
+[node name="VersionLabel" type="Label" parent="Root/Card/Layout/BodyScroll/Body/BodyMargin/Overview/HeroContent/TextBlock/VersionRow/VersionChip" unique_id=238505152]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.28, 0.72, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "vXXXXX"
 
-[node name="ContentMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body"]
+[node name="ContentMargin" type="MarginContainer" parent="Root/Card/Layout/BodyScroll/Body" unique_id=2124891402]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_right = 14
 
-[node name="Content" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin"]
+[node name="Content" type="HBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin" unique_id=2047107970]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="AboutPanel" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content"]
+[node name="AboutPanel" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content" unique_id=1438252840]
 custom_minimum_size = Vector2(235, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("SectionStyle")
 
-[node name="About" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel"]
+[node name="About" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel" unique_id=1096069639]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About"]
+[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About" unique_id=496162918]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.84)
 theme_override_font_sizes/font_size = 12
 text = "About"
 
-[node name="Copyright" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About"]
+[node name="Copyright" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About" unique_id=888956707]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.58)
 theme_override_font_sizes/font_size = 11
 text = "© 2026 Meta Games LLC"
 
-[node name="License" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About"]
+[node name="License" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About" unique_id=1771262294]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.36)
@@ -289,7 +290,7 @@ theme_override_font_sizes/font_size = 10
 text = "See LICENSE for licensing and third-party notices."
 autowrap_mode = 3
 
-[node name="Maintenance" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About"]
+[node name="Maintenance" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/AboutPanel/About" unique_id=1930119671]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.36)
@@ -297,57 +298,62 @@ theme_override_font_sizes/font_size = 10
 text = "Maintained by Meta Games LLC and community contributors."
 autowrap_mode = 3
 
-[node name="CreditsPanel" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content"]
+[node name="CreditsPanel" type="PanelContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content" unique_id=453799996]
 custom_minimum_size = Vector2(260, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("SectionStyle")
 
-[node name="CreditsStack" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel"]
+[node name="CreditsStack" type="VBoxContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel" unique_id=1575495315]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack"]
+[node name="Heading" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=903523805]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.84)
 theme_override_font_sizes/font_size = 12
 text = "Original Contributors"
 
-[node name="Intro" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack"]
+[node name="Intro" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=2108201316]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.35)
 theme_override_font_sizes/font_size = 10
 text = "Engine foundation and early development"
 
-[node name="NamesScroll" type="ScrollContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack"]
+[node name="NamesScroll" type="ScrollContainer" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack" unique_id=582689154]
 custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Names" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack/NamesScroll"]
+[node name="Names" type="Label" parent="Root/Card/Layout/BodyScroll/Body/ContentMargin/Content/CreditsPanel/CreditsStack/NamesScroll" unique_id=357771380]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.66)
 theme_override_constants/line_spacing = 3
 theme_override_font_sizes/font_size = 11
-text = "willemsteller\nBandito Burrito\nmawji\nAlyx\nCrunchitect\nTsuwuki"
+text = "willemsteller
+Bandito Burrito
+mawji
+Alyx
+Crunchitect
+Tsuwuki"
 
-[node name="BottomSpacer" type="Control" parent="Root/Card/Layout/BodyScroll/Body"]
+[node name="BottomSpacer" type="Control" parent="Root/Card/Layout/BodyScroll/Body" unique_id=1743881874]
 custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
 
-[node name="Footer" type="MarginContainer" parent="Root/Card/Layout"]
+[node name="Footer" type="MarginContainer" parent="Root/Card/Layout" unique_id=288534075]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="FooterRow" type="HBoxContainer" parent="Root/Card/Layout/Footer"]
+[node name="FooterRow" type="HBoxContainer" parent="Root/Card/Layout/Footer" unique_id=1902034744]
 layout_mode = 2
 
-[node name="FooterText" type="Label" parent="Root/Card/Layout/Footer/FooterRow"]
+[node name="FooterText" type="Label" parent="Root/Card/Layout/Footer/FooterRow" unique_id=1521084909]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.24)
@@ -355,15 +361,15 @@ theme_override_font_sizes/font_size = 10
 text = "BrickVerse Creator"
 vertical_alignment = 1
 
-[node name="DoneButton" type="Button" parent="Root/Card/Layout/Footer/FooterRow"]
+[node name="DoneButton" type="Button" parent="Root/Card/Layout/Footer/FooterRow" unique_id=1779735713]
 custom_minimum_size = Vector2(82, 30)
 layout_mode = 2
 focus_mode = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 11
 theme_override_styles/normal = SubResource("DoneNormal")
-theme_override_styles/hover = SubResource("DoneHover")
 theme_override_styles/pressed = SubResource("DonePressed")
+theme_override_styles/hover = SubResource("DoneHover")
 text = "Done"
 
 [connection signal="pressed" from="Root/Card/Layout/Header/HeaderRow/CloseButton" to="." method="hide"]

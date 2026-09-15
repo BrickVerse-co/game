@@ -295,7 +295,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
-					Text = "Find in Files...",
+					Text = "Find in Place...",
 					Icon = "search",
 					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.F }] },
 					Pressed = FindInFilesPopup.Open,
@@ -530,7 +530,9 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem() { Text = "Data Store Explorer", Icon = "database", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(0) },
 				new MenuButtonItem() { Text = "Localization Manager", Icon = "translate", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(1) },
 				new MenuButtonItem() { Text = "Instance Icon Manager", Icon = "image-square", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(2) },
-				new MenuButtonItem() { Text = "Scene History & Diff", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(3) },
+				new MenuButtonItem() { Text = "World Backups & Restore", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(3) },
+				new MenuButtonItem() { Text = "Collision Groups Editor", Icon = "brick", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(4) },
+				new MenuButtonItem() { Text = "Script Analysis & Activity", Icon = "bug", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(5) },
 				new MenuButtonItem() { Text = "Particle Editor", Icon = "play-filled", RequireGameOpen = true, Pressed = ParticleEditorWindow.Open },
 				new MenuSeperatorItem(),
 				new MenuButtonItem()

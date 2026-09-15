@@ -24,14 +24,25 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_byekl")
 theme_override_styles/tabbar_background = SubResource("StyleBoxEmpty_1f7jh")
 script = ExtResource("1_qnycq")
 
-[node name="Properties" type="ScrollContainer" parent="." unique_id=1188109505]
+[node name="Properties" type="VBoxContainer" parent="." unique_id=1188109505]
 layout_mode = 2
+theme_override_constants/separation = 4
+metadata/_tab_index = 0
+
+[node name="Search" type="LineEdit" parent="Properties"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "Filter properties…"
+clear_button_enabled = true
+
+[node name="Scroll" type="ScrollContainer" parent="Properties"]
+layout_mode = 2
+size_flags_vertical = 3
 follow_focus = true
 scroll_hint_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_byekl")
-metadata/_tab_index = 0
 
-[node name="Margin" type="MarginContainer" parent="Properties" unique_id=594757500]
+[node name="Margin" type="MarginContainer" parent="Properties/Scroll" unique_id=594757500]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -40,7 +51,7 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Container" type="VBoxContainer" parent="Properties/Margin" unique_id=1965013980]
+[node name="Container" type="VBoxContainer" parent="Properties/Scroll/Margin" unique_id=1965013980]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

@@ -42,6 +42,7 @@ internal sealed class ForgeChatClient
     - Give a new script its final source in the top-level create_instance `source` argument. Use ServerScript, ClientScript, or ModuleScript; plain Script aliases ServerScript. Do not create an empty script and patch it in avoidable follow-up calls.
     - Change existing scripts with edit_script_source; it writes through to the linked project file. Use get_script_diff to verify meaningful edits.
     - manage_project_file can list/read/write/delete project-relative .lua, .luau, .json, and .txt files. Prefer the script instance tools for scripts so the world instance and linked file stay synchronized.
+    - Use send_creator_notification when work finishes or when the user must review, approve, or fix something. Keep its title and message brief.
     - For world objects, prefer the selected visible instance or world.Environment unless the requested ownership is clear.
     - The Creator UI exposes Open/Reveal, View diff, and Rollback actions for tool changes.
     - If create_instance reports a visible path and linked file, both were created; do not contradict the result because an internal staging path appeared during creation.
@@ -111,6 +112,7 @@ internal sealed class ForgeChatClient
 			if (assistantMessage.ToolCalls == null || assistantMessage.ToolCalls.Count == 0)
 			{
 				result.AssistantText = assistantMessage.Content?.Trim() ?? string.Empty;
+				CreatorNotificationCenter.Notify("Forge finished", "Your response is ready.", "success");
 				return result;
 			}
 
@@ -172,6 +174,7 @@ internal sealed class ForgeChatClient
 			? "Forge completed its inspection but the model returned no final text. Review the tool activity above and try a more capable model."
 			: finalMessage.Content.Trim();
 		result.TranscriptDelta.Add(new ForgeChatMessage { Role = "assistant", Content = result.AssistantText });
+		CreatorNotificationCenter.Notify("Forge finished", "Your response is ready.", "success");
 		return result;
 	}
 

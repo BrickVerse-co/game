@@ -9,9 +9,9 @@ namespace BrickVerse.Creator.UI;
 public partial class CreatorResponsiveLayout : Node
 {
 	private const float MenuHeight = 36.0f;
-	private const float WideRibbonHeight = 74.0f;
-	private const float TwoRowRibbonHeight = 124.0f;
-	private const float ThreeRowRibbonHeight = 178.0f;
+	private const float WideRibbonHeight = 112.0f;
+	private const float TwoRowRibbonHeight = 112.0f;
+	private const float ThreeRowRibbonHeight = 112.0f;
 	private const float WorkspaceGap = 2.0f;
 
 	private Viewport _viewport = null!;

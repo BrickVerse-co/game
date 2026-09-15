@@ -350,13 +350,8 @@ public sealed partial class Explorer : TabContainer
 			{
 				item.Select(0);
 
-				// Uncollapse tree to reveal this item
-				TreeItem? parent = item.GetParent();
-				while (parent != null)
-				{
-					parent.Collapsed = false;
-					parent = parent.GetParent();
-				}
+				ExplorerTab? tab = GetTabFromRoot(instance.Root);
+				tab?.RevealSelection(item);
 
 				ExplorerTree tree = (ExplorerTree)item.GetTree();
 				tree.ScrollToItemFrame(item);

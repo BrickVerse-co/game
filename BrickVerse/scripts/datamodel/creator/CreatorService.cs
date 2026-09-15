@@ -670,7 +670,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 			Sessions.Add(session);
 			openedSuccessfully = true;
-			await ProjectManager.AddToRecents(folder);
+			await ProjectManager.AddToRecents(folder, openedWorld.WorldFilePath);
 
 			if (!string.IsNullOrWhiteSpace(PendingModelImportPath))
 			{

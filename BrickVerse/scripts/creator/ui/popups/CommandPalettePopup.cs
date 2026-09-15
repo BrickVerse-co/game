@@ -94,7 +94,8 @@ public sealed partial class CommandPalettePopup : PopupWindowBase
 			new("Input Manager", "Window", "Edit the current project's input actions.", "", CreatorService.Interface.OpenInputManager, HasWorld),
 			new("Device Emulator", "Window", "Preview the experience at common device sizes.", "", DeviceEmulatorPopup.Open, HasWorld),
 			new("Data Store Explorer", "Tools", "Inspect development data stores.", "", () => CreatorDataToolsWindow.Open(0), HasWorld),
-			new("Scene History & Diff", "Tools", "Inspect scene revisions and compare changes.", "", () => CreatorDataToolsWindow.Open(2), HasWorld),
+			new("Instance Icon Manager", "Tools", "Override Explorer icons by class or individual instance.", "", () => CreatorDataToolsWindow.Open(2), HasWorld),
+			new("Scene History & Diff", "Tools", "Inspect scene revisions and compare changes.", "", () => CreatorDataToolsWindow.Open(3), HasWorld),
 			new("What’s New", "Help", "Review the latest Creator features and improvements.", "", WhatsNewPopup.ShowLatest),
 		]);
 		for (int slot = 1; slot <= 9; slot++)

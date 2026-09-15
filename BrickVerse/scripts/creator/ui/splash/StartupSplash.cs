@@ -10,6 +10,10 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.Splashes.Components;
+using BrickVerse.Creator.Managers;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace BrickVerse.Creator.UI.Splashes;
 
@@ -38,6 +42,7 @@ public partial class StartupSplash : Control
 	[Export] private Control _cloudPage = null!;
 
 	public static StartupSplash Singleton { get; private set; } = null!;
+	private static bool _startupRecoveryPrompted;
 
 	public StartupSplash()
 	{
@@ -64,6 +69,45 @@ public partial class StartupSplash : Control
 		GetViewport().SizeChanged += UpdateResponsiveLayout;
 		UpdateResponsiveLayout();
 		base._Ready();
+		PromptStartupRecovery();
+	}
+
+	private async void PromptStartupRecovery()
+	{
+		if (_startupRecoveryPrompted) return;
+		_startupRecoveryPrompted = true;
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		if (World.Current != null || CreatorService.CurrentSession != null) return;
+		try
+		{
+			ProjectManager.RecentData? recent = (await ProjectManager.GetRecents(false)).FirstOrDefault();
+			if (!recent.HasValue || string.IsNullOrWhiteSpace(recent.Value.FolderPath) || !Directory.Exists(recent.Value.FolderPath)) return;
+			string projectName = new DirectoryInfo(recent.Value.FolderPath).Name;
+			bool reopen = await CreatorService.Interface.PromptConfirmation($"Reopen {projectName} where you left off?", "Resume your last Creator session", confirmText: "Reopen", cancelText: "Not now");
+			if (!reopen || World.Current != null) return;
+
+			string backups = Path.Combine(recent.Value.FolderPath, ".bvproject", "backups");
+			string? newest = Directory.Exists(backups) ? Directory.GetDirectories(backups).Where(path => !Path.GetFileName(path).StartsWith(".partial-", StringComparison.Ordinal)).OrderByDescending(path => path).FirstOrDefault() : null;
+			if (newest != null)
+			{
+				ProjectSnapshotManager.SnapshotInfo snapshot = await ProjectSnapshotManager.ValidateAsync(newest);
+				if (snapshot.Valid)
+				{
+					bool recover = await CreatorService.Interface.PromptConfirmation($"An autosave from {snapshot.CreatedUtc.ToLocalTime():g} is available. Restore it before reopening?", "Autosave available", confirmText: "Restore autosave", cancelText: "Open saved version");
+					if (recover) await ProjectSnapshotManager.RestoreAsync(newest, recent.Value.FolderPath);
+				}
+			}
+
+			string target = recent.Value.FolderPath;
+			if (!string.IsNullOrWhiteSpace(recent.Value.LastWorldPath))
+			{
+				string world = Path.GetFullPath(Path.Combine(recent.Value.FolderPath, recent.Value.LastWorldPath));
+				if (File.Exists(world)) target = world;
+			}
+			await CreatorService.Singleton.CreateNewSession(target);
+		}
+		catch (Exception ex) { BV.PrintWarn($"Could not resume the previous Creator session: {ex.Message}"); }
 	}
 
 	public override void _UnhandledKeyInput(InputEvent @event)

@@ -2,8 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dr7t7i7p4iq7y" path="res://scripts/creator/ui/docks/explorer/ExplorerTab.cs" id="1_0bmvf"]
 [ext_resource type="Script" uid="uid://dj81bugnjch4x" path="res://scripts/creator/ui/docks/explorer/ExplorerTree.cs" id="1_ns4t2"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/dots.svg" id="3_options"]
 
-[node name="ExplorerTab" type="VBoxContainer" unique_id=909158694 node_paths=PackedStringArray("Tree", "_searchEdit")]
+[node name="ExplorerTab" type="VBoxContainer" unique_id=909158694 node_paths=PackedStringArray("Tree", "_searchEdit", "_filterButton")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -12,18 +13,33 @@ grow_vertical = 2
 theme_override_constants/separation = 6
 script = ExtResource("1_0bmvf")
 Tree = NodePath("Tree")
-_searchEdit = NodePath("SearchEdit")
+_searchEdit = NodePath("SearchRow/SearchEdit")
+_filterButton = NodePath("SearchRow/FilterButton")
 
-[node name="SearchEdit" type="LineEdit" parent="." unique_id=1407216840]
+[node name="SearchRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SearchEdit" type="LineEdit" parent="SearchRow" unique_id=1407216840]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-placeholder_text = "Search Explorer..."
+size_flags_horizontal = 3
+placeholder_text = "Search names, properties, tags, or /regex/…"
+clear_button_enabled = true
 select_all_on_focus = true
 caret_blink = true
+
+[node name="FilterButton" type="MenuButton" parent="SearchRow"]
+custom_minimum_size = Vector2(38, 36)
+layout_mode = 2
+tooltip_text = "Search filters and Explorer options"
+flat = true
+icon = ExtResource("3_options")
 
 [node name="Tree" type="Tree" parent="." unique_id=861372896]
 layout_mode = 2
 size_flags_vertical = 3
+hide_root = true
 allow_rmb_select = true
 theme_override_constants/inner_item_margin_left = 5
 theme_override_constants/inner_item_margin_top = 2

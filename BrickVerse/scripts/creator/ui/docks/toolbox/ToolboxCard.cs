@@ -98,7 +98,7 @@ public partial class ToolboxCard : Button
 					BVFontAsset font = root.New<BVFontAsset>(); font.FontID = item.ID; UILabel label = root.New<UILabel>(parent); label.Name = name; label.Text = name; label.FontAsset = font; inserted = label; break;
 			}
 			if (inserted is Dynamic dynamic && parent == root.Environment) dynamic.Position = root.CreatorContext.Freelook.GetPlacementPosition();
-			if (inserted != null) { root.CreatorContext.Selections.SelectOnly(inserted); root.LinkedSession?.RescanFolder(); CreatorService.Interface.StatusBar?.SetStatus($"Inserted {item.Name} under {parent.Name}"); }
+			if (inserted != null) { root.CreatorContext.Selections.SelectOnly(inserted); root.LinkedSession?.RescanFolder(); Toolbox.RecordRecent(item, type); CreatorService.Interface.StatusBar?.SetStatus($"Inserted {item.Name} under {parent.Name}"); }
 		}
 		catch (Exception error) { BV.PrintErr($"Failed to insert toolbox asset {item.ID}: ", error); CreatorService.Interface.PopupAlert(error.Message, "Could not insert asset"); }
 		return inserted;

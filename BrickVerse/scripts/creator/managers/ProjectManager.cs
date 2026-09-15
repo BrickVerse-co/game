@@ -88,6 +88,7 @@ public static class ProjectManager
 				ThumbnailUrl = metadata.ThumbnailUrl,
 				FolderPath = recent.FolderPath,
 				LastOpened = recent.LastOpened,
+				LastWorldPath = recent.LastWorldPath,
 			};
 		}
 		catch (Exception ex)
@@ -167,7 +168,7 @@ public static class ProjectManager
 		return metadata;
 	}
 
-	public static async Task AddToRecents(string folderPath)
+	public static async Task AddToRecents(string folderPath, string? worldPath = null)
 	{
 		string recentsPath = ProjectSettings.GlobalizePath(RecentsPath);
 		List<RecentData> existing = [.. await GetRecents(false)];
@@ -178,6 +179,7 @@ public static class ProjectManager
 		{
 			FolderPath = folderPath,
 			LastOpened = DateTime.Now,
+			LastWorldPath = string.IsNullOrWhiteSpace(worldPath) ? "" : Path.GetRelativePath(folderPath, worldPath).SanitizePath(),
 		});
 
 		File.WriteAllText(recentsPath, JsonSerializer.Serialize([.. existing], RecentsFileGenerationContext.Default.RecentDataArray));
@@ -505,6 +507,7 @@ public static class ProjectManager
 	{
 		[JsonInclude] public string FolderPath;
 		[JsonInclude] public DateTime LastOpened;
+		[JsonInclude] public string LastWorldPath;
 		[JsonIgnore] public string PlaceName;
 		[JsonIgnore] public long? IconID;
 		[JsonIgnore] public long UniverseId;
