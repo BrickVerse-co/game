@@ -65,7 +65,7 @@ public partial class InsertMenuPopup : PopupPanel
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
+		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "LocalNetworkEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
