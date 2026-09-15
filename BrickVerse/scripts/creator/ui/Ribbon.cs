@@ -41,10 +41,10 @@ public sealed partial class Ribbon : Control
 	public override void _Ready()
 	{
 		_taskTabs = GetNode<TabContainer>("Layout/TaskTabs");
-		HBoxContainer home = _taskTabs.GetNode<HBoxContainer>("Home/Buttons");
-		HBoxContainer model = _taskTabs.GetNode<HBoxContainer>("Model/Buttons");
-		_quickActions = _taskTabs.GetNode<HBoxContainer>("Tools/Buttons");
-		_codeEditorActions = _taskTabs.GetNode<HBoxContainer>("Script/Buttons");
+		HBoxContainer home = _taskTabs.GetNode<HBoxContainer>("Home/Margin/Buttons");
+		HBoxContainer model = _taskTabs.GetNode<HBoxContainer>("Model/Margin/Buttons");
+		_quickActions = _taskTabs.GetNode<HBoxContainer>("Tools/Margin/Buttons");
+		_codeEditorActions = _taskTabs.GetNode<HBoxContainer>("Script/Margin/Buttons");
 		_selectButton = home.GetNode<Button>("Select");
 		_moveButton = home.GetNode<Button>("Move");
 		_rotateButton = home.GetNode<Button>("Rotate");
@@ -67,7 +67,7 @@ public sealed partial class Ribbon : Control
 		Button animatorButton = model.GetNode<Button>("Animator");
 		Button toolboxButton = _quickActions.GetNode<Button>("Toolbox");
 		Button shapesButton = model.GetNode<Button>("Shapes");
-		Button inputManagerButton = _taskTabs.GetNode<Button>("UI/Buttons/InputManager");
+		Button inputManagerButton = _taskTabs.GetNode<Button>("UI/Margin/Buttons/InputManager");
 		AddTaskAction("Find in Place", "search", FindInFilesPopup.Open);
 		AddTaskAction("Backups", "history", () => CreatorDataToolsWindow.Open(3));
 		AddTaskAction("Collisions", "brick", () => CreatorDataToolsWindow.Open(4));
