@@ -134,9 +134,9 @@ corner_radius_bottom_left = 6
 [sub_resource type="StyleBoxFlat" id="DividerStyle"]
 bg_color = Color(1, 1, 1, 0.06)
 
-[node name="FindInFiles" type="Window" node_paths=PackedStringArray("_query", "_matchCase", "_wholeWord", "_searchButton", "_results", "_status")]
+[node name="FindInFiles" type="Window" node_paths=PackedStringArray("_query", "_replace", "_matchCase", "_wholeWord", "_searchButton", "_replaceSelectedButton", "_replaceAllButton", "_results", "_status")]
 transparent_bg = true
-title = "Find in Files"
+title = "Find in Place"
 initial_position = 2
 size = Vector2i(720, 500)
 min_size = Vector2i(600, 420)
@@ -148,9 +148,12 @@ maximize_disabled = true
 theme = ExtResource("2")
 script = ExtResource("1")
 _query = NodePath("Root/Card/Layout/Body/SearchRow/Query")
+_replace = NodePath("Root/Card/Layout/Body/ReplaceRow/Replacement")
 _matchCase = NodePath("Root/Card/Layout/Body/OptionsMargin/OptionsPanel/Options/MatchCase")
 _wholeWord = NodePath("Root/Card/Layout/Body/OptionsMargin/OptionsPanel/Options/WholeWord")
 _searchButton = NodePath("Root/Card/Layout/Body/SearchRow/Search")
+_replaceSelectedButton = NodePath("Root/Card/Layout/Body/ReplaceRow/ReplaceSelected")
+_replaceAllButton = NodePath("Root/Card/Layout/Body/ReplaceRow/ReplaceAll")
 _results = NodePath("Root/Card/Layout/Body/ResultsMargin/Results")
 _status = NodePath("Root/Card/Layout/Body/OptionsMargin/OptionsPanel/Options/Status")
 
@@ -192,13 +195,13 @@ theme_override_constants/separation = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.92)
 theme_override_font_sizes/font_size = 15
-text = "Find in Files"
+text = "Find in Place"
 
 [node name="Subtitle" type="Label" parent="Root/Card/Layout/Header/HeaderRow/TitleBlock"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.34)
 theme_override_font_sizes/font_size = 10
-text = "Search across project text files"
+text = "Find, replace, and jump to matches across project scripts"
 
 [node name="CloseButton" type="Button" parent="Root/Card/Layout/Header/HeaderRow"]
 custom_minimum_size = Vector2(28, 28)
@@ -255,6 +258,33 @@ theme_override_styles/pressed = SubResource("PrimaryPressed")
 text = "Search"
 
 [node name="RightSpacer" type="Control" parent="Root/Card/Layout/Body/SearchRow"]
+custom_minimum_size = Vector2(14, 0)
+layout_mode = 2
+
+[node name="ReplaceRow" type="HBoxContainer" parent="Root/Card/Layout/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LeftSpacer" type="Control" parent="Root/Card/Layout/Body/ReplaceRow"]
+custom_minimum_size = Vector2(14, 0)
+layout_mode = 2
+
+[node name="Replacement" type="LineEdit" parent="Root/Card/Layout/Body/ReplaceRow"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Replace with…"
+clear_button_enabled = true
+
+[node name="ReplaceSelected" type="Button" parent="Root/Card/Layout/Body/ReplaceRow"]
+layout_mode = 2
+text = "Replace"
+
+[node name="ReplaceAll" type="Button" parent="Root/Card/Layout/Body/ReplaceRow"]
+layout_mode = 2
+text = "Replace all"
+
+[node name="RightSpacer" type="Control" parent="Root/Card/Layout/Body/ReplaceRow"]
 custom_minimum_size = Vector2(14, 0)
 layout_mode = 2
 

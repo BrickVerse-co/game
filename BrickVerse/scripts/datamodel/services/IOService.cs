@@ -20,7 +20,7 @@ namespace BrickVerse.Datamodel.Services;
 public sealed partial class IOService : Instance
 {
 	private const string CreatorTempPath = "brickverse_creator_temp";
-	private static readonly string[] AllowedExtensions = ["bvxw", "bvworld", "bvxm", "bvmodel", "model", "lua", "luau", "json", "txt"];
+	private static readonly string[] AllowedExtensions = ["bvxw", "bvworld", "bvxm", "bvmodel", "model", "lua", "luau", "json", "txt", "png", "jpg", "jpeg", "webp", "svg", "ogg", "wav", "mp3", "ogv"];
 
 	internal Dictionary<string, byte[]> FileStructure = [];
 	internal Dictionary<string, string> FileToIndex = [];
@@ -41,7 +41,7 @@ public sealed partial class IOService : Instance
 #if CREATOR
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
-			string baseFolder = Root.LinkedSession.ProjectFolderPath;
+			string baseFolder = Root.LinkedSession?.ProjectFolderPath ?? TempFilePath;
 			if (path.StartsWith("@temp/"))
 			{
 				baseFolder = TempFilePath;
@@ -197,4 +197,34 @@ public sealed partial class IOService : Instance
 
 		return newId;
 	}
+
+#if CREATOR
+	internal (string Path, string Id) ImportTemporaryFile(string sourcePath)
+	{
+		string extension = Path.GetExtension(sourcePath).TrimStart('.').ToLowerInvariant();
+		if (!AllowedExtensions.Contains(extension))
+			throw new InvalidOperationException($"Files with the .{extension} extension cannot be imported.");
+		if (!File.Exists(sourcePath))
+			throw new FileNotFoundException("The selected file no longer exists.", sourcePath);
+		string temporaryPath = $"@temp/{Guid.NewGuid():N}.{extension}";
+		string absolutePath = Path.GetFullPath(Path.Join(TempFilePath, temporaryPath));
+		if (!PathUtils.IsPathInsideDirectory(absolutePath, TempFilePath))
+			throw new InvalidOperationException("Could not create a safe temporary file path.");
+		Directory.CreateDirectory(Path.GetDirectoryName(absolutePath)!);
+		File.Copy(sourcePath, absolutePath, true);
+		return (temporaryPath, GetIDFromPath(temporaryPath));
+	}
+
+	internal void DeleteTemporaryFile(string path, string id)
+	{
+		if (TempIndexToFile.TryGetValue(id, out string? registeredPath) && registeredPath == path)
+		{
+			TempIndexToFile.Remove(id);
+			TempFileToIndex.Remove(path);
+		}
+		string absolutePath = Path.GetFullPath(Path.Join(TempFilePath, path));
+		if (PathUtils.IsPathInsideDirectory(absolutePath, TempFilePath) && File.Exists(absolutePath))
+			File.Delete(absolutePath);
+	}
+#endif
 }

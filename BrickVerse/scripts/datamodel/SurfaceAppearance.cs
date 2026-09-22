@@ -12,6 +12,7 @@ namespace BrickVerse.Datamodel;
 public sealed partial class SurfaceAppearance : Instance
 {
 	private readonly HashSet<Part> _targets = [];
+	private readonly HashSet<Mesh> _meshTargets = [];
 	private ImageAsset? _colorMap, _normalMap, _roughnessMap, _metalnessMap;
 	private bool _enabled = true;
 	private float _metalness, _roughness = 1;
@@ -36,7 +37,9 @@ public sealed partial class SurfaceAppearance : Instance
 	{
 		foreach (ImageAsset? asset in Assets()) Unlink(asset);
 		foreach (Part part in _targets) part.RefreshSurfaceAppearance(this);
+		foreach (Mesh mesh in _meshTargets) mesh.RefreshSurfaceAppearance(this);
 		_targets.Clear();
+		_meshTargets.Clear();
 		base.PreDelete();
 	}
 
@@ -59,12 +62,16 @@ public sealed partial class SurfaceAppearance : Instance
 		Material.Metallic = _metalness; Material.MetallicTexture = Texture(_metalnessMap);
 		Material.Transparency = _alphaMode == AlphaModeEnum.Transparency ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled;
 		foreach (Part part in _targets) part.RefreshSurfaceAppearance();
+		foreach (Mesh mesh in _meshTargets) mesh.RefreshSurfaceAppearance();
 	}
 	private void Reconcile()
 	{
-		HashSet<Part> desired = !_enabled ? [] : Parent switch { Part p => [p], Model m => m.GetDescendants().OfType<Part>().ToHashSet(), _ => [] };
+		HashSet<Part> desired = !_enabled ? [] : Parent switch { Part p => [p], Model m => m.GetDescendants().OfType<Part>().ToHashSet(), Pawn pawn => pawn.GetDescendants().OfType<Part>().ToHashSet(), _ => [] };
+		HashSet<Mesh> desiredMeshes = !_enabled ? [] : Parent switch { Mesh mesh => [mesh], Model model => model.GetDescendants().OfType<Mesh>().ToHashSet(), Pawn pawn => pawn.GetDescendants().OfType<Mesh>().ToHashSet(), _ => [] };
 		foreach (Part part in _targets.Except(desired).ToArray()) { _targets.Remove(part); part.RefreshSurfaceAppearance(); }
 		foreach (Part part in desired.Except(_targets).ToArray()) { _targets.Add(part); part.RefreshSurfaceAppearance(); }
+		foreach (Mesh mesh in _meshTargets.Except(desiredMeshes).ToArray()) { _meshTargets.Remove(mesh); mesh.RefreshSurfaceAppearance(); }
+		foreach (Mesh mesh in desiredMeshes.Except(_meshTargets).ToArray()) { _meshTargets.Add(mesh); mesh.RefreshSurfaceAppearance(); }
 	}
 
 	[ScriptEnum("AlphaMode")]

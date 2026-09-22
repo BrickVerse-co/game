@@ -383,7 +383,12 @@ public partial class NPC : Physical
 			}
 			return _character;
 		}
-		internal set => _character = value;
+		internal set
+		{
+			CharacterModel? previous = _character;
+			_character = value;
+			if (this is Player player && previous != value) player.OnCharacterChanged(previous);
+		}
 	}
 
 	[SyncVar, ScriptProperty]

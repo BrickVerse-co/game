@@ -26,6 +26,7 @@ public partial class PlayOptionsMenu : Control
 	[Export] private Button _sessionBtn = null!;
 	[Export] private HBoxContainer _sessionMembers = null!;
 	[Export] private Button _betaFeaturesBtn = null!;
+	[Export] private Button _notificationsBtn = null!;
 	[Export] private TextureRect _internetStatusIcon = null!;
 	[Export] private TextureRect _teamCreateStatusIcon = null!;
 	[Export] private OptionButton _playerCountOption = null!;
@@ -47,6 +48,7 @@ public partial class PlayOptionsMenu : Control
 		_collaborateBtn.Pressed += OnCollaborateButtonPressed;
 		_sessionBtn.Pressed += OnSessionButtonPressed;
 		_betaFeaturesBtn.Pressed += OnBetaFeaturesPressed;
+		CreatorNotificationCenter.Initialize(_notificationsBtn);
 		_playerCountOption.ItemSelected += OnPlayerCountSelected;
 		_playerCountOption.Select(0);
 		_playerCountOption.Text = _playerCountOption.GetItemId(0).ToString();

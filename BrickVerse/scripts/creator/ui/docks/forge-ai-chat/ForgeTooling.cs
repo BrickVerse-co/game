@@ -24,6 +24,23 @@ internal static class ForgeToolCatalog
 	public static readonly List<ForgeChatToolDefinition> Definitions =
 	[
 		Create(
+			"send_creator_notification",
+			"Send a notification to the Creator notification center and optionally request native desktop attention. Use when work finishes or the user needs to review or approve something.",
+			"""
+			{
+			  "type": "object",
+			  "properties": {
+			    "title": { "type": "string" },
+			    "message": { "type": "string" },
+			    "kind": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+			    "native_attention": { "type": "boolean" }
+			  },
+			  "required": ["title", "message"],
+			  "additionalProperties": false
+			}
+			"""
+		),
+		Create(
 			"get_creator_state",
 			"Get the current Creator state including the active world, selection, active editor, and console snippet.",
 			"""
@@ -290,6 +307,7 @@ internal sealed class ForgeToolExecutor
 		return toolName switch
 		{
 			"get_creator_state" => GetCreatorState(),
+			"send_creator_notification" => SendCreatorNotification(argumentsJson),
 			"get_world_tree" => GetWorldTree(argumentsJson),
 			"list_instantiable_classes" => ListInstantiableClasses(),
 			"search_instances" => SearchInstances(argumentsJson),
@@ -305,6 +323,19 @@ internal sealed class ForgeToolExecutor
 			"run_luau" => "User confirmation is required before Luau can run.",
 			_ => $"Unknown Forge tool: {toolName}",
 		};
+	}
+
+	private static string SendCreatorNotification(string argumentsJson)
+	{
+		using JsonDocument document = JsonDocument.Parse(argumentsJson);
+		JsonElement root = document.RootElement;
+		string title = root.TryGetProperty("title", out JsonElement titleValue) ? titleValue.GetString() ?? "Forge" : "Forge";
+		string message = root.TryGetProperty("message", out JsonElement messageValue) ? messageValue.GetString() ?? "" : "";
+		string kind = root.TryGetProperty("kind", out JsonElement kindValue) ? kindValue.GetString() ?? "info" : "info";
+		bool native = !root.TryGetProperty("native_attention", out JsonElement nativeValue) || nativeValue.ValueKind != JsonValueKind.False;
+		if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(message)) throw new InvalidOperationException("Notification title and message are required.");
+		CreatorNotificationCenter.Notify(title, message, kind, native);
+		return "Notification sent.";
 	}
 
 	public string DescribeWorldOutline(int maxDepth = 2, int maxNodes = 40)

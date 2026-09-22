@@ -20,7 +20,33 @@ namespace BrickVerse.Creator.UI;
 
 public partial class InsertMenuPopup : PopupPanel
 {
-	private Vector2I _popupSize = new(250, 350);
+	private Vector2I _popupSize = new(360, 480);
+	private const int RecentLimit = 6;
+	private static readonly List<string> RecentClasses = [];
+	private static readonly Dictionary<string, string> Descriptions = new(StringComparer.Ordinal)
+	{
+		["Part"] = "Basic solid for building and collision",
+		["Mesh"] = "Imported 3D model with animation support",
+		["Model"] = "Group related world objects",
+		["Folder"] = "Organize instances without a transform",
+		["Pawn"] = "Possessable custom character or vehicle rig",
+		["NPC"] = "Character body with health and navigation",
+		["SpawnLocation"] = "Possible player spawn point",
+		["Camera"] = "A controllable world camera",
+		["SurfaceAppearance"] = "PBR color, normal, roughness and metal maps",
+		["ServerScript"] = "Luau code that runs on the server",
+		["ClientScript"] = "Luau code that runs on the client",
+		["ModuleScript"] = "Reusable Luau module",
+		["NetworkEvent"] = "Replicated event for client/server messages",
+		["InteractionPrompt"] = "World prompt for player interaction",
+		["RigidBody"] = "Physics-simulated body",
+		["TriggerVolume"] = "Detect objects entering a region",
+		["DamageVolume"] = "Damage characters inside a region",
+		["ForceVolume"] = "Apply force inside a region",
+		["GUI"] = "Screen-space user interface root",
+		["GUI3D"] = "User interface rendered in the world",
+		["Animator"] = "Play reusable animation tracks",
+	};
 	private PackedScene _categoryTitlePacked = GD.Load<PackedScene>(
 		"res://scenes/creator/popups/insert/components/category_title.tscn"
 	);
@@ -65,7 +91,7 @@ public partial class InsertMenuPopup : PopupPanel
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "BindableEvent" },
+		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "LocalNetworkEvent" },
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -80,23 +106,31 @@ public partial class InsertMenuPopup : PopupPanel
 			"InstanceValue",
 		},
 		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
+		[new() { Title = "Rendering" }] = new() { "LODGroup", "ReflectionCapture", "SceneCapture" },
 		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
 		[new() { Title = "Audio" }] = new() { "Sound", "SoundGroup" },
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
+			"Pawn",
+			"Animator",
+			"AnimationTrack",
 			"Accessory",
 			"Clothing",
 			"NPC",
 			"Tool",
 		},
-		/*
-		["Vehicles"] = new()
+		[new() { Title = "Gameplay" }] = new()
 		{
-			"Vehicle",
-			"VehicleWheel",
+			"SpawnLocation",
+			"TriggerVolume",
+			"DamageVolume",
+			"ForceVolume",
+			"CaptureSurface",
+			"NavigationLink",
+			"NavigationObstacle",
+			"PathfindingPath",
 			"VehicleSeat",
 		},
-		*/
 		[new() { Title = "Lighting Effects", RecommendOn = [typeof(Lighting)] }] = new()
 		{
 			"BloomEffect",
@@ -161,6 +195,8 @@ public partial class InsertMenuPopup : PopupPanel
 	public Control ItemContainer = null!;
 	[Export]
 	public ScrollContainer ItemScroll = null!;
+	[Export]
+	public Label ResultSummary = null!;
 	private Button? _bottomFix;
 	private InsertPopupItem? _firstItem;
 
@@ -241,7 +277,7 @@ public partial class InsertMenuPopup : PopupPanel
 			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
 				|| name is not nameof(TerrainGrass))
 			.Where(name => !categorized.Contains(name)
-				&& (query == null || name.Contains(query, StringComparison.OrdinalIgnoreCase)))
+				&& (query == null || MatchesSearch(name, query)))
 			.OrderBy(static name => name, StringComparer.Ordinal)
 			.ToList();
 
@@ -256,7 +292,7 @@ public partial class InsertMenuPopup : PopupPanel
 				query == null
 					? subItems
 					: subItems
-						.Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase))
+						.Where(s => MatchesSearch(s, query))
 						.ToList();
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
 				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
@@ -288,6 +324,8 @@ public partial class InsertMenuPopup : PopupPanel
 
 		if (uncategorized.Count > 0)
 			toProcess.Add((new ItemKey { Title = "Other" }, uncategorized));
+		if (query == null && RecentClasses.Count > 0)
+			toProcess.Insert(0, (new ItemKey { Title = "Recently Used" }, [.. RecentClasses]));
 
 		// Process categories
 		foreach (var (cat, filtered) in toProcess)
@@ -303,6 +341,7 @@ public partial class InsertMenuPopup : PopupPanel
 				InsertPopupItem item = _itemPacked.Instantiate<InsertPopupItem>();
 				item.Pressed += () => OnInsert(myClass);
 				item.Classname = myClass;
+				item.Description = GetDescription(myClass);
 				ItemContainer.AddChild(item);
 				firstItem ??= item;
 
@@ -324,7 +363,34 @@ public partial class InsertMenuPopup : PopupPanel
 		}
 
 		ItemScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 0);
+		int resultCount = toProcess.Sum(group => group.filtered.Count);
+		ResultSummary.Text = query == null
+			? $"{resultCount} objects  ·  ↑↓ navigate  ·  Enter insert"
+			: $"{resultCount} match{(resultCount == 1 ? "" : "es")} for “{query}”";
 	}
+
+	private static string GetDescription(string className) => Descriptions.TryGetValue(className, out string? description)
+		? description : $"Create a {SplitClassName(className)} instance";
+
+	private static bool MatchesSearch(string className, string query)
+	{
+		string description = GetDescription(className);
+		string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+		return terms.All(term => className.Contains(term, StringComparison.OrdinalIgnoreCase)
+			|| description.Contains(term, StringComparison.OrdinalIgnoreCase)
+			|| IsSubsequence(term, className));
+	}
+
+	private static bool IsSubsequence(string query, string value)
+	{
+		int queryIndex = 0;
+		foreach (char character in value)
+			if (queryIndex < query.Length && char.ToUpperInvariant(character) == char.ToUpperInvariant(query[queryIndex])) queryIndex++;
+		return queryIndex == query.Length;
+	}
+
+	private static string SplitClassName(string value) => string.Concat(value.Select((character, index) =>
+		index > 0 && char.IsUpper(character) && !char.IsUpper(value[index - 1]) ? " " + char.ToLowerInvariant(character) : char.ToLowerInvariant(character).ToString()));
 
 	private void OnSearchTextChanged(string newText)
 	{
@@ -381,6 +447,9 @@ public partial class InsertMenuPopup : PopupPanel
 		}
 
 		instance.Name = className;
+		RecentClasses.Remove(className);
+		RecentClasses.Insert(0, className);
+		if (RecentClasses.Count > RecentLimit) RecentClasses.RemoveRange(RecentLimit, RecentClasses.Count - RecentLimit);
 		instance.CreatorInserted();
 
 		World.Current.CreatorContext.History.CreateInstances([instance], parentTo);

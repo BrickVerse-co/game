@@ -4,10 +4,12 @@
 
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
+using System;
 
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
+[System.Obsolete("BindableEvent is deprecated; use LocalNetworkEvent instead.", false)]
 public sealed partial class BindableEvent : Instance
 {
 	[ScriptProperty] public BVSignal Invoked { get; private set; } = new();

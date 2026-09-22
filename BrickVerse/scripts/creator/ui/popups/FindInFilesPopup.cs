@@ -19,19 +19,29 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 	private static readonly HashSet<string> SearchableExtensions = new(StringComparer.OrdinalIgnoreCase)
 		{ ".lua", ".luau", ".json", ".md", ".txt", ".csv", ".xml", ".toml", ".cfg" };
 	[Export] private LineEdit _query = null!;
+	[Export] private LineEdit _replace = null!;
 	[Export] private CheckButton _matchCase = null!;
 	[Export] private CheckButton _wholeWord = null!;
 	[Export] private Button _searchButton = null!;
+	[Export] private Button _replaceSelectedButton = null!;
+	[Export] private Button _replaceAllButton = null!;
 	[Export] private ItemList _results = null!;
 	[Export] private Label _status = null!;
 	private readonly List<Match> _matches = [];
 	private CancellationTokenSource? _searchCancellation;
+	private EditorLoadingSkeleton _loading = null!;
 	private static FindInFilesPopup? _instance;
 
 	public static void Open()
 	{
 		if (CreatorService.CurrentSession == null) return;
-		if (_instance != null && IsInstanceValid(_instance)) { _instance._query.GrabFocus(); return; }
+		if (_instance != null && IsInstanceValid(_instance) && _instance.IsInsideTree() && _instance.Visible)
+		{
+			_instance.GrabFocus();
+			_instance._query.GrabFocus();
+			return;
+		}
+		_instance = null;
 		FindInFilesPopup popup = GD.Load<PackedScene>(ScenePath).Instantiate<FindInFilesPopup>();
 		_instance = popup;
 		CreatorService.Interface.PopupWindow(popup);
@@ -42,6 +52,12 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		_searchButton.Pressed += Search;
 		_query.TextSubmitted += _ => Search();
 		_results.ItemActivated += OpenResult;
+		_replaceSelectedButton.Pressed += ReplaceSelected;
+		_replaceAllButton.Pressed += ReplaceAll;
+		_loading = new EditorLoadingSkeleton(7);
+		_loading.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect, Control.LayoutPresetMode.Minsize, 10);
+		_loading.Visible = false;
+		_results.AddChild(_loading);
 		_query.GrabFocus();
 		base._Ready();
 	}
@@ -64,6 +80,7 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		_searchCancellation = new CancellationTokenSource();
 		CancellationToken token = _searchCancellation.Token;
 		_searchButton.Disabled = true;
+		_loading.Visible = true;
 		_results.Clear();
 		_matches.Clear();
 		_status.Text = "Searching project…";
@@ -78,7 +95,14 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		}
 		catch (OperationCanceledException) { }
 		catch (Exception error) { _status.Text = "Search failed: " + error.Message; }
-		finally { if (IsInstanceValid(this)) _searchButton.Disabled = false; }
+		finally
+		{
+			if (IsInstanceValid(this))
+			{
+				_searchButton.Disabled = false;
+				_loading.Visible = false;
+			}
+		}
 	}
 
 	private static Match[] Scan(string projectRoot, string query, bool matchCase, bool wholeWord, CancellationToken token)
@@ -111,5 +135,43 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		if (index < 0 || index >= _matches.Count) return;
 		Match match = _matches[(int)index];
 		CreatorService.OpenFile(match.RelativePath, match.Line);
+	}
+
+	private void ReplaceSelected()
+	{
+		int[] selected = _results.GetSelectedItems();
+		if (selected.Length == 0 || selected[0] >= _matches.Count) return;
+		ReplaceMatches([_matches[selected[0]]]);
+	}
+
+	private void ReplaceAll() => ReplaceMatches([.. _matches]);
+
+	private void ReplaceMatches(IEnumerable<Match> matches)
+	{
+		CreatorSession? session = CreatorService.CurrentSession;
+		if (session == null || string.IsNullOrEmpty(_query.Text)) return;
+		int changed = 0;
+		foreach (IGrouping<string, Match> fileMatches in matches.GroupBy(match => match.RelativePath, StringComparer.OrdinalIgnoreCase))
+		{
+			string path = Path.GetFullPath(Path.Combine(session.ProjectFolderPath, fileMatches.Key));
+			if (!path.StartsWith(Path.GetFullPath(session.ProjectFolderPath), StringComparison.OrdinalIgnoreCase) || !File.Exists(path)) continue;
+			string[] lines = File.ReadAllLines(path);
+			foreach (Match match in fileMatches.OrderByDescending(match => match.Line))
+			{
+				int line = match.Line - 1; if (line < 0 || line >= lines.Length) continue;
+				string replaced = ReplaceText(lines[line], _query.Text, _replace.Text, _matchCase.ButtonPressed, _wholeWord.ButtonPressed);
+				if (replaced == lines[line]) continue; lines[line] = replaced; changed++;
+			}
+			File.WriteAllLines(path, lines);
+		}
+		_status.Text = $"Replaced {changed} match{(changed == 1 ? "" : "es")}";
+		Search();
+	}
+
+	private static string ReplaceText(string input, string query, string replacement, bool matchCase, bool wholeWord)
+	{
+		RegexOptions options = matchCase ? RegexOptions.None : RegexOptions.IgnoreCase;
+		string pattern = wholeWord ? $@"\b{Regex.Escape(query)}\b" : Regex.Escape(query);
+		return Regex.Replace(input, pattern, _ => replacement, options);
 	}
 }

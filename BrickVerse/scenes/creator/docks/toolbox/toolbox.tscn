@@ -5,6 +5,57 @@
 [ext_resource type="PackedScene" uid="uid://dbaked5s53qqn" path="res://scenes/shared/loader.tscn" id="2_h1wj5"]
 [ext_resource type="Texture2D" uid="uid://c60spvojllrt4" path="res://assets/textures/ui-icons/chevron-left.svg" id="3_n2m24"]
 [ext_resource type="Texture2D" uid="uid://yd5kv6j4l3hp" path="res://assets/textures/ui-icons/chevron-right.svg" id="4_q1vt0"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/star.svg" id="5_discover"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/box-fill.svg" id="6_inventory"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui-icons/clock.svg" id="7_recent"]
+
+[sub_resource type="StyleBoxFlat" id="ToolboxTabNormal"]
+content_margin_left = 9.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0.075, 0.082, 0.098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.18, 0.22, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="ToolboxTabHover"]
+content_margin_left = 9.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0.12, 0.135, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.29, 0.35, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="ToolboxTabPressed"]
+content_margin_left = 9.0
+content_margin_top = 5.0
+content_margin_right = 9.0
+content_margin_bottom = 5.0
+bg_color = Color(0, 0.38, 0.72, 0.3)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.592157, 1, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
 
 [node name="Toolbox" type="VBoxContainer" unique_id=1950152327]
 anchors_preset = 15
@@ -26,43 +77,92 @@ mouse_filter = 2
 layout_mode = 1
 text = "Toolbox"
 
-[node name="Content" type="PanelContainer" parent="." unique_id=1324323428 node_paths=PackedStringArray("_typeOption", "_filterOption", "_categoryOption", "_searchEdit", "_authorEdit", "_resultsContainer", "_pagNavPrev", "_pagNavLabel", "_pagNavNext", "_loaderView", "_noResultView")]
+[node name="Content" type="PanelContainer" parent="." unique_id=1324323428 node_paths=PackedStringArray("_discoverTab", "_inventoryTab", "_recentTab", "_browseOptions", "_typeOption", "_filterOption", "_searchEdit", "_resultsContainer", "_pagNavPrev", "_pagNavLabel", "_pagNavNext", "_pagination", "_loaderView", "_noResultView", "_noResultLabel")]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 theme_type_variation = &"CreatorToolboxPanel"
 script = ExtResource("1_akuy4")
-_typeOption = NodePath("Container/Options/Type")
-_filterOption = NodePath("Container/Options/Filter")
-_categoryOption = NodePath("Container/Category")
+_discoverTab = NodePath("Container/Tabs/Discover")
+_inventoryTab = NodePath("Container/Tabs/Inventory")
+_recentTab = NodePath("Container/Tabs/Recent")
+_browseOptions = NodePath("Container/BrowseOptions")
+_typeOption = NodePath("Container/BrowseOptions/Type")
+_filterOption = NodePath("Container/BrowseOptions/Filter")
 _searchEdit = NodePath("Container/Search")
-_authorEdit = NodePath("Container/Author")
 _resultsContainer = NodePath("Container/Control/ScrollContainer/MarginContainer/Results")
 _pagNavPrev = NodePath("Container/Pagination/Previous")
 _pagNavLabel = NodePath("Container/Pagination/Label")
 _pagNavNext = NodePath("Container/Pagination/Next")
+_pagination = NodePath("Container/Pagination")
 _loaderView = NodePath("Container/Control/Loader")
 _noResultView = NodePath("Container/Control/NoResultView")
+_noResultLabel = NodePath("Container/Control/NoResultView/Label")
 
 [node name="Container" type="VBoxContainer" parent="Content" unique_id=807622070]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 7
 
-[node name="SectionLabel" type="Label" parent="Content/Container" unique_id=1333754680]
-custom_minimum_size = Vector2(0, 18)
+[node name="Tabs" type="HBoxContainer" parent="Content/Container"]
 layout_mode = 2
-theme_type_variation = &"CreatorMutedLabel"
-theme_override_font_sizes/font_size = 9
-text = "ASSET MARKETPLACE"
-vertical_alignment = 1
+theme_override_constants/separation = 6
 
-[node name="Options" type="HBoxContainer" parent="Content/Container" unique_id=195251251]
+[node name="Discover" type="Button" parent="Content/Container/Tabs"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/icon_max_width = 16
+theme_override_styles/normal = SubResource("ToolboxTabNormal")
+theme_override_styles/hover = SubResource("ToolboxTabHover")
+theme_override_styles/pressed = SubResource("ToolboxTabPressed")
+theme_override_styles/focus = SubResource("ToolboxTabPressed")
+text = "Discover"
+icon = ExtResource("5_discover")
+toggle_mode = true
+
+[node name="Inventory" type="Button" parent="Content/Container/Tabs"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/icon_max_width = 16
+theme_override_styles/normal = SubResource("ToolboxTabNormal")
+theme_override_styles/hover = SubResource("ToolboxTabHover")
+theme_override_styles/pressed = SubResource("ToolboxTabPressed")
+theme_override_styles/focus = SubResource("ToolboxTabPressed")
+text = "Inventory"
+icon = ExtResource("6_inventory")
+toggle_mode = true
+
+[node name="Recent" type="Button" parent="Content/Container/Tabs"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/icon_max_width = 16
+theme_override_styles/normal = SubResource("ToolboxTabNormal")
+theme_override_styles/hover = SubResource("ToolboxTabHover")
+theme_override_styles/pressed = SubResource("ToolboxTabPressed")
+theme_override_styles/focus = SubResource("ToolboxTabPressed")
+text = "Recent"
+icon = ExtResource("7_recent")
+toggle_mode = true
+
+[node name="Search" type="LineEdit" parent="Content/Container" unique_id=650306327]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+tooltip_text = "Search assets, or filter creators with by:name, creator:name, or @name"
+placeholder_text = "Search assets or by:creator..."
+keep_editing_on_text_submit = true
+context_menu_enabled = false
+select_all_on_focus = true
+caret_blink = true
+
+[node name="BrowseOptions" type="HBoxContainer" parent="Content/Container" unique_id=195251251]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Type" type="OptionButton" parent="Content/Container/Options" unique_id=16203676]
+[node name="Type" type="OptionButton" parent="Content/Container/BrowseOptions" unique_id=16203676]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -81,7 +181,7 @@ popup/item_4/id = 4
 popup/item_5/text = "Fonts"
 popup/item_5/id = 5
 
-[node name="Filter" type="OptionButton" parent="Content/Container/Options" unique_id=67359682]
+[node name="Filter" type="OptionButton" parent="Content/Container/BrowseOptions" unique_id=67359682]
 custom_minimum_size = Vector2(88, 30)
 layout_mode = 2
 selected = 0
@@ -98,54 +198,6 @@ popup/item_4/text = "Price: Low"
 popup/item_4/id = 4
 popup/item_5/text = "Price: High"
 popup/item_5/id = 5
-
-[node name="Category" type="OptionButton" parent="Content/Container" unique_id=2086147754]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-selected = 0
-item_count = 12
-popup/item_0/text = "All categories"
-popup/item_0/id = 0
-popup/item_1/text = "Characters & Creatures"
-popup/item_1/id = 1
-popup/item_2/text = "Nature & Plants"
-popup/item_2/id = 2
-popup/item_3/text = "Buildings & Architecture"
-popup/item_3/id = 3
-popup/item_4/text = "Weapons & Combat"
-popup/item_4/id = 4
-popup/item_5/text = "Vehicles"
-popup/item_5/id = 5
-popup/item_6/text = "Environments"
-popup/item_6/id = 6
-popup/item_7/text = "Sci-Fi"
-popup/item_7/id = 7
-popup/item_8/text = "Animations"
-popup/item_8/id = 8
-popup/item_9/text = "Gameplay Features"
-popup/item_9/id = 9
-popup/item_10/text = "Engine Tools"
-popup/item_10/id = 10
-popup/item_11/text = "Materials"
-popup/item_11/id = 11
-
-[node name="Search" type="LineEdit" parent="Content/Container" unique_id=650306327]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-placeholder_text = "Search assets..."
-keep_editing_on_text_submit = true
-context_menu_enabled = false
-select_all_on_focus = true
-caret_blink = true
-
-[node name="Author" type="LineEdit" parent="Content/Container" unique_id=432616944]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-placeholder_text = "Filter by author name or ID..."
-keep_editing_on_text_submit = true
-context_menu_enabled = false
-select_all_on_focus = true
-caret_blink = true
 
 [node name="Control" type="Control" parent="Content/Container" unique_id=1922466028]
 layout_mode = 2
@@ -169,13 +221,12 @@ theme_override_constants/margin_top = 2
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 4
 
-[node name="Results" type="HFlowContainer" parent="Content/Container/Control/ScrollContainer/MarginContainer" unique_id=371562113]
+[node name="Results" type="VBoxContainer" parent="Content/Container/Control/ScrollContainer/MarginContainer" unique_id=371562113]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 9
+theme_override_constants/separation = 10
 
 [node name="Loader" parent="Content/Container/Control" unique_id=116749580 instance=ExtResource("2_h1wj5")]
 visible = false

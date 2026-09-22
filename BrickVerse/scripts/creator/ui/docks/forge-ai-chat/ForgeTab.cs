@@ -10,6 +10,10 @@ namespace BrickVerse.Creator.UI;
 /// <summary>The shared Forge web application hosted through gdCEF.</summary>
 public partial class ForgeTab : VBoxContainer
 {
+	private const string DefaultDockIconPath = "res://assets/textures/datamodel/forge-robot-chat.svg";
+	private const string ThinkingDockIconPath = "res://assets/textures/datamodel/forge-robot-chat-think.svg";
+	private const string DoneDockIconPath = "res://assets/textures/datamodel/forge-robot-chat-done-thinking.svg";
+
 	public static string ForgeUrl =>
 		Uri.TryCreate(Globals.ApiEndpoint, UriKind.Absolute, out var api)
 		&& api.Scheme == "https"
@@ -27,12 +31,20 @@ public partial class ForgeTab : VBoxContainer
 	private string _lastExternalUrl = "";
 	private bool _shuttingDown;
 	private bool _cefInitialized;
+	private VBoxContainer? _installPanel;
+	private Label? _installStatus;
+	private ProgressBar? _installProgress;
+	private Button? _installRetry;
+	private bool _installing;
 	public World? Root => World.Current;
 
-	public override void _Ready()
+	public override async void _Ready()
 	{
 		try
 		{
+			SetDockIconState("idle");
+			if (!ClassDB.ClassExists("GdCEF") && !await EnsureCefAvailableAsync())
+				return;
 			InitializeBrowser();
 		}
 		catch (Exception ex)
@@ -42,22 +54,88 @@ public partial class ForgeTab : VBoxContainer
 		}
 	}
 
+	private async System.Threading.Tasks.Task<bool> EnsureCefAvailableAsync()
+	{
+		if (_installing) return false;
+		_installing = true;
+		ShowInstallPanel();
+		try
+		{
+			SetInstallStatus("Downloading Forge browser…", 0);
+			string manifest = await ForgeCefInstaller.EnsureInstalledAsync(
+				progress => Callable.From(() => SetInstallStatus(
+					progress.HasValue ? $"Downloading Forge browser… {progress.Value:P0}" : "Downloading Forge browser…",
+					progress.HasValue ? progress.Value * 100 : 0
+				)).CallDeferred(),
+				_lifetime.Token
+			);
+			if (_shuttingDown || _lifetime.IsCancellationRequested) return false;
+			SetInstallStatus("Starting Forge browser…", 100);
+			GDExtensionManager.LoadStatus status = GDExtensionManager.LoadExtension(manifest);
+			if (status is not (GDExtensionManager.LoadStatus.Ok or GDExtensionManager.LoadStatus.AlreadyLoaded))
+				throw new InvalidOperationException($"Godot could not load gdCEF ({status}).");
+			if (!ClassDB.ClassExists("GdCEF"))
+				throw new InvalidOperationException("gdCEF loaded without registering the GdCEF class.");
+			_installPanel?.QueueFree();
+			_installPanel = null;
+			return true;
+		}
+		catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+		{
+			return false;
+		}
+		catch (Exception ex)
+		{
+			ReportRecoverableError("Forge browser installation failed", ex);
+			SetInstallStatus($"Forge browser could not be installed.\n{ex.Message}", 0);
+			if (_installRetry != null) _installRetry.Visible = true;
+			return false;
+		}
+		finally
+		{
+			_installing = false;
+		}
+	}
+
+	private void ShowInstallPanel()
+	{
+		if (_installPanel != null) return;
+		_installPanel = new VBoxContainer
+		{
+			Name = "ForgeBrowserInstaller",
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+		};
+		_installStatus = new Label { Text = "Preparing Forge browser…", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+		_installProgress = new ProgressBar { MinValue = 0, MaxValue = 100, ShowPercentage = false };
+		_installRetry = new Button { Text = "Retry installation", Visible = false };
+		_installRetry.Pressed += RetryCefInstallation;
+		_installPanel.AddChild(_installStatus);
+		_installPanel.AddChild(_installProgress);
+		_installPanel.AddChild(_installRetry);
+		AddChild(_installPanel);
+	}
+
+	private async void RetryCefInstallation()
+	{
+		if (_installRetry != null) _installRetry.Visible = false;
+		if (await EnsureCefAvailableAsync() && !_shuttingDown)
+			InitializeBrowser();
+	}
+
+	private void SetInstallStatus(string text, double progress)
+	{
+		if (_shuttingDown) return;
+		if (_installStatus != null) _installStatus.Text = text;
+		if (_installProgress != null) _installProgress.Value = progress;
+	}
+
 	private void InitializeBrowser()
 	{
 		MouseFilter = MouseFilterEnum.Ignore;
 		ClipContents = true;
 		if (!ClassDB.ClassExists("GdCEF"))
-		{
-			AddChild(
-				new Label
-				{
-					Text =
-						"Forge requires gdCEF. Run bin_scripts/install-gdcef.ps1 and restart Creator.",
-					AutowrapMode = TextServer.AutowrapMode.WordSmart,
-				}
-			);
-			return;
-		}
+			throw new InvalidOperationException("The Forge browser runtime is unavailable.");
 		_surface = new TextureRect
 		{
 			Name = "ForgeBrowserSurface",
@@ -230,6 +308,18 @@ public partial class ForgeTab : VBoxContainer
 				|| token.GetString() != _bridgeToken
 			)
 				return;
+			if (
+				request.RootElement.TryGetProperty("method", out var method)
+				&& method.GetString() == "notifications/forge_chat_state"
+			)
+			{
+				string state = request.RootElement.TryGetProperty("params", out var parameters)
+					&& parameters.TryGetProperty("state", out var stateNode)
+					? stateNode.GetString() ?? "idle"
+					: "idle";
+				SetDockIconState(state);
+				return;
+			}
 			var reply = await _mcp.HandleAsync(message, this, _lifetime.Token);
 			if (!_lifetime.IsCancellationRequested && reply != null)
 				Callable.From<string>(SendMcpReply).CallDeferred(reply);
@@ -239,6 +329,22 @@ public partial class ForgeTab : VBoxContainer
 		{
 			ReportRecoverableError("Forge MCP request failed", ex);
 		}
+	}
+
+	private void SetDockIconState(string state)
+	{
+		if (GetParent() is not TabContainer tabs) return;
+		int tabIndex = GetIndex();
+		if (tabIndex < 0 || tabIndex >= tabs.GetTabCount()) return;
+
+		string iconPath = state switch
+		{
+			"thinking" => ThinkingDockIconPath,
+			"done" => DoneDockIconPath,
+			_ => DefaultDockIconPath,
+		};
+		Texture2D? icon = GD.Load<Texture2D>(iconPath);
+		if (icon != null) tabs.SetTabIcon(tabIndex, icon);
 	}
 
 	public void ReceiveForgeConsole(string level, string message)

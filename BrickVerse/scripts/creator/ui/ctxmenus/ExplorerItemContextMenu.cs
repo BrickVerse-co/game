@@ -96,6 +96,12 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		{
 			AddIconItem("route", "Copy Lua Path", 51);
 			AddIconItem("book", "Open Documentation", 59);
+			AddSeparator();
+			AddIconItem("image-square", "Override icon for this instance…", 81);
+			AddIconItem("image-square", $"Override icon for all {Target!.ClassName} instances…", 82);
+			if (CreatorIconRegistry.GetInstanceOverride(Target) != null) AddIconItem("trash", "Reset this instance icon", 83);
+			if (Target.Root.LinkedSession is CreatorSession iconSession && CreatorIconRegistry.GetClassOverride(iconSession, Target.ClassName) != null)
+				AddIconItem("trash", $"Reset global {Target.ClassName} icon", 84);
 		}
 		AddSeparator();
 		AddIconItem("lock", "Lock/Unlock", 61);
@@ -335,6 +341,18 @@ public partial class ExplorerItemContextMenu : ContextMenu
 					}
 					break;
 				}
+			case 81:
+				CreatorIconRegistry.PromptSetInstance(Target!);
+				break;
+			case 82:
+				CreatorIconRegistry.PromptSetClass(Target!.Root.LinkedSession, Target.ClassName);
+				break;
+			case 83:
+				CreatorIconRegistry.ClearInstance(Target!);
+				break;
+			case 84:
+				if (Target!.Root.LinkedSession is CreatorSession iconSession) CreatorIconRegistry.ClearClass(iconSession, Target.ClassName);
+				break;
 			case 101: // Delete
 				{
 					context.History.DeleteInstances(targets);

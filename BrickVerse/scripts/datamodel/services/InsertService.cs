@@ -56,15 +56,18 @@ public sealed partial class InsertService : Instance
 	}
 
 	[ScriptMethod]
-	public void InitializeDefaultNPC(NPC npc)
+	public void InitializeDefaultNPC(NPC npc, bool usePawnTemplate = true)
 	{
 		int owner = npc.NetworkAuthority;
 
 		// Default character
-		var ptm = DefaultCharacter();
-		npc.Character = ptm;
+		CharacterModel ptm = usePawnTemplate && npc is Player && Root.PlayerDefaults.PawnTemplate is Pawn template
+			? (Pawn)template.Clone()
+			: DefaultCharacter();
+		if (ptm is not Pawn) npc.Character = ptm;
 		ptm.Name = "Character";
 		ptm.Parent = npc;
+		if (ptm is Pawn) npc.Character = ptm;
 		ptm.LocalPosition = Vector3.Zero;
 		ptm.LocalRotation = Vector3.Zero;
 		ptm.LocalSize = Vector3.One;

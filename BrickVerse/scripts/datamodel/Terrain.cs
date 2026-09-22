@@ -112,7 +112,7 @@ public sealed partial class Terrain : Instance
 	/// Assigning this value after initialization rebuilds the terrain
 	/// immediately. Save this property with the rest of the world data.
 	/// </summary>
-	[Editable, ScriptProperty, SyncVar, DefaultValue("")]
+	[Editable(IsHidden = true), ScriptProperty, SyncVar, DefaultValue("")]
 	public string SerialisedTerrain
 	{
 		get

@@ -11,6 +11,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 {
 	private const int AvatarSize = 24;
 	private const int BadgeSize = 16;
+	private const string DefaultAvatarPath = "res://assets/textures/client/placeholder/avatar-headshot.png";
 	private const int MenuSwitchAccount = 0;
 	private const int MenuRefreshIdentity = 1;
 	private const int MenuCopyUserId = 2;
@@ -75,6 +76,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
 			TooltipText = "Authenticated account",
 			TextureFilter = CanvasItem.TextureFilterEnum.Linear,
+			Texture = GD.Load<Texture2D>(DefaultAvatarPath),
 		};
 		_avatar.Material = CreateCircleMaskMaterial();
 		_avatar.GuiInput += OnAvatarGuiInput;
@@ -197,19 +199,17 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 
 	private static string ResolveHeadshotUrl(CreatorAPI.ToolbarIdentity? identity, OpenIdUserInfoResponse? openId)
 	{
-		// The authenticated thumbnail route is authoritative and resolves the
-		// user's current rendered headshot instead of an account-wide fallback.
+		if (identity.HasValue && !string.IsNullOrWhiteSpace(identity.Value.HeadshotUrl))
+		{
+			return NormalizeUrl(identity.Value.HeadshotUrl);
+		}
+
 		string userId = openId?.Sub ?? CreatorAPI.UserID;
 		if (!string.IsNullOrWhiteSpace(userId) && userId != "0")
 		{
 			return Globals.ApiEndpoint.PathJoin(
 				$"/v3/user/{Uri.EscapeDataString(userId)}/thumbnail?size=48"
 			);
-		}
-
-		if (identity.HasValue && !string.IsNullOrWhiteSpace(identity.Value.HeadshotUrl))
-		{
-			return NormalizeUrl(identity.Value.HeadshotUrl);
 		}
 
 		if (openId.HasValue)
@@ -257,7 +257,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 	{
 		if (string.IsNullOrWhiteSpace(url))
 		{
-			if (requestId == _avatarRequestId) _avatar.Texture = null;
+			if (requestId == _avatarRequestId) SetDefaultAvatar();
 			return;
 		}
 
@@ -266,7 +266,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			using SystemNetHttp.HttpResponseMessage response = await _http.GetAsync(url);
 			if (!response.IsSuccessStatusCode || requestId != _avatarRequestId)
 			{
-				if (requestId == _avatarRequestId) _avatar.Texture = null;
+				if (requestId == _avatarRequestId) SetDefaultAvatar();
 				return;
 			}
 
@@ -282,10 +282,14 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			{
 				err = img.LoadJpgFromBuffer(data);
 			}
+			if (err != Error.Ok)
+			{
+				err = img.LoadWebpFromBuffer(data);
+			}
 
 			if (err != Error.Ok || requestId != _avatarRequestId)
 			{
-				if (requestId == _avatarRequestId) _avatar.Texture = null;
+				if (requestId == _avatarRequestId) SetDefaultAvatar();
 				return;
 			}
 
@@ -293,9 +297,11 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 		}
 		catch
 		{
-			if (requestId == _avatarRequestId) _avatar.Texture = null;
+			if (requestId == _avatarRequestId) SetDefaultAvatar();
 		}
 	}
+
+	private void SetDefaultAvatar() => _avatar.Texture = GD.Load<Texture2D>(DefaultAvatarPath);
 
 	private static string NormalizeUrl(string url)
 	{

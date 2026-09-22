@@ -14,7 +14,7 @@ using System.Collections.Generic;
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
-public sealed partial class NetworkEvent : Instance
+public partial class NetworkEvent : Instance
 {
 	private bool _reliable;
 	private bool _rateLimitEnabled;

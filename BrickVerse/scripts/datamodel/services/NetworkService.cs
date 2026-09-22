@@ -992,7 +992,7 @@ public sealed partial class NetworkService : Instance
 
 			foreach (Instance item in Root.PlayerDefaults.GetChildren())
 			{
-				if (item is Inventory)
+				if (item is Inventory || item == Root.PlayerDefaults.PawnTemplate)
 					continue;
 
 				NetworkedObject clone = item.Clone();

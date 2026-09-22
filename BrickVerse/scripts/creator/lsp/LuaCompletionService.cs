@@ -31,6 +31,8 @@ public class LuaCompletionService(CreatorSession session)
 	private bool _isShutdown;
 
 	public event Action<string, List<LspDiagnostic>>? PublishDiagnostics;
+	public IReadOnlyDictionary<string, List<LspDiagnostic>> Diagnostics => _diagnostics;
+	private readonly Dictionary<string, List<LspDiagnostic>> _diagnostics = new(StringComparer.OrdinalIgnoreCase);
 
 	public static readonly string[] LuaKeywords =
 	[
@@ -92,6 +94,7 @@ public class LuaCompletionService(CreatorSession session)
 			// Call publish in main thread
 			Callable.From(() =>
 			{
+				_diagnostics[fullPath] = @params.Diagnostics;
 				PublishDiagnostics?.Invoke(fullPath, @params.Diagnostics);
 			}).CallDeferred();
 		}

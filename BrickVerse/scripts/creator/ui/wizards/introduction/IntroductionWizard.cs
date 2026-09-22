@@ -46,13 +46,13 @@ public partial class IntroductionWizard : Control
 		new(
 			"Build and transform tools",
 			"The ribbon contains Select, Move, Rotate, Scale, snapping, paint, materials, brushes, and Insert. Gizmos operate on the current selection; snapping keeps precise builds aligned.",
-			"Ribbon/Buttons",
+			"Ribbon/Layout/TaskTabs",
 			"Use 1-4 keys and R/T to switch common transform tools quickly."
 		),
 		new(
 			"Creator tools",
 			"These shortcuts open Forge AI, Terrain, Animator, Toolbox, and Input Manager. Forge can help create project files, Terrain sculpts materials and height, and Animator edits rig keyframes in 3D.",
-			"Ribbon/Buttons/QuickActions",
+			"Ribbon/Layout/TaskTabs/Tools/Margin/Buttons",
 			"Hover any tool for a short description before opening it."
 		),
 		new(
