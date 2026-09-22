@@ -29,6 +29,21 @@ public sealed partial class PlayerDefaults : HiddenBase
 	private bool _loadAppearanceTools;
 	private bool _allowDeveloperFreecam;
 	private Player.PlayerMovementModeEnum _movementMode;
+	private Pawn? _pawnTemplate;
+
+	/// <summary>A child Pawn cloned as the character of each newly created player.</summary>
+	[Editable, ScriptProperty]
+	public Pawn? PawnTemplate
+	{
+		get => _pawnTemplate?.IsDeleted == true ? null : _pawnTemplate;
+		set
+		{
+			if (value != null && value.Parent != this)
+				throw new System.ArgumentException("PawnTemplate must be a child of PlayerDefaults.");
+			_pawnTemplate = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
 	public float MaxHealth

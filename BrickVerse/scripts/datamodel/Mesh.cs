@@ -10,6 +10,7 @@ using BrickVerse.Scripting;
 using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
@@ -35,6 +36,7 @@ public sealed partial class Mesh : Entity
 	private bool _castShadows;
 	private AnimationPlayer? _animPlay;
 	private readonly List<MeshInstance3D> _meshInstances = [];
+	private SurfaceAppearance? _surfaceAppearance;
 	private readonly List<Material> _materials = [];
 	private Resource? _prevResource;
 
@@ -179,6 +181,7 @@ public sealed partial class Mesh : Entity
 		{
 			_usePartColor = value;
 			UpdateColor();
+			RefreshSurfaceAppearance();
 			OnPropertyChanged();
 		}
 	}
@@ -362,6 +365,7 @@ public sealed partial class Mesh : Entity
 			}
 
 			UpdateColor();
+			RefreshSurfaceAppearance();
 			if (_texture?.Resource is Texture2D texture) ApplyTexture(texture);
 			UpdateShadows();
 			UpdateTextureFilter();
@@ -397,6 +401,21 @@ public sealed partial class Mesh : Entity
 			if (material is BaseMaterial3D baseMaterial)
 				baseMaterial.AlbedoTexture = texture;
 		}
+	}
+
+	internal void RefreshSurfaceAppearance(SurfaceAppearance? ignored = null)
+	{
+		SurfaceAppearance? appearance = null;
+		Instance? current = this;
+		while (current != null && appearance == null)
+		{
+			appearance = current.GetChildren().OfType<SurfaceAppearance>()
+				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			current = current.Parent;
+		}
+		_surfaceAppearance = appearance;
+		foreach (MeshInstance3D instance in _meshInstances)
+			instance.MaterialOverride = _surfaceAppearance?.Material;
 	}
 
 	public override void HiddenChanged(bool to)

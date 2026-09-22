@@ -109,6 +109,47 @@ public sealed partial class Player : NPC
 	[ScriptProperty]
 	public BVSignal Respawned { get; private set; } = new();
 
+	[ScriptProperty]
+	public BVSignal<Pawn> PawnChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<CharacterModel?> CharacterChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public Pawn? ControlledPawn => Character as Pawn;
+
+	/// <summary>Replace the visual rig while retaining the player's replicated collision body.</summary>
+	[ScriptMethod]
+	public void Possess(Pawn pawn)
+	{
+		if (!Root.Network.IsServer) throw new InvalidOperationException("Pawn possession must be requested by a server script.");
+		if (pawn.IsDeleted || pawn.Root != Root) throw new ArgumentException("Pawn must be a live instance in this world.", nameof(pawn));
+		if (pawn.Controller is Player other && other != this) throw new InvalidOperationException("Pawn is already possessed.");
+		if (Character == pawn) return;
+
+		CharacterModel? previous = Character;
+		pawn.Parent = this;
+		pawn.LocalPosition = Vector3.Zero;
+		pawn.LocalRotation = Vector3.Zero;
+		pawn.SetNetworkAuthority(NetworkAuthority, true);
+		Character = pawn;
+		MovementMode = pawn.ControlMode;
+		OnPropertyChanged(nameof(Character));
+		if (previous != null && previous != pawn) previous.Delete();
+	}
+
+	[ScriptMethod]
+	public void Unpossess()
+	{
+		if (!Root.Network.IsServer) throw new InvalidOperationException("Pawn possession must be requested by a server script.");
+		if (Character is not Pawn pawn) return;
+		Character = null;
+		OnPropertyChanged(nameof(Character));
+		pawn.Delete();
+		Root.Insert.InitializeDefaultNPC(this, usePawnTemplate: false);
+		MovementMode = Root.PlayerDefaults.MovementMode;
+	}
+
 	[SyncVar, ScriptProperty]
 	public string UserID
 	{
@@ -910,9 +951,7 @@ public sealed partial class Player : NPC
 		CamAttach.Parent = this;
 		CamAttach.AutoUpdateNetTransform = false;
 
-		_remoteCamAttach = new();
-		Character?.GetAttachment(CharacterModel.CharacterAttachmentEnum.Head).GDNode.AddChild(_remoteCamAttach, @internal: Node.InternalMode.Back);
-		_remoteCamAttach.RemotePath = _remoteCamAttach.GetPathTo(CamAttach.GDNode3D);
+		BindPawnCamera();
 
 		SetCamRemoteAttachEnabled(false);
 
@@ -935,6 +974,29 @@ public sealed partial class Player : NPC
 		{
 			ptc.RagdollStarted.Connect(OnRagdollStarted);
 			ptc.RagdollStopped.Connect(OnRagdollStopped);
+		}
+	}
+
+	private void BindPawnCamera()
+	{
+		if (CamAttach == null || Character == null) return;
+		if (_remoteCamAttach != null && Node.IsInstanceValid(_remoteCamAttach)) _remoteCamAttach.QueueFree();
+		_remoteCamAttach = new RemoteTransform3D();
+		Character.GetAttachment(CharacterModel.CharacterAttachmentEnum.Head).GDNode.AddChild(_remoteCamAttach, @internal: Node.InternalMode.Back);
+		_remoteCamAttach.RemotePath = _remoteCamAttach.GetPathTo(CamAttach.GDNode3D);
+		SetCamRemoteAttachEnabled(false);
+	}
+
+	internal void OnCharacterChanged(CharacterModel? previous)
+	{
+		if (previous is Pawn oldPawn) oldPawn.InvokeUnpossessed(this);
+		MovementMode = Character is Pawn pawn ? pawn.ControlMode : Root.PlayerDefaults.MovementMode;
+		if (IsLocal && CamAttach != null) BindPawnCamera();
+		CharacterChanged.Invoke(Character);
+		if (Character is Pawn newPawn)
+		{
+			newPawn.InvokePossessed(this);
+			PawnChanged.Invoke(newPawn);
 		}
 	}
 
