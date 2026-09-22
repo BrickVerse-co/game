@@ -35,6 +35,16 @@ layout_mode = 2
 placeholder_text = "Filter properties…"
 clear_button_enabled = true
 
+[node name="FilterStatus" type="Label" parent="Properties"]
+visible = false
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.65, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Matching properties"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Scroll" type="ScrollContainer" parent="Properties"]
 layout_mode = 2
 size_flags_vertical = 3

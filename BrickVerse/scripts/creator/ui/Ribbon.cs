@@ -69,9 +69,15 @@ public sealed partial class Ribbon : Control
 		Button shapesButton = model.GetNode<Button>("Shapes");
 		Button inputManagerButton = _taskTabs.GetNode<Button>("UI/Margin/Buttons/InputManager");
 		AddTaskAction("Find in Place", "search", FindInFilesPopup.Open);
+		AddTaskAction("Data Stores", "database", () => CreatorDataToolsWindow.Open(0));
+		AddTaskAction("Localization", "translate", () => CreatorDataToolsWindow.Open(1));
+		AddTaskAction("Instance Icons", "image-square", () => CreatorDataToolsWindow.Open(2));
 		AddTaskAction("Backups", "history", () => CreatorDataToolsWindow.Open(3));
 		AddTaskAction("Collisions", "brick", () => CreatorDataToolsWindow.Open(4));
 		AddTaskAction("Analysis", "bug", () => CreatorDataToolsWindow.Open(5));
+		AddTaskAction("Scene Stats", "chart-bar", SceneStatisticsPopup.Open);
+		AddTaskAction("Particles", "play-filled", ParticleEditorWindow.Open);
+		AddTaskAction("Input", "keyboard", CreatorService.Interface.OpenInputManager);
 		PopulateShapesMenu(shapesButton);
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
@@ -170,8 +176,37 @@ public sealed partial class Ribbon : Control
 
 	private void AddTaskAction(string label, string icon, Action action)
 	{
-		Button button = new() { Name = label.Replace(" ", ""), Text = label, Icon = GD.Load<Texture2D>($"res://assets/textures/ui-icons/{icon}.svg"), CustomMinimumSize = new Vector2(82, 48), TooltipText = label };
-		button.Pressed += action; _quickActions.AddChild(button);
+		Button button = new()
+		{
+			Name = label.Replace(" ", ""),
+			CustomMinimumSize = new Vector2(Mathf.Max(74, label.Length * 7), 54),
+			TooltipText = label,
+			FocusMode = Control.FocusModeEnum.None,
+		};
+		TextureRect iconView = new()
+		{
+			Texture = GD.Load<Texture2D>($"res://assets/textures/ui-icons/{icon}.svg"),
+			Position = new Vector2(0, 5),
+			Size = new Vector2(button.CustomMinimumSize.X, 27),
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			Modulate = new Color("0097ff"),
+		};
+		Label caption = new()
+		{
+			Text = label,
+			Position = new Vector2(2, 33),
+			Size = new Vector2(button.CustomMinimumSize.X - 4, 18),
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+		};
+		caption.AddThemeFontSizeOverride("font_size", 11);
+		button.AddChild(iconView);
+		button.AddChild(caption);
+		button.Pressed += action;
+		_quickActions.AddChild(button);
 	}
 
 	private void OnCurrentControlChanged(Control? control)

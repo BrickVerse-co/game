@@ -891,7 +891,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			"res://scenes/creator/popups/animation_editor.tscn"
 		);
 		editor.InitialFilePath = filePath;
-		PopupWindow(editor);
+		PopupWindow(editor, toolWindow: true);
 	}
 
 	public void OpenUploadMeshMenu()
@@ -1122,12 +1122,13 @@ public partial class CreatorInterface : Control, IScriptObject
 		PopupWindow(dialog);
 	}
 
-	public void PopupWindow(Window window)
+	public void PopupWindow(Window window, bool toolWindow = false)
 	{
 		window.Visible = false;
 		window.ForceNative = true;
-		window.Transient = true;
-		window.AlwaysOnTop = true;
+		window.Exclusive = false;
+		window.Transient = !toolWindow;
+		window.AlwaysOnTop = !toolWindow;
 		window.Theme = Theme;
 
 		float uiScale = GetWindow().ContentScaleFactor;

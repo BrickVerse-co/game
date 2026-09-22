@@ -533,6 +533,7 @@ public sealed partial class Menu : PanelContainer
 				new MenuButtonItem() { Text = "World Backups & Restore", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(3) },
 				new MenuButtonItem() { Text = "Collision Groups Editor", Icon = "brick", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(4) },
 				new MenuButtonItem() { Text = "Script Analysis & Activity", Icon = "bug", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(5) },
+				new MenuButtonItem() { Text = "Scene Statistics", Icon = "chart-bar", RequireGameOpen = true, Pressed = SceneStatisticsPopup.Open },
 				new MenuButtonItem() { Text = "Particle Editor", Icon = "play-filled", RequireGameOpen = true, Pressed = ParticleEditorWindow.Open },
 				new MenuSeperatorItem(),
 				new MenuButtonItem()

@@ -38,8 +38,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="Item" type="Button" unique_id=1032583375 node_paths=PackedStringArray("IconRect", "ClassLabel")]
-custom_minimum_size = Vector2(0, 24)
+[node name="Item" type="Button" unique_id=1032583375 node_paths=PackedStringArray("IconRect", "ClassLabel", "DescriptionLabel")]
+custom_minimum_size = Vector2(0, 42)
 offset_right = 158.0
 offset_bottom = 24.0
 mouse_default_cursor_shape = 2
@@ -49,7 +49,8 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_qtjg1")
 flat = true
 script = ExtResource("1_hsxpd")
 IconRect = NodePath("HBoxContainer/TextureRect")
-ClassLabel = NodePath("HBoxContainer/Label")
+ClassLabel = NodePath("HBoxContainer/Text/Label")
+DescriptionLabel = NodePath("HBoxContainer/Text/Description")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1671367656]
 layout_mode = 1
@@ -63,12 +64,24 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer" unique_id=284225597]
-custom_minimum_size = Vector2(20, 0)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 texture = ExtResource("1_jwrsb")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="HBoxContainer" unique_id=613392506]
+[node name="Text" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -3
+
+[node name="Label" type="Label" parent="HBoxContainer/Text" unique_id=613392506]
 layout_mode = 2
 text = "Item Name"
+
+[node name="Description" type="Label" parent="HBoxContainer/Text"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.7, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "Object description"
+text_overrun_behavior = 3

@@ -18,7 +18,7 @@ using System.Linq;
 namespace BrickVerse.Creator.UI.Popups;
 
 /// <summary>
-/// Native Creator editor for BrickVerse skeletal animation clips. FBX/GLTF files
+/// Native Creator sequencer for BrickVerse object properties and skeletal clips. FBX/GLTF files
 /// are imported through Godot and converted to editable .bvanim tracks.
 /// </summary>
 public sealed partial class AnimationEditorWindow : PopupWindowBase
@@ -81,10 +81,13 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	private readonly List<byte[]> _undoHistory = [];
 	private readonly List<byte[]> _redoHistory = [];
 	private bool _restoringHistory;
+	private DatamodelDynamic? _initialTarget;
+	private byte[]? _previewState;
 
 	public override void _Ready()
 	{
 		base._Ready();
+		_initialTarget = DatamodelWorld.Current?.CreatorContext.Selections.SelectedInstances.OfType<DatamodelDynamic>().FirstOrDefault();
 		BuildInterface();
 		RefreshAll();
 		if (!string.IsNullOrWhiteSpace(InitialFilePath))
@@ -128,14 +131,18 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 		foreach (string value in new[] { "None", "Linear", "Pingpong" }) _loop.AddItem(value);
 		foreach (string value in new[] { "Linear", "Nearest", "Cubic" }) _interpolation.AddItem(value);
-		_tracks.SetColumnTitle(0, "Bone");
+		_tracks.SetColumnTitle(0, "Target");
 		_tracks.SetColumnTitle(1, "Channel");
 
 		_timeline = new AnimationTimeline { CustomMinimumSize = new Vector2(0, 165) };
-		GetNode<PanelContainer>("Editor/Main/Workspace/TimelineHost").AddChild(_timeline);
+		ScrollContainer scroll = new() { CustomMinimumSize = new Vector2(0, 180) };
+		GetNode<PanelContainer>("Editor/Main/Workspace/TimelineHost").AddChild(scroll);
+		_timeline.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		scroll.AddChild(_timeline);
 		_timeline.GuiInput += HandleTimelineInput;
 		CreatePreview(GetNode<Control>("Editor/Main/Workspace/Preview"));
 		PopulateBonePicker();
+		BuildObjectControls();
 
 		GetNode<Button>("Welcome/Card/Stack/NewTrack").Pressed += () => { NewClip(); ShowEditor(); };
 		GetNode<Button>("Welcome/Card/Stack/ImportFile").Pressed += OpenImport;
@@ -170,10 +177,11 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		_tracks.ItemSelected += SelectTrack;
 		_tracks.ItemEdited += CommitTrackPath;
 		_keys.ItemSelected += SelectKey;
+		_keys.ItemActivated += index => { SelectKey(index); OpenKeyframeProperties(); };
 		_boneChoice.ItemSelected += index => SelectPreviewBone((int)index);
 		_playhead.ValueChanged += SeekPreview;
 		_name.TextChanged += value => { if (_clip.Name != value) PushUndo(); _clip.Name = value; _timeline.QueueRedraw(); RefreshPreview(); };
-		_length.ValueChanged += value => { if (!Mathf.IsEqualApprox(_clip.Length, (float)value)) PushUndo(); _clip.Length = (float)value; _timeline.QueueRedraw(); RefreshPreview(); };
+		_length.ValueChanged += value => { double lastKey = _clip.Tracks.SelectMany(t => t.Keys).Select(k => k.Time).DefaultIfEmpty(0).Max(); if (value < lastKey) { _length.SetValueNoSignal(_clip.Length); _status.Text = "Move or delete keys beyond the new duration first."; return; } if (!Mathf.IsEqualApprox(_clip.Length, (float)value)) PushUndo(); _clip.Length = (float)value; _timeline.QueueRedraw(); RefreshPreview(); };
 		_loop.ItemSelected += index => { string mode = _loop.GetItemText((int)index); if (_clip.LoopMode != mode) PushUndo(); _clip.LoopMode = mode; RefreshPreview(); };
 		_interpolation.ItemSelected += _ => ApplyTrackInterpolation();
 		_time.ValueChanged += _ => ApplyKeyFields();
@@ -226,7 +234,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	}
 
 	private void ShowEditor() { _welcome.Visible = false; _editorRoot.Visible = true; EnsureDocumentTrack(); }
-	private void ShowWelcome() { _editorRoot.Visible = false; _welcome.Visible = true; }
+	private void ShowWelcome() { StopPlayback(); _editorRoot.Visible = false; _welcome.Visible = true; }
 
 	private void EnsureDocumentTrack()
 	{
@@ -245,7 +253,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	{
 		if (_clip.Length <= 0 || _clip.Tracks.Count == 0 || pointer.X < 150) return;
 		float timelineWidth = Math.Max(1, _timeline.Size.X - 162);
-		double time = Math.Clamp((pointer.X - 150) / timelineWidth * _clip.Length, 0, _clip.Length);
+		double time = SnapTime((pointer.X - 150) / timelineWidth * _clip.Length);
 		float rowHeight = Math.Max(22, (_timeline.Size.Y - 22) / Math.Max(1, _clip.Tracks.Count));
 		int trackIndex = Math.Clamp((int)((pointer.Y - 24) / rowHeight), 0, _clip.Tracks.Count - 1);
 		_selectedTrack = trackIndex;
@@ -273,6 +281,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 				if (button.Pressed && TryHitTimelineKey(button.Position, out int track, out int key))
 				{
 					SelectTimelineKey(track, key);
+					if (button.DoubleClick) { OpenKeyframeProperties(); return; }
 					_draggedTimelineTrack = track;
 					_draggedTimelineKey = _clip.Tracks[track].Keys[key];
 					_timelineDragUndoCaptured = false;
@@ -295,7 +304,9 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		{
 			if (!_timelineDragUndoCaptured) { PushUndo(); _timelineDragUndoCaptured = true; }
 			float width = Math.Max(1, _timeline.Size.X - 162);
-			_draggedTimelineKey.Time = Math.Clamp((motion.Position.X - 150) / width * _clip.Length, 0, _clip.Length);
+			double nextTime = SnapTime((motion.Position.X - 150) / width * _clip.Length);
+			if (_clip.Tracks[_draggedTimelineTrack].Keys.Any(k => k != _draggedTimelineKey && Mathf.IsEqualApprox(k.Time, nextTime))) return;
+			_draggedTimelineKey.Time = nextTime;
 			BVAnimationTrack track = _clip.Tracks[_draggedTimelineTrack];
 			track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
 			_selectedKey = track.Keys.IndexOf(_draggedTimelineKey);
@@ -374,7 +385,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		PushUndo();
 		BVAnimationTrack track = _clip.Tracks[_selectedTrack];
 		BVAnimationKey key = track.Keys[_selectedKey];
-		key.Value = track.Channel == "rotation" ? [0, 0, 0, 1] : track.Channel == "scale" ? [1, 1, 1] : [0, 0, 0];
+		key.Value = track.Channel == "property" ? ReadTrackValue(track) : track.Channel == "rotation" ? [0, 0, 0, 1] : track.Channel == "scale" ? [1, 1, 1] : [0, 0, 0];
 		key.Transition = 1;
 		RefreshKeys();
 		_status.Text = "Keyframe reset";
@@ -449,6 +460,13 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void SelectBoneForTrack(int trackIndex)
 	{
+		if (_objectPreview != null && trackIndex >= 0 && trackIndex < _clip.Tracks.Count)
+		{
+			string nodePath = _clip.Tracks[trackIndex].Path.Split(':')[0];
+			int index = _objectNodes.FindIndex(n => _objectPreview.GetPathTo(n).ToString() == nodePath);
+			if (index >= 0) { _objectChoice.Select(index); PopulateProperties(); SyncPoseAdapterFromBone(); }
+			return;
+		}
 		if (_previewSkeleton == null || trackIndex < 0 || trackIndex >= _clip.Tracks.Count) return;
 		string path = _clip.Tracks[trackIndex].Path;
 		int separator = path.LastIndexOf(':');
@@ -618,6 +636,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		keyPanel.AddChild(new Label { Text = "Keyframes" });
 		_keys = new ItemList { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
 		_keys.ItemSelected += SelectKey;
+		_keys.ItemActivated += index => { SelectKey(index); OpenKeyframeProperties(); };
 		keyPanel.AddChild(_keys);
 		HBoxContainer keyActions = new();
 		keyPanel.AddChild(keyActions);
@@ -726,6 +745,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 		Node3D rig = GD.Load<PackedScene>("res://scenes/datamodel/BrickversianModal.tscn").Instantiate<Node3D>();
 		_previewViewport.AddChild(rig);
+		_sampleRig = rig;
 		_previewPlayer = rig.GetNodeOrNull<AnimationPlayer>("Character/AnimationPlayer");
 		_previewSkeleton = rig.GetNodeOrNull<Skeleton3D>("Character/Poly/Skeleton3D");
 		ApplyNoobPreviewColors(_previewSkeleton);
@@ -763,6 +783,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void SyncPoseAdapterFromBone()
 	{
+		if (_poseAdapter != null && SelectedObject is Node3D target) { _poseAdapter.SetGlobalTransform(target.GlobalTransform); return; }
 		if (_poseAdapter == null || _previewSkeleton == null || _boneChoice == null) return;
 		int bone = _boneChoice.Selected;
 		if (bone < 0 || bone >= _previewSkeleton.GetBoneCount()) return;
@@ -771,6 +792,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void ApplyPoseAdapterToBone()
 	{
+		if (_poseAdapter != null && SelectedObject is Node3D target) { _previewPlayer?.Pause(); target.GlobalTransform = _poseAdapter.GetGlobalTransform(); return; }
 		if (_poseAdapter == null || _previewSkeleton == null) return;
 		int bone = _boneChoice.Selected;
 		if (bone < 0 || bone >= _previewSkeleton.GetBoneCount()) return;
@@ -1047,7 +1069,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void ResetPreviewCamera()
 	{
-		_cameraTarget = new Vector3(0, 2.6f, 0);
+		_cameraTarget = SelectedObject?.GlobalPosition ?? new Vector3(0, 2.6f, 0);
 		_cameraYaw = 0;
 		_cameraPitch = -0.08f;
 		_cameraDistance = 8.5f;
@@ -1089,6 +1111,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void KeySelectedBone(string channel)
 	{
+		if (_objectPreview != null) { AddObjectProperty(channel == "rotation" ? "rotation_degrees" : channel); AddKey(); return; }
 		if (_previewSkeleton == null)
 			return;
 		PushUndo();
@@ -1105,7 +1128,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 			trackIndex = _clip.Tracks.Count - 1;
 		}
 		BVAnimationTrack track = _clip.Tracks[trackIndex];
-		double time = Math.Clamp(_playhead.Value, 0, _clip.Length);
+		double time = SnapTime(_playhead.Value);
 		BVAnimationKey? key = track.Keys.FirstOrDefault(
 			item => Math.Abs(item.Time - time) < 0.0005
 		);
@@ -1174,7 +1197,8 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	{
 		PushUndo();
 		_documentTrack = null;
-		_clip = CreateDefaultClip();
+		_previewState = null;
+		_clip = _objectPreview != null ? new BVAnimationClip { Name = "New Animation" } : CreateDefaultClip();
 		_selectedTrack = -1;
 		_selectedKey = -1;
 		RefreshAll();
@@ -1226,6 +1250,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		try
 		{
 			_documentTrack = null;
+			_previewState = null;
 			_clip = Path.GetExtension(path).Equals(".bvanim", StringComparison.OrdinalIgnoreCase)
 				? BVAnimationFormat.Read(File.ReadAllBytes(path))
 				: ImportSceneAnimation(path);
@@ -1296,6 +1321,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		{
 			try
 			{
+				EnsureDocumentTrack();
 				if (!path.EndsWith(".bvanim", StringComparison.OrdinalIgnoreCase))
 					path += ".bvanim";
 				File.WriteAllBytes(path, BVAnimationFormat.Write(_clip));
@@ -1328,6 +1354,11 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	{
 		if (_previewPlayer == null)
 			return;
+		byte[] state;
+		try { state = CaptureClip(); }
+		catch { return; }
+		if (_previewState != null && _previewState.SequenceEqual(state)) return;
+		_previewState = state;
 		AnimationLibrary library;
 		try
 		{
@@ -1342,7 +1373,9 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		_previewPlayer.AddAnimationLibrary("editor", library);
 		if (_playhead != null)
 			_playhead.MaxValue = _clip.Length;
-		_documentTrack?.SetClip(_clip);
+		// Keep the document track stable while scrubbing/editing. Rebinding it on
+		// every UI change resets AnimationPlayer state and makes new keys appear to
+		// erase the previous pose. Persist explicitly from SaveClip/ShowEditor.
 	}
 
 	private void TogglePlayback()
@@ -1386,6 +1419,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 
 	private void AddTrack(string channel)
 	{
+		if (_objectPreview != null) { AddObjectProperty(channel == "rotation" ? "rotation_degrees" : channel); return; }
 		PushUndo();
 		int components = channel == "rotation" ? 4 : 3;
 		float[] value = ReadSelectedBoneValue(channel);
@@ -1419,18 +1453,19 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 	{
 		if (_selectedTrack < 0 || _selectedTrack >= _clip.Tracks.Count)
 			return;
-		PushUndo();
 		BVAnimationTrack track = _clip.Tracks[_selectedTrack];
-		float time = Math.Clamp((float)_playhead.Value, 0, _clip.Length);
+		float time = (float)SnapTime(_playhead.Value);
 		int existing = track.Keys.FindIndex(key => Mathf.IsEqualApprox(key.Time, time));
+		PushUndo();
 		if (existing >= 0)
 		{
 			_selectedKey = existing;
-			_status.Text = "A keyframe already exists at the playhead.";
+			track.Keys[existing].Value = ReadTrackValue(track);
+			_status.Text = "Keyframe updated at the playhead.";
 			RefreshKeys();
 			return;
 		}
-		float[] value = ReadSelectedBoneValue(track.Channel);
+		float[] value = ReadTrackValue(track);
 		track.Keys.Add(new BVAnimationKey { Time = time, Value = value });
 		track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
 		_selectedKey = track.Keys.FindIndex(key => Mathf.IsEqualApprox(key.Time, time));
@@ -1495,10 +1530,17 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		if (_selectedKey >= track.Keys.Count)
 			return;
 		BVAnimationKey key = track.Keys[_selectedKey];
-		float time = Math.Clamp((float)_time.Value, 0, _clip.Length);
-		int components = track.Channel == "rotation" ? 4 : 3;
+		float time = (float)SnapTime(_time.Value);
+		if (track.Keys.Any(other => other != key && Mathf.IsEqualApprox(other.Time, time))) { _time.SetValueNoSignal(key.Time); return; }
+		int components = BVAnimationFormat.ComponentCount(track);
 		float transition = (float)_transition.Value;
 		float[] value = _values.Take(components).Select(field => (float)field.Value).ToArray();
+		if (track.Channel == "rotation" || track.ValueType == "Quaternion")
+		{
+			Quaternion rotation = new(value[0], value[1], value[2], value[3]);
+			if (rotation.LengthSquared() < 0.000001f) { LoadKeyFields(); return; }
+			value = QuaternionValue(rotation.Normalized());
+		}
 		if (Mathf.IsEqualApprox(key.Time, time) && Mathf.IsEqualApprox(key.Transition, transition) && key.Value.SequenceEqual(value)) return;
 		PushUndo();
 		key.Time = time;
@@ -1507,6 +1549,7 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 		track.Keys.Sort((a, b) => a.Time.CompareTo(b.Time));
 		_selectedKey = track.Keys.IndexOf(key);
 		RefreshKeys(false);
+		SeekPreview(_playhead.Value);
 	}
 
 	private void ApplyTrackInterpolation()
@@ -1566,14 +1609,15 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 			BVAnimationTrack track = _clip.Tracks[index];
 			TreeItem item = _tracks.CreateItem(root);
 			item.SetText(0, track.Path);
-			item.SetText(1, track.Channel);
+			item.SetText(1, track.Channel == "property" ? track.ValueType : track.Channel);
 			item.SetMetadata(0, index);
-			item.SetEditable(0, true);
+			item.SetEditable(0, false);
 			item.SetEditable(1, false);
 			if (index == _selectedTrack)
 				item.Select(0);
 		}
 		_timeline.Clip = _clip;
+		_timeline.CustomMinimumSize = new Vector2(Math.Max(700, _timeline.CustomMinimumSize.X), Math.Max(165, 24 + _clip.Tracks.Count * 38));
 		_timeline.SelectedTrack = _selectedTrack;
 		_timeline.SelectedKey = _selectedKey;
 		RefreshPreview();

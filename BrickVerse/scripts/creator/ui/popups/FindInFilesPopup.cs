@@ -29,12 +29,19 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 	[Export] private Label _status = null!;
 	private readonly List<Match> _matches = [];
 	private CancellationTokenSource? _searchCancellation;
+	private EditorLoadingSkeleton _loading = null!;
 	private static FindInFilesPopup? _instance;
 
 	public static void Open()
 	{
 		if (CreatorService.CurrentSession == null) return;
-		if (_instance != null && IsInstanceValid(_instance)) { _instance._query.GrabFocus(); return; }
+		if (_instance != null && IsInstanceValid(_instance) && _instance.IsInsideTree() && _instance.Visible)
+		{
+			_instance.GrabFocus();
+			_instance._query.GrabFocus();
+			return;
+		}
+		_instance = null;
 		FindInFilesPopup popup = GD.Load<PackedScene>(ScenePath).Instantiate<FindInFilesPopup>();
 		_instance = popup;
 		CreatorService.Interface.PopupWindow(popup);
@@ -47,6 +54,10 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		_results.ItemActivated += OpenResult;
 		_replaceSelectedButton.Pressed += ReplaceSelected;
 		_replaceAllButton.Pressed += ReplaceAll;
+		_loading = new EditorLoadingSkeleton(7);
+		_loading.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect, Control.LayoutPresetMode.Minsize, 10);
+		_loading.Visible = false;
+		_results.AddChild(_loading);
 		_query.GrabFocus();
 		base._Ready();
 	}
@@ -69,6 +80,7 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		_searchCancellation = new CancellationTokenSource();
 		CancellationToken token = _searchCancellation.Token;
 		_searchButton.Disabled = true;
+		_loading.Visible = true;
 		_results.Clear();
 		_matches.Clear();
 		_status.Text = "Searching project…";
@@ -83,7 +95,14 @@ public sealed partial class FindInFilesPopup : PopupWindowBase
 		}
 		catch (OperationCanceledException) { }
 		catch (Exception error) { _status.Text = "Search failed: " + error.Message; }
-		finally { if (IsInstanceValid(this)) _searchButton.Disabled = false; }
+		finally
+		{
+			if (IsInstanceValid(this))
+			{
+				_searchButton.Disabled = false;
+				_loading.Visible = false;
+			}
+		}
 	}
 
 	private static Match[] Scan(string projectRoot, string query, bool matchCase, bool wholeWord, CancellationToken token)

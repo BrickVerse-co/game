@@ -88,6 +88,8 @@ public sealed partial class CreatorDataToolsWindow : Window
 		BuildCollisionGroupsTab(); BuildDiagnosticsTab();
 		RefreshStores(); LoadLocales(); LoadIcons(); RefreshSnapshots();
 		_tabs.CurrentTab = Mathf.Clamp(_initialTab, 0, _tabs.GetTabCount() - 1);
+		_tabs.TabChanged += tab => ToolTutorialPopup.ShowFor((int)tab);
+		Callable.From(() => ToolTutorialPopup.ShowFor(_tabs.CurrentTab)).CallDeferred();
 	}
 
 	public override void _ExitTree() => CreatorIconRegistry.Changed -= OnIconsChanged;
@@ -301,7 +303,9 @@ public sealed partial class CreatorDataToolsWindow : Window
 	{
 		MarginContainer page = new() { Name = "Collision Groups" }; page.AddThemeConstantOverride("margin_left", 12); page.AddThemeConstantOverride("margin_top", 12); page.AddThemeConstantOverride("margin_right", 12); page.AddThemeConstantOverride("margin_bottom", 12); _tabs.AddChild(page);
 		VBoxContainer layout = new(); page.AddChild(layout);
-		Label title = new() { Text = "Collision Groups Editor" }; title.AddThemeFontSizeOverride("font_size", 23); layout.AddChild(title);
+		HBoxContainer header = new(); layout.AddChild(header);
+		Label title = new() { Text = "Collision Groups Editor", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; title.AddThemeFontSizeOverride("font_size", 23); header.AddChild(title);
+		Button guide = new() { Text = "?  Guide", TooltipText = "Show the Collision Groups guide" }; guide.Pressed += () => ToolTutorialPopup.ShowFor(4, true); header.AddChild(guide);
 		Label subtitle = new() { Text = "Control which physics layers collide. Changes apply to every object assigned to each layer.", ThemeTypeVariation = "CreatorMutedLabel" }; layout.AddChild(subtitle);
 		Button refresh = new() { Text = "Refresh from world", CustomMinimumSize = new Vector2(140, 30) }; refresh.Pressed += RefreshCollisionMatrix; layout.AddChild(refresh);
 		_collisionMatrix = new Tree { Columns = 9, ColumnTitlesVisible = true, HideRoot = true, SizeFlagsVertical = Control.SizeFlags.ExpandFill }; layout.AddChild(_collisionMatrix);
@@ -334,6 +338,7 @@ public sealed partial class CreatorDataToolsWindow : Window
 		MarginContainer page = new() { Name = "Diagnostics" }; page.AddThemeConstantOverride("margin_left", 12); page.AddThemeConstantOverride("margin_top", 12); page.AddThemeConstantOverride("margin_right", 12); page.AddThemeConstantOverride("margin_bottom", 12); _tabs.AddChild(page);
 		VBoxContainer layout = new(); page.AddChild(layout); HBoxContainer header = new(); layout.AddChild(header);
 		Label title = new() { Text = "Script diagnostics", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; title.AddThemeFontSizeOverride("font_size", 23); header.AddChild(title);
+		Button guide = new() { Text = "?  Guide", TooltipText = "Show the Script Analysis guide" }; guide.Pressed += () => ToolTutorialPopup.ShowFor(5, true); header.AddChild(guide);
 		Button refresh = new() { Text = "Refresh", CustomMinimumSize = new Vector2(90, 30) }; refresh.Pressed += RefreshDiagnostics; header.AddChild(refresh);
 		TabContainer views = new() { SizeFlagsVertical = Control.SizeFlags.ExpandFill }; layout.AddChild(views);
 		_analysis = new Tree { Name = "Analysis", Columns = 4, ColumnTitlesVisible = true, HideRoot = true }; _analysis.SetColumnTitle(0, "Severity"); _analysis.SetColumnTitle(1, "File"); _analysis.SetColumnTitle(2, "Line"); _analysis.SetColumnTitle(3, "Message"); _analysis.SetColumnExpand(0, false); _analysis.SetColumnCustomMinimumWidth(0, 100); _analysis.SetColumnExpand(2, false); _analysis.SetColumnCustomMinimumWidth(2, 60); _analysis.ItemActivated += OpenDiagnostic; views.AddChild(_analysis);

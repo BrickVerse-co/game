@@ -11,6 +11,7 @@ public partial class PropertiesView : Control
 	public VBoxContainer PropertiesContainer = null!;
 	public InstanceTagView TagsView = null!;
 	private LineEdit _search = null!;
+	private Label _filterStatus = null!;
 	private string _lastFilter = "";
 	private int _lastChildCount = -1;
 
@@ -18,9 +19,21 @@ public partial class PropertiesView : Control
 	{
 		PropertiesContainer = GetNode<VBoxContainer>("Properties/Scroll/Margin/Container");
 		_search = GetNode<LineEdit>("Properties/Search");
+		_filterStatus = GetNode<Label>("Properties/FilterStatus");
 		_search.TextChanged += _ => ApplyPropertyFilter();
 		TagsView = GetNode<InstanceTagView>("Tags");
 		base._EnterTree();
+	}
+
+	public override void _UnhandledKeyInput(InputEvent @event)
+	{
+		if (IsVisibleInTree() && @event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.F })
+		{
+			_search.GrabFocus();
+			_search.SelectAll();
+			GetViewport().SetInputAsHandled();
+		}
+		base._UnhandledKeyInput(@event);
 	}
 
 	public override void _Process(double delta)
@@ -36,13 +49,26 @@ public partial class PropertiesView : Control
 		_lastFilter = query;
 		_lastChildCount = PropertiesContainer.GetChildCount();
 		Godot.Collections.Array<Node> children = PropertiesContainer.GetChildren();
+		int visibleFields = 0;
 		for (int i = 0; i < children.Count; i++)
 		{
 			if (children[i] is not PanelContainer header || i + 1 >= children.Count || children[i + 1] is not VBoxContainer fields) continue;
-			bool visible = query.Length == 0 || ContainsLabel(header, query) || ContainsLabel(fields, query);
-			header.Visible = visible;
-			fields.Visible = visible;
+			bool sectionMatches = query.Length == 0 || ContainsLabel(header, query);
+			int sectionVisible = 0;
+			foreach (Node field in fields.GetChildren())
+			{
+				bool fieldMatches = sectionMatches || ContainsLabel(field, query);
+				if (field is Control control) control.Visible = fieldMatches;
+				if (fieldMatches) sectionVisible++;
+			}
+			header.Visible = sectionVisible > 0;
+			fields.Visible = sectionVisible > 0;
+			visibleFields += sectionVisible;
 		}
+		_filterStatus.Visible = query.Length > 0;
+		_filterStatus.Text = visibleFields == 0
+			? $"No properties match “{query}”"
+			: $"{visibleFields} matching propert{(visibleFields == 1 ? "y" : "ies")}";
 	}
 
 	private static bool ContainsLabel(Node node, string query)

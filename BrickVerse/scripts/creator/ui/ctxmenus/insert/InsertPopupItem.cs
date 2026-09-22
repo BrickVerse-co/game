@@ -11,11 +11,15 @@ public partial class InsertPopupItem : Button
 {
 	[Export] public TextureRect IconRect = null!;
 	[Export] public Label ClassLabel = null!;
+	[Export] public Label DescriptionLabel = null!;
 	public string Classname = null!;
+	public string Description = "";
 
 	public override void _Ready()
 	{
 		IconRect.Texture = Globals.LoadIcon(Classname);
 		ClassLabel.Text = Classname;
+		DescriptionLabel.Text = Description;
+		TooltipText = string.IsNullOrWhiteSpace(Description) ? $"Create {Classname}" : Description;
 	}
 }

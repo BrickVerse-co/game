@@ -892,6 +892,10 @@ public sealed partial class Camera : Dynamic
 		MoveSpeedChanged?.Invoke(_moveSpeed);
 	}
 
+#if CREATOR
+	internal void SetCreatorMoveSpeed(float speed) => SetMoveSpeed(Mathf.Clamp(speed, 2f, 1024f));
+#endif
+
 	private void SnapForward()
 	{
 		Position += Forward * _moveSpeed / 10;

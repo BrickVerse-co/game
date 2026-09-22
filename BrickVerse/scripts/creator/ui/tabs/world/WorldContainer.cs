@@ -16,6 +16,7 @@ public sealed partial class WorldContainer : SubViewportContainer
 {
 	private const string ContainerOverlayPath = "res://scenes/creator/misc/game_container_overlay.tscn";
 	private readonly SubViewport _subViewport = null!;
+	internal SubViewport RenderViewport => _subViewport;
 	private string? _draggingFile;
 	private bool _dragFileShown = false;
 	private Instance? _draggingModel;
