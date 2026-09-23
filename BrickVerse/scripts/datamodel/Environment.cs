@@ -92,7 +92,7 @@ public sealed partial class Environment : Instance
 				PhysicsServer3D.AreaSetParam(
 					space,
 					PhysicsServer3D.AreaParameter.Gravity,
-					strength / -5f
+					strength / 5f
 				);
 				PhysicsServer3D.AreaSetParam(
 					space,
