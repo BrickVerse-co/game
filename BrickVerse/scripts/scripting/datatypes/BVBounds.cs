@@ -50,13 +50,13 @@ public class BVBounds : IScriptGDObject
 	[ScriptMethod]
 	public static BVBounds New()
 	{
-		return FromGDClass(new Aabb(Vector3.Zero, Vector3.Zero));
+		return FromGDClass(new());
 	}
 
 	[ScriptMethod]
 	public static BVBounds New(Vector3 position, Vector3 size)
 	{
-		return FromGDClass(new Aabb(position, size));
+		return FromGDClass(new(position, size));
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
@@ -75,7 +75,7 @@ public class BVBounds : IScriptGDObject
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
 	public static Vector3 ClosestPoint(BVBounds bounds, BVector3 point) =>
-		bounds.aabb.GetSupport(point.vector);
+		point.vector.Clamp(bounds.aabb.Position, bounds.aabb.End);
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
 	public static bool Contains(BVBounds bounds, BVector3 point) =>
@@ -107,20 +107,10 @@ public class BVBounds : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float Distance(BVBounds bounds, BVector3 point)
-	{
-		Vector3 closest = bounds.aabb.GetCenter().Clamp(bounds.aabb.Position, bounds.aabb.End);
-		return point.vector.DistanceSquaredTo(closest);
-	}
+	public static float Distance(BVBounds bounds, BVector3 point) =>
+		point.vector.DistanceTo(ClosestPoint(bounds, point));
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static float SqrDistance(BVBounds bounds, BVector3 point)
-	{
-		Vector3 closest = Vector3.Zero;
-		closest.X = Mathf.Clamp(point.vector.X, bounds.aabb.Position.X, bounds.aabb.End.X);
-		closest.Y = Mathf.Clamp(point.vector.Y, bounds.aabb.Position.Y, bounds.aabb.End.Y);
-		closest.Z = Mathf.Clamp(point.vector.Z, bounds.aabb.Position.Z, bounds.aabb.End.Z);
-
-		return point.vector.DistanceSquaredTo(closest);
-	}
+	public static float SqrDistance(BVBounds bounds, BVector3 point) =>
+		point.vector.DistanceSquaredTo(ClosestPoint(bounds, point));
 }
