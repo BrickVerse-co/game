@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Spatial;
 
@@ -59,8 +59,23 @@ public partial class SelectionBox : Node
 
 	public override void _ExitTree()
 	{
+		if (_target != null)
+		{
+			_target.TransformChanged -= UpdateBox;
+			_target = null;
+		}
+
 		_selectionBoxMesh?.QueueFree();
 		_selectionBoxXrayMesh?.QueueFree();
+
+		_selectionBox?.Dispose();
+		_selectionBoxXray?.Dispose();
+		_mat?.Dispose();
+		_matXray?.Dispose();
+
+		_cachedGlobalBounds = null;
+		RootGizmos = null;
+
 		base._ExitTree();
 	}
 
@@ -71,7 +86,8 @@ public partial class SelectionBox : Node
 
 	private void GenerateBoxes()
 	{
-		if (_boxGenerated) return;
+		if (_boxGenerated)
+			return;
 		_boxGenerated = true;
 		Aabb aabb = new(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(1, 1, 1));
 
@@ -94,7 +110,7 @@ public partial class SelectionBox : Node
 		_mat = new()
 		{
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 		};
 		st.SetMaterial(_mat);
 		_selectionBox = st.Commit();
@@ -103,10 +119,13 @@ public partial class SelectionBox : Node
 		{
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			NoDepthTest = true,
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 		};
 		stXray.SetMaterial(_matXray);
 		_selectionBoxXray = stXray.Commit();
+
+		st.Dispose();
+		stXray.Dispose();
 
 		_selectionBoxMesh = new MeshInstance3D { Mesh = _selectionBox };
 		Root.GDNode.AddChild(_selectionBoxMesh, @internal: Node.InternalMode.Back);
@@ -136,12 +155,15 @@ public partial class SelectionBox : Node
 
 	private void UpdateBox(Dynamic target)
 	{
-		bool isDragging = RootGizmos != null && (RootGizmos.IsDraggingDynamic || RootGizmos.IsTransformingSelected);
+		bool isDragging =
+			RootGizmos != null
+			&& (RootGizmos.IsDraggingDynamic || RootGizmos.IsTransformingSelected);
 		bool shouldShow = !isDragging;
 
 		_selectionBoxMesh.Visible = shouldShow;
 		_selectionBoxXrayMesh.Visible = shouldShow;
-		if (!shouldShow) return;
+		if (!shouldShow)
+			return;
 
 		Aabb globalBounds;
 		if (_cachedGlobalBounds.HasValue && _cachedTargetTransform != Transform3D.Identity)
@@ -162,10 +184,7 @@ public partial class SelectionBox : Node
 		}
 		Vector3 size = globalBounds.Size + Vector3.One * 0.005f;
 
-		Transform3D boxXform = new(
-			Basis.FromScale(size),
-			globalBounds.GetCenter()
-		);
+		Transform3D boxXform = new(Basis.FromScale(size), globalBounds.GetCenter());
 
 		_mat.AlbedoColor = SelectionColor;
 		_matXray.AlbedoColor = SelectionColor * new Color(1f, 1f, 1f, 0.2f);
