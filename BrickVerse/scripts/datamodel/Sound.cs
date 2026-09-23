@@ -22,14 +22,12 @@ public sealed partial class Sound : Dynamic
 	public const float SoundDistanceMultipler = 1.25f;
 	private const float MinPitch = 0.001f;
 	private const float MaxVolume = 2;
-	private static int _counter = 0;
 	private AudioAsset? _asset;
 	private AudioStreamPlayer? _audioPlayer;
 	private AudioStreamPlayer3D? _audioPlayer3D;
 	private bool _playAfterLoad = false;
 	private bool _serverIsPlaying = false;
 	private Resource? _prevAsset;
-	private readonly int _id = System.Threading.Interlocked.Increment(ref _counter);
 	private string _audioBusName = "Master";
 	private AudioEffectPanner? _panner;
 
@@ -412,9 +410,7 @@ public sealed partial class Sound : Dynamic
 
 		if (!PlayInWorld)
 		{
-			// AudioStreamPlayer has no direct stereo pan property. Give each 2D
-			// Sound its own bus and use AudioEffectPanner, matching the legacy implementation.
-			_audioBusName = $"Sound_{_id}";
+			_audioBusName = $"Sound_{ObjectID}";
 			AudioServer.AddBus();
 			int busIndex = AudioServer.BusCount - 1;
 			AudioServer.SetBusName(busIndex, _audioBusName);
