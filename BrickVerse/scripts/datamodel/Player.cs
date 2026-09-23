@@ -1162,41 +1162,42 @@ public sealed partial class Player : NPC
 		_bubbleChat.Visible = true;
 	}
 
-	public void WrapToSpawnPoint()
+	public void WarpToSpawnPoint()
 	{
 		Entity[] eligibleSpawns = Root
 			.Environment.SpawnPoints.Where(spawn =>
 				spawn is not SpawnLocation location || location.CanSpawn(this)
 			)
 			.ToArray();
+
 		if (eligibleSpawns.Length > 0)
 		{
 			Entity spawnpoint = ArrayUtils.GetRandom(eligibleSpawns);
-			// Spawn clear of the surface and let physics settle downward. Using the
-			// full height embedded characters for tall spawn parts and occasionally
-			// produced an invalid first physics frame.
+
+			// Spawn clear of the surface along the spawn point's local up direction.
+			// This prevents tall/rotated spawn parts from embedding the character.
 			float spawnClearance = Mathf.Max(3.5f, spawnpoint.Size.Y * 0.5f + 3.0f);
-			Position = spawnpoint.Position + new Vector3(0, spawnClearance, 0);
-			Rotation = new(0, spawnpoint.Rotation.Y, 0);
+
+			Position = spawnpoint.Position + spawnpoint.Up * spawnClearance;
+			Rotation = new Vector3(0, spawnpoint.Rotation.Y, 0);
 		}
 		else
 		{
 			Position = DefaultSpawnLocation;
-			Rotation = new(0, 0, 0);
+			Rotation = Vector3.Zero;
 		}
 
-		// Spawn at custom position
 #if CREATOR
-		if (Root.Entry != null && Root.Entry.DebugSpawnPos != null)
+		// Use the Creator debug spawn position once, if provided.
+		if (Root.Entry?.DebugSpawnPos != null && !_spawnedAtCreatorPos)
 		{
-			if (!_spawnedAtCreatorPos)
-			{
-				_spawnedAtCreatorPos = true;
-				Position = Root.Entry.DebugSpawnPos.Value + Vector3.Up * 3.0f;
-				Rotation = Vector3.Zero;
-			}
+			_spawnedAtCreatorPos = true;
+
+			Position = Root.Entry.DebugSpawnPos.Value + Vector3.Up * 3.0f;
+			Rotation = Vector3.Zero;
 		}
 #endif
+
 		SendNetTransformReliable();
 	}
 
@@ -1298,7 +1299,7 @@ public sealed partial class Player : NPC
 		Velocity = Vector3.Zero;
 
 		ResetAppearance();
-		WrapToSpawnPoint();
+		WarpToSpawnPoint();
 
 		Health = MaxHealth;
 		Velocity = Vector3.Zero;
