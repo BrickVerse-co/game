@@ -2,22 +2,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI.Chat;
 #if CREATOR
 #endif
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
+using BrickVerse.Providers.PlayerMovement;
 using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
-using BrickVerse.Networking;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Utils.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BrickVerse.Providers.PlayerMovement;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -84,8 +84,10 @@ public sealed partial class Player : NPC
 
 	[SyncVar]
 	public bool CanChat { get; set; } = false;
+
 	[SyncVar]
 	public bool CanQuickChat { get; set; } = false;
+
 	[ScriptProperty, SyncVar]
 	public bool CanVoiceChat { get; internal set; } = false;
 
@@ -122,10 +124,19 @@ public sealed partial class Player : NPC
 	[ScriptMethod]
 	public void Possess(Pawn pawn)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Pawn possession must be requested by a server script.");
-		if (pawn.IsDeleted || pawn.Root != Root) throw new ArgumentException("Pawn must be a live instance in this world.", nameof(pawn));
-		if (pawn.Controller is Player other && other != this) throw new InvalidOperationException("Pawn is already possessed.");
-		if (Character == pawn) return;
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(
+				"Pawn possession must be requested by a server script."
+			);
+		if (pawn.IsDeleted || pawn.Root != Root)
+			throw new ArgumentException(
+				"Pawn must be a live instance in this world.",
+				nameof(pawn)
+			);
+		if (pawn.Controller is Player other && other != this)
+			throw new InvalidOperationException("Pawn is already possessed.");
+		if (Character == pawn)
+			return;
 
 		CharacterModel? previous = Character;
 		pawn.Parent = this;
@@ -135,14 +146,19 @@ public sealed partial class Player : NPC
 		Character = pawn;
 		MovementMode = pawn.ControlMode;
 		OnPropertyChanged(nameof(Character));
-		if (previous != null && previous != pawn) previous.Delete();
+		if (previous != null && previous != pawn)
+			previous.Delete();
 	}
 
 	[ScriptMethod]
 	public void Unpossess()
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Pawn possession must be requested by a server script.");
-		if (Character is not Pawn pawn) return;
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(
+				"Pawn possession must be requested by a server script."
+			);
+		if (Character is not Pawn pawn)
+			return;
 		Character = null;
 		OnPropertyChanged(nameof(Character));
 		pawn.Delete();
@@ -357,7 +373,11 @@ public sealed partial class Player : NPC
 
 			PlayerMovement = _movementMode switch
 			{
-				PlayerMovementModeEnum.Default => new DefaultMovement() { Root = Root, Target = this },
+				PlayerMovementModeEnum.Default => new DefaultMovement()
+				{
+					Root = Root,
+					Target = this,
+				},
 				_ => null,
 			};
 
@@ -411,32 +431,32 @@ public sealed partial class Player : NPC
 	public bool IsTrustedReporter { get; internal set; } = false;
 
 	private static readonly Color[] ChatColorPalette =
-		[
-			Color.FromHtml("#4e9aa8"),
-			Color.FromHtml("#00a86b"),
-			Color.FromHtml("#4b3f69"),
-			Color.FromHtml("#d8ad39"),
-			Color.FromHtml("#d6c69a"),
-			Color.FromHtml("#26A69A"),
-			Color.FromHtml("#7CB342"),
-			Color.FromHtml("#5C6BC0"),
-			Color.FromHtml("#FB7EFD"),
-			Color.FromHtml("#54A0FF"),
-			Color.FromHtml("#5F27CD"),
-			Color.FromHtml("#01A3A4"),
-			Color.FromHtml("#F368E0"),
-			Color.FromHtml("#FF9F43"),
-			Color.FromHtml("#1DD1A1"),
-			Color.FromHtml("#48DBFB"),
-			Color.FromHtml("#AB47BC"),
-			Color.FromHtml("#42A5F5"),
-			Color.FromHtml("#66BB6A"),
-			Color.FromHtml("#FFA726"),
-			Color.FromHtml("#8D6E63"),
-			Color.FromHtml("#78909C"),
-			Color.FromHtml("#D4E157"),
-			Color.FromHtml("#B39DDB"),
-		];
+	[
+		Color.FromHtml("#4e9aa8"),
+		Color.FromHtml("#00a86b"),
+		Color.FromHtml("#4b3f69"),
+		Color.FromHtml("#d8ad39"),
+		Color.FromHtml("#d6c69a"),
+		Color.FromHtml("#26A69A"),
+		Color.FromHtml("#7CB342"),
+		Color.FromHtml("#5C6BC0"),
+		Color.FromHtml("#FB7EFD"),
+		Color.FromHtml("#54A0FF"),
+		Color.FromHtml("#5F27CD"),
+		Color.FromHtml("#01A3A4"),
+		Color.FromHtml("#F368E0"),
+		Color.FromHtml("#FF9F43"),
+		Color.FromHtml("#1DD1A1"),
+		Color.FromHtml("#48DBFB"),
+		Color.FromHtml("#AB47BC"),
+		Color.FromHtml("#42A5F5"),
+		Color.FromHtml("#66BB6A"),
+		Color.FromHtml("#FFA726"),
+		Color.FromHtml("#8D6E63"),
+		Color.FromHtml("#78909C"),
+		Color.FromHtml("#D4E157"),
+		Color.FromHtml("#B39DDB"),
+	];
 
 	public static Color ChatColorFromUserID(string userID)
 	{
@@ -446,7 +466,8 @@ public sealed partial class Player : NPC
 
 	public static string GetBadgeIconPath(Player player)
 	{
-		string badgeName = player.IsCreator ? "creator"
+		string badgeName =
+			player.IsCreator ? "creator"
 			: player.IsAdmin ? "admin"
 			: player.IsGovOfficial ? "gov"
 			: player.IsUniverseAdmin ? "universe_mod"
@@ -455,7 +476,8 @@ public sealed partial class Player : NPC
 			: player.IsPartner ? "partner"
 			: player.IsBetaTester ? "beta"
 			: player.IsBirthdayToday ? "birthday"
-			: !string.IsNullOrEmpty(player.MembershipType) && player.MembershipType != "NONE" ? player.MembershipType.ToLower()
+			: !string.IsNullOrEmpty(player.MembershipType) && player.MembershipType != "NONE"
+				? player.MembershipType.ToLower()
 			: "";
 
 		if (string.IsNullOrEmpty(badgeName))
@@ -681,7 +703,10 @@ public sealed partial class Player : NPC
 
 	internal void AddStaminaTick(double delta)
 	{
-		if (!UseStamina) { return; }
+		if (!UseStamina)
+		{
+			return;
+		}
 		Stamina += (float)(delta * StaminaRegen);
 		if (Stamina > MaxStamina)
 		{
@@ -691,7 +716,10 @@ public sealed partial class Player : NPC
 
 	internal void RemoveStaminaTick(double delta)
 	{
-		if (!UseStamina) { return; }
+		if (!UseStamina)
+		{
+			return;
+		}
 		Stamina -= (float)(delta * StaminaBurn);
 		if (Stamina < 0)
 		{
@@ -702,11 +730,15 @@ public sealed partial class Player : NPC
 	private void AfkTick(double delta)
 	{
 		// Disable AFK kick if local test
-		if (Root.IsLocalTest) return;
+		if (Root.IsLocalTest)
+			return;
 
 		if (_afkTimer > MaxAFKTime)
 		{
-			Root.Network.DisconnectSelf("You have been kicked from the server for being inactive for too long.", NetworkService.DisconnectionCodeEnum.AFK);
+			Root.Network.DisconnectSelf(
+				"You have been kicked from the server for being inactive for too long.",
+				NetworkService.DisconnectionCodeEnum.AFK
+			);
 			return;
 		}
 
@@ -743,7 +775,10 @@ public sealed partial class Player : NPC
 
 		base.PhysicsProcess(delta);
 
-		if (Root.SessionType != World.SessionTypeEnum.Client || !IsLocal || !IsReady) { return; }
+		if (Root.SessionType != World.SessionTypeEnum.Client || !IsLocal || !IsReady)
+		{
+			return;
+		}
 
 		if (Character is BrickversianModel pt && pt.Ragdolling)
 		{
@@ -752,7 +787,9 @@ public sealed partial class Player : NPC
 			return;
 		}
 
-		Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(Root.Input.MousePosition);
+		Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(
+			Root.Input.MousePosition
+		);
 		if (ray.HasValue && ray.Value.Instance is Physical p)
 		{
 			if (_mouseHoveringOn != null && _mouseHoveringOn != p)
@@ -768,15 +805,11 @@ public sealed partial class Player : NPC
 			Node collider = (Node)FootFwdRaycast.GetCollider();
 			if (collider != null && GetNetObjFromProxy(collider) is Truss truss)
 			{
-				if (!IsClimbing)
+				if (!IsClimbing && !ClimbDebounce && truss.Climbable)
 				{
-					if (!ClimbDebounce)
-					{
-						ClimbingTruss = truss;
-						IsClimbing = true;
-						Character?.PlayClimb();
-					}
-
+					ClimbingTruss = truss;
+					IsClimbing = true;
+					Character?.PlayClimb();
 				}
 			}
 			else
@@ -803,7 +836,12 @@ public sealed partial class Player : NPC
 		Camera? cam = Root.Environment.CurrentCamera;
 
 		// Apply camera modifier if enabled
-		if (UseHeadTurning && cam != null && cam.Mode == Camera.CameraModeEnum.Follow && cam.Target == CamAttach)
+		if (
+			UseHeadTurning
+			&& cam != null
+			&& cam.Mode == Camera.CameraModeEnum.Follow
+			&& cam.Target == CamAttach
+		)
 		{
 			Character?.ApplyCameraModifier(cam);
 		}
@@ -838,7 +876,10 @@ public sealed partial class Player : NPC
 
 	internal void EndClimb()
 	{
-		if (!IsClimbing) { return; }
+		if (!IsClimbing)
+		{
+			return;
+		}
 		IsClimbing = false;
 		JustFinishedClimbing = true;
 		ClimbingTruss = null;
@@ -867,19 +908,31 @@ public sealed partial class Player : NPC
 
 	public void OnInput(InputEvent @event)
 	{
-		if (Root.SessionType != World.SessionTypeEnum.Client) { return; }
-		if (!IsLocal || !Root.Input.IsGameFocused) { return; }
+		if (Root.SessionType != World.SessionTypeEnum.Client)
+		{
+			return;
+		}
+		if (!IsLocal || !Root.Input.IsGameFocused)
+		{
+			return;
+		}
 
 		if (@event.IsActionPressed("activate"))
 		{
-			Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(Root.Input.MousePosition);
+			Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(
+				Root.Input.MousePosition
+			);
 			if (ray.HasValue && ray.Value.Instance is Physical p)
 			{
 				p.InvokeClicked(this);
 			}
 		}
 
-		if (@event.IsActionPressed("toggle_freecam") && Root.PlayerDefaults.AllowDeveloperFreecam && (IsAdmin || IsCreator))
+		if (
+			@event.IsActionPressed("toggle_freecam")
+			&& Root.PlayerDefaults.AllowDeveloperFreecam
+			&& (IsAdmin || IsCreator)
+		)
 		{
 			if (Root.Environment.CurrentCamera?.Mode == Camera.CameraModeEnum.Free)
 			{
@@ -893,13 +946,18 @@ public sealed partial class Player : NPC
 			}
 		}
 
-		if (IsDead) { return; }
+		if (IsDead)
+		{
+			return;
+		}
 
 		if (@event.IsActionPressed("jump"))
 		{
 			// Ignore jump command if is custom
-			if (MovementMode == PlayerMovementModeEnum.Scripted) return;
-			if (!CanMove) return;
+			if (MovementMode == PlayerMovementModeEnum.Scripted)
+				return;
+			if (!CanMove)
+				return;
 			Jump();
 		}
 		else if (@event.IsActionPressed("toggle_sprint"))
@@ -920,7 +978,8 @@ public sealed partial class Player : NPC
 			UnequipTool();
 		}
 		Velocity = Vector3.Zero;
-		if (!Root.Network.IsServer) return; // Respawn on server only
+		if (!Root.Network.IsServer)
+			return; // Respawn on server only
 
 		// Respawn on client
 		await Globals.Singleton.WaitAsync(RespawnTime);
@@ -929,16 +988,37 @@ public sealed partial class Player : NPC
 
 	private void PlayDeathSound()
 	{
-		const int sampleRate = 22050; const float duration = 0.42f; int samples = (int)(sampleRate * duration); byte[] data = new byte[samples * 2];
+		const int sampleRate = 22050;
+		const float duration = 0.42f;
+		int samples = (int)(sampleRate * duration);
+		byte[] data = new byte[samples * 2];
 		Random random = new(Name.GetHashCode());
 		for (int i = 0; i < samples; i++)
 		{
-			float time = (float)i / sampleRate, envelope = Mathf.Pow(1f - time / duration, 2f);
-			float tone = Mathf.Sin(Mathf.Tau * (150f - time * 190f) * time) * 0.65f + ((float)random.NextDouble() * 2f - 1f) * 0.15f;
-			short sample = (short)(Mathf.Clamp(tone * envelope, -1f, 1f) * short.MaxValue); data[i * 2] = (byte)(sample & 255); data[i * 2 + 1] = (byte)((sample >> 8) & 255);
+			float time = (float)i / sampleRate,
+				envelope = Mathf.Pow(1f - time / duration, 2f);
+			float tone =
+				Mathf.Sin(Mathf.Tau * (150f - time * 190f) * time) * 0.65f
+				+ ((float)random.NextDouble() * 2f - 1f) * 0.15f;
+			short sample = (short)(Mathf.Clamp(tone * envelope, -1f, 1f) * short.MaxValue);
+			data[i * 2] = (byte)(sample & 255);
+			data[i * 2 + 1] = (byte)((sample >> 8) & 255);
 		}
-		AudioStreamPlayer3D player = new() { Stream = new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits, MixRate = sampleRate, Stereo = false, Data = data }, VolumeDb = -4, MaxDistance = 55 };
-		GDNode3D.AddChild(player, false, Node.InternalMode.Back); player.Finished += player.QueueFree; player.Play();
+		AudioStreamPlayer3D player = new()
+		{
+			Stream = new AudioStreamWav
+			{
+				Format = AudioStreamWav.FormatEnum.Format16Bits,
+				MixRate = sampleRate,
+				Stereo = false,
+				Data = data,
+			},
+			VolumeDb = -4,
+			MaxDistance = 55,
+		};
+		GDNode3D.AddChild(player, false, Node.InternalMode.Back);
+		player.Finished += player.QueueFree;
+		player.Play();
 	}
 
 	// Emit when network has received LocalPlayer, This can also be used to initialize localplayer
@@ -957,7 +1037,8 @@ public sealed partial class Player : NPC
 		SetCamRemoteAttachEnabled(false);
 
 		Camera? cam = Root.Environment.CurrentCamera;
-		if (cam == null) return;
+		if (cam == null)
+			return;
 		cam.Target = CamAttach;
 		cam.UpdateCameraSelf = false;
 		cam.FirstPersonEntered.Connect(OnFirstPersonEntered);
@@ -980,19 +1061,25 @@ public sealed partial class Player : NPC
 
 	private void BindPawnCamera()
 	{
-		if (CamAttach == null || Character == null) return;
-		if (_remoteCamAttach != null && Node.IsInstanceValid(_remoteCamAttach)) _remoteCamAttach.QueueFree();
+		if (CamAttach == null || Character == null)
+			return;
+		if (_remoteCamAttach != null && Node.IsInstanceValid(_remoteCamAttach))
+			_remoteCamAttach.QueueFree();
 		_remoteCamAttach = new RemoteTransform3D();
-		Character.GetAttachment(CharacterModel.CharacterAttachmentEnum.Head).GDNode.AddChild(_remoteCamAttach, @internal: Node.InternalMode.Back);
+		Character
+			.GetAttachment(CharacterModel.CharacterAttachmentEnum.Head)
+			.GDNode.AddChild(_remoteCamAttach, @internal: Node.InternalMode.Back);
 		_remoteCamAttach.RemotePath = _remoteCamAttach.GetPathTo(CamAttach.GDNode3D);
 		SetCamRemoteAttachEnabled(false);
 	}
 
 	internal void OnCharacterChanged(CharacterModel? previous)
 	{
-		if (previous is Pawn oldPawn) oldPawn.InvokeUnpossessed(this);
+		if (previous is Pawn oldPawn)
+			oldPawn.InvokeUnpossessed(this);
 		MovementMode = Character is Pawn pawn ? pawn.ControlMode : Root.PlayerDefaults.MovementMode;
-		if (IsLocal && CamAttach != null) BindPawnCamera();
+		if (IsLocal && CamAttach != null)
+			BindPawnCamera();
 		CharacterChanged.Invoke(Character);
 		if (Character is Pawn newPawn)
 		{
@@ -1021,8 +1108,10 @@ public sealed partial class Player : NPC
 
 	internal void PlayEmote(string emoteName)
 	{
-		if (IsSitting || IsDead) return;
-		if (!EmoteList.Contains(emoteName)) return;
+		if (IsSitting || IsDead)
+			return;
+		if (!EmoteList.Contains(emoteName))
+			return;
 		bool isOneShot = false;
 		if (OneShotEmoteList.Contains(emoteName))
 		{
@@ -1059,22 +1148,26 @@ public sealed partial class Player : NPC
 
 	private void OnFirstPersonEntered()
 	{
-		if (Character == null) return;
+		if (Character == null)
+			return;
 		Character.GDNode3D.Visible = false;
 		_bubbleChat.Visible = false;
 	}
 
 	private void OnFirstPersonExited()
 	{
-		if (Character == null) return;
+		if (Character == null)
+			return;
 		Character.GDNode3D.Visible = true;
 		_bubbleChat.Visible = true;
 	}
 
 	public void WrapToSpawnPoint()
 	{
-		Entity[] eligibleSpawns = Root.Environment.SpawnPoints
-			.Where(spawn => spawn is not SpawnLocation location || location.CanSpawn(this))
+		Entity[] eligibleSpawns = Root
+			.Environment.SpawnPoints.Where(spawn =>
+				spawn is not SpawnLocation location || location.CanSpawn(this)
+			)
 			.ToArray();
 		if (eligibleSpawns.Length > 0)
 		{
@@ -1113,7 +1206,11 @@ public sealed partial class Player : NPC
 		if (Root.Network.IsServer)
 		{
 			// Kick by server
-			Root.Network.DisconnectPeer((int)PeerID, reason, NetworkService.DisconnectionCodeEnum.Kicked);
+			Root.Network.DisconnectPeer(
+				(int)PeerID,
+				reason,
+				NetworkService.DisconnectionCodeEnum.Kicked
+			);
 		}
 		else if (Root.Network.LocalPeerID == PeerID)
 		{
@@ -1125,24 +1222,26 @@ public sealed partial class Player : NPC
 	[ScriptMethod, Attributes.Obsolete("Use PurchasesService.OwnsItem instead")]
 	public void OwnsItem(int assetId, BVCallback callback)
 	{
-		Root.Purchases.OwnsItemAsync(this, assetId).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		Root.Purchases.OwnsItemAsync(this, assetId)
+			.ContinueWith(tsk =>
 			{
-				bool owns = tsk.Result;
-				callback.Invoke(false, owns);
-			}
-			else
-			{
-				callback.Invoke(true, false);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					bool owns = tsk.Result;
+					callback.Invoke(false, owns);
+				}
+				else
+				{
+					callback.Invoke(true, false);
+				}
+			});
 	}
 
 	[ScriptMethod]
 	public void UnequipTool()
 	{
-		if (HoldingTool == null) return;
+		if (HoldingTool == null)
+			return;
 		Rpc(nameof(NetUnequipTool), HoldingTool.NetworkedObjectID);
 	}
 
@@ -1151,7 +1250,10 @@ public sealed partial class Player : NPC
 	{
 		NetworkedObject? netObj = await Root.WaitForNetObjectAsync(networkID);
 
-		if (netObj == null) { return; }
+		if (netObj == null)
+		{
+			return;
+		}
 
 		Tool tool = (Tool)netObj;
 
@@ -1208,7 +1310,8 @@ public sealed partial class Player : NPC
 
 	private bool EnvironmentCollisionIsReady()
 	{
-		return !Root.Environment.GetDescendants()
+		return !Root
+			.Environment.GetDescendants()
 			.OfType<Mesh>()
 			.Any(mesh => !mesh.IsDeleted && mesh.CanCollide && mesh.Loading);
 	}
@@ -1216,7 +1319,8 @@ public sealed partial class Player : NPC
 	private void CopyInventory()
 	{
 		// Only allow this operation in server
-		if (!Root.Network.IsServer) return;
+		if (!Root.Network.IsServer)
+			return;
 
 		foreach (Instance item in Inventory.GetChildren())
 		{
@@ -1279,7 +1383,8 @@ public sealed partial class Player : NPC
 	{
 		var sender = Root.Players.GetPlayerFromPeerID(RemoteSenderId);
 
-		if (sender == null) return; // Sender doesn't exist ?
+		if (sender == null)
+			return; // Sender doesn't exist ?
 
 		// If is creator or is admin
 		if (sender.IsCreator || sender.IsAdmin)
@@ -1292,6 +1397,6 @@ public sealed partial class Player : NPC
 	public enum PlayerMovementModeEnum
 	{
 		Default,
-		Scripted
+		Scripted,
 	}
 }
