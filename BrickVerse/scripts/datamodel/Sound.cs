@@ -788,8 +788,8 @@ public sealed partial class Sound : Dynamic
 			case AudioStreamOggVorbis aStream:
 				aStream.Loop = val;
 				break;
-			// unused in BrickVerse
-			//case AudioStreamWav aStream:
+				// unused in BrickVerse
+				//case AudioStreamWav aStream:
 		}
 	}
 
@@ -800,8 +800,8 @@ public sealed partial class Sound : Dynamic
 			case AudioStreamOggVorbis aStream:
 				aStream.LoopOffset = val;
 				break;
-			// unused in BrickVerse
-			//case AudioStreamWav aStream:
+				// unused in BrickVerse
+				//case AudioStreamWav aStream:
 		}
 	}
 }

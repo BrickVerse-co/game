@@ -86,9 +86,18 @@ public partial class WorldContainerOverlay : Control
 		{
 			BgColor = new Color(0.055f, 0.06f, 0.07f, 0.94f),
 			BorderColor = new Color(0.24f, 0.27f, 0.31f, 1f),
-			BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-			CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
-			ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 4, ContentMarginBottom = 4,
+			BorderWidthLeft = 1,
+			BorderWidthTop = 1,
+			BorderWidthRight = 1,
+			BorderWidthBottom = 1,
+			CornerRadiusTopLeft = 6,
+			CornerRadiusTopRight = 6,
+			CornerRadiusBottomLeft = 6,
+			CornerRadiusBottomRight = 6,
+			ContentMarginLeft = 6,
+			ContentMarginRight = 6,
+			ContentMarginTop = 4,
+			ContentMarginBottom = 4,
 		});
 		_toolbarPanel.AddChild(toolbar);
 		AddChild(_toolbarPanel);

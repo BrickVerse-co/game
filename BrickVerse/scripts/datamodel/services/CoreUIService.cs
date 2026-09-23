@@ -35,7 +35,7 @@ public sealed partial class CoreUIService : Instance
 
 	[ScriptProperty]
 	public static float TopInset => 80;
-	
+
 	[Editable, ScriptProperty]
 	public CtrlLockCursorEnum CtrlLockCursor
 	{

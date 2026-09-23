@@ -223,9 +223,14 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 	{
 		BgColor = color,
 		BorderColor = new Color("292d37"),
-		BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-		CornerRadiusTopLeft = radius, CornerRadiusTopRight = radius,
-		CornerRadiusBottomLeft = radius, CornerRadiusBottomRight = radius,
+		BorderWidthLeft = 1,
+		BorderWidthTop = 1,
+		BorderWidthRight = 1,
+		BorderWidthBottom = 1,
+		CornerRadiusTopLeft = radius,
+		CornerRadiusTopRight = radius,
+		CornerRadiusBottomLeft = radius,
+		CornerRadiusBottomRight = radius,
 	};
 
 	private static void SetMargins(MarginContainer margin, int horizontal, int vertical)

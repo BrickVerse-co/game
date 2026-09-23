@@ -118,7 +118,7 @@ public partial class Grabbable : Instance
 		{
 			Root.PlayerGUI.SetCursorShape(Control.CursorShape.Arrow);
 		}
-		
+
 		Root.Input.GodotInputEvent -= OnInput;
 		base.PreDelete();
 	}

@@ -350,9 +350,9 @@ public sealed partial class CreatorDataToolsWindow : Window
 	{
 		if (_analysis == null || _scriptActivity == null) return; _analysis.Clear(); _scriptActivity.Clear(); TreeItem analysisRoot = _analysis.CreateItem(); TreeItem activityRoot = _scriptActivity.CreateItem(); CreatorSession? session = CreatorService.CurrentSession;
 		if (session?.LuaCompletion != null) foreach ((string file, List<LspDiagnostic> diagnostics) in session.LuaCompletion.Diagnostics) foreach (LspDiagnostic diagnostic in diagnostics)
-		{
-			TreeItem row = analysisRoot.CreateChild(); int severity = diagnostic.Severity ?? 3; row.SetText(0, severity switch { 1 => "Error", 2 => "Warning", 4 => "Hint", _ => "Information" }); row.SetText(1, Path.GetRelativePath(session.ProjectFolderPath, file)); row.SetText(2, (diagnostic.Range.Start.Line + 1).ToString()); row.SetText(3, diagnostic.Message); row.SetMetadata(0, file); row.SetMetadata(1, diagnostic.Range.Start.Line + 1);
-		}
+				{
+					TreeItem row = analysisRoot.CreateChild(); int severity = diagnostic.Severity ?? 3; row.SetText(0, severity switch { 1 => "Error", 2 => "Warning", 4 => "Hint", _ => "Information" }); row.SetText(1, Path.GetRelativePath(session.ProjectFolderPath, file)); row.SetText(2, (diagnostic.Range.Start.Line + 1).ToString()); row.SetText(3, diagnostic.Message); row.SetMetadata(0, file); row.SetMetadata(1, diagnostic.Range.Start.Line + 1);
+				}
 		if (World.Current != null) foreach (DatamodelScript script in World.Current.GetDescendants().OfType<DatamodelScript>().OrderBy(script => script.LuaPath)) { TreeItem row = activityRoot.CreateChild(); row.SetText(0, script.Name); row.SetText(1, script.ClassName); row.SetText(2, $"{script.Source.Length:N0} characters"); row.SetText(3, script.LuaPath); }
 	}
 

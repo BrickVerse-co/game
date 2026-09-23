@@ -334,8 +334,8 @@ public partial class DatamodelBridge : Node3D
 			if (_handles.TryGetValue(lastPart, out PartHandle? lastHandle))
 			{
 				lastHandle.Index = index;
-			}	
-			
+			}
+
 			// prevents a bunch of error spam. idk why these nodes often arent in the tree but this kept spamming errors
 			bool inTree = IsInstanceValid(lastPart.GDNode3D) && lastPart.GDNode3D.IsInsideTree();
 			batch.MultiMesh.SetInstanceTransform(index, inTree ? lastPart.GetGlobalTransform() : Transform3D.Identity.Scaled(Vector3.Zero));

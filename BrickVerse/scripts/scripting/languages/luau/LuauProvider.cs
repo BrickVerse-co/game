@@ -753,7 +753,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		LuaState lua = LuaState.FromIntPtr(L);
 
 		double n = lua.IsNumber(1) ? lua.ToNumber(1) : 0;
-		
+
 		TaskCompletionSource<int> tcs = new();
 		SetYieldTask(lua, tcs.Task);
 

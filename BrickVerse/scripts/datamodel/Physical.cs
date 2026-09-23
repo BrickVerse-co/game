@@ -229,7 +229,7 @@ public partial class Physical : Dynamic
 	}
 
 	internal virtual bool IsFrozen => false;
-	
+
 	protected virtual void ApplyFreeze(bool to) { }
 
 	internal void UpdateCollision()
@@ -615,7 +615,7 @@ public partial class Physical : Dynamic
 		{
 			Root.Bridge?.MarkMoved(part);
 		}
-		
+
 		base.PhysicsProcess(delta);
 	}
 

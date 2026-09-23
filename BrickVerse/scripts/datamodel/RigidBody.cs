@@ -348,6 +348,6 @@ public partial class RigidBody : Physical
 		GDRigidBody.Freeze = to;
 		base.ApplyFreeze(to);
 	}
-	
+
 	internal override bool IsFrozen => GDRigidBody.Freeze;
 }

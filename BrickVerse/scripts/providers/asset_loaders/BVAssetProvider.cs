@@ -56,13 +56,13 @@ public class BVAssetProvider : IAssetProvider
 			url = item.ID;
 		}
 		else try
-		{
-			buffer = await GetResourceBuffer(url, item.Type, item.ID);
-		}
-		catch (Exception exception) when (item.Type == ResourceType.Mesh)
-		{
-			return await UseUnavailableMesh(item, url, exception);
-		}
+			{
+				buffer = await GetResourceBuffer(url, item.Type, item.ID);
+			}
+			catch (Exception exception) when (item.Type == ResourceType.Mesh)
+			{
+				return await UseUnavailableMesh(item, url, exception);
+			}
 		item.SizeBytes = buffer.LongLength;
 		item.DirectURL = url;
 		string extension = item.ID.StartsWith("temp:", StringComparison.Ordinal)

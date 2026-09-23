@@ -146,9 +146,9 @@ public sealed partial class World : Instance
 	internal AntiCheatService AntiCheat => FindChild<AntiCheatService>("AntiCheat")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
-	#if CREATOR
+#if CREATOR
 	public StudioService? StudioService => FindChild<StudioService>("StudioService");
-	#endif
+#endif
 #endif
 	public Temporary TemporaryContainer => FindChild<Temporary>("Temporary")!;
 

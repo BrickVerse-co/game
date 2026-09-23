@@ -698,7 +698,7 @@ public sealed partial class InputService : Instance
 	}
 
 	[ScriptMethod]
-	
+
 	public Vector3 GetMouseWorldPosition(Instance[]? ignoreList = null, uint passthroughMask = 1 << 0)
 	{
 		Viewport viewport = GDNode.GetViewport();

@@ -1158,7 +1158,7 @@ public partial class NPC : Physical
 		}
 
 		IsSitting = true;
-		OverrideNetworkTransform = true;;
+		OverrideNetworkTransform = true; ;
 		SetPhysicsProcess(true);
 		SittingIn = seat;
 		seat.Occupant = this;

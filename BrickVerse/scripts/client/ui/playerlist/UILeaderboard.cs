@@ -369,7 +369,7 @@ public partial class UILeaderboard : TouchScrollContainer
 	private void OnPlayerStatChanged(Stat stat, object? _)
 	{
 		if (!stat.Visible) return;
-		
+
 		foreach (var item in _teamToItem.Values)
 			item.UpdateStat(stat);
 		_neutralTeamItem?.UpdateStat(stat);

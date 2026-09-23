@@ -552,7 +552,7 @@ public sealed partial class NetworkPropSync : Instance
 			BV.PrintErr("Failed to deserialize prop batch for ", netID, ": ", ex);
 			return;
 		}
-		
+
 		NetworkedObject? netObj = NetService.Root.GetNetObj(netID);
 
 		if (netObj != null)

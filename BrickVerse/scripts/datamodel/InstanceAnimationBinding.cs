@@ -58,9 +58,16 @@ internal sealed class InstanceAnimationBinding : IDisposable
 
 	internal static Variant Read(Instance target, PropertyInfo property) => property.GetValue(target) switch
 	{
-		float value => Variant.From(value), double value => Variant.From(value), int value => Variant.From(value),
-		Enum value => Variant.From(Convert.ToInt32(value)), bool value => Variant.From(value), string value => Variant.From(value),
-		Vector2 value => Variant.From(value), Vector3 value => Variant.From(value), Color value => Variant.From(value), Quaternion value => Variant.From(value),
+		float value => Variant.From(value),
+		double value => Variant.From(value),
+		int value => Variant.From(value),
+		Enum value => Variant.From(Convert.ToInt32(value)),
+		bool value => Variant.From(value),
+		string value => Variant.From(value),
+		Vector2 value => Variant.From(value),
+		Vector3 value => Variant.From(value),
+		Color value => Variant.From(value),
+		Quaternion value => Variant.From(value),
 		_ => throw new InvalidOperationException($"Unsupported property '{property.Name}'.")
 	};
 

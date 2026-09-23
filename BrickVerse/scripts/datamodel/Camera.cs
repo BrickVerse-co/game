@@ -39,7 +39,7 @@ public sealed partial class Camera : Dynamic
 	private float _scrollLerpSpeed;
 	private float _orthographicSize;
 	private Vector3 _positionOffset;
-	private Quaternion  _rotationOffset;
+	private Quaternion _rotationOffset;
 	private bool _isFirstPerson;
 	private float _sensitivityMultipler = 1f;
 	private bool _canLock = true;
@@ -240,7 +240,7 @@ public sealed partial class Camera : Dynamic
 	}
 
 	[Editable, ScriptProperty]
-	public  Quaternion QuaternionOffset
+	public Quaternion QuaternionOffset
 	{
 		get => _rotationOffset;
 		set
@@ -1086,7 +1086,7 @@ public sealed partial class Camera : Dynamic
 	}
 
 	[ScriptMethod]
-	
+
 	public RayResult? ViewportPointToRay(Vector2 pos, Instance[]? ignoreList = null, float maxDistance = 10000f, uint passthroughMask = 0)
 	{
 		Viewport viewport = GDNode.GetViewport();

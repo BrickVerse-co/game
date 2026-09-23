@@ -780,7 +780,7 @@ public partial class Dynamic : Instance
 		bool isDraggingSelected = false;
 #endif
 
-bool moved = true;
+		bool moved = true;
 		bool rotated = true;
 		bool resized = true;
 
@@ -818,7 +818,7 @@ bool moved = true;
 			_lastNotifiedTransform = current;
 			_hasNotifiedOnce = true;
 		}
-		
+
 		TransformChanged?.Invoke();
 		if (!isDraggingSelected)
 		{
