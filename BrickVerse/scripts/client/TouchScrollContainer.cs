@@ -4,9 +4,14 @@ namespace BrickVerse.Client.UI;
 
 public partial class TouchScrollContainer : ScrollContainer
 {
-	[Export] public bool TouchDragScroll = true;
-	[Export] public float TouchScrollMultiplier = 1.0f;
-	[Export] public float TouchDragDeadzone = 8.0f;
+	[Export]
+	public bool TouchDragScroll = true;
+
+	[Export]
+	public float TouchScrollMultiplier = 1.0f;
+
+	[Export]
+	public float TouchDragDeadzone = 8.0f;
 
 	private int? _activeTouchIndex;
 	private Vector2 _touchStartPosition;
@@ -15,7 +20,7 @@ public partial class TouchScrollContainer : ScrollContainer
 
 	public override void _Input(InputEvent @event)
 	{
-		if (!TouchDragScroll || !Visible || !IsInsideTree())
+		if (!TouchDragScroll || !IsInsideTree() || !IsVisibleInTree())
 			return;
 
 		if (@event is InputEventScreenTouch touch)
@@ -72,7 +77,9 @@ public partial class TouchScrollContainer : ScrollContainer
 
 		VScrollBar bar = GetVScrollBar();
 		float maxScroll = (float)Mathf.Max(0, bar.MaxValue - bar.Page);
-		ScrollVertical = Mathf.RoundToInt(Mathf.Clamp(ScrollVertical - drag.Relative.Y * TouchScrollMultiplier, 0, maxScroll));
+		ScrollVertical = Mathf.RoundToInt(
+			Mathf.Clamp(ScrollVertical - drag.Relative.Y * TouchScrollMultiplier, 0, maxScroll)
+		);
 
 		GetViewport().SetInputAsHandled();
 	}
