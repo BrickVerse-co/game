@@ -39,7 +39,7 @@ public sealed partial class Camera : Dynamic
 	private float _scrollLerpSpeed;
 	private float _orthographicSize;
 	private Vector3 _positionOffset;
-	private Vector3 _rotationOffset;
+	private Quaternion  _rotationOffset;
 	private bool _isFirstPerson;
 	private float _sensitivityMultipler = 1f;
 	private bool _canLock = true;
@@ -240,12 +240,23 @@ public sealed partial class Camera : Dynamic
 	}
 
 	[Editable, ScriptProperty]
-	public Vector3 RotationOffset
+	public  Quaternion QuaternionOffset
 	{
 		get => _rotationOffset;
 		set
 		{
 			_rotationOffset = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public Vector3 RotationOffset
+	{
+		get => MathUtils.Vector3RadToDeg(_rotationOffset.GetEuler());
+		set
+		{
+			_rotationOffset = Quaternion.FromEuler(MathUtils.Vector3DegToRad(value));
 			OnPropertyChanged();
 		}
 	}
@@ -493,10 +504,10 @@ public sealed partial class Camera : Dynamic
 			}
 
 			Vector3 computedPosition = Target.Position + PositionOffset;
-			Vector3 computedRotation = _targetRotation + RotationOffset;
+			Quaternion computedRotation = QuaternionOffset * Quaternion.FromEuler(MathUtils.Vector3DegToRad(_targetRotation));
 
 			_turnX.GlobalPosition = computedPosition;
-			_turnX.RotationDegrees = computedRotation;
+			_turnX.Quaternion = computedRotation;
 
 			LimitZoomDistance();
 

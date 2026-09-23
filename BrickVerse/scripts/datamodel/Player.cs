@@ -55,6 +55,7 @@ public sealed partial class Player : NPC
 	private bool _showNametagToOtherPlayers = true;
 	private bool _waitingForEnvironmentCollision;
 	private PlayerMovementModeEnum _movementMode = PlayerMovementModeEnum.Default;
+	private PlayerRotationModeEnum _rotationMode = PlayerRotationModeEnum.Automatic;
 	private Team? _team;
 	private Color _chatColorBeforeTeam;
 
@@ -119,6 +120,17 @@ public sealed partial class Player : NPC
 
 	[ScriptProperty]
 	public Pawn? ControlledPawn => Character as Pawn;
+
+	[Editable, ScriptProperty]
+	public PlayerRotationModeEnum RotationMode
+	{
+		get => _rotationMode;
+		set
+		{
+			_rotationMode = value;
+			OnPropertyChanged();
+		}
+	}
 
 	/// <summary>Replace the visual rig while retaining the player's replicated collision body.</summary>
 	[ScriptMethod]
@@ -1188,12 +1200,12 @@ public sealed partial class Player : NPC
 			float spawnClearance = Mathf.Max(3.5f, spawnpoint.Size.Y * 0.5f + 3.0f);
 
 			Position = spawnpoint.Position + spawnpoint.Up * spawnClearance;
-			Rotation = new Vector3(0, spawnpoint.Rotation.Y, 0);
+			Quaternion = new Quaternion(spawnpoint.Up, Vertical) * spawnpoint.Quaternion;
 		}
 		else
 		{
 			Position = DefaultSpawnLocation;
-			Rotation = Vector3.Zero;
+			Quaternion = new Quaternion(Vector3.Up, Vertical);
 		}
 
 #if CREATOR
@@ -1408,5 +1420,14 @@ public sealed partial class Player : NPC
 	{
 		Default,
 		Scripted,
+	}
+	
+	[ScriptEnum]
+	public enum PlayerRotationModeEnum
+	{
+		Automatic, // Default value (works how it did before), automatically switches between rotating to movement or facing camera when Ctrl Locked or in First Person
+		CameraLocked,
+		Movement,
+		MovementCtrlLockOnly // separate version that still locks in First Person, will only rotate to movement when Ctrl Locked
 	}
 }
