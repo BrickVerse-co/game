@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -21,6 +21,7 @@ public partial class Explosion : Dynamic
 	private bool _affectAnchored = false;
 	private float _damage = 100000;
 	private bool _affectWelds;
+	private bool _useEffects = true;
 
 	[Editable, ScriptProperty]
 	public float Radius
@@ -77,9 +78,22 @@ public partial class Explosion : Dynamic
 		}
 	}
 
-	[ScriptProperty] public BVFunction? AffectPredicate { get; set; }
+	[Editable, ScriptProperty]
+	public bool UseEffects
+	{
+		get => _useEffects;
+		set
+		{
+			_useEffects = value;
+			OnPropertyChanged();
+		}
+	}
 
-	[ScriptProperty] public BVSignal<Instance> Touched { get; private set; } = new();
+	[ScriptProperty]
+	public BVFunction? AffectPredicate { get; set; }
+
+	[ScriptProperty]
+	public BVSignal<Instance> Touched { get; private set; } = new();
 
 	public override Node CreateGDNode()
 	{
@@ -107,23 +121,27 @@ public partial class Explosion : Dynamic
 
 	private async void TryIgnite()
 	{
-		if (!IsNetworkReady || IsHidden) return;
-		_particle.Scale = Vector3.One * _radius / 15;
-		_particle.Visible = true;
-		_particle.Emitting = true;
-
-		BuiltInAudioAsset audio = New<BuiltInAudioAsset>();
-		audio.AudioPreset = BuiltInAudioAsset.BuiltInAudioPresetEnum.Explosion;
+		if (!IsNetworkReady || IsHidden)
+			return;
 
 		Sound? s = null;
-
-		if (!Root.Network.IsServer)
+		if (_useEffects)
 		{
-			s = New<Sound>();
-			s.Audio = audio;
-			s.PlayInWorld = true;
-			s.Parent = this;
-			s.LocalPosition = Vector3.Zero;
+			_particle.Scale = Vector3.One * _radius / 15;
+			_particle.Visible = true;
+			_particle.Emitting = true;
+
+			if (!Root.Network.IsServer)
+			{
+				BuiltInAudioAsset audio = New<BuiltInAudioAsset>();
+				audio.AudioPreset = BuiltInAudioAsset.BuiltInAudioPresetEnum.Explosion;
+
+				s = New<Sound>();
+				s.Audio = audio;
+				s.PlayInWorld = true;
+				s.Parent = this;
+				s.LocalPosition = Vector3.Zero;
+			}
 		}
 
 		Instance[] overlaps = Root.Environment.OverlapSphere(Position, Radius);
@@ -143,7 +161,8 @@ public partial class Explosion : Dynamic
 
 			if (item is Entity e && !item.IsDescendantOfClass("Accessory"))
 			{
-				if (e.Anchored && !AffectAnchored && AffectPredicate == null) continue;
+				if (e.Anchored && !AffectAnchored && AffectPredicate == null)
+					continue;
 
 				RigidBody3D body = e.GDRigidBody;
 				Vector3 direction = body.GlobalTransform.Origin - GetGlobalTransform().Origin;
@@ -152,7 +171,10 @@ public partial class Explosion : Dynamic
 
 				direction = direction.Normalized();
 
-				if ((e.Size.X > Radius * 1.3 || e.Size.Y > Radius * 1.3 || e.Size.Z > Radius * 1.3) && AffectPredicate == null)
+				if (
+					(e.Size.X > Radius * 1.3 || e.Size.Y > Radius * 1.3 || e.Size.Z > Radius * 1.3)
+					&& AffectPredicate == null
+				)
 				{
 					unanchor = false;
 				}
@@ -178,7 +200,8 @@ public partial class Explosion : Dynamic
 			}
 			else if (item is Player plr)
 			{
-				if (plr.IsDead) continue;
+				if (plr.IsDead)
+					continue;
 
 				plr.TakeDamage(Damage);
 				AddPlrExplosionForce(plr);
