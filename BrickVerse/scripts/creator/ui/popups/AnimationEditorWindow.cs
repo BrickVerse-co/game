@@ -766,7 +766,11 @@ public sealed partial class AnimationEditorWindow : PopupWindowBase
 			ToolModeOverride = ToolModeEnum.Rotate,
 			SuppressSelectionInput = true,
 		};
-		_previewGizmos.Attach(DatamodelWorld.Current);
+		_previewGizmos.Attach(
+			DatamodelWorld.Current,
+			DatamodelWorld.Current.CreatorContext.History,
+			DatamodelWorld.Current.CreatorContext.Freelook
+		);
 		_previewViewport.AddChild(_previewGizmos);
 		_previewGizmos.Selected.Add(_poseAdapter);
 		_previewGizmos.Move.Targets.Add(_poseAdapter);

@@ -66,9 +66,7 @@ public sealed partial class Tabs : Control
 				// Terrain editing consumes viewport input while its bottom dock is open.
 				// Return to Output before the code editor takes focus so the terrain
 				// brush cannot continue handling clicks or keyboard shortcuts behind it.
-				TabContainer? bottomTabs = GetNodeOrNull<TabContainer>("../BottomTabs/Tabs");
-				if (bottomTabs != null && bottomTabs.CurrentTab != 0)
-					bottomTabs.CurrentTab = 0;
+				Docking.DockManager.OpenPanel("Output");
 			}
 			RefreshCreatorPresence();
 			CurrentControlChanged?.Invoke(value);

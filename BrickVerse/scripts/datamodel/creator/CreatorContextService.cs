@@ -50,8 +50,19 @@ public sealed partial class CreatorContextService : Instance
 		Freelook.GDNode3D.GlobalPosition = new(0, 6, -4);
 		Freelook.GDNode3D.RotationDegrees = new(-25, 0, 0);
 
+		// Gizmos record transform operations immediately when they attach. Create
+		// their stateful dependencies first so opening a world never observes a
+		// partially initialized CreatorContext.
+		Selections = Globals.LoadInstance<CreatorSelections>(Root);
+		Selections.NameOverride = "Selections";
+		Selections.NetworkParent = this;
+
+		History = Globals.LoadInstance<CreatorHistory>(Root);
+		History.NameOverride = "History";
+		History.NetworkParent = this;
+
 		Gizmos = new() { Name = "Gizmos" };
-		Gizmos.Attach(Root);
+		Gizmos.Attach(Root, History, Freelook);
 		GDNode.AddChild(Gizmos, false, Node.InternalMode.Front);
 
 		SplineEditor = new() { Name = "PCGSplineEditor" };
@@ -60,14 +71,6 @@ public sealed partial class CreatorContextService : Instance
 
 		GUIOverlay = Globals.LoadInstance<CreatorGUI>(Root);
 		GUIOverlay.NetworkParent = this;
-
-		Selections = Globals.LoadInstance<CreatorSelections>(Root);
-		Selections.NameOverride = "Selections";
-		Selections.NetworkParent = this;
-
-		History = Globals.LoadInstance<CreatorHistory>(Root);
-		History.NameOverride = "History";
-		History.NetworkParent = this;
 
 		Addons = Globals.LoadInstance<CreatorAddons>(Root);
 		Addons.NameOverride = "Addons";

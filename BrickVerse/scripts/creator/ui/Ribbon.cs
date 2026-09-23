@@ -14,11 +14,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.UI.Docking;
 
 namespace BrickVerse.Creator.UI;
 
 public sealed partial class Ribbon : Control
 {
+	private static readonly HashSet<string> PartInsertClasses = new(StringComparer.Ordinal)
+	{
+		"Part", "Truss", "Mesh", "EditableMesh", "Seat", "VehicleSeat",
+	};
+	private static readonly HashSet<string> GuiInsertClasses = new(StringComparer.Ordinal)
+	{
+		"GUI", "GUI3D", "UIView", "UILabel", "UIButton", "UIImage", "UIVideoFrame",
+		"UITextInput", "UIHLayout", "UIVLayout", "UIHFlow", "UIVFlow", "UIGradient",
+		"UIGridLayout", "UIScrollView", "UIViewport", "UICorner", "UIStroke", "UIShadow",
+		"UIAspectRatioRestraint",
+	};
+	private static readonly HashSet<string> ScriptInsertClasses = new(StringComparer.Ordinal)
+	{
+		"ClientScript", "ServerScript", "ModuleScript",
+	};
 	[Export]
 	private ButtonGroup _ribbonGroup = null!;
 
@@ -35,8 +51,6 @@ public sealed partial class Ribbon : Control
 	private Button _saveButton = null!;
 	private Button _findButton = null!;
 	private bool _showingCodeActions;
-	private TabContainer? _rightTabs;
-	private int _teamChatIndex = -1;
 
 	public override void _Ready()
 	{
@@ -133,34 +147,31 @@ public sealed partial class Ribbon : Control
 		{
 			CreatorService.Interface.OpenInsertMenu();
 		};
+		WireHomeInsertShortcuts(home);
 
-		TabContainer leftTabs = GetNode<TabContainer>(
-			"../Splitter/Left/Split");
-		TabContainer bottomTabs = GetNode<TabContainer>(
-			"../Splitter/Center/BottomTabs/Tabs");
-		TabContainer rightTabs = GetNode<TabContainer>(
-			"../Splitter/Right/RightTabs");
-		if (rightTabs.GetNodeOrNull<BrickVerse.Creator.TeamCreate.TeamChatDock>("Team Chat") == null)
+		DockHost rightDock = GetNode<DockHost>(
+			"../Splitter/Right/Region/Split/Primary");
+		if (!rightDock.ContainsPanelId("Team Chat"))
 		{
-			Node teamChat = GD.Load<PackedScene>("res://scenes/creator/docks/team_chat_dock.tscn").Instantiate();
-			rightTabs.AddChild(teamChat);
-			int teamChatIndex = rightTabs.GetTabCount() - 1;
-			rightTabs.SetTabTitle(teamChatIndex, "Team Chat");
-			rightTabs.SetTabIcon(teamChatIndex, GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg"));
+			Control teamChat = GD.Load<PackedScene>("res://scenes/creator/docks/team_chat_dock.tscn").Instantiate<Control>();
+			rightDock.AddPanel(new DockPanel(
+				"Team Chat",
+				"Team Chat",
+				teamChat,
+				GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg")
+			), suppressSave: true);
 		}
-		_rightTabs = rightTabs;
-		_teamChatIndex = rightTabs.GetNode<TeamChatDock>("Team Chat").GetIndex();
 		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged += RefreshTeamChatTab;
 		RefreshTeamChatTab();
 
-		forgeButton.Pressed += () => rightTabs.CurrentTab = 1;
+		forgeButton.Pressed += () => DockManager.OpenPanel("Forge");
 		terrainButton.Pressed += () =>
 		{
-			bottomTabs.CurrentTab = 1;
+			DockManager.OpenPanel("Terrain Editor");
 			World.Current?.Container?.GrabFocus();
 		};
 		animatorButton.Pressed += CreatorService.Interface.OpenAnimationEditor;
-		toolboxButton.Pressed += () => leftTabs.CurrentTab = 0;
+		toolboxButton.Pressed += () => DockManager.OpenPanel("Toolbox");
 		inputManagerButton.Pressed += CreatorService.Interface.OpenInputManager;
 		Tabs.Singleton.CurrentControlChanged += OnCurrentControlChanged;
 		OnCurrentControlChanged(Tabs.Singleton.CurrentControl);
@@ -207,6 +218,44 @@ public sealed partial class Ribbon : Control
 		button.AddChild(caption);
 		button.Pressed += action;
 		_quickActions.AddChild(button);
+	}
+
+	private static void WireHomeInsertShortcuts(HBoxContainer home)
+	{
+		Button part = home.GetNode<Button>("Part");
+		Button gui = home.GetNode<Button>("GUI");
+		Button script = home.GetNode<Button>("Script");
+		Button import = home.GetNode<Button>("Import");
+
+		part.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: PartInsertClasses);
+		gui.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: GuiInsertClasses);
+		script.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: ScriptInsertClasses);
+		PopulateImportMenu(import);
+	}
+
+	private static void PopulateImportMenu(Button button)
+	{
+		PopupMenu popup = new() { Name = "ImportPopup" };
+		button.AddChild(popup);
+		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/datamodel/Mesh.svg"), "Mesh", 0);
+		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/ui-icons/image-square.svg"), "Texture", 1);
+		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/datamodel/Sound.svg"), "Sound", 2);
+		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/ui-icons/video.svg"), "Video", 3);
+		popup.IdPressed += id =>
+		{
+			switch (id)
+			{
+				case 0: CreatorService.Interface.OpenUploadMeshMenu(); break;
+				case 1: CreatorService.Interface.OpenUploadTextureMenu(); break;
+				case 2: CreatorService.Interface.OpenUploadSoundMenu(); break;
+				case 3: CreatorService.Interface.OpenUploadVideoMenu(); break;
+			}
+		};
+		button.Pressed += () =>
+		{
+			popup.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+			popup.Popup();
+		};
 	}
 
 	private void OnCurrentControlChanged(Control? control)
@@ -287,10 +336,8 @@ public sealed partial class Ribbon : Control
 
 	private void RefreshTeamChatTab()
 	{
-		if (_rightTabs == null || _teamChatIndex < 0) return;
 		bool visible = TeamCreateService.Instance?.TeamCreateEnabled == true;
-		_rightTabs.SetTabHidden(_teamChatIndex, !visible);
-		if (!visible && _rightTabs.CurrentTab == _teamChatIndex) _rightTabs.CurrentTab = 0;
+		DockManager.SetPanelVisible("Team Chat", visible);
 	}
 
 	private void OnBrushGuiInput(InputEvent inputEvent)

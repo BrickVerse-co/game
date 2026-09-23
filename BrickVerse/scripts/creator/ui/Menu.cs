@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Creator.UI.Layout;
+using BrickVerse.Creator.UI.Docking;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
@@ -25,6 +27,7 @@ public sealed partial class Menu : PanelContainer
 		public string? Icon;
 		public Shortcut? KeyShortcut;
 		public Action? Pressed;
+		public Func<bool>? Checked;
 		public bool RequireGameOpen = false;
 		public string? RequiredBetaFeature;
 		public int Id = 0;
@@ -86,7 +89,18 @@ public sealed partial class Menu : PanelContainer
 				{
 					Text = "Command Palette...",
 					Icon = "search",
-					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.P }] },
+					KeyShortcut = new()
+					{
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.P,
+							},
+						],
+					},
 					Pressed = CommandPalettePopup.Open,
 				},
 				new MenuSeperatorItem(),
@@ -136,7 +150,18 @@ public sealed partial class Menu : PanelContainer
 				{
 					Text = "Save All",
 					Icon = "save",
-					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.S }] },
+					KeyShortcut = new()
+					{
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.S,
+							},
+						],
+					},
 					Pressed = () => Tabs.Singleton.SaveAll(),
 				},
 				new MenuButtonItem()
@@ -243,10 +268,7 @@ public sealed partial class Menu : PanelContainer
 					Text = "Close Place",
 					Icon = "x",
 					RequireGameOpen = true,
-					KeyShortcut = new()
-					{
-						Events = [new InputEventKey() { Keycode = Key.F4 }],
-					},
+					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F4 }] },
 					Pressed = () => Tabs.Singleton.CloseCurrentPlace(),
 				},
 				new MenuButtonItem()
@@ -297,7 +319,18 @@ public sealed partial class Menu : PanelContainer
 				{
 					Text = "Find in Place...",
 					Icon = "search",
-					KeyShortcut = new() { Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.F }] },
+					KeyShortcut = new()
+					{
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.F,
+							},
+						],
+					},
 					Pressed = FindInFilesPopup.Open,
 				},
 				new MenuSeperatorItem(),
@@ -337,7 +370,15 @@ public sealed partial class Menu : PanelContainer
 					Icon = "lock",
 					KeyShortcut = new()
 					{
-						Events = [new InputEventKey() { CtrlPressed = true, ShiftPressed = true, Keycode = Key.L }],
+						Events =
+						[
+							new InputEventKey()
+							{
+								CtrlPressed = true,
+								ShiftPressed = true,
+								Keycode = Key.L,
+							},
+						],
 					},
 					Pressed = () =>
 					{
@@ -525,16 +566,69 @@ public sealed partial class Menu : PanelContainer
 		_menus.Add(
 			new() { Title = "Tools" },
 			[
-				new MenuButtonItem() { Text = "Custom MCP Server", Icon = "link", Pressed = CustomMcpServer.Open },
+				new MenuButtonItem()
+				{
+					Text = "Custom MCP Server",
+					Icon = "link",
+					Pressed = CustomMcpServer.Open,
+				},
 				new MenuSeperatorItem(),
-				new MenuButtonItem() { Text = "Data Store Explorer", Icon = "database", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(0) },
-				new MenuButtonItem() { Text = "Localization Manager", Icon = "translate", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(1) },
-				new MenuButtonItem() { Text = "Instance Icon Manager", Icon = "image-square", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(2) },
-				new MenuButtonItem() { Text = "World Backups & Restore", Icon = "history", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(3) },
-				new MenuButtonItem() { Text = "Collision Groups Editor", Icon = "brick", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(4) },
-				new MenuButtonItem() { Text = "Script Analysis & Activity", Icon = "bug", RequireGameOpen = true, Pressed = () => CreatorDataToolsWindow.Open(5) },
-				new MenuButtonItem() { Text = "Scene Statistics", Icon = "chart-bar", RequireGameOpen = true, Pressed = SceneStatisticsPopup.Open },
-				new MenuButtonItem() { Text = "Particle Editor", Icon = "play-filled", RequireGameOpen = true, Pressed = ParticleEditorWindow.Open },
+				new MenuButtonItem()
+				{
+					Text = "Data Store Explorer",
+					Icon = "database",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(0),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Localization Manager",
+					Icon = "translate",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(1),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Instance Icon Manager",
+					Icon = "image-square",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(2),
+				},
+				new MenuButtonItem()
+				{
+					Text = "World Backups & Restore",
+					Icon = "history",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(3),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Collision Groups Editor",
+					Icon = "brick",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(4),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Script Analysis & Activity",
+					Icon = "bug",
+					RequireGameOpen = true,
+					Pressed = () => CreatorDataToolsWindow.Open(5),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Scene Statistics",
+					Icon = "chart-bar",
+					RequireGameOpen = true,
+					Pressed = SceneStatisticsPopup.Open,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Particle Editor",
+					Icon = "play-filled",
+					RequireGameOpen = true,
+					Pressed = ParticleEditorWindow.Open,
+				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()
 				{
@@ -640,6 +734,47 @@ public sealed partial class Menu : PanelContainer
 						CreatorService.Singleton.ShowRuntimeDebugWindows();
 					},
 				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
+					Text = "Toggle Left Dock",
+					Pressed = () => ToggleSideDock("Left"),
+					Checked = () => IsSideDockVisible("Left"),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Toggle Right Dock",
+					Pressed = () => ToggleSideDock("Right"),
+					Checked = () => IsSideDockVisible("Right"),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Toggle Bottom Dock",
+					Pressed = () => ToggleSideDock("Bottom"),
+					Checked = () => IsSideDockVisible("Bottom"),
+				},
+			]
+		);
+
+		_menus.Add(
+			new() { Title = "Dock" },
+			[
+				DockMenuItem("Explorer", "Explorer", "cube"),
+				DockMenuItem("Properties", "Properties", "settings"),
+				DockMenuItem("Toolbox", "Toolbox", "tools"),
+				DockMenuItem("Files", "FileBrowser", "folder"),
+				DockMenuItem("Assets", "AssetManager", "database"),
+				DockMenuItem("Output", "Output", "code"),
+				DockMenuItem("Terrain Editor", "Terrain Editor", "mountain"),
+				DockMenuItem("Forge AI", "Forge", "comments"),
+				DockMenuItem("Team Chat", "Team Chat", "users"),
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
+					Text = "Reset Dock Layout",
+					Icon = "arrow-counter-clockwise",
+					Pressed = DockManager.ResetLayout,
+				},
 			]
 		);
 
@@ -728,6 +863,7 @@ public sealed partial class Menu : PanelContainer
 				if (mbtn.IdToItem[(int)idx] is MenuButtonItem btn)
 				{
 					btn.Pressed?.Invoke();
+					RefreshCheckedItems(mbtn);
 				}
 			};
 
@@ -751,6 +887,12 @@ public sealed partial class Menu : PanelContainer
 					int index = menu.GetItemIndex(id);
 
 					btnI.Index = index;
+
+					if (btnI.Checked != null)
+					{
+						menu.SetItemAsCheckable(index, true);
+						menu.SetItemChecked(index, btnI.Checked.Invoke());
+					}
 
 					if (btnI.Icon != null)
 					{
@@ -791,6 +933,7 @@ public sealed partial class Menu : PanelContainer
 			}
 
 			_menuButtons.AddChild(btnRoot);
+			menu.AboutToPopup += () => RefreshCheckedItems(mbtn);
 		}
 
 		foreach (Timer timer in FindChildren("*", "Timer", true, false).Cast<Timer>())
@@ -823,6 +966,68 @@ public sealed partial class Menu : PanelContainer
 						: $"Enable {button.Text} in Beta Features first"
 				);
 			}
+		}
+	}
+
+	private Control? GetSideDock(string sideName)
+	{
+		string path = sideName == "Bottom" ? "../Splitter/Center/BottomTabs" : $"../Splitter/{sideName}";
+		return GetNodeOrNull<Control>(path);
+	}
+
+	private static MenuButtonItem DockMenuItem(string text, string panelId, string icon)
+	{
+		return new MenuButtonItem
+		{
+			Text = text,
+			Icon = icon,
+			Pressed = () =>
+			{
+				if (DockManager.IsPanelOpen(panelId))
+					DockManager.ClosePanel(panelId);
+				else
+					DockManager.OpenPanel(panelId);
+			},
+			Checked = () => DockManager.IsPanelOpen(panelId),
+		};
+	}
+
+	private void ToggleSideDock(string sideName)
+	{
+		Control? dock = GetSideDock(sideName);
+		switch (dock)
+		{
+			case null:
+				GD.PushWarning($"View menu could not find GUI/Splitter/{sideName}.");
+				return;
+			case CollapsiblePanel collapsible:
+				collapsible.Toggle();
+				return;
+			default:
+				dock.Visible = !dock.Visible;
+				dock.MouseFilter = dock.Visible
+					? Control.MouseFilterEnum.Stop
+					: Control.MouseFilterEnum.Ignore;
+				break;
+		}
+	}
+
+	private bool IsSideDockVisible(string sideName)
+	{
+		return GetSideDock(sideName) switch
+		{
+			CollapsiblePanel collapsible => !collapsible.Collapsed,
+			Control dock => dock.Visible,
+			_ => false,
+		};
+	}
+
+	private static void RefreshCheckedItems(MenuButtonMenus menuDefinition)
+	{
+		foreach (MenuItem item in menuDefinition.IdToItem.Values)
+		{
+			if (item is MenuButtonItem { Checked: not null } button)
+				menuDefinition.Popup.SetItemChecked(button.Index, button.Checked.Invoke());
 		}
 	}
 
@@ -991,15 +1196,15 @@ public sealed partial class Menu : PanelContainer
 		switch (idx)
 		{
 			case 0: // About BrickVerse
-				{
-					CreatorService.Interface.PopupCredits();
-					break;
-				}
+			{
+				CreatorService.Interface.PopupCredits();
+				break;
+			}
 			case 1: // Startup splash
-				{
-					StartupSplash.Singleton.Show();
-					break;
-				}
+			{
+				StartupSplash.Singleton.Show();
+				break;
+			}
 		}
 	}
 }

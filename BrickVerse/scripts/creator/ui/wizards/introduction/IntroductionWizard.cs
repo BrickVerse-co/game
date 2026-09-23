@@ -34,13 +34,13 @@ public partial class IntroductionWizard : Control
 		new(
 			"Explorer: the world hierarchy",
 			"Explorer shows every instance in your world. Expand parents to understand hierarchy, drag instances to reparent them, right-click for actions, and double-click scripts to edit them.",
-			"Splitter/Right/RightTabs/Explorer/Split/Explorer",
+			"Splitter/Right/Region/Split/Primary/Body/Explorer",
 			"Use Explorer when an object is hard to click in the 3D viewport."
 		),
 		new(
 			"Properties: edit the selection",
 			"Properties updates for whatever you select. Change position, appearance, behavior, physics, assets, and script-facing values here. Changes are undoable and Team Create changes replicate to collaborators.",
-			"Splitter/Right/RightTabs/Explorer/Split/Properties",
+			"Splitter/Right/Region/Split/Secondary/Body/Properties",
 			"Drag the divider between Explorer and Properties to give either panel more room."
 		),
 		new(

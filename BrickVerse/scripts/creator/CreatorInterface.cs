@@ -1139,7 +1139,10 @@ public partial class CreatorInterface : Control, IScriptObject
 		window.PopupCentered();
 	}
 
-	public InsertMenuPopup OpenInsertMenu(Instance? insertTo = null)
+	public InsertMenuPopup OpenInsertMenu(
+		Instance? insertTo = null,
+		IReadOnlySet<string>? allowedClasses = null
+	)
 	{
 		if (IsInstanceValid(InsertMenu))
 		{
@@ -1147,6 +1150,7 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 		InsertMenu = _insertMenuPopupPacked.Instantiate<InsertMenuPopup>();
 		InsertMenu.InsertTo = insertTo;
+		InsertMenu.AllowedClasses = allowedClasses;
 		AddChild(InsertMenu);
 		InsertMenu.PopupAtCursor();
 		InsertMenu.GrabFocus();

@@ -70,22 +70,20 @@ public sealed partial class Gizmos : Node
 	private readonly Dictionary<Dynamic, Transform3D> _initialRelativeTransforms = [];
 	private Transform3D _pivotStart;
 	private CreatorHistory _history = null!;
+	private BrickVerse.Datamodel.Camera _editorCamera = null!;
 	private Vector3 _lastMoveMotion = Vector3.Zero;
 	private Basis _lastRotateFeedbackBasis;
 
-	public void Attach(World game)
+	public void Attach(World game, CreatorHistory history, BrickVerse.Datamodel.Camera editorCamera)
 	{
-		Root = game;
-		_history = Root.CreatorContext.History;
-		game.Loaded.Once(() =>
-		{
-			_history = Root.CreatorContext.History;
-		});
+		Root = game ?? throw new System.ArgumentNullException(nameof(game));
+		_history = history ?? throw new System.ArgumentNullException(nameof(history));
+		_editorCamera = editorCamera ?? throw new System.ArgumentNullException(nameof(editorCamera));
 	}
 
 	public override void _Ready()
 	{
-		_camera = Root.CreatorContext.Freelook.Camera3D;
+		_camera = CameraOverride ?? _editorCamera.Camera3D;
 		Move.RootGizmos = this;
 		Rotate.RootGizmos = this;
 		Scale.RootGizmos = this;

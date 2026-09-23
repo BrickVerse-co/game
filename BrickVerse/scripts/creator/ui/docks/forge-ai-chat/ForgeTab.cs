@@ -36,10 +36,12 @@ public partial class ForgeTab : VBoxContainer
 	private ProgressBar? _installProgress;
 	private Button? _installRetry;
 	private bool _installing;
+	private bool _browserWasVisible;
 	public World? Root => World.Current;
 
 	public override async void _Ready()
 	{
+		VisibilityChanged += SyncBrowserVisibility;
 		try
 		{
 			SetDockIconState("idle");
@@ -190,7 +192,37 @@ public partial class ForgeTab : VBoxContainer
 			GD.PrintErr("Forge could not register CEF console forwarding.");
 		_browser.Connect("on_page_loaded", Callable.From<long, Node>(OnPageLoaded));
 		_browser.Connect("on_page_failed_loading", Callable.From<long, string, Node>(OnPageFailed));
-		Callable.From(ResizeBrowser).CallDeferred();
+		Callable.From(SyncBrowserVisibility).CallDeferred();
+	}
+
+	private void SyncBrowserVisibility()
+	{
+		if (_shuttingDown || _browser == null || !IsInstanceValid(_browser))
+			return;
+
+		bool visible = IsVisibleInTree();
+		if (_browserWasVisible != visible)
+		{
+			_browserWasVisible = visible;
+			// gdCEF renders outside Godot's canvas visibility lifecycle. Explicitly
+			// pause the native browser while its dock tab is hidden so it cannot
+			// paint stale frames over the newly selected tab.
+			if (_browser.HasMethod("set_hidden"))
+				_browser.Call("set_hidden", !visible);
+			else if (_browser.HasMethod("set_visible"))
+				_browser.Call("set_visible", visible);
+		}
+
+		if (visible)
+		{
+			// Containers finish laying out after visibility changes. Resize on the
+			// deferred pass to refresh the CEF backing texture with its real bounds.
+			Callable.From(ResizeBrowser).CallDeferred();
+		}
+		else if (_surface?.HasFocus() == true)
+		{
+			_surface.ReleaseFocus();
+		}
 	}
 
 	private void OnPageLoaded(long status, Node browser)
@@ -333,10 +365,6 @@ public partial class ForgeTab : VBoxContainer
 
 	private void SetDockIconState(string state)
 	{
-		if (GetParent() is not TabContainer tabs) return;
-		int tabIndex = GetIndex();
-		if (tabIndex < 0 || tabIndex >= tabs.GetTabCount()) return;
-
 		string iconPath = state switch
 		{
 			"thinking" => ThinkingDockIconPath,
@@ -344,7 +372,7 @@ public partial class ForgeTab : VBoxContainer
 			_ => DefaultDockIconPath,
 		};
 		Texture2D? icon = GD.Load<Texture2D>(iconPath);
-		if (icon != null) tabs.SetTabIcon(tabIndex, icon);
+		if (icon != null) Docking.DockManager.SetPanelIcon("Forge", icon);
 	}
 
 	public void ReceiveForgeConsole(string level, string message)
@@ -467,6 +495,7 @@ public partial class ForgeTab : VBoxContainer
 			return;
 		_shuttingDown = true;
 		_lifetime.Cancel();
+		VisibilityChanged -= SyncBrowserVisibility;
 		if (_surface != null)
 		{
 			_surface.GuiInput -= ForwardBrowserInput;

@@ -10,6 +10,7 @@ using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
+using BrickVerse.Creator.UI.Docking;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Creator.Utils;
@@ -126,10 +127,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
 		_runtimeDebugWindows[processId] = window;
-		TabContainer bottomTabs = CreatorGUIRoot.Singleton.GetNode<TabContainer>(
-			"Splitter/Center/BottomTabs/Tabs"
+		DockManager.AddPanel(
+			new DockPanel(window.DockPanelId, window.Name, window),
+			"bottom.single"
 		);
-		bottomTabs.AddChild(window);
 		window.Activate();
 	}
 

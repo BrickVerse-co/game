@@ -54,6 +54,7 @@ public partial class InsertMenuPopup : PopupPanel
 		"res://scenes/creator/popups/insert/components/item.tscn"
 	);
 	public Instance? InsertTo;
+	public IReadOnlySet<string>? AllowedClasses;
 
 	private sealed class ItemKey
 	{
@@ -272,6 +273,7 @@ public partial class InsertMenuPopup : PopupPanel
 				&& type.IsDefined(typeof(InstantiableAttribute), false)
 				&& !type.IsDefined(typeof(InternalAttribute), false))
 			.Select(static type => type.Name)
+			.Where(name => AllowedClasses == null || AllowedClasses.Contains(name))
 			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
 				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
 			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
@@ -290,10 +292,12 @@ public partial class InsertMenuPopup : PopupPanel
 			// filter subitems based on search
 			List<string> filtered =
 				query == null
-					? subItems
+					? [.. subItems]
 					: subItems
 						.Where(s => MatchesSearch(s, query))
 						.ToList();
+			if (AllowedClasses != null)
+				filtered.RemoveAll(name => !AllowedClasses.Contains(name));
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
 				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass))
@@ -325,7 +329,13 @@ public partial class InsertMenuPopup : PopupPanel
 		if (uncategorized.Count > 0)
 			toProcess.Add((new ItemKey { Title = "Other" }, uncategorized));
 		if (query == null && RecentClasses.Count > 0)
-			toProcess.Insert(0, (new ItemKey { Title = "Recently Used" }, [.. RecentClasses]));
+		{
+			List<string> recent = RecentClasses
+				.Where(name => AllowedClasses == null || AllowedClasses.Contains(name))
+				.ToList();
+			if (recent.Count > 0)
+				toProcess.Insert(0, (new ItemKey { Title = "Recently Used" }, recent));
+		}
 
 		// Process categories
 		foreach (var (cat, filtered) in toProcess)
