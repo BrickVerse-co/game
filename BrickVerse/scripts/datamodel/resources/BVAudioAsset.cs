@@ -24,11 +24,6 @@ public partial class BVAudioAsset : AudioAsset
 		}
 	}
 
-	public static void RegisterAsset()
-	{
-		RegisterType<BVAudioAsset>();
-	}
-
 	public override void LoadResource()
 	{
 		if (AudioID == "0") return;

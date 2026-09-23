@@ -162,17 +162,7 @@ public sealed partial class Globals : Node
 		NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
 
 		// Register asset types
-		// TODO: Maybe this could be automated via source generation?
-		BVImageAsset.RegisterAsset();
-		BVAudioAsset.RegisterAsset();
-		BVVideoAsset.RegisterAsset();
-		BVMeshAsset.RegisterAsset();
-		BuiltInAudioAsset.RegisterAsset();
-		BuiltInFontAsset.RegisterAsset();
-		FileLinkAsset.RegisterAsset();
-		GradientImageAsset.RegisterAsset();
-		BVMeshAnimationAsset.RegisterAsset();
-		BVFontAsset.RegisterAsset();
+		BaseAsset.RegisterGeneratedAssetTypes();
 	}
 
 	public override void _EnterTree()

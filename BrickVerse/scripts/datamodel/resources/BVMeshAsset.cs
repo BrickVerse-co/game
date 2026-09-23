@@ -24,11 +24,6 @@ public partial class BVMeshAsset : MeshAsset
 		}
 	}
 
-	public static void RegisterAsset()
-	{
-		RegisterType<BVMeshAsset>();
-	}
-
 	public override void LoadResource()
 	{
 		if (string.IsNullOrWhiteSpace(AssetID)) return;
