@@ -166,21 +166,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.49803922)
 theme_override_constants/line_spacing = 0
 theme_override_font_sizes/font_size = 16
-text = "Quick-fire competitive platforming! You’ve got 15 seconds to clear a randomly picked obby, from easy jumps to brutal challenges. Can you keep up?
-
-24/08/2025 - New map time! Cherry Hill is the latest map, being Medium in difficulty. There's some issues with the skybox right now so the lighting looks a little off but it'll be fixed soon!
-
-15/08/2025 - The first community-made map has been added! Frosty Cavern by zippyzipper is the newest addition to the game. It's a Hard map but it's easier than Ancient Tomb, so don't worry!
-
-01/07/2025 - You asked for a easier map, and it's here! Toxic Sewers is the latest addition to 15 Seconds, rated Medium. Might even be Easy, lol
-
-25/06/25 - The Audio Update! Maps now play music when playing, and there's a tick sound during intermission.
-
-25/06/25 - Monolith is here, the new hardest map! Rated Divine, it's three ranks harder than Ancient Tomb. Also added support for fog in maps.
-
-21/06/25 - Ancient Tomb has been given a revamp, making the gameplay easier to fit Hard difficulty and also a decoration boost.
-
-Map kit: https://polytoria.com/models/1097"
+text = "Quick-fire competitive platforming! You’ve got 15 seconds to clear a randomly picked obby, from easy jumps to brutal challenges. Can you keep up?"
 autowrap_mode = 3
 text_overrun_behavior = 4
 
