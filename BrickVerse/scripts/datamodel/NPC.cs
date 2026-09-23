@@ -287,12 +287,17 @@ public partial class NPC : Physical
 		{
 			if (this is Player plr && !plr.IsReady)
 				return;
+			float oldHealth = _health;
 			_health = value;
 			if (_health <= 0 && !IsDead)
 			{
 				TriggerNPCDead();
 			}
 			OnPropertyChanged();
+			if (_health != oldHealth)
+			{
+				HealthChanged.Invoke(_health, oldHealth);
+			}
 		}
 	}
 
@@ -480,6 +485,21 @@ public partial class NPC : Physical
 
 	[ScriptProperty]
 	public BVSignal NavFinished { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<float, float> HealthChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Jumped { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal LeftGround { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Seat> Seated { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Seat> Unseated { get; private set; } = new();
 
 	public override Node CreateGDNode()
 	{
@@ -816,6 +836,10 @@ public partial class NPC : Physical
 					_coyoteUsed = false;
 					Landed.Invoke();
 				}
+				else
+				{
+					LeftGround.Invoke();
+				}
 			}
 		}
 	}
@@ -1045,6 +1069,7 @@ public partial class NPC : Physical
 			_coyoteUsed = true;
 			CharacterVelocity.Y = JumpPower;
 			playJumpSound = true;
+			Jumped.Invoke();
 		}
 		if (IsSitting)
 		{
@@ -1096,6 +1121,7 @@ public partial class NPC : Physical
 		seat.Occupant = this;
 		seat.InvokeSat(this);
 		Character?.SetBlendValue(CharacterModel.CharacterModelBlendEnum.Sitting, 1);
+		Seated.Invoke(seat);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable, CallLocal = true)]
@@ -1109,9 +1135,11 @@ public partial class NPC : Physical
 
 			if (SittingIn != null)
 			{
-				SittingIn.Occupant = null;
-				SittingIn.InvokeVacated(this);
+				Seat seat = SittingIn;
+				seat.Occupant = null;
+				seat.InvokeVacated(this);
 				SittingIn = null;
+				Unseated.Invoke(seat);
 			}
 
 			Character?.SetBlendValue(CharacterModel.CharacterModelBlendEnum.Sitting, 0);
