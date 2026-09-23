@@ -49,6 +49,23 @@ public class BVSignal : IScriptObject
 		}
 	}
 
+	internal void InvokeOne(object? arg)
+	{
+		for (int i = _ptCallbacks.Count - 1; i >= 0; i--)
+		{
+			BVCallback? cb = _ptCallbacks[i];
+			if (cb is null || cb.Disposed)
+			{
+				_ptCallbacks.RemoveAt(i);
+				if (cb is not null) _ptSet.Remove(cb);
+				continue;
+			}
+
+			try { cb.InvokeOne(arg); }
+			catch (Exception ex) { GD.PushError("BVCallback single-argument invocation: " + ex); }
+		}
+	}
+
 	private static List<BVSignal> GetSignalListFromScript(Script s)
 	{
 		if (!_subscribedScripts.TryGetValue(s, out List<BVSignal>? signals))
@@ -98,7 +115,11 @@ public class BVSignal : IScriptObject
 
 	public void Connect(Action<object> action)
 	{
-		BVCallback cb = new(args => action(args?.Length > 0 ? args[0]! : null!)) { OriginalDelegate = action };
+		BVCallback cb = new(args => action(args?.Length > 0 ? args[0]! : null!))
+		{
+			OriginalDelegate = action,
+			SingleAction = action,
+		};
 		Connect(cb);
 	}
 
