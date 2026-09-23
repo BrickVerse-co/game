@@ -2,17 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.Spatial;
 using BrickVerse.Datamodel.Interfaces;
 #endif
-using BrickVerse.Utils;
-using BrickVerse.Utils.DTOs;
-using System;
-using System.Collections.Generic;
+
 
 namespace BrickVerse.Datamodel;
 
@@ -57,16 +58,13 @@ public partial class Dynamic : Instance
 	private BoxShape3D _boundShape = null!;
 	internal bool HasBound => _boundArea3D != null;
 	internal Aabb CreatorBounds;
-	private readonly static Dictionary<Node, Dynamic> _creatorProxyToDyn = [];
+	private static readonly Dictionary<Node, Dynamic> _creatorProxyToDyn = [];
 #endif
 
 	[Editable, ScriptProperty, NoSync, CloneIgnore, SaveIgnore]
 	public Vector3 Position
 	{
-		get
-		{
-			return GetGlobalPosition();
-		}
+		get { return GetGlobalPosition(); }
 		set
 		{
 			SetGlobalPosition(value);
@@ -125,10 +123,7 @@ public partial class Dynamic : Instance
 	[Editable, ScriptProperty, CloneIgnore, NoSync]
 	public Vector3 LocalPosition
 	{
-		get
-		{
-			return GetLocalPosition();
-		}
+		get { return GetLocalPosition(); }
 		set
 		{
 			SetLocalPosition(value);
@@ -143,10 +138,7 @@ public partial class Dynamic : Instance
 	[Editable, ScriptProperty, CloneIgnore, NoSync]
 	public Vector3 LocalRotation
 	{
-		get
-		{
-			return GDNode3D.RotationDegrees;
-		}
+		get { return GDNode3D.RotationDegrees; }
 		set
 		{
 			GDNode3D.RotationDegrees = value.SanitizeNaN();
@@ -161,10 +153,7 @@ public partial class Dynamic : Instance
 	[Editable, ScriptProperty, CloneIgnore]
 	public Vector3 LocalSize
 	{
-		get
-		{
-			return NodeSize / GetParentScale();
-		}
+		get { return NodeSize / GetParentScale(); }
 		set
 		{
 			var oldN = NodeSize;
@@ -238,9 +227,14 @@ public partial class Dynamic : Instance
 	}
 
 	// correct for godot would be -Z, but due to issues described in issue #369, we are using +Z except for the camera
-	[ScriptProperty] public Vector3 Forward => GetGlobalTransform().Basis.Z.Normalized();
-	[ScriptProperty] public Vector3 Right => GetGlobalTransform().Basis.X.Normalized();
-	[ScriptProperty] public Vector3 Up => GetGlobalTransform().Basis.Y.Normalized();
+	[ScriptProperty]
+	public Vector3 Forward => GetGlobalTransform().Basis.Z.Normalized();
+
+	[ScriptProperty]
+	public Vector3 Right => GetGlobalTransform().Basis.X.Normalized();
+
+	[ScriptProperty]
+	public Vector3 Up => GetGlobalTransform().Basis.Y.Normalized();
 
 	public override Node CreateGDNode()
 	{
@@ -328,7 +322,10 @@ public partial class Dynamic : Instance
 
 	public void UpdateTransformTick(double delta)
 	{
-		if (!_lerpUnreliable) { return; }
+		if (!_lerpUnreliable)
+		{
+			return;
+		}
 
 		Transform3D old = _currentTransform;
 
@@ -342,9 +339,11 @@ public partial class Dynamic : Instance
 
 	private void UpdateTransform(double delta)
 	{
-		if (!_isDirty) return;
+		if (!_isDirty)
+			return;
 		// If has transform authority, no need to update yourself
-		if (NetTransformAuthority == Root.Network.LocalPeerID) return;
+		if (NetTransformAuthority == Root.Network.LocalPeerID)
+			return;
 
 		float positionDistance = _currentTransform.Origin.DistanceTo(_netTransform.Origin);
 
@@ -364,14 +363,23 @@ public partial class Dynamic : Instance
 		}
 		else
 		{
-			Vector3 newPosition = _currentTransform.Origin.Lerp(_netTransform.Origin, MathUtils.ExpDecay((float)delta, LerpSpeed));
+			Vector3 newPosition = _currentTransform.Origin.Lerp(
+				_netTransform.Origin,
+				MathUtils.ExpDecay((float)delta, LerpSpeed)
+			);
 			Vector3 newScale = _netTransform.Basis.Scale;
-			Quaternion targetRotation = _netTransform.Basis.Orthonormalized().GetRotationQuaternion();
-			Quaternion currentRotation = (this is Part)
-				? GDNode3D.Transform.Basis.Orthonormalized().GetRotationQuaternion()
-				: _currentTransform.Basis.Orthonormalized().GetRotationQuaternion();
+			Quaternion targetRotation = _netTransform
+				.Basis.Orthonormalized()
+				.GetRotationQuaternion();
+			Quaternion currentRotation =
+				(this is Part)
+					? GDNode3D.Transform.Basis.Orthonormalized().GetRotationQuaternion()
+					: _currentTransform.Basis.Orthonormalized().GetRotationQuaternion();
 
-			Quaternion smoothRot = currentRotation.Slerp(targetRotation, MathUtils.ExpDecay((float)delta, LerpSpeed));
+			Quaternion smoothRot = currentRotation.Slerp(
+				targetRotation,
+				MathUtils.ExpDecay((float)delta, LerpSpeed)
+			);
 
 			_currentTransform = new Transform3D(new Basis(smoothRot).Scaled(newScale), newPosition);
 			if (positionDistance < 0.01f && currentRotation.AngleTo(targetRotation) < 0.01f)
@@ -487,7 +495,8 @@ public partial class Dynamic : Instance
 	// NOTE: Update operations needs transform to be force updated as godot does not update them instantly
 	protected void UpdateNetTransform()
 	{
-		if (Root == null || Root.Network == null) return;
+		if (Root == null || Root.Network == null)
+			return;
 
 		ForceUpdateTransform();
 		Transform3D current = GetLocalTransform();
@@ -503,13 +512,15 @@ public partial class Dynamic : Instance
 		_lastSentTransform = current;
 
 		InvokeTransformChanged();
-		if (!Root.IsLoaded) return;
+		if (!Root.IsLoaded)
+			return;
 		SendNetTransformUnreliable();
 	}
 
 	protected void UpdateNetTransformReliable()
 	{
-		if (Root == null || Root.Network == null) return;
+		if (Root == null || Root.Network == null)
+			return;
 
 		ForceUpdateTransform();
 		Transform3D current = GetLocalTransform();
@@ -521,13 +532,17 @@ public partial class Dynamic : Instance
 		_lastSentTransform = current;
 
 		InvokeTransformChanged();
-		if (!Root.IsLoaded) return;
+		if (!Root.IsLoaded)
+			return;
 		SendNetTransformReliable();
 	}
 
 	protected void SendNetTransformUnreliable(bool lerp = true)
 	{
-		if (Root == null || Root?.Network == null) { return; }
+		if (Root == null || Root?.Network == null)
+		{
+			return;
+		}
 
 		UpdateCurrentTransformCache();
 
@@ -545,7 +560,8 @@ public partial class Dynamic : Instance
 
 	protected void SendNetTransformReliable(bool lerp = false)
 	{
-		if (Root == null || Root?.Network == null) return;
+		if (Root == null || Root?.Network == null)
+			return;
 		_lerpUnreliable = false;
 
 		UpdateCurrentTransformCache();
@@ -564,7 +580,8 @@ public partial class Dynamic : Instance
 	/// </summary>
 	internal void UpdateCurrentTransformCache()
 	{
-		if (!GDNode3D.IsInsideTree()) return;
+		if (!GDNode3D.IsInsideTree())
+			return;
 		ForceUpdateTransform();
 		Transform3D newt = GetLocalTransform();
 		if (newt != _currentTransform)
@@ -587,7 +604,10 @@ public partial class Dynamic : Instance
 	/// <param name="fromPeer"></param>
 	/// <param name="newTransform"></param>
 	/// <returns></returns>
-	internal virtual TransformPayloadDto TransformNetworkPass(int fromPeer, TransformPayloadDto newTransform)
+	internal virtual TransformPayloadDto TransformNetworkPass(
+		int fromPeer,
+		TransformPayloadDto newTransform
+	)
 	{
 		return newTransform;
 	}
@@ -597,9 +617,14 @@ public partial class Dynamic : Instance
 		return true;
 	}
 
-	internal void UpdateTransformFromNet(TransformPayloadDto transform, bool isReliable, bool lerpTransform)
+	internal void UpdateTransformFromNet(
+		TransformPayloadDto transform,
+		bool isReliable,
+		bool lerpTransform
+	)
 	{
-		if (OverrideNetworkTransform) return;
+		if (OverrideNetworkTransform)
+			return;
 		Vector3 scale = GetLocalTransform().Basis.Scale;
 		_netTransform = new Transform3D(
 			new Basis(transform.Rotation).ScaledLocal(scale),
@@ -638,23 +663,18 @@ public partial class Dynamic : Instance
 #if CREATOR
 	private void CreateCreatorBounds()
 	{
-		if (Root == null) return;
-		if (Root.SessionType != World.SessionTypeEnum.Creator) return;
+		if (Root == null)
+			return;
+		if (Root.SessionType != World.SessionTypeEnum.Creator)
+			return;
 
-		_boundArea3D = new()
-		{
-			Monitorable = true,
-			Monitoring = false,
-		};
+		_boundArea3D = new() { Monitorable = true, Monitoring = false };
 		SetCreatorBoundActive(true);
 		_creatorProxyToDyn[_boundArea3D] = this;
 
 		_boundShape = new();
 
-		_boundCollider = new()
-		{
-			Shape = _boundShape
-		};
+		_boundCollider = new() { Shape = _boundShape };
 
 		_boundArea3D.AddChild(_boundCollider);
 		Root.Environment.GDNode.AddChild(_boundArea3D, @internal: Node.InternalMode.Back);
@@ -664,9 +684,12 @@ public partial class Dynamic : Instance
 
 	internal void UpdateCreatorBounds()
 	{
-		if (_boundShape == null) return;
-		if (Root == null) return;
-		if (Root.SessionType != World.SessionTypeEnum.Creator) return;
+		if (_boundShape == null)
+			return;
+		if (Root == null)
+			return;
+		if (Root.SessionType != World.SessionTypeEnum.Creator)
+			return;
 
 		Aabb bound = CalculateBounds();
 
@@ -678,7 +701,8 @@ public partial class Dynamic : Instance
 
 	public static Dynamic? GetDynFromCreatorBounds(Node collider)
 	{
-		if (_creatorProxyToDyn.TryGetValue(collider, out Dynamic? dyn)) return dyn;
+		if (_creatorProxyToDyn.TryGetValue(collider, out Dynamic? dyn))
+			return dyn;
 		return null;
 	}
 
@@ -695,11 +719,10 @@ public partial class Dynamic : Instance
 
 	private void SetCreatorBoundActive(bool to)
 	{
-		if (_boundArea3D == null) return;
+		if (_boundArea3D == null)
+			return;
 		_boundArea3D.CollisionLayer =
-			to && this is not IGroup and not Camera and not Physical
-				? 1 << 2
-				: 0u;
+			to && this is not IGroup and not Camera and not Physical ? 1 << 2 : 0u;
 	}
 
 	internal void PropagateUpdateCreatorBounds()
@@ -720,9 +743,12 @@ public partial class Dynamic : Instance
 	{
 #if CREATOR
 		bool isDraggingSelected =
-			Root.CreatorContext != null &&
-			Root.CreatorContext.Gizmos != null &&
-			(Root.CreatorContext.Gizmos.IsDraggingDynamic || Root.CreatorContext.Gizmos.IsTransformingSelected);
+			Root.CreatorContext != null
+			&& Root.CreatorContext.Gizmos != null
+			&& (
+				Root.CreatorContext.Gizmos.IsDraggingDynamic
+				|| Root.CreatorContext.Gizmos.IsTransformingSelected
+			);
 		if (Root.CreatorContext != null && Root.CreatorContext.Gizmos != null)
 		{
 			if (!Root.CreatorContext.Gizmos.HoveringGizmos && !isDraggingSelected)
@@ -758,15 +784,17 @@ public partial class Dynamic : Instance
 		}
 
 		// Destroy entity/rigidbodies under part destroy height
-		if (Root != null && Root.Environment != null && this is Entity or RigidBody)
+		if (Root != null && Root.Environment != null && this is Physical physical)
 		{
-			if (Position.Y <= Root.Environment.PartDestroyHeight)
+			if (Position.Y <= Root.Environment.PartDestroyHeight && !physical.Anchored)
 			{
 				// If not client, ignore PartDestroyHeight rule
-				if (Root.SessionType != World.SessionTypeEnum.Client) return;
+				if (Root.SessionType != World.SessionTypeEnum.Client)
+					return;
 
 				// If network is not ready, return
-				if (!IsNetworkReady) return;
+				if (!IsNetworkReady)
+					return;
 
 				Delete();
 			}
@@ -815,7 +843,8 @@ public partial class Dynamic : Instance
 	public override void HiddenChanged(bool to)
 	{
 		// Player cannot be hidden
-		if (this is Player) return;
+		if (this is Player)
+			return;
 
 		GDNode3D.Visible = !to;
 
@@ -866,8 +895,10 @@ public partial class Dynamic : Instance
 
 	internal void SetGlobalTransformRaw(Transform3D to)
 	{
-		if (!GDNode3D.IsInsideTree()) return;
-		if (_oldGlobalTransformApplied == to) return;
+		if (!GDNode3D.IsInsideTree())
+			return;
+		if (_oldGlobalTransformApplied == to)
+			return;
 		_oldGlobalTransformApplied = to;
 
 		Vector3 scale = new Vector3(
@@ -885,8 +916,10 @@ public partial class Dynamic : Instance
 
 	internal void SetLocalTransformRaw(Transform3D to)
 	{
-		if (!GDNode3D.IsInsideTree()) return;
-		if (_oldLocalTransformApplied == to) return;
+		if (!GDNode3D.IsInsideTree())
+			return;
+		if (_oldLocalTransformApplied == to)
+			return;
 		_oldLocalTransformApplied = to;
 
 		Vector3 scale = new Vector3(
@@ -922,7 +955,8 @@ public partial class Dynamic : Instance
 
 	internal void ForceUpdateTransform()
 	{
-		if (!GDNode3D.IsInsideTree()) return;
+		if (!GDNode3D.IsInsideTree())
+			return;
 		GDNode3D.ForceUpdateTransform();
 	}
 
@@ -1008,15 +1042,20 @@ public partial class Dynamic : Instance
 
 				// some dark magic
 				Vector3 worldExtents = new(
-					Mathf.Abs(rot.X.X) * he.X + Mathf.Abs(rot.Y.X) * he.Y + Mathf.Abs(rot.Z.X) * he.Z,
-					Mathf.Abs(rot.X.Y) * he.X + Mathf.Abs(rot.Y.Y) * he.Y + Mathf.Abs(rot.Z.Y) * he.Z,
-					Mathf.Abs(rot.X.Z) * he.X + Mathf.Abs(rot.Y.Z) * he.Y + Mathf.Abs(rot.Z.Z) * he.Z
+					Mathf.Abs(rot.X.X) * he.X
+						+ Mathf.Abs(rot.Y.X) * he.Y
+						+ Mathf.Abs(rot.Z.X) * he.Z,
+					Mathf.Abs(rot.X.Y) * he.X
+						+ Mathf.Abs(rot.Y.Y) * he.Y
+						+ Mathf.Abs(rot.Z.Y) * he.Z,
+					Mathf.Abs(rot.X.Z) * he.X
+						+ Mathf.Abs(rot.Y.Z) * he.Y
+						+ Mathf.Abs(rot.Z.Z) * he.Z
 				);
 
 				Vector3 center = t.Origin;
 
 				Aabb pBounds = new(center - worldExtents, worldExtents * 2);
-
 
 				if (bounds == null)
 				{
@@ -1049,7 +1088,8 @@ public partial class Dynamic : Instance
 				foreach (Node n in scanNodes)
 				{
 #if CREATOR
-					if (n is ISpatial) continue;
+					if (n is ISpatial)
+						continue;
 #endif
 					if (n is VisualInstance3D v3d)
 					{
@@ -1100,5 +1140,8 @@ public partial class Dynamic : Instance
 		return bounds ?? new(GetGlobalPosition(), Vector3.One * 0.5f);
 	}
 
-	public virtual Aabb GetSelfBound() { return default; }
+	public virtual Aabb GetSelfBound()
+	{
+		return default;
+	}
 }
