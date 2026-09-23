@@ -225,10 +225,11 @@ public partial class Physical : Dynamic
 	protected void UpdatePhysicsTick()
 	{
 		if (OverridePhysicsProcess) return;
-
-		SetPhysicsProcess(!_anchored && !IsAsleep);
+		SetPhysicsProcess(!_anchored && !IsAsleep && !IsFrozen);
 	}
 
+	internal virtual bool IsFrozen => false;
+	
 	protected virtual void ApplyFreeze(bool to) { }
 
 	internal void UpdateCollision()
