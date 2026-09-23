@@ -2,13 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 #if CREATOR
 using BrickVerse.Datamodel.Creator;
 #endif
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
+
 
 namespace BrickVerse.Datamodel;
 
@@ -36,6 +37,7 @@ public partial class UIField : Instance
 	internal bool OverrideParentCheck = false;
 
 	private bool _visible = true;
+
 	[Editable, ScriptProperty]
 	public Vector2 PositionOffset
 	{
@@ -170,7 +172,9 @@ public partial class UIField : Instance
 		{
 			_ignoreMouse = value;
 			OnPropertyChanged();
-			NodeControl.MouseFilter = value ? Control.MouseFilterEnum.Ignore : Control.MouseFilterEnum.Stop;
+			NodeControl.MouseFilter = value
+				? Control.MouseFilterEnum.Ignore
+				: Control.MouseFilterEnum.Stop;
 		}
 	}
 
@@ -186,18 +190,32 @@ public partial class UIField : Instance
 		}
 	}
 
-	[ScriptProperty] public Vector2 AbsolutePosition => NodeControl.GlobalPosition;
-	[ScriptProperty] public Vector2 AbsoluteSize => OverrideAbsSize ? OverrideAbsSizeTo : NodeControl.Size;
+	[ScriptProperty]
+	public Vector2 AbsolutePosition => NodeControl.GlobalPosition;
 
-	[ScriptProperty] public BVSignal MouseEnter { get; private set; } = new();
-	[ScriptProperty] public BVSignal MouseExit { get; private set; } = new();
+	[ScriptProperty]
+	public Vector2 AbsoluteSize => OverrideAbsSize ? OverrideAbsSizeTo : NodeControl.Size;
 
-	[ScriptProperty] public BVSignal MouseDown { get; private set; } = new();
-	[ScriptProperty] public BVSignal MouseUp { get; private set; } = new();
-	[ScriptProperty] public BVSignal TransformChanged { get; private set; } = new();
-	[ScriptProperty] public BVSignal VisibilityChanged { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal MouseEnter { get; private set; } = new();
 
-	[ScriptProperty] public bool IsVisibleInTree => NodeControl.IsVisibleInTree();
+	[ScriptProperty]
+	public BVSignal MouseExit { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal MouseDown { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal MouseUp { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal TransformChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal VisibilityChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public bool IsVisibleInTree => NodeControl.IsVisibleInTree();
 
 	internal bool IsParentedToUI = false;
 	internal bool IsParentedToCreatorGUI = false;
@@ -230,7 +248,8 @@ public partial class UIField : Instance
 		QueueRecomputeTransform();
 		RecomputeVisible();
 		foreach (Instance child in GetChildren())
-			if (child is UIField field) field.RefreshUIHierarchyStateRecursive();
+			if (child is UIField field)
+				field.RefreshUIHierarchyStateRecursive();
 		base.OnParentChanged(oldParent, newParent);
 	}
 
@@ -240,7 +259,8 @@ public partial class UIField : Instance
 		QueueRecomputeTransform();
 		RecomputeVisible();
 		foreach (Instance child in GetChildren())
-			if (child is UIField field) field.RefreshUIHierarchyStateRecursive();
+			if (child is UIField field)
+				field.RefreshUIHierarchyStateRecursive();
 	}
 
 	private void RefreshUIHierarchyState()
@@ -250,7 +270,9 @@ public partial class UIField : Instance
 		IsParentedToCreatorGUI = IsDescendantOfClass<CreatorGUI>();
 		if (!IsParentedToCreatorGUI)
 		{
-			NodeControl.MouseFilter = Control.MouseFilterEnum.Pass;
+			NodeControl.MouseFilter = IgnoreMouse
+				? Control.MouseFilterEnum.Ignore
+				: Control.MouseFilterEnum.Pass;
 			NodeControl.FocusMode = Control.FocusModeEnum.Click;
 		}
 #endif
@@ -274,8 +296,10 @@ public partial class UIField : Instance
 
 	internal void OnCornerControllerExit()
 	{
-		if (_controllerState == null) return;
-		if (--_controllerState.CornerCount > 0) return;
+		if (_controllerState == null)
+			return;
+		if (--_controllerState.CornerCount > 0)
+			return;
 		_styleBox.CornerRadiusTopLeft = _controllerState.SavedCorners[0];
 		_styleBox.CornerRadiusTopRight = _controllerState.SavedCorners[1];
 		_styleBox.CornerRadiusBottomLeft = _controllerState.SavedCorners[2];
@@ -302,8 +326,10 @@ public partial class UIField : Instance
 
 	internal void OnStrokeControllerExit()
 	{
-		if (_controllerState == null) return;
-		if (--_controllerState.StrokeCount > 0) return;
+		if (_controllerState == null)
+			return;
+		if (--_controllerState.StrokeCount > 0)
+			return;
 		_styleBox.BorderWidthTop = _controllerState.SavedBorderWidths[0];
 		_styleBox.BorderWidthBottom = _controllerState.SavedBorderWidths[1];
 		_styleBox.BorderWidthLeft = _controllerState.SavedBorderWidths[2];
@@ -318,18 +344,30 @@ public partial class UIField : Instance
 
 	internal int[] SavedCorners
 	{
-		get { _controllerState ??= new(); return _controllerState.SavedCorners; }
+		get
+		{
+			_controllerState ??= new();
+			return _controllerState.SavedCorners;
+		}
 	}
 
 	internal int[] SavedBorderWidths
 	{
-		get { _controllerState ??= new(); return _controllerState.SavedBorderWidths; }
+		get
+		{
+			_controllerState ??= new();
+			return _controllerState.SavedBorderWidths;
+		}
 	}
 
 	internal Color SavedBorderColor
 	{
 		get => _controllerState?.SavedBorderColor ?? default;
-		set { _controllerState ??= new(); _controllerState.SavedBorderColor = value; }
+		set
+		{
+			_controllerState ??= new();
+			_controllerState.SavedBorderColor = value;
+		}
 	}
 
 	internal void InternalSetRotation(float degrees)
@@ -338,9 +376,18 @@ public partial class UIField : Instance
 		NodeControl.Rotation = Mathf.DegToRad(degrees);
 	}
 
-	internal (float TopLeft, float TopRight, float BottomLeft, float BottomRight) InternalGetCorners()
-		=> (_styleBox.CornerRadiusTopLeft, _styleBox.CornerRadiusTopRight,
-			_styleBox.CornerRadiusBottomLeft, _styleBox.CornerRadiusBottomRight);
+	internal (
+		float TopLeft,
+		float TopRight,
+		float BottomLeft,
+		float BottomRight
+	) InternalGetCorners() =>
+		(
+			_styleBox.CornerRadiusTopLeft,
+			_styleBox.CornerRadiusTopRight,
+			_styleBox.CornerRadiusBottomLeft,
+			_styleBox.CornerRadiusBottomRight
+		);
 
 	internal void InternalSetAllCorners(float tl, float tr, float bl, float br)
 	{
@@ -378,10 +425,13 @@ public partial class UIField : Instance
 
 	private void SyncCornerPanel()
 	{
-		if (NodeControl == null) return;
-		if (NodeControl is Panel or TextureRect) return;
+		if (NodeControl == null)
+			return;
+		if (NodeControl is Panel or TextureRect)
+			return;
 
-		bool hasCorners = _styleBox.CornerRadiusTopLeft > 0
+		bool hasCorners =
+			_styleBox.CornerRadiusTopLeft > 0
 			|| _styleBox.CornerRadiusTopRight > 0
 			|| _styleBox.CornerRadiusBottomLeft > 0
 			|| _styleBox.CornerRadiusBottomRight > 0;
@@ -430,11 +480,13 @@ public partial class UIField : Instance
 
 	public override void Ready()
 	{
-		Callable.From(() =>
-		{
-			RecomputeTransform();
-			RecomputeVisible();
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				RecomputeTransform();
+				RecomputeVisible();
+			})
+			.CallDeferred();
 		base.Ready();
 	}
 
@@ -494,7 +546,8 @@ public partial class UIField : Instance
 
 	private bool IsMouseOverChildUIField()
 	{
-		if (NodeControl == null) return false;
+		if (NodeControl == null)
+			return false;
 		Vector2 mousePos = NodeControl.GetGlobalMousePosition();
 		foreach (Instance child in GetChildren())
 		{
@@ -517,6 +570,7 @@ public partial class UIField : Instance
 	{
 		MouseEnter.Invoke();
 	}
+
 	private void OnMouseExited()
 	{
 		if (NodeControl.HasFocus())
@@ -545,8 +599,9 @@ public partial class UIField : Instance
 
 		Vector2 size = _sizeOffset + (parentSize * _sizeRelative);
 
-
-		UIAspectRatioRestraint? aspectRatioConstraint = (UIAspectRatioRestraint?)FindChildByClass("UIAspectRatioRestraint");
+		UIAspectRatioRestraint? aspectRatioConstraint = (UIAspectRatioRestraint?)FindChildByClass(
+			"UIAspectRatioRestraint"
+		);
 		if (aspectRatioConstraint != null)
 		{
 			Vector2? maxSize;
@@ -606,7 +661,10 @@ public partial class UIField : Instance
 		if (Parent is not UIContainer)
 		{
 			Vector2 selfSize = AbsoluteSize;
-			Vector2 computedPos = new Vector2(_positionOffset.X, _positionOffset.Y) + (parentSize * new Vector2(_positionRelative.X, _positionRelative.Y)) - (new Vector2(_pivotPoint.X, _pivotPoint.Y) * selfSize);
+			Vector2 computedPos =
+				new Vector2(_positionOffset.X, _positionOffset.Y)
+				+ (parentSize * new Vector2(_positionRelative.X, _positionRelative.Y))
+				- (new Vector2(_pivotPoint.X, _pivotPoint.Y) * selfSize);
 
 			NodeControl.Position = computedPos;
 			NodeControl.Rotation = Mathf.DegToRad(_rotation);
@@ -680,7 +738,7 @@ public partial class UIField : Instance
 	{
 		Disabled,
 		ClipOnly,
-		ClipAndDraw
+		ClipAndDraw,
 	}
 
 	internal sealed class ControllerState
