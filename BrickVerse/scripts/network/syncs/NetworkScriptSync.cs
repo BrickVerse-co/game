@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
+using BrickVerse.Utils;
 using BrickVerse.Utils.Compression;
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
+using Godot;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Networking.Synchronizers;
@@ -24,7 +24,8 @@ public partial class NetworkScriptSync : Instance
 
 	static NetworkScriptSync()
 	{
-		if (Globals.IsInGDEditor) return;
+		if (Globals.IsInGDEditor)
+			return;
 		_useNetworkLog = OS.HasFeature("netlog");
 	}
 
@@ -39,7 +40,10 @@ public partial class NetworkScriptSync : Instance
 			{
 				if (item is Datamodel.Script cs)
 				{
-					if (_useNetworkLog) { BV.Print($"[Net] [ScriptSync] Packing {cs.Name} source"); }
+					if (_useNetworkLog)
+					{
+						BV.Print($"[Net] [ScriptSync] Packing {cs.Name} source");
+					}
 					try
 					{
 						cs.TryCompile();
@@ -54,15 +58,28 @@ public partial class NetworkScriptSync : Instance
 			}
 		}
 
-		byte[] rawData = ZstdCompressionUtils.Compress(JsonSerializer.Serialize([.. data], NetDataGenerationContext.Default.NetBatchScriptDataArray).ToUtf8Buffer());
+		byte[] rawData = ZstdCompressionUtils.Compress(
+			SerializeUtils.Serialize<NetBatchScriptData[]>([.. data])
+		);
 		RpcId(peerID, nameof(NetRecvAllScripts), rawData, true);
 	}
-
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvAllScripts(byte[] rawBytes, bool isFirstInit)
 	{
-		NetBatchScriptData[] scriptsData = JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(rawBytes), NetDataGenerationContext.Default.NetBatchScriptDataArray)!;
+		NetBatchScriptData[] scriptsData;
+		try
+		{
+			scriptsData =
+				SerializeUtils.Deserialize<NetBatchScriptData[]>(
+					ZstdCompressionUtils.Decompress(rawBytes)
+				) ?? [];
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr("[ScriptSync] Failed to deserialize script batch: ", ex);
+			return;
+		}
 
 		foreach (NetBatchScriptData item in scriptsData)
 		{
@@ -72,7 +89,10 @@ public partial class NetworkScriptSync : Instance
 			{
 				if (obj is Datamodel.Script s)
 				{
-					if (_useNetworkLog) { BV.Print($"[Net] [ScriptSync] Recv {s.Name} source"); }
+					if (_useNetworkLog)
+					{
+						BV.Print($"[Net] [ScriptSync] Recv {s.Name} source");
+					}
 					s.Bytecode = item.Bytecode;
 				}
 			}
@@ -130,6 +150,8 @@ public partial class NetworkScriptSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetLogCompileError(string msg)
 	{
-		NetService.Root.ScriptService.Logger.DispatchLog(new() { Content = msg, LogType = Scripting.LogDispatcher.LogTypeEnum.Error });
+		NetService.Root.ScriptService.Logger.DispatchLog(
+			new() { Content = msg, LogType = Scripting.LogDispatcher.LogTypeEnum.Error }
+		);
 	}
 }
