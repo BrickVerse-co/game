@@ -277,6 +277,12 @@ public sealed partial class World : Instance
 		return await WaitForNetObjectAsync(networkID);
 	}
 
+	[ScriptMethod]
+	public double GetFPS()
+	{
+		return Engine.GetFramesPerSecond();
+	}
+
 	/// <summary>Returns a root DataModel service by its BrickVerse alias or class name.</summary>
 	[ScriptMethod]
 	public Instance? GetService(string className)
