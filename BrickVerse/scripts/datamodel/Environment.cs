@@ -499,7 +499,7 @@ public sealed partial class Environment : Instance
 			instance = Physical.GetPhysicalFromCollider(a3d);
 		}
 
-		if (collider is RigidBody3D r)
+		if (collider is PhysicsBody3D r)
 		{
 			instance = (Instance?)GetNetObjFromProxy(r);
 		}
@@ -560,7 +560,7 @@ public sealed partial class Environment : Instance
 			query,
 			MaxOverlaps
 		);
-		List<Instance> intersects = [];
+		HashSet<Instance> intersects = [];
 
 		foreach (Godot.Collections.Dictionary result in results)
 		{

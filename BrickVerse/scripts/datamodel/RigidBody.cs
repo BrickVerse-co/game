@@ -182,9 +182,19 @@ public partial class RigidBody : Physical
 	{
 		base.InitGDNode();
 		PhysicsMat = new();
+		RigidBody3D? previous = GDRigidBody;
 		GDRigidBody = (RigidBody3D)GDNode;
 		GDRigidBody.PhysicsMaterialOverride = PhysicsMat;
 		GDRigidBody.GravityScale = 2;
+
+		if (ReferenceEquals(previous, GDRigidBody)) return;
+
+		if (previous != null)
+		{
+			previous.SleepingStateChanged -= OnSleepingStateChanged;
+		}
+
+		GDRigidBody.SleepingStateChanged += OnSleepingStateChanged;
 	}
 
 	public override void Init()
@@ -192,6 +202,22 @@ public partial class RigidBody : Physical
 		base.Init();
 		Anchored = true;
 		CanCollide = true;
+	}
+
+	private void OnSleepingStateChanged()
+	{
+		if (IsAsleep && Root != null && Root.Network != null
+			&& NetTransformAuthority == Root.Network.LocalPeerID)
+		{
+			UpdateNetTransformReliable();
+
+			if (!Root.Network.IsServer)
+			{
+				SendNetTransformUnreliable(false);
+			}
+		}
+
+		UpdatePhysicsTick();
 	}
 
 	internal override void ApplyAddForce(Vector3 force, ForceModeEnum mode = ForceModeEnum.Force)
@@ -322,4 +348,6 @@ public partial class RigidBody : Physical
 		GDRigidBody.Freeze = to;
 		base.ApplyFreeze(to);
 	}
+	
+	internal override bool IsAsleep => !GDRigidBody.Freeze && GDRigidBody.Sleeping;
 }

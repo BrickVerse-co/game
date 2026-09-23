@@ -1191,7 +1191,7 @@ public partial class NetworkedObject : IScriptObject
 		bool syncToNet = true
 	)
 	{
-		PropertyChanged.Invoke(propertyName);
+		PropertyChanged.InvokeOne(propertyName);
 		if (syncToNet)
 			SyncPropToClients(propertyName);
 	}

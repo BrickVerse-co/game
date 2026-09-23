@@ -2,37 +2,43 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
-#if CREATOR
-using BrickVerse.Datamodel.Creator;
-#endif
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Scripting;
 using BrickVerse.Scripting.Datatypes;
 using BrickVerse.Scripting.Luau;
 using BrickVerse.Shared;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using Godot;
+#if CREATOR
+using BrickVerse.Datamodel.Creator;
+#endif
+
 
 namespace BrickVerse.Datamodel.Services;
 
 [Static("ScriptService")]
 public sealed partial class ScriptService : Instance
 {
-	private const DynamicallyAccessedMemberTypes DynamicallyAccessedTypes = DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicMethods;
+	private const DynamicallyAccessedMemberTypes DynamicallyAccessedTypes =
+		DynamicallyAccessedMemberTypes.PublicProperties
+		| DynamicallyAccessedMemberTypes.PublicMethods;
 
 	private static readonly Dictionary<CacheKey, MethodsCacheData> _methodsCache = [];
 	private static readonly Dictionary<CacheKey, MethodInfo?> _methodCache = [];
 	private static readonly Dictionary<CacheKey, PropertyInfo?> _propertyCache = [];
-	private static readonly Dictionary<Type, (MethodInfo, ScriptMetamethodAttribute)[]> _metaMethodCache = [];
+	private static readonly Dictionary<
+		Type,
+		(MethodInfo, ScriptMetamethodAttribute)[]
+	> _metaMethodCache = [];
 
 	// Dictionary of all proxies
 	public static readonly Dictionary<Type, Type> ProxyMap = new()
@@ -67,7 +73,8 @@ public sealed partial class ScriptService : Instance
 	// Dictionary of all enum exposed to scripting (populated by source generator)
 	public static readonly Dictionary<string, Type> EnumMap = new(ScriptEnumMapInitializer.EnumMap);
 
-	private readonly Dictionary<ScriptLanguagesEnum, IScriptLanguageProvider> _languageProviders = [];
+	private readonly Dictionary<ScriptLanguagesEnum, IScriptLanguageProvider> _languageProviders =
+	[];
 
 	public LogDispatcher Logger { get; private set; } = null!;
 
@@ -82,11 +89,7 @@ public sealed partial class ScriptService : Instance
 
 	public override void Init()
 	{
-		Logger = new()
-		{
-			Name = "LogDispatch",
-			Root = Root
-		};
+		Logger = new() { Name = "LogDispatch", Root = Root };
 		Logger.InitEntry();
 		Logger.SetNetworkParent(this);
 		base.Init();
@@ -121,7 +124,8 @@ public sealed partial class ScriptService : Instance
 			throw new Exception(script.ChosenLanguage + " is not provided");
 		}
 
-		if (string.IsNullOrWhiteSpace(script.Source)) return;
+		if (string.IsNullOrWhiteSpace(script.Source))
+			return;
 
 		script.Bytecode = provider.CompileSource(script.Source);
 	}
@@ -133,12 +137,18 @@ public sealed partial class ScriptService : Instance
 		script.LanguageProvider.Close(script);
 	}
 
-	private void RegisterLanguageProvider(ScriptLanguagesEnum lang, IScriptLanguageProvider provider)
+	private void RegisterLanguageProvider(
+		ScriptLanguagesEnum lang,
+		IScriptLanguageProvider provider
+	)
 	{
 		_languageProviders.Add(lang, provider);
 	}
 
-	public static Dictionary<string, IScriptObject?> GetStaticObjects(World root, Script? script = null)
+	public static Dictionary<string, IScriptObject?> GetStaticObjects(
+		World root,
+		Script? script = null
+	)
 	{
 		Dictionary<string, IScriptObject?> dir = new()
 		{
@@ -180,7 +190,11 @@ public sealed partial class ScriptService : Instance
 				dir.Add("Creator", CreatorService.Singleton);
 			}
 #endif
-			if (script.PermissionFlags.HasFlag(ScriptPermissionFlags.IORead | ScriptPermissionFlags.IOWrite))
+			if (
+				script.PermissionFlags.HasFlag(
+					ScriptPermissionFlags.IORead | ScriptPermissionFlags.IOWrite
+				)
+			)
 			{
 				dir.Add("IO", root.IO);
 			}
@@ -200,15 +214,20 @@ public sealed partial class ScriptService : Instance
 		return dir;
 	}
 
-
 #pragma warning disable IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
 	internal static PropertyInfo? GetScriptPropertyOfName(
 #pragma warning restore IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
 		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type,
 		string name,
-		bool compat = false)
+		bool compat = false
+	)
 	{
-		CacheKey cacheKey = new() { Type = type, Key = name, IsCompatibility = compat };
+		CacheKey cacheKey = new()
+		{
+			Type = type,
+			Key = name,
+			IsCompatibility = compat,
+		};
 
 		// Try to get from cache first
 		if (_propertyCache.TryGetValue(cacheKey, out PropertyInfo? cached))
@@ -216,26 +235,35 @@ public sealed partial class ScriptService : Instance
 
 		PropertyInfo? result = null;
 
-		PropertyInfo[] props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+		PropertyInfo[] props = type.GetProperties(
+			BindingFlags.Public
+				| BindingFlags.Instance
+				| BindingFlags.Static
+				| BindingFlags.FlattenHierarchy
+		);
 
 		if (!compat)
 		{
 			result = props.FirstOrDefault(p =>
-				p.IsDefined(typeof(ScriptPropertyAttribute), false) &&
-				p.Name == name);
+				p.IsDefined(typeof(ScriptPropertyAttribute), false) && p.Name == name
+			);
 		}
 		else
 		{
 			// try legacy properties first
 			// and then case-insensitive ScriptPropertyAttribute
-			result = props.FirstOrDefault(p =>
-			{
-				ScriptLegacyPropertyAttribute? legacyAttr = p.GetCustomAttribute<ScriptLegacyPropertyAttribute>();
-				return legacyAttr != null &&
-					   legacyAttr.PropertyName.Equals(name, StringComparison.OrdinalIgnoreCase);
-			}) ?? props.FirstOrDefault(p =>
-					p.IsDefined(typeof(ScriptPropertyAttribute), false) &&
-					p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+			result =
+				props.FirstOrDefault(p =>
+				{
+					ScriptLegacyPropertyAttribute? legacyAttr =
+						p.GetCustomAttribute<ScriptLegacyPropertyAttribute>();
+					return legacyAttr != null
+						&& legacyAttr.PropertyName.Equals(name, StringComparison.OrdinalIgnoreCase);
+				})
+				?? props.FirstOrDefault(p =>
+					p.IsDefined(typeof(ScriptPropertyAttribute), false)
+					&& p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
+				);
 		}
 
 		// Cache result
@@ -254,45 +282,65 @@ public sealed partial class ScriptService : Instance
 #pragma warning restore IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
 		bool compatibility,
 		string key,
-		[DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type)
+		[DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type
+	)
 	{
-
-		CacheKey cacheKey = new() { Type = type, Key = key, IsCompatibility = compatibility };
+		CacheKey cacheKey = new()
+		{
+			Type = type,
+			Key = key,
+			IsCompatibility = compatibility,
+		};
 
 		// Try to get from cache first
 		if (_methodCache.TryGetValue(cacheKey, out MethodInfo? cachedMethod))
 			return cachedMethod;
 
-		MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+		MethodInfo[] methods = type.GetMethods(
+			BindingFlags.Public
+				| BindingFlags.Instance
+				| BindingFlags.Static
+				| BindingFlags.FlattenHierarchy
+		);
 		MethodInfo? method = null;
 
 		if (compatibility)
 		{
 			// Find legacy method first
 
-			method = methods.FirstOrDefault(p =>
-				p.IsDefined(typeof(ScriptLegacyMethodAttribute)) &&
-				string.Equals(
-					p.GetCustomAttribute<ScriptLegacyMethodAttribute>()?.MethodName,
-					key,
-					StringComparison.CurrentCultureIgnoreCase)) ??
-
+			method =
+				methods.FirstOrDefault(p =>
+					p.IsDefined(typeof(ScriptLegacyMethodAttribute))
+					&& string.Equals(
+						p.GetCustomAttribute<ScriptLegacyMethodAttribute>()?.MethodName,
+						key,
+						StringComparison.CurrentCultureIgnoreCase
+					)
+				)
+				??
 				// If not found, fallback to ScriptMethodAttribute
 				methods.FirstOrDefault(p =>
-					p.IsDefined(typeof(ScriptMethodAttribute)) &&
-					(p.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase) ||
-					 string.Equals(
-						 p.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName,
-						 key,
-						 StringComparison.CurrentCultureIgnoreCase)));
+					p.IsDefined(typeof(ScriptMethodAttribute))
+					&& (
+						p.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase)
+						|| string.Equals(
+							p.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName,
+							key,
+							StringComparison.CurrentCultureIgnoreCase
+						)
+					)
+				);
 		}
 		else
 		{
 			// No compat, lookup normal method attribute
 			method = methods.FirstOrDefault(p =>
-				p.IsDefined(typeof(ScriptMethodAttribute)) &&
-				(p.Name == key ||
-				 p.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName == key));
+				p.IsDefined(typeof(ScriptMethodAttribute))
+				&& (
+					p.Name == key
+					|| p.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName == key
+				)
+			);
 		}
 
 		// Cache the result
@@ -304,30 +352,47 @@ public sealed partial class ScriptService : Instance
 #pragma warning disable IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
 	internal static (MethodInfo Method, ScriptMetamethodAttribute Attribute)[] GetMetamethods(
 #pragma warning restore IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
-			[DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type)
+		[DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type
+	)
 	{
 		// Try to get from cache first
-		if (_metaMethodCache.TryGetValue(type, out (MethodInfo, ScriptMetamethodAttribute)[]? cached))
+		if (
+			_metaMethodCache.TryGetValue(
+				type,
+				out (MethodInfo, ScriptMetamethodAttribute)[]? cached
+			)
+		)
 			return cached;
 
-		(MethodInfo, ScriptMetamethodAttribute)[] metamethods = [.. type
-			.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-			.Select(m => (Method: m, Attribute: m.GetCustomAttribute<ScriptMetamethodAttribute>(true)!))
-			.Where(t => t.Attribute != null)];
+		(MethodInfo, ScriptMetamethodAttribute)[] metamethods =
+		[
+			.. type.GetMethods(
+					BindingFlags.Public
+						| BindingFlags.Instance
+						| BindingFlags.Static
+						| BindingFlags.FlattenHierarchy
+				)
+				.Select(m =>
+					(Method: m, Attribute: m.GetCustomAttribute<ScriptMetamethodAttribute>(true)!)
+				)
+				.Where(t => t.Attribute != null),
+		];
 
 		_metaMethodCache.TryAdd(type, metamethods);
 
 		return metamethods;
 	}
 
-
 	internal static bool IsObjectConvertible(object arg, Type targetType)
 	{
-		if (targetType == typeof(object)) return true;
+		if (targetType == typeof(object))
+			return true;
 
 		Type argType = arg.GetType();
-		if (argType == targetType) return true;
-		if (targetType.IsAssignableFrom(argType)) return true;
+		if (argType == targetType)
+			return true;
+		if (targetType.IsAssignableFrom(argType))
+			return true;
 
 		// unwrap Nullable and check the inner type
 		Type underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
@@ -345,13 +410,17 @@ public sealed partial class ScriptService : Instance
 			return underlying == typeof(float)
 				|| underlying == typeof(int)
 				|| underlying == typeof(long)
-				|| underlying == typeof(short);
+				|| underlying == typeof(uint)
+				|| underlying == typeof(short)
+				|| underlying == typeof(uint)
+				|| underlying == typeof(ulong);
 
 		// Array target, check element type compatibility
 		if (targetType.IsArray && arg is object[] objArr)
 		{
 			Type? elemType = targetType.GetElementType();
-			if (elemType == null) return false;
+			if (elemType == null)
+				return false;
 			return objArr.All((element) => IsObjectConvertible(element, elemType));
 		}
 
@@ -366,10 +435,13 @@ public sealed partial class ScriptService : Instance
 		// Dictionary to dictionary
 		if (arg is IDictionary srcDict && typeof(IDictionary).IsAssignableFrom(targetType))
 		{
-			if (!targetType.IsGenericType) return true;
+			if (!targetType.IsGenericType)
+				return true;
 			Type[] ga = targetType.GetGenericArguments();
-			if (ga.Length != 2) return true;
-			Type keyType = ga[0], valType = ga[1];
+			if (ga.Length != 2)
+				return true;
+			Type keyType = ga[0],
+				valType = ga[1];
 			foreach (DictionaryEntry entry in srcDict)
 			{
 				if (entry.Key != null && !keyType.IsAssignableFrom(entry.Key.GetType()))
@@ -381,8 +453,16 @@ public sealed partial class ScriptService : Instance
 		}
 
 		// string to double
-		if (arg is string s && (underlying == typeof(int) || underlying == typeof(long)
-			|| underlying == typeof(short) || underlying == typeof(float) || underlying == typeof(double)))
+		if (
+			arg is string s
+			&& (
+				underlying == typeof(int)
+				|| underlying == typeof(long)
+				|| underlying == typeof(short)
+				|| underlying == typeof(float)
+				|| underlying == typeof(double)
+			)
+		)
 			return double.TryParse(s, out _);
 
 		// IConvertible fallback
@@ -409,7 +489,10 @@ public sealed partial class ScriptService : Instance
 				return CreateInstanceForType(targetType);
 			}
 
-			if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			if (
+				targetType.IsGenericType
+				&& targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>)
+			)
 			{
 				return CreateInstanceForType(targetType);
 			}
@@ -482,7 +565,10 @@ public sealed partial class ScriptService : Instance
 				List<object> convertedList = [];
 				for (int i = 0; i < objectArray.Length; i++)
 				{
-					object? convertedElement = ConvertToPropertyType(objectArray[i], targetElementType);
+					object? convertedElement = ConvertToPropertyType(
+						objectArray[i],
+						targetElementType
+					);
 					if (convertedElement != null)
 					{
 						convertedList.Add(convertedElement);
@@ -505,7 +591,8 @@ public sealed partial class ScriptService : Instance
 		{
 			if (underlayingType == typeof(string))
 			{
-				return double.IsFinite(doubleValue)
+				return
+					double.IsFinite(doubleValue)
 					&& doubleValue == Math.Truncate(doubleValue)
 					&& doubleValue >= long.MinValue
 					&& doubleValue <= long.MaxValue
@@ -530,7 +617,12 @@ public sealed partial class ScriptService : Instance
 		{
 			if (Globals.IsBetaBuild)
 			{
-				throw new Exception("Property type is invalid, tried to convert " + value.GetType().Name + " to " + targetType.Name);
+				throw new Exception(
+					"Property type is invalid, tried to convert "
+						+ value.GetType().Name
+						+ " to "
+						+ targetType.Name
+				);
 			}
 			else
 			{
@@ -541,22 +633,33 @@ public sealed partial class ScriptService : Instance
 
 	internal static bool IsAsyncMethod(MethodInfo method)
 	{
-		if (method.ReturnType == typeof(Task)) return true;
+		if (method.ReturnType == typeof(Task))
+			return true;
 		Type attType = typeof(AsyncStateMachineAttribute);
 
-		// Obtain the custom attribute for the method. 
-		// The value returned contains the StateMachineType property. 
-		// Null is returned if the attribute isn't present for the method. 
-		AsyncStateMachineAttribute? attrib = (AsyncStateMachineAttribute?)method.GetCustomAttribute(attType);
+		// Obtain the custom attribute for the method.
+		// The value returned contains the StateMachineType property.
+		// Null is returned if the attribute isn't present for the method.
+		AsyncStateMachineAttribute? attrib = (AsyncStateMachineAttribute?)
+			method.GetCustomAttribute(attType);
 
 		return attrib != null;
 	}
 
 #pragma warning disable IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
-	internal static MethodsCacheData ResolveMethods([DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type, string key, bool compatibility)
+	internal static MethodsCacheData ResolveMethods(
+		[DynamicallyAccessedMembers(DynamicallyAccessedTypes)] Type type,
+		string key,
+		bool compatibility
+	)
 #pragma warning restore IL2114 // 'DynamicallyAccessedMembersAttribute' on a type or one of its base types references a member which has 'DynamicallyAccessedMembersAttribute' requirements.
 	{
-		CacheKey cacheKey = new() { Type = type, Key = key, IsCompatibility = compatibility };
+		CacheKey cacheKey = new()
+		{
+			Type = type,
+			Key = key,
+			IsCompatibility = compatibility,
+		};
 
 		if (_methodsCache.TryGetValue(cacheKey, out MethodsCacheData cached))
 		{
@@ -565,34 +668,50 @@ public sealed partial class ScriptService : Instance
 
 		// Get all methods once
 		MethodInfo[] methods = type.GetMethods(
-			BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy
+			BindingFlags.Public
+				| BindingFlags.Instance
+				| BindingFlags.Static
+				| BindingFlags.FlattenHierarchy
 		);
 
 		IEnumerable<MethodInfo> methodInfos = compatibility
 			? methods.Where(m =>
-				m.IsDefined(typeof(ScriptLegacyMethodAttribute)) &&
-				m.GetCustomAttribute<ScriptLegacyMethodAttribute>()?.MethodName?.Equals(key, StringComparison.CurrentCultureIgnoreCase) == true)
+				m.IsDefined(typeof(ScriptLegacyMethodAttribute))
+				&& m.GetCustomAttribute<ScriptLegacyMethodAttribute>()
+					?.MethodName?.Equals(key, StringComparison.CurrentCultureIgnoreCase) == true
+			)
 			: methods.Where(m =>
-				m.Name.Equals(key) ||
-				m.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName == key);
+				m.Name.Equals(key)
+				|| m.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName == key
+			);
 
 		if (compatibility && !methodInfos.Any())
 		{
 			methodInfos = methods.Where(m =>
-				m.IsDefined(typeof(ScriptMethodAttribute)) &&
-				(m.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase) ||
-				 m.GetCustomAttribute<ScriptMethodAttribute>()?.MethodName?.Equals(key, StringComparison.CurrentCultureIgnoreCase) == true));
+				m.IsDefined(typeof(ScriptMethodAttribute))
+				&& (
+					m.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase)
+					|| m.GetCustomAttribute<ScriptMethodAttribute>()
+						?.MethodName?.Equals(key, StringComparison.CurrentCultureIgnoreCase) == true
+				)
+			);
 		}
 
 		bool convertParamsToGD = methodInfos.Any(m =>
-			m.GetCustomAttributes<ScriptMethodAttribute>().Any(attr => attr.ConvertParamsToGD == true) ||
-			m.GetCustomAttributes<ScriptLegacyMethodAttribute>().Any(attr => attr.ConvertParamsToGD == true));
+			m.GetCustomAttributes<ScriptMethodAttribute>()
+				.Any(attr => attr.ConvertParamsToGD == true)
+			|| m.GetCustomAttributes<ScriptLegacyMethodAttribute>()
+				.Any(attr => attr.ConvertParamsToGD == true)
+		);
 
 		bool getParamsAsFunction = methodInfos.Any(m =>
-			m.GetCustomAttributes<ScriptMethodAttribute>().Any(attr => attr.GetParamsAsFunction == true));
+			m.GetCustomAttributes<ScriptMethodAttribute>()
+				.Any(attr => attr.GetParamsAsFunction == true)
+		);
 
 		bool semiStatic = methodInfos.Any(m =>
-			m.GetCustomAttributes<ScriptMethodAttribute>().Any(attr => attr.SemiStatic == true));
+			m.GetCustomAttributes<ScriptMethodAttribute>().Any(attr => attr.SemiStatic == true)
+		);
 
 		MethodsCacheData cacheData = new()
 		{
@@ -607,7 +726,7 @@ public sealed partial class ScriptService : Instance
 		return cacheData;
 	}
 
-	// --------------- HANDLE INSTANCE FOR TYPES --------------- 
+	// --------------- HANDLE INSTANCE FOR TYPES ---------------
 	internal static object CreateInstanceForType(Type targetType)
 	{
 		// Instance types
@@ -629,7 +748,6 @@ public sealed partial class ScriptService : Instance
 			return 0;
 		if (targetType == typeof(string))
 			return string.Empty;
-
 		// Dictionary types
 		else if (targetType == typeof(Dictionary<string, int>))
 			return new Dictionary<string, int>();
@@ -642,7 +760,9 @@ public sealed partial class ScriptService : Instance
 		else if (targetType == typeof(Dictionary<int, string>))
 			return new Dictionary<int, string>();
 
-		throw new NotSupportedException($"INTERNAL BUG: CreateInstanceForType: Type {targetType} is not supported in AOT");
+		throw new NotSupportedException(
+			$"INTERNAL BUG: CreateInstanceForType: Type {targetType} is not supported in AOT"
+		);
 	}
 
 	internal static object ConvertListToArray(List<object> list, Type elementType)
@@ -672,11 +792,18 @@ public sealed partial class ScriptService : Instance
 		{
 			return list.Cast<long>().ToArray();
 		}
+		else if (elementType == typeof(uint))
+		{
+			return list.Cast<uint>().ToArray();
+		}
+		else if (elementType == typeof(ulong))
+		{
+			return list.Cast<ulong>().ToArray();
+		}
 		else if (elementType == typeof(object))
 		{
 			return list.ToArray();
 		}
-
 		// Instance types
 		else if (elementType == typeof(NetworkedObject))
 		{
@@ -712,7 +839,9 @@ public sealed partial class ScriptService : Instance
 			return arr;
 		}
 
-		throw new NotSupportedException($"INTERNAL BUG: ConvertListToArray: Array element type {elementType} is not supported in AOT");
+		throw new NotSupportedException(
+			$"INTERNAL BUG: ConvertListToArray: Array element type {elementType} is not supported in AOT"
+		);
 	}
 
 	public struct MethodsCacheData
@@ -731,9 +860,9 @@ public sealed partial class ScriptService : Instance
 
 		public readonly bool Equals(CacheKey other)
 		{
-			return Type == other.Type &&
-				   Key.Equals(other.Key, StringComparison.CurrentCultureIgnoreCase) &&
-				   IsCompatibility == other.IsCompatibility;
+			return Type == other.Type
+				&& Key.Equals(other.Key, StringComparison.CurrentCultureIgnoreCase)
+				&& IsCompatibility == other.IsCompatibility;
 		}
 
 		public override readonly bool Equals(object? obj)
@@ -743,11 +872,7 @@ public sealed partial class ScriptService : Instance
 
 		public override readonly int GetHashCode()
 		{
-			return HashCode.Combine(
-				Type,
-				Key,
-				IsCompatibility
-			);
+			return HashCode.Combine(Type, Key, IsCompatibility);
 		}
 	}
 }

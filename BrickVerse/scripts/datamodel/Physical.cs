@@ -218,10 +218,14 @@ public partial class Physical : Dynamic
 			}
 		}
 
-		if (!OverridePhysicsProcess)
-		{
-			SetPhysicsProcess(!_anchored);
-		}
+		UpdatePhysicsTick();
+	}
+
+	protected void UpdatePhysicsTick()
+	{
+		if (OverridePhysicsProcess) return;
+
+		SetPhysicsProcess(!_anchored && !IsAsleep);
 	}
 
 	protected virtual void ApplyFreeze(bool to) { }
@@ -330,6 +334,7 @@ public partial class Physical : Dynamic
 	internal bool OverrideCanCollide = false;
 	internal bool OverrideCanCollideTo = false;
 	internal bool OverridePhysicsProcess = false;
+	internal virtual bool IsAsleep => false;
 
 	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty]
 	public uint RayPassthrough
@@ -592,14 +597,23 @@ public partial class Physical : Dynamic
 
 	public override void PhysicsProcess(double delta)
 	{
+		bool asleep = IsAsleep;
 		UpdateTransformTick(delta);
 		if (Root == null || Root?.Network == null) { return; }
 
+		bool localSim = NetTransformAuthority == Root.Network.LocalPeerID || !ExistInNetwork;
+
 		// Sync if has authority and not anchored, if so. sync in interval
-		if (NetTransformAuthority == Root.Network.LocalPeerID && !Anchored)
+		if (NetTransformAuthority == Root.Network.LocalPeerID && !Anchored && !asleep)
 		{
 			UpdateNetTransform();
 		}
+
+		if (localSim && !Anchored && !asleep && this is Part part)
+		{
+			Root.Bridge?.MarkMoved(part);
+		}
+		
 		base.PhysicsProcess(delta);
 	}
 

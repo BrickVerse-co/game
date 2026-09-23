@@ -28,9 +28,10 @@ public class DefaultMovement : IPlayerMovement
 			float forwardStrength = Input.GetActionStrength("forward");
 			float backwardStrength = Input.GetActionStrength("backward");
 			forwardInput = forwardStrength - backwardStrength;
+			Vector3 vertical = Target.Vertical;
 
-			Quaternion verticalize = new(facingRot.Y, Target.Vertical);
-			moveDirection =
+			Quaternion verticalize = new(facingRot.Y, vertical);
+			moveDirection = (
 				verticalize
 				* (
 					(facingRot.Z * -forwardInput)
@@ -41,7 +42,10 @@ public class DefaultMovement : IPlayerMovement
 							- Input.GetActionStrength("leftward")
 						)
 					)
-				).LimitLength(1);
+				)
+			)
+				.Slide(vertical)
+				.LimitLength(1);
 
 			bool initialSprintOverride = Target.SprintOverride;
 			jump = Input.IsActionPressed("jump");
