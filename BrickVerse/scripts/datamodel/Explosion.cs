@@ -22,6 +22,18 @@ public partial class Explosion : Dynamic
 	private float _damage = 100000;
 	private bool _affectWelds;
 	private bool _useEffects = true;
+	private float _blastPressure = 500000f;
+	private float _destroyJointRadiusPercent = 1f;
+	private bool _visible = true;
+	private float _effectScale = 1f;
+	private float _soundVolume = 1f;
+	private float _soundPitch = 1f;
+	private bool _damageEnabled = true;
+	private bool _physicsEnabled = true;
+	private bool _destroyJoints = true;
+	private bool _autoDelete = true;
+	private float _lifetime = ExplosionParticleTimeSec;
+	private bool _hasExploded;
 
 	[Editable, ScriptProperty]
 	public float Radius
@@ -89,8 +101,141 @@ public partial class Explosion : Dynamic
 		}
 	}
 
+	[Editable, ScriptProperty]
+	public float BlastPressure
+	{
+		get => _blastPressure;
+		set
+		{
+			_blastPressure = Mathf.Max(0, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float DestroyJointRadiusPercent
+	{
+		get => _destroyJointRadiusPercent;
+		set
+		{
+			_destroyJointRadiusPercent = Mathf.Clamp(value, 0, 1);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool Visible
+	{
+		get => _visible;
+		set
+		{
+			_visible = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float EffectScale
+	{
+		get => _effectScale;
+		set
+		{
+			_effectScale = Mathf.Max(0, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float SoundVolume
+	{
+		get => _soundVolume;
+		set
+		{
+			_soundVolume = Mathf.Clamp(value, 0, 2);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float SoundPitch
+	{
+		get => _soundPitch;
+		set
+		{
+			_soundPitch = Mathf.Max(0.001f, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool DamageEnabled
+	{
+		get => _damageEnabled;
+		set
+		{
+			_damageEnabled = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool PhysicsEnabled
+	{
+		get => _physicsEnabled;
+		set
+		{
+			_physicsEnabled = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool DestroyJoints
+	{
+		get => _destroyJoints;
+		set
+		{
+			_destroyJoints = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool AutoDelete
+	{
+		get => _autoDelete;
+		set
+		{
+			_autoDelete = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float Lifetime
+	{
+		get => _lifetime;
+		set
+		{
+			_lifetime = Mathf.Max(0, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[ScriptProperty]
+	public bool HasExploded => _hasExploded;
+
 	[ScriptProperty]
 	public BVFunction? AffectPredicate { get; set; }
+
+	[ScriptProperty]
+	public BVSignal<Instance> Hit { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Exploded { get; private set; } = new();
+
+	[ScriptMethod]
+	public void Explode() => TryIgnite();
 
 	[ScriptProperty]
 	public BVSignal<Instance> Touched { get; private set; } = new();
@@ -121,15 +266,18 @@ public partial class Explosion : Dynamic
 
 	private async void TryIgnite()
 	{
-		if (!IsNetworkReady || IsHidden)
+		if (!IsNetworkReady || IsHidden || _hasExploded)
 			return;
+
+		_hasExploded = true;
+		Exploded.Invoke();
 
 		Sound? s = null;
 		if (_useEffects)
 		{
-			_particle.Scale = Vector3.One * _radius / 15;
-			_particle.Visible = true;
-			_particle.Emitting = true;
+			_particle.Scale = Vector3.One * (_radius / 15f) * _effectScale;
+			_particle.Visible = _visible;
+			_particle.Emitting = _visible;
 
 			if (!Root.Network.IsServer)
 			{
@@ -139,6 +287,8 @@ public partial class Explosion : Dynamic
 				s = New<Sound>();
 				s.Audio = audio;
 				s.PlayInWorld = true;
+				s.Volume = _soundVolume;
+				s.Pitch = _soundPitch;
 				s.Parent = this;
 				s.LocalPosition = Vector3.Zero;
 			}
@@ -149,6 +299,7 @@ public partial class Explosion : Dynamic
 		foreach (Instance item in overlaps)
 		{
 			Touched.Invoke(item);
+			Hit.Invoke(item);
 
 			if (AffectPredicate != null)
 			{
@@ -159,7 +310,7 @@ public partial class Explosion : Dynamic
 				}
 			}
 
-			if (item is Entity e && !item.IsDescendantOfClass("Accessory"))
+			if (_physicsEnabled && item is Entity e && !item.IsDescendantOfClass("Accessory"))
 			{
 				if (e.Anchored && !AffectAnchored && AffectPredicate == null)
 					continue;
@@ -184,12 +335,17 @@ public partial class Explosion : Dynamic
 					e.Anchored = false;
 				}
 
-				float forceMagnitude = Force * (1 - (distance / Radius));
+				float forceMagnitude =
+					(Force + BlastPressure * 0.001f) * Mathf.Max(0, 1 - (distance / Radius));
 				Vector3 force = direction * forceMagnitude / 100;
 
 				body.ApplyCentralImpulse(force);
 
-				if (_affectWelds)
+				if (
+					_affectWelds
+					&& _destroyJoints
+					&& distance <= Radius * _destroyJointRadiusPercent
+				)
 				{
 					foreach (Weld w in Weld.GetWeldsFor(e))
 					{
@@ -203,8 +359,10 @@ public partial class Explosion : Dynamic
 				if (plr.IsDead)
 					continue;
 
-				plr.TakeDamage(Damage);
-				AddPlrExplosionForce(plr);
+				if (_damageEnabled)
+					plr.TakeDamage(Damage);
+				if (_physicsEnabled)
+					AddPlrExplosionForce(plr);
 			}
 		}
 
@@ -214,9 +372,11 @@ public partial class Explosion : Dynamic
 			Callable.From(s.Play).CallDeferred();
 		}
 
-		await Globals.Singleton.WaitAsync(ExplosionParticleTimeSec);
-
-		Delete();
+		if (_autoDelete)
+		{
+			await Globals.Singleton.WaitAsync(_lifetime);
+			Delete();
+		}
 	}
 
 	private void AddPlrExplosionForce(Player player)
