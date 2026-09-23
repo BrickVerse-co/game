@@ -67,6 +67,7 @@ public partial class Dynamic : Instance
 		get { return GetGlobalPosition(); }
 		set
 		{
+			GrantServerMovementGrace(value, GetGlobalPosition());
 			SetGlobalPosition(value);
 			if (AutoUpdateNetTransform)
 			{
@@ -126,12 +127,25 @@ public partial class Dynamic : Instance
 		get { return GetLocalPosition(); }
 		set
 		{
+			GrantServerMovementGrace(value, GetLocalPosition());
 			SetLocalPosition(value);
 			if (AutoUpdateNetTransform)
 			{
 				UpdateNetTransformReliable();
 			}
 			OnPropertyChanged();
+		}
+	}
+
+	private void GrantServerMovementGrace(Vector3 next, Vector3 current)
+	{
+		if (this is Player player
+			&& Root?.Network?.IsServer == true
+			&& next.IsFinite()
+			&& current.IsFinite()
+			&& next.DistanceTo(current) > 20f)
+		{
+			player.antiCheatMovementGraceUntilMsec = Time.GetTicksMsec() + 3000;
 		}
 	}
 

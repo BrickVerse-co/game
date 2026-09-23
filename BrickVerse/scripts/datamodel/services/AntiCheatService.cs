@@ -20,13 +20,17 @@ internal sealed partial class AntiCheatService : Instance
 		public ulong LastSampleMsec;
 		public ulong GraceUntilMsec;
 		public int ConsecutiveSpeedSamples;
+		public int UnexplainedTeleports;
+		public ulong TeleportWindowUntilMsec;
 		public bool WasInGrace = true;
 		public bool EnforcementRequested;
 	}
 
 	private readonly Dictionary<Player, PlayerState> _states = [];
 	private const float SampleInterval = 0.2f;
-	private const float TeleportDistance = 120f;
+	private const float TeleportDistance = 180f;
+	private const ulong TeleportWindowMsec = 15_000;
+	private const ulong DiscontinuityGraceMsec = 1500;
 	private const float EnforcementScore = 12f;
 	private const ulong MovementWarmupMsec = 3000;
 	private const float MaximumWorldCoordinate = 10_000_000f;
@@ -91,8 +95,9 @@ internal sealed partial class AntiCheatService : Instance
 		{
 			Flag(player, state, "invalid numeric/position state", 12); return;
 		}
-		bool grace = !player.IsReady || player.IsDead || player.Anchored || player.IsSitting || player.teleporting;
 		ulong sampleTime = Time.GetTicksMsec();
+		bool grace = !player.IsReady || player.IsDead || player.Anchored || player.IsSitting
+			|| player.teleporting || sampleTime < player.antiCheatMovementGraceUntilMsec;
 		if (grace)
 		{
 			state.WasInGrace = true;
@@ -117,8 +122,22 @@ internal sealed partial class AntiCheatService : Instance
 		float distanceAllowance = (maximumSpeed * 2.15f + externalAllowance) * interval + 2.5f + Math.Min(player.NetworkPing, 500) * 0.008f;
 		if (displacement.Length() > TeleportDistance)
 		{
-			Flag(player, state, "teleport", 5);
+			// A single discontinuity is commonly a portal, streaming correction, or
+			// burst of delayed replication. Re-baseline immediately and only score a
+			// pattern of repeated, unexplained long-distance jumps.
+			if (sampleTime > state.TeleportWindowUntilMsec)
+				state.UnexplainedTeleports = 0;
+			state.TeleportWindowUntilMsec = sampleTime + TeleportWindowMsec;
+			state.UnexplainedTeleports++;
+			if (state.UnexplainedTeleports >= 3)
+			{
+				Flag(player, state, "repeated unexplained teleport", 2.5f);
+				state.UnexplainedTeleports = 0;
+			}
+			state.GraceUntilMsec = sampleTime + DiscontinuityGraceMsec;
 			state.ConsecutiveSpeedSamples = 0;
+			ResetMotionState(state, position, velocity);
+			return;
 		}
 		else if (horizontalDistance > distanceAllowance)
 		{
@@ -152,7 +171,7 @@ internal sealed partial class AntiCheatService : Instance
 			if (player.CharBody3D.IsOnWall() && horizontalDistance > distanceAllowance * 0.8f) Flag(player, state, "collision bypass/noclip pattern", 0.75f);
 		}
 
-		state.Score = Math.Max(0, state.Score - interval * 0.12f);
+		state.Score = Math.Max(0, state.Score - interval * 0.35f);
 		state.Position = position; state.Velocity = velocity; state.LastSampleMsec = Time.GetTicksMsec();
 	}
 

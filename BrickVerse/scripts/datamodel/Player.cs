@@ -66,6 +66,9 @@ public sealed partial class Player : NPC
 	private double _afkTimer;
 
 	internal bool teleporting = false;
+	// Server-authored position changes (spawn placement, portals, admin commands,
+	// scripted cutscenes, etc.) must not be interpreted as client movement.
+	internal ulong antiCheatMovementGraceUntilMsec;
 
 	private BubbleChat _bubbleChat = null!;
 	private RemoteTransform3D _remoteCamAttach = null!;
