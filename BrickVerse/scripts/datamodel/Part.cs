@@ -2,10 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Shared;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -26,6 +27,8 @@ public partial class Part : Entity
 	private Node3D _nRemoteAt = null!; // Remote collider proxy
 
 	internal Shape3D ColliderShape => _collider.Shape;
+	public event Action? ShapeChanged;
+
 	internal override (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
 	{
 		(Godot.Mesh mesh, _) = Globals.LoadShape(_shape.ToString());
@@ -82,10 +85,7 @@ public partial class Part : Entity
 
 		if (OS.HasFeature("debug-face"))
 		{
-			RayCast3D raycast = new()
-			{
-				TargetPosition = new(0, 0, 2)
-			};
+			RayCast3D raycast = new() { TargetPosition = new(0, 0, 2) };
 			GDNode3D.AddChild(raycast);
 		}
 
@@ -133,6 +133,7 @@ public partial class Part : Entity
 	internal override void OnNodeSizeChanged(Vector3 newSize)
 	{
 		UpdateMeshSize();
+		ShapeChanged?.Invoke();
 		base.OnNodeSizeChanged(newSize);
 	}
 
@@ -167,6 +168,7 @@ public partial class Part : Entity
 
 			_shape = value;
 
+			ShapeChanged?.Invoke();
 			UpdateShape();
 			UpdateNegateHighlight();
 			OnPropertyChanged();
@@ -233,17 +235,14 @@ public partial class Part : Entity
 
 	internal void UpdateShape()
 	{
-		if (_collider == null) return;
+		if (_collider == null)
+			return;
 		(Godot.Mesh mesh, Shape3D shape) = Globals.LoadShape(_shape.ToString());
 		if (_isSeparateMesh)
 		{
 			_mesh?.Mesh = mesh;
-			_collider.Shape = shape;
 		}
-		else
-		{
-			_collider.Shape = shape;
-		}
+		_collider.Shape = shape;
 		PostCollisionShapeUpdate(_collider);
 	}
 
@@ -281,7 +280,8 @@ public partial class Part : Entity
 
 	private void ApplyVisualEffectParameters()
 	{
-		if (_mesh == null || _shaderEffect == null) return;
+		if (_mesh == null || _shaderEffect == null)
+			return;
 		_mesh.SetInstanceShaderParameter("bv_effect", (int)_shaderEffect.Effect);
 		_mesh.SetInstanceShaderParameter("bv_color", _color);
 		_mesh.SetInstanceShaderParameter("bv_effect_color", _shaderEffect.EffectColor);
@@ -298,14 +298,22 @@ public partial class Part : Entity
 		Instance? current = this;
 		while (current != null && effect == null)
 		{
-			effect = current.Children.OfType<ShaderEffect>()
-				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			effect = current
+				.Children.OfType<ShaderEffect>()
+				.FirstOrDefault(candidate =>
+					candidate != ignored && candidate.Enabled && !candidate.IsDeleted
+				);
 			current = current.Parent;
 		}
 
-		if (_shaderEffect == effect) { ApplyVisualEffectParameters(); return; }
+		if (_shaderEffect == effect)
+		{
+			ApplyVisualEffectParameters();
+			return;
+		}
 		_shaderEffect = effect;
-		if (effect != null && !_isSeparateMesh) CreateSeparateMesh();
+		if (effect != null && !_isSeparateMesh)
+			CreateSeparateMesh();
 		UpdateMaterial();
 	}
 
@@ -315,20 +323,26 @@ public partial class Part : Entity
 		Instance? current = this;
 		while (current != null && appearance == null)
 		{
-			appearance = current.Children.OfType<SurfaceAppearance>()
-				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			appearance = current
+				.Children.OfType<SurfaceAppearance>()
+				.FirstOrDefault(candidate =>
+					candidate != ignored && candidate.Enabled && !candidate.IsDeleted
+				);
 			current = current.Parent;
 		}
 
 		_surfaceAppearance = appearance;
-		if (appearance != null && !_isSeparateMesh) CreateSeparateMesh();
+		if (appearance != null && !_isSeparateMesh)
+			CreateSeparateMesh();
 		UpdateMaterial();
 	}
 
 	private Material ResolveVisualMaterial()
 	{
-		if (_shaderEffect != null) return ShaderEffect.SharedMaterial;
-		if (_surfaceAppearance != null) return _surfaceAppearance.Material;
+		if (_shaderEffect != null)
+			return ShaderEffect.SharedMaterial;
+		if (_surfaceAppearance != null)
+			return _surfaceAppearance.Material;
 		return Globals.LoadMaterial(_material, GetVisualColor(Color).A);
 	}
 
@@ -336,8 +350,22 @@ public partial class Part : Entity
 	{
 		if (_isSeparateMesh)
 		{
-			_mesh?.CastShadow = _castShadows ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off;
+			_mesh?.CastShadow = _castShadows
+				? GeometryInstance3D.ShadowCastingSetting.On
+				: GeometryInstance3D.ShadowCastingSetting.Off;
 		}
+	}
+
+	private Aabb PointsToBound(Vector3[] points, Basis transform)
+	{
+		Aabb bound = new(Vector3.Zero, Vector3.Zero);
+
+		foreach (Vector3 point in points)
+		{
+			bound = bound.Expand(transform * point);
+		}
+
+		return bound;
 	}
 
 	public override Aabb GetSelfBound()
@@ -347,24 +375,77 @@ public partial class Part : Entity
 		Vector3 localSize = Size;
 		Vector3 he = localSize / 2f;
 
-		Vector3 basisScale = t.Basis.Scale;
-
-		// get pure rotation matrix
-		Basis rot = t.Basis;
-		rot.X /= basisScale.X;
-		rot.Y /= basisScale.Y;
-		rot.Z /= basisScale.Z;
-
-		// some dark magic
-		Vector3 worldExtents = new(
-			Mathf.Abs(rot.X.X) * he.X + Mathf.Abs(rot.Y.X) * he.Y + Mathf.Abs(rot.Z.X) * he.Z,
-			Mathf.Abs(rot.X.Y) * he.X + Mathf.Abs(rot.Y.Y) * he.Y + Mathf.Abs(rot.Z.Y) * he.Z,
-			Mathf.Abs(rot.X.Z) * he.X + Mathf.Abs(rot.Y.Z) * he.Y + Mathf.Abs(rot.Z.Z) * he.Z
-		);
+		Basis rot = t.Basis.Orthonormalized();
 
 		Vector3 center = t.Origin;
 
-		return new(center - worldExtents, worldExtents * 2);
+		// Calculate the bounding box for the part based on its shape and size.
+		Aabb bound;
+		switch (Shape)
+		{
+			case ShapeEnum.Wedge:
+				bound = PointsToBound(
+					[
+						new(1, -1, 1),
+						new(-1, 1, 1),
+						new(-1, -1, 1),
+						new(1, -1, -1),
+						new(-1, 1, -1),
+						new(-1, -1, -1),
+					],
+					rot.ScaledLocal(he)
+				);
+				bound.Position += center;
+				return bound;
+			case ShapeEnum.Corner:
+				bound = PointsToBound(
+					[
+						new(1, -1, 1),
+						new(-1, -1, 1),
+						new(1, -1, -1),
+						new(-1, -1, -1),
+						new(-1, 1, -1),
+					],
+					rot.ScaledLocal(he)
+				);
+				bound.Position += center;
+				return bound;
+			case ShapeEnum.Concave:
+				bound = PointsToBound(
+					[
+						new(1, -1, -1),
+						new(1, 1, 1),
+						new(1, -1, 1),
+						new(-1, -1, -1),
+						new(-1, 1, 1),
+						new(-1, -1, 1),
+					],
+					rot.ScaledLocal(he)
+				);
+				bound.Position += center;
+				return bound;
+			case ShapeEnum.ConcaveCorner:
+				bound = PointsToBound(
+					[new(1, -1, -1), new(1, -1, 1), new(-1, -1, -1), new(-1, 1, 1), new(-1, -1, 1)],
+					rot.ScaledLocal(he)
+				);
+				bound.Position += center;
+				return bound;
+			case ShapeEnum.TriangleCorner:
+			case ShapeEnum.TriangleConcaveCorner:
+				bound = PointsToBound(
+					[new(1, -1, 1), new(-1, -1, -1), new(-1, 1, 1), new(-1, -1, 1)],
+					rot.ScaledLocal(he)
+				);
+				bound.Position += center;
+				return bound;
+			case ShapeEnum.Brick:
+			case ShapeEnum.Truss:
+			case ShapeEnum.Frame:
+			default: // Sphere Cylinder Cone Bevel Octant Torus BeveledCorner are currently unimplemented
+				Vector3 worldExtents = rot.X.Abs() * he.X + rot.Y.Abs() * he.Y + rot.Z.Abs() * he.Z;
+				return new(center - worldExtents, worldExtents * 2);
+		}
 	}
 
 	[ScriptEnum("PartShape")]
@@ -385,10 +466,12 @@ public partial class Part : Entity
 		BeveledCorner = 12,
 		ConcaveCorner = 13,
 		TriangleCorner = 14,
-		TriangleConcaveCorner = 15
+		TriangleConcaveCorner = 15,
 	}
 
-	[Attributes.Obsolete("This should not be used, it's here only for compatibility with legacy scripts.")]
+	[Attributes.Obsolete(
+		"This should not be used, it's here only for compatibility with legacy scripts."
+	)]
 	public enum LegacyShapeEnum
 	{
 		Brick = 0,
@@ -428,7 +511,6 @@ public partial class Part : Entity
 		Snow,
 		Stone,
 		Stud,
-		Wood
+		Wood,
 	}
-
 }
