@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Enums;
 using BrickVerse.Scripting;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -39,10 +39,7 @@ public sealed partial class TweenService : Instance
 	[ScriptMethod]
 	public TweenObject NewTween()
 	{
-		TweenObject tween = new()
-		{
-			tween = GDNode.CreateTween()
-		};
+		TweenObject tween = new() { tween = GDNode.CreateTween() };
 		tween.Init();
 		return tween;
 	}
@@ -207,26 +204,53 @@ public sealed partial class TweenService : Instance
 		tw.SetEase(ease);
 	}
 
-
 	[ScriptLegacyMethod("TweenPosition")]
-	public int CompatTweenPosition(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenPosition(
+		Dynamic target,
+		Vector3 destination,
+		float time,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
-		return CompatTweenVector3(target.Position, destination, time, new((v3) =>
-		{
-			target.Position = (Vector3)v3[0]!;
-		}), tweenType, callOnComplete);
+		return CompatTweenVector3(
+			target.Position,
+			destination,
+			time,
+			new(
+				(v3) =>
+				{
+					target.Position = (Vector3)v3[0]!;
+				}
+			),
+			tweenType,
+			callOnComplete
+		);
 	}
 
 	[ScriptLegacyMethod("TweenRotation")]
-	public int CompatTweenRotation(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenRotation(
+		Dynamic target,
+		Vector3 destination,
+		float time,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
 
-		tw.TweenMethod(Callable.From((Quaternion val) =>
-		{
-			target.GDNode3D.Quaternion = val;
-		}), target.GDNode3D.Quaternion, Quaternion.FromEuler(destination.FlipEuler()), time);
+		tw.TweenMethod(
+			Callable.From(
+				(Quaternion val) =>
+				{
+					target.GDNode3D.Quaternion = val;
+				}
+			),
+			target.GDNode3D.Quaternion,
+			Quaternion.FromEuler(destination.FlipEuler()),
+			time
+		);
 
 		void callComplete()
 		{
@@ -240,24 +264,53 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenSize")]
-	public int CompatTweenSize(Dynamic target, Vector3 destination, float time, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenSize(
+		Dynamic target,
+		Vector3 destination,
+		float time,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
-		return CompatTweenVector3(target.Size, destination, time, new((v3) =>
-		{
-			target.Size = (Vector3)v3[0]!;
-		}), tweenType, callOnComplete);
+		return CompatTweenVector3(
+			target.Size,
+			destination,
+			time,
+			new(
+				(v3) =>
+				{
+					target.Size = (Vector3)v3[0]!;
+				}
+			),
+			tweenType,
+			callOnComplete
+		);
 	}
 
 	[ScriptLegacyMethod("TweenNumber")]
-	public int CompatTweenNumber(float from, float to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenNumber(
+		float from,
+		float to,
+		float time,
+		BVCallback? callback,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
 
-		tw.TweenMethod(Callable.From((float val) =>
-		{
-			callback?.Invoke(val);
-		}), from, to, time);
+		tw.TweenMethod(
+			Callable.From(
+				(float val) =>
+				{
+					callback?.Invoke(val);
+				}
+			),
+			from,
+			to,
+			time
+		);
 
 		void callComplete()
 		{
@@ -271,15 +324,29 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenColor")]
-	public int CompatTweenColor(Color from, Color to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenColor(
+		Color from,
+		Color to,
+		float time,
+		BVCallback? callback,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
 
-		tw.TweenMethod(Callable.From((Color val) =>
-		{
-			callback?.Invoke(val);
-		}), from, to, time);
+		tw.TweenMethod(
+			Callable.From(
+				(Color val) =>
+				{
+					callback?.Invoke(val);
+				}
+			),
+			from,
+			to,
+			time
+		);
 
 		void callComplete()
 		{
@@ -293,15 +360,29 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenVector3")]
-	public int CompatTweenVector3(Vector3 from, Vector3 to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenVector3(
+		Vector3 from,
+		Vector3 to,
+		float time,
+		BVCallback? callback,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
 
-		tw.TweenMethod(Callable.From((Vector3 val) =>
-		{
-			callback?.Invoke(val);
-		}), from, to, time);
+		tw.TweenMethod(
+			Callable.From(
+				(Vector3 val) =>
+				{
+					callback?.Invoke(val);
+				}
+			),
+			from,
+			to,
+			time
+		);
 
 		void callComplete()
 		{
@@ -315,15 +396,29 @@ public sealed partial class TweenService : Instance
 	}
 
 	[ScriptLegacyMethod("TweenVector2")]
-	public int CompatTweenVector2(Vector2 from, Vector2 to, float time, BVCallback? callback, LeanTweenType tweenType = LeanTweenType.linear, BVCallback? callOnComplete = null)
+	public int CompatTweenVector2(
+		Vector2 from,
+		Vector2 to,
+		float time,
+		BVCallback? callback,
+		LeanTweenType tweenType = LeanTweenType.linear,
+		BVCallback? callOnComplete = null
+	)
 	{
 		Tween tw = GDNode.CreateTween();
 		InitLeanEase(tw, tweenType);
 
-		tw.TweenMethod(Callable.From((Vector2 val) =>
-		{
-			callback?.Invoke(val);
-		}), from, to, time);
+		tw.TweenMethod(
+			Callable.From(
+				(Vector2 val) =>
+				{
+					callback?.Invoke(val);
+				}
+			),
+			from,
+			to,
+			time
+		);
 
 		void callComplete()
 		{
@@ -339,7 +434,10 @@ public sealed partial class TweenService : Instance
 	[ScriptLegacyMethod("Cancel")]
 	public void CompatCancel(int id, bool _ = false)
 	{
-		if (_legacyTweenIDs.TryGetValue(id, out WeakReference<Tween>? wtw) && wtw.TryGetTarget(out var tw))
+		if (
+			_legacyTweenIDs.TryGetValue(id, out WeakReference<Tween>? wtw)
+			&& wtw.TryGetTarget(out var tw)
+		)
 		{
 			tw.Stop();
 		}
@@ -386,7 +484,6 @@ public sealed partial class TweenService : Instance
 			}
 		}
 
-
 		[ScriptProperty]
 		public float SpeedScale
 		{
@@ -405,14 +502,19 @@ public sealed partial class TweenService : Instance
 			set
 			{
 				_direction = value;
-				tween.SetEase(value switch
-				{
-					TweenDirectionEnum.In => Tween.EaseType.In,
-					TweenDirectionEnum.Out => Tween.EaseType.Out,
-					TweenDirectionEnum.InOut => Tween.EaseType.InOut,
-					TweenDirectionEnum.OutIn => Tween.EaseType.OutIn,
-					_ => throw new ArgumentOutOfRangeException(nameof(value), "Tween direction is out of range"),
-				});
+				tween.SetEase(
+					value switch
+					{
+						TweenDirectionEnum.In => Tween.EaseType.In,
+						TweenDirectionEnum.Out => Tween.EaseType.Out,
+						TweenDirectionEnum.InOut => Tween.EaseType.InOut,
+						TweenDirectionEnum.OutIn => Tween.EaseType.OutIn,
+						_ => throw new ArgumentOutOfRangeException(
+							nameof(value),
+							"Tween direction is out of range"
+						),
+					}
+				);
 			}
 		}
 
@@ -423,35 +525,54 @@ public sealed partial class TweenService : Instance
 			set
 			{
 				_transition = value;
-				tween.SetTrans(value switch
-				{
-					TweenTransitionEnum.Linear => Tween.TransitionType.Linear,
-					TweenTransitionEnum.Sine => Tween.TransitionType.Sine,
-					TweenTransitionEnum.Quint => Tween.TransitionType.Quint,
-					TweenTransitionEnum.Quart => Tween.TransitionType.Quart,
-					TweenTransitionEnum.Quad => Tween.TransitionType.Quad,
-					TweenTransitionEnum.Expo => Tween.TransitionType.Expo,
-					TweenTransitionEnum.Elastic => Tween.TransitionType.Elastic,
-					TweenTransitionEnum.Cubic => Tween.TransitionType.Cubic,
-					TweenTransitionEnum.Circ => Tween.TransitionType.Circ,
-					TweenTransitionEnum.Bounce => Tween.TransitionType.Bounce,
-					TweenTransitionEnum.Back => Tween.TransitionType.Back,
-					TweenTransitionEnum.Spring => Tween.TransitionType.Spring,
-					_ => throw new ArgumentOutOfRangeException(nameof(value), "Tween transition is out of range"),
-				});
+				tween.SetTrans(
+					value switch
+					{
+						TweenTransitionEnum.Linear => Tween.TransitionType.Linear,
+						TweenTransitionEnum.Sine => Tween.TransitionType.Sine,
+						TweenTransitionEnum.Quint => Tween.TransitionType.Quint,
+						TweenTransitionEnum.Quart => Tween.TransitionType.Quart,
+						TweenTransitionEnum.Quad => Tween.TransitionType.Quad,
+						TweenTransitionEnum.Expo => Tween.TransitionType.Expo,
+						TweenTransitionEnum.Elastic => Tween.TransitionType.Elastic,
+						TweenTransitionEnum.Cubic => Tween.TransitionType.Cubic,
+						TweenTransitionEnum.Circ => Tween.TransitionType.Circ,
+						TweenTransitionEnum.Bounce => Tween.TransitionType.Bounce,
+						TweenTransitionEnum.Back => Tween.TransitionType.Back,
+						TweenTransitionEnum.Spring => Tween.TransitionType.Spring,
+						_ => throw new ArgumentOutOfRangeException(
+							nameof(value),
+							"Tween transition is out of range"
+						),
+					}
+				);
 			}
 		}
 
-		[ScriptProperty] public bool IsRunning => tween.IsRunning();
-		[ScriptProperty] public double ElapsedTime => tween.GetTotalElapsedTime();
-		[ScriptProperty] public BVSignal Finished { get; private set; } = new();
-		[ScriptProperty] public BVSignal Canceled { get; private set; } = new();
+		[ScriptProperty]
+		public bool IsRunning => tween.IsRunning();
+
+		[ScriptProperty]
+		public double ElapsedTime => tween.GetTotalElapsedTime();
+
+		[ScriptProperty]
+		public BVSignal Finished { get; private set; } = new();
+
+		[ScriptProperty]
+		public BVSignal Canceled { get; private set; } = new();
 
 		public void Init()
 		{
 			Looped = false;
 			Parallel = true;
-			tween.Finished += () => { Finished.Invoke(); };
+			SpeedScale = 1.0f;
+			Direction = TweenDirectionEnum.InOut;
+			Transition = TweenTransitionEnum.Linear;
+
+			tween.Finished += () =>
+			{
+				Finished.Invoke();
+			};
 		}
 
 		[ScriptMethod]
@@ -469,75 +590,141 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void TweenPosition(Dynamic target, Vector3 destination, float time)
+		public TweenObject TweenPosition(Dynamic target, Vector3 destination, float time)
 		{
-			TweenVector3(target.Position, destination, time, new((v3) =>
-			{
-				target.Position = (Vector3)v3[0]!;
-			}));
+			return TweenVector3(
+				target.Position,
+				destination,
+				time,
+				new(
+					(v3) =>
+					{
+						target.Position = (Vector3)v3[0]!;
+					}
+				)
+			);
 		}
 
 		[ScriptMethod]
-		public void TweenRotation(Dynamic target, Vector3 destination, float time)
+		public TweenObject TweenRotation(Dynamic target, Vector3 destination, float time)
 		{
-			TweenQuaternion(target.Quaternion, Quaternion.FromEuler(destination.DegToRad()), time, new((q) =>
-			{
-				target.Quaternion = (Quaternion)q[0]!;
-			}));
+			return TweenQuaternion(
+				target.Quaternion,
+				Quaternion.FromEuler(destination.DegToRad()),
+				time,
+				new(
+					(q) =>
+					{
+						target.Quaternion = (Quaternion)q[0]!;
+					}
+				)
+			);
 		}
 
 		[ScriptMethod]
-		public void TweenSize(Dynamic target, Vector3 destination, float time)
+		public TweenObject TweenSize(Dynamic target, Vector3 destination, float time)
 		{
-			TweenVector3(target.Size, destination, time, new((v3) =>
-			{
-				target.Size = (Vector3)v3[0]!;
-			}));
+			return TweenVector3(
+				target.Size,
+				destination,
+				time,
+				new(
+					(v3) =>
+					{
+						target.Size = (Vector3)v3[0]!;
+					}
+				)
+			);
 		}
 
 		[ScriptMethod]
-		public void TweenColor(Color from, Color to, float time, BVCallback callback)
+		public TweenObject TweenColor(Color from, Color to, float time, BVCallback callback)
 		{
-			tween.TweenMethod(Callable.From((Color val) =>
-			{
-				callback.Invoke(val);
-			}), from, to, time);
+			tween.TweenMethod(
+				Callable.From(
+					(Color val) =>
+					{
+						callback.Invoke(val);
+					}
+				),
+				from,
+				to,
+				time
+			);
+			return this;
 		}
 
 		[ScriptMethod]
-		public void TweenNumber(float from, float to, float time, BVCallback callback)
+		public TweenObject TweenNumber(float from, float to, float time, BVCallback callback)
 		{
-			tween.TweenMethod(Callable.From((float val) =>
-			{
-				callback.Invoke(val);
-			}), from, to, time);
+			tween.TweenMethod(
+				Callable.From(
+					(float val) =>
+					{
+						callback.Invoke(val);
+					}
+				),
+				from,
+				to,
+				time
+			);
+			return this;
 		}
 
 		[ScriptMethod]
-		public void TweenVector2(Vector2 from, Vector2 to, float time, BVCallback callback)
+		public TweenObject TweenVector2(Vector2 from, Vector2 to, float time, BVCallback callback)
 		{
-			tween.TweenMethod(Callable.From((Vector2 val) =>
-			{
-				callback.Invoke(val);
-			}), from, to, time);
+			tween.TweenMethod(
+				Callable.From(
+					(Vector2 val) =>
+					{
+						callback.Invoke(val);
+					}
+				),
+				from,
+				to,
+				time
+			);
+			return this;
 		}
 
 		[ScriptMethod]
-		public void TweenVector3(Vector3 from, Vector3 to, float time, BVCallback callback)
+		public TweenObject TweenVector3(Vector3 from, Vector3 to, float time, BVCallback callback)
 		{
-			tween.TweenMethod(Callable.From((Vector3 val) =>
-			{
-				callback.Invoke(val);
-			}), from, to, time);
+			tween.TweenMethod(
+				Callable.From(
+					(Vector3 val) =>
+					{
+						callback.Invoke(val);
+					}
+				),
+				from,
+				to,
+				time
+			);
+			return this;
 		}
 
 		[ScriptMethod]
-		public void TweenQuaternion(Quaternion from, Quaternion to, float time, BVCallback callback)
+		public TweenObject TweenQuaternion(
+			Quaternion from,
+			Quaternion to,
+			float time,
+			BVCallback callback
+		)
 		{
-			tween.TweenMethod(Callable.From((Quaternion val) =>
-			{
-				callback.Invoke(val);
-			}), from, to, time);
+			tween.TweenMethod(
+				Callable.From(
+					(Quaternion val) =>
+					{
+						callback.Invoke(val);
+					}
+				),
+				from,
+				to,
+				time
+			);
+			return this;
 		}
 
 		[ScriptMethod]
@@ -545,7 +732,6 @@ public sealed partial class TweenService : Instance
 		{
 			tween.Play();
 		}
-
 
 		[ScriptMethod]
 		public void Pause()
@@ -560,9 +746,10 @@ public sealed partial class TweenService : Instance
 		}
 
 		[ScriptMethod]
-		public void Interval(float sec)
+		public TweenObject Interval(float sec)
 		{
 			tween.TweenInterval(sec);
+			return this;
 		}
 
 		[ScriptMethod]
@@ -598,7 +785,7 @@ public sealed partial class TweenService : Instance
 		Circ,
 		Bounce,
 		Back,
-		Spring
+		Spring,
 	}
 
 	[ScriptEnum]
@@ -607,6 +794,6 @@ public sealed partial class TweenService : Instance
 		In,
 		Out,
 		InOut,
-		OutIn
+		OutIn,
 	}
 }
