@@ -44,6 +44,7 @@ public partial class Physical : Dynamic
 	private uint _collisionLayers = 1, _collisionMask = 1;
 	private Vector3 _velocity = Vector3.Zero;
 	private Vector3 _angularVelocity = Vector3.Zero;
+	private uint _rayPassthrough = 0;
 
 	private bool _netEnsureTouchArea = false;
 
@@ -329,6 +330,17 @@ public partial class Physical : Dynamic
 	internal bool OverrideCanCollide = false;
 	internal bool OverrideCanCollideTo = false;
 	internal bool OverridePhysicsProcess = false;
+
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty]
+	public uint RayPassthrough
+	{
+		get => _rayPassthrough;
+		set
+		{
+			_rayPassthrough = value;
+			OnPropertyChanged();
+		}
+	}
 
 	public override void HiddenChanged(bool to)
 	{

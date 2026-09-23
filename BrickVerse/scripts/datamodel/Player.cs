@@ -800,7 +800,8 @@ public sealed partial class Player : NPC
 		}
 
 		Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(
-			Root.Input.MousePosition
+			Root.Input.MousePosition,
+			passthroughMask: 1 << 0
 		);
 
 		if (ray.HasValue && ray.Value.Instance is Physical p)
@@ -941,7 +942,8 @@ public sealed partial class Player : NPC
 		if (@event.IsActionPressed("activate"))
 		{
 			Environment.RayResult? ray = Root.Environment.CurrentCamera?.ScreenPointToRay(
-				Root.Input.MousePosition
+				Root.Input.MousePosition,
+				passthroughMask: 1 << 1
 			);
 			if (ray.HasValue && ray.Value.Instance is Physical p)
 			{
@@ -1421,13 +1423,13 @@ public sealed partial class Player : NPC
 		Default,
 		Scripted,
 	}
-	
+
 	[ScriptEnum]
 	public enum PlayerRotationModeEnum
 	{
 		Automatic, // Default value (works how it did before), automatically switches between rotating to movement or facing camera when Ctrl Locked or in First Person
 		CameraLocked,
 		Movement,
-		MovementCtrlLockOnly // separate version that still locks in First Person, will only rotate to movement when Ctrl Locked
+		MovementCtrlLockOnly, // separate version that still locks in First Person, will only rotate to movement when Ctrl Locked
 	}
 }
