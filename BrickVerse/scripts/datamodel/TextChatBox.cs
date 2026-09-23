@@ -12,7 +12,7 @@ using BrickVerse.Networking;
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
-public partial class VoiceBox : Part
+public partial class TextChatBox : Dynamic
 {
 	private BubbleText _bubbleText = null!;
 	public const string BubbleChatScene = "res://scenes/client/spatial/chat/bubble_text.tscn";

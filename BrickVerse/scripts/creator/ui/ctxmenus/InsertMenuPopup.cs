@@ -186,7 +186,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"Grabbable",
 			"Weld",
 		},
-		[new() { Title = "Gizmos" }] = new() { "Marker3D", "VoiceBox" },
+		[new() { Title = "Gizmos" }] = new() { "Marker3D", "TextChatBox" },
 	};
 
 	[Export]

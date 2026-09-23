@@ -18,7 +18,7 @@ public partial class BubbleText : Node3D
 	private readonly List<BubbleItem> _activeBubbles = [];
 
 	[Export] private Control _itemContainer = null!;
-	public VoiceBox TargetBox = null!;
+	public TextChatBox TargetBox = null!;
 
 	public override void _EnterTree()
 	{
