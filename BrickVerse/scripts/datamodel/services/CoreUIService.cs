@@ -33,6 +33,9 @@ public sealed partial class CoreUIService : Instance
 
 	public BVSignal CtrlLockCursorChanged { get; private set; } = new();
 
+	[ScriptProperty]
+	public static float TopInset => 80;
+	
 	[Editable, ScriptProperty]
 	public CtrlLockCursorEnum CtrlLockCursor
 	{
