@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
@@ -228,6 +229,14 @@ public sealed partial class Tabs : Control
 			};
 			_openedFiles[fullPath] = tec;
 		}
+		else if (other is ParticleEditorTab particle)
+		{
+			ParticleEditorWindow? existing = _orderedControls.OfType<ParticleEditorWindow>()
+				.FirstOrDefault(editor => editor.Target == particle.Target);
+			if (existing != null) { CurrentControl = existing; return; }
+			container = new ParticleEditorWindow(particle.Target);
+			icon = "play-filled";
+		}
 		else
 		{
 			throw new NotImplementedException();
@@ -326,6 +335,11 @@ public sealed partial class Tabs : Control
 	public class GameTab : TabData
 	{
 		public World World = null!;
+	}
+
+	public class ParticleEditorTab : TabData
+	{
+		public Particles Target = null!;
 	}
 
 	public class TabData
