@@ -37,7 +37,7 @@ public static class CreatorIconRegistry
 	}
 
 	public static string GetIconClassName(Instance instance) => instance is DatamodelScript script
-		? $"{instance.ClassName}{script.ChosenLanguage switch
+		? $"{instance.ClassName}{ResolveLanguage(script) switch
 		{
 			ScriptLanguagesEnum.Cpp => "CPP",
 			ScriptLanguagesEnum.CSharp => "CSharp",
@@ -47,13 +47,21 @@ public static class CreatorIconRegistry
 		}}"
 		: instance.ClassName;
 
+	private static ScriptLanguagesEnum ResolveLanguage(DatamodelScript script)
+	{
+		if (script.LinkedScript?.LinkedPath is string linkedPath
+			&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition definition))
+			return definition.Language;
+		return script.ChosenLanguage;
+	}
+
 	private static Texture2D LoadBuiltInIcon(Instance instance, string iconClass)
 	{
 		string dynamicPath = $"res://assets/textures/datamodel/{iconClass}.svg";
 		if (ResourceLoader.Exists(dynamicPath)) return Globals.LoadIcon(iconClass);
 		if (instance is DatamodelScript script)
 		{
-			string languageIcon = script.ChosenLanguage switch
+			string languageIcon = ResolveLanguage(script) switch
 			{
 				ScriptLanguagesEnum.Cpp => "cpp",
 				ScriptLanguagesEnum.CSharp => "csharp",
