@@ -9,6 +9,7 @@ using BrickVerse.Creator.LSP;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI;
+using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Data;
@@ -76,7 +77,7 @@ public partial class CreatorSession : Node, IDisposable
 
 	public async Task Init()
 	{
-		string projectData = File.ReadAllText(ProjectFilePath);
+		string projectData = await File.ReadAllTextAsync(ProjectFilePath);
 
 		// Migrate main place to main world
 		string migratedProjectData = projectData.Replace("\"MainPlace\":", "\"MainWorld\":");
@@ -95,10 +96,9 @@ public partial class CreatorSession : Node, IDisposable
 		FileBrowserTab = FileBrowser.Singleton.Insert(this);
 
 		await SetupFolders();
+		RescanFolder();
 
-		List<Task> tsks = [];
-
-		SetupLuaDocs();
+		await Task.Run(SetupLuaDocs);
 		ReadInputMap();
 
 		_backupTimer = new();
@@ -246,18 +246,15 @@ public partial class CreatorSession : Node, IDisposable
 
 	private async Task SetupFolders()
 	{
-		// Clear addon temp folder
-		string addonTemp = Path.GetFullPath(BVProjectFolderPath.PathJoin("addon-temp"));
-		if (Directory.Exists(addonTemp))
-			Directory.Delete(addonTemp, true);
-
-		if (!Directory.Exists(BVProjectFolderPath))
-			Directory.CreateDirectory(BVProjectFolderPath);
-
-		MigrateIndexFile();
-
-		BV.Print("Rebuilding index from .meta files...");
-		RescanFolder();
+		await Task.Run(() =>
+		{
+			// File maintenance is independent of Godot state and can run without
+			// blocking animation/input on the Creator thread.
+			string addonTemp = Path.GetFullPath(BVProjectFolderPath.PathJoin("addon-temp"));
+			if (Directory.Exists(addonTemp)) Directory.Delete(addonTemp, true);
+			if (!Directory.Exists(BVProjectFolderPath)) Directory.CreateDirectory(BVProjectFolderPath);
+			MigrateIndexFile();
+		});
 	}
 
 	private void SetupLuaDocs()
@@ -317,14 +314,26 @@ public partial class CreatorSession : Node, IDisposable
 		StartBackupTimer();
 	}
 
-	public World OpenWorld(string filePath, World? worldOverride = null, bool migrateCoords = false)
+	public World OpenWorld(string filePath, World? worldOverride = null, bool migrateCoords = false) =>
+		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: false).GetAwaiter().GetResult();
+
+	public Task<World> OpenWorldAsync(string filePath, World? worldOverride = null, bool migrateCoords = false,
+		Action<string>? reportStatus = null, Action<string>? reportDetail = null) =>
+		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: true, reportStatus, reportDetail);
+
+	private async Task<World> OpenWorldCore(string filePath, World? worldOverride, bool migrateCoords, bool asynchronous,
+		Action<string>? reportStatus = null, Action<string>? reportDetail = null)
 	{
 		filePath = filePath.SanitizePath();
 		if (WorldPathToRoot.ContainsKey(filePath)) throw new InvalidOperationException("World already opened");
 		string placePath = GlobalizePath(filePath);
 		if (!File.Exists(placePath)) throw new FileNotFoundException("World file not found");
 		_cleanupQueued = false;
-		byte[] worldData = File.ReadAllBytes(placePath);
+		byte[] worldData = asynchronous
+			? await ReadWorldFileAsync(placePath)
+			: File.ReadAllBytes(placePath);
+		reportStatus?.Invoke("Building DataModel");
+		if (asynchronous) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 		World root = worldOverride ?? Globals.LoadInstance<World>();
 		bool isMainWorld = string.Equals(
@@ -380,10 +389,6 @@ public partial class CreatorSession : Node, IDisposable
 
 			AddonsManager.UnregisterRoot(root);
 
-			// Debug force garbage collection
-			GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
-			GC.WaitForPendingFinalizers();
-
 			if (OpenedWorlds.Count == 0)
 			{
 				QueueDispose();
@@ -407,7 +412,10 @@ public partial class CreatorSession : Node, IDisposable
 			// Load world
 			try
 			{
-				PolyFormat.LoadWorld(root, worldData, migrateCoords);
+				if (asynchronous) await PolyFormat.LoadWorldAsync(root, worldData, migrateCoords, reportStatus, reportDetail);
+				else PolyFormat.LoadWorld(root, worldData, migrateCoords);
+				reportStatus?.Invoke("Finalizing world instances");
+				if (asynchronous) await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
 				root.InvokeReady();
 			}
 			catch (Exception ex)
@@ -436,6 +444,11 @@ public partial class CreatorSession : Node, IDisposable
 		return root;
 	}
 
+	private static async Task<byte[]> ReadWorldFileAsync(string path)
+	{
+		return await File.ReadAllBytesAsync(path);
+	}
+
 	public void QueueDispose()
 	{
 		_cleanupQueued = true;
@@ -457,6 +470,10 @@ public partial class CreatorSession : Node, IDisposable
 		return OpenWorld(Metadata.MainWorld, worldOverride);
 	}
 
+	public Task<World> OpenMainWorldAsync(World? worldOverride = null, Action<string>? reportStatus = null,
+		Action<string>? reportDetail = null) =>
+		OpenWorldAsync(Metadata.MainWorld, worldOverride, reportStatus: reportStatus, reportDetail: reportDetail);
+
 	public void RescanFolder()
 	{
 		RefreshFileIndex();
@@ -467,8 +484,9 @@ public partial class CreatorSession : Node, IDisposable
 		// Rebuild IndexToFile index
 		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
 		{
-			// Skip .bvproject temp folder
-			if (metaPath.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
+			// Compare a normalized relative path rather than absolute strings: project
+			// paths may use '/', while Directory enumeration uses '\\' on Windows.
+			if (IsInternalProjectFile(metaPath)) continue;
 
 			string targetAbsolute = metaPath[..^PackedFormat.MetaExtension.Length];
 			if (!File.Exists(targetAbsolute)) continue; // stale meta, ignore
@@ -957,8 +975,7 @@ public partial class CreatorSession : Node, IDisposable
 		// Clear orphan .meta files
 		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
 		{
-			// Ignore .bvproject folder
-			if (metaPath.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)) continue;
+			if (IsInternalProjectFile(metaPath)) continue;
 
 			string targetPath = metaPath[..^PackedFormat.MetaExtension.Length];
 			if (!File.Exists(targetPath))
@@ -997,6 +1014,36 @@ public partial class CreatorSession : Node, IDisposable
 	{
 		SyncFileIndex();
 		RefreshFileIndex();
+	}
+
+	private bool IsInternalProjectFile(string absolutePath)
+	{
+		string relative = Path.GetRelativePath(ProjectFolderPath, absolutePath).Replace('\\', '/').TrimStart('/');
+		return relative.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
+			|| relative.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase);
+	}
+
+	public bool TryRepairBackupFileLink(string linkedId, string internalPath, out string livePath)
+	{
+		livePath = "";
+		string normalized = internalPath.Replace('\\', '/').TrimStart('/');
+		const string backupPrefix = ".bvproject/backups/";
+		if (!normalized.StartsWith(backupPrefix, StringComparison.OrdinalIgnoreCase)) return false;
+		string afterPrefix = normalized[backupPrefix.Length..];
+		int snapshotSeparator = afterPrefix.IndexOf('/');
+		if (snapshotSeparator < 0 || snapshotSeparator == afterPrefix.Length - 1) return false;
+		string candidate = afterPrefix[(snapshotSeparator + 1)..].SanitizePath().TrimStart('/');
+		string absolute = GlobalizePath(candidate);
+		if (!File.Exists(absolute)) return false;
+
+		IndexToFile[linkedId] = candidate;
+		foreach (string stale in FileToIndex.Where(pair => pair.Value == linkedId).Select(pair => pair.Key).ToArray())
+			FileToIndex.Remove(stale);
+		FileToIndex[candidate] = linkedId;
+		PackedFormat.WriteMetaId(PackedFormat.GetMetaPath(absolute), linkedId);
+		SyncFileIndex();
+		livePath = candidate;
+		return true;
 	}
 
 	internal void ReadInputMap()
@@ -1105,9 +1152,17 @@ public partial class CreatorSession : Node, IDisposable
 		LuaCompletion?.Shutdown();
 
 		Tabs.Singleton.CloseTabsOfSession(this);
+		CreatorService.Sessions.Remove(this);
+		if (ReferenceEquals(CreatorService.CurrentSession, this))
+			CreatorService.CurrentSession = null;
 
 		QueueFree();
 		(this as Node).Dispose();
+		if (CreatorService.Sessions.Count == 0 && World.Current == null)
+		{
+			DisplayServer.WindowSetTitle($"BrickVerse Creator v{Globals.AppVersion}");
+			StartupSplash.Singleton.Open();
+		}
 
 		GC.SuppressFinalize(this);
 	}

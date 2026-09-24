@@ -73,6 +73,9 @@ public sealed partial class Terrain : Instance
 	private bool _isLoading;
 	private bool _isUpdatingSerialisedTerrain;
 	private bool _terrainDirty;
+	private int _materialUpdateSuspensions;
+	private bool _materialUpdatePending;
+	private bool _materialUpdateQueued;
 
 	private string _serialisedTerrain = string.Empty;
 	private bool _autoSerialise = true;
@@ -491,6 +494,59 @@ public sealed partial class Terrain : Instance
 
 	internal void NotifyMaterialChanged()
 	{
+		// World deserialization parents TerrainMaterial instances before applying
+		// their properties. Rebuilding the four texture arrays for every property
+		// turns each palette entry into hundreds of milliseconds of duplicate work.
+		// Ready() runs after all serialized children have loaded and performs one
+		// complete palette update through EnsureDefaultMaterials().
+		if (!IsPropReady || _materialUpdateSuspensions > 0)
+		{
+			_materialUpdatePending = true;
+			return;
+		}
+		UpdateTerrainMaterialParameters();
+	}
+
+	internal void BeginMaterialBulkUpdate()
+	{
+		_materialUpdateSuspensions++;
+	}
+
+	internal void EndMaterialBulkUpdate(bool deferRebuild = false)
+	{
+		if (_materialUpdateSuspensions == 0)
+			return;
+		_materialUpdateSuspensions--;
+		if (_materialUpdateSuspensions == 0 && _materialUpdatePending)
+		{
+			if (deferRebuild)
+				QueueMaterialUpdate();
+			else
+			{
+				_materialUpdatePending = false;
+				UpdateTerrainMaterialParameters();
+			}
+		}
+	}
+
+	private async void QueueMaterialUpdate()
+	{
+		if (_materialUpdateQueued)
+			return;
+		_materialUpdateQueued = true;
+		Node? node = GDNode;
+		SceneTree? tree = node?.GetTree();
+		if (node != null && tree != null)
+		{
+			// Let world construction and the first editor frame complete before the
+			// renderer uploads the terrain texture arrays.
+			await node.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+			await node.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		}
+		_materialUpdateQueued = false;
+		if (_materialUpdateSuspensions > 0 || !_materialUpdatePending || IsDeleted)
+			return;
+		_materialUpdatePending = false;
 		UpdateTerrainMaterialParameters();
 	}
 
@@ -1383,7 +1439,6 @@ public sealed partial class Terrain : Instance
 			Shader = shader
 		};
 
-		UpdateTerrainMaterialParameters();
 		_voxelTerrain!.Set("material", _terrainMaterial);
 	}
 
@@ -1881,10 +1936,11 @@ void fragment() {
 			{
 				_pendingReplayOperations = null;
 				_pendingReplayIndex = 0;
-				BV.Print(
-					"Terrain restored ",
-					pending.Length,
-					" serialized operation(s).");
+				if (pending.Length > 0)
+					BV.Print(
+						"Terrain restored ",
+						pending.Length,
+						" serialized operation(s).");
 			}
 		}
 		catch (Exception exception)

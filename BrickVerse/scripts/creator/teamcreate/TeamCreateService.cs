@@ -36,6 +36,7 @@ public sealed partial class TeamCreateService : Node
 	private static readonly HashSet<string> ReplicatedFileExtensions = new(StringComparer.OrdinalIgnoreCase)
 	{
 		".bvxw", ".bvworld", ".bvxm", ".bvmodel", ".model", ".luau", ".lua",
+		".js", ".mjs", ".ts", ".tsx", ".cs", ".cpp", ".cc", ".cxx",
 		".json", ".xml", ".md", ".txt", ".bvxl",
 	};
 
@@ -70,6 +71,7 @@ public sealed partial class TeamCreateService : Node
 	private bool _connectivityRequestActive;
 	private bool _manualDisconnect;
 	private bool _showCameraAvatars = true;
+	private DateTime _lastMembershipLossUtc = DateTime.MinValue;
 	private TeamCreateSessionWindow? _window;
 	private string _followMemberId = "";
 	private Node3D? _cameraAvatarRoot;
@@ -572,15 +574,26 @@ public sealed partial class TeamCreateService : Node
 			|| rejectedMemberId != _memberId)
 			return;
 
+		bool repeatedLoss = DateTime.UtcNow - _lastMembershipLossUtc < TimeSpan.FromSeconds(30);
+		_lastMembershipLossUtc = DateTime.UtcNow;
 		_memberId = "";
 		_localUserId = "";
 		_members.Clear();
 		ClearCameraAvatars();
 		_window?.Refresh();
+		if (repeatedLoss)
+		{
+			// A successful join followed immediately by another missing-member response
+			// indicates a server/session consistency problem. Stop the automatic loop;
+			// EnsureConnected() can retry when the user next opens Team Create.
+			_manualDisconnect = true;
+			LastConnectionError = "Team Create membership could not be restored. Reconnect manually.";
+			CreatorService.Interface.StatusBar?.SetStatus(LastConnectionError);
+			_window?.Refresh();
+			return;
+		}
 		CreatorService.Interface.StatusBar?.SetStatus("Team Create reconnecting...");
-		BV.Print(
-			"Team Create session membership expired; reconnecting. Server response: ",
-			responseBody);
+		BV.PrintWarn("Team Create membership expired; reconnecting once.");
 		_ = RejoinCurrentSession(_universeId);
 	}
 

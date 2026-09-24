@@ -38,6 +38,7 @@ public sealed partial class CollapsiblePanel : Control
 	private SplitContainer? _split;
 	private bool _vertical;
 	private bool _compact;
+	private Timer _saveSizeTimer = null!;
 
 	public override void _Ready()
 	{
@@ -46,6 +47,12 @@ public sealed partial class CollapsiblePanel : Control
 		if (_split == null)
 			// fallback to basic visibility toggling
 			GD.PushWarning($"CollapsiblePanel '{Name}' has no SplitContainer parent.");
+		else
+			_split.Dragged += OnSplitterDragged;
+
+		_saveSizeTimer = new Timer { OneShot = true, WaitTime = 0.2 };
+		_saveSizeTimer.Timeout += SaveCurrentSize;
+		AddChild(_saveSizeTimer);
 
 		if (ExpandedSize <= 0)
 		{
@@ -65,8 +72,27 @@ public sealed partial class CollapsiblePanel : Control
 
 	public override void _ExitTree()
 	{
+		if (_split != null)
+			_split.Dragged -= OnSplitterDragged;
 		if (!string.IsNullOrEmpty(PanelId) && Registry.TryGetValue(PanelId, out CollapsiblePanel? self) && self == this)
 			Registry.Remove(PanelId);
+	}
+
+	private void OnSplitterDragged(long offset)
+	{
+		if (!Collapsed && !_compact)
+			_saveSizeTimer.Start();
+	}
+
+	private void SaveCurrentSize()
+	{
+		if (Collapsed || _compact || string.IsNullOrEmpty(PanelId))
+			return;
+		int size = GetCurrentSplitSize();
+		if (size < 80)
+			return;
+		ExpandedSize = size;
+		DockLayoutService.SetExpandedSize(PanelId, size);
 	}
 
 	public void Toggle() => SetCollapsed(!Collapsed);

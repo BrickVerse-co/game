@@ -20,7 +20,7 @@ public partial class Script : Instance
 	internal Scripting.Luau.LuaState? LuauState;
 	internal Scripting.Luau.LuaState? LuauMainThread;
 
-	[CloneInclude]
+	[CloneInclude, SaveInclude]
 	public byte[]? Bytecode { get; internal set; }
 
 	internal readonly Dictionary<object, int> LuauUserdataCache = [];

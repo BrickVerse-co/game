@@ -37,6 +37,16 @@ public static class ProjectManager
 		{
 			string raw = File.ReadAllText(recentsPath);
 			RecentData[] data = JsonSerializer.Deserialize(raw, RecentsFileGenerationContext.Default.RecentDataArray) ?? [];
+			bool migrated = false;
+			for (int index = 0; index < data.Length; index++)
+			{
+				RecentData normalized = NormalizeRecent(data[index]);
+				migrated |= normalized.FolderPath != data[index].FolderPath
+					|| normalized.LastWorldPath != data[index].LastWorldPath;
+				data[index] = normalized;
+			}
+			if (migrated)
+				File.WriteAllText(recentsPath, JsonSerializer.Serialize(data, RecentsFileGenerationContext.Default.RecentDataArray));
 
 			List<RecentData> finalData = [];
 			List<Task<RecentData?>> tasks = [];
@@ -171,6 +181,7 @@ public static class ProjectManager
 
 	public static async Task AddToRecents(string folderPath, string? worldPath = null)
 	{
+		folderPath = CanonicalProjectFolder(folderPath);
 		string recentsPath = ProjectSettings.GlobalizePath(RecentsPath);
 		List<RecentData> existing = [.. await GetRecents(false)];
 
@@ -180,10 +191,44 @@ public static class ProjectManager
 		{
 			FolderPath = folderPath,
 			LastOpened = DateTime.Now,
-			LastWorldPath = string.IsNullOrWhiteSpace(worldPath) ? "" : Path.GetRelativePath(folderPath, worldPath).SanitizePath(),
+			LastWorldPath = string.IsNullOrWhiteSpace(worldPath)
+				? ""
+				: Path.IsPathRooted(worldPath)
+					? Path.GetRelativePath(folderPath, worldPath).SanitizePath()
+					: worldPath.SanitizePath().TrimStart('/'),
 		});
 
 		File.WriteAllText(recentsPath, JsonSerializer.Serialize([.. existing], RecentsFileGenerationContext.Default.RecentDataArray));
+	}
+
+	private static RecentData NormalizeRecent(RecentData recent)
+	{
+		string canonical = CanonicalProjectFolder(recent.FolderPath);
+		string lastWorld = (recent.LastWorldPath ?? "").SanitizePath().TrimStart('/');
+		if (lastWorld.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
+			|| lastWorld.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase))
+			lastWorld = "";
+		recent.FolderPath = canonical;
+		recent.LastWorldPath = lastWorld;
+		return recent;
+	}
+
+	private static string CanonicalProjectFolder(string path)
+	{
+		if (string.IsNullOrWhiteSpace(path)) return path;
+		string full = Path.GetFullPath(path);
+		if (File.Exists(full)) full = Path.GetDirectoryName(full)!;
+		string marker = Path.DirectorySeparatorChar + ".bvproject" + Path.DirectorySeparatorChar;
+		int internalIndex = full.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+		if (internalIndex >= 0)
+		{
+			string owner = full[..internalIndex];
+			if (File.Exists(Path.Combine(owner, Globals.ProjectMetaFileName))) return owner.SanitizePath();
+		}
+		for (DirectoryInfo? directory = new(full); directory != null; directory = directory.Parent)
+			if (File.Exists(Path.Combine(directory.FullName, Globals.ProjectMetaFileName)))
+				return directory.FullName.SanitizePath();
+		return full.SanitizePath();
 	}
 
 	public static async Task RemoveFromRecents(string folderPath)

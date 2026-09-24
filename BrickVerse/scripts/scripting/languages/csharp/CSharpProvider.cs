@@ -27,8 +27,9 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 		if (source.Length > 262_144) throw new InvalidOperationException("C# script exceeds the 256 KiB source limit");
 		SyntaxTree tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp14));
 		ValidateSyntax(tree);
+		SyntaxTree bindings = CSharpSyntaxTree.ParseText(CSharpBindingGenerator.Generate(), new CSharpParseOptions(LanguageVersion.CSharp14));
 		CSharpCompilation compilation = CSharpCompilation.Create(
-			"BrickVerseGuest_" + Guid.NewGuid().ToString("N"), [tree], GetReferences(),
+			"BrickVerseGuest_" + Guid.NewGuid().ToString("N"), [tree, bindings], GetReferences(),
 			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
 				optimizationLevel: OptimizationLevel.Release, allowUnsafe: false,
 				checkOverflow: true, concurrentBuild: false));
@@ -93,10 +94,22 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 			or PointerTypeSyntax or FunctionPointerTypeSyntax or StackAllocArrayCreationExpressionSyntax
 			or ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax
 			or GotoStatementSyntax or LockStatementSyntax or AwaitExpressionSyntax
-			or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+			or LocalFunctionStatementSyntax
 			or ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
 			or ImplicitArrayCreationExpressionSyntax))
 			throw new UnauthorizedAccessException("unsafe code, unbounded loops/allocations, threading, and dynamic delegates are disabled");
+		foreach (AnonymousFunctionExpressionSyntax lambda in root.DescendantNodes().OfType<AnonymousFunctionExpressionSyntax>())
+		{
+			InvocationExpressionSyntax? invocation = lambda.Ancestors().OfType<InvocationExpressionSyntax>().FirstOrDefault();
+			string target = invocation?.Expression switch
+			{
+				IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+				MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
+				_ => "",
+			};
+			if (target != "Connect")
+				throw new UnauthorizedAccessException("Callbacks are only permitted as arguments to the sandboxed Connect API");
+		}
 		foreach (UsingDirectiveSyntax directive in root.DescendantNodes().OfType<UsingDirectiveSyntax>())
 		{
 			string name = directive.Name?.ToString() ?? "";
@@ -110,7 +123,7 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 		SemanticModel model = compilation.GetSemanticModel(tree);
 		HashSet<string> allowedSystemTypes = ["Object", "String", "Boolean", "Byte", "SByte", "Int16", "UInt16",
 			"Int32", "UInt32", "Int64", "UInt64", "Single", "Double", "Decimal", "Char", "Math", "Convert",
-			"Array", "Nullable<T>", "List<T>", "Dictionary<TKey, TValue>", "HashSet<T>"];
+			"Array", "Nullable<T>", "Action<T>", "List<T>", "Dictionary<TKey, TValue>", "HashSet<T>"];
 		foreach (SyntaxNode node in tree.GetRoot().DescendantNodes())
 		{
 			ISymbol? symbol = model.GetSymbolInfo(node).Symbol;
@@ -125,7 +138,8 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 			if (type == null || SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, compilation.Assembly)) continue;
 			if (type.SpecialType != SpecialType.None) continue;
 			if (type.ContainingNamespace.ToDisplayString() == "BrickVerse.Scripting.Managed"
-				&& type.Name is nameof(BrickVerseScript) or nameof(IScriptApi)) continue;
+				&& type.Name is nameof(BrickVerseScript) or nameof(IScriptApi) or nameof(ScriptObject)
+					or nameof(GameApi) or nameof(ScriptSignal)) continue;
 			if (type.ContainingNamespace.ToDisplayString().StartsWith("System", StringComparison.Ordinal)
 				&& allowedSystemTypes.Contains(type.ConstructedFrom.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))) continue;
 			throw new UnauthorizedAccessException($"Type or member '{symbol?.ToDisplayString() ?? type.ToDisplayString()}' is outside the script sandbox");

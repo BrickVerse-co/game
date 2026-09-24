@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using BrickVerse.Attributes;
@@ -25,6 +26,8 @@ public interface IScriptApi
 	object? Get(int handle, string property);
 	void Set(int handle, string property, object? value);
 	object? Call(int handle, string method, params object?[] args);
+	bool HasMethod(int handle, string method);
+	int Connect(int signalHandle, Action<object?[]> callback);
 	void Print(string message);
 	void Warn(string message);
 	void Error(string message);
@@ -33,12 +36,19 @@ public interface IScriptApi
 public abstract class BrickVerseScript
 {
 	protected IScriptApi Bv { get; private set; } = null!;
+	protected GameApi Game { get; private set; } = null!;
 	protected int Script => Bv.Script;
 	protected int World => Bv.World;
+	protected int Global(string name) => Bv.Global(name);
+	protected T? Get<T>(int handle, string property) => (T?)Bv.Get(handle, property);
+	protected void Set(int handle, string property, object? value) => Bv.Set(handle, property, value);
+	protected T? Call<T>(int handle, string method, params object?[] args) => (T?)Bv.Call(handle, method, args);
+	protected void Call(int handle, string method, params object?[] args) => Bv.Call(handle, method, args);
 	protected void Print(string message) => Bv.Print(message);
 	protected void Warn(string message) => Bv.Warn(message);
 	protected void Error(string message) => Bv.Error(message);
-	internal void Attach(IScriptApi api) => Bv = api;
+	protected int Connect(int signalHandle, Action<object?[]> callback) => Bv.Connect(signalHandle, callback);
+	internal void Attach(IScriptApi api) { Bv = api; Game = new(api); }
 	public virtual void Start() { }
 	public virtual void Update(double delta) { }
 	public virtual void FixedUpdate(double delta) { }
@@ -96,15 +106,72 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	public object? Call(int handle, string method, params object?[] args)
 	{
 		IScriptObject target = Resolve(handle);
-		MethodInfo info = ScriptService.ResolveMethod(script.Compatibility, method, target.GetType())
+		object?[] guestArguments = args.Select(FromGuest).ToArray();
+		MethodInfo info = ResolveCallableMethod(target.GetType(), method, guestArguments)
 			?? throw new MissingMethodException(target.GetType().Name, method);
 		Demand(info.GetCustomAttribute<ScriptMethodAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
 		ParameterInfo[] parameters = info.GetParameters();
-		if (parameters.Length != args.Length)
-			throw new ArgumentException($"{method} expects {parameters.Length} arguments, received {args.Length}");
-		object?[] converted = args.Select((value, index) =>
-			ScriptService.ConvertToPropertyType(FromGuest(value), parameters[index].ParameterType)).ToArray();
-		return ToGuest(info.Invoke(target, converted));
+		object?[] converted = new object?[parameters.Length];
+		int guestIndex = 0;
+		for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
+		{
+			ParameterInfo parameter = parameters[parameterIndex];
+			if (parameter.GetCustomAttribute<ScriptingCallerAttribute>() != null)
+			{
+				converted[parameterIndex] = script;
+				continue;
+			}
+			converted[parameterIndex] = guestIndex < guestArguments.Length
+				? ScriptService.ConvertToPropertyType(guestArguments[guestIndex++], parameter.ParameterType)
+				: parameter.DefaultValue;
+		}
+		object? result = info.Invoke(target, converted);
+		if (result is System.Threading.Tasks.Task task)
+		{
+			task.GetAwaiter().GetResult();
+			result = task.GetType().IsGenericType ? task.GetType().GetProperty("Result")?.GetValue(task) : null;
+		}
+		return ToGuest(result);
+	}
+
+	public bool HasMethod(int handle, string method) =>
+		Resolve(handle).GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+			.Any(candidate => IsExposedMethod(candidate, method));
+
+	private MethodInfo? ResolveCallableMethod(Type type, string name, object?[] arguments) =>
+		type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+			.Where(candidate => IsExposedMethod(candidate, name))
+			.FirstOrDefault(candidate => ParametersAccept(candidate.GetParameters(), arguments));
+
+	private bool IsExposedMethod(MethodInfo method, string requestedName)
+	{
+		ScriptMethodAttribute? attribute = method.GetCustomAttribute<ScriptMethodAttribute>();
+		if (attribute != null && (method.Name == requestedName || attribute.MethodName == requestedName)) return true;
+		if (!script.Compatibility) return false;
+		ScriptLegacyMethodAttribute? legacy = method.GetCustomAttribute<ScriptLegacyMethodAttribute>();
+		return string.Equals(legacy?.MethodName, requestedName, StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static bool ParametersAccept(ParameterInfo[] parameters, object?[] arguments)
+	{
+		ParameterInfo[] visible = parameters.Where(parameter => parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null).ToArray();
+		int required = visible.Count(parameter => !parameter.IsOptional);
+		if (arguments.Length < required || arguments.Length > visible.Length) return false;
+		for (int index = 0; index < arguments.Length; index++)
+			if (arguments[index] != null && !ScriptService.IsObjectConvertible(arguments[index]!, visible[index].ParameterType)) return false;
+		return true;
+	}
+
+	public int Connect(int handle, Action<object?[]> callback)
+	{
+		if (Resolve(handle) is not BVSignal signal)
+			throw new InvalidOperationException("Connect is only available on BrickVerse signals.");
+		BVCallback bvCallback = new(args => callback(args.Select(ToGuest).ToArray()))
+		{
+			FromScript = script,
+			LangProvider = script.LanguageProvider,
+		};
+		return Add(signal.Connect(bvCallback));
 	}
 
 	public void Print(string message) => script.Root.ScriptService.Logger.LogInfo(script, message ?? string.Empty);
@@ -123,8 +190,27 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	private IScriptObject Resolve(int handle) => _objects.TryGetValue(handle, out IScriptObject? value)
 		? value : throw new InvalidOperationException("Invalid or expired script object handle");
 
-	private object? ToGuest(object? value) => value is IScriptObject scriptObject ? Add(scriptObject) : value;
-	private object? FromGuest(object? value) => value is int handle && _objects.TryGetValue(handle, out IScriptObject? obj) ? obj : value;
+	private object? ToGuest(object? value)
+	{
+		if (value is IScriptObject scriptObject) return Add(scriptObject);
+		if (value is Array array) return array.Cast<object?>().Select(ToGuest).ToArray();
+		if (value is IDictionary dictionary)
+		{
+			Dictionary<string, object?> result = [];
+			foreach (DictionaryEntry entry in dictionary)
+				if (entry.Key is string key) result[key] = ToGuest(entry.Value);
+			return result;
+		}
+		return value;
+	}
+
+	private object? FromGuest(object? value)
+	{
+		if (value is ScriptObject wrapper) return Resolve(wrapper.Handle);
+		if (value is int handle && _objects.TryGetValue(handle, out IScriptObject? obj)) return obj;
+		if (value is object?[] array) return array.Select(FromGuest).ToArray();
+		return value;
+	}
 
 	private void Demand(ScriptPermissionFlags required)
 	{

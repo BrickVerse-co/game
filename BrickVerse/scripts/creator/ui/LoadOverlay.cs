@@ -13,6 +13,7 @@ public partial class LoadOverlay : Control
 {
 	[Export] private Label _titleLabel = null!;
 	[Export] private Label _statusLabel = null!;
+	[Export] private Label _detailLabel = null!;
 	[Export] private ProgressBar _progressBar = null!;
 
 	public LoadOverlay()
@@ -30,6 +31,7 @@ public partial class LoadOverlay : Control
 	{
 		if (!IsInsideTree()) return;
 		SetProgress(0);
+		SetDetail("");
 		Visible = true;
 	}
 
@@ -51,6 +53,14 @@ public partial class LoadOverlay : Control
 		Callable.From(() =>
 		{
 			_statusLabel.Text = text;
+		}).CallDeferred();
+	}
+
+	public void SetDetail(string text)
+	{
+		Callable.From(() =>
+		{
+			_detailLabel.Text = text;
 		}).CallDeferred();
 	}
 

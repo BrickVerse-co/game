@@ -227,6 +227,15 @@ public partial class WorldContainerOverlay : Control
 
 	private void RefreshStatus()
 	{
+		if (World == null
+			|| World.IsDeleted
+			|| World.GDNode == null
+			|| !IsInstanceValid(World.GDNode)
+			|| World.CreatorContext?.Selections == null
+			|| World.CreatorContext.Freelook == null
+			|| _viewportStatus == null
+			|| _statsLabel == null)
+			return;
 		int selected = World.CreatorContext.Selections.SelectedInstances.Count;
 		string selection = selected == 0 ? "No selection" : $"{selected} selected";
 		string moveSnap = CreatorService.Interface.MoveSnapEnabled ? $"Move {CreatorService.Interface.UserMoveSnapping:g}m" : "Move snap off";

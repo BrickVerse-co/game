@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -160,6 +161,8 @@ public sealed partial class Globals : Node
 	public static event Action<int>? GodotNotification;
 
 	private static readonly ConditionalWeakTable<string, Type> _typesCache = [];
+	private static readonly Dictionary<Type, Func<NetworkedObject>> _networkedObjectFactories = [];
+	private static readonly object _networkedObjectFactoriesLock = new();
 
 	static Globals()
 	{
@@ -345,8 +348,8 @@ public sealed partial class Globals : Node
 		Type? type = GetTypeByName(className);
 		if (type != null)
 		{
-			object? obj = Activator.CreateInstance(type);
-			if (obj is NetworkedObject netObj)
+			NetworkedObject? netObj = CreateNetworkedObject(type);
+			if (netObj != null)
 			{
 				netObj.NameOverride = className;
 				preInit?.Invoke(netObj);
@@ -356,6 +359,23 @@ public sealed partial class Globals : Node
 		}
 
 		return null;
+	}
+
+	private static NetworkedObject? CreateNetworkedObject(Type type)
+	{
+		if (!RuntimeFeature.IsDynamicCodeSupported)
+			return Activator.CreateInstance(type) as NetworkedObject;
+		lock (_networkedObjectFactoriesLock)
+		{
+			if (!_networkedObjectFactories.TryGetValue(type, out Func<NetworkedObject>? factory))
+			{
+				NewExpression create = System.Linq.Expressions.Expression.New(type);
+				factory = System.Linq.Expressions.Expression.Lambda<Func<NetworkedObject>>(
+					System.Linq.Expressions.Expression.Convert(create, typeof(NetworkedObject))).Compile();
+				_networkedObjectFactories[type] = factory;
+			}
+			return factory();
+		}
 	}
 
 	public static Node? LoadNetworkedObjectScene(string className)
@@ -429,7 +449,7 @@ public sealed partial class Globals : Node
 
 		string path = $"{ShapesMeshesPath}{shapeName}.tres";
 		Mesh mesh =
-			ResourceLoader.Load<Mesh>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			ResourceLoader.Load<Mesh>(path, cacheMode: ResourceLoader.CacheMode.Ignore)
 			?? throw new KeyNotFoundException($"Shape '{shapeName}' was not found at '{path}'.");
 		Shape3D shape = CreateShape(mesh, shapeName);
 		(Mesh, Shape3D) loadedShape = (mesh, shape);
@@ -448,7 +468,8 @@ public sealed partial class Globals : Node
 
 		mat = ResourceLoader.Load<Material>(
 			$"res://resources/materials/parts/{material}.tres",
-			cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+			// Keep material variants independent, but reuse their shaders/textures.
+			cacheMode: ResourceLoader.CacheMode.Ignore
 		);
 		if (
 			!isOpaque
@@ -458,7 +479,7 @@ public sealed partial class Globals : Node
 		{
 			Shader shader = ResourceLoader.Load<Shader>(
 				"res://resources/shaders/part/part_transparent.gdshader",
-				cacheMode: ResourceLoader.CacheMode.IgnoreDeep
+				cacheMode: ResourceLoader.CacheMode.Reuse
 			);
 			shadMat.Shader = shader;
 		}
@@ -504,7 +525,8 @@ public sealed partial class Globals : Node
 		}
 
 		TResource resource =
-			ResourceLoader.Load<TResource>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			// Ignore only the root; IgnoreDeep reloads shared dependencies for every class.
+			ResourceLoader.Load<TResource>(path, cacheMode: ResourceLoader.CacheMode.Ignore)
 			?? throw new InvalidOperationException($"Failed to load resource at '{path}'.");
 		cache[key] = resource;
 		return resource;
@@ -554,7 +576,7 @@ public sealed partial class Globals : Node
 		}
 
 		Texture2D texture =
-			ResourceLoader.Load<Texture2D>(path, cacheMode: ResourceLoader.CacheMode.IgnoreDeep)
+			ResourceLoader.Load<Texture2D>(path, cacheMode: ResourceLoader.CacheMode.Ignore)
 			?? throw new InvalidOperationException($"Failed to load texture at '{path}'.");
 		cache[key] = texture;
 		return texture;
@@ -882,7 +904,7 @@ public sealed partial class Globals : Node
 			CachedScenes[path] = ResourceLoader.Load<PackedScene>(
 				path,
 				null,
-				ResourceLoader.CacheMode.IgnoreDeep
+				ResourceLoader.CacheMode.Ignore
 			);
 		}
 		return CachedScenes[path].Instantiate<T>();
