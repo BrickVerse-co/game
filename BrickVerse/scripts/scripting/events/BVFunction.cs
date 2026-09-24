@@ -2,11 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Scripting.Luau;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting.Luau;
+
 namespace BrickVerse.Scripting;
 
 public class BVFunction(Func<object?[], Task<object?[]>> target) : IScriptObject
@@ -42,7 +43,11 @@ public class BVFunction(Func<object?[], Task<object?[]>> target) : IScriptObject
 		return state.Yield(1);
 	}
 
-	private async Task HandleCallAsync(LuaState state, object?[] args, TaskCompletionSource<int> tcs)
+	private async Task HandleCallAsync(
+		LuaState state,
+		object?[] args,
+		TaskCompletionSource<int> tcs
+	)
 	{
 		try
 		{

@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
-[Instantiable]
+[Instantiable, PhysicalRootStop]
 public sealed partial class Tool : RigidBody
 {
 	private bool _droppable = true;
@@ -280,6 +280,7 @@ public sealed partial class Tool : RigidBody
 			if (instance is Part p)
 			{
 				p.OverrideNoMultiMesh = true;
+				p.Root?.Bridge?.MarkDirty(p);
 			}
 			if (instance is Physical e)
 			{
@@ -305,6 +306,7 @@ public sealed partial class Tool : RigidBody
 			if (instance is Part p)
 			{
 				p.OverrideNoMultiMesh = false;
+				p.Root?.Bridge?.MarkDirty(p);
 			}
 			if (instance is Physical e)
 			{

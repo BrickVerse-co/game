@@ -36,6 +36,7 @@ public sealed partial class TeamCreateService : Node
 	private static readonly HashSet<string> ReplicatedFileExtensions = new(StringComparer.OrdinalIgnoreCase)
 	{
 		".bvxw", ".bvworld", ".bvxm", ".bvmodel", ".model", ".luau", ".lua",
+		".js", ".mjs", ".ts", ".tsx", ".cs", ".cpp", ".cc", ".cxx",
 		".json", ".xml", ".md", ".txt", ".bvxl",
 	};
 
@@ -70,6 +71,7 @@ public sealed partial class TeamCreateService : Node
 	private bool _connectivityRequestActive;
 	private bool _manualDisconnect;
 	private bool _showCameraAvatars = true;
+	private DateTime _lastMembershipLossUtc = DateTime.MinValue;
 	private TeamCreateSessionWindow? _window;
 	private string _followMemberId = "";
 	private Node3D? _cameraAvatarRoot;
@@ -434,13 +436,18 @@ public sealed partial class TeamCreateService : Node
 			using HttpResponseMessage response = await _http.GetAsync(
 				ApiPath("/changes?after=" + _sequence.ToString(CultureInfo.InvariantCulture))
 			);
+			string body = await response.Content.ReadAsStringAsync();
+			if (IsAuthenticationRejected(response, body))
+			{
+				CallDeferred(nameof(HandleAuthenticationRejected));
+				return;
+			}
 			if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
 			{
 				CallDeferred(nameof(DisableFromServer));
 				return;
 			}
 			if (!response.IsSuccessStatusCode) return;
-			string body = await response.Content.ReadAsStringAsync();
 			CallDeferred(nameof(ApplyPollResponse), requestedUniverse, body);
 		}
 		catch (Exception error)
@@ -479,7 +486,9 @@ public sealed partial class TeamCreateService : Node
 			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 			{
-				if (IsMissingMembershipResponse(response, body))
+				if (IsAuthenticationRejected(response, body))
+					CallDeferred(nameof(HandleAuthenticationRejected));
+				else if (IsMissingMembershipResponse(response, body))
 					CallDeferred(nameof(HandleMembershipLost), memberId, body);
 				return;
 			}
@@ -532,7 +541,9 @@ public sealed partial class TeamCreateService : Node
 			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 			{
-				if (IsMissingMembershipResponse(response, body))
+				if (IsAuthenticationRejected(response, body))
+					CallDeferred(nameof(HandleAuthenticationRejected));
+				else if (IsMissingMembershipResponse(response, body))
 					CallDeferred(nameof(HandleMembershipLost), memberId, body);
 				else
 					BV.PrintErr("Team Create rejected changes: ", body);
@@ -566,21 +577,52 @@ public sealed partial class TeamCreateService : Node
 		response.StatusCode == System.Net.HttpStatusCode.NotFound
 		&& body.Contains("member not found", StringComparison.OrdinalIgnoreCase);
 
+	private static bool IsAuthenticationRejected(HttpResponseMessage response, string body) =>
+		response.StatusCode == System.Net.HttpStatusCode.Unauthorized
+		|| body.Contains("invalid_token", StringComparison.OrdinalIgnoreCase);
+
+	private void HandleAuthenticationRejected()
+	{
+		const string message = "Team Create authentication expired. Sign in again, then reconnect Team Create.";
+		if (_manualDisconnect && LastConnectionError == message)
+			return;
+		_memberId = "";
+		_localUserId = "";
+		_members.Clear();
+		ClearCameraAvatars();
+		_manualDisconnect = true;
+		LastConnectionError = message;
+		CreatorService.Interface.StatusBar?.SetStatus(message);
+		_window?.Refresh();
+		StateChanged?.Invoke();
+	}
+
 	private void HandleMembershipLost(string rejectedMemberId, string responseBody)
 	{
 		if (string.IsNullOrWhiteSpace(rejectedMemberId)
 			|| rejectedMemberId != _memberId)
 			return;
 
+		bool repeatedLoss = DateTime.UtcNow - _lastMembershipLossUtc < TimeSpan.FromSeconds(30);
+		_lastMembershipLossUtc = DateTime.UtcNow;
 		_memberId = "";
 		_localUserId = "";
 		_members.Clear();
 		ClearCameraAvatars();
 		_window?.Refresh();
+		if (repeatedLoss)
+		{
+			// A successful join followed immediately by another missing-member response
+			// indicates a server/session consistency problem. Stop the automatic loop;
+			// EnsureConnected() can retry when the user next opens Team Create.
+			_manualDisconnect = true;
+			LastConnectionError = "Team Create membership could not be restored. Reconnect manually.";
+			CreatorService.Interface.StatusBar?.SetStatus(LastConnectionError);
+			_window?.Refresh();
+			return;
+		}
 		CreatorService.Interface.StatusBar?.SetStatus("Team Create reconnecting...");
-		BV.Print(
-			"Team Create session membership expired; reconnecting. Server response: ",
-			responseBody);
+		BV.PrintWarn("Team Create membership expired; reconnecting once.");
 		_ = RejoinCurrentSession(_universeId);
 	}
 

@@ -1638,6 +1638,13 @@ public static class CreatorAPI
 		if (string.IsNullOrWhiteSpace(nextUniverseId))
 			nextUniverseId = resolvedUniverseId.ToString();
 
+		if (success)
+		{
+			BV.Print($"Your world has been successfully uploaded. You can view it at: {Globals.MainEndpoint.PathJoin("/worlds/" + nextWorldId)}");
+		} else {
+			BV.PrintErr($"Failed to upload your world. Response (Http Code {(int)msg.StatusCode}): {responseText}");
+		}
+
 		return new CreatorPublishResponse
 		{
 			Success = success,

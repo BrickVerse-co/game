@@ -80,7 +80,7 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[node name="LoadOverlay" type="Panel" unique_id=596595339 node_paths=PackedStringArray("_titleLabel", "_statusLabel", "_progressBar")]
+[node name="LoadOverlay" type="Panel" unique_id=596595339 node_paths=PackedStringArray("_titleLabel", "_statusLabel", "_detailLabel", "_progressBar")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -90,6 +90,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_backdrop")
 script = ExtResource("1_4enpk")
 _titleLabel = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text/Title")
 _statusLabel = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text/Status")
+_detailLabel = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text/Detail")
 _progressBar = NodePath("CenterContainer/LoadingCard/CardMargin/CardContent/ProgressBar")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=672094972]
@@ -151,6 +152,15 @@ theme_override_colors/font_color = Color(0.84, 0.84, 0.87, 0.9)
 theme_override_fonts/font = ExtResource("2_regular")
 theme_override_font_sizes/font_size = 13
 text = "Preparing your workspace..."
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Detail" type="Label" parent="CenterContainer/LoadingCard/CardMargin/CardContent/Header/Text"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.66, 0.7, 0.82)
+theme_override_fonts/font = ExtResource("2_regular")
+theme_override_font_sizes/font_size = 11
+text = ""
 clip_text = true
 text_overrun_behavior = 3
 

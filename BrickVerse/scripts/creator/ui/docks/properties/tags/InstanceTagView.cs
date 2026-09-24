@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -15,22 +15,42 @@ public partial class InstanceTagView : Control
 {
 	private const string TagLabelPath = "res://scenes/creator/tags/tag_label.tscn";
 	public List<Instance> Targets = [];
-	[Export] private Control _container = null!;
-	[Export] private LineEdit _newTagEdit = null!;
-	[Export] private Button _plusButton = null!;
-	[Export] private Control _tagLayout = null!;
-	[Export] private Control _blankLayout = null!;
+
+	[Export]
+	private Control _container = null!;
+
+	[Export]
+	private LineEdit _newTagEdit = null!;
+
+	[Export]
+	private Button _plusButton = null!;
+
+	[Export]
+	private Control _tagLayout = null!;
+
+	[Export]
+	private Control _blankLayout = null!;
 
 	private string _searchFilter = "";
 
-	public override void _EnterTree()
+	public override void _Ready()
 	{
-		_newTagEdit.TextSubmitted += (_) => { AddNewTag(); };
+		base._Ready();
+
+		_newTagEdit.TextSubmitted += OnTextSubmitted;
 		_newTagEdit.TextChanged += OnSearch;
 		_plusButton.Pressed += AddNewTag;
+	}
 
-		Clear();
+	public override void _EnterTree()
+	{
 		base._EnterTree();
+		Clear();
+	}
+
+	private void OnTextSubmitted(string text)
+	{
+		AddNewTag();
 	}
 
 	private void OnSearch(string newText)
@@ -41,8 +61,10 @@ public partial class InstanceTagView : Control
 
 	public void AddNewTag()
 	{
-		if (Targets.Count == 0) return;
-		if (string.IsNullOrEmpty(_newTagEdit.Text)) return;
+		if (Targets.Count == 0)
+			return;
+		if (string.IsNullOrEmpty(_newTagEdit.Text))
+			return;
 
 		foreach (Instance instance in Targets)
 		{
@@ -68,12 +90,12 @@ public partial class InstanceTagView : Control
 	{
 		foreach (Node child in _container.GetChildren())
 		{
-			if (child is TagLabel label)
-			{
-				bool matchesSearch = string.IsNullOrEmpty(_searchFilter) ||
-									label.Text.Contains(_searchFilter, StringComparison.CurrentCultureIgnoreCase);
-				label.Visible = matchesSearch;
-			}
+			if (child is not TagLabel label)
+				continue;
+			bool matchesSearch =
+				string.IsNullOrEmpty(_searchFilter)
+				|| label.Text.Contains(_searchFilter, StringComparison.CurrentCultureIgnoreCase);
+			label.Visible = matchesSearch;
 		}
 	}
 
@@ -82,18 +104,16 @@ public partial class InstanceTagView : Control
 		Clear();
 		Targets = instances;
 
-		if (Targets.Count == 0) return;
+		if (Targets.Count == 0)
+			return;
 
 		_blankLayout.Visible = false;
 		_tagLayout.Visible = true;
 
 		HashSet<string> allTags = [];
-		foreach (Instance instance in Targets)
+		foreach (var tag in Targets.SelectMany(instance => instance.Tags))
 		{
-			foreach (string tag in instance.Tags)
-			{
-				allTags.Add(tag);
-			}
+			allTags.Add(tag);
 		}
 
 		foreach (string tag in allTags)
@@ -123,5 +143,4 @@ public partial class InstanceTagView : Control
 			_container.AddChild(label);
 		}
 	}
-
 }

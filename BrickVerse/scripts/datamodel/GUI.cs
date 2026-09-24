@@ -8,6 +8,8 @@ using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Creator;
 #endif
 
+using BrickVerse.Datamodel.Services;
+
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
@@ -16,6 +18,7 @@ public partial class GUI : Instance
 	private Control _control = null!;
 	private bool _visible = true;
 	private int _zIndex = 0;
+	private bool _avoidCoreUI = false;
 
 	[Editable, ScriptProperty]
 	public bool Visible
@@ -26,6 +29,21 @@ public partial class GUI : Instance
 			_visible = value;
 			_control.Visible = _visible;
 			RecomputeVisible();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool AvoidCoreUI
+	{
+		get => _avoidCoreUI;
+		set
+		{
+			_avoidCoreUI = value;
+			if (Root.SessionType != World.SessionTypeEnum.Creator)
+			{
+				_control.OffsetTop = value ? CoreUIService.TopInset : 0;
+			}
 			OnPropertyChanged();
 		}
 	}

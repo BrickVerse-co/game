@@ -16,6 +16,7 @@ public static class ClientAuthAPI
 	private static bool _bootstrapped;
 	internal static string JoinToken { get; private set; } = string.Empty;
 	internal static string CreatorToken { get; private set; } = string.Empty;
+	internal static bool HasJoinToken => !string.IsNullOrWhiteSpace(JoinToken);
 	internal static IClientConnector? ClientConnector { get; private set; }
 	internal static IServerListener? ServerListener { get; private set; }
 

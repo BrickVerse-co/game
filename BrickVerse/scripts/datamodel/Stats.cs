@@ -23,7 +23,7 @@ public sealed partial class Stats : Instance
 	}
 
 	[ScriptMethod]
-	public Stat[] GetStats()
+	public Stat[] GetStats(bool visableOnly = false)
 	{
 		List<Stat> stats = [];
 
@@ -31,7 +31,10 @@ public sealed partial class Stats : Instance
 		{
 			if (item is Stat s)
 			{
-				stats.Add(s);
+				if (!visableOnly || s.Visible)
+				{
+					stats.Add(s);
+				}
 			}
 		}
 

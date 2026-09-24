@@ -113,6 +113,7 @@ public sealed partial class World : Instance
 	public PlayerGUI PlayerGUI => FindChild<PlayerGUI>("PlayerGUI")!;
 	public ChatService Chat => FindChild<ChatService>("Chat")!;
 	public VoiceChatService VoiceChat => FindChild<VoiceChatService>("VoiceChatService")!;
+	public SoundService SoundService => FindChild<SoundService>("SoundService")!;
 	public GameSettingsService GameSettings => FindChild<GameSettingsService>("GameSettings")!;
 	public InputService Input => FindChild<InputService>("Input")!;
 	public VRService VRService => FindChild<VRService>("VRService")!;
@@ -146,9 +147,9 @@ public sealed partial class World : Instance
 	internal AntiCheatService AntiCheat => FindChild<AntiCheatService>("AntiCheat")!;
 #if CREATOR
 	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
-	#if CREATOR
+#if CREATOR
 	public StudioService? StudioService => FindChild<StudioService>("StudioService");
-	#endif
+#endif
 #endif
 	public Temporary TemporaryContainer => FindChild<Temporary>("Temporary")!;
 
@@ -275,6 +276,12 @@ public sealed partial class World : Instance
 	public async Task<NetworkedObject?> GetNetworkedObject(string networkID)
 	{
 		return await WaitForNetObjectAsync(networkID);
+	}
+
+	[ScriptMethod]
+	public double GetFPS()
+	{
+		return Engine.GetFramesPerSecond();
 	}
 
 	/// <summary>Returns a root DataModel service by its BrickVerse alias or class name.</summary>
@@ -746,6 +753,14 @@ public sealed partial class World : Instance
 			voiceChatService = Globals.LoadInstance<VoiceChatService>(Root);
 			voiceChatService.NameOverride = "VoiceChatService";
 			voiceChatService.NetworkParent = this;
+		}
+
+		SoundService? soundService = FindChild<SoundService>("SoundService");
+		if (soundService == null)
+		{
+			soundService = Globals.LoadInstance<SoundService>(Root);
+			soundService.NameOverride = "SoundService";
+			soundService.NetworkParent = this;
 		}
 
 		GameSettingsService? gameSettingsService = FindChild<GameSettingsService>("GameSettings");

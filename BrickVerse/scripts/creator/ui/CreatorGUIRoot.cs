@@ -4,6 +4,7 @@
 
 using Godot;
 using BrickVerse.Creator.Utils;
+using BrickVerse.Creator.UI.Docking;
 using System.Collections.Generic;
 
 namespace BrickVerse.Creator.UI;
@@ -21,7 +22,10 @@ public sealed partial class CreatorGUIRoot : Control
 	{
 		HookSoundFeedback(this, playModalOpen: false);
 		GetTree().NodeAdded += OnNodeAdded;
+		CallDeferred(nameof(ApplySavedDockLayout));
 	}
+
+	private static void ApplySavedDockLayout() => DockManager.RestoreLayout();
 
 	private void OnNodeAdded(Node node) => HookSoundFeedback(node, playModalOpen: true);
 

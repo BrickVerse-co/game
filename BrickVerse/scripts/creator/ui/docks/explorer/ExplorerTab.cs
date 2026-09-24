@@ -84,31 +84,31 @@ public partial class ExplorerTab : Control
 	private void OnFilterMenuPressed(long id)
 	{
 		PopupMenu popup = _filterButton.GetPopup();
-			if (id >= 0 && id < SuggestedFilters.Length)
-			{
-				string separator = _searchEdit.Text.Length == 0 || _searchEdit.Text.EndsWith(' ') ? "" : " ";
-				string suggestion = SuggestedFilters[(int)id];
-				_searchEdit.Text += separator + suggestion;
-				_searchEdit.CaretColumn = _searchEdit.Text.Length - (suggestion.EndsWith("\"\"") ? 1 : 0);
-				_searchEdit.GrabFocus();
-			}
-			else if (id == 1000)
-			{
-				_expandHierarchyOnSelection = !_expandHierarchyOnSelection;
-				popup.SetItemChecked(popup.GetItemIndex(1000), _expandHierarchyOnSelection);
-			}
-			else if (id >= 100 && id < 100 + SearchHistory.Count)
-			{
-				_searchEdit.Text = SearchHistory[(int)id - 100];
-				_searchEdit.CaretColumn = _searchEdit.Text.Length;
-				_searchEdit.GrabFocus();
-			}
-			else if (id == 199)
-			{
-				SearchHistory.Clear();
-				SaveSearchHistoryFile();
-				BuildFilterMenu();
-			}
+		if (id >= 0 && id < SuggestedFilters.Length)
+		{
+			string separator = _searchEdit.Text.Length == 0 || _searchEdit.Text.EndsWith(' ') ? "" : " ";
+			string suggestion = SuggestedFilters[(int)id];
+			_searchEdit.Text += separator + suggestion;
+			_searchEdit.CaretColumn = _searchEdit.Text.Length - (suggestion.EndsWith("\"\"") ? 1 : 0);
+			_searchEdit.GrabFocus();
+		}
+		else if (id == 1000)
+		{
+			_expandHierarchyOnSelection = !_expandHierarchyOnSelection;
+			popup.SetItemChecked(popup.GetItemIndex(1000), _expandHierarchyOnSelection);
+		}
+		else if (id >= 100 && id < 100 + SearchHistory.Count)
+		{
+			_searchEdit.Text = SearchHistory[(int)id - 100];
+			_searchEdit.CaretColumn = _searchEdit.Text.Length;
+			_searchEdit.GrabFocus();
+		}
+		else if (id == 199)
+		{
+			SearchHistory.Clear();
+			SaveSearchHistoryFile();
+			BuildFilterMenu();
+		}
 	}
 
 	private void SaveSearch(string query)

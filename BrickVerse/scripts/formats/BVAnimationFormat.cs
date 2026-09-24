@@ -233,14 +233,19 @@ public static class BVAnimationFormat
 
 	public static int ComponentCount(BVAnimationTrack track) => track.Channel is not "property" and not "instance" ? (track.Channel == "rotation" ? 4 : 3) : track.ValueType switch
 	{
-		"String" => 0, "Float" or "Int" or "Bool" => 1, "Vector2" => 2, "Vector3" => 3, "Color" or "Quaternion" => 4,
+		"String" => 0,
+		"Float" or "Int" or "Bool" => 1,
+		"Vector2" => 2,
+		"Vector3" => 3,
+		"Color" or "Quaternion" => 4,
 		_ => throw new InvalidOperationException($"Unsupported property type '{track.ValueType}'.")
 	};
 
 	public static float[] EncodeValue(Variant value) => value.VariantType switch
 	{
 		Variant.Type.String => [],
-		Variant.Type.Float => [(float)value.AsDouble()], Variant.Type.Int => [value.AsInt64()],
+		Variant.Type.Float => [(float)value.AsDouble()],
+		Variant.Type.Int => [value.AsInt64()],
 		Variant.Type.Bool => [value.AsBool() ? 1 : 0],
 		Variant.Type.Vector2 => [value.AsVector2().X, value.AsVector2().Y],
 		Variant.Type.Vector3 => VectorComponents(value.AsVector3()),
@@ -252,8 +257,11 @@ public static class BVAnimationFormat
 	public static Variant DecodeValue(string type, float[] v, string text = "") => type switch
 	{
 		"String" => Variant.From(text),
-		"Float" => Variant.From(v[0]), "Int" => Variant.From((long)v[0]), "Bool" => Variant.From(v[0] >= 0.5f),
-		"Vector2" => Variant.From(new Vector2(v[0], v[1])), "Vector3" => Variant.From(new Vector3(v[0], v[1], v[2])),
+		"Float" => Variant.From(v[0]),
+		"Int" => Variant.From((long)v[0]),
+		"Bool" => Variant.From(v[0] >= 0.5f),
+		"Vector2" => Variant.From(new Vector2(v[0], v[1])),
+		"Vector3" => Variant.From(new Vector3(v[0], v[1], v[2])),
 		"Color" => Variant.From(new Color(v[0], v[1], v[2], v[3])),
 		"Quaternion" => Variant.From(new Quaternion(v[0], v[1], v[2], v[3]).Normalized()),
 		_ => throw new InvalidOperationException("Unsupported animation value.")

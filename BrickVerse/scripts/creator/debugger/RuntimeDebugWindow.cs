@@ -4,6 +4,7 @@
 using Godot;
 using BrickVerse.Schemas.Debugger;
 using System.Collections.Generic;
+using BrickVerse.Creator.UI.Docking;
 
 namespace BrickVerse.Creator.Debugger;
 
@@ -25,6 +26,7 @@ public sealed partial class RuntimeDebugWindow : MarginContainer
 	private readonly RichTextLabel _memory;
 	private readonly RichTextLabel _network;
 	private Timer _diagnosticsTimer = null!;
+	public string DockPanelId => $"runtime-{_processId}";
 
 	public RuntimeDebugWindow(DebugServer server, int processId, bool isServer)
 	{
@@ -79,8 +81,7 @@ public sealed partial class RuntimeDebugWindow : MarginContainer
 	public void Activate()
 	{
 		Show();
-		if (GetParent() is TabContainer tabs)
-			tabs.CurrentTab = tabs.GetTabIdxFromControl(this);
+		DockManager.OpenPanel(DockPanelId);
 	}
 
 	public override async void _Ready()

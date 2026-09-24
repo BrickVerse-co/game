@@ -95,7 +95,7 @@ public static class DatamodelLoader
 					item.ModelRoot = m;
 					if (item is Script s)
 					{
-						string scriptPath = baseFolder + s.CreateLuaFileName();
+						string scriptPath = baseFolder + s.CreateScriptFileName();
 						root.IO.WriteBytesToPath(scriptPath, s.Source.ToUtf8Buffer());
 						s.LinkedScript = root.Assets.GetFileLinkByPath(scriptPath);
 					}

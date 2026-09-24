@@ -4,12 +4,11 @@
 
 using System;
 using System.Collections.Generic;
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -29,7 +28,6 @@ public sealed partial class InteractionPrompt : Physical
 	private float _activationTime = 0.5f;
 	private string _title = "Interact";
 	private string _subtitle = "[color=#a3a3a3]Subtitle[/color]";
-
 
 	private float _scale = 1f;
 
@@ -76,7 +74,6 @@ public sealed partial class InteractionPrompt : Physical
 		}
 	}
 
-
 	[Editable, ScriptProperty, DefaultValue(true)]
 	public bool Enabled
 	{
@@ -111,7 +108,6 @@ public sealed partial class InteractionPrompt : Physical
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty, DefaultValue("[color=#a3a3a3]Subtitle[/color]")]
 	public string Subtitle
@@ -181,8 +177,6 @@ public sealed partial class InteractionPrompt : Physical
 		}
 	}
 
-
-
 	[Editable, ScriptProperty, DefaultValue(true)]
 	public bool RequireFacing
 	{
@@ -193,7 +187,6 @@ public sealed partial class InteractionPrompt : Physical
 			OnPropertyChanged();
 		}
 	}
-
 
 	[ScriptProperty]
 	public Player[] HiddenFor
@@ -216,7 +209,6 @@ public sealed partial class InteractionPrompt : Physical
 			//OnPropertyChanged();
 		}
 	}
-
 
 	public bool CheckCanInteract()
 	{
@@ -249,7 +241,6 @@ public sealed partial class InteractionPrompt : Physical
 		var direction = (_prompt.GlobalTransform.Origin - playerTransform.Origin).Normalized();
 		return targetF.Dot(direction) >= _losThreshold;
 	}
-
 
 	public void OnMouseEnterParent()
 	{
@@ -284,7 +275,9 @@ public sealed partial class InteractionPrompt : Physical
 	{
 		_prompt = Globals.CreateInstanceFromScene<Node3D>(PromptScenePath);
 		_animPlayer = _prompt.GetNode<AnimationPlayer>("AnimPlay");
-		_progressBar = _prompt.GetNode<TextureProgressBar>("SV/Control/Pivot/Key/TextureProgressBar");
+		_progressBar = _prompt.GetNode<TextureProgressBar>(
+			"SV/Control/Pivot/Key/TextureProgressBar"
+		);
 		return _prompt;
 	}
 
@@ -300,9 +293,15 @@ public sealed partial class InteractionPrompt : Physical
 	public override void Process(double delta)
 	{
 		_prompt.Scale = new Vector3(_scale, _scale, _scale);
-		if (Root.SessionType != World.SessionTypeEnum.Client) { return; }
-		if (!Root.IsLoaded) return;
-		var distance = Root.Players.LocalPlayer?.GetGlobalPosition().DistanceTo(GetGlobalPosition());
+		if (Root.SessionType != World.SessionTypeEnum.Client)
+		{
+			return;
+		}
+		if (!Root.IsLoaded)
+			return;
+		var distance = Root
+			.Players.LocalPlayer?.GetGlobalPosition()
+			.DistanceTo(GetGlobalPosition());
 		_inRange = distance <= _maxDistance;
 		_prompt.Visible = false;
 		if (_inRange && _enabled && !_hiddenByServer)
@@ -356,7 +355,10 @@ public sealed partial class InteractionPrompt : Physical
 					// Hate it? Blame JewelEyed <3
 					if (Root.Players.LocalPlayer != null)
 					{
-						_timeSpentActivating = -Math.Max((Root.Players.LocalPlayer.NetworkPing / 1000f), 0.1f);
+						_timeSpentActivating = -Math.Max(
+							(Root.Players.LocalPlayer.NetworkPing / 1000f),
+							0.1f
+						);
 					}
 				}
 			}
@@ -368,7 +370,6 @@ public sealed partial class InteractionPrompt : Physical
 				_timeSpentActivating = 0.0f;
 				_animPlayer.Play("InputEnd");
 			}
-
 		}
 		_progress = (_timeSpentActivating / _activationTime);
 		_progressBar.Value = _progress * 100f;
@@ -387,7 +388,6 @@ public sealed partial class InteractionPrompt : Physical
 		_hiddenFor.Remove(plr);
 		RpcId(plr.PeerID, nameof(ShowRPC));
 	}
-
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void HideRPC()
@@ -417,12 +417,13 @@ public sealed partial class InteractionPrompt : Physical
 		Interacted.Invoke(p);
 	}
 
-	[ScriptProperty] public BVSignal<Player> Interacted { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Player> Interacted { get; private set; } = new();
 
 	[ScriptEnum("UIMode")]
 	public enum UIModeEnum
 	{
 		Default,
-		GUI3D
+		GUI3D,
 	}
 }

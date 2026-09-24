@@ -25,11 +25,6 @@ public partial class BVMeshAnimationAsset : MeshAnimationAsset
 		}
 	}
 
-	public static void RegisterAsset()
-	{
-		RegisterType<BVMeshAnimationAsset>();
-	}
-
 	public override void LoadResource()
 	{
 		AssetLoader.Singleton.GetResource(

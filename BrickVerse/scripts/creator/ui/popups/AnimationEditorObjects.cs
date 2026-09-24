@@ -34,7 +34,8 @@ public sealed partial class AnimationEditorWindow
 		_objectChoice.ItemSelected += _ => { PopulateProperties(); SyncPoseAdapterFromBone(); };
 		_propertyChoice = new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
 		controls.AddChild(_propertyChoice);
-		AddButton(controls, "+ Property track", () => {
+		AddButton(controls, "+ Property track", () =>
+		{
 			if (_propertyChoice.Selected >= 0) AddObjectProperty(_objectProperties[_propertyChoice.Selected]);
 		});
 		VBoxContainer editor = (VBoxContainer)_editorRoot;

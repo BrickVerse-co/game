@@ -26,57 +26,57 @@ internal static class ForgeCefInstaller
 		await InstallLock.WaitAsync(cancellationToken);
 		try
 		{
-		string platform = GetPlatformFolder();
-		string installRoot = ProjectSettings.GlobalizePath($"user://forge/gdcef/{Version}");
-		string manifestPath = Path.Combine(installRoot, "gdcef.gdextension");
-		if (IsComplete(installRoot, platform))
-			return manifestPath;
+			string platform = GetPlatformFolder();
+			string installRoot = ProjectSettings.GlobalizePath($"user://forge/gdcef/{Version}");
+			string manifestPath = Path.Combine(installRoot, "gdcef.gdextension");
+			if (IsComplete(installRoot, platform))
+				return manifestPath;
 
-		string stagingRoot = installRoot + ".installing";
-		string archivePath = Path.Combine(Path.GetTempPath(), $"brickverse-gdcef-{Version}.zip");
-		if (Directory.Exists(stagingRoot))
-			Directory.Delete(stagingRoot, true);
-		Directory.CreateDirectory(stagingRoot);
+			string stagingRoot = installRoot + ".installing";
+			string archivePath = Path.Combine(Path.GetTempPath(), $"brickverse-gdcef-{Version}.zip");
+			if (Directory.Exists(stagingRoot))
+				Directory.Delete(stagingRoot, true);
+			Directory.CreateDirectory(stagingRoot);
 
-		try
-		{
-			using System.Net.Http.HttpResponseMessage response = await Http.GetAsync(
-				ArchiveUrl,
-				HttpCompletionOption.ResponseHeadersRead,
-				cancellationToken
-			);
-			response.EnsureSuccessStatusCode();
-			long? length = response.Content.Headers.ContentLength;
-			await using (Stream input = await response.Content.ReadAsStreamAsync(cancellationToken))
-			await using (FileStream output = new(archivePath, FileMode.Create, System.IO.FileAccess.Write, FileShare.None))
+			try
 			{
-				byte[] buffer = new byte[1024 * 1024];
-				long received = 0;
-				int read;
-				while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
+				using System.Net.Http.HttpResponseMessage response = await Http.GetAsync(
+					ArchiveUrl,
+					HttpCompletionOption.ResponseHeadersRead,
+					cancellationToken
+				);
+				response.EnsureSuccessStatusCode();
+				long? length = response.Content.Headers.ContentLength;
+				await using (Stream input = await response.Content.ReadAsStreamAsync(cancellationToken))
+				await using (FileStream output = new(archivePath, FileMode.Create, System.IO.FileAccess.Write, FileShare.None))
 				{
-					await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-					received += read;
-					reportProgress(length > 0 ? (double)received / length.Value : null);
+					byte[] buffer = new byte[1024 * 1024];
+					long received = 0;
+					int read;
+					while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
+					{
+						await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+						received += read;
+						reportProgress(length > 0 ? (double)received / length.Value : null);
+					}
 				}
+
+				ExtractCurrentPlatform(archivePath, stagingRoot, platform);
+				WriteManifest(stagingRoot, platform);
+				MakeExecutablesRunnable(stagingRoot, platform);
+				if (!IsComplete(stagingRoot, platform))
+					throw new InvalidDataException("The downloaded gdCEF runtime is incomplete.");
+
+				if (Directory.Exists(installRoot))
+					Directory.Delete(installRoot, true);
+				Directory.Move(stagingRoot, installRoot);
+				return manifestPath;
 			}
-
-			ExtractCurrentPlatform(archivePath, stagingRoot, platform);
-			WriteManifest(stagingRoot, platform);
-			MakeExecutablesRunnable(stagingRoot, platform);
-			if (!IsComplete(stagingRoot, platform))
-				throw new InvalidDataException("The downloaded gdCEF runtime is incomplete.");
-
-			if (Directory.Exists(installRoot))
-				Directory.Delete(installRoot, true);
-			Directory.Move(stagingRoot, installRoot);
-			return manifestPath;
-		}
-		finally
-		{
-			if (File.Exists(archivePath)) File.Delete(archivePath);
-			if (Directory.Exists(stagingRoot)) Directory.Delete(stagingRoot, true);
-		}
+			finally
+			{
+				if (File.Exists(archivePath)) File.Delete(archivePath);
+				if (Directory.Exists(stagingRoot)) Directory.Delete(stagingRoot, true);
+			}
 		}
 		finally
 		{

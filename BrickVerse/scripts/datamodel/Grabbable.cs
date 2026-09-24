@@ -114,6 +114,11 @@ public partial class Grabbable : Instance
 
 	public override void PreDelete()
 	{
+		if (_dragging && _dragger == Root.Players.LocalPlayer)
+		{
+			Root.PlayerGUI.SetCursorShape(Control.CursorShape.Arrow);
+		}
+
 		Root.Input.GodotInputEvent -= OnInput;
 		base.PreDelete();
 	}
@@ -274,7 +279,7 @@ public partial class Grabbable : Instance
 					}
 					else
 					{
-						RayResult? hit = Root.Environment.Raycast(rayOrigin, rayDir, ignoreList: [Parent]);
+						RayResult? hit = Root.Environment.Raycast(rayOrigin, rayDir, ignoreList: [Parent], passthroughMask: 1 << 2);
 						if (hit != null)
 						{
 							targetPos = hit.Value.Position;

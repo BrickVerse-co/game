@@ -15,6 +15,7 @@ namespace BrickVerse.Datamodel;
 public partial class Stat : Instance
 {
 	private string _displayName = "";
+	private bool _visible = true;
 
 	internal Dictionary<Player, object?> PlayerToStat = [];
 	public BVSignal<Player, object?> PlayerStatChanged = new();
@@ -29,6 +30,22 @@ public partial class Stat : Instance
 		set
 		{
 			_displayName = value;
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(true)]
+	public bool Visible
+	{
+		get => _visible;
+		set
+		{
+			if (_visible == value)
+			{
+				return;
+			}
+
+			_visible = value;
 			OnPropertyChanged();
 		}
 	}

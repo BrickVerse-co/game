@@ -7,7 +7,11 @@ using BrickVerse.Creator.LSP;
 using BrickVerse.Creator.LSP.Schemas;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Utils;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using System;
@@ -15,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
@@ -171,6 +176,12 @@ public partial class TextEditorRoot : Node
 			CodeEditor.CodeCompletionEnabled = true;
 			CodeEditor.CodeCompletionRequested += OnCompletionRequest;
 			WarmStyLuaInstallation();
+		}
+		else if (IsManagedScriptLanguage(Container.CodeCompletion))
+		{
+			CodeEditor.CodeCompletionPrefixes = [".", "(", " "];
+			CodeEditor.CodeCompletionEnabled = true;
+			CodeEditor.CodeCompletionRequested += OnCompletionRequest;
 		}
 
 		CodeEditor.Text = File.ReadAllText(Container.TargetFilePathAbsolute);
@@ -650,7 +661,6 @@ public partial class TextEditorRoot : Node
 				return;
 			}
 		}
-
 		FormatLinesFallback(fromLine, toLine);
 		CreatorService.Interface.StatusBar?.SetStatus(
 			"StyLua is unavailable; applied basic formatting to " + target
@@ -834,6 +844,9 @@ public partial class TextEditorRoot : Node
 				_highlighter.AddColorRegion(";", "", Color.FromHtml(_palette.Comment));
 				break;
 			case ".cs":
+			case ".cpp":
+			case ".cc":
+			case ".cxx":
 				AddKeywords([
 					"abstract", "as", "async", "await", "base", "bool", "break", "byte", "case",
 					"catch", "char", "class", "const", "continue", "decimal", "default", "delegate",
@@ -850,6 +863,7 @@ public partial class TextEditorRoot : Node
 				AddCStyleComments();
 				break;
 			case ".js":
+			case ".mjs":
 			case ".jsx":
 			case ".ts":
 			case ".tsx":
@@ -995,6 +1009,11 @@ public partial class TextEditorRoot : Node
 				}
 			}
 		}
+		else if (IsManagedScriptLanguage(Container.CodeCompletion) && _oldText != curText)
+		{
+			_oldText = curText;
+			if (IsCompletionTrigger()) OnCompletionRequest();
+		}
 	}
 
 	private bool IsCompletionTrigger()
@@ -1023,7 +1042,6 @@ public partial class TextEditorRoot : Node
 
 	public async void OnCompletionRequest()
 	{
-		if (_completion == null) return;
 		CodeEditCompletionContext context = new()
 		{
 			ScriptPath = Container.TargetFilePathAbsolute,
@@ -1032,7 +1050,9 @@ public partial class TextEditorRoot : Node
 			CursorColumn = CodeEditor.GetCaretColumn(),
 		};
 
-		List<CodeEditCompletionItem> items = await _completion.GetCompletionsAsync(context);
+		List<CodeEditCompletionItem> items = _completion != null
+			? await _completion.GetCompletionsAsync(context)
+			: GetBasicLanguageCompletions(context);
 
 		string wcaret = GetWordBeforeCaret();
 
@@ -1075,12 +1095,76 @@ public partial class TextEditorRoot : Node
 		CodeEditor.UpdateCodeCompletionOptions(false);
 	}
 
+	private static bool IsManagedScriptLanguage(FileTypeEnum fileType) => fileType is
+		FileTypeEnum.CSharp or FileTypeEnum.JavaScript or FileTypeEnum.TypeScript or FileTypeEnum.Cpp;
+
+	private List<CodeEditCompletionItem> GetBasicLanguageCompletions(CodeEditCompletionContext context)
+	{
+		string line = CodeEditor.GetLine(context.CursorLine);
+		string before = line[..Math.Min(context.CursorColumn, line.Length)];
+		bool member = before.TrimEnd().EndsWith(".", StringComparison.Ordinal);
+		IEnumerable<(string Name, CodeEdit.CodeCompletionKind Kind, string Detail)> values = member
+			? GetReflectedScriptMembers()
+			: GetReflectedScriptGlobals();
+		return values
+			.GroupBy(value => value.Name, StringComparer.Ordinal)
+			.Select(group => group.First())
+			.OrderBy(value => value.Name, StringComparer.OrdinalIgnoreCase)
+			.Select(value => new CodeEditCompletionItem
+		{
+			DisplayText = value.Name,
+			InsertText = value.Name,
+			Kind = value.Kind,
+			Detail = value.Detail,
+			Documentation = value.Detail,
+		}).ToList();
+	}
+
+	private static IEnumerable<(string Name, CodeEdit.CodeCompletionKind Kind, string Detail)> GetReflectedScriptMembers()
+	{
+		IEnumerable<Type> types = typeof(IScriptObject).Assembly.GetTypes()
+			.Where(type => type.IsPublic && typeof(IScriptObject).IsAssignableFrom(type));
+		foreach (Type type in types)
+		{
+			foreach (PropertyInfo property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+				if (property.GetCustomAttribute<ScriptPropertyAttribute>() != null)
+					yield return (property.Name, CodeEdit.CodeCompletionKind.Member, property.PropertyType.Name);
+			foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+			{
+				ScriptMethodAttribute? attribute = method.GetCustomAttribute<ScriptMethodAttribute>();
+				if (attribute == null) continue;
+				string name = attribute.MethodName ?? method.Name;
+				string arguments = string.Join(", ", method.GetParameters()
+					.Where(parameter => parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null)
+					.Select(parameter => $"{parameter.Name}: {parameter.ParameterType.Name}"));
+				yield return (name, CodeEdit.CodeCompletionKind.Function, $"{method.ReturnType.Name} {name}({arguments})");
+			}
+		}
+	}
+
+	private static IEnumerable<(string Name, CodeEdit.CodeCompletionKind Kind, string Detail)> GetReflectedScriptGlobals()
+	{
+		foreach (Type type in typeof(IScriptObject).Assembly.GetTypes()
+			.Where(type => type.IsPublic && !type.IsGenericType && typeof(IScriptObject).IsAssignableFrom(type)))
+			yield return (type.Name, CodeEdit.CodeCompletionKind.Class, type.FullName ?? type.Name);
+		foreach ((string name, Type type) in ScriptService.GlobalDataMap)
+			yield return (name, CodeEdit.CodeCompletionKind.Class, type.Name);
+		foreach ((string name, Type type) in ScriptService.EnumMap)
+			yield return (name, CodeEdit.CodeCompletionKind.Enum, type.Name);
+		if (World.Current != null)
+			foreach ((string name, IScriptObject? value) in ScriptService.GetStaticObjects(World.Current))
+				yield return (name, CodeEdit.CodeCompletionKind.Variable, value?.GetType().Name ?? "DataModel service");
+	}
+
 	private void UpdateStatusBar()
 	{
 		int lineIndex = CodeEditor.GetCaretLine() + 1;
 		int column = CodeEditor.GetCaretColumn() + 1;
-		string language = Container.CodeCompletion == FileTypeEnum.Lua
-			? "Luau"
+		string language = ScriptLanguageRegistry.TryFromPath(
+			Container.TargetFilePathAbsolute,
+			out ScriptLanguageDefinition scriptLanguage
+		)
+			? scriptLanguage.DisplayName
 			: Path.GetExtension(Container.TargetFilePathAbsolute).TrimStart('.').ToUpperInvariant();
 		if (string.IsNullOrWhiteSpace(language)) language = "Plain Text";
 		_statusBar.Text = $"{language}  •  Ln {lineIndex}, Col {column}  •  {Container.OriginTabName}";

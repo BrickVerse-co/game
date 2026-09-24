@@ -5,6 +5,7 @@
 using Godot;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
@@ -66,9 +67,7 @@ public sealed partial class Tabs : Control
 				// Terrain editing consumes viewport input while its bottom dock is open.
 				// Return to Output before the code editor takes focus so the terrain
 				// brush cannot continue handling clicks or keyboard shortcuts behind it.
-				TabContainer? bottomTabs = GetNodeOrNull<TabContainer>("../BottomTabs/Tabs");
-				if (bottomTabs != null && bottomTabs.CurrentTab != 0)
-					bottomTabs.CurrentTab = 0;
+				Docking.DockManager.OpenPanel("Output");
 			}
 			RefreshCreatorPresence();
 			CurrentControlChanged?.Invoke(value);
@@ -230,6 +229,14 @@ public sealed partial class Tabs : Control
 			};
 			_openedFiles[fullPath] = tec;
 		}
+		else if (other is ParticleEditorTab particle)
+		{
+			ParticleEditorWindow? existing = _orderedControls.OfType<ParticleEditorWindow>()
+				.FirstOrDefault(editor => editor.Target == particle.Target);
+			if (existing != null) { CurrentControl = existing; return; }
+			container = new ParticleEditorWindow(particle.Target);
+			icon = "play-filled";
+		}
 		else
 		{
 			throw new NotImplementedException();
@@ -328,6 +335,11 @@ public sealed partial class Tabs : Control
 	public class GameTab : TabData
 	{
 		public World World = null!;
+	}
+
+	public class ParticleEditorTab : TabData
+	{
+		public Particles Target = null!;
 	}
 
 	public class TabData

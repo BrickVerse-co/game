@@ -7,22 +7,10 @@ size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 0
 
-[node name="Header" type="PanelContainer" parent="." unique_id=352362473]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"CreatorDockHeaderAccentPanel"
-
-[node name="Label" type="Label" parent="Header" unique_id=716894610]
-layout_mode = 2
-theme_type_variation = &"CreatorDockHeaderLabel"
-text = "Explorer"
-vertical_alignment = 1
-
 [node name="Tabs" type="TabContainer" parent="." unique_id=508319159]
 layout_mode = 2
 size_flags_vertical = 3
+theme_type_variation = &"CreatorDockTabs"
 tabs_visible = false
 deselect_enabled = true
-theme_type_variation = &"CreatorDockTabs"
 script = ExtResource("2_a6sm1")

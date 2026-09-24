@@ -56,13 +56,13 @@ public class BVAssetProvider : IAssetProvider
 			url = item.ID;
 		}
 		else try
-		{
-			buffer = await GetResourceBuffer(url, item.Type, item.ID);
-		}
-		catch (Exception exception) when (item.Type == ResourceType.Mesh)
-		{
-			return await UseUnavailableMesh(item, url, exception);
-		}
+			{
+				buffer = await GetResourceBuffer(url, item.Type, item.ID);
+			}
+			catch (Exception exception) when (item.Type == ResourceType.Mesh)
+			{
+				return await UseUnavailableMesh(item, url, exception);
+			}
 		item.SizeBytes = buffer.LongLength;
 		item.DirectURL = url;
 		string extension = item.ID.StartsWith("temp:", StringComparison.Ordinal)
@@ -704,13 +704,8 @@ public class BVAssetProvider : IAssetProvider
 		{
 			RemoveNonMeshNodes(child); // recurse first
 
-			bool isMesh = child is MeshInstance3D;
-			bool isSkeleton = child is Skeleton3D;
-			bool isExactNode3D = child.GetType() == typeof(Node3D);
-			bool isAnimationPlayer = child is AnimationPlayer;
-			bool isAnimationTree = child is AnimationTree;
-
-			if (!isMesh && !isSkeleton && !isExactNode3D && !isAnimationPlayer && !isAnimationTree)
+			if (child is not (MeshInstance3D or Skeleton3D or AnimationPlayer or AnimationTree or BoneAttachment3D) &&
+				child.GetType() != typeof(Node3D))
 			{
 				child.Free();
 			}

@@ -2,14 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
+using BrickVerse.Enums;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
-using BrickVerse.Enums;
-
-
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.Spatial;
 #endif
@@ -28,6 +27,8 @@ public sealed partial class Sound : Dynamic
 	private bool _playAfterLoad = false;
 	private bool _serverIsPlaying = false;
 	private Resource? _prevAsset;
+	private string _audioBusName = "Master";
+	private AudioEffectPanner? _panner;
 
 	private int _soundID = 0;
 	private bool _autoplay = false;
@@ -41,11 +42,26 @@ public sealed partial class Sound : Dynamic
 	private float _maxDistance = 60f;
 	private SoundGroup? _soundGroup;
 
+	// Additional playback / spatial controls.
+	private float _pan = 0f;
+	private float _maxPolyphony = 1f;
+	private float _attenuationStrength = 1f;
+	private float _panningStrength = 1f;
+	private bool _dopplerEnabled = false;
+	private float _emissionAngle = 45f;
+	private bool _emissionAngleEnabled = false;
+	private float _emissionAngleAttenuation = -12f;
+
 	[Editable, ScriptProperty]
 	public SoundGroup? SoundGroup
 	{
 		get => _soundGroup;
-		set { _soundGroup = value; UpdateSoundGroup(); OnPropertyChanged(); }
+		set
+		{
+			_soundGroup = value;
+			UpdateSoundGroup();
+			OnPropertyChanged();
+		}
 	}
 
 	private AudioStream? _currentStream;
@@ -118,6 +134,106 @@ public sealed partial class Sound : Dynamic
 		{
 			_pitch = Mathf.Max(value, MinPitch);
 			UpdatePitch();
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Stereo pan for non-world sounds. -1 is left, 0 is center, 1 is right.</summary>
+	[Editable, ScriptProperty]
+	public float Pan
+	{
+		get => _pan;
+		set
+		{
+			_pan = Mathf.Clamp(value, -1f, 1f);
+			UpdatePan();
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Maximum simultaneous voices produced by this Sound.</summary>
+	[Editable, ScriptProperty]
+	public int MaxPolyphony
+	{
+		get => (int)_maxPolyphony;
+		set
+		{
+			_maxPolyphony = Mathf.Clamp(value, 1, 128);
+			UpdateMaxPolyphony();
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Strength of distance attenuation for world-space audio.</summary>
+	[Editable, ScriptProperty]
+	public float AttenuationStrength
+	{
+		get => _attenuationStrength;
+		set
+		{
+			_attenuationStrength = Mathf.Max(0f, value);
+			UpdateSpatialSettings();
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>How strongly positional audio is panned between the listener's ears.</summary>
+	[Editable, ScriptProperty]
+	public float PanningStrength
+	{
+		get => _panningStrength;
+		set
+		{
+			_panningStrength = Mathf.Clamp(value, 0f, 3f);
+			UpdateSpatialSettings();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool DopplerEnabled
+	{
+		get => _dopplerEnabled;
+		set
+		{
+			_dopplerEnabled = value;
+			UpdateSpatialSettings();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public bool EmissionAngleEnabled
+	{
+		get => _emissionAngleEnabled;
+		set
+		{
+			_emissionAngleEnabled = value;
+			UpdateSpatialSettings();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float EmissionAngle
+	{
+		get => _emissionAngle;
+		set
+		{
+			_emissionAngle = Mathf.Clamp(value, 0.1f, 90f);
+			UpdateSpatialSettings();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public float EmissionAngleAttenuation
+	{
+		get => _emissionAngleAttenuation;
+		set
+		{
+			_emissionAngleAttenuation = Mathf.Clamp(value, -80f, 0f);
+			UpdateSpatialSettings();
 			OnPropertyChanged();
 		}
 	}
@@ -201,7 +317,9 @@ public sealed partial class Sound : Dynamic
 		}
 	}
 
-	private AudioStreamPlayer3D.AttenuationModelEnum _attenuationMode = AudioStreamPlayer3D.AttenuationModelEnum.Disabled;
+	private AudioStreamPlayer3D.AttenuationModelEnum _attenuationMode = AudioStreamPlayer3D
+		.AttenuationModelEnum
+		.Disabled;
 
 	[Editable, ScriptProperty]
 	public SoundAttenuationModeEnum AttenuationMode
@@ -210,28 +328,44 @@ public sealed partial class Sound : Dynamic
 		{
 			return _attenuationMode switch
 			{
-				AudioStreamPlayer3D.AttenuationModelEnum.InverseDistance => SoundAttenuationModeEnum.Linear,
-				AudioStreamPlayer3D.AttenuationModelEnum.InverseSquareDistance => SoundAttenuationModeEnum.Squared,
-				AudioStreamPlayer3D.AttenuationModelEnum.Logarithmic => SoundAttenuationModeEnum.Logarithmic,
-				AudioStreamPlayer3D.AttenuationModelEnum.Disabled => SoundAttenuationModeEnum.Disabled,
-				_ => SoundAttenuationModeEnum.Disabled
+				AudioStreamPlayer3D.AttenuationModelEnum.InverseDistance =>
+					SoundAttenuationModeEnum.Linear,
+				AudioStreamPlayer3D.AttenuationModelEnum.InverseSquareDistance =>
+					SoundAttenuationModeEnum.Squared,
+				AudioStreamPlayer3D.AttenuationModelEnum.Logarithmic =>
+					SoundAttenuationModeEnum.Logarithmic,
+				AudioStreamPlayer3D.AttenuationModelEnum.Disabled =>
+					SoundAttenuationModeEnum.Disabled,
+				_ => SoundAttenuationModeEnum.Disabled,
 			};
 		}
 		set
 		{
-			if (_audioPlayer3D == null) return;
-
 			_attenuationMode = value switch
 			{
-				SoundAttenuationModeEnum.Linear => AudioStreamPlayer3D.AttenuationModelEnum.InverseDistance,
-				SoundAttenuationModeEnum.Squared => AudioStreamPlayer3D.AttenuationModelEnum.InverseSquareDistance,
-				SoundAttenuationModeEnum.Logarithmic => AudioStreamPlayer3D.AttenuationModelEnum.Logarithmic,
-				SoundAttenuationModeEnum.Disabled => AudioStreamPlayer3D.AttenuationModelEnum.Disabled,
-				_ => _audioPlayer3D.AttenuationModel
+				SoundAttenuationModeEnum.Linear => AudioStreamPlayer3D
+					.AttenuationModelEnum
+					.InverseDistance,
+				SoundAttenuationModeEnum.Squared => AudioStreamPlayer3D
+					.AttenuationModelEnum
+					.InverseSquareDistance,
+				SoundAttenuationModeEnum.Logarithmic => AudioStreamPlayer3D
+					.AttenuationModelEnum
+					.Logarithmic,
+				SoundAttenuationModeEnum.Disabled => AudioStreamPlayer3D
+					.AttenuationModelEnum
+					.Disabled,
+				_ => throw new IndexOutOfRangeException("Attenuation mode out of range"),
 			};
 
-			_audioPlayer3D.AttenuationModel = _attenuationMode;
-			_audioPlayer3D.AttenuationFilterCutoffHz = _attenuationMode == AudioStreamPlayer3D.AttenuationModelEnum.Disabled ? 20500 : 5000;
+			if (_audioPlayer3D != null)
+			{
+				_audioPlayer3D.AttenuationModel = _attenuationMode;
+				_audioPlayer3D.AttenuationFilterCutoffHz =
+					_attenuationMode == AudioStreamPlayer3D.AttenuationModelEnum.Disabled
+						? 20500
+						: 5000;
+			}
 
 			OnPropertyChanged();
 		}
@@ -240,7 +374,10 @@ public sealed partial class Sound : Dynamic
 	[ScriptProperty]
 	public float Time
 	{
-		get => _audioPlayer != null ? _audioPlayer.GetPlaybackPosition() : _audioPlayer3D != null ? _audioPlayer3D.GetPlaybackPosition() : 0;
+		get =>
+			_audioPlayer != null ? _audioPlayer.GetPlaybackPosition()
+			: _audioPlayer3D != null ? _audioPlayer3D.GetPlaybackPosition()
+			: 0;
 		set
 		{
 			_time = value;
@@ -253,14 +390,20 @@ public sealed partial class Sound : Dynamic
 		}
 	}
 
-	[ScriptProperty] public bool Playing { get; private set; } = false;
-	[ScriptProperty] public bool Loading { get; private set; } = false;
+	[ScriptProperty]
+	public bool Playing { get; private set; } = false;
+
+	[ScriptProperty]
+	public bool Loading { get; private set; } = false;
 
 	[ScriptProperty]
 	public float Length => (_currentStream != null ? (float)_currentStream.GetLength() : 0);
 
-	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
-	[ScriptProperty] public BVSignal Finished { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal Loaded { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Finished { get; private set; } = new();
 
 	[SyncVar]
 	public bool ServerIsPlaying
@@ -297,10 +440,16 @@ public sealed partial class Sound : Dynamic
 
 		if (!PlayInWorld)
 		{
-			_audioPlayer = new AudioStreamPlayer
-			{
-				Stream = _currentStream
-			};
+			_audioBusName = $"Sound_{ObjectID}";
+			AudioServer.AddBus();
+			int busIndex = AudioServer.BusCount - 1;
+			AudioServer.SetBusName(busIndex, _audioBusName);
+			AudioServer.SetBusSend(busIndex, _soundGroup?.BusName ?? "Master");
+
+			_panner = new AudioEffectPanner();
+			AudioServer.AddBusEffect(busIndex, _panner);
+
+			_audioPlayer = new AudioStreamPlayer { Stream = _currentStream, Bus = _audioBusName };
 			GDNode.AddChild(_audioPlayer, @internal: Node.InternalMode.Back);
 			_audioPlayer.Finished += OnPlayerFinished;
 		}
@@ -310,7 +459,10 @@ public sealed partial class Sound : Dynamic
 			{
 				Stream = _currentStream,
 				AttenuationModel = _attenuationMode,
-				AttenuationFilterCutoffHz = _attenuationMode == AudioStreamPlayer3D.AttenuationModelEnum.Disabled ? 20500 : 5000
+				AttenuationFilterCutoffHz =
+					_attenuationMode == AudioStreamPlayer3D.AttenuationModelEnum.Disabled
+						? 20500
+						: 5000,
 			};
 			GDNode.AddChild(_audioPlayer3D, @internal: Node.InternalMode.Back);
 			_audioPlayer3D.Finished += OnPlayerFinished;
@@ -325,6 +477,15 @@ public sealed partial class Sound : Dynamic
 
 		_audioPlayer = null;
 		_audioPlayer3D = null;
+
+		if (_audioBusName != "Master")
+		{
+			int busIndex = AudioServer.GetBusIndex(_audioBusName);
+			if (busIndex >= 0)
+				AudioServer.RemoveBus(busIndex);
+			_audioBusName = "Master";
+			_panner = null;
+		}
 	}
 
 	private void UpdateAudioPlayer()
@@ -332,14 +493,27 @@ public sealed partial class Sound : Dynamic
 		UpdateMaxDistance();
 		UpdateVolume();
 		UpdatePitch();
+		UpdatePan();
+		UpdateMaxPolyphony();
+		UpdateSpatialSettings();
 		UpdateSoundGroup();
 	}
 
 	internal void UpdateSoundGroup()
 	{
 		string bus = _soundGroup?.BusName ?? "Master";
-		if (_audioPlayer != null) _audioPlayer.Bus = bus;
-		if (_audioPlayer3D != null) _audioPlayer3D.Bus = bus;
+
+		// 2D sounds stay on their private effects bus; route that bus into the SoundGroup.
+		if (_audioPlayer != null && _audioBusName != "Master")
+		{
+			int busIndex = AudioServer.GetBusIndex(_audioBusName);
+			if (busIndex >= 0)
+				AudioServer.SetBusSend(busIndex, bus);
+			_audioPlayer.Bus = _audioBusName;
+		}
+
+		if (_audioPlayer3D != null)
+			_audioPlayer3D.Bus = bus;
 	}
 
 	private void UpdateMaxDistance()
@@ -359,13 +533,41 @@ public sealed partial class Sound : Dynamic
 		_audioPlayer3D?.PitchScale = _pitch;
 	}
 
+	private void UpdatePan()
+	{
+		// Pan applies to non-world sounds. 3D sounds use positional panning instead.
+		if (_panner != null)
+			_panner.Pan = _pan;
+	}
+
+	private void UpdateMaxPolyphony()
+	{
+		int polyphony = (int)_maxPolyphony;
+		if (_audioPlayer != null)
+			_audioPlayer.MaxPolyphony = polyphony;
+		if (_audioPlayer3D != null)
+			_audioPlayer3D.MaxPolyphony = polyphony;
+	}
+
+	private void UpdateSpatialSettings()
+	{
+		if (_audioPlayer3D == null)
+			return;
+
+		_audioPlayer3D.UnitSize = Mathf.Max(0.01f, _attenuationStrength);
+		_audioPlayer3D.PanningStrength = _panningStrength;
+		_audioPlayer3D.DopplerTracking = _dopplerEnabled
+			? AudioStreamPlayer3D.DopplerTrackingEnum.IdleStep
+			: AudioStreamPlayer3D.DopplerTrackingEnum.Disabled;
+		_audioPlayer3D.EmissionAngleEnabled = _emissionAngleEnabled;
+		_audioPlayer3D.EmissionAngleDegrees = _emissionAngle;
+		_audioPlayer3D.EmissionAngleFilterAttenuationDb = _emissionAngleAttenuation;
+	}
+
 	private void CreateBVAudioAsset()
 	{
 		Loading = true;
-		BVAudioAsset audioAsset = new()
-		{
-			Name = "AudioAsset"
-		};
+		BVAudioAsset audioAsset = new() { Name = "AudioAsset" };
 		Audio = audioAsset;
 		audioAsset.AudioID = _soundID.ToString();
 	}
@@ -425,6 +627,19 @@ public sealed partial class Sound : Dynamic
 		}
 	}
 
+	[ScriptMethod]
+	public float GetPeakVolume()
+	{
+		int bus = AudioServer.GetBusIndex(_audioBusName);
+		if (bus < 0)
+			return 0f;
+
+		float left = AudioServer.GetBusPeakVolumeLeftDb(bus, 0);
+		float right = AudioServer.GetBusPeakVolumeRightDb(bus, 0);
+
+		return Mathf.DbToLinear(Mathf.Max(left, right));
+	}
+
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetPlayOneshot(float volume)
 	{
@@ -445,7 +660,10 @@ public sealed partial class Sound : Dynamic
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetSoundPlay()
 	{
-		if (Root.SessionType != World.SessionTypeEnum.Client) { return; }
+		if (Root.SessionType != World.SessionTypeEnum.Client)
+		{
+			return;
+		}
 		InternalPlay();
 	}
 
@@ -457,7 +675,8 @@ public sealed partial class Sound : Dynamic
 
 	private void InternalPlay()
 	{
-		if (Root.SessionType == World.SessionTypeEnum.Creator) return;
+		if (Root.SessionType == World.SessionTypeEnum.Creator)
+			return;
 
 		if (!Loading && Audio != null)
 		{
@@ -478,7 +697,8 @@ public sealed partial class Sound : Dynamic
 	private void InternalPlayOneShot(float volume)
 	{
 		// can safely mute on the server since this method doesn't change any properties
-		if (Root.Network.IsServer) return;
+		if (Root.Network.IsServer)
+			return;
 
 		if (_audioPlayer != null)
 		{
@@ -541,7 +761,8 @@ public sealed partial class Sound : Dynamic
 	private void OnResourceLoaded(Resource audio)
 	{
 		// Prevent the same resource firing twice
-		if (audio == _prevAsset) return;
+		if (audio == _prevAsset)
+			return;
 		_prevAsset = audio;
 		Loading = false;
 		_currentStream = (AudioStream)audio;

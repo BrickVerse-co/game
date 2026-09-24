@@ -23,8 +23,6 @@ public partial class BVFontAsset : FontAsset
 		}
 	}
 
-	public static void RegisterAsset() => RegisterType<BVFontAsset>();
-
 	public override void LoadResource()
 	{
 		if (string.IsNullOrWhiteSpace(FontID)) return;

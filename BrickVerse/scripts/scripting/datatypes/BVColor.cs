@@ -16,6 +16,47 @@ public class BVColor : IScriptGDObject
 	[ScriptProperty] public float B { get => color.B; set => color.B = value; }
 	[ScriptProperty] public float A { get => color.A; set => color.A = value; }
 
+	/// <summary>
+	/// Shorthand for Color.New(0, 0, 0, 0).
+	/// </summary>
+	[ScriptProperty] public static BVColor Transparent => new() { R = 0f, G = 0f, B = 0f, A = 0f };
+	/// <summary>
+	/// Shorthand for Color.New().
+	/// </summary>
+	[ScriptProperty] public static BVColor Black => new() { R = 0f, G = 0f, B = 0f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(0.5).
+	/// </summary>
+	[ScriptProperty] public static BVColor Gray => new() { R = 0.5f, G = 0.5f, B = 0.5f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(1).
+	/// </summary>
+	[ScriptProperty] public static BVColor White => new() { R = 1f, G = 1f, B = 1f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(1, 0, 0).
+	/// </summary>
+	[ScriptProperty] public static BVColor Red => new() { R = 1f, G = 0f, B = 0f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(1, 1, 0).
+	/// </summary>
+	[ScriptProperty] public static BVColor Yellow => new() { R = 1f, G = 1f, B = 0f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(0, 1, 0).
+	/// </summary>
+	[ScriptProperty] public static BVColor Green => new() { R = 0f, G = 1f, B = 0f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(0, 1, 1).
+	/// </summary>
+	[ScriptProperty] public static BVColor Cyan => new() { R = 0f, G = 1f, B = 1f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(0, 0, 1).
+	/// </summary>
+	[ScriptProperty] public static BVColor Blue => new() { R = 0f, G = 0f, B = 1f, A = 1f };
+	/// <summary>
+	/// Shorthand for Color.New(1, 0, 1).
+	/// </summary>
+	[ScriptProperty] public static BVColor Magenta => new() { R = 1f, G = 0f, B = 1f, A = 1f };
+
 	public static BVColor FromGDClass(Color clr)
 	{
 		return new BVColor()

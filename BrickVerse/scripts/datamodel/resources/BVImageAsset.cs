@@ -40,11 +40,6 @@ public partial class BVImageAsset : ImageAsset
 
 	internal string? DirectImageURL { get; private set; }
 
-	public static void RegisterAsset()
-	{
-		RegisterType<BVImageAsset>();
-	}
-
 	public override void LoadResource()
 	{
 		if (string.IsNullOrEmpty(ImageID)) { return; }

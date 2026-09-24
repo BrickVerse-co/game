@@ -2,8 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using Humanizer;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Datamodel.Interfaces;
@@ -14,19 +19,20 @@ using BrickVerse.Networking.Synchronizers;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using Godot;
+using Humanizer;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Datamodel;
 
 [Abstract]
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicProperties | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+[DynamicallyAccessedMembers(
+	DynamicallyAccessedMemberTypes.PublicProperties
+		| DynamicallyAccessedMemberTypes.PublicFields
+		| DynamicallyAccessedMemberTypes.NonPublicProperties
+		| DynamicallyAccessedMemberTypes.NonPublicFields
+		| DynamicallyAccessedMemberTypes.NonPublicMethods
+)]
 public partial class NetworkedObject : IScriptObject
 {
 	private const float DefaultUnreliableSyncInterval = 1;
@@ -39,12 +45,16 @@ public partial class NetworkedObject : IScriptObject
 	private bool _processRegistered = false;
 	private bool _physicsProcessRegistered = false;
 
-	private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _editablePropertiesCache = [];
+	private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _editablePropertiesCache =
+	[];
 	private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _scriptPropertiesCache = [];
 	private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _syncPropertiesCache = [];
 	private static readonly ConcurrentDictionary<NetworkedObject, Node> _netObjToProxy = new();
 	private static readonly ConcurrentDictionary<Node, NetworkedObject> _proxyToNetObj = new();
-	private static readonly ConcurrentDictionary<Type, Dictionary<string, PropertyInfo?>> _syncPropertyByNameCache = new();
+	private static readonly ConcurrentDictionary<
+		Type,
+		Dictionary<string, PropertyInfo?>
+	> _syncPropertyByNameCache = new();
 
 	private static readonly Dictionary<Type, Dictionary<string, int>> _typeRpcIdMap = [];
 	private static readonly Dictionary<Type, Dictionary<int, MethodInfo>> _typeRpcMethodMap = [];
@@ -61,7 +71,8 @@ public partial class NetworkedObject : IScriptObject
 		get => _networkParent;
 		set
 		{
-			if (value == _networkParent) return;
+			if (value == _networkParent || value == this)
+				return;
 			if (_networkParent != null)
 			{
 				InvokeExitTree();
@@ -87,14 +98,6 @@ public partial class NetworkedObject : IScriptObject
 			{
 				_networkParent.NonInstanceChildren.Add(this);
 			}
-			if (_networkParent is Instance postI && this is Instance selfpostI)
-			{
-				selfpostI.AddNameToParent();
-				selfpostI.AddLegacyNameToParent();
-				postI.Children.Add(selfpostI);
-				selfpostI.Index = postI.Children.Count - 1;
-				postI.ChildAdded.Invoke(selfpostI);
-			}
 
 			if (_networkParent != null)
 			{
@@ -117,6 +120,15 @@ public partial class NetworkedObject : IScriptObject
 				}
 
 				TreeEntered.Invoke();
+			}
+
+			if (_networkParent is Instance postI && this is Instance selfpostI)
+			{
+				selfpostI.AddNameToParent();
+				selfpostI.AddLegacyNameToParent();
+				postI.Children.Add(selfpostI);
+				selfpostI.Index = postI.Children.Count - 1;
+				postI.ChildAdded.Invoke(selfpostI);
 			}
 		}
 	}
@@ -166,7 +178,9 @@ public partial class NetworkedObject : IScriptObject
 			string setto = value;
 
 			if (GetType().IsDefined(typeof(StaticAttribute), false))
-				throw new InvalidOperationException($"Cannot set Name on static type '{GetType().Name}'.");
+				throw new InvalidOperationException(
+					$"Cannot set Name on static type '{GetType().Name}'."
+				);
 			if (string.IsNullOrWhiteSpace(setto))
 				setto = ClassName;
 			if (this is Instance preI)
@@ -233,8 +247,11 @@ public partial class NetworkedObject : IScriptObject
 	public event Action? NetPropertiesReady;
 	public event Action? Deleted;
 
-	[ScriptProperty] public BVSignal<string> PropertyChanged { get; private set; } = new();
-	[ScriptProperty] public BVSignal Renamed { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<string> PropertyChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Renamed { get; private set; } = new();
 
 	private string _networkedObjectID = "";
 	private string _objectID = "";
@@ -267,10 +284,7 @@ public partial class NetworkedObject : IScriptObject
 	public bool IsDeleted
 	{
 		get => _isDeleted;
-		private set
-		{
-			_isDeleted = value;
-		}
+		private set { _isDeleted = value; }
 	}
 
 	public bool IsProcessRegistered => _processRegistered;
@@ -307,7 +321,11 @@ public partial class NetworkedObject : IScriptObject
 	internal bool ShouldReplicateChild => this is not ServerHidden;
 
 	// If local peer id matches, is server (owns everything), or doesn't exist in server (client owns it's local thing)
-	protected bool HasAuthority => Root != null && (Root.Network.LocalPeerID == NetworkAuthority || Root.Network.IsServer || !ExistInNetwork);
+	protected bool HasAuthority =>
+		Root != null
+		&& (
+			Root.Network.LocalPeerID == NetworkAuthority || Root.Network.IsServer || !ExistInNetwork
+		);
 
 	/// <summary>
 	/// Check if this object is ready in the network
@@ -316,7 +334,8 @@ public partial class NetworkedObject : IScriptObject
 	{
 		get
 		{
-			if (this is Instance i && i.IsInTemporary) return false;
+			if (this is Instance i && i.IsInTemporary)
+				return false;
 			return IsPropReady;
 		}
 	}
@@ -335,20 +354,24 @@ public partial class NetworkedObject : IScriptObject
 	[SyncVar(ServerOnly = true)]
 	internal int NetPropAuthority { get; set; } = 1; // Network authority for changing properties
 
-
 	internal Dictionary<string, NetworkedObject> UniqueNames = [];
 
-	[ScriptProperty] public BVSignal TreeEntered { get; private set; } = new();
-	[ScriptProperty] public BVSignal TreeExited { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal TreeEntered { get; private set; } = new();
 
-	[ScriptProperty] public BVSignal Destroying { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal TreeExited { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Destroying { get; private set; } = new();
 
 	public NetworkedObject()
 	{
 		InitializeRpcMethods();
 
 		// Ignore if use node is false
-		if (!Globals.UseNodes) return;
+		if (!Globals.UseNodes)
+			return;
 		Node n = CreateGDNode();
 		OverrideGDNode(n);
 		InitGDNode();
@@ -363,8 +386,7 @@ public partial class NetworkedObject : IScriptObject
 
 	public bool TrySetName(string value)
 	{
-		if (GetType().IsDefined(typeof(StaticAttribute), false)
-			|| string.IsNullOrWhiteSpace(value))
+		if (GetType().IsDefined(typeof(StaticAttribute), false) || string.IsNullOrWhiteSpace(value))
 			return false;
 
 		Name = value;
@@ -381,7 +403,10 @@ public partial class NetworkedObject : IScriptObject
 		Dictionary<string, NetworkedObject> uniqueNames = NetworkParent.UniqueNames;
 
 		// If name is not taken
-		if (!uniqueNames.TryGetValue(original, out NetworkedObject? owner) || ReferenceEquals(owner, this))
+		if (
+			!uniqueNames.TryGetValue(original, out NetworkedObject? owner)
+			|| ReferenceEquals(owner, this)
+		)
 		{
 			return original;
 		}
@@ -400,7 +425,8 @@ public partial class NetworkedObject : IScriptObject
 
 	private static (string baseName, int number) GetBaseNameAndNumber(string name)
 	{
-		if (string.IsNullOrEmpty(name)) return (name, 0);
+		if (string.IsNullOrEmpty(name))
+			return (name, 0);
 
 		int i = name.Length - 1;
 		while (i >= 0 && char.IsDigit(name[i]))
@@ -408,7 +434,8 @@ public partial class NetworkedObject : IScriptObject
 			i--;
 		}
 
-		if (i == name.Length - 1) return (name, 0);
+		if (i == name.Length - 1)
+			return (name, 0);
 
 		string baseName = name[..(i + 1)];
 		string numberPart = name[(i + 1)..];
@@ -439,22 +466,34 @@ public partial class NetworkedObject : IScriptObject
 #pragma warning disable IL2075 // Reflection access is already defined
 			IEnumerable<MethodInfo> rpcMethods = currentType
 				.GetMethods(
-					BindingFlags.Public |
-					BindingFlags.NonPublic |
-					BindingFlags.Instance |
-					BindingFlags.DeclaredOnly)
+					BindingFlags.Public
+						| BindingFlags.NonPublic
+						| BindingFlags.Instance
+						| BindingFlags.DeclaredOnly
+				)
 				.Where(method => method.GetCustomAttribute<NetRpcAttribute>() != null)
 				.OrderBy(method => method.Name, StringComparer.Ordinal)
 				.ThenBy(
-					method => string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.FullName ?? parameter.ParameterType.Name)),
-					StringComparer.Ordinal);
+					method =>
+						string.Join(
+							",",
+							method
+								.GetParameters()
+								.Select(parameter =>
+									parameter.ParameterType.FullName ?? parameter.ParameterType.Name
+								)
+						),
+					StringComparer.Ordinal
+				);
 #pragma warning restore IL2075 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The return value of the source method does not have matching annotations.
 
 			foreach (MethodInfo method in rpcMethods)
 			{
 				if (nameToId.ContainsKey(method.Name))
 				{
-					throw new NetworkException($"Duplicate RPC method name is not allowed: {type.FullName}.{method.Name}");
+					throw new NetworkException(
+						$"Duplicate RPC method name is not allowed: {type.FullName}.{method.Name}"
+					);
 				}
 
 				int methodId = GetStableRpcMethodId(method);
@@ -462,9 +501,10 @@ public partial class NetworkedObject : IScriptObject
 				if (idToMethod.TryGetValue(methodId, out MethodInfo? existingMethod))
 				{
 					throw new NetworkException(
-						$"RPC method ID collision on {type.FullName}. " +
-						$"MethodA={existingMethod.DeclaringType?.FullName}.{existingMethod.Name}, " +
-						$"MethodB={method.DeclaringType?.FullName}.{method.Name}, ID={methodId}");
+						$"RPC method ID collision on {type.FullName}. "
+							+ $"MethodA={existingMethod.DeclaringType?.FullName}.{existingMethod.Name}, "
+							+ $"MethodB={method.DeclaringType?.FullName}.{method.Name}, ID={methodId}"
+					);
 				}
 
 				nameToId[method.Name] = methodId;
@@ -481,10 +521,16 @@ public partial class NetworkedObject : IScriptObject
 	private static int GetStableRpcMethodId(MethodInfo method)
 	{
 		string signature =
-			$"{method.DeclaringType?.FullName}.{method.Name}(" +
-			string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.FullName ?? parameter.ParameterType.Name)) +
-			")";
-
+			$"{method.DeclaringType?.FullName}.{method.Name}("
+			+ string.Join(
+				",",
+				method
+					.GetParameters()
+					.Select(parameter =>
+						parameter.ParameterType.FullName ?? parameter.ParameterType.Name
+					)
+			)
+			+ ")";
 		unchecked
 		{
 			int hash = 17;
@@ -500,16 +546,20 @@ public partial class NetworkedObject : IScriptObject
 
 	private void RegisterName()
 	{
-		if (NetworkParent == null || string.IsNullOrEmpty(_name)) return;
+		if (NetworkParent == null || string.IsNullOrEmpty(_name))
+			return;
 		NetworkParent.UniqueNames[_name] = this;
 	}
 
 	private void UnregisterName()
 	{
-		if (NetworkParent == null || string.IsNullOrEmpty(_name)) return;
+		if (NetworkParent == null || string.IsNullOrEmpty(_name))
+			return;
 
-		if (NetworkParent.UniqueNames.TryGetValue(_name, out NetworkedObject? currentOwner)
-			&& ReferenceEquals(currentOwner, this))
+		if (
+			NetworkParent.UniqueNames.TryGetValue(_name, out NetworkedObject? currentOwner)
+			&& ReferenceEquals(currentOwner, this)
+		)
 		{
 			NetworkParent.UniqueNames.Remove(_name);
 		}
@@ -560,7 +610,8 @@ public partial class NetworkedObject : IScriptObject
 		return current;
 	}
 
-	internal T? GetNetObj<T>(string networkPath) where T : NetworkedObject
+	internal T? GetNetObj<T>(string networkPath)
+		where T : NetworkedObject
 	{
 		return (T?)GetNetObj(networkPath);
 	}
@@ -607,7 +658,8 @@ public partial class NetworkedObject : IScriptObject
 
 	public static NetworkedObject? GetNetObjFromProxy(Node n)
 	{
-		if (_proxyToNetObj.TryGetValue(n, out NetworkedObject? nobj)) return nobj;
+		if (_proxyToNetObj.TryGetValue(n, out NetworkedObject? nobj))
+			return nobj;
 		return null;
 	}
 
@@ -616,7 +668,8 @@ public partial class NetworkedObject : IScriptObject
 	/// </summary>
 	public void InitEntry()
 	{
-		if (InvokedEntry) return;
+		if (InvokedEntry)
+			return;
 		InvokedEntry = true;
 
 		// Assign network ID
@@ -701,25 +754,35 @@ public partial class NetworkedObject : IScriptObject
 	}
 
 	private sealed record DefaultInit(PropertyInfo Property, object? Value);
-	private static readonly ConcurrentDictionary<Type, DefaultInit[]> _defaultInitsCache = new();
 
+	private static readonly ConcurrentDictionary<Type, DefaultInit[]> _defaultInitsCache = new();
 
 	private DefaultInit[] GetDefaultInits()
 	{
 		Type type = GetType();
 
-		return _defaultInitsCache.GetOrAdd(type, _ =>
-		{
-			return [.. GetEditableProperties().Select(prop =>
+		return _defaultInitsCache.GetOrAdd(
+			type,
+			_ =>
 			{
-				DefaultValueAttribute? attr = prop.GetCustomAttribute<DefaultValueAttribute>();
-				if (attr == null)
-					return null;
+				return
+				[
+					.. GetEditableProperties()
+						.Select(prop =>
+						{
+							DefaultValueAttribute? attr =
+								prop.GetCustomAttribute<DefaultValueAttribute>();
+							if (attr == null)
+								return null;
 
-				object? val = ValidateValue(attr.DefaultValue, prop.PropertyType);
-				return new DefaultInit(prop, val);
-			}).Where(x => x != null).Cast<DefaultInit>()];
-		});
+							object? val = ValidateValue(attr.DefaultValue, prop.PropertyType);
+							return new DefaultInit(prop, val);
+						})
+						.Where(x => x != null)
+						.Cast<DefaultInit>(),
+				];
+			}
+		);
 	}
 
 	private static object? ValidateValue(object? raw, Type targetType)
@@ -748,7 +811,7 @@ public partial class NetworkedObject : IScriptObject
 		return value switch
 		{
 			Array a => a.Clone(),
-			_ => value
+			_ => value,
 		};
 	}
 
@@ -800,9 +863,13 @@ public partial class NetworkedObject : IScriptObject
 					signal.DisconnectAll();
 				}
 			}
-			else if (propInfo.PropertyType.IsAssignableTo(typeof(NetworkedObject)) || propInfo.PropertyType.IsAssignableTo(typeof(RefCounted)))
+			else if (
+				propInfo.PropertyType.IsAssignableTo(typeof(NetworkedObject))
+				|| propInfo.PropertyType.IsAssignableTo(typeof(RefCounted))
+			)
 			{
-				if (propInfo.IsDefined(typeof(IgnoreCleanupAttribute))) continue;
+				if (propInfo.IsDefined(typeof(IgnoreCleanupAttribute)))
+					continue;
 				// Null references to other NetworkedObjects
 				try
 				{
@@ -920,7 +987,8 @@ public partial class NetworkedObject : IScriptObject
 
 	private void EnterTreeRecheck()
 	{
-		if (IsDeleted) return;
+		if (IsDeleted)
+			return;
 
 		// Determine should replicatte
 		if (this is Instance i && i.IsDescendantOfClass<ServerHidden>())
@@ -954,7 +1022,8 @@ public partial class NetworkedObject : IScriptObject
 
 		if (GDNode != null && NetworkParent != null)
 		{
-			if (!Node.IsInstanceValid(NetworkParent.SlotNode)) return;
+			if (!Node.IsInstanceValid(NetworkParent.SlotNode))
+				return;
 			Node? parent = GDNode.GetParentOrNull<Node>();
 			if (parent == null)
 			{
@@ -973,7 +1042,8 @@ public partial class NetworkedObject : IScriptObject
 	/// <returns></returns>
 	public virtual Node CreateGDNode()
 	{
-		if (GDNode != null) return GDNode;
+		if (GDNode != null)
+			return GDNode;
 		Node? node = Globals.LoadNetworkedObjectScene(ClassName);
 		if (node != null)
 		{
@@ -997,7 +1067,8 @@ public partial class NetworkedObject : IScriptObject
 
 		Root?.Network?.ReplicateSync.CountInstanceLoaded(this);
 
-		if (IsPropReady) return;
+		if (IsPropReady)
+			return;
 		IsPropReady = true;
 
 		// Send replication when ready
@@ -1041,7 +1112,8 @@ public partial class NetworkedObject : IScriptObject
 
 	internal static Node[] GetDescendantsInternal(Node? innerNode = null)
 	{
-		if (innerNode == null) return [];
+		if (innerNode == null)
+			return [];
 		Node scanNode = innerNode;
 		List<Node> nodes = [];
 
@@ -1061,7 +1133,8 @@ public partial class NetworkedObject : IScriptObject
 
 	internal static Node[] GetNonInstanceDescendants(Node? innerNode = null)
 	{
-		if (innerNode == null) return [];
+		if (innerNode == null)
+			return [];
 		Node scanNode = innerNode;
 		List<Node> nodes = [];
 
@@ -1090,8 +1163,10 @@ public partial class NetworkedObject : IScriptObject
 		// Walk up the inheritance chain
 		while (objType != null)
 		{
-			if (string.Equals(objType.Name, className, StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(objType.FullName, className, StringComparison.OrdinalIgnoreCase))
+			if (
+				string.Equals(objType.Name, className, StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(objType.FullName, className, StringComparison.OrdinalIgnoreCase)
+			)
 				return true;
 
 			objType = objType.BaseType;
@@ -1111,9 +1186,12 @@ public partial class NetworkedObject : IScriptObject
 		return IsA(XmlFormat.ConvertClassName(className));
 	}
 
-	protected void OnPropertyChanged([CallerMemberName] string propertyName = "", bool syncToNet = true)
+	protected void OnPropertyChanged(
+		[CallerMemberName] string propertyName = "",
+		bool syncToNet = true
+	)
 	{
-		PropertyChanged.Invoke(propertyName);
+		PropertyChanged.InvokeOne(propertyName);
 		if (syncToNet)
 			SyncPropToClients(propertyName);
 	}
@@ -1121,13 +1199,16 @@ public partial class NetworkedObject : IScriptObject
 	protected void SyncPropToClients(string propertyName)
 	{
 		// If network has not started yet, return
-		if (Root == null || Root.Network == null) return;
+		if (Root == null || Root.Network == null)
+			return;
 
 		// If root is not ready, return
-		if (!Root.IsLoaded) return;
+		if (!Root.IsLoaded)
+			return;
 
 		// If during replication process, return
-		if (!_isReplicating) return;
+		if (!_isReplicating)
+			return;
 
 		PropertyInfo? prop = GetSyncProperty(propertyName);
 
@@ -1161,10 +1242,19 @@ public partial class NetworkedObject : IScriptObject
 			object? current = prop.GetValue(this);
 
 			// Check if last sync value is the same, or else skip if unreliable is on
-			if (!broadcastUnreliable && _lastSyncedValues.TryGetValue(propertyName, out object? lastValue))
+			if (
+				!broadcastUnreliable
+				&& _lastSyncedValues.TryGetValue(propertyName, out object? lastValue)
+			)
 			{
 				// Check if last value is null, or is the same as one before
-				if ((lastValue == null && current == null) || (lastValue != null && lastValue.Equals(current))) { return; }
+				if (
+					(lastValue == null && current == null)
+					|| (lastValue != null && lastValue.Equals(current))
+				)
+				{
+					return;
+				}
 			}
 
 			// Update cache
@@ -1241,15 +1331,20 @@ public partial class NetworkedObject : IScriptObject
 	private void BroadcastReplicate()
 	{
 		// wait one frame so it's ready
-		Callable.From(() =>
-		{
-			SendNetReplicate(true);
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				SendNetReplicate(true);
+			})
+			.CallDeferred();
 	}
 
 	private void SendNetReplicate(bool isSyncOnce = false)
 	{
-		if (Root.Network == null) { return; }
+		if (Root.Network == null)
+		{
+			return;
+		}
 		Root.Network.ReplicateSync.SendNetReplicate(this, isSyncOnce);
 		ExistInNetwork = true;
 	}
@@ -1268,7 +1363,7 @@ public partial class NetworkedObject : IScriptObject
 			ParentNodeID = NetworkParent?.NetworkedObjectID ?? "",
 			NetworkID = NetworkedObjectID,
 			Index = this is Instance i ? i.Index : 0,
-			Sequence = _sequence
+			Sequence = _sequence,
 		};
 	}
 
@@ -1282,7 +1377,6 @@ public partial class NetworkedObject : IScriptObject
 
 		NetworkedObject? existingObj = null;
 
-
 		if (this is Instance i3)
 		{
 			existingObj = i3.FindChild(objName);
@@ -1292,13 +1386,13 @@ public partial class NetworkedObject : IScriptObject
 			existingObj = FindNonInstanceChild(objName);
 		}
 
-
 		if (existingObj != null)
 		{
 			NetworkedObject netObj = existingObj;
 
 			// Decline any packet with a sequence number older or equal to the latest applied.
-			if (data.Sequence <= netObj.AppliedSequence) return;
+			if (data.Sequence <= netObj.AppliedSequence)
+				return;
 
 			netObj.Root = Root;
 			netObj.ExistInNetwork = true;
@@ -1374,7 +1468,8 @@ public partial class NetworkedObject : IScriptObject
 	{
 		List<NetworkedObject> instances = [];
 
-		if (!ShouldReplicateChild) return [];
+		if (!ShouldReplicateChild)
+			return [];
 
 		instances.AddRange(NonInstanceChildren);
 
@@ -1464,12 +1559,14 @@ public partial class NetworkedObject : IScriptObject
 
 			if (value != null)
 			{
-				propData.Add(new NetPropReplicateData
-				{
-					Name = prop.Name,
-					ValueRaw = NetworkPropSync.SerializePropValue(value),
-					Sequence = GetSequenceForProp(prop.Name)
-				});
+				propData.Add(
+					new NetPropReplicateData
+					{
+						Name = prop.Name,
+						ValueRaw = NetworkPropSync.SerializePropValue(value),
+						Sequence = GetSequenceForProp(prop.Name),
+					}
+				);
 			}
 		}
 
@@ -1478,16 +1575,16 @@ public partial class NetworkedObject : IScriptObject
 
 	public NetPropNetworkedObjectRef? GetObjectRef()
 	{
-		return new()
-		{ NetID = NetworkedObjectID };
+		return new() { NetID = NetworkedObjectID };
 	}
 
 	internal PropertyInfo? GetSyncProperty(string propName)
 	{
 		// Get sync property from cache
-		Dictionary<string, PropertyInfo?> nameCache = _syncPropertyByNameCache
-			.GetOrAdd(GetType(), type =>
-				GetSyncProperties().ToDictionary(p => p.Name, p => (PropertyInfo?)p));
+		Dictionary<string, PropertyInfo?> nameCache = _syncPropertyByNameCache.GetOrAdd(
+			GetType(),
+			type => GetSyncProperties().ToDictionary(p => p.Name, p => (PropertyInfo?)p)
+		);
 
 		nameCache.TryGetValue(propName, out PropertyInfo? result);
 		return result;
@@ -1497,7 +1594,8 @@ public partial class NetworkedObject : IScriptObject
 	{
 		PropertyInfo? prop = GetSyncProperty(propName);
 
-		if (prop == null) return;
+		if (prop == null)
+			return;
 
 		// Check sequence
 		if (sequence != -1)
@@ -1562,20 +1660,31 @@ public partial class NetworkedObject : IScriptObject
 		_isReplicating = true;
 	}
 
-	public T New<T>(NetworkedObject? parent = null) where T : NetworkedObject
+	public T New<T>(NetworkedObject? parent = null)
+		where T : NetworkedObject
 	{
 		NetworkedObject obj = NewInternal(typeof(T).Name, parent, Root);
 		return (T)obj;
 	}
 
-	public static NetworkedObject? NewFromScript([ScriptingCaller] Script caller, string className, NetworkedObject? parent = null)
+	public static NetworkedObject? NewFromScript(
+		[ScriptingCaller] Script caller,
+		string className,
+		NetworkedObject? parent = null
+	)
 	{
 		return NewInternal(className, parent, caller.Root);
 	}
 
-	protected static NetworkedObject NewInternal(string className, NetworkedObject? parent = null, World? root = null)
+	protected static NetworkedObject NewInternal(
+		string className,
+		NetworkedObject? parent = null,
+		World? root = null
+	)
 	{
-		NetworkedObject netObj = Globals.LoadNetworkedObject(className) ?? throw new Exception(className + " doesn't exist");
+		NetworkedObject netObj =
+			Globals.LoadNetworkedObject(className)
+			?? throw new Exception(className + " doesn't exist");
 
 		if (!netObj.GetType().IsDefined(typeof(InstantiableAttribute), false))
 		{
@@ -1673,7 +1782,8 @@ public partial class NetworkedObject : IScriptObject
 
 		IEnumerable<PropertyInfo> creatorProperties = from.GetEditableProperties();
 
-		IEnumerable<PropertyInfo> cloneIncludes = from.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+		IEnumerable<PropertyInfo> cloneIncludes = from.GetType()
+			.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 			.Where(p => p.GetCustomAttribute<CloneIncludeAttribute>() != null);
 
 		creatorProperties = creatorProperties.Concat(cloneIncludes);
@@ -1723,7 +1833,7 @@ public partial class NetworkedObject : IScriptObject
 		{
 			BroadcastAll = true,
 			Target = ProcessRpcTarget(),
-			TargetMethod = GetRpcMethodId(methodName)
+			TargetMethod = GetRpcMethodId(methodName),
 		};
 
 		if (args != null)
@@ -1735,7 +1845,11 @@ public partial class NetworkedObject : IScriptObject
 		}
 
 		MethodInfo? md = GetRpcMethod(methodName);
-		NetRpcAttribute? rpcA = md.GetCustomAttribute<NetRpcAttribute>() ?? throw new NetworkException($"Tried to call Rpc function which is not marked as Rpc ({md.Name})");
+		NetRpcAttribute? rpcA =
+			md.GetCustomAttribute<NetRpcAttribute>()
+			?? throw new NetworkException(
+				$"Tried to call Rpc function which is not marked as Rpc ({md.Name})"
+			);
 
 		if (!CanSendNetworkRpc())
 		{
@@ -1754,7 +1868,9 @@ public partial class NetworkedObject : IScriptObject
 
 		if (Globals.UseLogRPC)
 		{
-			BV.Print($"RPC {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
+			BV.Print(
+				$"RPC {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)"
+			);
 		}
 
 		if (network.IsServer)
@@ -1772,9 +1888,7 @@ public partial class NetworkedObject : IScriptObject
 		if (ShouldUseNetworkPathForRpc())
 			return NetworkPath;
 
-		return string.IsNullOrEmpty(NetworkedObjectID)
-			? NetworkPath
-			: "i:" + NetworkedObjectID;
+		return string.IsNullOrEmpty(NetworkedObjectID) ? NetworkPath : "i:" + NetworkedObjectID;
 	}
 
 	private bool ShouldUseNetworkPathForRpc()
@@ -1806,10 +1920,10 @@ public partial class NetworkedObject : IScriptObject
 
 	private bool CanSendNetworkRpc()
 	{
-		return Root != null &&
-			Root.Network != null &&
-			Root.Network.NetInstance != null &&
-			(Root.Network.IsServer || Root.Network.ClientConnected);
+		return Root != null
+			&& Root.Network != null
+			&& Root.Network.NetInstance != null
+			&& (Root.Network.IsServer || Root.Network.ClientConnected);
 	}
 
 	public void RpcId(int id, string methodName, params object?[]? args)
@@ -1818,7 +1932,7 @@ public partial class NetworkedObject : IScriptObject
 		{
 			BroadcastAll = false,
 			Target = ProcessRpcTarget(),
-			TargetMethod = GetRpcMethodId(methodName)
+			TargetMethod = GetRpcMethodId(methodName),
 		};
 		if (args != null)
 		{
@@ -1829,7 +1943,11 @@ public partial class NetworkedObject : IScriptObject
 		}
 
 		MethodInfo? md = GetRpcMethod(methodName);
-		NetRpcAttribute? rpcA = md.GetCustomAttribute<NetRpcAttribute>() ?? throw new NetworkException($"Tried to call Rpc function which is not marked as Rpc ({md.Name})");
+		NetRpcAttribute? rpcA =
+			md.GetCustomAttribute<NetRpcAttribute>()
+			?? throw new NetworkException(
+				$"Tried to call Rpc function which is not marked as Rpc ({md.Name})"
+			);
 
 		if (!CanSendNetworkRpc())
 		{
@@ -1845,13 +1963,16 @@ public partial class NetworkedObject : IScriptObject
 			md.Invoke(this, args);
 		}
 
-		if (id == 1 && network.IsServer) return;
+		if (id == 1 && network.IsServer)
+			return;
 
 		byte[] msg = netmsg.Serialize();
 
 		if (Globals.UseLogRPC)
 		{
-			BV.Print($"RPCID {id} {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)");
+			BV.Print(
+				$"RPCID {id} {methodName} ({msg.Length.Bytes().Kilobytes}kb) ({args?.Length ?? 0} args)"
+			);
 		}
 		netInstance.SendMessage(id, msg, rpcA.TransferMode, rpcA.TransferChannel);
 	}
@@ -1865,9 +1986,13 @@ public partial class NetworkedObject : IScriptObject
 		while (currentType != null && md == null)
 		{
 #pragma warning disable IL2075 // Method reflection access is already defined
-			md = currentType.GetMethod(methodName,
-				BindingFlags.Public | BindingFlags.NonPublic |
-				BindingFlags.Instance | BindingFlags.DeclaredOnly);
+			md = currentType.GetMethod(
+				methodName,
+				BindingFlags.Public
+					| BindingFlags.NonPublic
+					| BindingFlags.Instance
+					| BindingFlags.DeclaredOnly
+			);
 #pragma warning restore IL2075
 
 			currentType = currentType.BaseType;
@@ -1892,10 +2017,14 @@ public partial class NetworkedObject : IScriptObject
 
 			foreach (var kv in idToMethod.OrderBy(x => x.Key))
 			{
-				BV.PrintErr($"  Has RPC {kv.Key}: {kv.Value.DeclaringType?.FullName}.{kv.Value.Name}");
+				BV.PrintErr(
+					$"  Has RPC {kv.Key}: {kv.Value.DeclaringType?.FullName}.{kv.Value.Name}"
+				);
 			}
 
-			throw new Exception($"No RPC method found with id '{methodId}' on type {type.FullName}");
+			throw new Exception(
+				$"No RPC method found with id '{methodId}' on type {type.FullName}"
+			);
 		}
 
 		return method;
@@ -1911,7 +2040,6 @@ public partial class NetworkedObject : IScriptObject
 
 		return id;
 	}
-
 
 	[ScriptMethod]
 	public async void Destroy(float time = 0f)
@@ -1936,10 +2064,14 @@ public partial class NetworkedObject : IScriptObject
 
 	internal void InternalDestroy(bool forceDestroy)
 	{
-		if (GetType().IsDefined(typeof(StaticAttribute), false) && !forceDestroy) throw new InvalidOperationException("Cannot destroy a static class");
-		if (GetType().IsDefined(typeof(InternalAttribute), false) && !forceDestroy) throw new InvalidOperationException("Cannot destroy an internal class");
-		if (this is Player && !forceDestroy) throw new InvalidOperationException("Cannot destroy a player, use Kick instead.");
-		if (IsDeleted) return;
+		if (GetType().IsDefined(typeof(StaticAttribute), false) && !forceDestroy)
+			throw new InvalidOperationException("Cannot destroy a static class");
+		if (GetType().IsDefined(typeof(InternalAttribute), false) && !forceDestroy)
+			throw new InvalidOperationException("Cannot destroy an internal class");
+		if (this is Player && !forceDestroy)
+			throw new InvalidOperationException("Cannot destroy a player, use Kick instead.");
+		if (IsDeleted)
+			return;
 
 		Destroying?.Invoke();
 
@@ -1995,7 +2127,8 @@ public partial class NetworkedObject : IScriptObject
 	internal void OverrideGDNode(Node to)
 	{
 		// Ignore if use node is false
-		if (!Globals.UseNodes) return;
+		if (!Globals.UseNodes)
+			return;
 
 		if (GDNode != null)
 		{
@@ -2012,17 +2145,20 @@ public partial class NetworkedObject : IScriptObject
 
 	public void SetProcess(bool enabled)
 	{
-		if (IsDeleted) return;
+		if (IsDeleted)
+			return;
 
 		if (enabled)
 		{
-			if (_processRegistered) return;
+			if (_processRegistered)
+				return;
 			Globals.GodotProcess += Process;
 			_processRegistered = true;
 		}
 		else
 		{
-			if (!_processRegistered) return;
+			if (!_processRegistered)
+				return;
 			Globals.GodotProcess -= Process;
 			_processRegistered = false;
 		}
@@ -2030,17 +2166,20 @@ public partial class NetworkedObject : IScriptObject
 
 	public void SetPhysicsProcess(bool enabled)
 	{
-		if (IsDeleted) return;
+		if (IsDeleted)
+			return;
 
 		if (enabled)
 		{
-			if (_physicsProcessRegistered) return;
+			if (_physicsProcessRegistered)
+				return;
 			Globals.GodotPhysicsProcess += PhysicsProcess;
 			_physicsProcessRegistered = true;
 		}
 		else
 		{
-			if (!_physicsProcessRegistered) return;
+			if (!_physicsProcessRegistered)
+				return;
 			Globals.GodotPhysicsProcess -= PhysicsProcess;
 			_physicsProcessRegistered = false;
 		}
@@ -2077,22 +2216,32 @@ public partial class NetworkedObject : IScriptObject
 	[ScriptMethod]
 	public void Delete(float time = 0f) => Destroy(time);
 
-
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
 	public static string ToString(NetworkedObject? obj)
 	{
-		if (obj == null) return "<NetworkedObject>";
+		if (obj == null)
+			return "<NetworkedObject>";
 		return "<" + obj.ClassName + ":" + obj.Name + ">";
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
-	public static bool MetamethodEquals(object? a, object? b) => a is NetworkedObject netobj && netobj.Equals(b);
+	public static bool MetamethodEquals(object? a, object? b) =>
+		a is NetworkedObject netobj && netobj.Equals(b);
 
 	internal IEnumerable<PropertyInfo> GetEditableProperties()
 	{
 #pragma warning disable IL2070 // Reflection access is already defined
-		return _editablePropertiesCache.GetOrAdd(GetType(), static type =>
-		[.. type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(p => p.IsDefined(typeof(EditableAttribute)))]
+		return _editablePropertiesCache.GetOrAdd(
+			GetType(),
+			static type =>
+				[
+					.. type.GetProperties(
+							BindingFlags.Public
+								| BindingFlags.Instance
+								| BindingFlags.FlattenHierarchy
+						)
+						.Where(p => p.IsDefined(typeof(EditableAttribute))),
+				]
 		);
 #pragma warning restore IL2070 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The parameter of method does not have matching annotations.
 	}
@@ -2100,8 +2249,20 @@ public partial class NetworkedObject : IScriptObject
 	internal IEnumerable<PropertyInfo> GetScriptProperties()
 	{
 #pragma warning disable IL2070 // Reflection access is already defined
-		return _scriptPropertiesCache.GetOrAdd(GetType(), static type =>
-		[.. type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(p => p.IsDefined(typeof(ScriptPropertyAttribute)) || p.IsDefined(typeof(ScriptLegacyPropertyAttribute)))]
+		return _scriptPropertiesCache.GetOrAdd(
+			GetType(),
+			static type =>
+				[
+					.. type.GetProperties(
+							BindingFlags.Public
+								| BindingFlags.Instance
+								| BindingFlags.FlattenHierarchy
+						)
+						.Where(p =>
+							p.IsDefined(typeof(ScriptPropertyAttribute))
+							|| p.IsDefined(typeof(ScriptLegacyPropertyAttribute))
+						),
+				]
 		);
 #pragma warning restore IL2070 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The parameter of method does not have matching annotations.
 	}
@@ -2109,22 +2270,35 @@ public partial class NetworkedObject : IScriptObject
 	internal IEnumerable<PropertyInfo> GetSyncProperties()
 	{
 #pragma warning disable IL2070 // Reflection access is already defined
-		return _syncPropertiesCache.GetOrAdd(GetType(), static type =>
-		[.. type.GetProperties(BindingFlags.Public | BindingFlags.Instance| BindingFlags.FlattenHierarchy)
-			.Where(p =>
-				// Editable or SyncVar, but not NoSync
-				(p.IsDefined(typeof(EditableAttribute)) ||
-				 p.IsDefined(typeof(SyncVarAttribute))) &&
-				!p.IsDefined(typeof(NoSyncAttribute))
-			)]
+		return _syncPropertiesCache.GetOrAdd(
+			GetType(),
+			static type =>
+				[
+					.. type.GetProperties(
+							BindingFlags.Public
+								| BindingFlags.Instance
+								| BindingFlags.FlattenHierarchy
+						)
+						.Where(p =>
+							// Editable or SyncVar, but not NoSync
+							(
+								p.IsDefined(typeof(EditableAttribute))
+								|| p.IsDefined(typeof(SyncVarAttribute))
+							) && !p.IsDefined(typeof(NoSyncAttribute))
+						),
+				]
 		);
 #pragma warning restore IL2070 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The parameter of method does not have matching annotations.
 	}
 
 	public override bool Equals(object? obj) =>
-		obj is NetworkedObject netobj &&
-		ExistInNetwork == netobj.ExistInNetwork &&
-		(ExistInNetwork ? NetworkedObjectID == netobj.NetworkedObjectID : ObjectID == netobj.ObjectID);
+		obj is NetworkedObject netobj
+		&& ExistInNetwork == netobj.ExistInNetwork
+		&& (
+			ExistInNetwork
+				? NetworkedObjectID == netobj.NetworkedObjectID
+				: ObjectID == netobj.ObjectID
+		);
 
 	public override int GetHashCode()
 	{
@@ -2134,13 +2308,19 @@ public partial class NetworkedObject : IScriptObject
 #if DEBUG
 	private void ValidateProcessRegistration()
 	{
-		const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+		const BindingFlags flags =
+			BindingFlags.Instance
+			| BindingFlags.Public
+			| BindingFlags.NonPublic
+			| BindingFlags.DeclaredOnly;
 
 		var declaredProcess = GetType().GetMethod(nameof(Process), flags);
 		var declaredPhysics = GetType().GetMethod(nameof(PhysicsProcess), flags);
 
-		bool declaresProcess = declaredProcess != null && declaredProcess.DeclaringType != typeof(NetworkedObject);
-		bool declaresPhysics = declaredPhysics != null && declaredPhysics.DeclaringType != typeof(NetworkedObject);
+		bool declaresProcess =
+			declaredProcess != null && declaredProcess.DeclaringType != typeof(NetworkedObject);
+		bool declaresPhysics =
+			declaredPhysics != null && declaredPhysics.DeclaringType != typeof(NetworkedObject);
 
 		if (declaresProcess && !IsProcessRegistered)
 		{
@@ -2149,7 +2329,9 @@ public partial class NetworkedObject : IScriptObject
 
 		if (declaresPhysics && !IsPhysicsProcessRegistered)
 		{
-			BV.PrintWarn($"{ClassName} declares PhysicsProcess() but doesn't call SetPhysicsProcess(true)");
+			BV.PrintWarn(
+				$"{ClassName} declares PhysicsProcess() but doesn't call SetPhysicsProcess(true)"
+			);
 		}
 	}
 #endif

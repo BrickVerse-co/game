@@ -170,7 +170,7 @@ public sealed partial class AnimationTrack : Instance
 			}
 		}
 		else if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
-			{ if (_objectPlayer.IsPlaying()) UpdatePlayback((float)_objectPlayer.CurrentAnimationPosition, true); }
+		{ if (_objectPlayer.IsPlaying()) UpdatePlayback((float)_objectPlayer.CurrentAnimationPosition, true); }
 		else if (_objectPlayer != null) { _objectPlayer = null; NotifyStopped(false); }
 	}
 

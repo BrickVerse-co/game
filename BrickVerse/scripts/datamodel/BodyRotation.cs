@@ -2,25 +2,26 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
 public partial class BodyRotation : Instance
 {
-	private Vector3 _targetRotation = new(0, 0, 0);
+	private Quaternion _targetQuaternion = Quaternion.Identity;
 	private float _force = 0;
 	private float _acceptanceAngle = 5;
 
 	[Editable, ScriptProperty]
 	public Vector3 TargetRotation
 	{
-		get => _targetRotation;
+		get => _targetQuaternion.GetEuler().RadToDeg();
 		set
 		{
-			_targetRotation = value;
+			_targetQuaternion = Quaternion.FromEuler(value.DegToRad());
 			OnPropertyChanged();
 		}
 	}
@@ -55,27 +56,21 @@ public partial class BodyRotation : Instance
 
 	public override void PhysicsProcess(double delta)
 	{
-		Quaternion gdRot = Quaternion.FromEuler(_targetRotation);
-
 		if (Parent != null && Parent.GDNode is RigidBody3D rigid3D)
 		{
-			Vector3 currentPos = rigid3D.GlobalPosition;
-			Quaternion currentRot = rigid3D.GlobalBasis.GetRotationQuaternion();
-			Quaternion error = gdRot * currentRot.Inverse();
+			Quaternion error =
+				_targetQuaternion * rigid3D.GlobalBasis.GetRotationQuaternion().Inverse();
 
 			if (error.W < 0)
 			{
 				error = -error;
 			}
 
-			error = error.Normalized();
-			Vector3 axis = error.GetAxis();
 			float angle = error.GetAngle();
-			float speed = Mathf.Min(angle * Force, Force);
 
 			if (angle > Mathf.DegToRad(AcceptanceAngle))
 			{
-				rigid3D.AngularVelocity = axis * speed;
+				rigid3D.AngularVelocity = error.GetAxis() * Mathf.Min(angle * Force, Force);
 			}
 			else
 			{
@@ -88,6 +83,6 @@ public partial class BodyRotation : Instance
 	[ScriptMethod]
 	public void SetQuaternion(Quaternion quaternion)
 	{
-		_targetRotation = quaternion.GetEuler();
+		_targetQuaternion = quaternion;
 	}
 }

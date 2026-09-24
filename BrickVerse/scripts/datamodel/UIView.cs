@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Enums;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -12,9 +13,21 @@ public partial class UIView : UIField
 {
 	private Color _borderColor;
 	private Color _color;
+	private BorderModeEnum _borderMode;
 	private float _borderWidth;
 	private float _cornerRadius;
 
+	[Editable, ScriptProperty]
+	public BorderModeEnum BorderMode
+	{
+		get => _borderMode;
+		set
+		{
+			_borderMode = value;
+			UpdateBorderOffset();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
 	public Color BorderColor
@@ -102,4 +115,29 @@ public partial class UIView : UIField
 		CornerRadius = 0;
 	}
 
+	private void UpdateBorderOffset()
+	{
+		int rounded = Mathf.RoundToInt(_borderWidth);
+		if (_borderMode == BorderModeEnum.Outline)
+		{
+			_styleBox.ExpandMarginBottom = rounded;
+			_styleBox.ExpandMarginLeft = rounded;
+			_styleBox.ExpandMarginRight = rounded;
+			_styleBox.ExpandMarginTop = rounded;
+		}
+		else if (_borderMode == BorderModeEnum.Middle)
+		{
+			_styleBox.ExpandMarginBottom = rounded / 2;
+			_styleBox.ExpandMarginLeft = rounded / 2;
+			_styleBox.ExpandMarginRight = rounded / 2;
+			_styleBox.ExpandMarginTop = rounded / 2;
+		}
+		else
+		{
+			_styleBox.ExpandMarginBottom = 0;
+			_styleBox.ExpandMarginLeft = 0;
+			_styleBox.ExpandMarginRight = 0;
+			_styleBox.ExpandMarginTop = 0;
+		}
+	}
 }

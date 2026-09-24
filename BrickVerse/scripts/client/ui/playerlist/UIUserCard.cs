@@ -8,6 +8,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using System;
 using System.Collections.Generic;
 
 namespace BrickVerse.Client.UI.Playerlist;
@@ -72,10 +73,25 @@ public partial class UIUserCard : Control
 	private void AddStat(Stat stat)
 	{
 		if (_statToUserCardStat.ContainsKey(stat)) return;
+
+		stat.PropertyChanged.Connect(_ => OnStatVisibilityChanged(stat));
+
+		if (!stat.Visible) return;
+
+		CreateStatRow(stat);
+	}
+
+	private void CreateStatRow(Stat stat)
+	{
+		if (_statToUserCardStat.ContainsKey(stat)) return;
+
 		var s = Globals.CreateInstanceFromScene<UIUserCardStat>(UserCardStat);
 		s.TargetStat = stat;
 		s.Root = this;
+
 		_statsContainer.AddChild(s);
+		_statsContainer.MoveChild(s, GetInsertIndex(stat));
+
 		_statToUserCardStat.Add(stat, s);
 
 		void OnStatDeleted()
@@ -97,6 +113,30 @@ public partial class UIUserCard : Control
 			RefreshBox();
 		}
 	}
+
+
+	private int GetInsertIndex(Stat stat)
+	{
+		Stat[] visibleStats = Root.Stats.GetStats(true);
+		return Array.IndexOf(visibleStats, stat);
+	}
+
+	private void OnStatVisibilityChanged(Stat stat)
+	{
+		bool hasRow = _statToUserCardStat.ContainsKey(stat);
+
+		if (stat.Visible && !hasRow)
+		{
+			CreateStatRow(stat);
+		}
+		else if (!stat.Visible && hasRow)
+		{
+			_statToUserCardStat[stat].QueueFree();
+			_statToUserCardStat.Remove(stat);
+			RefreshBox();
+		}
+	}
+
 
 	private void OnIconLoaded(Resource resource)
 	{

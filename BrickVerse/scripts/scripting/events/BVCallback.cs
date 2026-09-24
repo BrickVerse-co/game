@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Scripting.Luau;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Scripting;
@@ -16,6 +16,7 @@ namespace BrickVerse.Scripting;
 public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 {
 	public Delegate? OriginalDelegate = null!;
+	internal Action<object>? SingleAction;
 	public Action<object?[]> TargetAction = target;
 	public IScriptLanguageProvider LangProvider = null!;
 	public Script? FromScript;
@@ -26,7 +27,8 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 
 	public void Invoke(params object?[] args)
 	{
-		if (_disposed) return;
+		if (_disposed)
+			return;
 		BV.CallOnMainThread(() =>
 		{
 			TargetAction.Invoke(args);
@@ -35,7 +37,13 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 
 	public void InvokeDirect(object?[] args)
 	{
-		if (_disposed) return;
+		if (_disposed)
+			return;
+		if (BV.IsMainThread() || !Globals.GDAvailable)
+		{
+			TargetAction.Invoke(args);
+			return;
+		}
 		if (InvokeInParallel && ParallelActor != null)
 		{
 			Actor actor = ParallelActor;
@@ -45,6 +53,29 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 		BV.CallOnMainThread(() =>
 		{
 			TargetAction.Invoke(args);
+		});
+	}
+
+	internal void InvokeOne(object? arg)
+	{
+		if (_disposed)
+			return;
+
+		if (BV.IsMainThread() || !Globals.GDAvailable)
+		{
+			if (SingleAction != null)
+			{
+				SingleAction(arg!);
+				return;
+			}
+
+			TargetAction.Invoke([arg]);
+			return;
+		}
+
+		BV.CallOnMainThread(() =>
+		{
+			TargetAction.Invoke([arg]);
 		});
 	}
 
@@ -72,7 +103,8 @@ public class BVCallback(Action<object?[]> target) : IDisposable, IScriptObject
 
 	public void Dispose()
 	{
-		if (_disposed) return;
+		if (_disposed)
+			return;
 		_disposed = true;
 		GC.SuppressFinalize(this);
 	}

@@ -10,6 +10,7 @@ using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
+using BrickVerse.Creator.UI.Docking;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Creator.Utils;
@@ -126,10 +127,10 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		RuntimeDebugWindow window = new(DebugServer, processId, isServer);
 		_runtimeDebugWindows[processId] = window;
-		TabContainer bottomTabs = CreatorGUIRoot.Singleton.GetNode<TabContainer>(
-			"Splitter/Center/BottomTabs/Tabs"
+		DockManager.AddPanel(
+			new DockPanel(window.DockPanelId, window.Name, window),
+			"bottom.single"
 		);
-		bottomTabs.AddChild(window);
 		window.Activate();
 	}
 
@@ -643,26 +644,41 @@ public sealed partial class CreatorService : Node, IScriptObject
 		};
 		AddChild(session);
 
-		Interface.StatusBar?.SetStatus("Initializing...");
-
 		Interface.LoadOverlay?.SetTitle("Opening project");
-		Interface.LoadOverlay?.SetStatus("Initializing");
-		Interface.LoadOverlay?.SetMaxProgress(2);
+		Interface.LoadOverlay?.SetMaxProgress(8);
 		StartupSplash.Singleton.Close();
 		Interface.LoadOverlay?.Show();
-		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+		async Task SetOpenPhase(string status, int progress)
+		{
+			Interface.LoadOverlay?.SetStatus(status);
+			Interface.LoadOverlay?.SetProgress(progress);
+			Interface.StatusBar?.SetStatus(status);
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		}
 
 		try
 		{
+			await SetOpenPhase("Reading project metadata", 1);
 			await session.Init();
 
-			Interface.StatusBar?.SetStatus("Opening world...");
-			Interface.LoadOverlay?.SetStatus("Opening world");
-			Interface.LoadOverlay?.SetProgress(1);
+			await SetOpenPhase("Indexing project files", 2);
+			await SetOpenPhase("Reading world data", 3);
+			void ReportWorldStatus(string status)
+			{
+				Interface.LoadOverlay?.SetStatus(status);
+				Interface.LoadOverlay?.SetProgress(status.StartsWith("Building", StringComparison.Ordinal) ? 4 : 5);
+				Interface.StatusBar?.SetStatus(status);
+			}
+			void ReportWorldDetail(string detail)
+			{
+				Interface.LoadOverlay?.SetDetail(detail);
+			}
 
 			World? openedWorld = targetPlace != null
-				? session.OpenWorld(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride)
-				: session.OpenMainWorld(worldOverride);
+				? await session.OpenWorldAsync(Path.GetRelativePath(folder, targetPlace).SanitizePath(), worldOverride,
+					reportStatus: ReportWorldStatus, reportDetail: ReportWorldDetail)
+				: await session.OpenMainWorldAsync(worldOverride, ReportWorldStatus, ReportWorldDetail);
 			if (openedWorld == null)
 			{
 				throw new InvalidDataException("The project did not open a world.");
@@ -670,7 +686,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 			Sessions.Add(session);
 			openedSuccessfully = true;
+			await SetOpenPhase("Starting project services", 6);
 			await ProjectManager.AddToRecents(folder, openedWorld.WorldFilePath);
+			await SetOpenPhase("Preparing Creator workspace", 7);
 
 			if (!string.IsNullOrWhiteSpace(PendingModelImportPath))
 			{
@@ -678,6 +696,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 				PendingModelImportPath = null;
 				Interface.ImportModel(modelPath);
 			}
+			await SetOpenPhase("Project ready", 8);
 		}
 		catch (Exception ex)
 		{
@@ -714,6 +733,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		try
 		{
+			CompileProjectScripts(World.Current);
 			PolyFormat.SaveWorldToFile(World.Current, placePath);
 		}
 		catch (Exception ex)
@@ -729,6 +749,25 @@ public sealed partial class CreatorService : Node, IScriptObject
 		CurrentSession.Save();
 		Interface.StatusBar?.SetStatus("Saved to " + placePath + " at " + DateTime.Now.ToString("HH:mm:ss") + " in " + savingTime.ToString("0.00") + " milliseconds");
 		Interface.LoadOverlay?.Hide();
+	}
+
+	private static void CompileProjectScripts(World root)
+	{
+		Interface.LoadOverlay?.SetStatus("Compiling scripts...");
+		foreach (Script script in root.GetDescendants().OfType<Script>())
+		{
+			if (string.IsNullOrWhiteSpace(script.Source)) continue;
+			script.Bytecode = null;
+			try
+			{
+				root.ScriptService.CompileScript(script);
+			}
+			catch (Exception exception)
+			{
+				string source = script.LinkedScript?.LinkedPath ?? script.LuaPath;
+				throw new InvalidOperationException($"Could not compile {source}: {exception.Message}", exception);
+			}
+		}
 	}
 
 	public static void SaveCurrentFile()
@@ -764,6 +803,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 					return;
 				}
 
+				CompileProjectScripts(World.Current);
 				PolyFormat.SaveWorldToFile(World.Current, path);
 				CurrentSession.RescanFolder();
 			}
@@ -806,6 +846,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 				Interface.PopupAlert("Script's file reference's invalid, please reinsert the script from the file browser.");
 				return;
 			}
+			if (IsInternalProjectPath(scriptPath))
+			{
+				if (!CurrentSession.TryRepairBackupFileLink(script.LinkedScript.LinkedID, scriptPath, out string repairedPath))
+				{
+					Interface.PopupAlert("This script link points into an autosave and no matching live project file was found.");
+					return;
+				}
+				scriptPath = repairedPath;
+				Interface.StatusBar?.SetStatus($"Repaired script link to {repairedPath}");
+			}
 			BV.Print("Opening ", scriptPath);
 			OpenFile(scriptPath);
 		}
@@ -815,10 +865,22 @@ public sealed partial class CreatorService : Node, IScriptObject
 		}
 	}
 
+	private static bool IsInternalProjectPath(string path)
+	{
+		string normalized = path.Replace('\\', '/').TrimStart('/');
+		return normalized.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
+			|| normalized.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase);
+	}
+
 	public static async void OpenFile(string path, int lineNumber = 0)
 	{
 		if (CurrentSession == null) return;
 		string pathRelative = path;
+		if (IsInternalProjectPath(pathRelative))
+		{
+			Interface.StatusBar?.SetStatus("Ignored internal project file");
+			return;
+		}
 		path = CurrentSession.GlobalizePath(path);
 
 		string ext = pathRelative.GetExtension();
@@ -850,10 +912,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (userPref == PreferredEditorEnum.BuiltIn)
 		{
 			FileTypeEnum codeCompletion = FileTypeEnum.Plaintext;
-			if (Globals.ScriptFileExtensions.Contains(path.GetExtension()))
-			{
-				codeCompletion = FileTypeEnum.Lua;
-			}
+			if (ScriptLanguageRegistry.TryFromPath(path, out ScriptLanguageDefinition language))
+				codeCompletion = language.Language switch
+				{
+					ScriptLanguagesEnum.Luau => FileTypeEnum.Lua,
+					ScriptLanguagesEnum.CSharp => FileTypeEnum.CSharp,
+					ScriptLanguagesEnum.JavaScript => FileTypeEnum.JavaScript,
+					ScriptLanguagesEnum.TypeScript => FileTypeEnum.TypeScript,
+					ScriptLanguagesEnum.Cpp => FileTypeEnum.Cpp,
+					_ => FileTypeEnum.Plaintext,
+				};
 
 			Tabs.Singleton.Insert(new Tabs.TextEditorTab()
 			{
@@ -950,9 +1018,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static ScriptTypeEnum GetScriptTypeFromPath(string filePath)
 	{
 		string fileName = filePath.GetFile();
-		string fileExt = filePath.GetExtension();
-
-		if (!Globals.ScriptFileExtensions.Contains(fileExt))
+		if (!ScriptLanguageRegistry.IsScriptPath(filePath))
 		{
 			return ScriptTypeEnum.Unknown;
 		}
@@ -984,8 +1050,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		string fileName = filePath.GetFile();
 
-		// Remove .luau extension
-		string baseName = fileName.Replace(".luau", "");
+		string baseName = fileName.GetBaseName();
 
 		// Split by dots
 		string[] parts = baseName.Split(".");
@@ -1151,7 +1216,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private static void CleanupSessions()
 	{
-		foreach (var session in Sessions)
+		// CreatorSession.Dispose removes itself from Sessions. Iterate a snapshot so
+		// closing the first session does not invalidate shutdown enumeration.
+		foreach (CreatorSession session in Sessions.ToArray())
 		{
 			session.Dispose();
 		}
@@ -1180,5 +1247,9 @@ public enum ScriptTypeEnum
 public enum FileTypeEnum
 {
 	Plaintext,
-	Lua
+	Lua,
+	CSharp,
+	JavaScript,
+	TypeScript,
+	Cpp,
 }

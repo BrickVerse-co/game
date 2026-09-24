@@ -28,6 +28,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Text.RegularExpressions;
 using Script = BrickVerse.Datamodel.Script;
+using System.Diagnostics;
 
 namespace BrickVerse.Scripting.Luau;
 
@@ -747,38 +748,21 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 		LuaLog(L, static (logger, script, message, line) =>
 			logger.LogError(script, message, line));
 
-	public int LuaWait(IntPtr L)
+	public static int LuaWait(IntPtr L)
 	{
 		LuaState lua = LuaState.FromIntPtr(L);
 
-		double n;
+		double n = lua.IsNumber(1) ? lua.ToNumber(1) : 0;
 
-		if (lua.IsNumber(1))
-		{
-			n = lua.ToNumber(1);
-		}
-		else
-		{
-			n = 0;
-		}
-
-		ulong startedAt = Time.GetTicksMsec();
 		TaskCompletionSource<int> tcs = new();
-
 		SetYieldTask(lua, tcs.Task);
 
 		async void RunAsync()
 		{
-			if (n != 0)
-			{
-				await Globals.Singleton.WaitAsync((float)n);
-			}
-			else
-			{
-				await Globals.Singleton.WaitPhysicsFrame();
-			}
-
-			PushValueToLua(lua, (Time.GetTicksMsec() - startedAt) / 1000.0);
+			Task task = n > 0 ? Globals.Singleton.WaitAsync((float)n) : Globals.Singleton.WaitPhysicsFrame();
+			Stopwatch sw = Stopwatch.StartNew();
+			await task;
+			lua.PushNumber(sw.Elapsed.TotalSeconds);
 			tcs.SetResult(1);
 		}
 
@@ -1837,7 +1821,7 @@ public sealed partial class LuauProvider : IScriptLanguageProvider
 
 		object objKey = (object?)obj ?? specifyType!;
 		Type type = specifyType ?? obj!.GetType();
-		bool isValueType = type.IsValueType;
+		bool isValueType = type.IsValueType || typeof(IScriptGDObject).IsAssignableFrom(type);
 
 		if (!isValueType)
 		{
