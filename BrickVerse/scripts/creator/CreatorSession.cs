@@ -17,6 +17,7 @@ using BrickVerse.Datamodel.Services;
 using BrickVerse.DocsGen;
 using BrickVerse.Formats;
 using BrickVerse.Shared;
+using BrickVerse.Scripting;
 using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
@@ -524,7 +525,8 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void CreateScript(string atPath)
 	{
-		if (!atPath.EndsWith(".luau")) return;
+		if (!ScriptLanguageRegistry.TryFromPath(atPath, out ScriptLanguageDefinition language))
+			throw new NotSupportedException($"Unsupported script extension '{Path.GetExtension(atPath)}'");
 		string scriptPath = Path.Join(ProjectFolderPath, atPath).SanitizePath();
 		string relativeScriptPath = Path.GetRelativePath(ProjectFolderPath, scriptPath).SanitizePath();
 
@@ -532,14 +534,13 @@ public partial class CreatorSession : Node, IDisposable
 
 		string scriptName = CreatorService.GetScriptNameFromPath(scriptPath);
 
-		string scriptSource = "";
-
-		if (scriptType == ScriptTypeEnum.Module)
+		ScriptTypeKind typeKind = scriptType switch
 		{
-			scriptSource = @"local module = {}
-
-return module";
-		}
+			ScriptTypeEnum.Server => ScriptTypeKind.Server,
+			ScriptTypeEnum.Client => ScriptTypeKind.Client,
+			_ => ScriptTypeKind.Module,
+		};
+		string scriptSource = ScriptLanguageRegistry.CreateStarterSource(language.Language, typeKind);
 
 		string fileBaseFolder = scriptPath.GetBaseDir();
 
@@ -570,6 +571,7 @@ return module";
 			if (scriptToCreate != null)
 			{
 				scriptToCreate.Name = scriptName.ToPascalCase();
+				scriptToCreate.ChosenLanguage = language.Language;
 				scriptToCreate.LinkedScript = currentGame.Assets.GetFileLinkByPath(relativeScriptPath);
 				scriptToCreate.Parent = CreatorService.Interface.PendingCreateScriptAt;
 				currentGame.CreatorContext.Selections.DeselectAll();
@@ -925,6 +927,7 @@ return module";
 		Script s = new() { Root = World.Current };
 		path = GlobalizePath(path);
 		s.Source = File.ReadAllText(path);
+		s.ChosenLanguage = ScriptLanguageRegistry.FromPath(path);
 		s.PermissionFlags = Scripting.ScriptPermissionFlags.IORead | Scripting.ScriptPermissionFlags.IOWrite;
 		s.Parent = World.Current.TemporaryContainer;
 		s.Run();

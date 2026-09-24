@@ -8,6 +8,7 @@ using BrickVerse.Creator.LSP.Schemas;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
 using System;
@@ -834,6 +835,9 @@ public partial class TextEditorRoot : Node
 				_highlighter.AddColorRegion(";", "", Color.FromHtml(_palette.Comment));
 				break;
 			case ".cs":
+			case ".cpp":
+			case ".cc":
+			case ".cxx":
 				AddKeywords([
 					"abstract", "as", "async", "await", "base", "bool", "break", "byte", "case",
 					"catch", "char", "class", "const", "continue", "decimal", "default", "delegate",
@@ -850,6 +854,7 @@ public partial class TextEditorRoot : Node
 				AddCStyleComments();
 				break;
 			case ".js":
+			case ".mjs":
 			case ".jsx":
 			case ".ts":
 			case ".tsx":
@@ -1079,8 +1084,11 @@ public partial class TextEditorRoot : Node
 	{
 		int lineIndex = CodeEditor.GetCaretLine() + 1;
 		int column = CodeEditor.GetCaretColumn() + 1;
-		string language = Container.CodeCompletion == FileTypeEnum.Lua
-			? "Luau"
+		string language = ScriptLanguageRegistry.TryFromPath(
+			Container.TargetFilePathAbsolute,
+			out ScriptLanguageDefinition scriptLanguage
+		)
+			? scriptLanguage.DisplayName
 			: Path.GetExtension(Container.TargetFilePathAbsolute).TrimStart('.').ToUpperInvariant();
 		if (string.IsNullOrWhiteSpace(language)) language = "Plain Text";
 		_statusBar.Text = $"{language}  •  Ln {lineIndex}, Col {column}  •  {Container.OriginTabName}";

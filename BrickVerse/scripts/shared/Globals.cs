@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -50,7 +51,10 @@ public sealed partial class Globals : Node
 	public const string ProjectInputMapName = "input.json";
 	public const string ProjectLocalizationName = "localization.json";
 	public const string ModelFileExtension = "model";
-	public static readonly string[] ScriptFileExtensions = ["lua", "luau"];
+	public static readonly string[] ScriptFileExtensions =
+	[
+		.. Scripting.ScriptLanguageRegistry.Definitions.SelectMany(static language => language.Extensions),
+	];
 #endif
 
 	public static Globals Singleton { get; private set; } = null!;

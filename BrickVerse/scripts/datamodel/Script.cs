@@ -87,6 +87,12 @@ public partial class Script : Instance
 			}
 			_linkedFile = value;
 			_linkedFile?.LinkTo(this);
+			if (_linkedFile?.LinkedPath is string linkedPath
+				&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition language))
+			{
+				ChosenLanguage = language.Language;
+				Bytecode = null;
+			}
 		}
 	}
 
@@ -205,20 +211,15 @@ public partial class Script : Instance
 		await LanguageProvider.CallAsync(this, funcName, args);
 	}
 
-	internal string CreateLuaFileName()
+	internal string CreateScriptFileName()
 	{
-		if (this is ServerScript)
+		ScriptTypeKind type = this switch
 		{
-			return $"{Name}.server.luau";
-		}
-		else if (this is ClientScript)
-		{
-			return $"{Name}.client.luau";
-		}
-		else
-		{
-			return $"{Name}.luau";
-		}
+			ServerScript => ScriptTypeKind.Server,
+			ClientScript => ScriptTypeKind.Client,
+			_ => ScriptTypeKind.Module,
+		};
+		return ScriptLanguageRegistry.CreateFileName(Name, type, ChosenLanguage);
 	}
 
 	[ScriptMethod(Permissions = ScriptPermissionFlags.IOWrite)]

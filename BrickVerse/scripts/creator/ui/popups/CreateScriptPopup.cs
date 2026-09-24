@@ -5,13 +5,17 @@
 using Godot;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
+using BrickVerse.Scripting;
 using System;
+using System.IO;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class CreateScriptPopup : PopupWindowBase
 {
 	[Export] private ButtonGroup _scriptGroup = null!;
+	[Export] private OptionButton _languageSelect = null!;
+	[Export] private Label _platformSupportLabel = null!;
 	[Export] private LineEdit _pathEdit = null!;
 	[Export] private Button _browseBtn = null!;
 	[Export] private Button _createBtn = null!;
@@ -32,6 +36,21 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 		_pathEdit.Select(CreateAt.Length, _scriptPath.Length - 12);
 		_pathEdit.CaretColumn = _scriptPath.Length - 12;
 		_pathEdit.GrabFocus();
+
+		foreach (ScriptLanguageDefinition language in ScriptLanguageRegistry.Definitions)
+		{
+			string suffix = language.PlatformSupport == ScriptPlatformSupport.All
+				? ""
+				: " (desktop/server only)";
+			_languageSelect.AddItem(language.DisplayName + suffix, (int)language.Language);
+		}
+		_languageSelect.Select(0);
+		_languageSelect.ItemSelected += _ =>
+		{
+			UpdatePathLanguage();
+			UpdatePlatformSupportMessage();
+		};
+		UpdatePlatformSupportMessage();
 
 		_pathEdit.GuiInput += @event =>
 		{
@@ -79,7 +98,7 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 
 			string pathPrefix = string.IsNullOrEmpty(baseDir) ? "" : baseDir + '/';
 
-			_pathEdit.Text = $"{pathPrefix}{typeFolder}{scriptName}{scriptTypeExtension}.luau";
+			_pathEdit.Text = $"{pathPrefix}{typeFolder}{scriptName}{scriptTypeExtension}.{SelectedLanguage.PrimaryExtension}";
 		};
 
 		_browseBtn.Pressed += () =>
@@ -98,10 +117,8 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 
 					string path = CreatorService.CurrentSession!.LocalizePath(paths[0]);
 
-					if (!path.EndsWith(".luau"))
-					{
-						path += ".luau";
-					}
+					if (!ScriptLanguageRegistry.IsScriptPath(path))
+						path += "." + SelectedLanguage.PrimaryExtension;
 
 					_pathEdit.Text = path;
 				}
@@ -127,6 +144,23 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 		_errorLabel.Text = msg;
 	}
 
+	private ScriptLanguageDefinition SelectedLanguage => ScriptLanguageRegistry.Get(
+		(ScriptLanguagesEnum)_languageSelect.GetItemId(_languageSelect.Selected)
+	);
+
+	private void UpdatePathLanguage()
+	{
+		string extension = Path.GetExtension(_pathEdit.Text);
+		_pathEdit.Text = extension.Length == 0
+			? _pathEdit.Text + "." + SelectedLanguage.PrimaryExtension
+			: _pathEdit.Text[..^extension.Length] + "." + SelectedLanguage.PrimaryExtension;
+	}
+
+	private void UpdatePlatformSupportMessage()
+	{
+		_platformSupportLabel.Text = ScriptLanguageRegistry.GetPlatformDescription(SelectedLanguage);
+	}
+
 	private void SubmitCreateScript()
 	{
 		_scriptPath = _pathEdit.Text;
@@ -136,9 +170,10 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 			SetErrorMessage("Give your script a name!");
 			return;
 		}
-		if (!_scriptPath.EndsWith(".luau"))
+		if (!ScriptLanguageRegistry.TryFromPath(_scriptPath, out ScriptLanguageDefinition language)
+			|| language.Language != SelectedLanguage.Language)
 		{
-			SetErrorMessage("Script file name must ends with .luau");
+			SetErrorMessage($"Script file name must end with .{SelectedLanguage.PrimaryExtension}");
 			return;
 		}
 

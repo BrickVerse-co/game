@@ -851,10 +851,16 @@ public sealed partial class CreatorService : Node, IScriptObject
 		if (userPref == PreferredEditorEnum.BuiltIn)
 		{
 			FileTypeEnum codeCompletion = FileTypeEnum.Plaintext;
-			if (Globals.ScriptFileExtensions.Contains(path.GetExtension()))
-			{
-				codeCompletion = FileTypeEnum.Lua;
-			}
+			if (ScriptLanguageRegistry.TryFromPath(path, out ScriptLanguageDefinition language))
+				codeCompletion = language.Language switch
+				{
+					ScriptLanguagesEnum.Luau => FileTypeEnum.Lua,
+					ScriptLanguagesEnum.CSharp => FileTypeEnum.CSharp,
+					ScriptLanguagesEnum.JavaScript => FileTypeEnum.JavaScript,
+					ScriptLanguagesEnum.TypeScript => FileTypeEnum.TypeScript,
+					ScriptLanguagesEnum.Cpp => FileTypeEnum.Cpp,
+					_ => FileTypeEnum.Plaintext,
+				};
 
 			Tabs.Singleton.Insert(new Tabs.TextEditorTab()
 			{
@@ -951,9 +957,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static ScriptTypeEnum GetScriptTypeFromPath(string filePath)
 	{
 		string fileName = filePath.GetFile();
-		string fileExt = filePath.GetExtension();
-
-		if (!Globals.ScriptFileExtensions.Contains(fileExt))
+		if (!ScriptLanguageRegistry.IsScriptPath(filePath))
 		{
 			return ScriptTypeEnum.Unknown;
 		}
@@ -985,8 +989,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	{
 		string fileName = filePath.GetFile();
 
-		// Remove .luau extension
-		string baseName = fileName.Replace(".luau", "");
+		string baseName = fileName.GetBaseName();
 
 		// Split by dots
 		string[] parts = baseName.Split(".");
@@ -1181,5 +1184,9 @@ public enum ScriptTypeEnum
 public enum FileTypeEnum
 {
 	Plaintext,
-	Lua
+	Lua,
+	CSharp,
+	JavaScript,
+	TypeScript,
+	Cpp,
 }
