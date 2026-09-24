@@ -1216,7 +1216,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 	private static void CleanupSessions()
 	{
-		foreach (var session in Sessions)
+		// CreatorSession.Dispose removes itself from Sessions. Iterate a snapshot so
+		// closing the first session does not invalidate shutdown enumeration.
+		foreach (CreatorSession session in Sessions.ToArray())
 		{
 			session.Dispose();
 		}
