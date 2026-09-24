@@ -72,6 +72,7 @@ public partial class CreatorSession : Node, IDisposable
 
 	public readonly Dictionary<string, string> FileToIndex = [];
 	public readonly Dictionary<string, World> WorldPathToRoot = [];
+	public readonly Dictionary<string, World> PrefabPathToRoot = [];
 
 	public LuaCompletionService? LuaCompletion;
 
@@ -320,6 +321,80 @@ public partial class CreatorSession : Node, IDisposable
 	public Task<World> OpenWorldAsync(string filePath, World? worldOverride = null, bool migrateCoords = false,
 		Action<string>? reportStatus = null, Action<string>? reportDetail = null) =>
 		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: true, reportStatus, reportDetail);
+
+	public World OpenPrefab(string filePath)
+	{
+		filePath = filePath.SanitizePath();
+		if (PrefabPathToRoot.TryGetValue(filePath, out World? existing))
+		{
+			Tabs.Singleton.FocusWorld(existing);
+			return existing;
+		}
+
+		string absolutePath = GlobalizePath(filePath);
+		if (!File.Exists(absolutePath)) throw new FileNotFoundException("Model file not found", absolutePath);
+
+		World root = Globals.LoadInstance<World>();
+		root.SessionType = World.SessionTypeEnum.Creator;
+		root.WorldSessionID = ++_worldSessionCounter;
+		root.LinkedSession = this;
+		root.PrefabFilePath = filePath;
+
+		NetworkService network = new();
+		network.Attach(root);
+		network.NetworkParent = root;
+		network.NetworkMode = NetworkService.NetworkModeEnum.Creator;
+		network.IsServer = true;
+
+		DatamodelBridge bridge = new();
+		root.InitEntry();
+		root.GDNode.AddChild(bridge, true, Node.InternalMode.Back);
+		Tabs.Singleton.Insert(new Tabs.GameTab { World = root, Title = $"{Path.GetFileName(filePath)} — Prefab" });
+		OpenedWorlds.Add(root);
+		PrefabPathToRoot[filePath] = root;
+
+		void Deleted()
+		{
+			root.Deleted -= Deleted;
+			OpenedWorlds.Remove(root);
+			PrefabPathToRoot.Remove(filePath);
+			bridge.QueueFree();
+			AddonsManager.UnregisterRoot(root);
+			if (OpenedWorlds.Count == 0) QueueDispose();
+		}
+		root.Deleted += Deleted;
+
+		bridge.Attach(root);
+		root.Root = root;
+		root.Setup();
+		SyncFileIndex();
+		root.IO.IndexToFile = IndexToFile;
+		root.IO.FileToIndex = FileToIndex;
+
+		Explorer.Singleton?.BeginBulkUpdate(root);
+		try
+		{
+			root.PrefabRoot = PolyFormat.LoadModelFromFile(root, absolutePath, root.Environment)
+				?? throw new InvalidDataException($"Failed to load prefab '{filePath}'.");
+			root.PrefabRoot.LinkedModel = root.Assets.GetFileLinkByPath(filePath);
+			root.PrefabRoot.EditableChildren = true;
+			root.InvokeReady();
+			root.CreatorContext.Selections.SelectOnly(root.PrefabRoot);
+			root.CreatorContext.Freelook.MoveToSelected();
+		}
+		catch
+		{
+			root.ForceDelete();
+			throw;
+		}
+		finally
+		{
+			Explorer.Singleton?.EndBulkUpdate(root);
+		}
+
+		RescanFolder();
+		return root;
+	}
 
 	private async Task<World> OpenWorldCore(string filePath, World? worldOverride, bool migrateCoords, bool asynchronous,
 		Action<string>? reportStatus = null, Action<string>? reportDetail = null)

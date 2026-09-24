@@ -105,6 +105,12 @@ public sealed partial class Tabs : Control
 
 	public static Tabs Singleton { get; private set; } = null!;
 	public WorldContainer? CurrentWorldContainer => CurrentControl as WorldContainer;
+	public void FocusWorld(World world)
+	{
+		WorldContainer? container = _orderedControls.OfType<WorldContainer>()
+			.FirstOrDefault(item => item.World == world);
+		if (container != null) CurrentControl = container;
+	}
 	public Tabs()
 	{
 		Singleton = this;
@@ -260,8 +266,11 @@ public sealed partial class Tabs : Control
 			if (!(control is TextEditorContainer txt && txt.EditorRoot.Saved))
 			{
 				bool isPlace = control is WorldContainer;
+				bool isPrefab = control is WorldContainer prefabContainer && prefabContainer.World.IsPrefabEditor;
 				string message = isPlace
-					? "Close this place? Make sure you have saved or published any changes you want to keep."
+					? isPrefab
+						? "Close this prefab? Make sure you have saved any changes you want to keep."
+						: "Close this place? Make sure you have saved or published any changes you want to keep."
 					: "Close this tab? Any unsaved changes will be lost.";
 				string dismissKey = isPlace
 					? CreatorSettingKeys.Popups.ClosePlaceWarning
@@ -584,7 +593,13 @@ public sealed partial class Tabs : Control
 		}
 		foreach (WorldContainer container in _orderedControls.OfType<WorldContainer>())
 		{
-			if (!string.IsNullOrWhiteSpace(container.World.WorldFilePath))
+			if (container.World.IsPrefabEditor && container.World.PrefabRoot != null)
+			{
+				container.World.LinkedSession.SaveModel(
+					container.World.PrefabRoot, container.World.PrefabFilePath!);
+				savedDocuments++;
+			}
+			else if (!string.IsNullOrWhiteSpace(container.World.WorldFilePath))
 			{
 				PolyFormat.SaveWorldToFile(container.World,
 					container.World.LinkedSession.GlobalizePath(container.World.WorldFilePath));

@@ -24,6 +24,12 @@ public partial class ExplorerTree : Tree
 	public override void _Ready()
 	{
 		ItemActivated += OnItemActivated;
+		ButtonClicked += (item, _, id, _) =>
+		{
+			if (id != 1 || !ItemToInstance.TryGetValue(item, out Instance? instance)) return;
+			if (instance.LinkedModel?.LinkedPath is string prefabPath)
+				Root.LinkedSession.OpenPrefab(prefabPath);
+		};
 		base._Ready();
 	}
 
@@ -107,6 +113,10 @@ public partial class ExplorerTree : Tree
 		if (clickedInstance != null && clickedInstance is Datamodel.Script script)
 		{
 			CreatorService.OpenScript(script);
+		}
+		else if (clickedInstance?.LinkedModel?.LinkedPath is string prefabPath)
+		{
+			Root.LinkedSession.OpenPrefab(prefabPath);
 		}
 	}
 
