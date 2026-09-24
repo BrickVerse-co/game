@@ -125,6 +125,12 @@ public partial class CreatorInterface : Control, IScriptObject
 	public SelectionPivotModeEnum SelectionPivotMode { get; internal set; } =
 		SelectionPivotModeEnum.Center;
 
+	[ScriptProperty]
+	public MoveGizmoStyleEnum MoveGizmoStyle { get; internal set; } = MoveGizmoStyleEnum.Classic;
+
+	[ScriptProperty]
+	public bool ShowTransformTips { get; internal set; } = true;
+
 	public static bool TempDisableSnap => Input.IsKeyPressed(Key.Alt);
 
 	public CreatorService Service = null!;
@@ -213,6 +219,8 @@ public partial class CreatorInterface : Control, IScriptObject
 			case CreatorSettingKeys.Interface.DuplicateOnDragEnabled:
 			case CreatorSettingKeys.Interface.TransformOrientation:
 			case CreatorSettingKeys.Interface.SelectionPivotMode:
+			case CreatorSettingKeys.Interface.MoveGizmoStyle:
+			case CreatorSettingKeys.Interface.ShowTransformTips:
 				ApplyEditorTransformSettings();
 				break;
 			case CreatorSettingKeys.Interface.ThemeMode:
@@ -241,6 +249,9 @@ public partial class CreatorInterface : Control, IScriptObject
 		SelectionPivotMode = settings.Get<SelectionPivotModeEnum>(
 			CreatorSettingKeys.Interface.SelectionPivotMode
 		);
+		MoveGizmoStyle = settings.Get<MoveGizmoStyleEnum>(CreatorSettingKeys.Interface.MoveGizmoStyle);
+		ShowTransformTips = settings.Get<bool>(CreatorSettingKeys.Interface.ShowTransformTips);
+		World.Current?.CreatorContext?.Gizmos?.RefreshVisuals();
 	}
 
 	private void ApplyThemeMode()

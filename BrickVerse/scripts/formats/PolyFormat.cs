@@ -342,8 +342,9 @@ public static partial class PolyFormat
 			? ReadRootDataBytes(rawdata)
 			: await Task.Run(() => ReadRootDataBytes(rawdata));
 		decodeTimer.Stop();
+		reportDetail?.Invoke($"Decoded world file in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms");
 		Stopwatch linkedModelTimer = Stopwatch.StartNew();
-		reportDetail?.Invoke("Reading linked model data");
+		reportDetail?.Invoke("Resolving linked model references");
 		Dictionary<string, PolyRootData> linkedModels = await PreloadLinkedModelsAsync(root, data);
 		linkedModelTimer.Stop();
 		PolyLoadContext context = new()
@@ -356,7 +357,9 @@ public static partial class PolyFormat
 		if (data.Objects == null || data.Objects.Length == 0 || data.FileType != PolyFileType.World) return;
 
 		PolyObject rootObj = data.Objects[0];
+		reportDetail?.Invoke("Applying world properties");
 		LoadProperties(rootObj, root, context);
+		reportDetail?.Invoke($"Loading {data.NonInstanceObjects.Length:N0} shared resources");
 		foreach (PolyObject item in data.NonInstanceObjects)
 			FromPolyObject(item, context);
 
@@ -367,6 +370,7 @@ public static partial class PolyFormat
 
 		int loadedObjects = 0;
 		reportStatus?.Invoke("Building DataModel");
+		reportDetail?.Invoke($"Preparing {totalObjects:N0} saved instances");
 		Stopwatch loadTimer = Stopwatch.StartNew();
 		Stopwatch frameBudget = Stopwatch.StartNew();
 		while (pending.Count > 0)

@@ -11,4 +11,22 @@ public partial class RibbonToolButton : Button
 {
 	[Export]
 	public ToolModeEnum ToolMode;
+
+	public override void _Ready()
+	{
+		// Ribbon button visuals are full-size child Controls. Their default Stop
+		// filter otherwise consumes clicks over the label before this Button can
+		// emit Pressed/Toggled. Keep the complete visible tile clickable.
+		SetDescendantsMouseIgnored(this);
+		base._Ready();
+	}
+
+	private static void SetDescendantsMouseIgnored(Node parent)
+	{
+		foreach (Node child in parent.GetChildren())
+		{
+			if (child is Control control) control.MouseFilter = MouseFilterEnum.Ignore;
+			SetDescendantsMouseIgnored(child);
+		}
+	}
 }

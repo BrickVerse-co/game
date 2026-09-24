@@ -96,6 +96,11 @@ public sealed partial class WorldContainer : SubViewportContainer
 
 	private void OnMouseExited()
 	{
+		// Hovering is calculated inside the subviewport. Do not let a handle from
+		// a previous tab keep selection input suppressed after the pointer leaves.
+		World.CreatorContext?.Gizmos?.HoveringGizmos = false;
+		World.CreatorContext?.Gizmos?.HoveringUIGizmo = false;
+
 		if (_draggingFile != null)
 		{
 			_draggingFile = null;

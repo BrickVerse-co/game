@@ -7,6 +7,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Creator;
 using BrickVerse.Shared;
+using BrickVerse.Creator.UI;
 
 namespace BrickVerse.Datamodel.Creator;
 
@@ -24,9 +25,16 @@ public sealed partial class CreatorContextService : Instance
 		get
 		{
 			if (!Globals.Singleton.GetWindow().HasFocus()) return false;
+			if (Root.Container == null || !Root.Container.IsVisibleInTree()) return false;
+			if (Tabs.Singleton?.CurrentWorldContainer != Root.Container) return false;
 			Control? rootFocusOwner = GDNode.GetWindow().GuiGetFocusOwner();
 			Control? focusOwner = GDNode.GetViewport().GuiGetFocusOwner();
-			return rootFocusOwner == Root.Container || focusOwner is InputFallbackBase;
+			if (rootFocusOwner == Root.Container || focusOwner is InputFallbackBase) return true;
+
+			// Mouse presses reach WorldContainer before focus ownership settles for
+			// the frame. Treat the pointer being inside the active viewport as focus
+			// so the first click can select an object and restore keyboard focus.
+			return Root.Container.GetGlobalRect().HasPoint(Root.Container.GetGlobalMousePosition());
 		}
 	}
 
@@ -63,7 +71,9 @@ public sealed partial class CreatorContextService : Instance
 
 		Gizmos = new() { Name = "Gizmos" };
 		Gizmos.Attach(Root, History, Freelook);
-		GDNode.AddChild(Gizmos, false, Node.InternalMode.Front);
+		// Keep the spatial editor controller in the same processing/render branch
+		// as the world. Service proxy nodes may disable their own processing.
+		Root.GDNode.AddChild(Gizmos, false, Node.InternalMode.Front);
 
 		SplineEditor = new() { Name = "PCGSplineEditor" };
 		SplineEditor.Attach(Root);

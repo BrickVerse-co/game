@@ -83,6 +83,13 @@ public partial class ExplorerTree : Tree
 			AcceptEvent();
 			EditSelected(true);
 		}
+		else if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.F, CtrlPressed: false, AltPressed: false, MetaPressed: false })
+		{
+			// The Explorer owns keyboard focus here, so the viewport's F shortcut
+			// cannot see this event. Frame the shared Creator selection directly.
+			Root.CreatorContext.Freelook.MoveToSelected();
+			AcceptEvent();
+		}
 		base._GuiInput(@event);
 	}
 

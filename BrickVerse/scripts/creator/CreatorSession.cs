@@ -329,10 +329,11 @@ public partial class CreatorSession : Node, IDisposable
 		string placePath = GlobalizePath(filePath);
 		if (!File.Exists(placePath)) throw new FileNotFoundException("World file not found");
 		_cleanupQueued = false;
+		reportDetail?.Invoke($"Opening {Path.GetFileName(placePath)}");
 		byte[] worldData = asynchronous
-			? await ReadWorldFileAsync(placePath)
+			? await ReadWorldFileAsync(placePath, reportDetail)
 			: File.ReadAllBytes(placePath);
-		reportStatus?.Invoke("Building DataModel");
+		reportDetail?.Invoke("Creating the world runtime");
 		if (asynchronous) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 		World root = worldOverride ?? Globals.LoadInstance<World>();
@@ -367,6 +368,7 @@ public partial class CreatorSession : Node, IDisposable
 			netService.IsServer = true;
 		}
 
+		reportDetail?.Invoke("Initializing world services");
 		root.InitEntry();
 
 		root.GDNode.AddChild(dmBridge, true, Node.InternalMode.Back);
@@ -374,6 +376,7 @@ public partial class CreatorSession : Node, IDisposable
 		BV.Print("Opening ", filePath);
 		BV.Print("-> Full Path: ", placePath);
 
+		reportDetail?.Invoke("Attaching the world viewport");
 		Tabs.Singleton.Insert(new Tabs.GameTab() { World = root, Title = placePath.GetFile() });
 
 		OpenedWorlds.Add(root);
@@ -402,6 +405,7 @@ public partial class CreatorSession : Node, IDisposable
 		root.Root = root;
 		root.Setup();
 
+		reportDetail?.Invoke("Preparing the project file index");
 		SyncFileIndex();
 
 		root.IO.IndexToFile = IndexToFile;
@@ -410,11 +414,13 @@ public partial class CreatorSession : Node, IDisposable
 		if (worldOverride == null)
 		{
 			// Load world
+			Explorer.Singleton?.BeginBulkUpdate(root);
 			try
 			{
 				if (asynchronous) await PolyFormat.LoadWorldAsync(root, worldData, migrateCoords, reportStatus, reportDetail);
 				else PolyFormat.LoadWorld(root, worldData, migrateCoords);
 				reportStatus?.Invoke("Finalizing world instances");
+				reportDetail?.Invoke("Running instance ready hooks");
 				if (asynchronous) await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
 				root.InvokeReady();
 			}
@@ -423,6 +429,11 @@ public partial class CreatorSession : Node, IDisposable
 				BV.PrintErr(ex);
 				root.ForceDelete();
 				throw new InvalidDataException($"Failed to load world '{filePath}'.", ex);
+			}
+			finally
+			{
+				reportDetail?.Invoke("Populating Explorer in the background");
+				Explorer.Singleton?.EndBulkUpdate(root);
 			}
 		}
 		else
@@ -444,10 +455,44 @@ public partial class CreatorSession : Node, IDisposable
 		return root;
 	}
 
-	private static async Task<byte[]> ReadWorldFileAsync(string path)
+	private static async Task<byte[]> ReadWorldFileAsync(string path, Action<string>? reportDetail)
 	{
-		return await File.ReadAllBytesAsync(path);
+		const int ReadBufferSize = 1024 * 1024;
+		await using FileStream stream = new(
+			path,
+			FileMode.Open,
+			System.IO.FileAccess.Read,
+			FileShare.Read,
+			ReadBufferSize,
+			FileOptions.Asynchronous | FileOptions.SequentialScan
+		);
+		if (stream.Length > int.MaxValue)
+			throw new IOException("World files larger than 2 GiB are not supported.");
+
+		int length = checked((int)stream.Length);
+		byte[] data = GC.AllocateUninitializedArray<byte>(length);
+		reportDetail?.Invoke($"Reading {FormatBytes(length)} from disk");
+		int offset = 0;
+		long lastReport = 0;
+		while (offset < length)
+		{
+			int read = await stream.ReadAsync(data.AsMemory(offset, Math.Min(ReadBufferSize, length - offset)));
+			if (read == 0)
+				throw new EndOfStreamException($"World file ended after {offset:N0} of {length:N0} bytes.");
+			offset += read;
+			long now = System.Environment.TickCount64;
+			if (offset == length || now - lastReport >= 100)
+			{
+				reportDetail?.Invoke($"Read {FormatBytes(offset)} of {FormatBytes(length)} ({offset * 100L / Math.Max(1, length)}%)");
+				lastReport = now;
+			}
+		}
+		return data;
 	}
+
+	private static string FormatBytes(long bytes) => bytes >= 1024 * 1024
+		? $"{bytes / 1024d / 1024d:0.0} MiB"
+		: $"{bytes / 1024d:0.0} KiB";
 
 	public void QueueDispose()
 	{

@@ -57,6 +57,9 @@ public sealed partial class Tabs : Control
 			if (value is WorldContainer gameContainer)
 			{
 				World.Current = gameContainer.World;
+				// Gizmos and free-look only receive input while their SubViewport owns
+				// focus. Returning from a document tab must restore that focus.
+				Callable.From(gameContainer.GrabFocus).CallDeferred();
 			}
 			if (value is TextEditorContainer tec && World.Current != null && World.Current.LinkedSession != tec.TargetSession)
 			{

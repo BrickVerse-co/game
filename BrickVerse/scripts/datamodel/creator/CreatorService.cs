@@ -1232,6 +1232,7 @@ public enum ToolModeEnum
 	Move,
 	Rotate,
 	Scale,
+	Pivot,
 	Paint,
 	Brush
 }

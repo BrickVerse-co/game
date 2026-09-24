@@ -12,4 +12,5 @@ public interface IGizmo
 	List<Dynamic> Targets { get; set; }
 	bool Visible { get; set; }
 	Gizmos? RootGizmos { get; set; }
+	void RefreshVisuals();
 }

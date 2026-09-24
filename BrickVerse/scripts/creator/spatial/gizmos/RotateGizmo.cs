@@ -51,6 +51,8 @@ public partial class RotateGizmo : Node, IGizmo
 
 	public override void _EnterTree()
 	{
+		SetProcess(false);
+		SetProcessInput(true);
 		CreateSurfTool();
 		CreateInstances();
 	}
@@ -161,16 +163,20 @@ public partial class RotateGizmo : Node, IGizmo
 				Mesh = _rotateGizmo[i],
 				CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 				Visible = false,
-				// not using 1 because of decal wrapping onto gizmos
-				Layers = 1 << 6
+				Layers = 1,
+				IgnoreOcclusionCulling = true,
+				ExtraCullMargin = 100000f
 			};
-			AddChild(_rotateGizmoInstance[i]);
+			RootGizmos!.Root.GDNode.AddChild(
+				_rotateGizmoInstance[i],
+				@internal: Node.InternalMode.Front
+			);
 		}
 	}
 
 	private void ClearInstances()
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 4; i++)
 		{
 			_rotateGizmoInstance[i].QueueFree();
 		}
@@ -178,14 +184,26 @@ public partial class RotateGizmo : Node, IGizmo
 
 	public override void _Process(double delta)
 	{
+		RefreshVisuals();
+	}
+
+	public void RefreshVisuals()
+	{
 		SetVisiblity();
+		if (!Visible || Targets.Count == 0)
+		{
+			if (!_isMouseDragging)
+				HighlightAxis(-1);
+			return;
+		}
 		RedrawGizmo();
 		UpdateDrag();
 	}
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0) return;
+		if (Targets.Count == 0 || RootGizmos == null) return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -257,7 +275,7 @@ public partial class RotateGizmo : Node, IGizmo
 		if (!Visible) return;
 
 		Transform3D pform = Gizmos.GetCenterPivot([.. Targets]);
-		float gizmoScale = pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+		float gizmoScale = Mathf.Max(0.4f, pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
 		Vector3 pScale = new(gizmoScale, gizmoScale, gizmoScale);
 
 		for (int i = 0; i < 3; i++)
@@ -276,9 +294,9 @@ public partial class RotateGizmo : Node, IGizmo
 			axisTransform.Basis = axisTransform.Basis.Scaled(pScale);
 			axisTransform.Origin = pform.Origin;
 
-			_rotateGizmoInstance[i].Transform = axisTransform;
+			_rotateGizmoInstance[i].GlobalTransform = axisTransform;
 		}
-		_rotateGizmoInstance[3].Transform = new Transform3D(
+		_rotateGizmoInstance[3].GlobalTransform = new Transform3D(
 			pform.Basis.Orthonormalized().Scaled(pScale),
 			pform.Origin
 		);
@@ -295,7 +313,7 @@ public partial class RotateGizmo : Node, IGizmo
 	private void UpdateAxis(Vector3 rayOrigin, Vector3 rayNormal, Vector3 cameraNormal)
 	{
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
-		_gizmoScale = pivot.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+		_gizmoScale = Mathf.Max(0.4f, pivot.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
 
 		float colD = 1e20f;
 		int colAxis = -1;

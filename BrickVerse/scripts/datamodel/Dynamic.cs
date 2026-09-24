@@ -40,6 +40,8 @@ public partial class Dynamic : Instance
 	protected List<Node3D> excludedBoundNodes = [];
 	private bool _hasSyncedOnce = false;
 	private bool _locked;
+	private Vector3 _pivotOffset;
+	private Vector3 _pivotRotation;
 	private bool _isFirstUpdate = true;
 	private bool _isDirty = false;
 
@@ -51,6 +53,33 @@ public partial class Dynamic : Instance
 
 	protected virtual float PositionSyncThreshold => 0.5f;
 	protected virtual float RotationSyncThreshold => 5f;
+
+	/// <summary>Local Creator transform pivot. It changes editor gizmo placement without moving geometry.</summary>
+	[Editable, ScriptProperty]
+	public Vector3 PivotOffset
+	{
+		get => _pivotOffset;
+		set
+		{
+			if (_pivotOffset.IsEqualApprox(value)) return;
+			_pivotOffset = value;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Local Creator pivot orientation in degrees. It affects editor handles without rotating geometry.</summary>
+	[Editable, ScriptProperty]
+	public Vector3 PivotRotation
+	{
+		get => _pivotRotation;
+		set
+		{
+			Vector3 sanitized = value.SanitizeNaN();
+			if (_pivotRotation.IsEqualApprox(sanitized)) return;
+			_pivotRotation = sanitized;
+			OnPropertyChanged();
+		}
+	}
 
 #if CREATOR
 	private Area3D _boundArea3D = null!;

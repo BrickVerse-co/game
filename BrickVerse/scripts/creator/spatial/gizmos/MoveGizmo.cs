@@ -4,7 +4,9 @@
 
 using Godot;
 using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
 using BrickVerse.Utils;
+using BrickVerse.Creator.Settings;
 using System;
 using System.Collections.Generic;
 
@@ -55,6 +57,8 @@ public partial class MoveGizmo : Node, IGizmo
 
 	public override void _EnterTree()
 	{
+		SetProcess(false);
+		SetProcessInput(true);
 		CreateSurfTool();
 		CreateInstances();
 	}
@@ -76,6 +80,7 @@ public partial class MoveGizmo : Node, IGizmo
 				ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 				RenderPriority = (int)Godot.Material.RenderPriorityMax,
 				NoDepthTest = true,
+				CullMode = BaseMaterial3D.CullModeEnum.Disabled,
 				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 				AlbedoColor = axisColor
 			};
@@ -146,10 +151,14 @@ public partial class MoveGizmo : Node, IGizmo
 				Mesh = _moveGizmo[i],
 				CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 				Visible = false,
-				// not using 1 because of decal wrapping onto gizmos
-				Layers = 1 << 6
+				Layers = 1,
+				IgnoreOcclusionCulling = true,
+				ExtraCullMargin = 100000f
 			};
-			AddChild(_moveGizmoInstance[i]);
+			RootGizmos!.Root.GDNode.AddChild(
+				_moveGizmoInstance[i],
+				@internal: Node.InternalMode.Front
+			);
 		}
 	}
 
@@ -163,10 +172,18 @@ public partial class MoveGizmo : Node, IGizmo
 
 	public override void _Process(double delta)
 	{
+		RefreshVisuals();
+	}
+
+	public void RefreshVisuals()
+	{
 		SetVisiblity();
 		if (!Visible || Targets.Count == 0)
 		{
+			if (!_isMouseDragging)
+				HighlightAxis(-1);
 			RootGizmos?.Root.PlayerGUI.SetCursorShape(Control.CursorShape.Arrow);
+			return;
 		}
 		RedrawGizmo();
 		UpdateDrag();
@@ -174,7 +191,8 @@ public partial class MoveGizmo : Node, IGizmo
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0) return;
+		if (Targets.Count == 0 || RootGizmos == null) return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -266,15 +284,18 @@ public partial class MoveGizmo : Node, IGizmo
 			axisTransform.Basis = axisTransform.Basis.Scaled(pScale);
 			axisTransform.Origin = pform.Origin + axisDirection * gizmoScale * GizmoArrowOffset;
 
-			_moveGizmoInstance[i].Transform = axisTransform;
+			_moveGizmoInstance[i].GlobalTransform = axisTransform;
 		}
 	}
 
 	private void SetVisiblity()
 	{
+		bool compact = CreatorService.Interface.MoveGizmoStyle == MoveGizmoStyleEnum.Universal;
 		for (int i = 0; i < 6; i++)
 		{
-			_moveGizmoInstance[i].Visible = Visible;
+			// Universal editors use one positive handle per axis; the classic
+			// BrickVerse design retains handles on both ends of every axis.
+			_moveGizmoInstance[i].Visible = Visible && (!compact || (i & 1) == 1);
 		}
 	}
 
@@ -288,6 +309,7 @@ public partial class MoveGizmo : Node, IGizmo
 
 		for (int i = 0; i < 6; i++)
 		{
+			if (CreatorService.Interface.MoveGizmoStyle == MoveGizmoStyleEnum.Universal && (i & 1) == 0) continue;
 			MoveGizmoAxis axis = (MoveGizmoAxis)i;
 			Vector3 axisDirection = GetHandleDirection(pivot, axis);
 			Vector3 grabberPos = pivot.Origin + axisDirection * gizmoScale * (GizmoArrowOffset + (ArrowShaftLength + ArrowHeadLength) * 0.5f);

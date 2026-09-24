@@ -322,6 +322,35 @@ public static class CreatorSettingsRegistry
 				]
 			});
 
+		defs.Add(CreatorSettingKeys.Interface.MoveGizmoStyle,
+			new SettingDef<MoveGizmoStyleEnum>
+			{
+				Key = CreatorSettingKeys.Interface.MoveGizmoStyle,
+				SectionKey = "interface",
+				Label = "Move Gizmo Design",
+				Description = "Choose the classic six-direction handles or the compact Unreal/Blender-style handles.",
+				ValueKind = SettingValueKind.Enum,
+				ControlKind = SettingControlKind.Dropdown,
+				DefaultValue = MoveGizmoStyleEnum.Classic,
+				Options =
+				[
+					new() { Value = MoveGizmoStyleEnum.Classic, Label = "Classic" },
+					new() { Value = MoveGizmoStyleEnum.Universal, Label = "Unreal / Blender" },
+				]
+			});
+
+		defs.Add(CreatorSettingKeys.Interface.ShowTransformTips,
+			new SettingDef<bool>
+			{
+				Key = CreatorSettingKeys.Interface.ShowTransformTips,
+				SectionKey = "interface",
+				Label = "Show Transform Tips",
+				Description = "Show tool controls and shortcuts in the bottom-right of the viewport.",
+				ValueKind = SettingValueKind.Bool,
+				ControlKind = SettingControlKind.Toggle,
+				DefaultValue = true
+			});
+
 		// Keybinds
 		defs.Add(CreatorSettingKeys.Keybinds.ToolSelect,
 			new SettingDef<string>

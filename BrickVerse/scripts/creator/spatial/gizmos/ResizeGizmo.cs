@@ -51,6 +51,8 @@ public partial class ResizeGizmo : Node, IGizmo
 
 	public override void _EnterTree()
 	{
+		SetProcess(false);
+		SetProcessInput(true);
 		CreateSurfTool();
 		CreateInstances();
 	}
@@ -73,6 +75,7 @@ public partial class ResizeGizmo : Node, IGizmo
 				ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 				RenderPriority = (int)Godot.Material.RenderPriorityMax,
 				NoDepthTest = true,
+				CullMode = BaseMaterial3D.CullModeEnum.Disabled,
 				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 				AlbedoColor = axisColor
 			};
@@ -101,10 +104,14 @@ public partial class ResizeGizmo : Node, IGizmo
 				Mesh = _resizeGizmo[i],
 				CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 				Visible = false,
-				// not using 1 because of decal wrapping onto gizmos
-				Layers = 1 << 6
+				Layers = 1,
+				IgnoreOcclusionCulling = true,
+				ExtraCullMargin = 100000f
 			};
-			AddChild(_resizeGizmoInstance[i]);
+			RootGizmos!.Root.GDNode.AddChild(
+				_resizeGizmoInstance[i],
+				@internal: Node.InternalMode.Front
+			);
 		}
 	}
 
@@ -118,14 +125,26 @@ public partial class ResizeGizmo : Node, IGizmo
 
 	public override void _Process(double delta)
 	{
+		RefreshVisuals();
+	}
+
+	public void RefreshVisuals()
+	{
 		SetVisiblity();
+		if (!Visible || Targets.Count == 0)
+		{
+			if (!_isMouseDragging)
+				HighlightAxis(-1);
+			return;
+		}
 		RedrawGizmo();
 		UpdateDrag();
 	}
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0) return;
+		if (Targets.Count == 0 || RootGizmos == null) return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -224,7 +243,7 @@ public partial class ResizeGizmo : Node, IGizmo
 				Origin = worldCenter + targetRotation.Xform(localOffsets[i])
 			};
 
-			float gizmoScale = gizmoTransform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+			float gizmoScale = Mathf.Max(0.4f, gizmoTransform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
 			gizmoTransform.Basis = gizmoTransform.Basis.Scaled(new Vector3(gizmoScale, gizmoScale, gizmoScale));
 
 			_resizeGizmoInstance[i].GlobalTransform = gizmoTransform;
@@ -244,7 +263,7 @@ public partial class ResizeGizmo : Node, IGizmo
 	private void UpdateAxis(Vector3 rayOrigin, Vector3 rayNormal)
 	{
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
-		_gizmoScale = pivot.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f;
+		_gizmoScale = Mathf.Max(0.4f, pivot.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
 
 		float colD = 1e20f;
 		int colAxis = -1;
