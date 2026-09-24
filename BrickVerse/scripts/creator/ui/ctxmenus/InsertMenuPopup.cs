@@ -109,7 +109,11 @@ public partial class InsertMenuPopup : PopupPanel
 		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
 		[new() { Title = "Rendering" }] = new() { "LODGroup", "ReflectionCapture", "SceneCapture" },
 		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
-		[new() { Title = "Audio" }] = new() { "Sound", "SoundGroup" },
+		[new() { Title = "Audio" }] = new()
+		{
+			"AudioPlayer", "AudioEmitter", "AudioListener", "AudioDeviceInput", "AudioDeviceOutput",
+			"AudioWire", "AudioFader", "AudioEqualizer", "AudioReverb", "Sound", "SoundGroup"
+		},
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
 			"Pawn",
