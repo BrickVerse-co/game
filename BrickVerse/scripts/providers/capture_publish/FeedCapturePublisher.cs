@@ -18,7 +18,8 @@ public sealed class FeedCapturePublisher : ICapturePublisher
 	{
 		string authorization = ClientAuthAPI.GetAuthorizationHeaderValue();
 		if (string.IsNullOrWhiteSpace(authorization))
-			throw new InvalidOperationException("Sign in before sharing a capture to your Feed.");
+			throw new InvalidOperationException(
+				"This game session has no world join token. Rejoin the published world before sharing to Feed.");
 		_http.DefaultRequestHeaders["Authorization"] = authorization;
 
 		using MultipartFormDataContent form = new();

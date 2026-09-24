@@ -436,13 +436,18 @@ public sealed partial class TeamCreateService : Node
 			using HttpResponseMessage response = await _http.GetAsync(
 				ApiPath("/changes?after=" + _sequence.ToString(CultureInfo.InvariantCulture))
 			);
+			string body = await response.Content.ReadAsStringAsync();
+			if (IsAuthenticationRejected(response, body))
+			{
+				CallDeferred(nameof(HandleAuthenticationRejected));
+				return;
+			}
 			if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
 			{
 				CallDeferred(nameof(DisableFromServer));
 				return;
 			}
 			if (!response.IsSuccessStatusCode) return;
-			string body = await response.Content.ReadAsStringAsync();
 			CallDeferred(nameof(ApplyPollResponse), requestedUniverse, body);
 		}
 		catch (Exception error)
@@ -481,7 +486,9 @@ public sealed partial class TeamCreateService : Node
 			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 			{
-				if (IsMissingMembershipResponse(response, body))
+				if (IsAuthenticationRejected(response, body))
+					CallDeferred(nameof(HandleAuthenticationRejected));
+				else if (IsMissingMembershipResponse(response, body))
 					CallDeferred(nameof(HandleMembershipLost), memberId, body);
 				return;
 			}
@@ -534,7 +541,9 @@ public sealed partial class TeamCreateService : Node
 			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 			{
-				if (IsMissingMembershipResponse(response, body))
+				if (IsAuthenticationRejected(response, body))
+					CallDeferred(nameof(HandleAuthenticationRejected));
+				else if (IsMissingMembershipResponse(response, body))
 					CallDeferred(nameof(HandleMembershipLost), memberId, body);
 				else
 					BV.PrintErr("Team Create rejected changes: ", body);
@@ -567,6 +576,26 @@ public sealed partial class TeamCreateService : Node
 	) =>
 		response.StatusCode == System.Net.HttpStatusCode.NotFound
 		&& body.Contains("member not found", StringComparison.OrdinalIgnoreCase);
+
+	private static bool IsAuthenticationRejected(HttpResponseMessage response, string body) =>
+		response.StatusCode == System.Net.HttpStatusCode.Unauthorized
+		|| body.Contains("invalid_token", StringComparison.OrdinalIgnoreCase);
+
+	private void HandleAuthenticationRejected()
+	{
+		const string message = "Team Create authentication expired. Sign in again, then reconnect Team Create.";
+		if (_manualDisconnect && LastConnectionError == message)
+			return;
+		_memberId = "";
+		_localUserId = "";
+		_members.Clear();
+		ClearCameraAvatars();
+		_manualDisconnect = true;
+		LastConnectionError = message;
+		CreatorService.Interface.StatusBar?.SetStatus(message);
+		_window?.Refresh();
+		StateChanged?.Invoke();
+	}
 
 	private void HandleMembershipLost(string rejectedMemberId, string responseBody)
 	{

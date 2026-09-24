@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Client.UI.Notification;
+using BrickVerse.Client.WebAPI;
 using BrickVerse.Providers.CapturePublish;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -141,6 +142,8 @@ public sealed partial class CaptureService : Instance
 		try
 		{
 			if (CurrentPhoto == null) return;
+			if (!CanShareToFeed(out string unavailableReason))
+				throw new InvalidOperationException(unavailableReason);
 			if (CapturePublisher == null) throw new MissingComponentException("Missing capture publisher component");
 
 			byte[] screenshotBytes = CurrentPhoto.GetImage().SavePngToBuffer();
@@ -161,6 +164,24 @@ public sealed partial class CaptureService : Instance
 			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(exception.Message, "Could not share moment");
 			GD.PushError(exception);
 		}
+	}
+
+	internal bool CanShareToFeed(out string unavailableReason)
+	{
+		if (!ClientAuthAPI.HasJoinToken)
+		{
+			unavailableReason = Root.Network?.IsProd == true
+				? "This game session has no world join token. Rejoin the world before sharing to Feed."
+				: "Sharing to Feed is unavailable in Creator play-tests because play-test clients do not receive a world join token. Join the published world to share captures.";
+			return false;
+		}
+		if (CapturePublisher == null)
+		{
+			unavailableReason = "Sharing to Feed is unavailable in this session.";
+			return false;
+		}
+		unavailableReason = "";
+		return true;
 	}
 
 	public void ViewCurrentPhoto()
