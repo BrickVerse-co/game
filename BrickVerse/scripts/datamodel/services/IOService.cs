@@ -3,8 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using System;
 using System.IO;
+using System.Linq;
 using Godot;
 #if CREATOR
 using BrickVerse.Shared;
@@ -20,7 +22,10 @@ namespace BrickVerse.Datamodel.Services;
 public sealed partial class IOService : Instance
 {
 	private const string CreatorTempPath = "brickverse_creator_temp";
-	private static readonly string[] AllowedExtensions = ["bvxw", "bvworld", "bvxm", "bvmodel", "model", "lua", "luau", "json", "txt", "png", "jpg", "jpeg", "webp", "svg", "ogg", "wav", "mp3", "ogv"];
+	private static readonly HashSet<string> AllowedExtensions = new(
+		new[] { "bvxw", "bvworld", "bvxm", "bvmodel", "model", "json", "txt", "png", "jpg", "jpeg", "webp", "svg", "ogg", "wav", "mp3", "ogv" }
+			.Concat(ScriptLanguageRegistry.Definitions.SelectMany(language => language.Extensions)),
+		StringComparer.OrdinalIgnoreCase);
 
 	internal Dictionary<string, byte[]> FileStructure = [];
 	internal Dictionary<string, string> FileToIndex = [];
@@ -37,7 +42,9 @@ public sealed partial class IOService : Instance
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IORead)]
 	public byte[]? ReadBytesFromPath(string path)
 	{
-		if (!AllowedExtensions.Contains(path.GetExtension())) throw new Exception("Reading this file extension is not allowed");
+		string extension = path.GetExtension();
+		if (!AllowedExtensions.Contains(extension))
+			throw new InvalidOperationException($"Reading .{extension} files is not allowed ({path}).");
 #if CREATOR
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
@@ -90,7 +97,9 @@ public sealed partial class IOService : Instance
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IOWrite)]
 	public void WriteBytesToPath(string path, byte[] bytes)
 	{
-		if (!AllowedExtensions.Contains(path.GetExtension())) throw new Exception("Writing to this file extension is not allowed");
+		string extension = path.GetExtension();
+		if (!AllowedExtensions.Contains(extension))
+			throw new InvalidOperationException($"Writing .{extension} files is not allowed ({path}).");
 #if CREATOR
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{

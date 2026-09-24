@@ -564,6 +564,9 @@ public sealed class ForgeCreateInstanceArgs
 
 	[JsonPropertyName("source")]
 	public string? Source { get; set; }
+
+	[JsonPropertyName("language")]
+	public string? Language { get; set; }
 }
 
 public sealed class ForgeProjectFileArgs

@@ -45,6 +45,11 @@ public partial class UICapturePreview : Control
 
 	private void OnFirstShareBtnPressed()
 	{
+		if (!_capture.CanShareToFeed(out string unavailableReason))
+		{
+			CoreUI.NotificationCenter.FireMessage(unavailableReason, "Could not share moment");
+			return;
+		}
 		_shareAnimPlay.Play("share_appear");
 		_firstMenuPage.Visible = false;
 		_captionWritePage.Visible = true;

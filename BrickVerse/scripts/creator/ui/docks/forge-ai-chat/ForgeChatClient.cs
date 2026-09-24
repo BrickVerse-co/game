@@ -38,7 +38,7 @@ internal sealed class ForgeChatClient
     - Only read or modify user-visible Creator hierarchy. Never target Temporary, Hidden, Internal, Runtime, Cache, Preview, or inaccessible engine staging areas.
     - Visible Explorer services such as world.Environment, world.ScriptService, world.PlayerDefaults, and their visible descendants are valid targets even if engine metadata uses hidden flags.
     - Inspect or search before ambiguous mutations. Reuse existing instances and scripts when the request is an edit.
-    - For Script classes, prefer world.ScriptService when no parent is specified. New scripts created with create_instance are automatically backed by a linked project .luau file.
+    - For Script classes, prefer world.ScriptService when no parent is specified. New scripts created with create_instance are automatically backed by a linked project script file; pass language (Luau, CSharp, JavaScript, TypeScript, or Cpp) when using an experimental language.
     - Give a new script its final source in the top-level create_instance `source` argument. Use ServerScript, ClientScript, or ModuleScript; plain Script aliases ServerScript. Do not create an empty script and patch it in avoidable follow-up calls.
     - Change existing scripts with edit_script_source; it writes through to the linked project file. Use get_script_diff to verify meaningful edits.
     - manage_project_file can list/read/write/delete project-relative .lua, .luau, .json, and .txt files. Prefer the script instance tools for scripts so the world instance and linked file stay synchronized.

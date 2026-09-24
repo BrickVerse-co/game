@@ -311,7 +311,10 @@ public static class DockManager
 		}
 
 		foreach ((string id, DockRegion region) in _regions)
+		{
 			data.RegionSplitModes[id] = region.IsSplit;
+			data.RegionSplitOffsets[id] = region.GetSplitOffsets();
+		}
 		data.ClosedPanelIds = [.. _closedPanelIds.Order()];
 
 		DockLayoutService.SaveDockLayout(data);
@@ -327,6 +330,12 @@ public static class DockManager
 		{
 			if (_regions.TryGetValue(regionId, out DockRegion? region))
 				region.SetSplit(isSplit, suppressSave: true);
+		}
+
+		foreach ((string regionId, List<int> offsets) in data.RegionSplitOffsets)
+		{
+			if (_regions.TryGetValue(regionId, out DockRegion? region))
+				region.RestoreSplitOffsets(offsets);
 		}
 
 		foreach ((string hostId, DockZoneData zone) in data.Zones)

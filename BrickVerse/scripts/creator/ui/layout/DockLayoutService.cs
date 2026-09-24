@@ -112,6 +112,8 @@ public sealed class DockLayoutData
 
 	public Dictionary<string, bool> RegionSplitModes { get; set; } = [];
 
+	public Dictionary<string, List<int>> RegionSplitOffsets { get; set; } = [];
+
 	public List<string> ClosedPanelIds { get; set; } = [];
 }
 

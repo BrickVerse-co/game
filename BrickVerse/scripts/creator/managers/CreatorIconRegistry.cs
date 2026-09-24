@@ -3,11 +3,13 @@
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
+using BrickVerse.Scripting;
 using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using DatamodelScript = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.Managers;
 
@@ -23,13 +25,53 @@ public static class CreatorIconRegistry
 
 	public static Texture2D Resolve(Instance instance)
 	{
+		string iconClass = GetIconClassName(instance);
 		CreatorSession? session = GetSession(instance);
-		if (session == null) return Globals.LoadIcon(instance.ClassName);
+		if (session == null) return LoadBuiltInIcon(instance, iconClass);
 		IconRegistryData data = GetData(session);
 		if (data.Instances.TryGetValue(instance.ObjectID, out string? individual))
-			return LoadOverride(session, individual) ?? Globals.LoadIcon(instance.ClassName);
-		if (data.Classes.TryGetValue(instance.ClassName, out string? global))
-			return LoadOverride(session, global) ?? Globals.LoadIcon(instance.ClassName);
+			return LoadOverride(session, individual) ?? LoadBuiltInIcon(instance, iconClass);
+		if (data.Classes.TryGetValue(iconClass, out string? global))
+			return LoadOverride(session, global) ?? LoadBuiltInIcon(instance, iconClass);
+		return LoadBuiltInIcon(instance, iconClass);
+	}
+
+	public static string GetIconClassName(Instance instance) => instance is DatamodelScript script
+		? $"{instance.ClassName}{ResolveLanguage(script) switch
+		{
+			ScriptLanguagesEnum.Cpp => "CPP",
+			ScriptLanguagesEnum.CSharp => "CSharp",
+			ScriptLanguagesEnum.JavaScript => "JavaScript",
+			ScriptLanguagesEnum.TypeScript => "TypeScript",
+			_ => "Luau",
+		}}"
+		: instance.ClassName;
+
+	private static ScriptLanguagesEnum ResolveLanguage(DatamodelScript script)
+	{
+		if (script.LinkedScript?.LinkedPath is string linkedPath
+			&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition definition))
+			return definition.Language;
+		return script.ChosenLanguage;
+	}
+
+	private static Texture2D LoadBuiltInIcon(Instance instance, string iconClass)
+	{
+		string dynamicPath = $"res://assets/textures/datamodel/{iconClass}.svg";
+		if (ResourceLoader.Exists(dynamicPath)) return Globals.LoadIcon(iconClass);
+		if (instance is DatamodelScript script)
+		{
+			string languageIcon = ResolveLanguage(script) switch
+			{
+				ScriptLanguagesEnum.Cpp => "cpp",
+				ScriptLanguagesEnum.CSharp => "csharp",
+				ScriptLanguagesEnum.JavaScript => "javascript",
+				ScriptLanguagesEnum.TypeScript => "typescript",
+				_ => "luau",
+			};
+			Texture2D? icon = GD.Load<Texture2D>($"res://assets/textures/creator/filebrowser/icons/{languageIcon}.svg");
+			if (icon != null) return icon;
+		}
 		return Globals.LoadIcon(instance.ClassName);
 	}
 

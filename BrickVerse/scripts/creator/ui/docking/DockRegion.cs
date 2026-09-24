@@ -23,26 +23,61 @@ public sealed partial class DockRegion : Control
 		return preferredHostId.EndsWith(".secondary") ? _secondary : _primary;
 	}
 
-	public void ResetToDefault() => SetSplit(InitiallySplit, suppressSave: true);
+	public void ResetToDefault()
+	{
+		SetSplit(InitiallySplit, suppressSave: true);
+		RestoreSplitOffsets(_defaultSplitOffsets);
+	}
 
 	private DockHost _single = null!;
 	private DockHost _primary = null!;
 	private DockHost _secondary = null!;
-	private Control _split = null!;
+	private VSplitContainer _split = null!;
+	private Timer _saveSplitTimer = null!;
+	private int[] _defaultSplitOffsets = [];
+	private int[]? _pendingSplitOffsets;
 
 	public override void _Ready()
 	{
 		_single = GetNode<DockHost>("Single");
-		_split = GetNode<Control>("Split");
+		_split = GetNode<VSplitContainer>("Split");
 		_primary = GetNode<DockHost>("Split/Primary");
 		_secondary = GetNode<DockHost>("Split/Secondary");
 		IsSplit = InitiallySplit;
+		_defaultSplitOffsets = [.. _split.SplitOffsets];
+		_split.Dragged += OnSplitDragged;
+		_saveSplitTimer = new Timer { OneShot = true, WaitTime = 0.2 };
+		_saveSplitTimer.Timeout += DockManager.SaveLayout;
+		AddChild(_saveSplitTimer);
 
 		DockManager.RegisterRegion(this);
 		ApplyPresentation();
 	}
 
-	public override void _ExitTree() => DockManager.UnregisterRegion(this);
+	public override void _ExitTree()
+	{
+		_split.Dragged -= OnSplitDragged;
+		DockManager.UnregisterRegion(this);
+	}
+
+	private void OnSplitDragged(long offset) => _saveSplitTimer.Start();
+
+	public System.Collections.Generic.List<int> GetSplitOffsets() => [.. _split.SplitOffsets];
+
+	public void RestoreSplitOffsets(System.Collections.Generic.IEnumerable<int> offsets)
+	{
+		_pendingSplitOffsets = [.. offsets];
+		CallDeferred(nameof(ApplyPendingSplitOffsets));
+	}
+
+	private void ApplyPendingSplitOffsets()
+	{
+		if (_pendingSplitOffsets == null)
+			return;
+		_split.SplitOffsets = _pendingSplitOffsets;
+		_pendingSplitOffsets = null;
+		_split.QueueSort();
+	}
 
 	public static bool CanReadDockData(Variant data)
 	{

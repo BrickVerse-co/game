@@ -125,6 +125,11 @@
 		<PackageReference Include="TurboXml" Version="2.0.3" />
 		<PackageReference Include="ZstdSharp.Port" Version="0.8.7" />
 		<PackageReference Include="Humanizer.Core" Version="3.0.10" />
+		<!-- Desktop/server-only sandboxed scripting runtimes. Creator compiles source;
+		     exported mobile builds reject these languages before provider startup. -->
+		<PackageReference Include="Jint" Version="4.9.2" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+		<PackageReference Include="Wasmtime" Version="44.0.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\BrickVerse.SourceGen\BrickVerse.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

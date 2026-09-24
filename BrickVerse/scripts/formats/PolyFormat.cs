@@ -221,6 +221,7 @@ public static partial class PolyFormat
 		if (globalLoadContext != null)
 		{
 			context.LoadingModelChain = globalLoadContext.LoadingModelChain;
+			context.LoadedModel = globalLoadContext.LoadedModel;
 		}
 
 		if (data.FileType == PolyFileType.Model)
@@ -323,7 +324,8 @@ public static partial class PolyFormat
 		InternalLoadWorld(root, data, forceMigrateCords);
 	}
 
-	public static async Task LoadWorldAsync(World root, byte[] rawdata, bool forceMigrateCords = false)
+	public static async Task LoadWorldAsync(World root, byte[] rawdata, bool forceMigrateCords = false,
+		Action<string>? reportStatus = null, Action<string>? reportDetail = null)
 	{
 		if (rawdata.Length == 0) return;
 
@@ -331,8 +333,26 @@ public static partial class PolyFormat
 		// render thread. Instance creation stays on the main thread, but is divided
 		// into frame-sized top-level batches so a large world does not present as a
 		// frozen application while it is being constructed.
-		PolyRootData data = await Task.Run(() => ReadRootDataBytes(rawdata));
-		PolyLoadContext context = new() { RootData = data, Root = root, ForceCordMigration = forceMigrateCords };
+		reportStatus?.Invoke($"Decoding world file ({rawdata.Length / 1024d / 1024d:0.0} MiB)");
+		reportDetail?.Invoke("Decompressing and parsing saved instances");
+		Stopwatch decodeTimer = Stopwatch.StartNew();
+		// Scheduling tiny world files on the thread pool costs far more than their
+		// decompression and JSON parsing. Keep large files off the render thread.
+		PolyRootData data = rawdata.Length < 1024 * 1024
+			? ReadRootDataBytes(rawdata)
+			: await Task.Run(() => ReadRootDataBytes(rawdata));
+		decodeTimer.Stop();
+		Stopwatch linkedModelTimer = Stopwatch.StartNew();
+		reportDetail?.Invoke("Reading linked model data");
+		Dictionary<string, PolyRootData> linkedModels = await PreloadLinkedModelsAsync(root, data);
+		linkedModelTimer.Stop();
+		PolyLoadContext context = new()
+		{
+			RootData = data,
+			Root = root,
+			ForceCordMigration = forceMigrateCords,
+			LoadedModel = linkedModels,
+		};
 		if (data.Objects == null || data.Objects.Length == 0 || data.FileType != PolyFileType.World) return;
 
 		PolyObject rootObj = data.Objects[0];
@@ -340,24 +360,35 @@ public static partial class PolyFormat
 		foreach (PolyObject item in data.NonInstanceObjects)
 			FromPolyObject(item, context);
 
-		const int ObjectsPerFrame = 64;
 		Stack<(PolyObject? Object, NetworkedObject Parent, NetworkedObject? ReadyObject)> pending = new();
+		int totalObjects = CountObjects(rootObj.Children);
 		for (int index = rootObj.Children.Length - 1; index >= 0; index--)
 			pending.Push((rootObj.Children[index], root, null));
 
-		int loadedThisFrame = 0;
+		int loadedObjects = 0;
+		reportStatus?.Invoke("Building DataModel");
+		Stopwatch loadTimer = Stopwatch.StartNew();
+		Stopwatch frameBudget = Stopwatch.StartNew();
 		while (pending.Count > 0)
 		{
 			(PolyObject? obj, NetworkedObject parent, NetworkedObject? readyObject) = pending.Pop();
 			if (readyObject != null)
 			{
+				long readyStarted = Stopwatch.GetTimestamp();
 				readyObject.InvokePropReady();
+				if (readyObject is Terrain readyTerrain)
+					readyTerrain.EndMaterialBulkUpdate(deferRebuild: true);
+				ReportSlowWorldObject(readyObject, "ready", readyStarted);
 				continue;
 			}
 			if (obj == null) continue;
 
+			long objectStarted = Stopwatch.GetTimestamp();
 			NetworkedObject? created = FromPolyObject(obj, context, parent, deferChildren: true, deferReady: true);
 			if (created == null) continue;
+			if (created is Terrain terrain)
+				terrain.BeginMaterialBulkUpdate();
+			ReportSlowWorldObject(created, "construction/properties", objectStarted);
 			pending.Push((null, created, created));
 			if (obj.LinkedModel == null && context.InsertChild)
 			{
@@ -365,13 +396,95 @@ public static partial class PolyFormat
 					pending.Push((obj.Children[childIndex], created, null));
 			}
 
-			loadedThisFrame++;
-			if (loadedThisFrame >= ObjectsPerFrame && root.GDNode.GetTree() != null)
+			loadedObjects++;
+			reportDetail?.Invoke($"{created.ClassName} '{created.Name}' ({loadedObjects:N0}/{totalObjects:N0})");
+			// A fixed object count severely underutilized a frame for simple objects.
+			// Spend up to ~12 ms constructing instances, then yield so input and the
+			// loading overlay remain responsive without adding a frame per 64 objects.
+			if (frameBudget.ElapsedMilliseconds >= 12 && root.GDNode.GetTree() != null)
 			{
-				loadedThisFrame = 0;
 				await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
+				frameBudget.Restart();
 			}
 		}
+		loadTimer.Stop();
+		reportStatus?.Invoke($"Loaded {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalSeconds:0.00}s (decoded in {decodeTimer.Elapsed.TotalSeconds:0.00}s)");
+		reportDetail?.Invoke("Finishing editor integration");
+		BV.Print($"World load: decoded {rawdata.Length / 1024d / 1024d:0.0} MiB in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms; preloaded linked models in {linkedModelTimer.Elapsed.TotalMilliseconds:N0} ms; constructed {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalMilliseconds:N0} ms.");
+	}
+
+	private static void ReportSlowWorldObject(NetworkedObject obj, string phase, long started)
+	{
+		double milliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+		if (milliseconds >= 50)
+			BV.Print($"World load: {obj.ClassName} '{obj.Name}' {phase} took {milliseconds:N0} ms.");
+	}
+
+	private static async Task<Dictionary<string, PolyRootData>> PreloadLinkedModelsAsync(World root, PolyRootData world)
+	{
+		Dictionary<string, PolyRootData> loaded = [];
+		HashSet<string> discovered = [];
+		Queue<string> pending = new(CollectLinkedModelIds(world));
+		while (pending.Count > 0)
+		{
+			List<string> batch = [];
+			while (pending.TryDequeue(out string? id))
+				if (discovered.Add(id)) batch.Add(id);
+			if (batch.Count == 0) continue;
+
+			List<(string Id, PolyRootData? Data)> decoded = [];
+			List<(string Id, byte[] Bytes)> largeModels = [];
+			foreach (string id in batch)
+			{
+				byte[]? bytes = root.IO.ReadBytesFromID(id);
+				if (bytes == null)
+				{
+					decoded.Add((id, null));
+					continue;
+				}
+				if (bytes.Length < 1024 * 1024)
+					decoded.Add((id, ReadRootDataBytes(bytes)));
+				else
+					largeModels.Add((id, bytes));
+			}
+
+			Task<(string Id, PolyRootData? Data)>[] tasks = largeModels.Select(model => Task.Run(() =>
+				(model.Id, (PolyRootData?)ReadRootDataBytes(model.Bytes)))).ToArray();
+			if (tasks.Length > 0)
+				decoded.AddRange(await Task.WhenAll(tasks));
+
+			foreach ((string id, PolyRootData? model) in decoded)
+			{
+				if (!model.HasValue) continue;
+				loaded[id] = model.Value;
+				foreach (string nested in CollectLinkedModelIds(model.Value))
+					if (!discovered.Contains(nested)) pending.Enqueue(nested);
+			}
+		}
+		return loaded;
+	}
+
+	private static IEnumerable<string> CollectLinkedModelIds(PolyRootData data)
+	{
+		Stack<PolyObject> pending = new((data.Objects ?? []).Concat(data.NonInstanceObjects ?? []));
+		while (pending.TryPop(out PolyObject? item))
+		{
+			if (!string.IsNullOrWhiteSpace(item.LinkedModel)) yield return item.LinkedModel;
+			foreach (PolyObject child in item.Children ?? []) pending.Push(child);
+		}
+	}
+
+	private static int CountObjects(IEnumerable<PolyObject> roots)
+	{
+		int count = 0;
+		Stack<PolyObject> pending = new(roots);
+		while (pending.TryPop(out PolyObject? item))
+		{
+			count++;
+			if (item.LinkedModel != null) continue;
+			foreach (PolyObject child in item.Children) pending.Push(child);
+		}
+		return count;
 	}
 
 	private static void InternalLoadWorld(World root, PolyRootData data, bool forceMigrateCords = false)
@@ -433,15 +546,14 @@ public static partial class PolyFormat
 				return null;
 			}
 
-			byte[]? linkedModelData = loadContext.Root.IO.ReadBytesFromID(obj.LinkedModel);
-			if (linkedModelData == null)
-			{
-				BV.PrintErr("Failed to load linked model: ", obj.LinkedModel);
-				return null;
-			}
-
 			if (!loadContext.LoadedModel.TryGetValue(obj.LinkedModel, out PolyRootData data))
 			{
+				byte[]? linkedModelData = loadContext.Root.IO.ReadBytesFromID(obj.LinkedModel);
+				if (linkedModelData == null)
+				{
+					BV.PrintErr("Failed to load linked model: ", obj.LinkedModel);
+					return null;
+				}
 				data = ReadRootDataBytes(linkedModelData);
 				loadContext.LoadedModel[obj.LinkedModel] = data;
 			}
@@ -491,6 +603,7 @@ public static partial class PolyFormat
 		netObj.Root = loadContext.Root;
 		netObj.ObjectID = obj.ID;
 		netObj.AutoInvokeReady = false;
+		netObj.AutoInvokeReadyOnParent = false;
 		// Set to false as properties set will override it.
 		netObj.CallInitOverrides = false;
 		netObj.TrySetName(obj.Name);

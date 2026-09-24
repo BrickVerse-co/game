@@ -839,6 +839,20 @@ public sealed partial class Particles : Dynamic
 		Rpc(nameof(NetEmit), count);
 	}
 
+#if CREATOR
+	internal GpuParticles3D CreateEditorPreviewEmitter()
+	{
+		GpuParticles3D preview = (GpuParticles3D)_particles.Duplicate();
+		preview.Position = Vector3.Zero;
+		preview.Rotation = Vector3.Zero;
+		preview.Scale = Vector3.One;
+		preview.Emitting = true;
+		preview.OneShot = false;
+		preview.VisibilityAabb = new Aabb(new Vector3(-50, -50, -50), new Vector3(100, 100, 100));
+		return preview;
+	}
+#endif
+
 	[NetRpc(Networking.AuthorityMode.Authority, CallLocal = true, TransferMode = Networking.TransferMode.Reliable)]
 	private void NetEmit(int count)
 	{

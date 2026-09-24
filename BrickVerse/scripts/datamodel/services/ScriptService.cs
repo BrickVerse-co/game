@@ -16,6 +16,9 @@ using BrickVerse.Datamodel.Data;
 using BrickVerse.Scripting;
 using BrickVerse.Scripting.Datatypes;
 using BrickVerse.Scripting.Luau;
+using BrickVerse.Scripting.JavaScript;
+using BrickVerse.Scripting.CSharp;
+using BrickVerse.Scripting.Cpp;
 using BrickVerse.Shared;
 using Godot;
 #if CREATOR
@@ -84,6 +87,13 @@ public sealed partial class ScriptService : Instance
 		{
 			// Only allow node creation here, scripting will be disabled in non node env (eg. unit tests)
 			RegisterLanguageProvider(ScriptLanguagesEnum.Luau, new LuauProvider());
+			if (!OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS())
+			{
+				RegisterLanguageProvider(ScriptLanguagesEnum.CSharp, new CSharpProvider());
+				RegisterLanguageProvider(ScriptLanguagesEnum.JavaScript, new JavaScriptProvider());
+				RegisterLanguageProvider(ScriptLanguagesEnum.TypeScript, new TypeScriptProvider());
+				RegisterLanguageProvider(ScriptLanguagesEnum.Cpp, new CppProvider());
+			}
 		}
 	}
 
@@ -107,6 +117,7 @@ public sealed partial class ScriptService : Instance
 	public void Run(Script script)
 	{
 		//BV.Print("Running script: ", script.LuaPath);
+		EnsurePlatformSupport(script.ChosenLanguage);
 
 		if (!_languageProviders.TryGetValue(script.ChosenLanguage, out var provider))
 		{
@@ -119,6 +130,7 @@ public sealed partial class ScriptService : Instance
 
 	public void CompileScript(Script script)
 	{
+		EnsurePlatformSupport(script.ChosenLanguage);
 		if (!_languageProviders.TryGetValue(script.ChosenLanguage, out var provider))
 		{
 			throw new Exception(script.ChosenLanguage + " is not provided");
@@ -128,6 +140,16 @@ public sealed partial class ScriptService : Instance
 			return;
 
 		script.Bytecode = provider.CompileSource(script.Source);
+	}
+
+	private static void EnsurePlatformSupport(ScriptLanguagesEnum language)
+	{
+		if (ScriptLanguageRegistry.IsSupportedOnCurrentPlatform(language)) return;
+		ScriptLanguageDefinition definition = ScriptLanguageRegistry.Get(language);
+		throw new PlatformNotSupportedException(
+			$"{definition.DisplayName} scripts are not supported on this platform. "
+			+ ScriptLanguageRegistry.GetPlatformDescription(definition) + "."
+		);
 	}
 
 	public static void Close(Script script)

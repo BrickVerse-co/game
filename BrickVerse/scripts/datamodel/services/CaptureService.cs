@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Client.UI.Notification;
+using BrickVerse.Client.WebAPI;
 using BrickVerse.Providers.CapturePublish;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
@@ -138,20 +139,49 @@ public sealed partial class CaptureService : Instance
 
 	public async void UploadCurrentPhoto(string caption = "")
 	{
-		if (CurrentPhoto == null) return;
-		if (CapturePublisher == null) throw new MissingComponentException("Missing capture publisher component");
+		try
+		{
+			if (CurrentPhoto == null) return;
+			if (!CanShareToFeed(out string unavailableReason))
+				throw new InvalidOperationException(unavailableReason);
+			if (CapturePublisher == null) throw new MissingComponentException("Missing capture publisher component");
 
-		byte[] screenshotBytes = CurrentPhoto.GetImage().SavePngToBuffer();
+			byte[] screenshotBytes = CurrentPhoto.GetImage().SavePngToBuffer();
 
-		string gameName = !string.IsNullOrWhiteSpace(Root.UniverseName)
-			? Root.UniverseName
-			: (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : "BrickVerse");
-		string gameTag = Regex.Replace(gameName.Trim(), @"[^\p{L}\p{N}_]+", "_").Trim('_');
-		string automaticCaption = $"Captured in #{(string.IsNullOrWhiteSpace(gameTag) ? "BrickVerse" : gameTag)} 🎮";
-		string feedCaption = string.IsNullOrWhiteSpace(caption)
-			? automaticCaption
-			: $"{caption.Trim()}\n\n{automaticCaption}";
-		await CapturePublisher.Publish(screenshotBytes, feedCaption, true);
+			string gameName = !string.IsNullOrWhiteSpace(Root.UniverseName)
+				? Root.UniverseName
+				: (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : "BrickVerse");
+			string gameTag = Regex.Replace(gameName.Trim(), @"[^\p{L}\p{N}_]+", "_").Trim('_');
+			string automaticCaption = $"Captured in #{(string.IsNullOrWhiteSpace(gameTag) ? "BrickVerse" : gameTag)} 🎮";
+			string feedCaption = string.IsNullOrWhiteSpace(caption)
+				? automaticCaption
+				: $"{caption.Trim()}\n\n{automaticCaption}";
+			await CapturePublisher.Publish(screenshotBytes, feedCaption, true);
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage("Your capture was posted to Feed.", "Moment shared");
+		}
+		catch (Exception exception)
+		{
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(exception.Message, "Could not share moment");
+			GD.PushError(exception);
+		}
+	}
+
+	internal bool CanShareToFeed(out string unavailableReason)
+	{
+		if (!ClientAuthAPI.HasJoinToken)
+		{
+			unavailableReason = Root.Network?.IsProd == true
+				? "This game session has no world join token. Rejoin the world before sharing to Feed."
+				: "Sharing to Feed is unavailable in Creator play-tests because play-test clients do not receive a world join token. Join the published world to share captures.";
+			return false;
+		}
+		if (CapturePublisher == null)
+		{
+			unavailableReason = "Sharing to Feed is unavailable in this session.";
+			return false;
+		}
+		unavailableReason = "";
+		return true;
 	}
 
 	public void ViewCurrentPhoto()

@@ -12,13 +12,15 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b7t1w"]
 
-[node name="CreateScriptPopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_pathEdit", "_browseBtn", "_createBtn", "_cancelBtn", "_errorLabel")]
+[sub_resource type="ButtonGroup" id="ButtonGroup_language"]
+
+[node name="CreateScriptPopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_languageGrid", "_platformSupportLabel", "_pathEdit", "_browseBtn", "_createBtn", "_cancelBtn", "_errorLabel")]
 theme = ExtResource("99_creator_theme")
 force_native = false
 transparent = true
 oversampling_override = 1.0
 title = "Create Script"
-size = Vector2i(316, 200)
+size = Vector2i(520, 420)
 transient = true
 exclusive = true
 unresizable = true
@@ -27,6 +29,9 @@ minimize_disabled = true
 maximize_disabled = true
 script = ExtResource("1_xf0nj")
 _scriptGroup = SubResource("ButtonGroup_4aee4")
+_languageGroup = SubResource("ButtonGroup_language")
+_languageGrid = NodePath("Control/VBoxContainer/Language")
+_platformSupportLabel = NodePath("Control/VBoxContainer/PlatformSupport")
 _pathEdit = NodePath("Control/VBoxContainer/Layout2/Layout/LineEdit")
 _browseBtn = NodePath("Control/VBoxContainer/Layout2/Layout/Browse")
 _createBtn = NodePath("Control/VBoxContainer/Layout/Create")
@@ -83,6 +88,16 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_b7t1w")
 button_group = SubResource("ButtonGroup_4aee4")
 text = "Module"
 icon = ExtResource("4_bd64o")
+
+[node name="Language" type="GridContainer" parent="Control/VBoxContainer"]
+layout_mode = 2
+columns = 3
+tooltip_text = "Script language. C++ scripts compile to sandboxed WebAssembly."
+
+[node name="PlatformSupport" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+autowrap_mode = 2
+text = "All supported platforms"
 
 [node name="Layout2" type="HBoxContainer" parent="Control/VBoxContainer" unique_id=497312817]
 layout_mode = 2

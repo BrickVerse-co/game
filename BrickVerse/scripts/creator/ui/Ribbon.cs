@@ -92,6 +92,7 @@ public sealed partial class Ribbon : Control
 		AddTaskAction("Scene Stats", "chart-bar", SceneStatisticsPopup.Open);
 		AddTaskAction("Particles", "play-filled", ParticleEditorWindow.Open);
 		AddTaskAction("Input", "keyboard", CreatorService.Interface.OpenInputManager);
+		NormalizeRibbonIcons(_taskTabs);
 		PopulateShapesMenu(shapesButton);
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
@@ -190,15 +191,14 @@ public sealed partial class Ribbon : Control
 		Button button = new()
 		{
 			Name = label.Replace(" ", ""),
-			CustomMinimumSize = new Vector2(Mathf.Max(74, label.Length * 7), 54),
+			CustomMinimumSize = new Vector2(Mathf.Max(62, label.Length * 7 + 12), 54),
 			TooltipText = label,
 			FocusMode = Control.FocusModeEnum.None,
 		};
 		TextureRect iconView = new()
 		{
+			Name = "Icon",
 			Texture = GD.Load<Texture2D>($"res://assets/textures/ui-icons/{icon}.svg"),
-			Position = new Vector2(0, 5),
-			Size = new Vector2(button.CustomMinimumSize.X, 27),
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			MouseFilter = Control.MouseFilterEnum.Ignore,
@@ -206,18 +206,43 @@ public sealed partial class Ribbon : Control
 		};
 		Label caption = new()
 		{
+			Name = "Label",
 			Text = label,
-			Position = new Vector2(2, 33),
-			Size = new Vector2(button.CustomMinimumSize.X - 4, 18),
 			HorizontalAlignment = HorizontalAlignment.Center,
 			VerticalAlignment = VerticalAlignment.Center,
 			MouseFilter = Control.MouseFilterEnum.Ignore,
+			TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
 		};
-		caption.AddThemeFontSizeOverride("font_size", 11);
 		button.AddChild(iconView);
 		button.AddChild(caption);
+		caption.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+		caption.OffsetLeft = 2;
+		caption.OffsetTop = -20;
+		caption.OffsetRight = -2;
+		caption.OffsetBottom = -2;
 		button.Pressed += action;
 		_quickActions.AddChild(button);
+	}
+
+	private static void NormalizeRibbonIcons(Control root)
+	{
+		foreach (Node node in root.FindChildren("*", nameof(Button), recursive: true, owned: false))
+		{
+			if (node is not Button button
+				|| button.GetNodeOrNull<TextureRect>("Icon") is not TextureRect icon)
+				continue;
+
+			button.ClipContents = true;
+			icon.CustomMinimumSize = Vector2.Zero;
+			icon.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+			icon.OffsetLeft = 0;
+			icon.OffsetTop = 5;
+			icon.OffsetRight = 0;
+			icon.OffsetBottom = -22;
+			icon.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
+			icon.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+			icon.MouseFilter = Control.MouseFilterEnum.Ignore;
+		}
 	}
 
 	private static void WireHomeInsertShortcuts(HBoxContainer home)
