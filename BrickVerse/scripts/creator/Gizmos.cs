@@ -353,8 +353,8 @@ public sealed partial class Gizmos : Node
 		if (ActiveToolMode == ToolModeEnum.Pivot)
 		{
 			Dynamic target = Selected[0];
-			Vector3 worldOrigin = target.GetGlobalTransform() * _pivotEditStartOffset + vector.Snap(GetSafeMoveSnap());
-			target.PivotOffset = target.GetGlobalTransform().AffineInverse() * worldOrigin;
+			Vector3 worldOrigin = _pivotStart.Origin + vector.Snap(GetSafeMoveSnap());
+			target.PivotOffset = WorldToLocalPivotOffset(target, worldOrigin);
 			return;
 		}
 		ApplyMoveMotion(vector, snap: true);
@@ -686,7 +686,7 @@ public sealed partial class Gizmos : Node
 			{
 				Vector3 before = pivotTarget.PivotOffset;
 				Vector3 hitPosition = (Vector3)intersection["position"];
-				Vector3 after = pivotTarget.GetGlobalTransform().AffineInverse() * hitPosition;
+				Vector3 after = WorldToLocalPivotOffset(pivotTarget, hitPosition);
 				_history.RecordAppliedAction("Set pivot", new((_) => pivotTarget.PivotOffset = after), new((_) => pivotTarget.PivotOffset = before));
 				pivotTarget.PivotOffset = after;
 				CreatorService.Interface.StatusBar?.SetStatus("Pivot moved. Use Reset Pivot to restore the object origin.");
@@ -701,7 +701,7 @@ public sealed partial class Gizmos : Node
 			&& selectInstance is Dynamic tabPivotTarget && intersection.Count > 0)
 		{
 			Vector3 before = tabPivotTarget.PivotOffset;
-			Vector3 after = tabPivotTarget.GetGlobalTransform().AffineInverse() * (Vector3)intersection["position"];
+			Vector3 after = WorldToLocalPivotOffset(tabPivotTarget, (Vector3)intersection["position"]);
 			_history.RecordAppliedAction("Move pivot", new((_) => tabPivotTarget.PivotOffset = after), new((_) => tabPivotTarget.PivotOffset = before));
 			tabPivotTarget.PivotOffset = after;
 			return;
@@ -1171,8 +1171,7 @@ public sealed partial class Gizmos : Node
 
 	public static Transform3D GetCenterPivot(Instance[] instances)
 	{
-		Vector3 center = Vector3.Zero;
-		int count = 0;
+		Aabb? combinedBounds = null;
 		Dynamic? firstDynamic = null;
 		TransformOrientationEnum orientationMode = CreatorService.Interface?.TransformOrientation ?? TransformOrientationEnum.Global;
 		SelectionPivotModeEnum pivotMode = CreatorService.Interface?.SelectionPivotMode ?? SelectionPivotModeEnum.Center;
@@ -1182,22 +1181,20 @@ public sealed partial class Gizmos : Node
 			if (sel is Dynamic dyn)
 			{
 				firstDynamic ??= dyn;
-				Transform3D xform = dyn.GetGlobalTransform();
-				center += xform.Origin;
-				count++;
+				Aabb bounds = dyn.CalculateBounds();
+				combinedBounds = combinedBounds.HasValue ? combinedBounds.Value.Merge(bounds) : bounds;
 			}
 		}
-		if (count == 0) return Transform3D.Identity;
-		center /= count;
+		if (!combinedBounds.HasValue) return Transform3D.Identity;
+		Vector3 center = combinedBounds.Value.GetCenter();
 
 		Vector3 origin = center;
-		if (firstDynamic != null && !firstDynamic.PivotOffset.IsZeroApprox())
+		if (firstDynamic != null && (!firstDynamic.PivotOffset.IsZeroApprox()
+			|| pivotMode == SelectionPivotModeEnum.PrimarySelection || instances.Length == 1))
 		{
-			origin = firstDynamic.GetGlobalTransform() * firstDynamic.PivotOffset;
-		}
-		else if (pivotMode == SelectionPivotModeEnum.PrimarySelection && firstDynamic != null)
-		{
-			origin = firstDynamic.GetGlobalTransform().Origin;
+			Basis objectBasis = firstDynamic.GetGlobalTransform().Basis.Orthonormalized();
+			origin = firstDynamic.CalculateBounds().GetCenter()
+				+ objectBasis.Xform(firstDynamic.PivotOffset);
 		}
 
 		Basis basis = Basis.Identity;
@@ -1212,6 +1209,13 @@ public sealed partial class Gizmos : Node
 		}
 
 		return new Transform3D(basis, origin);
+	}
+
+	private static Vector3 WorldToLocalPivotOffset(Dynamic target, Vector3 worldPoint)
+	{
+		Vector3 boundsCenter = target.CalculateBounds().GetCenter();
+		Basis objectBasis = target.GetGlobalTransform().Basis.Orthonormalized();
+		return objectBasis.Inverse().Xform(worldPoint - boundsCenter);
 	}
 
 	private Transform3D GetSelectionPivot()

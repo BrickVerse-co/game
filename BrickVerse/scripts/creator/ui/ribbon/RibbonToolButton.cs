@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 
 namespace BrickVerse.Creator.UI;
@@ -19,6 +20,14 @@ public partial class RibbonToolButton : Button
 		// emit Pressed/Toggled. Keep the complete visible tile clickable.
 		SetDescendantsMouseIgnored(this);
 		base._Ready();
+	}
+
+	public override void _Pressed()
+	{
+		CreatorService.Interface.ToolMode = ToolMode;
+		World.Current?.CreatorContext?.Gizmos?.RefreshVisuals();
+		World.Current?.Container?.GrabFocus();
+		base._Pressed();
 	}
 
 	private static void SetDescendantsMouseIgnored(Node parent)
