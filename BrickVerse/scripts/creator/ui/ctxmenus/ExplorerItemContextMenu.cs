@@ -98,10 +98,10 @@ public partial class ExplorerItemContextMenu : ContextMenu
 			AddIconItem("book", "Open Documentation", 59);
 			AddSeparator();
 			AddIconItem("image-square", "Override icon for this instance…", 81);
-			AddIconItem("image-square", $"Override icon for all {Target!.ClassName} instances…", 82);
-			if (CreatorIconRegistry.GetInstanceOverride(Target) != null) AddIconItem("trash", "Reset this instance icon", 83);
-			if (Target.Root.LinkedSession is CreatorSession iconSession && CreatorIconRegistry.GetClassOverride(iconSession, Target.ClassName) != null)
-				AddIconItem("trash", $"Reset global {Target.ClassName} icon", 84);
+			AddIconItem("image-square", $"Override icon for all {CreatorIconRegistry.GetIconClassName(Target!)} instances…", 82);
+			if (CreatorIconRegistry.GetInstanceOverride(Target!) != null) AddIconItem("trash", "Reset this instance icon", 83);
+			if (Target!.Root.LinkedSession is CreatorSession iconSession && CreatorIconRegistry.GetClassOverride(iconSession, CreatorIconRegistry.GetIconClassName(Target)) != null)
+				AddIconItem("trash", $"Reset global {CreatorIconRegistry.GetIconClassName(Target)} icon", 84);
 		}
 		AddSeparator();
 		AddIconItem("lock", "Lock/Unlock", 61);
@@ -345,13 +345,13 @@ public partial class ExplorerItemContextMenu : ContextMenu
 				CreatorIconRegistry.PromptSetInstance(Target!);
 				break;
 			case 82:
-				CreatorIconRegistry.PromptSetClass(Target!.Root.LinkedSession, Target.ClassName);
+					CreatorIconRegistry.PromptSetClass(Target!.Root.LinkedSession, CreatorIconRegistry.GetIconClassName(Target));
 				break;
 			case 83:
 				CreatorIconRegistry.ClearInstance(Target!);
 				break;
 			case 84:
-				if (Target!.Root.LinkedSession is CreatorSession iconSession) CreatorIconRegistry.ClearClass(iconSession, Target.ClassName);
+				if (Target!.Root.LinkedSession is CreatorSession iconSession) CreatorIconRegistry.ClearClass(iconSession, CreatorIconRegistry.GetIconClassName(Target));
 				break;
 			case 101: // Delete
 				{

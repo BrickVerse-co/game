@@ -14,6 +14,7 @@ using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
+using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using System.Diagnostics.CodeAnalysis;
 
@@ -130,7 +131,7 @@ internal static class ForgeToolCatalog
 		),
 		Create(
 			"create_instance",
-			"Create a new instantiable instance under a parent path and optionally set common properties. Use canonical paths returned by search_instances, such as world.ScriptService; slash-form paths are accepted too. For scripts use ServerScript, ClientScript, or ModuleScript (Script aliases ServerScript) and pass source in this same call; Creator creates and links the project .luau file atomically.",
+			"Create a new instantiable instance under a parent path and optionally set common properties. Use canonical paths returned by search_instances, such as world.ScriptService; slash-form paths are accepted too. For scripts use ServerScript, ClientScript, or ModuleScript (Script aliases ServerScript), pass source in this same call, and optionally set language to Luau, CSharp, JavaScript, TypeScript, or Cpp (C# / JavaScript / TypeScript / C++ are desktop and dedicated-server only). Creator creates and links the matching project file atomically.",
 			"""
 			{
 			  "type": "object",
@@ -138,7 +139,8 @@ internal static class ForgeToolCatalog
 			    "class_name": { "type": "string" },
 			    "parent_path": { "type": "string" },
 			    "name": { "type": "string" },
-			    "source": { "type": "string", "description": "Initial Luau source for a Script instance." },
+			    "source": { "type": "string", "description": "Initial source for a Script instance." },
+			    "language": { "type": "string", "enum": ["Luau", "CSharp", "JavaScript", "TypeScript", "Cpp"], "description": "Optional script language; non-Luau languages are experimental and desktop/dedicated-server only." },
 			    "properties": {
 			      "type": "object",
 			      "additionalProperties": true
@@ -738,8 +740,21 @@ internal sealed class ForgeToolExecutor
 		string propertyResult;
 		try
 		{
-			if (instance is BrickVerse.Datamodel.Script initialScript && args.Source != null)
-				initialScript.Source = args.Source;
+			if (instance is BrickVerse.Datamodel.Script initialScript)
+			{
+				if (!string.IsNullOrWhiteSpace(args.Language))
+				{
+					ScriptLanguageDefinition language = ScriptLanguageRegistry.Definitions.FirstOrDefault(
+						definition => definition.Language.ToString().Equals(args.Language.Trim(), StringComparison.OrdinalIgnoreCase)
+							|| definition.DisplayName.Equals(args.Language.Trim(), StringComparison.OrdinalIgnoreCase)
+							|| definition.PrimaryExtension.Equals(args.Language.Trim().TrimStart('.'), StringComparison.OrdinalIgnoreCase))
+						?? throw new InvalidOperationException($"Unknown script language '{args.Language}'.");
+					if (!ScriptLanguageRegistry.IsSupportedOnCurrentPlatform(language.Language))
+						throw new PlatformNotSupportedException($"{language.DisplayName} scripts are not supported on this platform. {ScriptLanguageRegistry.GetPlatformDescription(language)}.");
+					initialScript.ChosenLanguage = language.Language;
+				}
+				if (args.Source != null) initialScript.Source = args.Source;
+			}
 			propertyResult = ApplyProperties(instance, args.Properties);
 			createdScriptFile = instance is BrickVerse.Datamodel.Script script
 				? CreateAndLinkScriptFile(script)
@@ -835,11 +850,12 @@ internal sealed class ForgeToolExecutor
 		}
 
 		string safeName = SanitizeFileName(script.Name);
-		string relativePath = $"{folder}/{safeName}{suffix}.luau";
+		string extension = ScriptLanguageRegistry.Get(script.ChosenLanguage).PrimaryExtension;
+		string relativePath = $"{folder}/{safeName}{suffix}.{extension}";
 		int copyNumber = 2;
 		while (File.Exists(_root.LinkedSession.GlobalizePath(relativePath)))
 		{
-			relativePath = $"{folder}/{safeName}{copyNumber}{suffix}.luau";
+			relativePath = $"{folder}/{safeName}{copyNumber}{suffix}.{extension}";
 			copyNumber++;
 		}
 

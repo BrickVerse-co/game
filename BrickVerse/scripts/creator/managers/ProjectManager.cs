@@ -7,6 +7,7 @@ using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Formats;
+using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Creator.Utils;
@@ -384,23 +385,24 @@ public static class ProjectManager
 		foreach (Script s in scripts)
 		{
 			string targetFolder;
-			string targetName;
+			ScriptTypeKind scriptType;
 			string baseName = s.Name;
 			if (s is ServerScript)
 			{
 				targetFolder = serverPath;
-				targetName = $"{baseName}.server.luau";
+				scriptType = ScriptTypeKind.Server;
 			}
 			else if (s is ClientScript)
 			{
 				targetFolder = clientPath;
-				targetName = $"{baseName}.client.luau";
+				scriptType = ScriptTypeKind.Client;
 			}
 			else
 			{
 				targetFolder = modulePath;
-				targetName = $"{baseName}.luau";
+				scriptType = ScriptTypeKind.Module;
 			}
+			string targetName = ScriptLanguageRegistry.CreateFileName(baseName, scriptType, s.ChosenLanguage);
 
 			// Check if this source already exists
 			if (sourceToPath.TryGetValue(s.Source, out string? existingPath))
@@ -420,18 +422,8 @@ public static class ProjectManager
 					nameCounters[fullKey] = value;
 				}
 				nameCounters[fullKey] = ++value;
-				if (s is ServerScript)
-				{
-					targetName = $"{baseName}{value}.server.luau";
-				}
-				else if (s is ClientScript)
-				{
-					targetName = $"{baseName}{nameCounters[fullKey]}.client.luau";
-				}
-				else
-				{
-					targetName = $"{baseName}{nameCounters[fullKey]}.luau";
-				}
+				targetName = ScriptLanguageRegistry.CreateFileName(
+					$"{baseName}{nameCounters[fullKey]}", scriptType, s.ChosenLanguage);
 			}
 			string targetFile = Path.GetFullPath(Path.Join(targetFolder, targetName));
 

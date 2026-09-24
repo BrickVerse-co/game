@@ -39,11 +39,16 @@ public class JavaScriptProvider : IScriptLanguageProvider
 		engine.SetValue("__bv_get", new Func<int, string, object?>(api.Get));
 		engine.SetValue("__bv_set", new Action<int, string, object?>(api.Set));
 		engine.SetValue("__bv_call", new Func<int, string, object?[], object?>(api.Call));
-		engine.Execute("const bv=Object.freeze({global:__bv_global,get:__bv_get,set:__bv_set,call:(h,n,...a)=>__bv_call(h,n,a)});");
-		engine.SetValue("script", api.Script);
-		engine.SetValue("world", api.World);
-		engine.SetValue("game", api.World);
-		engine.SetValue("print", new Action<object?>(value => script.Root.ScriptService.Logger.LogInfo(script, value?.ToString() ?? "null")));
+		engine.SetValue("__bv_world_handle", api.World);
+		engine.Execute("const __bv_unwrap=v=>v&&typeof v==='object'&&Object.prototype.hasOwnProperty.call(v,'__bv_handle')?v.__bv_handle:v;const __bv_wrap=h=>{if(typeof h!=='number'||h===0)return h===0?null:h;return new Proxy(Object.create(null),{get:(_,p)=>p==='__bv_handle'?h:__bv_wrap(__bv_get(h,String(p))),set:(_,p,v)=>{__bv_set(h,String(p),__bv_unwrap(v));return true;}})};const bv=Object.freeze({global:n=>__bv_wrap(__bv_global(n)),get:(h,n)=>__bv_wrap(__bv_get(__bv_unwrap(h),n)),set:(h,n,v)=>__bv_set(__bv_unwrap(h),n,__bv_unwrap(v)),call:(h,n,...a)=>__bv_wrap(__bv_call(__bv_unwrap(h),n,a.map(__bv_unwrap)))});const game=__bv_wrap(__bv_world_handle);const world=game;");
+		// Expose a read-only view rather than the raw DataModel instance. The
+		// integer capability handle remains available through bv, while common
+		// script metadata is convenient and safe to read directly.
+		engine.SetValue("script", new ScriptView(script.Name));
+		engine.SetValue("__bv_print", new Action<string>(message => script.Root.ScriptService.Logger.LogInfo(script, message)));
+		engine.SetValue("__bv_warn", new Action<string>(message => script.Root.ScriptService.Logger.LogWarning(script, message)));
+		engine.SetValue("__bv_error", new Action<string>(message => script.Root.ScriptService.Logger.LogError(script, message)));
+		engine.Execute("const print=(...args)=>__bv_print(args.map(String).join(' '));const console=Object.freeze({log:print,info:print,warn:(...args)=>__bv_warn(args.map(String).join(' ')),error:(...args)=>__bv_error(args.map(String).join(' '))});");
 		_engines[script] = engine;
 		try { engine.Execute(Encoding.UTF8.GetString(script.Bytecode!)); }
 		catch (Exception exception)
@@ -74,4 +79,5 @@ public class JavaScriptProvider : IScriptLanguageProvider
 	public void Close(Script script) => _engines.Remove(script);
 	public void FreeBVCallback(BVCallback callback) { }
 	public void Dispose() => _engines.Clear();
+	private sealed record ScriptView(string Name);
 }

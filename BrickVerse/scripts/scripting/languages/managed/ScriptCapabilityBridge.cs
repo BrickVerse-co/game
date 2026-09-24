@@ -25,6 +25,9 @@ public interface IScriptApi
 	object? Get(int handle, string property);
 	void Set(int handle, string property, object? value);
 	object? Call(int handle, string method, params object?[] args);
+	void Print(string message);
+	void Warn(string message);
+	void Error(string message);
 }
 
 public abstract class BrickVerseScript
@@ -32,6 +35,9 @@ public abstract class BrickVerseScript
 	protected IScriptApi Bv { get; private set; } = null!;
 	protected int Script => Bv.Script;
 	protected int World => Bv.World;
+	protected void Print(string message) => Bv.Print(message);
+	protected void Warn(string message) => Bv.Warn(message);
+	protected void Error(string message) => Bv.Error(message);
 	internal void Attach(IScriptApi api) => Bv = api;
 	public virtual void Start() { }
 	public virtual void Update(double delta) { }
@@ -58,6 +64,12 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	public object? Get(int handle, string property)
 	{
 		IScriptObject target = Resolve(handle);
+		if (target is Instance instance)
+		{
+			if (property.Equals("Name", StringComparison.Ordinal)) return instance.Name;
+			Instance? child = instance.FindFirstChild(property);
+			if (child != null) return Add(child);
+		}
 		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
 		Demand(info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
@@ -67,6 +79,13 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	public void Set(int handle, string property, object? value)
 	{
 		IScriptObject target = Resolve(handle);
+		if (target is Instance instance && property.Equals("Name", StringComparison.Ordinal))
+		{
+			if (value is not string name || string.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Instance.Name must be a non-empty string.", nameof(value));
+			instance.Name = name;
+			return;
+		}
 		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
 		Demand(info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
@@ -87,6 +106,10 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 			ScriptService.ConvertToPropertyType(FromGuest(value), parameters[index].ParameterType)).ToArray();
 		return ToGuest(info.Invoke(target, converted));
 	}
+
+	public void Print(string message) => script.Root.ScriptService.Logger.LogInfo(script, message ?? string.Empty);
+	public void Warn(string message) => script.Root.ScriptService.Logger.LogWarning(script, message ?? string.Empty);
+	public void Error(string message) => script.Root.ScriptService.Logger.LogError(script, message ?? string.Empty);
 
 	private int Add(IScriptObject value)
 	{
