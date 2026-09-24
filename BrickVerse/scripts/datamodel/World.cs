@@ -162,6 +162,9 @@ public sealed partial class World : Instance
 
 	internal CreatorSession LinkedSession = null!;
 	internal string? WorldFilePath;
+	internal string? PrefabFilePath;
+	internal Instance? PrefabRoot;
+	internal bool IsPrefabEditor => !string.IsNullOrWhiteSpace(PrefabFilePath);
 #endif
 	internal Viewport? RootViewport { get; set; }
 	internal ClientEntry? Entry { get; set; }

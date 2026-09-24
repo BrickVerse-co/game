@@ -53,6 +53,13 @@ public enum SelectionPivotModeEnum
 	PrimarySelection
 }
 
+[ScriptEnum("MoveGizmoStyle", IsCreatorOnly = true)]
+public enum MoveGizmoStyleEnum
+{
+	Classic,
+	Universal
+}
+
 [ScriptEnum("PlayTestPresentation", IsCreatorOnly = true)]
 public enum PlayTestPresentationEnum
 {

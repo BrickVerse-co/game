@@ -51,6 +51,7 @@ public sealed partial class Ribbon : Control
 	private Button _saveButton = null!;
 	private Button _findButton = null!;
 	private bool _showingCodeActions;
+	private string _lastSelectionSignature = "";
 
 	public override void _Ready()
 	{
@@ -94,6 +95,7 @@ public sealed partial class Ribbon : Control
 		AddTaskAction("Input", "keyboard", CreatorService.Interface.OpenInputManager);
 		NormalizeRibbonIcons(_taskTabs);
 		PopulateShapesMenu(shapesButton);
+		AddModelTools(model);
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
@@ -178,13 +180,134 @@ public sealed partial class Ribbon : Control
 		OnCurrentControlChanged(Tabs.Singleton.CurrentControl);
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
+		_selectButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Select); };
+		_moveButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Move); };
+		_rotateButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Rotate); };
+		_scaleButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Scale); };
 	}
 
 	private static TextEditor.TextEditorContainer? ActiveTextEditor() => Tabs.Singleton?.CurrentControl as TextEditor.TextEditorContainer;
 
+	public override void _Process(double delta)
+	{
+		Instance[] selected = World.Current?.CreatorContext?.Selections?.GetSelected() ?? [];
+		string signature = string.Join(',', selected.Select(instance => instance.ObjectID));
+		if (signature == _lastSelectionSignature) return;
+		_lastSelectionSignature = signature;
+		if (selected.Length == 0) return;
+		_taskTabs.CurrentTab = selected.Any(instance => instance is UIField) ? 2
+			: selected.Any(instance => instance is BrickVerse.Datamodel.Script) ? 3 : 1;
+	}
+
 	private void FormatActiveDocument() => ActiveTextEditor()?.EditorRoot.FormatDocument();
 	private void SaveActiveDocument() => ActiveTextEditor()?.EditorRoot.SaveDocument();
 	private void FindInActiveDocument() => ActiveTextEditor()?.EditorRoot.OpenFind();
+
+	private void AddModelTools(HBoxContainer model)
+	{
+		AddModelAction(model, "Group", "group", "Group as a Model or Folder", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			menu.AddItem("Group as Model", 0); menu.AddItem("Group as Folder", 1);
+			menu.IdPressed += id => World.Current?.CreatorContext.Selections.GroupSelected(id == 1 ? CreatorHistory.GroupAsEnum.Folder : CreatorHistory.GroupAsEnum.Model);
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(model, "Pivot", "pivot", "Edit the selected object's local pivot with move and rotate handles", button => button.Pressed += () => ActivateTool(ToolModeEnum.Pivot));
+		AddModelAction(model, "Reset Pivot", "reset-pivot", "Restore selected pivots to their object origins", button => button.Pressed += ResetPivots);
+		AddModelAction(model, "Anchor", "anchor", "Anchor or unanchor selected physical instances", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			menu.AddItem("Toggle Selected", 0); menu.AddItem("Anchor All Descendants", 1); menu.AddItem("Unanchor All Descendants", 2);
+			menu.IdPressed += id => SetAnchored((int)id);
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(model, "Lock", "lock", "Lock or unlock selected instances", button => button.Pressed += () => World.Current?.CreatorContext.Selections.ToggleLockSelected());
+		AddModelAction(model, "Align", "align", "Set World or Local transform orientation", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			menu.AddItem("World orientation", 0); menu.AddItem("Local orientation", 1); menu.AddItem("Align rotation to world", 2);
+			menu.IdPressed += id => SetAlignment((int)id);
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(model, "Weld", "weld", "Create a Weld between two selected physical instances", button => button.Pressed += CreateWeld);
+		AddModelAction(model, "Effects", "effects", "Insert an effect, attachment, or light", AddEffectsMenu);
+	}
+
+	private static void AddModelAction(Container parent, string text, string icon, string tooltip, Action<Button> configure)
+	{
+		Button button = new() { TooltipText = tooltip, CustomMinimumSize = new Vector2(Mathf.Max(60, text.Length * 7 + 14), 54), FocusMode = FocusModeEnum.None, ClipContents = true };
+		TextureRect iconView = new() { Texture = GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/{icon}.svg"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color("0097ff") };
+		iconView.SetAnchorsPreset(Control.LayoutPreset.FullRect); iconView.OffsetTop = 5; iconView.OffsetBottom = -22;
+		Label label = new() { Text = text, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+		label.SetAnchorsPreset(Control.LayoutPreset.BottomWide); label.OffsetLeft = 2; label.OffsetTop = -20; label.OffsetRight = -2; label.OffsetBottom = -2;
+		button.AddChild(iconView); button.AddChild(label);
+		parent.AddChild(button); configure(button);
+	}
+
+	private static void ResetPivots()
+	{
+		World? world = World.Current; if (world == null) return;
+		Dynamic[] targets = world.CreatorContext.Selections.GetSelected().OfType<Dynamic>().ToArray(); if (targets.Length == 0) return;
+		Vector3[] beforeOffsets = targets.Select(target => target.PivotOffset).ToArray();
+		Vector3[] beforeRotations = targets.Select(target => target.PivotRotation).ToArray();
+		world.CreatorContext.History.RecordAppliedAction("Reset pivots", new((_) => { foreach (Dynamic target in targets) { target.PivotOffset = Vector3.Zero; target.PivotRotation = Vector3.Zero; } }), new((_) => { for (int i = 0; i < targets.Length; i++) { targets[i].PivotOffset = beforeOffsets[i]; targets[i].PivotRotation = beforeRotations[i]; } }));
+		foreach (Dynamic target in targets) { target.PivotOffset = Vector3.Zero; target.PivotRotation = Vector3.Zero; }
+		world.CreatorContext.Gizmos.RefreshVisuals();
+	}
+
+	private static void SetAnchored(int command)
+	{
+		World? world = World.Current; if (world == null) return;
+		IEnumerable<Physical> source = world.CreatorContext.Selections.GetSelected().OfType<Physical>();
+		if (command > 0) source = world.CreatorContext.Selections.GetSelected().SelectMany(item => item.GetDescendants().Prepend(item)).OfType<Physical>();
+		Physical[] items = source.Distinct().ToArray(); if (items.Length == 0) return;
+		bool[] before = items.Select(item => item.Anchored).ToArray(); bool value = command == 0 ? !items.All(item => item.Anchored) : command == 1;
+		world.CreatorContext.History.RecordAppliedAction(value ? "Anchor instances" : "Unanchor instances", new((_) => { foreach (Physical item in items) item.Anchored = value; }), new((_) => { for (int i = 0; i < items.Length; i++) items[i].Anchored = before[i]; }));
+		foreach (Physical item in items) item.Anchored = value;
+	}
+
+	private static void CreateWeld()
+	{
+		World? world = World.Current; if (world == null) return;
+		Physical[] parts = world.CreatorContext.Selections.GetSelected().OfType<Physical>().Take(2).ToArray();
+		if (parts.Length != 2) { CreatorService.Interface.PopupAlert("Select exactly two physical instances to create a Weld.", "Weld"); return; }
+		Weld weld = Globals.LoadInstance<Weld>(world); weld.Part0 = parts[0]; weld.Part1 = parts[1];
+		world.CreatorContext.History.CreateInstances([weld], parts[0]); world.CreatorContext.Selections.SelectOnly(weld);
+	}
+
+	private static void SetAlignment(int command)
+	{
+		if (command < 2)
+		{
+			CreatorSettingsService.Instance.Set(CreatorSettingKeys.Interface.TransformOrientation,
+				command == 0 ? TransformOrientationEnum.Global : TransformOrientationEnum.Local);
+			CreatorService.Interface.StatusBar?.SetStatus(command == 0 ? "Gizmos aligned to World" : "Gizmos aligned to Local");
+			return;
+		}
+		World? world = World.Current; if (world == null) return;
+		Dynamic[] items = world.CreatorContext.Selections.GetSelected().OfType<Dynamic>().ToArray(); if (items.Length == 0) return;
+		Transform3D[] before = items.Select(item => item.GetGlobalTransform()).ToArray();
+		Action apply = () => { foreach (Dynamic item in items) item.Rotation = Vector3.Zero; };
+		apply();
+		world.CreatorContext.History.RecordAppliedAction("Align rotation to world", new((_) => apply()), new((_) => { for (int i = 0; i < items.Length; i++) items[i].SetGlobalTransform(before[i]); }));
+	}
+
+	private static void AddEffectsMenu(Button button)
+	{
+		(string Label, string ClassName)[] effects = [("Beam", "Beam"), ("Explosion", "Explosion"), ("Fire", "Particles"), ("Particle Emitter", "Particles"), ("Smoke", "Particles"), ("Sparkles", "Particles"), ("Trail", "Trail"), ("Attachment", "Attachment"), ("Point Light", "PointLight"), ("Spot Light", "SpotLight"), ("Surface Light", "SurfaceLight")];
+		PopupMenu menu = new(); button.AddChild(menu);
+		for (int i = 0; i < effects.Length; i++) menu.AddItem(effects[i].Label, i);
+		menu.IdPressed += id =>
+		{
+			World? world = World.Current; if (world == null) return;
+			Instance parent = world.CreatorContext.Selections.GetSelected().FirstOrDefault() ?? world.Environment;
+			Instance? effect = Globals.LoadInstance<Instance>(effects[(int)id].ClassName, world);
+			if (effect == null) { CreatorService.Interface.StatusBar?.SetStatus($"{effects[(int)id].Label} is not available in this build."); return; }
+			if (effects[(int)id].ClassName == "Particles") effect.Name = effects[(int)id].Label;
+			world.CreatorContext.History.CreateInstances([effect], parent); world.CreatorContext.Selections.SelectOnly(effect);
+		};
+		button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+	}
 
 	private void AddTaskAction(string label, string icon, Action action)
 	{
@@ -388,18 +511,22 @@ public sealed partial class Ribbon : Control
 		if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolSelect, Key.Key1))
 		{
 			_selectButton.ButtonPressed = true;
+			ActivateTool(ToolModeEnum.Select);
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolMove, Key.Key2))
 		{
 			_moveButton.ButtonPressed = true;
+			ActivateTool(ToolModeEnum.Move);
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolRotate, Key.Key3))
 		{
 			_rotateButton.ButtonPressed = true;
+			ActivateTool(ToolModeEnum.Rotate);
 		}
 		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolScale, Key.Key4))
 		{
 			_scaleButton.ButtonPressed = true;
+			ActivateTool(ToolModeEnum.Scale);
 		}
 
 		base._UnhandledKeyInput(@event);
@@ -408,8 +535,14 @@ public sealed partial class Ribbon : Control
 	private void OnRibbonChanged(BaseButton rawBtn)
 	{
 		RibbonToolButton btn = (RibbonToolButton)rawBtn;
-		CreatorService.Interface.ToolMode = btn.ToolMode;
-		switch (btn.ToolMode)
+		ActivateTool(btn.ToolMode);
+	}
+
+	private static void ActivateTool(ToolModeEnum toolMode)
+	{
+		CreatorService.Interface.ToolMode = toolMode;
+		World.Current?.CreatorContext?.Gizmos?.RefreshVisuals();
+		switch (toolMode)
 		{
 			case ToolModeEnum.Paint:
 			case ToolModeEnum.Brush:

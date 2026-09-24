@@ -723,18 +723,22 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		if (World.Current == null) { CreatorService.Interface.StatusBar?.SetStatus("No current game opened, did not save"); return; }
 		if (CurrentSession == null) { CreatorService.Interface.StatusBar?.SetStatus("No session, did not save"); return; }
-		string placePath = CurrentSession.GlobalizePath(World.Current.WorldFilePath!);
+		string placePath = CurrentSession.GlobalizePath(
+			World.Current.IsPrefabEditor ? World.Current.PrefabFilePath! : World.Current.WorldFilePath!);
 		var start = Time.GetTicksUsec();
 
-		Interface.LoadOverlay?.SetTitle("Saving world");
-		Interface.LoadOverlay?.SetStatus("Saving world");
+		Interface.LoadOverlay?.SetTitle(World.Current.IsPrefabEditor ? "Saving prefab" : "Saving world");
+		Interface.LoadOverlay?.SetStatus(World.Current.IsPrefabEditor ? "Saving prefab" : "Saving world");
 		Interface.LoadOverlay?.SetMaxProgress(2);
 		Interface.LoadOverlay?.Show();
 
 		try
 		{
 			CompileProjectScripts(World.Current);
-			PolyFormat.SaveWorldToFile(World.Current, placePath);
+			if (World.Current.IsPrefabEditor && World.Current.PrefabRoot != null)
+				CurrentSession.SaveModel(World.Current.PrefabRoot, World.Current.PrefabFilePath!);
+			else
+				PolyFormat.SaveWorldToFile(World.Current, placePath);
 		}
 		catch (Exception ex)
 		{
@@ -890,10 +894,9 @@ public sealed partial class CreatorService : Node, IScriptObject
 			CurrentSession.OpenWorld(pathRelative);
 			return;
 		}
-		else if (ext == "model")
+		else if (ext is "model" or "bvxm" or "bvmodel")
 		{
-			if (World.Current == null) return;
-			await CurrentSession.InsertModel(pathRelative, World.Current.Environment);
+			CurrentSession.OpenPrefab(pathRelative);
 			return;
 		}
 		else if (pathRelative == Globals.ProjectInputMapName)
@@ -1232,6 +1235,7 @@ public enum ToolModeEnum
 	Move,
 	Rotate,
 	Scale,
+	Pivot,
 	Paint,
 	Brush
 }

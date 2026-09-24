@@ -36,6 +36,8 @@ public static class CreatorSettingKeys
 		public const string DuplicateOnDragEnabled = "interface.duplicate_on_drag_enabled";
 		public const string TransformOrientation = "interface.transform_orientation";
 		public const string SelectionPivotMode = "interface.selection_pivot_mode";
+		public const string MoveGizmoStyle = "interface.move_gizmo_style";
+		public const string ShowTransformTips = "interface.show_transform_tips";
 	}
 
 	public static class Keybinds

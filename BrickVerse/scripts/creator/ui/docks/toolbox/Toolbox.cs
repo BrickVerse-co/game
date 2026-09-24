@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using BrickVerse.Schemas.API;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -372,6 +373,11 @@ public sealed partial class Toolbox : Control
 	{
 		try
 		{
+			// Inventory is a Creator OAuth route. Refresh first so a long-running
+			// editor session never sends the stale token cached by BVAPI.
+			string accessToken = await CreatorAPI.GetValidAccessTokenAsync();
+			if (version != _requestVersion) return;
+			BVAPI.SetAuthToken(accessToken);
 			using JsonDocument response = await BVAPI.GetJson("/v3/asset/inventory?limit=50");
 			if (version != _requestVersion)
 				return;
@@ -410,6 +416,7 @@ public sealed partial class Toolbox : Control
 		}
 		catch (Exception ex)
 		{
+			if (version != _requestVersion) return;
 			ShowError(version, "Sign in to view your inventory", ex);
 		}
 	}

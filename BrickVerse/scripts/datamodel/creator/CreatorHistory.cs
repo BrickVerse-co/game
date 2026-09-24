@@ -79,6 +79,10 @@ public sealed partial class CreatorHistory : Instance
 		_currentAction.DoCallbacks.Add(callback);
 	}
 
+	/// <summary>Discards an action which an editor tool chose not to apply.</summary>
+	[ScriptMethod]
+	public void CancelAction() => _currentAction = null;
+
 	[ScriptMethod]
 	public void AddUndoCallback(BVCallback callback)
 	{

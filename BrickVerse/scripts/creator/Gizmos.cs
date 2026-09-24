@@ -29,7 +29,7 @@ public sealed partial class Gizmos : Node
 	public Camera3D? CameraOverride { get; set; }
 	public ToolModeEnum? ToolModeOverride { get; set; }
 	public bool SuppressSelectionInput { get; set; }
-	public Camera3D ActiveCamera => CameraOverride ?? Root.Environment.CurrentGDCamera!;
+	public Camera3D ActiveCamera => CameraOverride ?? Root.Environment.CurrentGDCamera ?? _camera;
 	private ToolModeEnum ActiveToolMode => ToolModeOverride ?? CreatorService.Interface.ToolMode;
 	private bool _isDraggingDyn;
 	private bool _isDragPending;
@@ -44,6 +44,8 @@ public sealed partial class Gizmos : Node
 	private const float MinimumSnap = 0.0001f;
 	private SelectionBox _paintBox = null!;
 	private SelectionBox _hoverBox = null!;
+	private ImmediateMesh _moveRulerMesh = null!;
+	private MeshInstance3D _moveRuler = null!;
 
 	public bool HoveringGizmos { get; set; }
 	public bool HoveringUIGizmo { get; set; }
@@ -73,6 +75,8 @@ public sealed partial class Gizmos : Node
 	private BrickVerse.Datamodel.Camera _editorCamera = null!;
 	private Vector3 _lastMoveMotion = Vector3.Zero;
 	private Basis _lastRotateFeedbackBasis;
+	private Vector3 _pivotEditStartOffset;
+	private Vector3 _pivotEditStartRotation;
 
 	public void Attach(World game, CreatorHistory history, BrickVerse.Datamodel.Camera editorCamera)
 	{
@@ -83,6 +87,8 @@ public sealed partial class Gizmos : Node
 
 	public override void _Ready()
 	{
+		SetProcess(true);
+		SetProcessInput(true);
 		_camera = CameraOverride ?? _editorCamera.Camera3D;
 		Move.RootGizmos = this;
 		Rotate.RootGizmos = this;
@@ -115,6 +121,9 @@ public sealed partial class Gizmos : Node
 		AddChild(Resize, true);
 		AddChild(_paintBox = new() { Root = Root, Name = "PaintBox", RootGizmos = this });
 		AddChild(_hoverBox = new() { Root = Root, Name = "HoverBox", RootGizmos = this });
+		_moveRulerMesh = new ImmediateMesh();
+		_moveRuler = new MeshInstance3D { Mesh = _moveRulerMesh, MaterialOverride = new StandardMaterial3D { ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, VertexColorUseAsAlbedo = true, NoDepthTest = true } };
+		Root.GDNode.AddChild(_moveRuler, @internal: Node.InternalMode.Back);
 	}
 
 	private void OnResizeDragStarted()
@@ -258,6 +267,14 @@ public sealed partial class Gizmos : Node
 		IsTransformingSelected = true;
 		_pivotStart = GetSelectionPivot();
 		_lastRotateFeedbackBasis = _pivotStart.Basis;
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			Dynamic target = Selected[0];
+			_pivotEditStartRotation = target.PivotRotation;
+			_history.NewAction("Rotate Pivot");
+			_history.AddUndoCallback(new((_) => target.PivotRotation = _pivotEditStartRotation));
+			return;
+		}
 		_initialRelativeTransforms.Clear();
 
 		// Store each object's transform relative to pivot
@@ -274,6 +291,13 @@ public sealed partial class Gizmos : Node
 	private void OnRotateDragged(Basis basis)
 	{
 		basis = SnapBasis(basis, _pivotStart.Basis, CreatorService.Interface.RotateSnapping);
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			Dynamic target = Selected[0];
+			Basis objectBasis = target.GetGlobalTransform().Basis.Orthonormalized();
+			target.PivotRotation = MathUtils.Vector3RadToDeg((objectBasis.Inverse() * basis).GetEuler());
+			return;
+		}
 		if (!_lastRotateFeedbackBasis.IsEqualApprox(basis))
 		{
 			_lastRotateFeedbackBasis = basis;
@@ -291,6 +315,13 @@ public sealed partial class Gizmos : Node
 	private void OnRotateDragEnded()
 	{
 		IsTransformingSelected = false;
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			Dynamic target = Selected[0]; Vector3 value = target.PivotRotation;
+			_history.AddDoCallback(new((_) => target.PivotRotation = value));
+			_history.CommitAction();
+			return;
+		}
 		CommitHistorySelectedTransform();
 		_initialRelativeTransforms.Clear();
 	}
@@ -319,11 +350,27 @@ public sealed partial class Gizmos : Node
 	private void OnMoveDragged(Vector3 vector)
 	{
 		_lastMoveMotion = vector;
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			Dynamic target = Selected[0];
+			Vector3 worldOrigin = _pivotStart.Origin + vector.Snap(GetSafeMoveSnap());
+			target.PivotOffset = WorldToLocalPivotOffset(target, worldOrigin);
+			return;
+		}
 		ApplyMoveMotion(vector, snap: true);
 	}
 
 	private void OnMoveDragEnded()
 	{
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			IsTransformingSelected = false;
+			Dynamic target = Selected[0]; Vector3 value = target.PivotOffset;
+			_history.AddDoCallback(new((_) => target.PivotOffset = value));
+			_history.CommitAction();
+			CreatorSoundEffects.PlayMove();
+			return;
+		}
 		if (Selected.Count > 0)
 		{
 			ApplyMoveMotion(_lastMoveMotion, snap: true);
@@ -331,12 +378,21 @@ public sealed partial class Gizmos : Node
 		IsTransformingSelected = false;
 		CommitHistorySelectedTransform();
 		CreatorSoundEffects.PlayMove();
+		ClearMoveRuler();
 	}
 
 	private void OnMoveDragStarted()
 	{
 		IsTransformingSelected = true;
 		_lastMoveMotion = Vector3.Zero;
+		if (ActiveToolMode == ToolModeEnum.Pivot)
+		{
+			Dynamic target = Selected[0];
+			_pivotEditStartOffset = target.PivotOffset;
+			_history.NewAction("Move Pivot");
+			_history.AddUndoCallback(new((_) => target.PivotOffset = _pivotEditStartOffset));
+			return;
+		}
 		_dragStartOffsets.Clear();
 
 		foreach (Dynamic item in Selected)
@@ -363,6 +419,7 @@ public sealed partial class Gizmos : Node
 				item.SetGlobalTransform(current);
 			}
 		}
+		UpdateMoveRuler(_pivotStart.Origin, _pivotStart.Origin + appliedMotion, Selected.Any(item => item is Physical));
 	}
 
 	private void ApplySelectDragMotion(Vector3 motion)
@@ -376,6 +433,33 @@ public sealed partial class Gizmos : Node
 				item.SetGlobalTransform(updated);
 			}
 		}
+		UpdateMoveRuler(_pivotStart.Origin, _pivotStart.Origin + motion, DragSelected.Any(item => item is Physical));
+	}
+
+	private void UpdateMoveRuler(Vector3 start, Vector3 end, bool visible)
+	{
+		if (!visible) { ClearMoveRuler(); return; }
+		Vector3 xCorner = new(end.X, start.Y, start.Z);
+		Vector3 yCorner = new(end.X, end.Y, start.Z);
+		_moveRulerMesh.ClearSurfaces();
+		_moveRulerMesh.SurfaceBegin(Godot.Mesh.PrimitiveType.Lines);
+		AddRulerLine(start, xCorner, AxisColors[0]);
+		AddRulerLine(xCorner, yCorner, AxisColors[1]);
+		AddRulerLine(yCorner, end, AxisColors[2]);
+		_moveRulerMesh.SurfaceEnd();
+		_moveRuler.Visible = true;
+	}
+
+	private void AddRulerLine(Vector3 from, Vector3 to, Color color)
+	{
+		_moveRulerMesh.SurfaceSetColor(color); _moveRulerMesh.SurfaceAddVertex(from);
+		_moveRulerMesh.SurfaceSetColor(color); _moveRulerMesh.SurfaceAddVertex(to);
+	}
+
+	private void ClearMoveRuler()
+	{
+		if (_moveRulerMesh == null) return;
+		_moveRulerMesh.ClearSurfaces(); _moveRuler.Visible = false;
 	}
 
 	private void RecordHistoryUndo()
@@ -419,10 +503,16 @@ public sealed partial class Gizmos : Node
 
 	public override void _Process(double delta)
 	{
+		RefreshVisuals();
+	}
+
+	public void RefreshVisuals()
+	{
+		SynchronizeSelectedTargets();
 		bool selectionValid = Selected.Count > 0;
 
-		Move.Visible = ActiveToolMode == ToolModeEnum.Move && selectionValid;
-		Rotate.Visible = ActiveToolMode == ToolModeEnum.Rotate && selectionValid;
+		Move.Visible = (ActiveToolMode == ToolModeEnum.Move || ActiveToolMode == ToolModeEnum.Pivot) && selectionValid;
+		Rotate.Visible = (ActiveToolMode == ToolModeEnum.Rotate || ActiveToolMode == ToolModeEnum.Pivot) && selectionValid;
 
 		if (ActiveToolMode == ToolModeEnum.Scale && selectionValid)
 		{
@@ -435,6 +525,28 @@ public sealed partial class Gizmos : Node
 			Resize.Visible = false;
 			Scale.Visible = false;
 		}
+
+		// Drive rendering from the root controller as well as each handle's own
+		// process callback. This keeps visibility deterministic if a service or
+		// viewport changes inherited processing state.
+		Move.RefreshVisuals();
+		Rotate.RefreshVisuals();
+		Scale.RefreshVisuals();
+		Resize.RefreshVisuals();
+	}
+
+	private void SynchronizeSelectedTargets()
+	{
+		CreatorSelections? selections = Root.CreatorContext?.Selections;
+		if (selections == null) return;
+
+		HashSet<Dynamic> authoritative = [
+			.. selections.SelectedInstances.OfType<Dynamic>().Where(item => !item.IsDeleted)
+		];
+		foreach (Dynamic stale in Selected.Where(item => !authoritative.Contains(item)).ToArray())
+			Deselect(stale);
+		foreach (Dynamic missing in authoritative.Where(item => !Selected.Contains(item)))
+			Select(missing);
 	}
 
 	public void Select(Dynamic dyn)
@@ -507,10 +619,11 @@ public sealed partial class Gizmos : Node
 		if (!Root.CreatorContext.IsViewportFocused) { return; }
 		ToolModeEnum toolMode = CreatorService.Interface.ToolMode;
 
-		Vector2 mousePos = _camera.GetViewport().GetMousePosition();
+		Camera3D camera = ActiveCamera;
+		Vector2 mousePos = camera.GetViewport().GetMousePosition();
 
-		Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
-		Vector3 rayNormal = rayOrigin + _camera.ProjectRayNormal(mousePos) * 1000;
+		Vector3 rayOrigin = camera.ProjectRayOrigin(mousePos);
+		Vector3 rayNormal = rayOrigin + camera.ProjectRayNormal(mousePos) * 1000;
 
 		PhysicsRayQueryParameters3D query = PhysicsRayQueryParameters3D.Create(rayOrigin, rayNormal);
 		query.CollideWithAreas = true;
@@ -564,6 +677,34 @@ public sealed partial class Gizmos : Node
 		if (selectInstance is Dynamic sdyn && !sdyn.Locked)
 		{
 			_hoverBox.Target = sdyn;
+		}
+
+		if (toolMode == ToolModeEnum.Pivot && !HoveringGizmos
+			&& @event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+		{
+			if (selectInstance is Dynamic pivotTarget && !pivotTarget.Locked && intersection.Count > 0)
+			{
+				Vector3 before = pivotTarget.PivotOffset;
+				Vector3 hitPosition = (Vector3)intersection["position"];
+				Vector3 after = WorldToLocalPivotOffset(pivotTarget, hitPosition);
+				_history.RecordAppliedAction("Set pivot", new((_) => pivotTarget.PivotOffset = after), new((_) => pivotTarget.PivotOffset = before));
+				pivotTarget.PivotOffset = after;
+				CreatorService.Interface.StatusBar?.SetStatus("Pivot moved. Use Reset Pivot to restore the object origin.");
+			}
+			return;
+		}
+
+		// Temporary pivot placement: in Move mode, hold Tab and click
+		// a surface to put the selected object's gizmo at that position.
+		if (toolMode == ToolModeEnum.Move && Input.IsKeyPressed(Key.Tab)
+			&& @event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }
+			&& selectInstance is Dynamic tabPivotTarget && intersection.Count > 0)
+		{
+			Vector3 before = tabPivotTarget.PivotOffset;
+			Vector3 after = WorldToLocalPivotOffset(tabPivotTarget, (Vector3)intersection["position"]);
+			_history.RecordAppliedAction("Move pivot", new((_) => tabPivotTarget.PivotOffset = after), new((_) => tabPivotTarget.PivotOffset = before));
+			tabPivotTarget.PivotOffset = after;
+			return;
 		}
 		else
 		{
@@ -654,6 +795,7 @@ public sealed partial class Gizmos : Node
 					IsTransformingSelected = false;
 					CommitHistoryTransform(DragSelected);
 					CreatorSoundEffects.PlayMove();
+					ClearMoveRuler();
 				}
 				_selectDragStartTransforms.Clear();
 				DragSelected.Clear();
@@ -831,7 +973,7 @@ public sealed partial class Gizmos : Node
 		};
 		menu.PopupHide += menu.QueueFree;
 		CreatorService.Interface.AddChild(menu);
-		menu.Popup(new Rect2I((Vector2I)_camera.GetViewport().GetMousePosition(), Vector2I.Zero));
+		menu.Popup(new Rect2I((Vector2I)ActiveCamera.GetViewport().GetMousePosition(), Vector2I.Zero));
 	}
 
 	private void RebaseActiveDirectDrag()
@@ -839,7 +981,7 @@ public sealed partial class Gizmos : Node
 		if (!_isDraggingDyn)
 			return;
 
-		_dragStartPos = _camera.GetViewport().GetMousePosition();
+		_dragStartPos = ActiveCamera.GetViewport().GetMousePosition();
 		_pivotStart = GetSelectionPivot();
 		_selectDragStartTransforms.Clear();
 
@@ -957,7 +1099,8 @@ public sealed partial class Gizmos : Node
 	{
 		if (DragSelected.Count == 0) return;
 
-		Vector2 mousePos = _camera.GetViewport().GetMousePosition();
+		Camera3D camera = ActiveCamera;
+		Vector2 mousePos = camera.GetViewport().GetMousePosition();
 		Vector3 motion;
 		Instance[] ignoreList = [.. DragSelected];
 		Datamodel.Environment.RayResult? hit = Root.Environment.CurrentCamera?.ScreenPointToRay(mousePos, ignoreList);
@@ -976,19 +1119,19 @@ public sealed partial class Gizmos : Node
 		}
 		else
 		{
-			Vector3 rayOrigin = _camera.ProjectRayOrigin(mousePos);
-			Vector3 rayDirection = _camera.ProjectRayNormal(mousePos);
-			Vector3 planeNormal = (_camera.GlobalPosition - _pivotStart.Origin).Normalized();
+			Vector3 rayOrigin = camera.ProjectRayOrigin(mousePos);
+			Vector3 rayDirection = camera.ProjectRayNormal(mousePos);
+			Vector3 planeNormal = (camera.GlobalPosition - _pivotStart.Origin).Normalized();
 			if (planeNormal.IsZeroApprox())
 			{
-				planeNormal = -_camera.GlobalBasis.Z;
+				planeNormal = -camera.GlobalBasis.Z;
 			}
 
 			Plane dragPlane = new(planeNormal, _pivotStart.Origin);
 			Vector3? currentIntersection = dragPlane.IntersectsRay(rayOrigin, rayDirection);
 			Vector3? startIntersection = dragPlane.IntersectsRay(
-				_camera.ProjectRayOrigin(_dragStartPos),
-				_camera.ProjectRayNormal(_dragStartPos)
+				camera.ProjectRayOrigin(_dragStartPos),
+				camera.ProjectRayNormal(_dragStartPos)
 			);
 
 			if (currentIntersection == null || startIntersection == null)
@@ -1028,8 +1171,7 @@ public sealed partial class Gizmos : Node
 
 	public static Transform3D GetCenterPivot(Instance[] instances)
 	{
-		Vector3 center = Vector3.Zero;
-		int count = 0;
+		Aabb? combinedBounds = null;
 		Dynamic? firstDynamic = null;
 		TransformOrientationEnum orientationMode = CreatorService.Interface?.TransformOrientation ?? TransformOrientationEnum.Global;
 		SelectionPivotModeEnum pivotMode = CreatorService.Interface?.SelectionPivotMode ?? SelectionPivotModeEnum.Center;
@@ -1039,27 +1181,41 @@ public sealed partial class Gizmos : Node
 			if (sel is Dynamic dyn)
 			{
 				firstDynamic ??= dyn;
-				Transform3D xform = dyn.GetGlobalTransform();
-				center += xform.Origin;
-				count++;
+				Aabb bounds = dyn.CalculateBounds();
+				combinedBounds = combinedBounds.HasValue ? combinedBounds.Value.Merge(bounds) : bounds;
 			}
 		}
-		if (count == 0) return Transform3D.Identity;
-		center /= count;
+		if (!combinedBounds.HasValue) return Transform3D.Identity;
+		Vector3 center = combinedBounds.Value.GetCenter();
 
 		Vector3 origin = center;
-		if (pivotMode == SelectionPivotModeEnum.PrimarySelection && firstDynamic != null)
+		if (firstDynamic != null && (!firstDynamic.PivotOffset.IsZeroApprox()
+			|| pivotMode == SelectionPivotModeEnum.PrimarySelection || instances.Length == 1))
 		{
-			origin = firstDynamic.GetGlobalTransform().Origin;
+			Basis objectBasis = firstDynamic.GetGlobalTransform().Basis.Orthonormalized();
+			origin = firstDynamic.CalculateBounds().GetCenter()
+				+ objectBasis.Xform(firstDynamic.PivotOffset);
 		}
 
 		Basis basis = Basis.Identity;
-		if (orientationMode == TransformOrientationEnum.Local && firstDynamic != null)
+		if (firstDynamic != null && !firstDynamic.PivotRotation.IsZeroApprox())
+		{
+			basis = firstDynamic.GetGlobalTransform().Basis.Orthonormalized()
+				* new Basis(Quaternion.FromEuler(MathUtils.Vector3DegToRad(firstDynamic.PivotRotation)));
+		}
+		else if (orientationMode == TransformOrientationEnum.Local && firstDynamic != null)
 		{
 			basis = firstDynamic.GetGlobalTransform().Basis.Orthonormalized();
 		}
 
 		return new Transform3D(basis, origin);
+	}
+
+	private static Vector3 WorldToLocalPivotOffset(Dynamic target, Vector3 worldPoint)
+	{
+		Vector3 boundsCenter = target.CalculateBounds().GetCenter();
+		Basis objectBasis = target.GetGlobalTransform().Basis.Orthonormalized();
+		return objectBasis.Inverse().Xform(worldPoint - boundsCenter);
 	}
 
 	private Transform3D GetSelectionPivot()

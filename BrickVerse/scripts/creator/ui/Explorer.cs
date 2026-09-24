@@ -10,6 +10,7 @@ using BrickVerse.Shared;
 using BrickVerse.Creator.Managers;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace BrickVerse.Creator.UI;
 
@@ -35,6 +36,8 @@ public sealed partial class Explorer : TabContainer
 	private static readonly Dictionary<TreeItem, Instance> _itemToInstance = [];
 	private static readonly Dictionary<World, ExplorerTab> _gameToTab = [];
 	private readonly Dictionary<Instance, List<Instance>> _pendingChildren = [];
+	private readonly HashSet<World> _bulkLoadingRoots = [];
+	private readonly Dictionary<World, List<Instance>> _bulkPendingInstances = [];
 
 	// Flag to prevent recursive selection
 	private static bool _isUpdatingSelection = false;
@@ -48,6 +51,23 @@ public sealed partial class Explorer : TabContainer
 	}
 
 	public void Insert(Instance instance)
+	{
+		World? root = instance as World ?? instance.Root;
+		if (root != null && instance is not World && _bulkLoadingRoots.Contains(root))
+		{
+			if (!_bulkPendingInstances.TryGetValue(root, out List<Instance>? pending))
+			{
+				pending = [];
+				_bulkPendingInstances[root] = pending;
+			}
+			pending.Add(instance);
+			return;
+		}
+
+		InsertImmediately(instance);
+	}
+
+	private void InsertImmediately(Instance instance)
 	{
 		// If excluded from explorer, return
 		if (instance.GetType().IsDefined(typeof(ExplorerExcludeAttribute)))
@@ -132,6 +152,33 @@ public sealed partial class Explorer : TabContainer
 				Insert(child); // recursively insert queued children
 			}
 			_pendingChildren.Remove(instance);
+		}
+	}
+
+	public void BeginBulkUpdate(World root)
+	{
+		_bulkLoadingRoots.Add(root);
+		_bulkPendingInstances.Remove(root);
+	}
+
+	public void EndBulkUpdate(World root)
+	{
+		_bulkLoadingRoots.Remove(root);
+		if (!_bulkPendingInstances.Remove(root, out List<Instance>? pending) || pending.Count == 0)
+			return;
+		_ = FlushBulkInstancesAsync(root, pending);
+	}
+
+	private async Task FlushBulkInstancesAsync(World root, List<Instance> instances)
+	{
+		const int InstancesPerFrame = 256;
+		for (int index = 0; index < instances.Count; index++)
+		{
+			Instance instance = instances[index];
+			if (!instance.IsDeleted && instance.Root == root)
+				InsertImmediately(instance);
+			if ((index + 1) % InstancesPerFrame == 0 && IsInsideTree())
+				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 		}
 	}
 

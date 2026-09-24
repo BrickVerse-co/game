@@ -21,6 +21,8 @@ public partial class WorldContainerOverlay : Control
 	private SpinBox _cameraSpeed = null!;
 	private Label _statsLabel = null!;
 	private PanelContainer _toolbarPanel = null!;
+	private PanelContainer _transformTipsPanel = null!;
+	private Label _transformTips = null!;
 	private Control _viewportAxis = null!;
 	private MenuButton _optionsButton = null!;
 	private bool _showToolbar;
@@ -33,8 +35,40 @@ public partial class WorldContainerOverlay : Control
 		LoadSettings();
 		_viewportAxis = GetNode<Control>("ViewportAxis");
 		CreateViewportToolbar();
+		CreateTransformTips();
 		ApplyVisibility();
 		base._Ready();
+	}
+
+	private void CreateTransformTips()
+	{
+		_transformTips = new Label
+		{
+			MouseFilter = MouseFilterEnum.Ignore,
+			HorizontalAlignment = HorizontalAlignment.Left,
+			Modulate = new Color(0.86f, 0.89f, 0.94f),
+		};
+		_transformTips.AddThemeFontSizeOverride("font_size", 12);
+		_transformTipsPanel = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
+		_transformTipsPanel.SetAnchorsPreset(LayoutPreset.BottomRight);
+		_transformTipsPanel.GrowHorizontal = GrowDirection.Begin;
+		_transformTipsPanel.GrowVertical = GrowDirection.Begin;
+		_transformTipsPanel.OffsetLeft = -310;
+		_transformTipsPanel.OffsetTop = -96;
+		_transformTipsPanel.OffsetRight = -14;
+		_transformTipsPanel.OffsetBottom = -14;
+		_transformTipsPanel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+		{
+			BgColor = new Color(0.045f, 0.05f, 0.06f, 0.88f),
+			BorderColor = new Color(0.2f, 0.24f, 0.3f, 0.9f),
+			BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
+			CornerRadiusTopLeft = 5, CornerRadiusTopRight = 5,
+			CornerRadiusBottomLeft = 5, CornerRadiusBottomRight = 5,
+			ContentMarginLeft = 10, ContentMarginRight = 10,
+			ContentMarginTop = 7, ContentMarginBottom = 7,
+		});
+		_transformTipsPanel.AddChild(_transformTips);
+		AddChild(_transformTipsPanel);
 	}
 
 	public override void _Process(double delta)
@@ -243,6 +277,18 @@ public partial class WorldContainerOverlay : Control
 		_viewportStatus.Text = $"{selection}   |   {moveSnap}   |   {rotateSnap}";
 		Vector3 cameraPosition = World.CreatorContext.Freelook.Position;
 		_statsLabel.Text = $"{Engine.GetFramesPerSecond()} FPS\n{World.GetDescendants().Length:n0} instances\nCamera  {cameraPosition.X:0.0}, {cameraPosition.Y:0.0}, {cameraPosition.Z:0.0}";
+
+		ToolModeEnum tool = CreatorService.Interface.ToolMode;
+		_transformTipsPanel.Visible = CreatorService.Interface.ShowTransformTips
+			&& selected > 0 && tool is ToolModeEnum.Move or ToolModeEnum.Rotate or ToolModeEnum.Scale or ToolModeEnum.Pivot;
+		_transformTips.Text = tool switch
+		{
+			ToolModeEnum.Move => "MOVE  •  Drag an axis handle\nTab + click places the pivot  •  Ruler lines show distance\n1 Select   2 Move   3 Rotate   4 Scale",
+			ToolModeEnum.Rotate => "ROTATE  •  Drag a colored ring\nAlt temporarily reduces snapping\n1 Select   2 Move   3 Rotate   4 Scale",
+			ToolModeEnum.Scale => "SCALE  •  Drag an axis handle\nShift scales every axis  •  Alt scales from center\n1 Select   2 Move   3 Rotate   4 Scale",
+			ToolModeEnum.Pivot => "EDIT PIVOT  •  Drag arrows to move  •  Drag rings to rotate\nReset Pivot restores local position and rotation to 0, 0, 0",
+			_ => ""
+		};
 	}
 
 	public override void _ExitTree()
