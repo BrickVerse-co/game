@@ -20,7 +20,7 @@ public partial class NPC : Physical
 	private const float CoyoteTime = 0.15f;
 	private const float NavigationDistance = 2f;
 	public const float BodyRotateLerp = 10f;
-	private const float StepHeight = 1.5f;
+	private float _stepHeight = 1.5f;
 	private Tool? _holdingTool;
 	private Seat? _sittingIn;
 	private CharacterModel? _sitPoseModel;
@@ -66,6 +66,19 @@ public partial class NPC : Physical
 
 	protected override float PositionSyncThreshold => 0.1f;
 	protected override float RotationSyncThreshold => 1f;
+
+	/// <summary>Maximum ledge height the character controller can traverse automatically.</summary>
+	[Editable, ScriptProperty, SyncVar]
+	public float StepHeight
+	{
+		get => _stepHeight;
+		set
+		{
+			_stepHeight = Mathf.Clamp(value, 0f, 4f);
+			if (CharBody3D != null) CharBody3D.FloorSnapLength = _stepHeight;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, SyncVar(Unreliable = true, AllowAuthorWrite = true)]
 	public override Vector3 Velocity
@@ -522,7 +535,7 @@ public partial class NPC : Physical
 
 	public override Node CreateGDNode()
 	{
-		return new CharacterBody3D() { FloorMaxAngle = Mathf.DegToRad(80f) };
+		return new CharacterBody3D() { FloorMaxAngle = Mathf.DegToRad(80f), FloorSnapLength = _stepHeight, FloorStopOnSlope = true };
 	}
 
 	public override void InitGDNode()
@@ -806,7 +819,6 @@ public partial class NPC : Physical
 
 					finalState = CharacterModel.CharacterModelStateEnum.Walking;
 					animSpeed = WalkSpeed / 8;
-					TryStepUp();
 				}
 				else
 				{
@@ -854,8 +866,10 @@ public partial class NPC : Physical
 			UpdateVelocityInternal(CharacterVelocity);
 			if (this is not Player)
 			{
+				bool wasGrounded = isOnFloor;
 				CharBody3D.Velocity = Velocity;
 				CharBody3D.MoveAndSlide();
+				TryTraverseSteps((float)delta, wasGrounded);
 				CharacterVelocity = CharBody3D.Velocity;
 				UpdateVelocityInternal(CharacterVelocity);
 			}
@@ -990,107 +1004,54 @@ public partial class NPC : Physical
 	}
 
 	[ScriptMethod]
-	public bool TryStepUp()
+	public bool TryStepUp(float delta = 0.0166667f)
 	{
-		if (CharBody3D == null)
-		{
-			return false;
-		}
+		if (CharBody3D == null || _stepHeight <= 0 || CharBody3D.GetSlideCollisionCount() == 0) return false;
+		Vector3 horizontalVelocity = CharacterVelocity.Slide(Vertical);
+		if (horizontalVelocity.LengthSquared() < 0.0001f) return false;
 
-		if (!CharBody3D.IsOnFloor())
-		{
-			return false;
-		}
+		bool hitWall = false;
+		for (int i = 0; i < CharBody3D.GetSlideCollisionCount(); i++)
+			if (Mathf.Abs(CharBody3D.GetSlideCollision(i).GetNormal().Dot(Vertical)) < 0.2f) { hitWall = true; break; }
+		if (!hitWall) return false;
 
-		int slideCount = CharBody3D.GetSlideCollisionCount();
+		const float margin = 0.03f;
+		Transform3D start = CharBody3D.GlobalTransform;
+		Vector3 upMotion = Vertical * (_stepHeight + margin);
+		if (CharBody3D.TestMove(start, upMotion, new KinematicCollision3D(), margin, true)) return false;
 
-		if (slideCount <= 0)
-		{
-			return false;
-		}
+		Transform3D raised = start; raised.Origin += upMotion;
+		float forwardDistance = Mathf.Clamp(horizontalVelocity.Length() * Mathf.Max(delta, 0.001f), 0.06f, 0.65f);
+		Vector3 forwardMotion = horizontalVelocity.Normalized() * forwardDistance;
+		if (CharBody3D.TestMove(raised, forwardMotion, new KinematicCollision3D(), margin, true)) return false;
 
-		Vector3 desiredVelocity = Velocity;
-		Vector3 desiredXZ = desiredVelocity.Slide(Vertical);
+		Transform3D forward = raised; forward.Origin += forwardMotion;
+		KinematicCollision3D floorHit = new();
+		if (!CharBody3D.TestMove(forward, -Vertical * (_stepHeight + margin * 2), floorHit, margin, true)) return false;
+		Vector3 floorNormal = floorHit.GetNormal();
+		if (floorNormal.Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle)) return false;
+		Vector3 landing = forward.Origin + floorHit.GetTravel() + Vertical * margin;
+		float rise = (landing - start.Origin).Dot(Vertical);
+		if (rise <= margin || rise > _stepHeight + margin) return false;
 
-		if (desiredXZ.LengthSquared() < 0.0001f)
-		{
-			return false;
-		}
+		start.Origin = landing;
+		CharBody3D.GlobalTransform = start;
+		CharBody3D.Velocity = CharacterVelocity;
+		return true;
+	}
 
-		float groundAltitude;
-		{
-			var downHit = new KinematicCollision3D();
-			bool hasGround = CharBody3D.TestMove(
-				CharBody3D.GlobalTransform,
-				Vector3.Down * (StepHeight + 0.05f),
-				downHit,
-				0.001f,
-				true
-			);
-			if (!hasGround)
-			{
-				return false;
-			}
-
-			groundAltitude = downHit.GetPosition().Dot(Vertical);
-		}
-
-		const float stepSearchOvershoot = 0.05f;
-
-		var spaceState = World.Current!.World3D.DirectSpaceState;
-
-		for (int i = 0; i < slideCount; i++)
-		{
-			KinematicCollision3D stepTest = CharBody3D.GetSlideCollision(i);
-			Vector3 n = stepTest.GetNormal();
-			Vector3 p = stepTest.GetPosition();
-
-			if (Mathf.Abs(n.Dot(Vertical)) >= 0.01f)
-			{
-				continue;
-			}
-
-			if (!(p.Dot(Vertical) - groundAltitude < StepHeight))
-			{
-				continue;
-			}
-
-			float stepHeight = p.Dot(Vertical) + StepHeight + 0.0001f;
-			Vector3 stepTestInvDir = (-n).Slide(Vertical).Normalized();
-			Vector3 origin =
-				SetAxisOf(p, Vertical, stepHeight) + (stepTestInvDir * stepSearchOvershoot);
-			Vector3 direction = Vertical * -StepHeight;
-
-			Dictionary result = spaceState.IntersectRay(
-				new PhysicsRayQueryParameters3D()
-				{
-					From = origin,
-					To = origin + direction,
-					Exclude = [CharBody3D.GetRid()],
-					CollideWithAreas = false,
-					CollideWithBodies = true,
-				}
-			);
-
-			if (result.Count == 0)
-			{
-				continue;
-			}
-
-			Vector3 hitPos = result["position"].AsVector3();
-
-			Vector3 stepUpPoint =
-				SetAxisOf(p, Vertical, hitPos.Dot(Vertical) + 0.01f)
-				+ (stepTestInvDir * stepSearchOvershoot);
-			Vector3 stepUpPointOffset = stepUpPoint - SetAxisOf(p, Vertical, groundAltitude);
-
-			CharBody3D.GlobalPosition += stepUpPointOffset;
-			CharBody3D.Velocity = desiredVelocity;
-
-			return true;
-		}
-
-		return false;
+	internal void TryTraverseSteps(float delta, bool wasGrounded)
+	{
+		if (!wasGrounded || CharacterVelocity.Dot(Vertical) > 0 || _stepHeight <= 0) return;
+		if (TryStepUp(delta)) return;
+		if (CharBody3D.IsOnFloor()) return;
+		KinematicCollision3D floorHit = new();
+		if (!CharBody3D.TestMove(CharBody3D.GlobalTransform, -Vertical * (_stepHeight + 0.03f), floorHit, 0.03f, true)) return;
+		if (floorHit.GetNormal().Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle)) return;
+		Transform3D transform = CharBody3D.GlobalTransform;
+		transform.Origin += floorHit.GetTravel() + Vertical * 0.03f;
+		CharBody3D.GlobalTransform = transform;
+		CharBody3D.ApplyFloorSnap();
 	}
 
 	[ScriptMethod]
