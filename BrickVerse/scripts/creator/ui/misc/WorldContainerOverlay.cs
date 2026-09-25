@@ -6,6 +6,7 @@ using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Creator.UI.Popups;
+using System.Linq;
 
 namespace BrickVerse.Creator.UI;
 
@@ -271,6 +272,7 @@ public partial class WorldContainerOverlay : Control
 			|| _statsLabel == null)
 			return;
 		int selected = World.CreatorContext.Selections.SelectedInstances.Count;
+		UIField? selectedUI = World.CreatorContext.Selections.SelectedInstances.OfType<UIField>().FirstOrDefault();
 		string selection = selected == 0 ? "No selection" : $"{selected} selected";
 		string moveSnap = CreatorService.Interface.MoveSnapEnabled ? $"Move {CreatorService.Interface.UserMoveSnapping:g}m" : "Move snap off";
 		string rotateSnap = CreatorService.Interface.RotateSnapEnabled ? $"Rotate {CreatorService.Interface.UserRotateSnapping:g}°" : "Rotate snap off";
@@ -279,9 +281,11 @@ public partial class WorldContainerOverlay : Control
 		_statsLabel.Text = $"{Engine.GetFramesPerSecond()} FPS\n{World.GetDescendants().Length:n0} instances\nCamera  {cameraPosition.X:0.0}, {cameraPosition.Y:0.0}, {cameraPosition.Z:0.0}";
 
 		ToolModeEnum tool = CreatorService.Interface.ToolMode;
-		_transformTipsPanel.Visible = CreatorService.Interface.ShowTransformTips
-			&& selected > 0 && tool is ToolModeEnum.Move or ToolModeEnum.Rotate or ToolModeEnum.Scale or ToolModeEnum.Pivot;
-		_transformTips.Text = tool switch
+		_transformTipsPanel.Visible = CreatorService.Interface.ShowTransformTips && selected > 0
+			&& (selectedUI != null || tool is ToolModeEnum.Move or ToolModeEnum.Rotate or ToolModeEnum.Scale or ToolModeEnum.Pivot);
+		_transformTips.Text = selectedUI != null
+			? $"UI LAYOUT  •  {selectedUI.AbsoluteSize.X:0} × {selectedUI.AbsoluteSize.Y:0}px\nPosition  {selectedUI.PositionRelative.X * 100:0.#}%, {selectedUI.PositionRelative.Y * 100:0.#}%  •  Size  {selectedUI.SizeRelative.X * 100:0.#}%, {selectedUI.SizeRelative.Y * 100:0.#}%\nAlt: measure edges  •  Shift: disable snapping  •  Arrow keys: nudge"
+			: tool switch
 		{
 			ToolModeEnum.Move => "MOVE  •  Drag an axis handle\nTab + click places the pivot  •  Ruler lines show distance\n1 Select   2 Move   3 Rotate   4 Scale",
 			ToolModeEnum.Rotate => "ROTATE  •  Drag a colored ring\nAlt temporarily reduces snapping\n1 Select   2 Move   3 Rotate   4 Scale",

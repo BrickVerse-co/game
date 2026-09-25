@@ -48,6 +48,8 @@ public sealed partial class UIScaleProperty : HBoxContainer, IProperty<UIScale>
 	{
 		_offset = GetNode<SpinBox>("Offset");
 		_scale = GetNode<SpinBox>("Scale");
+		_offset.TooltipText = "Fixed pixel contribution. Use this for minimum padding or exact adjustments.";
+		_scale.TooltipText = "Percentage of the parent size. Use this to adapt across screen sizes.";
 
 		_offset.ValueChanged += v =>
 		{

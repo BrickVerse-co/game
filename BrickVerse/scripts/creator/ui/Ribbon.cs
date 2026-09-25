@@ -58,6 +58,7 @@ public sealed partial class Ribbon : Control
 		_taskTabs = GetNode<TabContainer>("Layout/TaskTabs");
 		HBoxContainer home = _taskTabs.GetNode<HBoxContainer>("Home/Margin/Buttons");
 		HBoxContainer model = _taskTabs.GetNode<HBoxContainer>("Model/Margin/Buttons");
+		HBoxContainer ui = _taskTabs.GetNode<HBoxContainer>("UI/Margin/Buttons");
 		_quickActions = _taskTabs.GetNode<HBoxContainer>("Tools/Margin/Buttons");
 		_codeEditorActions = _taskTabs.GetNode<HBoxContainer>("Script/Margin/Buttons");
 		_selectButton = home.GetNode<Button>("Select");
@@ -96,6 +97,7 @@ public sealed partial class Ribbon : Control
 		NormalizeRibbonIcons(_taskTabs);
 		PopulateShapesMenu(shapesButton);
 		AddModelTools(model);
+		AddUITools(ui);
 
 		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
@@ -231,6 +233,180 @@ public sealed partial class Ribbon : Control
 		});
 		AddModelAction(model, "Weld", "weld", "Create a Weld between two selected physical instances", button => button.Pressed += CreateWeld);
 		AddModelAction(model, "Effects", "effects", "Insert an effect, attachment, or light", AddEffectsMenu);
+	}
+
+	private enum UILayoutPreset
+	{
+		TopLeft, TopCenter, TopRight, Center, BottomLeft, BottomCenter, BottomRight,
+		FullScreen, Header, Footer, ResponsiveCard, Responsive, Fixed
+	}
+	private enum UIArrange { Left, CenterX, Right, Top, CenterY, Bottom, MatchWidth, MatchHeight, MatchSize }
+
+	private readonly record struct UILayoutState(
+		Vector2 PositionOffset, Vector2 PositionRelative, Vector2 SizeOffset,
+		Vector2 SizeRelative, Vector2 PivotPoint, Vector2 MinimumSize, Vector2 MaximumSize);
+
+	private void AddUITools(HBoxContainer ui)
+	{
+		AddModelAction(ui, "Layout", "align", "Apply responsive anchor and layout presets", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			string[] labels = ["Top Left", "Top Center", "Top Right", "Center", "Bottom Left", "Bottom Center", "Bottom Right", "Stretch Full Screen", "Stretch Header", "Stretch Footer", "Responsive Center Card"];
+			for (int i = 0; i < labels.Length; i++) menu.AddItem(labels[i], i);
+			menu.AddSeparator();
+			menu.AddItem("Convert Current Layout to Responsive", (int)UILayoutPreset.Responsive);
+			menu.AddItem("Convert Current Layout to Fixed Pixels", (int)UILayoutPreset.Fixed);
+			menu.IdPressed += id => ApplyUILayout((UILayoutPreset)id);
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(ui, "Responsive", "scale", "Convert the current visual rectangle to device-independent percentages", button => button.Pressed += () => ApplyUILayout(UILayoutPreset.Responsive));
+		AddModelAction(ui, "Arrange", "align", "Align UI selections or match their sizes to the first selected item", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			string[] labels = ["Align Left", "Align Horizontal Centers", "Align Right", "Align Top", "Align Vertical Centers", "Align Bottom", "Match Width", "Match Height", "Match Size"];
+			for (int i = 0; i < labels.Length; i++) menu.AddItem(labels[i], i);
+			menu.IdPressed += id => ArrangeUI((UIArrange)id);
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(ui, "Constraints", "scale", "Set minimum and maximum responsive size constraints", button =>
+		{
+			PopupMenu menu = new(); button.AddChild(menu);
+			menu.AddItem("Use Current Size as Minimum", 0); menu.AddItem("Use Current Size as Maximum", 1); menu.AddItem("Clear Size Constraints", 2);
+			menu.IdPressed += ApplyUIConstraints;
+			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		});
+		AddModelAction(ui, "Preview", "insert", "Preview common phone, tablet, desktop, console, and safe-area sizes", button => button.Pressed += DeviceEmulatorPopup.Open);
+	}
+
+	private static void ArrangeUI(UIArrange operation)
+	{
+		World? world = World.Current; if (world == null) return;
+		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
+		if (fields.Length < 2)
+		{
+			CreatorService.Interface.PopupAlert("Select at least two UI instances. The first selected instance is the reference.", "Arrange UI");
+			return;
+		}
+		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
+		UIField reference = fields[0]; Rect2 referenceRect = new(reference.AbsolutePosition, reference.AbsoluteSize);
+		for (int i = 1; i < fields.Length; i++)
+		{
+			UIField field = fields[i]; Rect2 rect = new(field.AbsolutePosition, field.AbsoluteSize);
+			Vector2 positionDelta = operation switch
+			{
+				UIArrange.Left => new(referenceRect.Position.X - rect.Position.X, 0),
+				UIArrange.CenterX => new(referenceRect.GetCenter().X - rect.GetCenter().X, 0),
+				UIArrange.Right => new(referenceRect.End.X - rect.End.X, 0),
+				UIArrange.Top => new(0, referenceRect.Position.Y - rect.Position.Y),
+				UIArrange.CenterY => new(0, referenceRect.GetCenter().Y - rect.GetCenter().Y),
+				UIArrange.Bottom => new(0, referenceRect.End.Y - rect.End.Y),
+				_ => Vector2.Zero
+			};
+			field.PositionOffset += positionDelta;
+			Vector2 sizeDelta = operation switch
+			{
+				UIArrange.MatchWidth => new(referenceRect.Size.X - rect.Size.X, 0),
+				UIArrange.MatchHeight => new(0, referenceRect.Size.Y - rect.Size.Y),
+				UIArrange.MatchSize => referenceRect.Size - rect.Size,
+				_ => Vector2.Zero
+			};
+			field.SizeOffset += sizeDelta;
+		}
+		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
+		world.CreatorContext.History.RecordAppliedAction("Arrange UI", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
+	}
+
+	private static UILayoutState CaptureUILayout(UIField field) => new(
+		field.PositionOffset, field.PositionRelative, field.SizeOffset,
+		field.SizeRelative, field.PivotPoint, field.MinimumSize, field.MaximumSize);
+
+	private static void RestoreUILayout(UIField field, UILayoutState state)
+	{
+		field.PositionOffset = state.PositionOffset;
+		field.PositionRelative = state.PositionRelative;
+		field.SizeOffset = state.SizeOffset;
+		field.SizeRelative = state.SizeRelative;
+		field.PivotPoint = state.PivotPoint;
+		field.MinimumSize = state.MinimumSize;
+		field.MaximumSize = state.MaximumSize;
+	}
+
+	private static void ApplyUIConstraints(long command)
+	{
+		World? world = World.Current; if (world == null) return;
+		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
+		if (fields.Length == 0) { CreatorService.Interface.PopupAlert("Select one or more UI instances first.", "UI Constraints"); return; }
+		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
+		foreach (UIField field in fields)
+		{
+			if (command == 0) field.MinimumSize = field.AbsoluteSize;
+			else if (command == 1) field.MaximumSize = field.AbsoluteSize;
+			else { field.MinimumSize = Vector2.Zero; field.MaximumSize = Vector2.Zero; }
+		}
+		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
+		world.CreatorContext.History.RecordAppliedAction("Set UI constraints", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
+	}
+
+	private static void ApplyUILayout(UILayoutPreset preset)
+	{
+		World? world = World.Current; if (world == null) return;
+		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
+		if (fields.Length == 0)
+		{
+			CreatorService.Interface.PopupAlert("Select one or more UI instances first.", "UI Layout");
+			return;
+		}
+		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
+		void Apply()
+		{
+			foreach (UIField field in fields) ApplyUILayoutPreset(field, preset);
+		}
+		Apply();
+		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
+		world.CreatorContext.History.RecordAppliedAction("Apply UI layout", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
+		CreatorService.Interface.StatusBar?.SetStatus($"Applied {preset} layout to {fields.Length} UI instance{(fields.Length == 1 ? "" : "s")}");
+	}
+
+	private static void ApplyUILayoutPreset(UIField field, UILayoutPreset preset)
+	{
+		if (preset is UILayoutPreset.Responsive or UILayoutPreset.Fixed)
+		{
+			Vector2 parentSize = field.NodeControl.GetParentOrNull<Control>()?.Size ?? Vector2.Zero;
+			if (parentSize.X <= 0 || parentSize.Y <= 0) return;
+			Vector2 size = field.AbsoluteSize;
+			Vector2 anchorPoint = field.NodeControl.Position + field.PivotPoint * size;
+			if (preset == UILayoutPreset.Responsive)
+			{
+				field.PositionRelative = new(anchorPoint.X / parentSize.X, anchorPoint.Y / parentSize.Y);
+				field.PositionOffset = Vector2.Zero;
+				field.SizeRelative = new(size.X / parentSize.X, size.Y / parentSize.Y);
+				field.SizeOffset = Vector2.Zero;
+			}
+			else
+			{
+				field.PositionRelative = Vector2.Zero;
+				field.PositionOffset = anchorPoint;
+				field.SizeRelative = Vector2.Zero;
+				field.SizeOffset = size;
+			}
+			return;
+		}
+
+		(Vector2 anchor, Vector2 pivot) = preset switch
+		{
+			UILayoutPreset.TopCenter => (new(.5f, 0), new(.5f, 0)), UILayoutPreset.TopRight => (new(1, 0), new(1, 0)),
+			UILayoutPreset.Center => (new(.5f, .5f), new(.5f, .5f)), UILayoutPreset.BottomLeft => (new(0, 1), new(0, 1)),
+			UILayoutPreset.BottomCenter => (new(.5f, 1), new(.5f, 1)), UILayoutPreset.BottomRight => (Vector2.One, Vector2.One),
+			_ => (Vector2.Zero, Vector2.Zero)
+		};
+		field.PositionRelative = anchor; field.PositionOffset = Vector2.Zero; field.PivotPoint = pivot;
+		switch (preset)
+		{
+			case UILayoutPreset.FullScreen: field.SizeRelative = Vector2.One; field.SizeOffset = Vector2.Zero; break;
+			case UILayoutPreset.Header: field.SizeRelative = new(1, 0); field.SizeOffset = new(0, 64); break;
+			case UILayoutPreset.Footer: field.PositionRelative = new(0, 1); field.PivotPoint = new(0, 1); field.SizeRelative = new(1, 0); field.SizeOffset = new(0, 64); break;
+			case UILayoutPreset.ResponsiveCard: field.PositionRelative = new(.5f, .5f); field.PivotPoint = new(.5f, .5f); field.SizeRelative = new(.8f, .7f); field.SizeOffset = Vector2.Zero; break;
+		}
 	}
 
 	private static void AddModelAction(Container parent, string text, string icon, string tooltip, Action<Button> configure)

@@ -25,29 +25,62 @@ public sealed partial class DeviceEmulatorPopup : Window
 	[Export] private CheckButton _rightTrigger = null!;
 	[Export] private Label _status = null!;
 	private DevicePreviewGuide? _guide;
+	private VBoxContainer _gamepadPanel = null!;
+	private VBoxContainer _vrPanel = null!;
+	private GamepadInputSimulator _gamepad = null!;
+	private VRInputSimulator _vr = null!;
 
 	public static void Open()
 	{
 		DeviceEmulatorPopup popup = GD.Load<PackedScene>(ScenePath).Instantiate<DeviceEmulatorPopup>();
 		CreatorGUIRoot.Singleton.AddChild(popup);
-		popup.PopupCentered(new Vector2I(590, 720));
+		popup.PopupCentered(new Vector2I(640, 820));
 	}
 
 	public override void _Ready()
 	{
 		CloseRequested += QueueFree;
+		BuildVisualSimulators();
 		_enabled.Toggled += _ => Send();
 		_profile.ItemSelected += _ => { ApplyProfileDefaults(); Send(); };
 		_screen.ItemSelected += _ => UpdateGuide();
 		_preview.Toggled += _ => UpdateGuide();
-		foreach (Range slider in new Range[] { _leftX, _leftY, _rightX, _rightY, _headYaw, _headHeight, _handSpread }) slider.ValueChanged += _ => Send();
-		foreach (CheckButton button in new[] { _primary, _secondary, _leftTrigger, _rightTrigger }) button.Toggled += _ => Send();
 		ApplyProfileDefaults();
+	}
+
+	private void BuildVisualSimulators()
+	{
+		Control content = _status.GetParent<Control>();
+		content.GetNode<Control>("GamepadTitle").Visible = false;
+		content.GetNode<Control>("GamepadGrid").Visible = false;
+		content.GetNode<Control>("Buttons").Visible = false;
+		content.GetNode<Control>("VRTitle").Visible = false;
+		content.GetNode<Control>("VRGrid").Visible = false;
+
+		_gamepadPanel = SimulatorPanel("GAMEPAD INPUT", "Interactive dual-stick controller");
+		_gamepad = new GamepadInputSimulator(); _gamepad.Changed += Send; _gamepadPanel.AddChild(_gamepad);
+		Button resetGamepad = new() { Text = "Reset gamepad", FocusMode = Control.FocusModeEnum.None }; resetGamepad.Pressed += _gamepad.Reset; _gamepadPanel.AddChild(resetGamepad);
+		content.AddChild(_gamepadPanel); content.MoveChild(_gamepadPanel, _status.GetIndex());
+
+		_vrPanel = SimulatorPanel("VR POSE", "Headset and tracked hand controllers");
+		_vr = new VRInputSimulator(); _vr.Changed += Send; _vrPanel.AddChild(_vr);
+		Button resetVr = new() { Text = "Reset VR pose", FocusMode = Control.FocusModeEnum.None }; resetVr.Pressed += _vr.Reset; _vrPanel.AddChild(resetVr);
+		content.AddChild(_vrPanel); content.MoveChild(_vrPanel, _status.GetIndex());
+	}
+
+	private static VBoxContainer SimulatorPanel(string title, string subtitle)
+	{
+		VBoxContainer panel = new(); panel.AddThemeConstantOverride("separation", 6);
+		panel.AddChild(new Label { Text = title, ThemeTypeVariation = "HeaderSmall" });
+		panel.AddChild(new Label { Text = subtitle, Modulate = new Color("93a4ba") });
+		return panel;
 	}
 
 	private void ApplyProfileDefaults()
 	{
 		_screen.Select(_profile.Selected switch { 1 => 1, 2 => 2, 3 => 3, _ => 0 });
+		_gamepadPanel.Visible = _profile.Selected == 3;
+		_vrPanel.Visible = _profile.Selected == 4;
 		UpdateGuide();
 	}
 
@@ -58,17 +91,17 @@ public sealed partial class DeviceEmulatorPopup : Window
 		Touchscreen = _profile.Selected is 1 or 2,
 		Gamepad = _profile.Selected is 3 or 4,
 		VR = _profile.Selected == 4,
-		LeftX = (float)_leftX.Value,
-		LeftY = (float)_leftY.Value,
-		RightX = (float)_rightX.Value,
-		RightY = (float)_rightY.Value,
-		PrimaryButton = _primary.ButtonPressed,
-		SecondaryButton = _secondary.ButtonPressed,
-		LeftTrigger = _leftTrigger.ButtonPressed,
-		RightTrigger = _rightTrigger.ButtonPressed,
-		HeadYaw = Mathf.DegToRad((float)_headYaw.Value),
-		HeadHeight = (float)_headHeight.Value,
-		HandSpread = (float)_handSpread.Value,
+		LeftX = _gamepad.LeftStick.X,
+		LeftY = _gamepad.LeftStick.Y,
+		RightX = _gamepad.RightStick.X,
+		RightY = _gamepad.RightStick.Y,
+		PrimaryButton = _gamepad.Primary,
+		SecondaryButton = _gamepad.Secondary,
+		LeftTrigger = _gamepad.LeftTrigger,
+		RightTrigger = _gamepad.RightTrigger,
+		HeadYaw = Mathf.DegToRad(_vr.HeadYawDegrees),
+		HeadHeight = _vr.HeadHeight,
+		HandSpread = _vr.HandSpread,
 	};
 
 	private void Send()
