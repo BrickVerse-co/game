@@ -7,7 +7,6 @@ using BrickVerse.Networking.Interfaces;
 using BrickVerse.Shared;
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -96,13 +95,6 @@ public static class OfficialClientIntegrity
 		if (File.Exists(expectedPath))
 		{
 			return expectedPath;
-		}
-
-		string[] candidates = Directory.GetFiles(baseDirectory, "*.dll", SearchOption.TopDirectoryOnly);
-		string? candidate = candidates.FirstOrDefault();
-		if (!string.IsNullOrWhiteSpace(candidate))
-		{
-			return candidate;
 		}
 
 		string executablePath = OS.GetExecutablePath();
