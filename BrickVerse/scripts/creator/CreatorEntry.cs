@@ -38,6 +38,7 @@ public partial class CreatorEntry : Node
 
 	public override void _EnterTree()
 	{
+		CrashReporter.Initialize(this, CrashApplication.Creator);
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
 		//BV.Print("CreatorEntry: Command line arguments: ", string.Join(", ", cmdargs));
 
@@ -140,37 +141,35 @@ public partial class CreatorEntry : Node
 			);
 		}
 
-		if (!string.IsNullOrWhiteSpace(_pendingWorldId))
+		try
 		{
-			await CreatorService.Singleton.CreateNewSessionByWorldId(_pendingWorldId);
-			_pendingWorldId = null;
-		}
+			if (!string.IsNullOrWhiteSpace(_pendingWorldId))
+			{
+				await CreatorService.Singleton.CreateNewSessionByWorldId(_pendingWorldId);
+				_pendingWorldId = null;
+			}
 
-		if (!string.IsNullOrWhiteSpace(_pendingFilePath))
+			if (!string.IsNullOrWhiteSpace(_pendingFilePath))
+			{
+				string filePath = _pendingFilePath;
+				_pendingFilePath = null;
+				string extension = Path.GetExtension(filePath).ToLowerInvariant();
+				if (extension == ".bvanim")
+					CreatorService.Interface.OpenAnimationEditor(filePath);
+				else if (extension is ".bvxm" or ".bvmodel" or ".model")
+					CreatorService.Interface.ImportModel(filePath);
+				else if (extension == ".bvaddon")
+				{
+					await AddonsManager.InstallAddonFile(filePath);
+					CreatorService.Interface.PopupAlert(
+						$"Installed {Path.GetFileName(filePath)}.", "Addon Installed");
+				}
+				else await CreatorService.Singleton.CreateNewSession(filePath);
+			}
+		}
+		catch (Exception error)
 		{
-			string filePath = _pendingFilePath;
-			_pendingFilePath = null;
-			string extension = Path.GetExtension(filePath).ToLowerInvariant();
-			if (extension == ".bvanim")
-			{
-				CreatorService.Interface.OpenAnimationEditor(filePath);
-			}
-			else if (extension is ".bvxm" or ".bvmodel" or ".model")
-			{
-				CreatorService.Interface.ImportModel(filePath);
-			}
-			else if (extension == ".bvaddon")
-			{
-				await AddonsManager.InstallAddonFile(filePath);
-				CreatorService.Interface.PopupAlert(
-					$"Installed {Path.GetFileName(filePath)}.",
-					"Addon Installed"
-				);
-			}
-			else
-			{
-				await CreatorService.Singleton.CreateNewSession(filePath);
-			}
+			CrashReporter.Capture(error, "Creator startup", fatal: false);
 		}
 	}
 
