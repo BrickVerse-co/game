@@ -1312,6 +1312,7 @@ public sealed partial class Player : NPC
 		StaminaRegen = Root.PlayerDefaults.StaminaRegen;
 		StaminaBurn = Root.PlayerDefaults.StaminaBurn;
 		JumpPower = Root.PlayerDefaults.JumpPower;
+		StepHeight = Root.PlayerDefaults.StepHeight;
 		RespawnTime = Root.PlayerDefaults.RespawnTime;
 		UseHeadTurning = Root.PlayerDefaults.UseHeadTurning;
 		UseBubbleChat = Root.PlayerDefaults.UseBubbleChat;

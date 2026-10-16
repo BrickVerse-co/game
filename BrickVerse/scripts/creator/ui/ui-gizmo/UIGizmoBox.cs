@@ -796,7 +796,11 @@ public partial class UIGizmoBox : Control
 		Scale = gt.Scale;
 		GlobalPosition = gt.Origin;
 
-		_sizeIndLabel.Text = $"{Target.AbsoluteSize.X}x{Target.AbsoluteSize.Y}";
+		bool responsive = !Target.SizeRelative.IsZeroApprox() || !Target.PositionRelative.IsZeroApprox();
+		_sizeIndLabel.Text = responsive
+			? $"{Target.AbsoluteSize.X:0}×{Target.AbsoluteSize.Y:0}  •  {Target.SizeRelative.X * 100:0.#}% × {Target.SizeRelative.Y * 100:0.#}%"
+			: $"{Target.AbsoluteSize.X:0}×{Target.AbsoluteSize.Y:0} px";
+		QueueRedraw();
 
 		float cr = -Rotation;
 
@@ -809,6 +813,21 @@ public partial class UIGizmoBox : Control
 			Vector2 pivotPixelPos = Target.PivotPoint * Size;
 			_pivotIndicator.Position = pivotPixelPos - _pivotIndicator.Size * 0.5f;
 		}
+	}
+
+	public override void _Draw()
+	{
+		if (Target?.NodeControl?.GetParent() is not Control parent) return;
+		Vector2 anchorInParent = parent.Size * Target.PositionRelative + Target.PositionOffset;
+		Vector2 anchorGlobal = parent.GetGlobalTransformWithCanvas() * anchorInParent;
+		Vector2 anchorLocal = GetGlobalTransformWithCanvas().AffineInverse() * anchorGlobal;
+		Vector2 pivotLocal = Target.PivotPoint * Size;
+		Color anchorColor = new(0.22f, 0.75f, 1f, 0.9f);
+		DrawDashedLine(anchorLocal, pivotLocal, new Color(anchorColor, 0.55f), 1f, 5f);
+		DrawCircle(anchorLocal, 5f, new Color(0.04f, 0.08f, 0.12f, 0.9f));
+		DrawArc(anchorLocal, 6f, 0, Mathf.Tau, 20, anchorColor, 2f);
+		DrawLine(anchorLocal - new Vector2(9, 0), anchorLocal + new Vector2(9, 0), anchorColor, 1f);
+		DrawLine(anchorLocal - new Vector2(0, 9), anchorLocal + new Vector2(0, 9), anchorColor, 1f);
 	}
 
 	private readonly struct UIBounds

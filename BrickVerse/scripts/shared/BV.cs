@@ -9,11 +9,15 @@ using BrickVerse.Scripting;
 using BrickVerse.Creator.UI;
 #endif
 using System;
+using System.Collections.Generic;
 
 namespace BrickVerse.Shared;
 
 public static class BV
 {
+	private const int RecentLogLimit = 250;
+	private static readonly object RecentLogLock = new();
+	private static readonly Queue<string> RecentLogs = new();
 	public static int OwnerThreadId { get; private set; }
 	public static bool IsServer { get; set; } = false;
 
@@ -171,6 +175,11 @@ public static class BV
 
 	public static void DispatchLog(LogDispatcher.LogData data)
 	{
+		lock (RecentLogLock)
+		{
+			RecentLogs.Enqueue($"[{DateTime.UtcNow:O}] [{data.LogType}] {data.Content}");
+			while (RecentLogs.Count > RecentLogLimit) RecentLogs.Dequeue();
+		}
 		try
 		{
 #if CREATOR
@@ -195,6 +204,11 @@ public static class BV
 				Console.WriteLine("[ERROR] [Log Dispatch] " + ex);
 			}
 		}
+	}
+
+	public static string GetRecentLogs()
+	{
+		lock (RecentLogLock) return string.Join(System.Environment.NewLine, RecentLogs);
 	}
 
 	public static bool IsMainThread()

@@ -323,19 +323,17 @@ jobs:
 
           $packageSha = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $executableSha = (Get-FileHash -LiteralPath "$exportDirectory\BrickVerse.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          $managedFiles = @(Get-ChildItem -LiteralPath $exportDirectory -Recurse -File |
-            Where-Object { $_.Extension -in '.dll', '.pck' } |
-            Sort-Object FullName)
-          if ($managedFiles.Count -eq 0) {
-            throw "No managed export payload was found under $exportDirectory. Expected at least one .dll or .pck file."
+          # OfficialClientIntegrity hashes its own BrickVerse.dll when the managed
+          # assembly is exported. If it is embedded, it falls back to the executable.
+          $managedFile = Get-ChildItem -LiteralPath $exportDirectory -Recurse -File -Filter 'BrickVerse.dll' |
+            Sort-Object FullName |
+            Select-Object -First 1
+          $managedSha = if ($null -ne $managedFile) {
+            (Get-FileHash -LiteralPath $managedFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           }
-
-          $managedManifest = Join-Path $env:RUNNER_TEMP 'managed-hashes.txt'
-          $managedFiles | ForEach-Object {
-            $fileHash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$fileHash  $($_.FullName)"
-          } | Set-Content -LiteralPath $managedManifest -Encoding utf8NoBOM
-          $managedSha = (Get-FileHash -LiteralPath $managedManifest -Algorithm SHA256).Hash.ToLowerInvariant()
+          else {
+            $executableSha
+          }
 
           $version = "${{ env.RELEASE_CHANNEL }}-${{ github.run_number }}"
           $blobPath = "binaries/${{ env.APP }}/windows/${{ env.RELEASE_CHANNEL }}/$version/BrickVerse-Windows.zip"
@@ -450,11 +448,17 @@ jobs:
             EXECUTABLE_SHA=""
           fi
 
-          # Hash the complete managed/native payload. Godot 4.7 can embed the
-          # managed assemblies in the PCK instead of exporting BrickVerse.dll.
-          MANAGED_SHA="$(find "$EXPORT_DIR" -type f \
-            \( -name "*.dll" -o -name "*.dylib" -o -name "*.so" -o -name "*.pck" \) \
-            -print0 | sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print $1}')"
+          # OfficialClientIntegrity hashes its own BrickVerse.dll when the managed
+          # assembly is exported. If it is embedded, it falls back to the executable.
+          MANAGED_FILE="$(find "$EXPORT_DIR" -type f -name "BrickVerse.dll" | sort | head -n 1 || true)"
+          if [[ -n "$MANAGED_FILE" ]]; then
+            MANAGED_SHA="$(sha256sum "$MANAGED_FILE" | awk '{print $1}')"
+          elif [[ -n "$PRIMARY_FILE" ]]; then
+            MANAGED_SHA="$EXECUTABLE_SHA"
+          else
+            echo "Could not find the exported executable or BrickVerse.dll under $EXPORT_DIR." >&2
+            exit 1
+          fi
 
           echo "package_sha=$PACKAGE_SHA" >> "$GITHUB_OUTPUT"
           echo "executable_sha=$EXECUTABLE_SHA" >> "$GITHUB_OUTPUT"

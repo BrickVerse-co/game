@@ -175,6 +175,7 @@ public sealed partial class Globals : Node
 	public override void _EnterTree()
 	{
 		GDAvailable = true;
+		WindowsDebugConsole.Initialize(ReadCmdArgs());
 		UseProdApi = OS.HasFeature("use-prod-api");
 		ConfigureEndpoints();
 		UseLogRPC = OS.HasFeature("rpclog");

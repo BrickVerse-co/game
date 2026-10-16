@@ -13,6 +13,7 @@ public sealed partial class PlayerDefaults : HiddenBase
 	private float _maxHealth;
 	private float _walkSpeed;
 	private float _jumpPower;
+	private float _stepHeight;
 	private Color _chatColor;
 	private bool _chatColorsEnabled;
 	private float _respawnTime;
@@ -87,6 +88,14 @@ public sealed partial class PlayerDefaults : HiddenBase
 			_jumpPower = value;
 			OnPropertyChanged();
 		}
+	}
+
+	/// <summary>Maximum stair or ledge height players automatically traverse.</summary>
+	[Editable, ScriptProperty]
+	public float StepHeight
+	{
+		get => _stepHeight;
+		set { _stepHeight = Mathf.Clamp(value, 0f, 4f); OnPropertyChanged(); }
 	}
 
 	[Editable, ScriptProperty]
@@ -279,6 +288,7 @@ public sealed partial class PlayerDefaults : HiddenBase
 		MaxHealth = 100f;
 		WalkSpeed = 16f;
 		JumpPower = 36f;
+		StepHeight = 1.5f;
 		ChatColor = new Color(1, 1, 1);
 		ChatColorsEnabled = true;
 		RespawnTime = 5.0f;

@@ -72,6 +72,7 @@ public sealed partial class ClientEntry : Node3D
 	public ClientEntry()
 	{
 		BootstrapRuntimeIdentityFromCommandLine();
+		CrashReporter.Initialize(this, CrashApplication.Client);
 		Root = Globals.LoadInstance<World>();
 	}
 
@@ -132,7 +133,7 @@ public sealed partial class ClientEntry : Node3D
 		}
 		catch (Exception ex)
 		{
-			BV.PrintErr("Error during client entry: ", ex);
+			CrashReporter.Capture(ex, "Client startup", fatal: true);
 		}
 	}
 

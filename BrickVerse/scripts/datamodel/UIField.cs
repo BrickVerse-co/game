@@ -23,6 +23,8 @@ public partial class UIField : Instance
 	private Vector2 _positionRelative = new(0.5f, 0.5f);
 	private Vector2 _sizeOffset = new(100, 100);
 	private Vector2 _sizeRelative = new(0, 0);
+	private Vector2 _minimumSize = Vector2.Zero;
+	private Vector2 _maximumSize = Vector2.Zero;
 	private Vector2 _pivotPoint = new(0.5f, 0.5f);
 	private Vector2 _scale = new(1f, 1f);
 	private float _rotation = 0;
@@ -96,6 +98,22 @@ public partial class UIField : Instance
 			QueueRecomputeTransform();
 			OnPropertyChanged();
 		}
+	}
+
+	/// <summary>Minimum rendered size in pixels after responsive scale is evaluated. Zero disables an axis.</summary>
+	[Editable, ScriptProperty]
+	public Vector2 MinimumSize
+	{
+		get => _minimumSize;
+		set { _minimumSize = value.Max(Vector2.Zero); QueueRecomputeTransform(); OnPropertyChanged(); }
+	}
+
+	/// <summary>Maximum rendered size in pixels after responsive scale is evaluated. Zero disables an axis.</summary>
+	[Editable, ScriptProperty]
+	public Vector2 MaximumSize
+	{
+		get => _maximumSize;
+		set { _maximumSize = value.Max(Vector2.Zero); QueueRecomputeTransform(); OnPropertyChanged(); }
 	}
 
 	[Editable, ScriptProperty]
@@ -647,6 +665,12 @@ public partial class UIField : Instance
 				size = ratio * Mathf.Min(maxSize.Value.X, maxSize.Value.Y);
 			}
 		}
+
+		if (_minimumSize.X > 0) size.X = Mathf.Max(size.X, _minimumSize.X);
+		if (_minimumSize.Y > 0) size.Y = Mathf.Max(size.Y, _minimumSize.Y);
+		if (_maximumSize.X > 0) size.X = Mathf.Min(size.X, _maximumSize.X);
+		if (_maximumSize.Y > 0) size.Y = Mathf.Min(size.Y, _maximumSize.Y);
+		size = size.Max(Vector2.Zero);
 
 		NodeControl.CustomMinimumSize = size;
 

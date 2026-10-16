@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Client;
 using BrickVerse.DocsGen;
 using Godot;
@@ -24,12 +25,14 @@ public partial class AppEntry : Node
 		bool isCreator = cmdargs.ContainsKey("creator");
 		bool isLtChild = cmdargs.ContainsKey("ltchild");
 		bool isSolo = cmdargs.ContainsKey("solo");
+		bool hasOnlyStartupSwitches = cmdargs.Count == 0
+			|| cmdargs.Keys.All(static key => key.Equals("console", StringComparison.OrdinalIgnoreCase));
 		bool isStandaloneClientShell = OS.HasFeature("client")
 			&& !Globals.IsServerBuild
 			&& !OS.HasFeature("creator")
 			&& !OS.HasFeature("renderer")
 			&& !isCreator
-			&& cmdargs.Count == 0;
+			&& hasOnlyStartupSwitches;
 
 		if (cmdargs.TryGetValue("wait", out string? waitTime))
 		{

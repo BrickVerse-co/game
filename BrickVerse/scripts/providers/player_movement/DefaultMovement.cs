@@ -265,10 +265,9 @@ public class DefaultMovement : IPlayerMovement
 		Target.ApplyInternalVelocity(Target.CharacterVelocity);
 		Target.CharBody3D.Velocity = Target.CharacterVelocity;
 		Target.CharBody3D.MoveAndSlide();
-
-		if (isOnFloor && Target.IsMoving && !Target.IsClimbing && !Target.IsSitting)
-		{
-			Target.TryStepUp();
-		}
+		if (Target.IsMoving && !Target.IsClimbing && !Target.IsSitting)
+			Target.TryTraverseSteps((float)delta, isOnFloor);
+		Target.CharacterVelocity = Target.CharBody3D.Velocity;
+		Target.ApplyInternalVelocity(Target.CharacterVelocity);
 	}
 }
