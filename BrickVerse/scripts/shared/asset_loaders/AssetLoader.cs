@@ -13,9 +13,9 @@ namespace BrickVerse.Shared.AssetLoaders;
 
 public partial class AssetLoader : Node
 {
-
 	private readonly record struct AssetCacheKey(ResourceType Type, string ID, Vector2I? Resize);
-	private const int DefaultMaxConcurrentRequests = 5;
+	public const int DefaultMaxConcurrentRequests = 8;
+	public const int MaximumConcurrentRequests = 16;
 
 	public AssetLoader()
 	{
@@ -33,9 +33,15 @@ public partial class AssetLoader : Node
 
 	private readonly ConcurrentDictionary<AssetCacheKey, CacheItem> _cache = [];
 	private readonly ConcurrentDictionary<AssetCacheKey, Lazy<Task<CacheItem>>> _pendingRequests = [];
-	public int MaxConcurrentRequests { get; set; } = DefaultMaxConcurrentRequests;
+	private int _maxConcurrentRequests = DefaultMaxConcurrentRequests;
+	public int MaxConcurrentRequests
+	{
+		get => _maxConcurrentRequests;
+		set => _maxConcurrentRequests = Math.Clamp(value, 1, MaximumConcurrentRequests);
+	}
 
 	private SemaphoreSlim _loadSlots = null!;
+	private readonly object _loadSlotsLock = new();
 
 	public IAssetProvider AssetProvider = null!;
 
@@ -69,12 +75,14 @@ public partial class AssetLoader : Node
 
 	private async Task<CacheItem> LoadItem(CacheItem item, AssetCacheKey key)
 	{
-		if (_loadSlots == null)
+		SemaphoreSlim loadSlots;
+		lock (_loadSlotsLock)
 		{
-			_loadSlots = new(MaxConcurrentRequests);
+			_loadSlots ??= new(MaxConcurrentRequests);
+			loadSlots = _loadSlots;
 		}
 
-		await _loadSlots.WaitAsync();
+		await loadSlots.WaitAsync();
 		try
 		{
 			CacheItem result = await LoadResource(item);
@@ -85,7 +93,22 @@ public partial class AssetLoader : Node
 		finally
 		{
 			_pendingRequests.TryRemove(key, out _);
-			_loadSlots.Release();
+			loadSlots.Release();
+		}
+	}
+
+	private async Task<CacheItem> LoadItemAndReport(CacheItem item, AssetCacheKey key)
+	{
+		try
+		{
+			return await LoadItem(item, key);
+		}
+		catch (Exception exception)
+		{
+			Callable.From(() => BV.PrintErr(
+				"Failed to load resource (Type: " + item.Type + ", ID: " + item.ID + "): " + exception.Message
+			)).CallDeferred();
+			throw;
 		}
 	}
 
@@ -100,7 +123,13 @@ public partial class AssetLoader : Node
 			return;
 		}
 
-		Lazy<Task<CacheItem>> task = _pendingRequests.GetOrAdd(key, _ => new Lazy<Task<CacheItem>>(() => LoadItem(item, key), LazyThreadSafetyMode.ExecutionAndPublication));
+		Lazy<Task<CacheItem>> task = _pendingRequests.GetOrAdd(
+			key,
+			_ => new Lazy<Task<CacheItem>>(
+				() => LoadItemAndReport(item, key),
+				LazyThreadSafetyMode.ExecutionAndPublication
+			)
+		);
 
 		_ = WaitForResource(task.Value, item, callback);
 	}
@@ -112,9 +141,9 @@ public partial class AssetLoader : Node
 			CacheItem result = await task;
 			Callable.From(() => callback(result)).CallDeferred();
 		}
-		catch (Exception exception)
+		catch
 		{
-			Callable.From(() => BV.PrintErr("Failed to load resource (Type: " + item.Type + ", ID: " + item.ID + "): " + exception.Message)).CallDeferred();
+			// The shared load task reports once, even when several callbacks await it.
 		}
 	}
 }

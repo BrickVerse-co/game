@@ -17,8 +17,10 @@ func _export_begin(features: PackedStringArray, is_debug: bool, path: String, fl
 	
 	# Apply overrides
 	ProjectSettings.set_setting("display/window/size/mode", DisplayServer.WindowMode.WINDOW_MODE_MAXIMIZED)
-	if features.has("beta"):
-		ProjectSettings.set_setting("debug/settings/stdout/verbose_stdout", true)
+	# Release presets include the beta feature for channel behavior, so it cannot
+	# be used as a proxy for diagnostic logging. Verbose output logs every loaded
+	# resource and shader and adds substantial synchronous startup I/O.
+	ProjectSettings.set_setting("debug/settings/stdout/verbose_stdout", is_debug)
 	
 	ProjectSettings.save()
 

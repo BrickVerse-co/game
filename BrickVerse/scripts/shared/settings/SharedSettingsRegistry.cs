@@ -349,13 +349,13 @@ public static class SharedSettingsRegistry
 					ValueKind = SettingValueKind.Int,
 					ControlKind = SettingControlKind.Dropdown,
 					RequiresRestart = true,
-					DefaultValue = 10,
+					DefaultValue = AssetLoaders.AssetLoader.DefaultMaxConcurrentRequests,
 					Options =
 					[
-						new() { Value = 10, Label = "Default (10)" },
-						new() { Value = 15, Label = "Fast (15)" },
-						new() { Value = 30, Label = "Aggressive (30)" },
-						new() { Value = 60, Label = "SPEED (60)" },
+						new() { Value = 5, Label = "Low impact (5)" },
+						new() { Value = AssetLoaders.AssetLoader.DefaultMaxConcurrentRequests, Label = "Default (8)" },
+						new() { Value = 12, Label = "Fast (12)" },
+						new() { Value = AssetLoaders.AssetLoader.MaximumConcurrentRequests, Label = "Maximum (16)" },
 					]
 				}
 			},

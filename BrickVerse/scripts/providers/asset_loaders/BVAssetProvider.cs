@@ -124,17 +124,7 @@ public class BVAssetProvider : IAssetProvider
 			case ResourceType.GuildIcon:
 			case ResourceType.GuildBanner:
 				{
-					Image image = new();
-					Error imageError = extension switch
-					{
-						".jpg" or ".jpeg" => image.LoadJpgFromBuffer(buffer),
-						".webp" => image.LoadWebpFromBuffer(buffer),
-						".svg" => image.LoadSvgFromBuffer(buffer),
-						_ => image.LoadPngFromBuffer(buffer),
-					};
-					if (imageError != Error.Ok)
-						throw new InvalidDataException($"Could not decode temporary image {item.ID} ({imageError}).");
-					image.GenerateMipmaps();
+					Image image = ImageBufferDecoder.Decode(buffer, extension.Length > 0 ? extension : url);
 					image.FixAlphaEdges();
 
 					if (item.Resize != null)
@@ -145,6 +135,10 @@ public class BVAssetProvider : IAssetProvider
 							Image.Interpolation.Lanczos
 						);
 					}
+
+					Error mipmapError = image.GenerateMipmaps();
+					if (mipmapError != Error.Ok)
+						throw new InvalidDataException($"Could not generate mipmaps for image {item.ID} ({mipmapError}).");
 
 					item.Resource = ImageTexture.CreateFromImage(image);
 

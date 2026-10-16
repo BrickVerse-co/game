@@ -99,6 +99,13 @@ common/show_focus_state_on_pointer_event=2
 theme/custom="uid://cwykhfx1ffjoj"
 theme/custom_font="res://assets/fonts/default.tres"
 
+[voxel]
+
+threads/count/minimum=2
+threads/count/margin_below_maximum=4
+threads/count/ratio_over_maximum=0.25
+threads/main/time_budget_ms=4
+
 [input]
 
 ui_accept={
