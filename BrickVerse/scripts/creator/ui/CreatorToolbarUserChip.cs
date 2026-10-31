@@ -277,15 +277,7 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 			}
 
 			Image img = new();
-			Error err = img.LoadPngFromBuffer(data);
-			if (err != Error.Ok)
-			{
-				err = img.LoadJpgFromBuffer(data);
-			}
-			if (err != Error.Ok)
-			{
-				err = img.LoadWebpFromBuffer(data);
-			}
+			Error err = DecodeImage(img, data);
 
 			if (err != Error.Ok || requestId != _avatarRequestId)
 			{
@@ -302,6 +294,20 @@ public sealed partial class CreatorToolbarUserChip : HBoxContainer
 	}
 
 	private void SetDefaultAvatar() => _avatar.Texture = GD.Load<Texture2D>(DefaultAvatarPath);
+
+	private static Error DecodeImage(Image image, byte[] data)
+	{
+		if (data.Length >= 8 && data[0] == 0x89 && data[1] == 0x50
+			&& data[2] == 0x4e && data[3] == 0x47)
+			return image.LoadPngFromBuffer(data);
+		if (data.Length >= 3 && data[0] == 0xff && data[1] == 0xd8 && data[2] == 0xff)
+			return image.LoadJpgFromBuffer(data);
+		if (data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49
+			&& data[2] == 0x46 && data[3] == 0x46 && data[8] == 0x57
+			&& data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50)
+			return image.LoadWebpFromBuffer(data);
+		return Error.FileUnrecognized;
+	}
 
 	private static string NormalizeUrl(string url)
 	{

@@ -35,7 +35,8 @@ run/main_scene="res://scenes/entry.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="BrickVerseClient"
 config/quit_on_go_back=false
-config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+run/max_fps=60
 boot_splash/bg_color="#213e61"
 boot_splash/show_image=false
 boot_splash/image="uid://bs34jgixa1n2r"
@@ -80,7 +81,6 @@ window/size/mode=3
 window/subwindows/embed_subwindows=false
 window/per_pixel_transparency/allowed=true
 window/handheld/orientation=1
-window/vsync/vsync_mode=0
 mouse_cursor/custom_image="uid://d2k5mfxblvr3l"
 
 [dotnet]
@@ -98,13 +98,6 @@ common/snap_controls_to_pixels=false
 common/show_focus_state_on_pointer_event=2
 theme/custom="uid://cwykhfx1ffjoj"
 theme/custom_font="res://assets/fonts/default.tres"
-
-[voxel]
-
-threads/count/minimum=2
-threads/count/margin_below_maximum=4
-threads/count/ratio_over_maximum=0.25
-threads/main/time_budget_ms=4
 
 [input]
 
@@ -486,15 +479,23 @@ jolt_physics_3d/limits/max_bodies=131070
 
 occlusion_culling/bvh_build_quality=0
 textures/canvas_textures/default_texture_filter=2
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 lights_and_shadows/directional_shadow/size.mobile=512
 reflections/sky_reflections/ggx_samples.mobile=2
 anti_aliasing/quality/msaa_3d=2
 limits/global_shader_variables/buffer_size=524288
 environment/defaults/default_clear_color=Color(0.15, 0.15, 0.15, 1)
-occlusion_culling/use_occlusion_culling=true
 mesh_lod/lod_change/threshold_pixels=0.0
 lights_and_shadows/positional_shadow/atlas_size.mobile=512
+
+[voxel]
+
+threads/count/minimum=2
+threads/count/margin_below_maximum=4
+threads/count/ratio_over_maximum=0.25
+threads/main/time_budget_ms=4
 
 [xr]
 
@@ -502,5 +503,5 @@ openxr/form_factor=0
 openxr/view_configuration=1
 openxr/reference_space=1
 openxr/startup_alert=false
-shaders/enabled=true
-openxr/enabled.xr=true
+shaders/enabled=false
+openxr/enabled=false

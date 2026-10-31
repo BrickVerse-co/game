@@ -46,7 +46,7 @@ public partial class AuthSplash : Panel
 		_right = GetNode<Control>("Card/Layout/Right");
 		Visible = !CreatorAPI.IsUserAuthenticated;
 		MouseFilter = MouseFilterEnum.Stop;
-		ZIndex = 9999;
+		ZIndex = (int)RenderingServer.CanvasItemZMax;
 		_signInButton.Pressed += OpenBrowserLogin;
 		_createAccountButton.Pressed += OpenCreateAccount;
 		_termsButton.Pressed += OpenTerms;
