@@ -154,18 +154,9 @@ public sealed partial class Ribbon : Control
 		};
 		WireHomeInsertShortcuts(home);
 
-		DockHost rightDock = GetNode<DockHost>(
-			"../Splitter/Right/Region/Split/Primary");
-		if (!rightDock.ContainsPanelId("Team Chat"))
-		{
-			Control teamChat = GD.Load<PackedScene>("res://scenes/creator/docks/team_chat_dock.tscn").Instantiate<Control>();
-			rightDock.AddPanel(new DockPanel(
-				"Team Chat",
-				"Team Chat",
-				teamChat,
-				GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg")
-			), suppressSave: true);
-		}
+		// Ribbon can become ready before sibling dock hosts. Defer dynamic panel
+		// insertion so DockHost has initialized its body and tab bar first.
+		Callable.From(AddTeamChatPanel).CallDeferred();
 		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged += RefreshTeamChatTab;
 		RefreshTeamChatTab();
 
@@ -656,6 +647,24 @@ public sealed partial class Ribbon : Control
 		if (Tabs.Singleton != null) Tabs.Singleton.CurrentControlChanged -= OnCurrentControlChanged;
 		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged -= RefreshTeamChatTab;
 		base._ExitTree();
+	}
+
+	private void AddTeamChatPanel()
+	{
+		DockHost rightDock = GetNode<DockHost>("../Splitter/Right/Region/Split/Primary");
+		if (rightDock.ContainsPanelId("Team Chat"))
+			return;
+
+		Control teamChat = GD.Load<PackedScene>(
+			"res://scenes/creator/docks/team_chat_dock.tscn"
+		).Instantiate<Control>();
+		rightDock.AddPanel(new DockPanel(
+			"Team Chat",
+			"Team Chat",
+			teamChat,
+			GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg")
+		), suppressSave: true);
+		RefreshTeamChatTab();
 	}
 
 	private void RefreshTeamChatTab()

@@ -37,7 +37,7 @@ public partial class StartupSplash : Control
 	[Export] private Button _supportButton = null!;
 	[Export] private ScrollContainer _recentWorldsScroll = null!;
 	[Export] private Label _versionNumber = null!;
-	[Export] private MarginContainer _page = null!;
+	[Export] private Control _page = null!;
 	[Export] private Control _homePage = null!;
 	[Export] private Control _cloudPage = null!;
 
