@@ -26,6 +26,8 @@ public partial class NetworkTransformSync : Instance
 	private const int MaxSnapshotChunkBytes = 1000;
 	private const int SnapshotObjectsPerChunk = 300;
 	private const int SnapshotChunksInFlight = 4;
+	private const int SnapshotChunksPerFrame = 4;
+	private const double SnapshotAckFallbackSeconds = 1.5;
 
 	internal NetworkService NetService = null!;
 	private readonly Dictionary<string, PendingTransform> _pendingTransforms = [];
@@ -41,6 +43,8 @@ public partial class NetworkTransformSync : Instance
 		public byte[][] Chunks { get; } = chunks;
 		public int NextChunkIndex { get; set; }
 		public int AcknowledgedChunkCount { get; set; }
+		public double ElapsedWithoutAck { get; set; }
+		public bool UseLegacyPacing { get; set; }
 	}
 
 	// Pending Transform batch update
@@ -67,7 +71,17 @@ public partial class NetworkTransformSync : Instance
 		if (NetService.IsServer)
 		{
 			foreach (TransformSnapshotSendSession session in _snapshotSendSessions.Values.ToArray())
+			{
+				if (!session.UseLegacyPacing)
+				{
+					session.ElapsedWithoutAck += delta;
+					session.UseLegacyPacing = session.ElapsedWithoutAck >= SnapshotAckFallbackSeconds;
+				}
+
 				SendNextSnapshotChunks(session);
+				if (session.UseLegacyPacing && session.NextChunkIndex >= session.Chunks.Length)
+					_snapshotSendSessions.Remove(session.PeerID);
+			}
 
 			_batchTimer += delta;
 
@@ -115,6 +129,17 @@ public partial class NetworkTransformSync : Instance
 
 	private void SendNextSnapshotChunks(TransformSnapshotSendSession session)
 	{
+		if (session.UseLegacyPacing)
+		{
+			int sent = 0;
+			while (session.NextChunkIndex < session.Chunks.Length && sent++ < SnapshotChunksPerFrame)
+			{
+				int index = session.NextChunkIndex++;
+				RpcId(session.PeerID, nameof(NetRecvTransformSnapshotChunk), session.Chunks[index], index, session.Chunks.Length);
+			}
+			return;
+		}
+
 		while (session.NextChunkIndex < session.Chunks.Length
 			&& session.NextChunkIndex - session.AcknowledgedChunkCount < SnapshotChunksInFlight)
 		{
@@ -130,6 +155,8 @@ public partial class NetworkTransformSync : Instance
 
 		int peerID = RemoteSenderId;
 		if (!_snapshotSendSessions.TryGetValue(peerID, out TransformSnapshotSendSession? session))
+			return;
+		if (session.UseLegacyPacing)
 			return;
 
 		if (chunkIndex < session.AcknowledgedChunkCount)
