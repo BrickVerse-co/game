@@ -1064,16 +1064,31 @@ public sealed partial class NetworkService : Instance
 
 	private void ServerDisconnected()
 	{
+		string phase = GetClientJoinPhase();
 		ClientConnected = false;
 		// wait one frame in case of disconnected due to other reasons
 		Callable.From(() =>
 		{
 			if (!IsDisconnected)
 			{
-				BV.Print("Disconnected from server");
-				DisconnectSelf("Disconnected from server", DisconnectionCodeEnum.Unknown);
+				string reportID = Guid.NewGuid().ToString("N")[..8];
+				string reason = $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
+				BV.PrintErr($"[JoinFailure:{reportID}] Server transport disconnected during {phase}. " +
+					$"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, " +
+					$"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}.");
+				DisconnectSelf(reason, DisconnectionCodeEnum.ConnectionLost);
 			}
 		}).CallDeferred();
+	}
+
+	private string GetClientJoinPhase()
+	{
+		if (!ClientConnected) return "server connection";
+		if (!IsPlaceReplicationDone) return "world replication";
+		if (!IsTransformReplicateDone) return "transform synchronization";
+		if (!IsClientScriptReplicateDone) return "script synchronization";
+		if (!_localPlayerReady) return "player setup";
+		return "game session";
 	}
 
 	private void OnServerStarted()
@@ -1371,7 +1386,8 @@ public sealed partial class NetworkService : Instance
 		AFK,
 		ConnectTimeout,
 		IntegrityFail,
-		NetInstanceFailure
+		NetInstanceFailure,
+		ConnectionLost
 	}
 
 	public enum NetworkModeEnum

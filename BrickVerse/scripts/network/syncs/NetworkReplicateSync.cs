@@ -12,6 +12,7 @@ using BrickVerse.Utils.Compression;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Networking.Synchronizers;
@@ -20,6 +21,7 @@ namespace BrickVerse.Networking.Synchronizers;
 public sealed partial class NetworkReplicateSync : Instance
 {
 	private const int PlaceReplicationChunkSize = 300;
+	private const int MaxPlaceReplicationChunkBytes = 256 * 1024;
 	internal NetworkService NetService = null!;
 
 	// Queue for pending replicate data (waiting for node to spawn)
@@ -30,6 +32,11 @@ public sealed partial class NetworkReplicateSync : Instance
 	public event Action<int, int>? InstanceLoadedProgress;
 	private readonly HashSet<string> _removedRef = [];
 	private readonly HashSet<NetReplicateData> _worldReplicateSet = [];
+	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Index, int Count, int ObjectCount)> _incomingChunks = new();
+	private bool _processingIncomingChunk;
+	private bool _hasProcessedIncomingChunk;
+	private int _placeChunksReceived;
+	private int _placeChunksExpected;
 
 	private static readonly bool _useNetworkLog = false;
 
@@ -55,11 +62,48 @@ public sealed partial class NetworkReplicateSync : Instance
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
-	private async void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate)
+	private void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate, int chunkIndex, int chunkCount, int objectCount)
 	{
-		// Wait frame for all deletion to finish
-		await Globals.Singleton.WaitFrame();
-		await Globals.Singleton.WaitFrame();
+		if (isPlaceReplicate)
+		{
+			_placeChunksExpected = chunkCount;
+			InstanceToBeLoadedCount = objectCount;
+		}
+		_incomingChunks.Enqueue((rawBytes, isPlaceReplicate, chunkIndex, chunkCount, objectCount));
+	}
+
+	private async void ProcessNextIncomingChunk()
+	{
+		if (_processingIncomingChunk || _incomingChunks.Count == 0)
+			return;
+
+		_processingIncomingChunk = true;
+		try
+		{
+			// Defer the first batch for scene cleanup; later chunks are already processed
+			// after the previous batch yielded back to the scene tree.
+			if (!_hasProcessedIncomingChunk)
+			{
+				await Globals.Singleton.WaitFrame();
+				await Globals.Singleton.WaitFrame();
+			}
+			var incoming = _incomingChunks.Dequeue();
+			await ProcessIncomingChunk(incoming.Bytes, incoming.IsPlaceReplication);
+			_hasProcessedIncomingChunk = true;
+			if (incoming.IsPlaceReplication)
+			{
+				_placeChunksReceived++;
+				TryCompletePlaceReplication();
+			}
+		}
+		finally
+		{
+			_processingIncomingChunk = false;
+		}
+	}
+
+	private async Task ProcessIncomingChunk(byte[] rawBytes, bool isPlaceReplicate)
+	{
 
 		NetReplicateData[] netObjsData = SerializeUtils.Deserialize<NetReplicateData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
 		NetReplicateData[][] chunked = ArrayUtils.Chunk(netObjsData, PlaceReplicationChunkSize);
@@ -71,7 +115,6 @@ public sealed partial class NetworkReplicateSync : Instance
 			if (isPlaceReplicate)
 			{
 				_worldReplicateSet.Add(data);
-				InstanceToBeLoadedCount += 1;
 			}
 		}
 
@@ -84,6 +127,7 @@ public sealed partial class NetworkReplicateSync : Instance
 				if (data.ParentNodeID == null)
 				{
 					if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} no parent"); }
+					if (isPlaceReplicate) _worldReplicateSet.Remove(data);
 					CountInstanceLoaded(null);
 					continue;
 				}
@@ -113,6 +157,7 @@ public sealed partial class NetworkReplicateSync : Instance
 					if (removed)
 					{
 						if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} removed"); }
+						if (isPlaceReplicate) _worldReplicateSet.Remove(data);
 						CountInstanceLoaded(null);
 						continue;
 					}
@@ -142,16 +187,46 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	public void SendChunk(NetworkedObject[] netObjs, Player plr, bool isPlaceReplicate = false)
 	{
-		NetService.TransformSync.SendChunk(netObjs, plr);
-		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackNetObjs(netObjs)));
+		NetReplicateData[] packed = PackNetObjs(netObjs);
+		List<NetReplicateData[]> chunks = BuildChunks(packed);
+		for (int i = 0; i < chunks.Count; i++)
+		{
+			byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(chunks[i]));
+			RpcId(plr.PeerID, nameof(NetRecvChunk), rawData, isPlaceReplicate, i, chunks.Count, packed.Length);
+		}
+	}
 
-		RpcId(plr.PeerID, nameof(NetRecvChunk), rawData, isPlaceReplicate);
+	private static List<NetReplicateData[]> BuildChunks(NetReplicateData[] objects)
+	{
+		List<NetReplicateData[]> chunks = [];
+		List<NetReplicateData> current = [];
+		int estimatedBytes = 0;
+
+		foreach (NetReplicateData item in objects)
+		{
+			int itemBytes = SerializeUtils.Serialize(item).Length;
+			if (current.Count > 0 && (current.Count >= PlaceReplicationChunkSize || estimatedBytes + itemBytes > MaxPlaceReplicationChunkBytes))
+			{
+				chunks.Add([.. current]);
+				current.Clear();
+				estimatedBytes = 0;
+			}
+
+			current.Add(item);
+			estimatedBytes += itemBytes;
+		}
+
+		if (current.Count > 0 || chunks.Count == 0)
+			chunks.Add([.. current]);
+
+		return chunks;
 	}
 
 	// Fallsafe for pending replicates
 	public override void Process(double delta)
 	{
 		base.Process(delta);
+		ProcessNextIncomingChunk();
 
 		// Debugging magic key
 		if (Input.IsActionJustPressed("magic"))
@@ -186,7 +261,7 @@ public sealed partial class NetworkReplicateSync : Instance
 
 		//GD.PushWarning("Broadcast chunk ", netObjs.Length);
 
-		Rpc(nameof(NetRecvChunk), rawData, false);
+		Rpc(nameof(NetRecvChunk), rawData, false, 0, 1, netObjs.Length);
 	}
 
 	public static void MarkChunkOverride(NetworkedObject[] netObjs)
@@ -245,8 +320,20 @@ public sealed partial class NetworkReplicateSync : Instance
 
 			if (_worldReplicateSet.Count == 0)
 			{
-				NetService.NetWorldSyncd();
+				TryCompletePlaceReplication();
 			}
+		}
+	}
+
+	private void TryCompletePlaceReplication()
+	{
+		if (_placeChunksExpected > 0
+			&& _placeChunksReceived == _placeChunksExpected
+			&& _incomingChunks.Count == 0
+			&& !_processingIncomingChunk
+			&& _worldReplicateSet.Count == 0)
+		{
+			NetService.NetWorldSyncd();
 		}
 	}
 
