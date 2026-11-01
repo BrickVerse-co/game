@@ -36,8 +36,25 @@ public partial class DisconnectedUI : CanvasLayer
 		_entry.NetworkService.ClientDisconnected += OnClientDisconnected;
 	}
 
+	public override void _ExitTree()
+	{
+		if (GodotObject.IsInstanceValid(_entry))
+		{
+			_entry.NetworkEssentialsReady -= OnNetworkEssentialsReady;
+			_entry.NetworkService.ClientDisconnected -= OnClientDisconnected;
+		}
+	}
+
 	private void OnClientDisconnected(string reason, NetworkService.DisconnectionCodeEnum code)
 	{
+		if (!GodotObject.IsInstanceValid(this)
+			|| !GodotObject.IsInstanceValid(_reasonLabel)
+			|| !GodotObject.IsInstanceValid(_codeLabel)
+			|| !GodotObject.IsInstanceValid(_animPlay))
+		{
+			return;
+		}
+
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 		_reasonLabel.Text = reason;
 		_codeLabel.Text = "Code: " + code;

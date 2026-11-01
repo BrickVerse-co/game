@@ -22,6 +22,7 @@ public sealed partial class NetworkReplicateSync : Instance
 {
 	private const int PlaceReplicationChunkSize = 300;
 	private const int MaxPlaceReplicationChunkBytes = 256 * 1024;
+	private const int MaxInFlightPlaceChunks = 4;
 	internal NetworkService NetService = null!;
 
 	// Queue for pending replicate data (waiting for node to spawn)
@@ -33,10 +34,20 @@ public sealed partial class NetworkReplicateSync : Instance
 	private readonly HashSet<string> _removedRef = [];
 	private readonly HashSet<NetReplicateData> _worldReplicateSet = [];
 	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Index, int Count, int ObjectCount)> _incomingChunks = new();
+	private readonly Dictionary<int, PlaceReplicationSendSession> _placeReplicationSendSessions = [];
 	private bool _processingIncomingChunk;
 	private bool _hasProcessedIncomingChunk;
 	private int _placeChunksReceived;
 	private int _placeChunksExpected;
+
+	private sealed class PlaceReplicationSendSession(int peerID, byte[][] chunks, int objectCount)
+	{
+		public int PeerID { get; } = peerID;
+		public byte[][] Chunks { get; } = chunks;
+		public int ObjectCount { get; } = objectCount;
+		public int NextChunkIndex { get; set; }
+		public int AcknowledgedChunkCount { get; set; }
+	}
 
 	private static readonly bool _useNetworkLog = false;
 
@@ -93,13 +104,15 @@ public sealed partial class NetworkReplicateSync : Instance
 			if (incoming.IsPlaceReplication)
 			{
 				_placeChunksReceived++;
-				TryCompletePlaceReplication();
+				RpcId(1, nameof(NetAckPlaceReplicationChunk), incoming.Index);
 			}
 		}
 		finally
 		{
 			_processingIncomingChunk = false;
 		}
+
+		TryCompletePlaceReplication();
 	}
 
 	private async Task ProcessIncomingChunk(byte[] rawBytes, bool isPlaceReplicate)
@@ -189,11 +202,66 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		NetReplicateData[] packed = PackNetObjs(netObjs);
 		List<NetReplicateData[]> chunks = BuildChunks(packed);
+		byte[][] compressedChunks = new byte[chunks.Count][];
+		long totalBytes = 0;
 		for (int i = 0; i < chunks.Count; i++)
 		{
-			byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(chunks[i]));
-			RpcId(plr.PeerID, nameof(NetRecvChunk), rawData, isPlaceReplicate, i, chunks.Count, packed.Length);
+			compressedChunks[i] = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(chunks[i]));
+			totalBytes += compressedChunks[i].Length;
 		}
+
+		if (!isPlaceReplicate)
+		{
+			for (int i = 0; i < compressedChunks.Length; i++)
+				RpcId(plr.PeerID, nameof(NetRecvChunk), compressedChunks[i], false, i, compressedChunks.Length, packed.Length);
+			return;
+		}
+
+		PlaceReplicationSendSession session = new(plr.PeerID, compressedChunks, packed.Length);
+		_placeReplicationSendSessions[plr.PeerID] = session;
+		BV.Print($"[JoinReplication] Snapshot queued for peer {plr.PeerID}: objects={packed.Length}, chunks={chunks.Count}, compressedBytes={totalBytes}, window={MaxInFlightPlaceChunks}.");
+		SendNextPlaceReplicationChunks(session);
+	}
+
+	private void SendNextPlaceReplicationChunks(PlaceReplicationSendSession session)
+	{
+		while (session.NextChunkIndex < session.Chunks.Length
+			&& session.NextChunkIndex - session.AcknowledgedChunkCount < MaxInFlightPlaceChunks)
+		{
+			int chunkIndex = session.NextChunkIndex++;
+			RpcId(session.PeerID, nameof(NetRecvChunk), session.Chunks[chunkIndex], true, chunkIndex, session.Chunks.Length, session.ObjectCount);
+		}
+	}
+
+	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
+	private void NetAckPlaceReplicationChunk(int chunkIndex)
+	{
+		if (!NetService.IsServer) return;
+
+		int peerID = RemoteSenderId;
+		if (!_placeReplicationSendSessions.TryGetValue(peerID, out PlaceReplicationSendSession? session))
+			return;
+
+		if (chunkIndex != session.AcknowledgedChunkCount)
+		{
+			BV.PrintErr($"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={chunkIndex}, expected={session.AcknowledgedChunkCount}.");
+			return;
+		}
+
+		session.AcknowledgedChunkCount++;
+		if (session.AcknowledgedChunkCount == session.Chunks.Length)
+		{
+			_placeReplicationSendSessions.Remove(peerID);
+			BV.Print($"[JoinReplication] Peer {peerID} acknowledged all {session.Chunks.Length} world chunks.");
+			return;
+		}
+
+		SendNextPlaceReplicationChunks(session);
+	}
+
+	internal void CancelPlaceReplicationSend(int peerID)
+	{
+		_placeReplicationSendSessions.Remove(peerID);
 	}
 
 	private static List<NetReplicateData[]> BuildChunks(NetReplicateData[] objects)
