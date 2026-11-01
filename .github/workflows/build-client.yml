@@ -26,8 +26,18 @@ env:
   REGISTRATION_BRANCH: ${{ github.ref_name == 'beta' && 'beta' || 'main' }}
 
 jobs:
+  build-world-server:
+    name: Build world server image before clients
+    uses: ./.github/workflows/build-world-server.yml
+    with:
+      release_branch: ${{ github.ref_name }}
+    permissions:
+      contents: read
+    secrets: inherit
+
   build-client:
     name: Build Client (${{ matrix.platform }})
+    needs: build-world-server
     runs-on: ${{ matrix.runner }}
     environment: release
     permissions:

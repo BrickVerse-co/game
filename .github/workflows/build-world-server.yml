@@ -2,20 +2,18 @@ name: Build World Server Image
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Build Client
-    types:
-      - completed
-    branches:
-      - main
-      - beta
+  workflow_call:
+    inputs:
+      release_branch:
+        description: Branch whose server image should be published
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-world-server-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  group: build-world-server-${{ inputs.release_branch || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -27,12 +25,11 @@ env:
   EXPORT_PRESET: Server Linux
   ACR_SERVER: brickverse-gshnc4bufnhxgvdu.azurecr.io
   IMAGE_NAME: world-server
-  RELEASE_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+  RELEASE_BRANCH: ${{ inputs.release_branch || github.ref_name }}
 
 jobs:
   build-and-push:
     name: Export and publish Linux world server
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -42,7 +39,7 @@ jobs:
       - name: Checkout BrickVerse
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
           lfs: true
           fetch-depth: 1
           submodules: recursive
