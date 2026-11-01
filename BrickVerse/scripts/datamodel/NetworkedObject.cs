@@ -1896,6 +1896,12 @@ public partial class NetworkedObject : IScriptObject
 		if (this is World)
 			return true;
 
+		// Static datamodel services are constructed independently on client and
+		// server, so their server-assigned network IDs are not guaranteed to match.
+		// Address them by their stable hierarchy path on both peers.
+		if (GetType().IsDefined(typeof(StaticAttribute), inherit: true))
+			return true;
+
 		if (this is Services.NetworkService)
 			return true;
 
