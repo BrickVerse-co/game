@@ -25,7 +25,7 @@ public partial class NetworkTransformSync : Instance
 	private const double BatchInterval = 0.05;
 	private const int MaxSnapshotChunkBytes = 1000;
 	private const int SnapshotObjectsPerChunk = 300;
-	private const int SnapshotChunksPerFrame = 4;
+	private const int SnapshotChunksInFlight = 4;
 
 	internal NetworkService NetService = null!;
 	private readonly Dictionary<string, PendingTransform> _pendingTransforms = [];
@@ -40,6 +40,7 @@ public partial class NetworkTransformSync : Instance
 		public int PeerID { get; } = peerID;
 		public byte[][] Chunks { get; } = chunks;
 		public int NextChunkIndex { get; set; }
+		public int AcknowledgedChunkCount { get; set; }
 	}
 
 	// Pending Transform batch update
@@ -66,11 +67,7 @@ public partial class NetworkTransformSync : Instance
 		if (NetService.IsServer)
 		{
 			foreach (TransformSnapshotSendSession session in _snapshotSendSessions.Values.ToArray())
-			{
 				SendNextSnapshotChunks(session);
-				if (session.NextChunkIndex >= session.Chunks.Length)
-					_snapshotSendSessions.Remove(session.PeerID);
-			}
 
 			_batchTimer += delta;
 
@@ -98,10 +95,8 @@ public partial class NetworkTransformSync : Instance
 		long compressedBytes = chunks.Sum(chunk => (long)chunk.Length);
 		TransformSnapshotSendSession session = new(peerID, [.. chunks]);
 		_snapshotSendSessions[peerID] = session;
-		BV.Print($"[JoinTransform] Snapshot queued for peer {peerID}: transforms={transforms.Length}, chunks={chunks.Count}, compressedBytes={compressedBytes}, pace={SnapshotChunksPerFrame}/frame.");
+		BV.Print($"[JoinTransform] Snapshot queued for peer {peerID}: transforms={transforms.Length}, chunks={chunks.Count}, compressedBytes={compressedBytes}, window={SnapshotChunksInFlight}.");
 		SendNextSnapshotChunks(session);
-		if (session.NextChunkIndex >= session.Chunks.Length)
-			_snapshotSendSessions.Remove(peerID);
 	}
 
 	private static void AppendCompressedChunks(NetBatchTransformData[] transforms, List<byte[]> output)
@@ -120,12 +115,41 @@ public partial class NetworkTransformSync : Instance
 
 	private void SendNextSnapshotChunks(TransformSnapshotSendSession session)
 	{
-		int sent = 0;
-		while (session.NextChunkIndex < session.Chunks.Length && sent++ < SnapshotChunksPerFrame)
+		while (session.NextChunkIndex < session.Chunks.Length
+			&& session.NextChunkIndex - session.AcknowledgedChunkCount < SnapshotChunksInFlight)
 		{
 			int index = session.NextChunkIndex++;
 			RpcId(session.PeerID, nameof(NetRecvTransformSnapshotChunk), session.Chunks[index], index, session.Chunks.Length);
 		}
+	}
+
+	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
+	private void NetAckTransformSnapshotChunk(int chunkIndex)
+	{
+		if (!NetService.IsServer) return;
+
+		int peerID = RemoteSenderId;
+		if (!_snapshotSendSessions.TryGetValue(peerID, out TransformSnapshotSendSession? session))
+			return;
+
+		if (chunkIndex < session.AcknowledgedChunkCount)
+			return;
+
+		if (chunkIndex != session.AcknowledgedChunkCount)
+		{
+			BV.PrintErr($"[JoinTransform] Out-of-order chunk acknowledgement from peer {peerID}: received={chunkIndex}, expected={session.AcknowledgedChunkCount}.");
+			return;
+		}
+
+		session.AcknowledgedChunkCount++;
+		if (session.AcknowledgedChunkCount == session.Chunks.Length)
+		{
+			_snapshotSendSessions.Remove(peerID);
+			BV.Print($"[JoinTransform] Peer {peerID} acknowledged all {session.Chunks.Length} transform chunks.");
+			return;
+		}
+
+		SendNextSnapshotChunks(session);
 	}
 
 	internal void CancelTransformSnapshotSend(int peerID)
@@ -183,7 +207,16 @@ public partial class NetworkTransformSync : Instance
 		if (_snapshotChunksExpected == 0)
 			_snapshotChunksExpected = chunkCount;
 
-		if (chunkCount != _snapshotChunksExpected || chunkIndex != _snapshotChunksReceived)
+		if (chunkCount != _snapshotChunksExpected)
+			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
+
+		if (chunkIndex < _snapshotChunksReceived)
+		{
+			RpcId(1, nameof(NetAckTransformSnapshotChunk), chunkIndex);
+			return;
+		}
+
+		if (chunkIndex != _snapshotChunksReceived)
 			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
 
 		NetBatchTransformData[] transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
@@ -194,6 +227,7 @@ public partial class NetworkTransformSync : Instance
 		}
 
 		_snapshotChunksReceived++;
+		RpcId(1, nameof(NetAckTransformSnapshotChunk), chunkIndex);
 		if (_snapshotChunksReceived == _snapshotChunksExpected)
 			NetService.NetTransformSyncd();
 	}
