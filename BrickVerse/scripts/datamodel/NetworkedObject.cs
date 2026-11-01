@@ -1391,7 +1391,10 @@ public partial class NetworkedObject : IScriptObject
 			NetworkedObject netObj = existingObj;
 
 			// Decline any packet with a sequence number older or equal to the latest applied.
-			if (data.Sequence <= netObj.AppliedSequence)
+			// A one-time world snapshot must initialize a locally pre-created object
+			// even when both sides are at sequence 0. The stale-sequence guard applies
+			// only to later incremental updates.
+			if (!data.IsSyncOnce && data.Sequence <= netObj.AppliedSequence)
 				return;
 
 			netObj.Root = Root;
@@ -1894,6 +1897,12 @@ public partial class NetworkedObject : IScriptObject
 	private bool ShouldUseNetworkPathForRpc()
 	{
 		if (this is World)
+			return true;
+
+		// Static datamodel services are constructed independently on client and
+		// server, so their server-assigned network IDs are not guaranteed to match.
+		// Address them by their stable hierarchy path on both peers.
+		if (GetType().IsDefined(typeof(StaticAttribute), inherit: true))
 			return true;
 
 		if (this is Services.NetworkService)

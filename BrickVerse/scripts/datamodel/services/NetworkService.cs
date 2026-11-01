@@ -111,6 +111,7 @@ public sealed partial class NetworkService : Instance
 	private bool _heartbeatInFlight;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private readonly ConcurrentDictionary<int, string> _peerJoinTokens = new();
+	private readonly ConcurrentDictionary<int, string> _peerJoinStages = new();
 	private ulong _lastActivityReportTime;
 	private bool _localPlayerReady;
 	private bool _localPlayerRequestInFlight;
@@ -469,7 +470,7 @@ public sealed partial class NetworkService : Instance
 		}
 		catch (Exception ex)
 		{
-			_ = ex;
+			BV.PrintErr($"Invalid network packet from peer {fromPeer}, bytes={data.Length}: {ex}");
 #if DEBUG
 			if (OS.IsDebugBuild())
 			{
@@ -599,9 +600,10 @@ public sealed partial class NetworkService : Instance
 			if (
 				_heartbeatCount > HeartbeatBeforeCheckPlayers
 				&& Root.Players.AbsolutePlayersCount <= 0
+				&& (NetInstance?.PeerIds.Count ?? 0) == 0
 			)
 			{
-				BV.Print("No players, shutting down");
+				BV.Print("No players or active peers, shutting down");
 				ShutdownServer();
 			}
 		}
@@ -652,6 +654,7 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerConnected(int peerID)
 	{
+		_peerJoinStages[peerID] = "authentication";
 		_peerLastActivity[peerID] = Time.GetTicksMsec();
 
 		lock (_rateLimiterLock)
@@ -671,6 +674,15 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerDisconnected(int peerID)
 	{
+		string stage = _peerJoinStages.TryGetValue(peerID, out string? joinStage) ? joinStage : "unknown";
+		Player? disconnectedPlayer = _players.GetPlayerFromPeerID(peerID);
+		BV.PrintErr(
+			$"[JoinFailure] Peer {peerID} disconnected during {stage}. " +
+			$"PlayerReady={disconnectedPlayer?.IsReady ?? false}, " +
+			$"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}.");
+		ReplicateSync.CancelPlaceReplicationSend(peerID);
+		TransformSync.CancelTransformSnapshotSend(peerID);
+		_peerJoinStages.TryRemove(peerID, out _);
 		ActivePeerIDs.Remove(peerID);
 		_peerLastActivity.TryRemove(peerID, out _);
 		lock (_rateLimiterLock)
@@ -836,6 +848,7 @@ public sealed partial class NetworkService : Instance
 			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, " +
 			$"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
 		);
+		_peerJoinStages[peerID] = "authentication validation";
 
 		if (peerID <= 1)
 		{
@@ -1015,12 +1028,16 @@ public sealed partial class NetworkService : Instance
 
 		try
 		{
-			BV.Print("Auth: invoking PeerPreInit...");
-			PeerPreInit?.Invoke(peerID);
-
 			BV.Print("Auth: starting SyncPlaceToPlayer...");
+			_peerJoinStages[peerID] = "world replication";
 			ReplicateSync.SyncPlaceToPlayer(plr);
 			BV.Print("Auth: SyncPlaceToPlayer returned.");
+
+			// These callbacks send RPCs to world objects (for example Animator).
+			// Queue them after the initial snapshot so the client has those targets
+			// registered before it processes their initialization RPCs.
+			BV.Print("Auth: invoking PeerPreInit...");
+			PeerPreInit?.Invoke(peerID);
 		}
 		catch (Exception ex)
 		{
@@ -1060,16 +1077,44 @@ public sealed partial class NetworkService : Instance
 
 	private void ServerDisconnected()
 	{
+		string phase = GetClientJoinPhase();
 		ClientConnected = false;
 		// wait one frame in case of disconnected due to other reasons
 		Callable.From(() =>
 		{
 			if (!IsDisconnected)
 			{
-				BV.Print("Disconnected from server");
-				DisconnectSelf("Disconnected from server", DisconnectionCodeEnum.Unknown);
+				string reportID = Guid.NewGuid().ToString("N")[..8];
+				bool worldTransferFailed = phase == "world replication";
+				bool transformTransferFailed = phase == "transform synchronization";
+				string reason = worldTransferFailed
+					? $"World data stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+					: transformTransferFailed
+						? $"World positions stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+						: $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
+				BV.PrintErr($"[JoinFailure:{reportID}] Server transport disconnected during {phase}. " +
+					$"PlaceChunks={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected}, " +
+					$"TransformChunks={TransformSync.SnapshotChunksReceived}/{TransformSync.SnapshotChunksExpected}, " +
+					$"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, " +
+					$"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}.");
+				DisconnectionCodeEnum code = worldTransferFailed
+					? DisconnectionCodeEnum.WorldDataTransferInterrupted
+					: transformTransferFailed
+						? DisconnectionCodeEnum.TransformSynchronizationInterrupted
+						: DisconnectionCodeEnum.ConnectionLost;
+				DisconnectSelf(reason, code);
 			}
 		}).CallDeferred();
+	}
+
+	private string GetClientJoinPhase()
+	{
+		if (!ClientConnected) return "server connection";
+		if (!IsPlaceReplicationDone) return "world replication";
+		if (!IsTransformReplicateDone) return "transform synchronization";
+		if (!IsClientScriptReplicateDone) return "script synchronization";
+		if (!_localPlayerReady) return "player setup";
+		return "game session";
 	}
 
 	private void OnServerStarted()
@@ -1173,12 +1218,14 @@ public sealed partial class NetworkService : Instance
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllTransform()
 	{
+		if (IsServer) _peerJoinStages[RemoteSenderId] = "transform synchronization";
 		TransformSync.SyncAllTransformToPeer(RemoteSenderId);
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllScripts()
 	{
+		if (IsServer) _peerJoinStages[RemoteSenderId] = "script synchronization";
 		ScriptSync.SyncScriptsToPeer(RemoteSenderId);
 	}
 
@@ -1235,6 +1282,7 @@ public sealed partial class NetworkService : Instance
 	private void NetPlayerReportReady()
 	{
 		int peerID = RemoteSenderId;
+		if (IsServer) _peerJoinStages[peerID] = "player setup";
 		Player? plr = Root.Players.GetPlayerFromPeerID(peerID);
 
 		if (plr != null && !plr.IsReady)
@@ -1367,7 +1415,10 @@ public sealed partial class NetworkService : Instance
 		AFK,
 		ConnectTimeout,
 		IntegrityFail,
-		NetInstanceFailure
+		NetInstanceFailure,
+		ConnectionLost,
+		WorldDataTransferInterrupted,
+		TransformSynchronizationInterrupted
 	}
 
 	public enum NetworkModeEnum
