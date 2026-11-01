@@ -27,11 +27,13 @@ public partial class NetworkTransformSync : Instance
 	private const int SnapshotObjectsPerChunk = 300;
 	private const int SnapshotChunksInFlight = 4;
 	private const int SnapshotChunksPerFrame = 4;
+	private const int IncomingSnapshotChunksPerFrame = 1;
 	private const double SnapshotAckFallbackSeconds = 1.5;
 
 	internal NetworkService NetService = null!;
 	private readonly Dictionary<string, PendingTransform> _pendingTransforms = [];
 	private readonly Dictionary<int, TransformSnapshotSendSession> _snapshotSendSessions = [];
+	private readonly Queue<(byte[] Bytes, int Index, int Count)> _incomingSnapshotChunks = new();
 	private int _snapshotChunksExpected;
 	private int _snapshotChunksReceived;
 	internal int SnapshotChunksExpected => _snapshotChunksExpected;
@@ -92,6 +94,10 @@ public partial class NetworkTransformSync : Instance
 				_pendingBatchUpdate.Clear();
 				_batchTimer = 0.0;
 			}
+		}
+		else
+		{
+			ProcessIncomingSnapshotChunks();
 		}
 	}
 
@@ -237,72 +243,86 @@ public partial class NetworkTransformSync : Instance
 		if (chunkCount != _snapshotChunksExpected)
 			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
 
-		if (chunkIndex < _snapshotChunksReceived)
+		int nextQueuedChunk = _snapshotChunksReceived + _incomingSnapshotChunks.Count;
+		if (chunkIndex < nextQueuedChunk)
 		{
-			RpcId(1, nameof(NetAckTransformSnapshotChunk), chunkIndex);
+			if (chunkIndex < _snapshotChunksReceived)
+				RpcId(1, nameof(NetAckTransformSnapshotChunk), chunkIndex);
 			return;
 		}
 
-		if (chunkIndex != _snapshotChunksReceived)
-			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
+		if (chunkIndex != nextQueuedChunk)
+			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {nextQueuedChunk}/{_snapshotChunksExpected}.");
 
-		NetBatchTransformData[] transforms;
-		try
-		{
-			transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
-				ZstdCompressionUtils.Decompress(rawBytes)
-			) ?? throw new NetworkException("Decoded transform chunk was empty.");
-		}
-		catch (Exception ex)
-		{
-			BV.PrintErr(
-				$"[JoinTransform] Could not decode chunk {chunkIndex + 1}/{chunkCount}; "
-					+ $"continuing join and skipping its transforms. {ex.GetType().Name}: {ex.Message}"
-			);
-			CompleteTransformSnapshotChunk(chunkIndex);
-			return;
-		}
+		// Queue reliable snapshot data so a large world cannot monopolize the
+		// Godot main thread while every transform is applied in one RPC drain.
+		_incomingSnapshotChunks.Enqueue((rawBytes, chunkIndex, chunkCount));
+	}
 
-		int skippedTransforms = 0;
-		string? firstSkippedNetId = null;
-		string? firstSkippedReason = null;
-		foreach (NetBatchTransformData item in transforms)
+	private void ProcessIncomingSnapshotChunks()
+	{
+		for (int processed = 0; processed < IncomingSnapshotChunksPerFrame && _incomingSnapshotChunks.Count > 0; processed++)
 		{
+			(byte[] rawBytes, int chunkIndex, int chunkCount) = _incomingSnapshotChunks.Dequeue();
+
+			NetBatchTransformData[] transforms;
 			try
 			{
-				if (string.IsNullOrWhiteSpace(item.NetID))
-					throw new NetworkException("Transform entry has no network ID.");
-				if (_pendingTransforms.ContainsKey(item.NetID))
-					continue;
-				if (item.Value is not { Length: 16 })
-					throw new NetworkException("Transform payload must contain 16 bytes.");
-
-				RecvUpdateTransformHandler(
-					item.NetID,
-					TransformPayloadDto.FromArray(item.Value),
-					1,
-					true,
-					false
-				);
+				transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
+					ZstdCompressionUtils.Decompress(rawBytes)
+				) ?? throw new NetworkException("Decoded transform chunk was empty.");
 			}
 			catch (Exception ex)
 			{
-				skippedTransforms++;
-				firstSkippedNetId ??= item.NetID;
-				firstSkippedReason ??= $"{ex.GetType().Name}: {ex.Message}";
+				BV.PrintErr(
+					$"[JoinTransform] Could not decode chunk {chunkIndex + 1}/{chunkCount}; "
+						+ $"continuing join and skipping its transforms. {ex.GetType().Name}: {ex.Message}"
+				);
+				CompleteTransformSnapshotChunk(chunkIndex);
+				continue;
 			}
-		}
 
-		if (skippedTransforms > 0)
-		{
-			BV.PrintErr(
-				$"[JoinTransform] Skipped {skippedTransforms} invalid transform(s) in chunk "
-					+ $"{chunkIndex + 1}/{chunkCount}; first object={firstSkippedNetId ?? "<unknown>"}. "
-					+ firstSkippedReason
-			);
-		}
+			int skippedTransforms = 0;
+			string? firstSkippedNetId = null;
+			string? firstSkippedReason = null;
+			foreach (NetBatchTransformData item in transforms)
+			{
+				try
+				{
+					if (string.IsNullOrWhiteSpace(item.NetID))
+						throw new NetworkException("Transform entry has no network ID.");
+					if (_pendingTransforms.ContainsKey(item.NetID))
+						continue;
+					if (item.Value is not { Length: 16 })
+						throw new NetworkException("Transform payload must contain 16 bytes.");
 
-		CompleteTransformSnapshotChunk(chunkIndex);
+					RecvUpdateTransformHandler(
+						item.NetID,
+						TransformPayloadDto.FromArray(item.Value),
+						1,
+						true,
+						false
+					);
+				}
+				catch (Exception ex)
+				{
+					skippedTransforms++;
+					firstSkippedNetId ??= item.NetID;
+					firstSkippedReason ??= $"{ex.GetType().Name}: {ex.Message}";
+				}
+			}
+
+			if (skippedTransforms > 0)
+			{
+				BV.PrintErr(
+					$"[JoinTransform] Skipped {skippedTransforms} invalid transform(s) in chunk "
+						+ $"{chunkIndex + 1}/{chunkCount}; first object={firstSkippedNetId ?? "<unknown>"}. "
+						+ firstSkippedReason
+				);
+			}
+
+			CompleteTransformSnapshotChunk(chunkIndex);
+		}
 	}
 
 	private void CompleteTransformSnapshotChunk(int chunkIndex)
