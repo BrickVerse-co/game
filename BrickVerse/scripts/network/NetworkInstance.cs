@@ -33,6 +33,7 @@ public class NetworkInstance
 	private readonly ENetConnection _peer;
 
 	private readonly ConcurrentQueue<Action> _actionQueue = new();
+	private Task? _networkLoopTask;
 	internal readonly ConcurrentDictionary<int, ENetPacketPeer> IdToPeer = [];
 	internal readonly ConcurrentDictionary<ENetPacketPeer, int> PeerToId = [];
 
@@ -52,7 +53,7 @@ public class NetworkInstance
 
 	public bool IsSilence { get; private set; } = false;
 	public bool IsServer { get; private set; } = false;
-	private bool _shutdownd = false;
+	private volatile bool _shutdownd = false;
 
 	public NetworkInstance()
 	{
@@ -103,7 +104,7 @@ public class NetworkInstance
 
 	private void PostPeerCreate()
 	{
-		_ = Task.Run(NetworkLoop);
+		_networkLoopTask = Task.Run(NetworkLoop);
 	}
 
 	internal bool VerifyDataServerToken(int peerID, string token)
@@ -172,6 +173,16 @@ public class NetworkInstance
 	{
 		if (_shutdownd) return;
 		_shutdownd = true;
+		// ENetConnection is not safe to destroy while Service/Flush is running.
+		// Let the worker observe shutdown and exit before touching the peer here.
+		try
+		{
+			_networkLoopTask?.GetAwaiter().GetResult();
+		}
+		catch (Exception ex)
+		{
+			GD.PushError("Network loop failed during shutdown: ", ex);
+		}
 		foreach ((_, ENetPacketPeer pk) in IdToPeer)
 		{
 			pk.PeerDisconnect();

@@ -23,6 +23,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	private const int MaxPlaceReplicationChunkBytes = 256 * 1024;
 	private const int MaxCompressedPlaceChunkBytes = 1000;
 	private const int PlaceChunksPerFrame = 4;
+	private const ulong PlaceReplicationTimeoutMs = 90_000;
 	internal NetworkService NetService = null!;
 
 	// Queue for pending replicate data (waiting for node to spawn)
@@ -39,6 +40,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	private bool _hasProcessedIncomingChunk;
 	private int _placeChunksReceived;
 	private int _placeChunksExpected;
+	private ulong _placeReplicationStartedAtMsec;
 	internal int PlaceChunksReceived => _placeChunksReceived;
 	internal int PlaceChunksExpected => _placeChunksExpected;
 
@@ -79,6 +81,8 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		if (isPlaceReplicate)
 		{
+			if (_placeReplicationStartedAtMsec == 0)
+				_placeReplicationStartedAtMsec = Time.GetTicksMsec();
 			_placeChunksExpected = chunkCount;
 			InstanceToBeLoadedCount = objectCount;
 		}
@@ -147,6 +151,13 @@ public sealed partial class NetworkReplicateSync : Instance
 			foreach (NetReplicateData data in chunk)
 			{
 				if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] on the way {data.NodePath}"); }
+				if (isPlaceReplicate && Root.NetworkObjects.ContainsKey(data.NetworkID))
+				{
+					// Existing local objects are already materialized, but still count
+					// toward the server snapshot total or the loading screen never ends.
+					CountInstanceLoaded(null);
+					continue;
+				}
 
 				if (data.ParentNodeID == null)
 				{
@@ -327,6 +338,7 @@ public sealed partial class NetworkReplicateSync : Instance
 				SendNextPlaceReplicationChunks(session);
 		}
 		ProcessNextIncomingChunk();
+		CheckPlaceReplicationTimeout();
 
 		// Debugging magic key
 		if (Input.IsActionJustPressed("magic"))
@@ -351,6 +363,23 @@ public sealed partial class NetworkReplicateSync : Instance
 				CheckLeftoverReplication(node);
 			}
 		}
+	}
+
+	private void CheckPlaceReplicationTimeout()
+	{
+		if (_placeReplicationStartedAtMsec == 0 || NetService.IsPlaceReplicationDone)
+			return;
+
+		if (Time.GetTicksMsec() - _placeReplicationStartedAtMsec < PlaceReplicationTimeoutMs)
+			return;
+
+		string reportID = Guid.NewGuid().ToString("N")[..8];
+		BV.PrintErr($"[JoinFailure:{reportID}] World replication timed out after {PlaceReplicationTimeoutMs / 1000}s: " +
+			$"chunks={_placeChunksReceived}/{_placeChunksExpected}, loaded={InstanceLoadedCount - 1}/{InstanceToBeLoadedCount}, " +
+			$"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}.");
+		NetService.DisconnectSelf(
+			$"World loading timed out while applying server data. Please retry. If this keeps happening, share report ID {reportID} with support.",
+			DisconnectionCodeEnum.ConnectionTimeout);
 	}
 
 	public void BroadcastChunk(NetworkedObject[] netObjs)
