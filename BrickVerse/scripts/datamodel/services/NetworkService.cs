@@ -470,7 +470,7 @@ public sealed partial class NetworkService : Instance
 		}
 		catch (Exception ex)
 		{
-			_ = ex;
+			BV.PrintErr($"Invalid network packet from peer {fromPeer}, bytes={data.Length}: {ex}");
 #if DEBUG
 			if (OS.IsDebugBuild())
 			{
@@ -1084,11 +1084,15 @@ public sealed partial class NetworkService : Instance
 			if (!IsDisconnected)
 			{
 				string reportID = Guid.NewGuid().ToString("N")[..8];
-				string reason = $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
+				bool worldTransferFailed = phase == "world replication";
+				string reason = worldTransferFailed
+					? $"World data stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+					: $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
 				BV.PrintErr($"[JoinFailure:{reportID}] Server transport disconnected during {phase}. " +
+					$"PlaceChunks={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected}, " +
 					$"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, " +
 					$"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}.");
-				DisconnectSelf(reason, DisconnectionCodeEnum.ConnectionLost);
+				DisconnectSelf(reason, worldTransferFailed ? DisconnectionCodeEnum.WorldDataTransferInterrupted : DisconnectionCodeEnum.ConnectionLost);
 			}
 		}).CallDeferred();
 	}
@@ -1402,7 +1406,8 @@ public sealed partial class NetworkService : Instance
 		ConnectTimeout,
 		IntegrityFail,
 		NetInstanceFailure,
-		ConnectionLost
+		ConnectionLost,
+		WorldDataTransferInterrupted
 	}
 
 	public enum NetworkModeEnum
