@@ -2,7 +2,11 @@ name: Build World Server Image
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows:
+      - Build Client
+    types:
+      - completed
     branches:
       - main
       - beta
@@ -11,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-world-server-${{ github.ref }}
+  group: build-world-server-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -23,10 +27,12 @@ env:
   EXPORT_PRESET: Server Linux
   ACR_SERVER: brickverse-gshnc4bufnhxgvdu.azurecr.io
   IMAGE_NAME: world-server
+  RELEASE_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
 
 jobs:
   build-and-push:
     name: Export and publish Linux world server
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -36,6 +42,7 @@ jobs:
       - name: Checkout BrickVerse
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           lfs: true
           fetch-depth: 1
           submodules: recursive
@@ -150,9 +157,9 @@ jobs:
         with:
           images: ${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=beta,enable=${{ github.ref == 'refs/heads/beta' }}
-            type=raw,value=${{ github.ref_name }}-${{ github.run_number }}
+            type=raw,value=latest,enable=${{ env.RELEASE_BRANCH == 'main' }}
+            type=raw,value=beta,enable=${{ env.RELEASE_BRANCH == 'beta' }}
+            type=raw,value=${{ env.RELEASE_BRANCH }}-${{ github.run_number }}
 
       - name: Build and push world server image
         uses: docker/build-push-action@v6
@@ -169,7 +176,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          IMAGE="${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.run_number }}"
+          IMAGE="${{ env.ACR_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.RELEASE_BRANCH }}-${{ github.run_number }}"
           docker buildx imagetools inspect "$IMAGE"
           docker pull "$IMAGE"
           docker run --rm "$IMAGE" --version
