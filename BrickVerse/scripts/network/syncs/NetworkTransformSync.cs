@@ -68,12 +68,6 @@ public partial class NetworkTransformSync : Instance
 		RpcId(peerID, nameof(NetRecvChunk), rawData, true);
 	}
 
-	public void SendChunk(NetworkedObject[] netObjs, Player plr)
-	{
-		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(netObjs)));
-		RpcId(plr.PeerID, nameof(NetRecvChunk), rawData, false);
-	}
-
 	public void BroadcastChunk(NetworkedObject[] netObjs)
 	{
 		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(netObjs)));
