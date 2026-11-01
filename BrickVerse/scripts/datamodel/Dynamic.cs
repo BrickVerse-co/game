@@ -106,6 +106,24 @@ public partial class Dynamic : Instance
 		}
 	}
 
+	/// <summary>World-space transforms; setting it preserves Size.</summary>
+	[ScriptProperty, CloneIgnore, NoSync, SaveIgnore]
+	public Transform3D CFrame
+	{
+		get => new(GetGlobalTransform().Basis.Orthonormalized(), GetGlobalPosition());
+		set
+		{
+			if (!value.IsFinite()) throw new ArgumentException("CFrame must contain finite values.", nameof(value));
+			Transform3D next = new(value.Basis.Orthonormalized().Scaled(NodeSize), value.Origin);
+			GrantServerMovementGrace(next.Origin, GetGlobalPosition());
+			SetGlobalTransform(next);
+			if (AutoUpdateNetTransform) UpdateNetTransformReliable();
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(Position), false);
+			OnPropertyChanged(nameof(Rotation), false);
+		}
+	}
+
 	[Editable, ScriptProperty, NoSync, CloneIgnore, SaveIgnore]
 	public Vector3 Rotation
 	{

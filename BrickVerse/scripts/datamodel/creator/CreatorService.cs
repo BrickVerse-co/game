@@ -723,6 +723,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		if (World.Current == null) { CreatorService.Interface.StatusBar?.SetStatus("No current game opened, did not save"); return; }
 		if (CurrentSession == null) { CreatorService.Interface.StatusBar?.SetStatus("No session, did not save"); return; }
+		Tabs.Singleton?.SaveEditorsForSession(CurrentSession);
 		string placePath = CurrentSession.GlobalizePath(
 			World.Current.IsPrefabEditor ? World.Current.PrefabFilePath! : World.Current.WorldFilePath!);
 		var start = Time.GetTicksUsec();
@@ -734,7 +735,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 
 		try
 		{
-			CompileProjectScripts(World.Current);
+			CompileScriptsForBuild(World.Current);
 			if (World.Current.IsPrefabEditor && World.Current.PrefabRoot != null)
 				CurrentSession.SaveModel(World.Current.PrefabRoot, World.Current.PrefabFilePath!);
 			else
@@ -755,13 +756,29 @@ public sealed partial class CreatorService : Node, IScriptObject
 		Interface.LoadOverlay?.Hide();
 	}
 
-	private static void CompileProjectScripts(World root)
+	internal static void CompileScriptsForBuild(Instance container, Script? excludedScript = null)
 	{
 		Interface.LoadOverlay?.SetStatus("Compiling scripts...");
-		foreach (Script script in root.GetDescendants().OfType<Script>())
+		World root = container.Root;
+		IEnumerable<Script> scripts = container is Script ownScript
+			? [ownScript, .. container.GetDescendants().OfType<Script>()]
+			: container.GetDescendants().OfType<Script>();
+		foreach (Script script in scripts)
 		{
-			if (string.IsNullOrWhiteSpace(script.Source)) continue;
-			script.Bytecode = null;
+			if (ReferenceEquals(script, excludedScript)) continue;
+			if (script.LinkedScript != null && script.LinkedScript.ReadFile() == null)
+			{
+				string missingPath = script.LinkedScript.LinkedPath ?? script.LinkedScript.LinkedID;
+				throw new FileNotFoundException($"Could not compile '{script.Name}': linked source file '{missingPath}' is missing.");
+			}
+			string sourceText = script.Source;
+			if (string.IsNullOrWhiteSpace(sourceText))
+			{
+				script.ClearCompiledArtifact();
+				continue;
+			}
+			if (script.HasCurrentCompiledArtifact(sourceText)) continue;
+			script.ClearCompiledArtifact();
 			try
 			{
 				root.ScriptService.CompileScript(script);
@@ -807,7 +824,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 					return;
 				}
 
-				CompileProjectScripts(World.Current);
+				CompileScriptsForBuild(World.Current);
 				PolyFormat.SaveWorldToFile(World.Current, path);
 				CurrentSession.RescanFolder();
 			}
@@ -822,6 +839,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 	public static async void PackCurrentProject()
 	{
 		if (World.Current == null) { BV.Print("No current game opened, did not save"); return; }
+		SaveCurrentFile();
 		string? exportPath = ProjectSettings.GlobalizePath("res://test.packed");
 
 		await PackedFormat.PackProjectToFile(World.Current.LinkedSession.ProjectFolderPath, exportPath);

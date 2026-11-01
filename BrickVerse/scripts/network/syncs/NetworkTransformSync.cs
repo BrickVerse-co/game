@@ -24,6 +24,9 @@ public partial class NetworkTransformSync : Instance
 {
 	private const double BatchInterval = 0.05;
 	private const int MaxSnapshotChunkBytes = 1000;
+	private const int MaxCompressedTransformBytes = 256 * 1024;
+	private const int MaxDecompressedTransformBytes = 8 * 1024 * 1024;
+	private const int MaxDecompressedSnapshotChunkBytes = 512 * 1024;
 	private const int SnapshotObjectsPerChunk = 300;
 	private const int SnapshotChunksInFlight = 4;
 	private const int SnapshotChunksPerFrame = 4;
@@ -216,7 +219,9 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvChunk(byte[] rawBytes, bool isFirstInit)
 	{
-		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
+		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
+			throw new NetworkException("Invalid compressed transform batch size.");
+		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedTransformBytes))!;
 
 		foreach (NetBatchTransformData item in netObjsData)
 		{
@@ -234,6 +239,8 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvTransformSnapshotChunk(byte[] rawBytes, int chunkIndex, int chunkCount)
 	{
+		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
+			throw new NetworkException("Invalid compressed transform snapshot size.");
 		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount)
 			throw new NetworkException($"Invalid transform snapshot chunk {chunkIndex}/{chunkCount}.");
 
@@ -269,7 +276,7 @@ public partial class NetworkTransformSync : Instance
 			try
 			{
 				transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
-					ZstdCompressionUtils.Decompress(rawBytes)
+					ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedSnapshotChunkBytes)
 				) ?? throw new NetworkException("Decoded transform chunk was empty.");
 			}
 			catch (Exception ex)
@@ -585,7 +592,8 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.UnreliableOrdered)]
 	private void RecvBatchedTransforms(byte[] transformsRaw, bool isReliable)
 	{
-		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(ZstdCompressionUtils.Decompress(transformsRaw));
+		if (transformsRaw is not { Length: > 0 } || transformsRaw.Length > MaxCompressedTransformBytes) return;
+		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(ZstdCompressionUtils.Decompress(transformsRaw, MaxDecompressedTransformBytes));
 		if (transforms == null) return;
 		foreach (var data in transforms)
 		{

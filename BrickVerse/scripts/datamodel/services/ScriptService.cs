@@ -136,10 +136,15 @@ public sealed partial class ScriptService : Instance
 			throw new Exception(script.ChosenLanguage + " is not provided");
 		}
 
-		if (string.IsNullOrWhiteSpace(script.Source))
+		string source = script.Source;
+		if (string.IsNullOrWhiteSpace(source))
+		{
+			script.ClearCompiledArtifact();
 			return;
+		}
 
-		script.Bytecode = provider.CompileSource(script.Source);
+		script.Bytecode = provider.CompileSource(source);
+		script.RecordCompiledArtifact(source);
 	}
 
 	private static void EnsurePlatformSupport(ScriptLanguagesEnum language)

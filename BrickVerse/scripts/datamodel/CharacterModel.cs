@@ -7,6 +7,7 @@ using BrickVerse.Datamodel.Services;
 using BrickVerse.Networking;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace BrickVerse.Datamodel;
@@ -180,7 +181,8 @@ public partial class CharacterModel : Dynamic
 	[ScriptMethod]
 	public virtual Dynamic GetAttachment(CharacterAttachmentEnum attachmentEnum)
 	{
-		throw new NotImplementedException();
+		return GetDescendants().OfType<Dynamic>()
+			.FirstOrDefault(child => child.Name == attachmentEnum.ToString()) ?? this;
 	}
 
 	public virtual void ApplyCameraModifier(Camera camera) { }

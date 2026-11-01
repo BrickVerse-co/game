@@ -26,6 +26,10 @@ namespace BrickVerse.Networking.Synchronizers;
 public sealed partial class NetworkPropSync : Instance
 {
 	private const double BatchInterval = 0.05;
+	private const int MaxSerializedPropBytes = 256 * 1024;
+	private const int MaxPropBatchBytes = 2 * 1024 * 1024;
+	private const int MaxPendingPropObjects = 4096;
+	private const int MaxPendingPropsPerObject = 1024;
 
 	internal NetworkService NetService = null!;
 
@@ -474,6 +478,12 @@ public sealed partial class NetworkPropSync : Instance
 		bool isUnreliable
 	)
 	{
+		if (propValueRaw == null || propValueRaw.Length > MaxSerializedPropBytes)
+		{
+			BV.PrintErr($"Rejected oversized property update from peer {peerID}.");
+			return;
+		}
+
 		NetworkedObject? netObj = NetService.Root.GetNetObjectFromID(netID);
 
 		if (netObj != null)
@@ -539,6 +549,12 @@ public sealed partial class NetworkPropSync : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable, TransferChannel = 1)]
 	private void NetRecvPropUpdateBatch(string netID, byte[] propDataRaw)
 	{
+		if (propDataRaw == null || propDataRaw.Length > MaxPropBatchBytes)
+		{
+			BV.PrintErr("Rejected oversized property batch for ", netID);
+			return;
+		}
+
 		NetPropReplicateData[] propReplicates;
 
 		try
@@ -564,14 +580,31 @@ public sealed partial class NetworkPropSync : Instance
 		}
 		else
 		{
-			// Queue the batch until netObj exists
-			if (!_pendingProps.TryGetValue(netID, out List<NetPropReplicateData>? value))
-			{
-				value = [];
-				_pendingProps[netID] = value;
-			}
+			QueuePendingProps(netID, propReplicates);
+		}
+	}
 
-			value.AddRange(propReplicates);
+	private void QueuePendingProps(string netID, IEnumerable<NetPropReplicateData> props)
+	{
+		if (!_pendingProps.TryGetValue(netID, out List<NetPropReplicateData>? pending))
+		{
+			if (_pendingProps.Count >= MaxPendingPropObjects)
+			{
+				BV.PrintErr("Pending property object limit reached; dropping updates for ", netID);
+				return;
+			}
+			pending = [];
+			_pendingProps[netID] = pending;
+		}
+
+		foreach (NetPropReplicateData prop in props)
+		{
+			if (pending.Count >= MaxPendingPropsPerObject)
+			{
+				BV.PrintErr("Pending property limit reached for ", netID);
+				break;
+			}
+			if (prop.ValueRaw is { Length: <= MaxSerializedPropBytes }) pending.Add(prop);
 		}
 	}
 
@@ -688,7 +721,17 @@ public sealed partial class NetworkPropSync : Instance
 
 	private void NetRecvBatchedProps(byte[] propsRaw)
 	{
-		var objects = SerializeUtils.Deserialize<BatchPropObjectData[]>(propsRaw);
+		if (propsRaw == null || propsRaw.Length > MaxPropBatchBytes) return;
+		BatchPropObjectData[]? objects;
+		try
+		{
+			objects = SerializeUtils.Deserialize<BatchPropObjectData[]>(propsRaw);
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr("Failed to deserialize property broadcast: ", ex);
+			return;
+		}
 		if (objects == null)
 			return;
 
@@ -699,13 +742,8 @@ public sealed partial class NetworkPropSync : Instance
 			if (netObj == null)
 			{
 				// Queue for later
-				if (!_pendingProps.TryGetValue(obj.NetID, out List<NetPropReplicateData>? pending))
-				{
-					pending = [];
-					_pendingProps[obj.NetID] = pending;
-				}
-
-				pending.AddRange(
+				QueuePendingProps(
+					obj.NetID,
 					obj.Props.Select(p => new NetPropReplicateData
 					{
 						Name = p.PropName,

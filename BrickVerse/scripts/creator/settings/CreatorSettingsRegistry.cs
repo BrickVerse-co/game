@@ -530,6 +530,7 @@ public static class CreatorSettingsRegistry
 					new() { Value = PreferredEditorEnum.BuiltIn, Label = "Built-in" },
 					new() { Value = PreferredEditorEnum.SystemDefault, Label = "System Default" },
 					new() { Value = PreferredEditorEnum.VSCode, Label = "VS Code" },
+					new() { Value = PreferredEditorEnum.VisualStudio, Label = "Visual Studio" },
 					new() { Value = PreferredEditorEnum.Zed, Label = "Zed" },
 				]
 			});

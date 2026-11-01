@@ -34,7 +34,7 @@ public sealed partial class GameSetting : Instance
 	[Editable, ScriptProperty] public float Step { get => _step; set { _step = Mathf.Max(0.001f, value); OnPropertyChanged(); } }
 	[Editable, ScriptProperty] public int MaxTextLength { get; set; } = 128;
 
-	[ScriptProperty] public BVSignal<object> Changed { get; private set; } = new();
+	[ScriptProperty] public new BVSignal<object> Changed { get; private set; } = new();
 
 	[ScriptMethod] public bool GetBoolean() => Root.GameSettings.GetBoolean(this);
 	[ScriptMethod] public float GetNumber() => Root.GameSettings.GetNumber(this);

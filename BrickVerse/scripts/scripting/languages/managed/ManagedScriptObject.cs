@@ -24,7 +24,8 @@ public class ScriptObject
 	{
 		if (value is null) return default;
 		Type target = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-		if (typeof(ScriptObject).IsAssignableFrom(target) && value is int handle)
+		if (typeof(ScriptObject).IsAssignableFrom(target)
+			&& ScriptCapabilityBridge.TryReadGuestHandle(value, out int handle))
 			return (T?)Activator.CreateInstance(target, Api, handle);
 		if (target.IsEnum) return (T)Enum.ToObject(target, value);
 		if (value is T typed) return typed;

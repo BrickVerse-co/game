@@ -22,6 +22,13 @@ public sealed partial class NetworkReplicateSync : Instance
 	private const int PlaceReplicationChunkSize = 300;
 	private const int MaxPlaceReplicationChunkBytes = 256 * 1024;
 	private const int MaxCompressedPlaceChunkBytes = 1000;
+	private const int MaxIncomingChunkBytes = MaxPlaceReplicationChunkBytes;
+	private const int MaxDecompressedChunkBytes = 512 * 1024;
+	private const int MaxQueuedIncomingBytes = 16 * 1024 * 1024;
+	private const int MaxPlaceReplicationObjects = 1_000_000;
+	private const int MaxSingleReplicateBytes = 512 * 1024;
+	private const int MaxPendingReplicateParents = 4096;
+	private const int MaxPendingReplicatesPerParent = 1024;
 	private const int PlaceChunksPerFrame = 4;
 	private const ulong PlaceReplicationTimeoutMs = 90_000;
 	internal NetworkService NetService = null!;
@@ -35,6 +42,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	private readonly HashSet<string> _removedRef = [];
 	private readonly HashSet<NetReplicateData> _worldReplicateSet = [];
 	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Index, int Count, int ObjectCount)> _incomingChunks = new();
+	private int _queuedIncomingBytes;
 	private readonly Dictionary<int, PlaceReplicationSendSession> _placeReplicationSendSessions = [];
 	private bool _processingIncomingChunk;
 	private bool _hasProcessedIncomingChunk;
@@ -79,14 +87,49 @@ public sealed partial class NetworkReplicateSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate, int chunkIndex, int chunkCount, int objectCount)
 	{
+		if (rawBytes == null || rawBytes.Length == 0 || rawBytes.Length > MaxIncomingChunkBytes)
+		{
+			RejectIncomingChunk($"invalid compressed size {rawBytes?.Length ?? 0}");
+			return;
+		}
+
+		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount || objectCount < 0
+			|| objectCount > MaxPlaceReplicationObjects || chunkCount > Math.Max(1, objectCount))
+		{
+			RejectIncomingChunk($"invalid metadata index={chunkIndex}, count={chunkCount}, objects={objectCount}");
+			return;
+		}
+
 		if (isPlaceReplicate)
 		{
+			int expectedIndex = _placeChunksReceived + _incomingChunks.Count(chunk => chunk.IsPlaceReplication);
+			if ((_placeChunksExpected != 0 && (_placeChunksExpected != chunkCount || InstanceToBeLoadedCount != objectCount))
+				|| chunkIndex != expectedIndex)
+			{
+				RejectIncomingChunk($"inconsistent or out-of-order metadata index={chunkIndex}, expected={expectedIndex}, count={chunkCount}, objects={objectCount}");
+				return;
+			}
+
 			if (_placeReplicationStartedAtMsec == 0)
 				_placeReplicationStartedAtMsec = Time.GetTicksMsec();
 			_placeChunksExpected = chunkCount;
 			InstanceToBeLoadedCount = objectCount;
 		}
+
+		if (_queuedIncomingBytes > MaxQueuedIncomingBytes - rawBytes.Length)
+		{
+			RejectIncomingChunk("queued replication data exceeded the 16 MiB limit");
+			return;
+		}
+
 		_incomingChunks.Enqueue((rawBytes, isPlaceReplicate, chunkIndex, chunkCount, objectCount));
+		_queuedIncomingBytes += rawBytes.Length;
+	}
+
+	private void RejectIncomingChunk(string reason)
+	{
+		BV.PrintErr("Rejected world replication chunk: ", reason);
+		NetService.DisconnectSelf("The server sent invalid world data. Please retry.", DisconnectionCodeEnum.ConnectionFailure);
 	}
 
 	private async void ProcessNextIncomingChunk()
@@ -107,6 +150,7 @@ public sealed partial class NetworkReplicateSync : Instance
 			while (_incomingChunks.Count > 0 && processedObjects < PlaceReplicationChunkSize)
 			{
 				var incoming = _incomingChunks.Dequeue();
+				_queuedIncomingBytes -= incoming.Bytes.Length;
 				processedObjects += ProcessIncomingChunk(incoming.Bytes, incoming.IsPlaceReplication);
 				_hasProcessedIncomingChunk = true;
 				if (incoming.IsPlaceReplication)
@@ -133,7 +177,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	private int ProcessIncomingChunk(byte[] rawBytes, bool isPlaceReplicate)
 	{
 
-		NetReplicateData[] netObjsData = SerializeUtils.Deserialize<NetReplicateData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
+		NetReplicateData[] netObjsData = SerializeUtils.Deserialize<NetReplicateData[]>(ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedChunkBytes))!;
 		NetReplicateData[][] chunked = ArrayUtils.Chunk(netObjsData, PlaceReplicationChunkSize);
 
 		foreach (NetReplicateData data in netObjsData)
@@ -509,10 +553,24 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		// Ignore if from server itself
 		if (NetService.IsServer) return;
+		if (data is not { Length: > 0 } || data.Length > MaxSingleReplicateBytes)
+		{
+			BV.PrintErr("Rejected invalid single-object replication payload.");
+			return;
+		}
 
 		await Globals.Singleton.WaitFrame();
 
-		NetReplicateData replicateData = SerializeUtils.Deserialize<NetReplicateData>(data)!;
+		NetReplicateData replicateData;
+		try
+		{
+			replicateData = SerializeUtils.Deserialize<NetReplicateData>(data);
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr("Rejected malformed single-object replication payload: ", ex);
+			return;
+		}
 		string parentID = replicateData.ParentNodeID;
 		string parentNodePath = replicateData.ParentNodePath;
 
@@ -552,8 +610,18 @@ public sealed partial class NetworkReplicateSync : Instance
 			// Parent not ready yet → queue
 			if (!_pendingReplicates.TryGetValue(parentID, out List<NetReplicateData>? value))
 			{
+				if (_pendingReplicates.Count >= MaxPendingReplicateParents)
+				{
+					BV.PrintErr("Pending replication parent limit reached; dropping ", replicateData.NodePath);
+					return;
+				}
 				value = [];
 				_pendingReplicates[parentID] = value;
+			}
+			if (value.Count >= MaxPendingReplicatesPerParent)
+			{
+				BV.PrintErr("Pending replication limit reached for parent ", parentID);
+				return;
 			}
 			if (_useNetworkLog) { BV.Print($"[Net] [?] Pending {replicateData.NodePath}"); }
 			value.Add(replicateData);

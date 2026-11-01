@@ -18,6 +18,8 @@ namespace BrickVerse.Networking.Synchronizers;
 [Internal]
 public partial class NetworkScriptSync : Instance
 {
+	private const int MaxCompressedScriptBatchBytes = 16 * 1024 * 1024;
+	private const int MaxDecompressedScriptBatchBytes = 64 * 1024 * 1024;
 	internal NetworkService NetService = null!;
 
 	private static readonly bool _useNetworkLog = false;
@@ -67,12 +69,17 @@ public partial class NetworkScriptSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvAllScripts(byte[] rawBytes, bool isFirstInit)
 	{
+		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedScriptBatchBytes)
+		{
+			BV.PrintErr("[ScriptSync] Rejected invalid compressed script batch size.");
+			return;
+		}
 		NetBatchScriptData[] scriptsData;
 		try
 		{
 			scriptsData =
 				SerializeUtils.Deserialize<NetBatchScriptData[]>(
-					ZstdCompressionUtils.Decompress(rawBytes)
+					ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedScriptBatchBytes)
 				) ?? [];
 		}
 		catch (Exception ex)

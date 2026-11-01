@@ -20,6 +20,8 @@ namespace BrickVerse.Scripting.CSharp;
 
 public sealed class CSharpProvider : IScriptLanguageProvider
 {
+	private static readonly Lazy<string> BindingSource = new(CSharpBindingGenerator.Generate);
+	private static readonly Lazy<MetadataReference[]> References = new(() => GetReferences().ToArray());
 	private readonly Dictionary<Script, ScriptState> _states = [];
 
 	public byte[] CompileSource(string source)
@@ -27,18 +29,18 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 		if (source.Length > 262_144) throw new InvalidOperationException("C# script exceeds the 256 KiB source limit");
 		SyntaxTree tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp14));
 		ValidateSyntax(tree);
-		SyntaxTree bindings = CSharpSyntaxTree.ParseText(CSharpBindingGenerator.Generate(), new CSharpParseOptions(LanguageVersion.CSharp14));
+		SyntaxTree bindings = CSharpSyntaxTree.ParseText(BindingSource.Value, new CSharpParseOptions(LanguageVersion.CSharp14));
 		CSharpCompilation compilation = CSharpCompilation.Create(
-			"BrickVerseGuest_" + Guid.NewGuid().ToString("N"), [tree, bindings], GetReferences(),
+			"BrickVerseGuest_" + Guid.NewGuid().ToString("N"), [tree, bindings], References.Value,
 			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
 				optimizationLevel: OptimizationLevel.Release, allowUnsafe: false,
 				checkOverflow: true, concurrentBuild: false));
+		ValidateSymbols(compilation, tree);
 		using MemoryStream output = new();
 		EmitResult result = compilation.Emit(output);
 		if (!result.Success)
 			throw new InvalidOperationException(string.Join(Environment.NewLine,
 				result.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error)));
-		ValidateSymbols(compilation, tree);
 		return output.ToArray();
 	}
 

@@ -331,6 +331,20 @@ public partial class Physical : Dynamic
 		}
 	}
 
+	[ScriptProperty]
+	public Vector3 AssemblyLinearVelocity
+	{
+		get => Velocity;
+		set => Velocity = value;
+	}
+
+	[ScriptProperty]
+	public Vector3 AssemblyAngularVelocity
+	{
+		get => AngularVelocity;
+		set => AngularVelocity = value;
+	}
+
 	public Physical? PhysicalRoot { get; private set; }
 
 	internal bool OverrideCanCollide = false;
@@ -1255,6 +1269,16 @@ public partial class Physical : Dynamic
 	{
 		ApplyAddForce(force, mode);
 	}
+
+	[ScriptMethod]
+	public void ApplyImpulse(Vector3 impulse) => ApplyAddForce(impulse, ForceModeEnum.Impulse);
+
+	[ScriptMethod]
+	public void ApplyAngularImpulse(Vector3 impulse) => ApplyAddTorque(impulse, ForceModeEnum.Impulse);
+
+	[ScriptMethod]
+	public void ApplyImpulseAtPosition(Vector3 impulse, Vector3 position) =>
+		ApplyAddForceAtPosition(impulse, position, ForceModeEnum.Impulse);
 
 	internal virtual void ApplyAddForce(Vector3 force, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
 

@@ -57,6 +57,7 @@ public abstract class BrickVerseScript
 
 public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 {
+	internal const string GuestHandleTag = "\0brickverse:object-handle";
 	private readonly Dictionary<int, IScriptObject> _objects = [];
 	private readonly Dictionary<IScriptObject, int> _handles = new(ReferenceEqualityComparer.Instance);
 	private int _nextHandle = 1;
@@ -78,7 +79,7 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 		{
 			if (property.Equals("Name", StringComparison.Ordinal)) return instance.Name;
 			Instance? child = instance.FindFirstChild(property);
-			if (child != null) return Add(child);
+			if (child != null) return ToGuest(child);
 		}
 		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
@@ -99,7 +100,7 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
 		Demand(info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
-		if (!info.CanWrite) throw new InvalidOperationException($"{property} is read-only");
+		if (info.SetMethod?.IsPublic != true) throw new InvalidOperationException($"{property} is read-only");
 		info.SetValue(target, ScriptService.ConvertToPropertyType(FromGuest(value), info.PropertyType));
 	}
 
@@ -192,7 +193,7 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 
 	private object? ToGuest(object? value)
 	{
-		if (value is IScriptObject scriptObject) return Add(scriptObject);
+		if (value is IScriptObject scriptObject) return new object?[] { GuestHandleTag, Add(scriptObject) };
 		if (value is Array array) return array.Cast<object?>().Select(ToGuest).ToArray();
 		if (value is IDictionary dictionary)
 		{
@@ -207,9 +208,20 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	private object? FromGuest(object? value)
 	{
 		if (value is ScriptObject wrapper) return Resolve(wrapper.Handle);
+		if (TryReadGuestHandle(value, out int taggedHandle)) return Resolve(taggedHandle);
 		if (value is int handle && _objects.TryGetValue(handle, out IScriptObject? obj)) return obj;
 		if (value is object?[] array) return array.Select(FromGuest).ToArray();
 		return value;
+	}
+
+	internal static bool TryReadGuestHandle(object? value, out int handle)
+	{
+		handle = 0;
+		return value is object?[] { Length: 2 } tagged
+			&& tagged[0] is string marker
+			&& marker == GuestHandleTag
+			&& tagged[1] is int parsed
+			&& (handle = parsed) > 0;
 	}
 
 	private void Demand(ScriptPermissionFlags required)

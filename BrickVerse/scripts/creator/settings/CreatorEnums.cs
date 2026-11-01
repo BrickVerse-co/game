@@ -12,7 +12,8 @@ public enum PreferredEditorEnum
 	BuiltIn,
 	SystemDefault,
 	VSCode,
-	Zed
+	Zed,
+	VisualStudio
 }
 
 [ScriptEnum("IndentationMode", IsCreatorOnly = true)]

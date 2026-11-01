@@ -35,6 +35,24 @@ public sealed class Main : BrickVerseScript
 	}
 
 	[Fact]
+	public void CSharp_CompilesGeneratedTypedDataModelBindings()
+	{
+		using CSharpProvider provider = new();
+		byte[] assembly = provider.CompileSource("""
+using BrickVerse.Scripting.Managed;
+public sealed class PlayerEventsServerScript : BrickVerseScript
+{
+    public override void Start()
+    {
+        Players players = Game.GetService<Players>("Players");
+        players.PlayerAdded.Connect(player => Print(player.Name));
+    }
+}
+""");
+		Assert.NotEmpty(assembly);
+	}
+
+	[Fact]
 	public void CSharp_RejectsFilesystemAccess()
 	{
 		using CSharpProvider provider = new();

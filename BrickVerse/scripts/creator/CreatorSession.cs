@@ -99,7 +99,10 @@ public partial class CreatorSession : Node, IDisposable
 		await SetupFolders();
 		RescanFolder();
 
-		await Task.Run(SetupLuaDocs);
+		await Task.WhenAll(
+			Task.Run(SetupLuaDocs),
+			Task.Run(() => ScriptIdeSupportGenerator.Generate(ProjectFolderPath))
+		);
 		ReadInputMap();
 
 		_backupTimer = new();
@@ -678,7 +681,7 @@ public partial class CreatorSession : Node, IDisposable
 			ScriptTypeEnum.Client => ScriptTypeKind.Client,
 			_ => ScriptTypeKind.Module,
 		};
-		string scriptSource = ScriptLanguageRegistry.CreateStarterSource(language.Language, typeKind);
+		string scriptSource = ScriptLanguageRegistry.CreateStarterSource(language.Language, typeKind, scriptName);
 
 		string fileBaseFolder = scriptPath.GetBaseDir();
 

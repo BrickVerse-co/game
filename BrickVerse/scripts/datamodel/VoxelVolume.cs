@@ -163,7 +163,7 @@ public sealed partial class VoxelVolume : Entity
 	public int TriangleCount { get; private set; }
 
 	[ScriptProperty]
-	public BVSignal Changed { get; private set; } = new();
+	public new BVSignal Changed { get; private set; } = new();
 
 	[ScriptProperty]
 	public BVSignal Rebuilt { get; private set; } = new();

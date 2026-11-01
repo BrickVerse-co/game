@@ -245,7 +245,7 @@ public partial class UITextInput : UIView
 	}
 
 	[ScriptProperty] public BVSignal<string> Submitted { get; private set; } = new();
-	[ScriptProperty] public BVSignal<string> Changed { get; private set; } = new();
+	[ScriptProperty] public new BVSignal<string> Changed { get; private set; } = new();
 	[ScriptProperty] public BVSignal FocusEnter { get; private set; } = new();
 	[ScriptProperty] public BVSignal FocusExit { get; private set; } = new();
 
