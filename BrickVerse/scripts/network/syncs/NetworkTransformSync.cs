@@ -12,7 +12,9 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Utils.Compression;
 using BrickVerse.Utils.DTOs;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Client.Networking;
@@ -21,9 +23,24 @@ namespace BrickVerse.Client.Networking;
 public partial class NetworkTransformSync : Instance
 {
 	private const double BatchInterval = 0.05;
+	private const int MaxSnapshotChunkBytes = 1000;
+	private const int SnapshotObjectsPerChunk = 300;
+	private const int SnapshotChunksPerFrame = 4;
 
 	internal NetworkService NetService = null!;
 	private readonly Dictionary<string, PendingTransform> _pendingTransforms = [];
+	private readonly Dictionary<int, TransformSnapshotSendSession> _snapshotSendSessions = [];
+	private int _snapshotChunksExpected;
+	private int _snapshotChunksReceived;
+	internal int SnapshotChunksExpected => _snapshotChunksExpected;
+	internal int SnapshotChunksReceived => _snapshotChunksReceived;
+
+	private sealed class TransformSnapshotSendSession(int peerID, byte[][] chunks)
+	{
+		public int PeerID { get; } = peerID;
+		public byte[][] Chunks { get; } = chunks;
+		public int NextChunkIndex { get; set; }
+	}
 
 	// Pending Transform batch update
 	private readonly Dictionary<string, PendingBatchTransform> _pendingBatchUpdate = [];
@@ -48,6 +65,13 @@ public partial class NetworkTransformSync : Instance
 		base.Process(delta);
 		if (NetService.IsServer)
 		{
+			foreach (TransformSnapshotSendSession session in _snapshotSendSessions.Values.ToArray())
+			{
+				SendNextSnapshotChunks(session);
+				if (session.NextChunkIndex >= session.Chunks.Length)
+					_snapshotSendSessions.Remove(session.PeerID);
+			}
+
 			_batchTimer += delta;
 
 			if (_batchTimer >= BatchInterval)
@@ -63,9 +87,50 @@ public partial class NetworkTransformSync : Instance
 	public void SyncAllTransformToPeer(int peerID)
 	{
 		NetworkedObject[] allNetObjs = NetService.Root.GetReplicateDescendants();
+		NetBatchTransformData[] transforms = PackTransforms(allNetObjs);
+		List<byte[]> chunks = [];
+		foreach (NetBatchTransformData[] chunk in ArrayUtils.Chunk(transforms, SnapshotObjectsPerChunk))
+			AppendCompressedChunks(chunk, chunks);
 
-		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(allNetObjs)));
-		RpcId(peerID, nameof(NetRecvChunk), rawData, true);
+		if (chunks.Count == 0)
+			chunks.Add(ZstdCompressionUtils.Compress(SerializeUtils.Serialize(Array.Empty<NetBatchTransformData>())));
+
+		long compressedBytes = chunks.Sum(chunk => (long)chunk.Length);
+		TransformSnapshotSendSession session = new(peerID, [.. chunks]);
+		_snapshotSendSessions[peerID] = session;
+		BV.Print($"[JoinTransform] Snapshot queued for peer {peerID}: transforms={transforms.Length}, chunks={chunks.Count}, compressedBytes={compressedBytes}, pace={SnapshotChunksPerFrame}/frame.");
+		SendNextSnapshotChunks(session);
+		if (session.NextChunkIndex >= session.Chunks.Length)
+			_snapshotSendSessions.Remove(peerID);
+	}
+
+	private static void AppendCompressedChunks(NetBatchTransformData[] transforms, List<byte[]> output)
+	{
+		byte[] compressed = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(transforms));
+		if (compressed.Length <= MaxSnapshotChunkBytes || transforms.Length <= 1)
+		{
+			output.Add(compressed);
+			return;
+		}
+
+		int middle = transforms.Length / 2;
+		AppendCompressedChunks(transforms[..middle], output);
+		AppendCompressedChunks(transforms[middle..], output);
+	}
+
+	private void SendNextSnapshotChunks(TransformSnapshotSendSession session)
+	{
+		int sent = 0;
+		while (session.NextChunkIndex < session.Chunks.Length && sent++ < SnapshotChunksPerFrame)
+		{
+			int index = session.NextChunkIndex++;
+			RpcId(session.PeerID, nameof(NetRecvTransformSnapshotChunk), session.Chunks[index], index, session.Chunks.Length);
+		}
+	}
+
+	internal void CancelTransformSnapshotSend(int peerID)
+	{
+		_snapshotSendSessions.Remove(peerID);
 	}
 
 	public void BroadcastChunk(NetworkedObject[] netObjs)
@@ -107,6 +172,30 @@ public partial class NetworkTransformSync : Instance
 		{
 			NetService.NetTransformSyncd();
 		}
+	}
+
+	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
+	private void NetRecvTransformSnapshotChunk(byte[] rawBytes, int chunkIndex, int chunkCount)
+	{
+		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount)
+			throw new NetworkException($"Invalid transform snapshot chunk {chunkIndex}/{chunkCount}.");
+
+		if (_snapshotChunksExpected == 0)
+			_snapshotChunksExpected = chunkCount;
+
+		if (chunkCount != _snapshotChunksExpected || chunkIndex != _snapshotChunksReceived)
+			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
+
+		NetBatchTransformData[] transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
+		foreach (NetBatchTransformData item in transforms)
+		{
+			if (_pendingTransforms.ContainsKey(item.NetID)) continue;
+			RecvUpdateTransformHandler(item.NetID, TransformPayloadDto.FromArray(item.Value), 1, true, false);
+		}
+
+		_snapshotChunksReceived++;
+		if (_snapshotChunksReceived == _snapshotChunksExpected)
+			NetService.NetTransformSyncd();
 	}
 
 	public void SendUpdateTransform(Dynamic dyn, bool isReliable = false, int sendTo = 0, bool lerpTransform = false)

@@ -681,6 +681,7 @@ public sealed partial class NetworkService : Instance
 			$"PlayerReady={disconnectedPlayer?.IsReady ?? false}, " +
 			$"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}.");
 		ReplicateSync.CancelPlaceReplicationSend(peerID);
+		TransformSync.CancelTransformSnapshotSend(peerID);
 		_peerJoinStages.TryRemove(peerID, out _);
 		ActivePeerIDs.Remove(peerID);
 		_peerLastActivity.TryRemove(peerID, out _);
@@ -1085,14 +1086,23 @@ public sealed partial class NetworkService : Instance
 			{
 				string reportID = Guid.NewGuid().ToString("N")[..8];
 				bool worldTransferFailed = phase == "world replication";
+				bool transformTransferFailed = phase == "transform synchronization";
 				string reason = worldTransferFailed
 					? $"World data stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
-					: $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
+					: transformTransferFailed
+						? $"World positions stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+						: $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
 				BV.PrintErr($"[JoinFailure:{reportID}] Server transport disconnected during {phase}. " +
 					$"PlaceChunks={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected}, " +
+					$"TransformChunks={TransformSync.SnapshotChunksReceived}/{TransformSync.SnapshotChunksExpected}, " +
 					$"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, " +
 					$"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}.");
-				DisconnectSelf(reason, worldTransferFailed ? DisconnectionCodeEnum.WorldDataTransferInterrupted : DisconnectionCodeEnum.ConnectionLost);
+				DisconnectionCodeEnum code = worldTransferFailed
+					? DisconnectionCodeEnum.WorldDataTransferInterrupted
+					: transformTransferFailed
+						? DisconnectionCodeEnum.TransformSynchronizationInterrupted
+						: DisconnectionCodeEnum.ConnectionLost;
+				DisconnectSelf(reason, code);
 			}
 		}).CallDeferred();
 	}
@@ -1407,7 +1417,8 @@ public sealed partial class NetworkService : Instance
 		IntegrityFail,
 		NetInstanceFailure,
 		ConnectionLost,
-		WorldDataTransferInterrupted
+		WorldDataTransferInterrupted,
+		TransformSynchronizationInterrupted
 	}
 
 	public enum NetworkModeEnum
