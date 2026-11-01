@@ -599,9 +599,10 @@ public sealed partial class NetworkService : Instance
 			if (
 				_heartbeatCount > HeartbeatBeforeCheckPlayers
 				&& Root.Players.AbsolutePlayersCount <= 0
+				&& (NetInstance?.PeerIds.Count ?? 0) == 0
 			)
 			{
-				BV.Print("No players, shutting down");
+				BV.Print("No players or active peers, shutting down");
 				ShutdownServer();
 			}
 		}
