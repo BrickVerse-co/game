@@ -53,6 +53,26 @@ public sealed class PlayerEventsServerScript : BrickVerseScript
 	}
 
 	[Fact]
+	public void CSharp_CompilesGeneratedDatatypesAndEnums()
+	{
+		using CSharpProvider provider = new();
+		byte[] assembly = provider.CompileSource("""
+using BrickVerse.Scripting.Managed;
+public sealed class DatatypeServerScript : BrickVerseScript
+{
+    public override void Start()
+    {
+        BVector3 vectors = Game.GetService<BVector3>("Vector3");
+        BVector3 position = vectors.New(1f, 2f, 3f);
+        TextureFilter filter = default;
+        Print($"{position.X} {filter}");
+    }
+}
+""");
+		Assert.NotEmpty(assembly);
+	}
+
+	[Fact]
 	public void CSharp_RejectsFilesystemAccess()
 	{
 		using CSharpProvider provider = new();

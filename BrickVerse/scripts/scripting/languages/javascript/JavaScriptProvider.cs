@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Text;
 using System.Threading.Tasks;
 using BrickVerse.Scripting.Managed;
@@ -114,6 +116,10 @@ const console = Object.freeze({
 			api.Connect(handle, args => engine.Invoke(callback, args))));
 		engine.SetValue("__bv_world_handle", api.World);
 		engine.Execute(RuntimeBootstrap);
+		string datatypeGlobals = string.Join("\n", BrickVerse.Datamodel.Services.ScriptService.GlobalDataMap.Keys
+			.OrderBy(name => name, StringComparer.Ordinal)
+			.Select(name => $"globalThis[{JsonSerializer.Serialize(name)}] = bv.global({JsonSerializer.Serialize(name)});"));
+		engine.Execute(datatypeGlobals);
 		// Expose a read-only view rather than the raw DataModel instance. The
 		// integer capability handle remains available through bv, while common
 		// script metadata is convenient and safe to read directly.

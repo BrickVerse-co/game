@@ -3,6 +3,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -21,15 +23,27 @@ public class ScriptObject
 	protected void Invoke(string method, params object?[] args) => Api.Call(Handle, method, UnwrapAll(args));
 
 	internal T? ConvertValue<T>(object? value)
+		=> (T?)ConvertValue(typeof(T), value);
+
+	private object? ConvertValue(Type requestedType, object? value)
 	{
 		if (value is null) return default;
-		Type target = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+		Type target = Nullable.GetUnderlyingType(requestedType) ?? requestedType;
 		if (typeof(ScriptObject).IsAssignableFrom(target)
 			&& ScriptCapabilityBridge.TryReadGuestHandle(value, out int handle))
-			return (T?)Activator.CreateInstance(target, Api, handle);
-		if (target.IsEnum) return (T)Enum.ToObject(target, value);
-		if (value is T typed) return typed;
-		return (T?)Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+			return Activator.CreateInstance(target, Api, handle);
+		if (target.IsArray && value is IEnumerable enumerable)
+		{
+			Type elementType = target.GetElementType()!;
+			List<object?> items = [];
+			foreach (object? item in enumerable) items.Add(ConvertValue(elementType, item));
+			Array result = Array.CreateInstance(elementType, items.Count);
+			for (int index = 0; index < items.Count; index++) result.SetValue(items[index], index);
+			return result;
+		}
+		if (target.IsEnum) return Enum.ToObject(target, value);
+		if (target.IsInstanceOfType(value)) return value;
+		return Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
 	}
 
 	internal static object? Unwrap(object? value) => value is ScriptObject item ? item.Handle : value;

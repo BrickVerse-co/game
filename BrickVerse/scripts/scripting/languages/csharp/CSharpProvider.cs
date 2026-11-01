@@ -134,6 +134,7 @@ public sealed class CSharpProvider : IScriptLanguageProvider
 				throw new UnauthorizedAccessException($"Method '{method.Name}' is outside the script sandbox");
 			if (symbol is IMethodSymbol ownMethod
 				&& SymbolEqualityComparer.Default.Equals(ownMethod.ContainingAssembly, compilation.Assembly)
+				&& ownMethod.Locations.Any(location => location.SourceTree == tree)
 				&& node is InvocationExpressionSyntax)
 				throw new UnauthorizedAccessException("Calling script-defined methods is disabled to prevent unbounded recursion; use lifecycle overrides and Invoke");
 			INamedTypeSymbol? type = symbol as INamedTypeSymbol ?? symbol?.ContainingType;
