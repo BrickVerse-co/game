@@ -192,6 +192,15 @@ public partial class TextEditorRoot : Node
 		CodeEditor.Text = File.ReadAllText(Container.TargetFilePathAbsolute);
 		CodeEditor.ClearUndoHistory();
 		CodeEditor.TextChanged += OnCodeEditTextChanged;
+		_oldText = CodeEditor.Text;
+		if (Container.CodeCompletion == FileTypeEnum.Visual)
+		{
+			InitializeVisualEditor();
+			Saved = true;
+			SavedChanged?.Invoke(true);
+			UpdateStatusBar();
+			return;
+		}
 		InitSyntaxHighlighter(Container.CodeCompletion);
 
 		CreatorSettingsService.Instance.Changed += OnCreatorSettingChanged;

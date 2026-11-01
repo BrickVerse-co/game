@@ -87,6 +87,7 @@ public sealed partial class ScriptService : Instance
 		{
 			// Only allow node creation here, scripting will be disabled in non node env (eg. unit tests)
 			RegisterLanguageProvider(ScriptLanguagesEnum.Luau, new LuauProvider());
+			RegisterLanguageProvider(ScriptLanguagesEnum.Visual, new BrickVerse.Scripting.Visual.VisualScriptProvider());
 			if (!OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS())
 			{
 				RegisterLanguageProvider(ScriptLanguagesEnum.CSharp, new CSharpProvider());

@@ -941,6 +941,7 @@ public sealed partial class CreatorService : Node, IScriptObject
 					ScriptLanguagesEnum.JavaScript => FileTypeEnum.JavaScript,
 					ScriptLanguagesEnum.TypeScript => FileTypeEnum.TypeScript,
 					ScriptLanguagesEnum.Cpp => FileTypeEnum.Cpp,
+					ScriptLanguagesEnum.Visual => FileTypeEnum.Visual,
 					_ => FileTypeEnum.Plaintext,
 				};
 
@@ -1274,4 +1275,5 @@ public enum FileTypeEnum
 	JavaScript,
 	TypeScript,
 	Cpp,
+	Visual,
 }

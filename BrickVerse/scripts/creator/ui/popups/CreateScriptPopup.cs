@@ -138,45 +138,25 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 
 	private void BuildLanguageGrid()
 	{
-		_languageGrid.Columns = 3;
+		_languageGrid.Columns = 1;
+		OptionButton dropdown = new()
+		{
+			CustomMinimumSize = new Vector2(0, 38),
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			TooltipText = "Select the scripting language for this file",
+		};
 		foreach (ScriptLanguageDefinition language in ScriptLanguageRegistry.Definitions)
 		{
-			Button button = new()
-			{
-				Text = language.DisplayName,
-				TooltipText = language.PlatformSupport == ScriptPlatformSupport.All
-					? language.DisplayName
-					: $"{language.DisplayName} — desktop/server only",
-				CustomMinimumSize = new Vector2(116, 58),
-				ToggleMode = true,
-				ButtonGroup = _languageGroup,
-				Icon = LoadLanguageIcon(language),
-				ExpandIcon = true,
-			};
-			button.SetMeta("language", (int)language.Language);
-			button.Pressed += () =>
-			{
-				_selectedLanguage = (ScriptLanguagesEnum)button.GetMeta("language").AsInt32();
-				UpdatePathLanguage();
-				UpdatePlatformSupportMessage();
-			};
-			_languageGrid.AddChild(button);
-			if (language.Language == _selectedLanguage) button.ButtonPressed = true;
+			dropdown.AddItem(language.DisplayName, (int)language.Language);
+			if (language.Language == _selectedLanguage) dropdown.Select(dropdown.ItemCount - 1);
 		}
-	}
-
-	private static Texture2D? LoadLanguageIcon(ScriptLanguageDefinition language)
-	{
-		string iconName = language.Language switch
+		dropdown.ItemSelected += index =>
 		{
-			ScriptLanguagesEnum.Luau => "luau",
-			ScriptLanguagesEnum.CSharp => "csharp",
-			ScriptLanguagesEnum.JavaScript => "javascript",
-			ScriptLanguagesEnum.TypeScript => "typescript",
-			ScriptLanguagesEnum.Cpp => "cpp",
-			_ => "script",
+			_selectedLanguage = (ScriptLanguagesEnum)dropdown.GetItemId((int)index);
+			UpdatePathLanguage();
+			UpdatePlatformSupportMessage();
 		};
-		return ResourceLoader.Load<Texture2D>($"res://assets/textures/creator/filebrowser/icons/{iconName}.svg");
+		_languageGrid.AddChild(dropdown);
 	}
 
 	private void UpdatePathLanguage()

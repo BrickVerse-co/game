@@ -43,6 +43,7 @@ public static class CreatorIconRegistry
 			ScriptLanguagesEnum.CSharp => "CSharp",
 			ScriptLanguagesEnum.JavaScript => "JavaScript",
 			ScriptLanguagesEnum.TypeScript => "TypeScript",
+			ScriptLanguagesEnum.Visual => "Visual",
 			_ => "Luau",
 		}}"
 		: instance.ClassName;
@@ -67,6 +68,7 @@ public static class CreatorIconRegistry
 				ScriptLanguagesEnum.CSharp => "csharp",
 				ScriptLanguagesEnum.JavaScript => "javascript",
 				ScriptLanguagesEnum.TypeScript => "typescript",
+				ScriptLanguagesEnum.Visual => "script",
 				_ => "luau",
 			};
 			Texture2D? icon = GD.Load<Texture2D>($"res://assets/textures/creator/filebrowser/icons/{languageIcon}.svg");

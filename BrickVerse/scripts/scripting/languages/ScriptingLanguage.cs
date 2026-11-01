@@ -30,6 +30,7 @@ public enum ScriptLanguagesEnum
 	JavaScript = 2,
 	TypeScript = 3,
 	Cpp = 4,
+	Visual = 5,
 }
 
 /// <summary>
@@ -79,6 +80,8 @@ public static class ScriptLanguageRegistry
 		new(ScriptLanguagesEnum.Cpp, "C++ (WebAssembly)", "cpp", ["cpp", "cc", "cxx"], true,
 			"#include <brickverse.h>\n\nBV_EXPORT(\"bv_start\") void start() {}\nBV_EXPORT(\"bv_update\") void update(double delta) {}\nBV_EXPORT(\"bv_fixed_update\") void fixed_update(double delta) {}\n",
 			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer),
+		new(ScriptLanguagesEnum.Visual, "Visual (Experimental)", "bvgraph", ["bvgraph"], true,
+			"{\"version\":1,\"nodes\":[],\"connections\":[]}", ScriptPlatformSupport.All),
 	];
 
 	private static readonly Dictionary<ScriptLanguagesEnum, ScriptLanguageDefinition> _byLanguage =
@@ -151,6 +154,7 @@ public static class ScriptLanguageRegistry
 			ScriptLanguagesEnum.JavaScript => "const Players = game.GetService(\"Players\");\n\nPlayers.PlayerAdded.Connect(player => {\n    console.log(player.Name);\n});\n",
 			ScriptLanguagesEnum.TypeScript => "const Players = game.GetService<Players>(\"Players\");\n\nPlayers.PlayerAdded.Connect((player: Player) => {\n    console.log(player.Name);\n});\n",
 			ScriptLanguagesEnum.Cpp => "#include <brickverse.h>\n\nBV_EXPORT(\"bv_start\") void start()\n{\n    auto players = Game::GetService<Players>(\"Players\");\n    players.PlayerAdded([](Player player) {\n        BV::Print(player.Name());\n    });\n}\n",
+			ScriptLanguagesEnum.Visual => "{\"version\":1,\"nodes\":[{\"id\":\"begin\",\"type\":\"event_start\",\"x\":80,\"y\":120},{\"id\":\"hello\",\"type\":\"print\",\"x\":380,\"y\":120,\"text\":\"Hello from Visual Script!\"}],\"connections\":[{\"from\":\"begin\",\"fromPort\":0,\"to\":\"hello\",\"toPort\":0}]}",
 			_ => "",
 		};
 	}

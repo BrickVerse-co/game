@@ -14,13 +14,25 @@
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_language"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+bg_color = Color(0.055, 0.063, 0.078, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.19, 0.24, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="CreateScriptPopup" type="Window" unique_id=1539327050 node_paths=PackedStringArray("_languageGrid", "_platformSupportLabel", "_pathEdit", "_browseBtn", "_createBtn", "_cancelBtn", "_errorLabel")]
 theme = ExtResource("99_creator_theme")
 force_native = false
-transparent = true
+transparent = false
 oversampling_override = 1.0
 title = "Create Script"
-size = Vector2i(520, 420)
+size = Vector2i(560, 440)
 transient = true
 exclusive = true
 unresizable = true
@@ -38,6 +50,14 @@ _createBtn = NodePath("Control/VBoxContainer/Layout/Create")
 _cancelBtn = NodePath("Control/VBoxContainer/Layout/Cancel")
 _errorLabel = NodePath("Control/VBoxContainer/ErrorText")
 
+[node name="Background" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+
 [node name="Control" type="MarginContainer" parent="." unique_id=175424596]
 custom_minimum_size = Vector2(300, 0)
 anchors_preset = 15
@@ -46,14 +66,29 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_74i0g")
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Control" unique_id=1321677954]
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Heading" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Create a new script"
+
+[node name="Description" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.66, 0.73, 1)
+text = "Choose where it runs and the language used by your project."
+
+[node name="TypeHeading" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "SCRIPT TYPE"
 
 [node name="server" type="CheckBox" parent="Control/VBoxContainer" unique_id=571073244]
 layout_mode = 2
@@ -88,6 +123,10 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_b7t1w")
 button_group = SubResource("ButtonGroup_4aee4")
 text = "Module"
 icon = ExtResource("4_bd64o")
+
+[node name="LanguageHeading" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "LANGUAGE"
 
 [node name="Language" type="GridContainer" parent="Control/VBoxContainer"]
 layout_mode = 2
