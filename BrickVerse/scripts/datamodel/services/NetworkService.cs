@@ -1015,12 +1015,15 @@ public sealed partial class NetworkService : Instance
 
 		try
 		{
-			BV.Print("Auth: invoking PeerPreInit...");
-			PeerPreInit?.Invoke(peerID);
-
 			BV.Print("Auth: starting SyncPlaceToPlayer...");
 			ReplicateSync.SyncPlaceToPlayer(plr);
 			BV.Print("Auth: SyncPlaceToPlayer returned.");
+
+			// These callbacks send RPCs to world objects (for example Animator).
+			// Queue them after the initial snapshot so the client has those targets
+			// registered before it processes their initialization RPCs.
+			BV.Print("Auth: invoking PeerPreInit...");
+			PeerPreInit?.Invoke(peerID);
 		}
 		catch (Exception ex)
 		{
