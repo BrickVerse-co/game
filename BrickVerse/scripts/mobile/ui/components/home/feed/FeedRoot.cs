@@ -81,12 +81,13 @@ public partial class FeedRoot : Node
 					DateTime.TryParse(item.TryGetProperty("createdAt", out JsonElement created) ? created.GetString() : null, out DateTime postedAt);
 					FeedPostCard card = _feedCard.Instantiate<FeedPostCard>();
 					bool isBrand = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isBrandAccount", out JsonElement brand) && brand.ValueKind == JsonValueKind.True;
+					bool isGovOfficial = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isGovOfficial", out JsonElement government) && government.ValueKind == JsonValueKind.True;
 					card.Data = new APIFeedPostData
 					{
 						Id = item.TryGetProperty("id", out JsonElement postId) ? postId.ToString() : "",
 						Content = item.TryGetProperty("content", out JsonElement content) ? content.GetString() ?? "" : "",
 						PostedAt = postedAt,
-						Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user", IsVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True, IsBrandAccount = isBrand },
+						Author = new APIFeedPostAuthor { Id = authorId, Username = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement username) ? username.GetString() ?? "BrickVerse user" : "BrickVerse user", IsVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True, IsBrandAccount = isBrand, IsGovOfficial = isGovOfficial },
 						LikeCount = ReadCount(item, "totalLikes", "likeCount"),
 						ReplyCount = ReadCount(item, "totalComments", "commentCount"),
 						RepostCount = ReadCount(item, "totalReposts", "repostCount"),

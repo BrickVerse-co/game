@@ -84,23 +84,53 @@ public static class OfficialClientIntegrity
 
 	private static string? ResolveManagedBinaryPath()
 	{
+		string executablePath = OS.GetExecutablePath();
+		string? executableDirectory = Path.GetDirectoryName(executablePath);
+		string? packagedAssembly = FindPackagedManagedBinary(executableDirectory);
+		if (packagedAssembly != null)
+		{
+			return packagedAssembly;
+		}
+
+		packagedAssembly = FindPackagedManagedBinary(AppContext.BaseDirectory);
+		if (packagedAssembly != null)
+		{
+			return packagedAssembly;
+		}
+
+		// Assembly.Location can point at a runtime extraction or shadow-copy. It is
+		// only a fallback because release metadata hashes the packaged DLL.
 		string assemblyPath = typeof(OfficialClientIntegrity).Assembly.Location;
 		if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
 		{
 			return assemblyPath;
 		}
 
-		string baseDirectory = AppContext.BaseDirectory;
-		string expectedPath = Path.Combine(baseDirectory, "BrickVerse.dll");
-		if (File.Exists(expectedPath))
-		{
-			return expectedPath;
-		}
-
-		string executablePath = OS.GetExecutablePath();
 		if (!string.IsNullOrWhiteSpace(executablePath) && File.Exists(executablePath))
 		{
 			return executablePath;
+		}
+
+		return null;
+	}
+
+	private static string? FindPackagedManagedBinary(string? root)
+	{
+		if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return null;
+
+		string direct = Path.Combine(root, "BrickVerse.dll");
+		if (File.Exists(direct)) return direct;
+
+		try
+		{
+			foreach (string candidate in Directory.EnumerateFiles(root, "BrickVerse.dll", SearchOption.AllDirectories))
+			{
+				return candidate;
+			}
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			BV.PrintErr("Failed to locate packaged client assembly: ", ex.Message);
 		}
 
 		return null;

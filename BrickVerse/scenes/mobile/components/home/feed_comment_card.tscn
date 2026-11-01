@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/textures/client/placeholder/avatar-headshot.png" id="1_avatar"]
 [ext_resource type="Texture2D" path="res://assets/textures/client/ui/feed/verified-user.svg" id="2_verified"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/comments.svg" id="3_reply"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/heart.svg" id="4_like"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/dots.svg" id="5_more"]
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileMarkdown.cs" id="6_markdown"]
 
 [sub_resource type="StyleBoxFlat" id="card"]
 border_width_bottom = 1
@@ -66,11 +67,14 @@ layout_mode = 2
 icon = ExtResource("5_more")
 flat = true
 
-[node name="Body" type="Label" parent="Layout/Content"]
+[node name="Body" type="RichTextLabel" parent="Layout/Content"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
 text = "Comment"
-autowrap_mode = 3
+fit_content = true
+scroll_active = false
+script = ExtResource("6_markdown")
 
 [node name="Actions" type="HBoxContainer" parent="Layout/Content"]
 layout_mode = 2

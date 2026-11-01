@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/book.svg" id="11_bookmark"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/external-link.svg" id="12_share"]
 [ext_resource type="Texture2D" path="res://assets/textures/ui-icons/dots.svg" id="13_more"]
+[ext_resource type="Script" path="res://scripts/mobile/ui/components/shared/MobileMarkdown.cs" id="14_markdown"]
 
 [sub_resource type="StyleBoxFlat" id="feed_surface"]
 bg_color = Color(0.0352941, 0.0392157, 0.0470588, 1)
@@ -126,11 +127,14 @@ icon = ExtResource("13_more")
 flat = true
 expand_icon = true
 
-[node name="Label3" type="Label" parent="HBoxContainer/VBoxContainer" unique_id=1839125975]
+[node name="Label3" type="RichTextLabel" parent="HBoxContainer/VBoxContainer" unique_id=1839125975]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
 text = "Content Content Content Content Content Content Content Content Content Content Content Content Content Content "
-autowrap_mode = 3
+fit_content = true
+scroll_active = false
+script = ExtResource("14_markdown")
 
 [node name="MediaFrame" type="PanelContainer" parent="HBoxContainer/VBoxContainer"]
 visible = false

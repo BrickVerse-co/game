@@ -18,7 +18,7 @@ public partial class FeedPostCard : PanelContainer
 	[Export] private Label _usernameLabel = null!;
 	[Export] private Label _postDateLabel = null!;
 	[Export] private Label _locationLabel = null!;
-	[Export] private Label _contentLabel = null!;
+	[Export] private MobileMarkdown _contentLabel = null!;
 	[Export] private TextureRect _pfpRect = null!;
 	[Export] private TextureRect _mediaRect = null!;
 	[Export] private Label _likeLabel = null!;
@@ -52,17 +52,21 @@ public partial class FeedPostCard : PanelContainer
 		LoadHeadshot();
 		_usernameLabel.Text = Data.Author.Username;
 		TextureRect verifiedBadge = GetNode<TextureRect>("HBoxContainer/VBoxContainer/HBoxContainer/Verified");
-		verifiedBadge.Visible = Data.Author.IsVerified || Data.Author.IsBrandAccount;
-		verifiedBadge.Texture = GD.Load<Texture2D>(Data.Author.IsBrandAccount
-			? "res://assets/textures/client/ui/feed/verified-brand.svg"
-			: "res://assets/textures/client/ui/feed/verified-user.svg");
-		verifiedBadge.TooltipText = Data.Author.IsBrandAccount ? "Verified brand" : "Verified account";
+		verifiedBadge.Visible = Data.Author.IsVerified || Data.Author.IsBrandAccount || Data.Author.IsGovOfficial;
+		verifiedBadge.Texture = GD.Load<Texture2D>(Data.Author.IsGovOfficial
+			? "res://assets/textures/client/ui/feed/verified-gov.svg"
+			: Data.Author.IsBrandAccount
+				? "res://assets/textures/client/ui/feed/verified-brand.svg"
+				: "res://assets/textures/client/ui/feed/verified-user.svg");
+		verifiedBadge.TooltipText = Data.Author.IsGovOfficial
+			? "Verified government account"
+			: Data.Author.IsBrandAccount ? "Verified brand" : "Verified account";
 		DateTime postedUtc = Data.PostedAt.Kind == DateTimeKind.Utc
 			? Data.PostedAt
 			: DateTime.SpecifyKind(Data.PostedAt, DateTimeKind.Utc);
 		_postDateLabel.Text = " · " + RelativeTime(postedUtc);
 		_locationLabel.Visible = false;
-		_contentLabel.Text = Data.Content;
+		_contentLabel.SetMarkdown(Data.Content);
 		_likeLabel.Text = CompactCount(Data.LikeCount);
 		_commentLabel.Text = CompactCount(Data.ReplyCount);
 		_isLiked = Data.IsLiked;
