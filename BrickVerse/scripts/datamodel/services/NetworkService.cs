@@ -111,6 +111,7 @@ public sealed partial class NetworkService : Instance
 	private bool _heartbeatInFlight;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private readonly ConcurrentDictionary<int, string> _peerJoinTokens = new();
+	private readonly ConcurrentDictionary<int, string> _peerJoinStages = new();
 	private ulong _lastActivityReportTime;
 	private bool _localPlayerReady;
 	private bool _localPlayerRequestInFlight;
@@ -653,6 +654,7 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerConnected(int peerID)
 	{
+		_peerJoinStages[peerID] = "authentication";
 		_peerLastActivity[peerID] = Time.GetTicksMsec();
 
 		lock (_rateLimiterLock)
@@ -672,6 +674,14 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerDisconnected(int peerID)
 	{
+		string stage = _peerJoinStages.TryGetValue(peerID, out string? joinStage) ? joinStage : "unknown";
+		Player? disconnectedPlayer = _players.GetPlayerFromPeerID(peerID);
+		BV.PrintErr(
+			$"[JoinFailure] Peer {peerID} disconnected during {stage}. " +
+			$"PlayerReady={disconnectedPlayer?.IsReady ?? false}, " +
+			$"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}.");
+		ReplicateSync.CancelPlaceReplicationSend(peerID);
+		_peerJoinStages.TryRemove(peerID, out _);
 		ActivePeerIDs.Remove(peerID);
 		_peerLastActivity.TryRemove(peerID, out _);
 		lock (_rateLimiterLock)
@@ -837,6 +847,7 @@ public sealed partial class NetworkService : Instance
 			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, " +
 			$"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
 		);
+		_peerJoinStages[peerID] = "authentication validation";
 
 		if (peerID <= 1)
 		{
@@ -1017,6 +1028,7 @@ public sealed partial class NetworkService : Instance
 		try
 		{
 			BV.Print("Auth: starting SyncPlaceToPlayer...");
+			_peerJoinStages[peerID] = "world replication";
 			ReplicateSync.SyncPlaceToPlayer(plr);
 			BV.Print("Auth: SyncPlaceToPlayer returned.");
 
@@ -1192,12 +1204,14 @@ public sealed partial class NetworkService : Instance
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllTransform()
 	{
+		if (IsServer) _peerJoinStages[RemoteSenderId] = "transform synchronization";
 		TransformSync.SyncAllTransformToPeer(RemoteSenderId);
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllScripts()
 	{
+		if (IsServer) _peerJoinStages[RemoteSenderId] = "script synchronization";
 		ScriptSync.SyncScriptsToPeer(RemoteSenderId);
 	}
 
@@ -1254,6 +1268,7 @@ public sealed partial class NetworkService : Instance
 	private void NetPlayerReportReady()
 	{
 		int peerID = RemoteSenderId;
+		if (IsServer) _peerJoinStages[peerID] = "player setup";
 		Player? plr = Root.Players.GetPlayerFromPeerID(peerID);
 
 		if (plr != null && !plr.IsReady)
