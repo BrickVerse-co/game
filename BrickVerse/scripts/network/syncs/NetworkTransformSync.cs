@@ -246,13 +246,67 @@ public partial class NetworkTransformSync : Instance
 		if (chunkIndex != _snapshotChunksReceived)
 			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
 
-		NetBatchTransformData[] transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
-		foreach (NetBatchTransformData item in transforms)
+		NetBatchTransformData[] transforms;
+		try
 		{
-			if (_pendingTransforms.ContainsKey(item.NetID)) continue;
-			RecvUpdateTransformHandler(item.NetID, TransformPayloadDto.FromArray(item.Value), 1, true, false);
+			transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
+				ZstdCompressionUtils.Decompress(rawBytes)
+			) ?? throw new NetworkException("Decoded transform chunk was empty.");
+		}
+		catch (Exception ex)
+		{
+			BV.PrintErr(
+				$"[JoinTransform] Could not decode chunk {chunkIndex + 1}/{chunkCount}; "
+					+ $"continuing join and skipping its transforms. {ex.GetType().Name}: {ex.Message}"
+			);
+			CompleteTransformSnapshotChunk(chunkIndex);
+			return;
 		}
 
+		int skippedTransforms = 0;
+		string? firstSkippedNetId = null;
+		string? firstSkippedReason = null;
+		foreach (NetBatchTransformData item in transforms)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(item.NetID))
+					throw new NetworkException("Transform entry has no network ID.");
+				if (_pendingTransforms.ContainsKey(item.NetID))
+					continue;
+				if (item.Value is not { Length: 16 })
+					throw new NetworkException("Transform payload must contain 16 bytes.");
+
+				RecvUpdateTransformHandler(
+					item.NetID,
+					TransformPayloadDto.FromArray(item.Value),
+					1,
+					true,
+					false
+				);
+			}
+			catch (Exception ex)
+			{
+				skippedTransforms++;
+				firstSkippedNetId ??= item.NetID;
+				firstSkippedReason ??= $"{ex.GetType().Name}: {ex.Message}";
+			}
+		}
+
+		if (skippedTransforms > 0)
+		{
+			BV.PrintErr(
+				$"[JoinTransform] Skipped {skippedTransforms} invalid transform(s) in chunk "
+					+ $"{chunkIndex + 1}/{chunkCount}; first object={firstSkippedNetId ?? "<unknown>"}. "
+					+ firstSkippedReason
+			);
+		}
+
+		CompleteTransformSnapshotChunk(chunkIndex);
+	}
+
+	private void CompleteTransformSnapshotChunk(int chunkIndex)
+	{
 		_snapshotChunksReceived++;
 		RpcId(1, nameof(NetAckTransformSnapshotChunk), chunkIndex);
 		if (_snapshotChunksReceived == _snapshotChunksExpected)
