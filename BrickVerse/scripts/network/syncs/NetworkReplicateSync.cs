@@ -399,9 +399,18 @@ public sealed partial class NetworkReplicateSync : Instance
 			return;
 		}
 
-		foreach (string? key in _pendingReplicates.Keys)
+		foreach (string key in _pendingReplicates.Keys.ToArray())
 		{
 			NetworkedObject? node = NetService.Root.GetNetObjectFromID(key);
+			if (node == null && _pendingReplicates.TryGetValue(key, out List<NetReplicateData>? pending))
+			{
+				// A parent may become available under its stable path without being
+				// registered under the server's ID (notably for pre-created objects).
+				// Retry the same path fallback used during initial chunk application.
+				string parentPath = pending.Count > 0 ? pending[0].ParentNodePath : "";
+				if (!string.IsNullOrEmpty(parentPath))
+					node = NetService.Root.GetNetObj(parentPath);
+			}
 			if (node != null)
 			{
 				CheckLeftoverReplication(node);
@@ -418,9 +427,14 @@ public sealed partial class NetworkReplicateSync : Instance
 			return;
 
 		string reportID = Guid.NewGuid().ToString("N")[..8];
+		string unresolved = string.Join(" | ", _worldReplicateSet.Take(8).Select(data =>
+			$"{data.ClassName} {data.NodePath} (id={data.NetworkID}, parent={data.ParentNodeID})"));
+		string pendingParents = string.Join(" | ", _pendingReplicates.Take(8).Select(pair =>
+			$"{pair.Key} -> {(pair.Value.Count > 0 ? pair.Value[0].ParentNodePath : "<empty>")}"));
 		BV.PrintErr($"[JoinFailure:{reportID}] World replication timed out after {PlaceReplicationTimeoutMs / 1000}s: " +
 			$"chunks={_placeChunksReceived}/{_placeChunksExpected}, loaded={InstanceLoadedCount - 1}/{InstanceToBeLoadedCount}, " +
-			$"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}.");
+			$"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}. " +
+			$"First unresolved: [{unresolved}]. First pending parents: [{pendingParents}].");
 		NetService.DisconnectSelf(
 			$"World loading timed out while applying server data. Please retry. If this keeps happening, share report ID {reportID} with support.",
 			DisconnectionCodeEnum.ConnectionTimeout);
