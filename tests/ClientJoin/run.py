@@ -10,22 +10,26 @@ from pathlib import Path
 import shutil
 import socket
 import subprocess
-import sys
 import tempfile
 import time
 import threading
+import random
+from api_fixture import ProductionApiFixture
 
 
 class LossProxy:
     """Interrupt client-to-server UDP once, while ENet and application ACKs are active."""
 
-    def __init__(self, server_port, duration):
+    def __init__(self, server_port, duration, max_datagram=0):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(("127.0.0.1", 0))
         self.socket.settimeout(0.1)
         self.port = str(self.socket.getsockname()[1])
         self.server = ("127.0.0.1", int(server_port))
         self.duration = duration
+        self.max_datagram = max_datagram
+        self.oversized_drops = 0
+        self.largest_datagram = 0
         self.client = None
         self.upstream_packets = 0
         self.drop_started = None
@@ -38,6 +42,10 @@ class LossProxy:
             try:
                 data, origin = self.socket.recvfrom(65535)
             except socket.timeout:
+                continue
+            self.largest_datagram = max(self.largest_datagram, len(data))
+            if self.max_datagram and len(data) > self.max_datagram:
+                self.oversized_drops += 1
                 continue
             if origin == self.server:
                 if self.client:
@@ -61,7 +69,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("engine", nargs="?", default=shutil.which("godot"))
     parser.add_argument("world", nargs="?")
+    parser.add_argument("--production-api", action="store_true")
     parser.add_argument("--parts", type=int, default=0)
+    parser.add_argument("--large-value-bytes", type=int, default=0)
+    parser.add_argument("--max-datagram", type=int, default=0)
     parser.add_argument("--loss-window", type=float, default=0,
                         help="Drop upstream UDP for this many seconds during snapshot transfer.")
     options = parser.parse_args()
@@ -78,15 +89,22 @@ def main():
         port = str(available.getsockname()[1])
     log_dir = Path(tempfile.mkdtemp(prefix="brickverse-join-smoke-"))
     processes = []
-    proxy = LossProxy(port, options.loss_window) if options.loss_window > 0 else None
+    proxy = LossProxy(port, options.loss_window, options.max_datagram) if options.loss_window > 0 or options.max_datagram > 0 else None
     world = Path(options.world).resolve() if options.world else None
-    if options.parts:
+    if options.parts or options.large_value_bytes:
         world = log_dir / "large-world.xml"
         world.write_text('<game><Item class="Environment"><Properties>'
                          '<string name="Name">Environment</string></Properties>'
                          + ''.join(f'<Item class="Part"><Properties><string name="Name">Block{i}</string>'
                                    '<bool name="Anchored">true</bool></Properties></Item>'
-                                   for i in range(options.parts)) + '</Item></game>')
+                                   for i in range(options.parts))
+                         + ('<Item class="StringValue"><Properties><string name="Name">LargeValue</string>'
+                            '<string name="Value">' + random.Random(42).randbytes(options.large_value_bytes).hex()
+                            + '</string></Properties></Item>' if options.large_value_bytes else '')
+                         + '</Item></game>')
+    if options.production_api and world is None:
+        world = root / "BrickVerse/samples/worlds/baseplate.bvxw"
+    api = ProductionApiFixture(port, world, proxy.port if proxy else None) if options.production_api else None
     try:
         for role in ("server", "client"):
             log = open(log_dir / f"{role}.log", "w")
@@ -105,7 +123,9 @@ def main():
                 "--id",
                 "joinsmoke",
             ]
-            if role == "server" and world:
+            if options.production_api:
+                args.extend(["--token", "test-host-token" if role == "server" else "test-join-token"])
+            elif role == "server" and world:
                 args.extend(["--world", str(world)])
             process = subprocess.Popen(
                 args, stdout=log, stderr=subprocess.STDOUT, env=env
@@ -129,7 +149,13 @@ def main():
                     "Replication RPC arguments do not match the receiver."
                 )
             if "Dispatch Client run" in client_log:
-                if proxy:
+                if api:
+                    required = {"/api/v3/world/server/awaken", "/api/v3/world/server/tree",
+                                "/api/v3/world/server/user", "/api/v3/world/client/server/authorize-connection",
+                                "/api/v3/world/client/server/status"}
+                    if not required.issubset(api.requests):
+                        raise RuntimeError(f"Production launch skipped API stages: {required - set(api.requests)}")
+                if proxy and options.loss_window > 0:
                     server_log = (log_dir / "server.log").read_text()
                     if proxy.drop_started is None or "[JoinReplication] Retrying" not in server_log:
                         raise RuntimeError("Join passed, but did not exercise snapshot retry recovery.")
@@ -145,8 +171,6 @@ def main():
             "Client did not complete the join handshake within 45 seconds."
         )
     finally:
-        if proxy:
-            proxy.close()
         for process, log in reversed(processes):
             if process.poll() is None:
                 process.terminate()
@@ -156,6 +180,11 @@ def main():
                     process.kill()
                     process.wait()
             log.close()
+        if api:
+            api.close()
+        if proxy:
+            print(f"UDP proxy: largest={proxy.largest_datagram}, oversized drops={proxy.oversized_drops}")
+            proxy.close()
         print(f"Join logs: {log_dir}")
 
 

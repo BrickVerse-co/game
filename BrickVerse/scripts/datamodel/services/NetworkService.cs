@@ -68,6 +68,10 @@ public sealed partial class NetworkService : Instance
 	> _netInstanceErrorMessages = new()
 	{
 		{
+			NetworkInstance.NetInstanceErrorEnum.ProtocolMismatch,
+			"This client and game server use incompatible network versions. Update the client and restart the game server."
+		},
+		{
 			NetworkInstance.NetInstanceErrorEnum.DataChannelConnectFailure,
 			"Couldn't connect to the data channel, please try rejoining"
 		},
