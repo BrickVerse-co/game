@@ -978,6 +978,10 @@ public sealed partial class NetworkService : Instance
 			|| !IsPlatformClaimConsistent((ClientPlatformEnum)platform, platformStr)
 		)
 		{
+			BV.PrintErr(
+				$"Auth integrity rejected peer {peerID}: contradictory platform claim "
+					+ $"category={platform} ({(ClientPlatformEnum)platform}), os='{platformStr}'."
+			);
 			SuspiciousPeerActivity?.Invoke(peerID, "invalid-platform-claim", 3);
 			DisconnectPeer(peerID, IntegrityFailureMessage, DisconnectionCodeEnum.IntegrityFail);
 			return;
@@ -992,8 +996,12 @@ public sealed partial class NetworkService : Instance
 					throw new Exception("Integrity validation failed.");
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
+				BV.PrintErr(
+					$"Auth integrity proof rejected for peer {peerID}, os='{platformStr}', "
+						+ $"proofBytes={pk?.Length ?? 0}: {ex.Message}"
+				);
 				DisconnectPeer(
 					peerID,
 					IntegrityFailureMessage,
@@ -1679,7 +1687,10 @@ public sealed partial class NetworkService : Instance
 			return ClientPlatformEnum.VR;
 		if (OS.HasFeature("console"))
 			return ClientPlatformEnum.Console;
-		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui"))
+		// "mobile-ui" is also enabled by desktop client presets so keyboard/mouse
+		// users can opt into the touch-oriented layout. It is a presentation feature,
+		// not a trustworthy operating-system claim.
+		if (Globals.IsMobileBuild)
 		{
 			Vector2I viewport = DisplayServer.WindowGetSize();
 			return Mathf.Min(viewport.X, viewport.Y) >= 720
@@ -1689,7 +1700,7 @@ public sealed partial class NetworkService : Instance
 		return ClientPlatformEnum.Desktop;
 	}
 
-	private static bool IsPlatformClaimConsistent(ClientPlatformEnum platform, string platformName)
+	internal static bool IsPlatformClaimConsistent(ClientPlatformEnum platform, string platformName)
 	{
 		string normalized = (platformName ?? string.Empty).Trim().ToLowerInvariant();
 		if (normalized is not ("windows" or "macos" or "linux" or "android" or "ios"))

@@ -444,9 +444,15 @@ jobs:
             # macOS exports put the executable inside the .app bundle.
             PRIMARY_FILE="$(find "$EXPORT_DIR" -type f -path "*/Contents/MacOS/*" | sort | head -n 1 || true)"
           else
+            # The executable hash must describe the file OS.GetExecutablePath()
+            # sees at runtime. Never select the alphabetically earlier PCK unless
+            # an executable genuinely was not exported.
             PRIMARY_FILE="$(find "$EXPORT_DIR" -maxdepth 2 -type f \
-              \( -name "${{ matrix.executable_glob }}" -o -name "*.pck" \) \
-              | sort | head -n 1 || true)"
+              -name "${{ matrix.executable_glob }}" | sort | head -n 1 || true)"
+            if [[ -z "$PRIMARY_FILE" ]]; then
+              PRIMARY_FILE="$(find "$EXPORT_DIR" -maxdepth 2 -type f \
+                -name "*.pck" | sort | head -n 1 || true)"
+            fi
           fi
 
           if [[ -n "$PRIMARY_FILE" ]]; then

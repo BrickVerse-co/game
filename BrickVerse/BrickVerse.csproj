@@ -93,6 +93,9 @@
 		<NativeLibrary Include="native/luau/ios/libLuau.Bytecode.a" />
 		<NativeLibrary Include="native/luau/ios/libLuau.Common.a" />
 	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="BrickVerse.Tests" />
+	</ItemGroup>
 	<ItemGroup Condition="'$(RuntimeIdentifier)' == 'iossimulator-arm64'">
 		<DirectPInvoke Include="Luau.VM" />
 		<DirectPInvoke Include="Luau.Compiler" />
