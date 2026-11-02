@@ -139,6 +139,10 @@ public sealed partial class NetworkService : Instance
 	public void Attach(World game)
 	{
 		game.Network = this;
+		// Reserve the world's ID before assigning IDs to the network service and
+		// synchronizers. Clients reserve the same first ID for their local world;
+		// giving it to NetworkService made snapshot children attach to World.
+		game.Root = game;
 		Root = game;
 		TransformSync.Name = "TransformSync";
 		PropSync.Name = "PropSync";

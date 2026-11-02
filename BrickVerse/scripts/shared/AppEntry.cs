@@ -17,9 +17,22 @@ namespace BrickVerse.Shared;
 
 public partial class AppEntry : Node
 {
+	internal static bool ShouldOpenAppShell(
+		bool usesMobileUI,
+		bool isStandaloneClientShell,
+		IReadOnlyDictionary<string, string> args
+	) => (usesMobileUI || isStandaloneClientShell)
+		&& !(args.TryGetValue("token", out string? token) && !string.IsNullOrWhiteSpace(token))
+		&& !(args.TryGetValue("network", out string? mode)
+			&& mode.Equals("server", StringComparison.OrdinalIgnoreCase));
+
 	public override async void _Ready()
 	{
 		Dictionary<string, string> cmdargs = ReadCmdArgs();
+		// The Android HTTP bridge must survive shell/game transitions and also
+		// exist for direct token launches that never construct MobileUI.
+		if (OS.HasFeature("android"))
+			BrickVerse.Mobile.Utils.MobileAuthBrowser.GetOrCreate();
 		bool isApiRefGen = cmdargs.ContainsKey("genapi");
 		bool isCreator = cmdargs.ContainsKey("creator");
 		bool isLtChild = cmdargs.ContainsKey("ltchild");
@@ -80,7 +93,7 @@ public partial class AppEntry : Node
 		{
 			entry = AppEntryEnum.Creator;
 		}
-		if (Globals.UsesMobileUI || isStandaloneClientShell)
+		if (ShouldOpenAppShell(Globals.UsesMobileUI, isStandaloneClientShell, cmdargs))
 		{
 			entry = AppEntryEnum.MobileUI;
 		}

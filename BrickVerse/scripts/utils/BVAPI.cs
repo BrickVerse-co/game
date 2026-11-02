@@ -24,6 +24,7 @@ public static class BVAPI
 
 	public static void SetAuthToken(string token)
 	{
+		token = NormalizeToken(token);
 		_client.DefaultRequestHeaders.Remove("Authorization");
 		_client.DefaultRequestHeaders.Remove("Cookie");
 

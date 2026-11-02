@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
 using System.Text.Json;
@@ -30,15 +31,18 @@ public static class BVMobileAuthAPI
 	public static Func<string, bool>? InAppBrowserLauncher { private get; set; }
 
 	public static APIV3AuthMeUser CurrentUserInfo { get; private set; }
-	public static bool IsAuthenticated => !string.IsNullOrWhiteSpace(_authData.Token);
+	public static bool IsAuthenticated { get; private set; }
 
 	private static MobileAuthData _authData;
 	private const string AuthDataPath = "user://auth2";
 
-	public static async Task SetupClient()
+	public static async Task SetupClient(bool authenticate = true)
 	{
 		try
 		{
+			IsAuthenticated = false;
+			CurrentUserInfo = default;
+			_authState = "";
 			_authData = new();
 
 			if (FileAccess.FileExists(AuthDataPath))
@@ -58,7 +62,10 @@ public static class BVMobileAuthAPI
 				}
 			}
 
-			if (_authData.Token == null)
+			if (!authenticate)
+				return;
+
+			if (string.IsNullOrWhiteSpace(_authData.Token))
 				AskForAuthentication?.Invoke();
 			else
 				await LoginWithAuthToken(_authData.Token!);
@@ -68,7 +75,7 @@ public static class BVMobileAuthAPI
 			// Corrupt storage and platform I/O failures must never escape an
 			// async-void startup callback on Android NativeAOT.
 			BV.PrintErr("Mobile authentication initialization failed: ", exception);
-			_authData = new();
+			OS.Alert(exception.Message, "Unable to verify session");
 			BVAPI.SetAuthToken("");
 			AskForAuthentication?.Invoke();
 		}
@@ -76,7 +83,8 @@ public static class BVMobileAuthAPI
 
 	private static void SaveAuthData()
 	{
-		FileAccess authData = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Write);
+		using FileAccess authData = FileAccess.Open(AuthDataPath, FileAccess.ModeFlags.Write)
+			?? throw new System.IO.IOException("Could not open mobile authentication storage.");
 		authData.StoreString(
 			JsonSerializer.Serialize(
 				_authData,
@@ -101,10 +109,10 @@ public static class BVMobileAuthAPI
 		CancellationToken cancellationToken = _mobileAuthCancellation.Token;
 		_authState = Guid.NewGuid().ToString();
 		_authData.PendingState = _authState;
-		SaveAuthData();
 
 		try
 		{
+			SaveAuthData();
 			string createUrl = Globals.ApiEndpoint.PathJoin("/v3/auth/quick-signin/create");
 			BV.Print("Starting mobile authentication request: ", createUrl);
 			using HttpResponseMessage createResponse = await _client.PostAsync(
@@ -132,9 +140,9 @@ public static class BVMobileAuthAPI
 			string authUrl = Globals.MainEndpoint.PathJoin(
 				$"/auth/mobile?code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(_authState)}&mode={(register ? "signup" : "login")}"
 			);
-			if (!InAppBrowserLauncher?.Invoke(authUrl) == true)
+			if (InAppBrowserLauncher?.Invoke(authUrl) != true)
 			{
-				BV.Print("Opening authentication in the system browser: ", authUrl);
+				BV.Print("Opening authentication in the system browser.");
 				Error shellOpenResult = OS.ShellOpen(authUrl);
 				BV.Print("System browser open result: ", shellOpenResult);
 				if (shellOpenResult != Error.Ok)
@@ -148,7 +156,8 @@ public static class BVMobileAuthAPI
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
 			BV.PrintWarn("Mobile authentication expired or was cancelled.");
-			AskForAuthentication?.Invoke();
+			if (!IsAuthenticated)
+				AskForAuthentication?.Invoke();
 		}
 		catch (TaskCanceledException exception)
 		{
@@ -189,6 +198,8 @@ public static class BVMobileAuthAPI
 			// already effectively logged out.
 			BV.PrintWarn("Server logout did not complete: ", exception.Message);
 		}
+		IsAuthenticated = false;
+		CurrentUserInfo = default;
 		_authData = new();
 		if (FileAccess.FileExists(AuthDataPath))
 			DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(AuthDataPath));
@@ -230,6 +241,9 @@ public static class BVMobileAuthAPI
 
 		while (!cancellationToken.IsCancellationRequested && DateTime.UtcNow < expiresAt)
 		{
+			if (IsAuthenticated)
+				return;
+			bool canLogin = false;
 			try
 			{
 				using HttpResponseMessage response = await _client.PostAsync(
@@ -237,6 +251,9 @@ public static class BVMobileAuthAPI
 					new StringContent("{}", System.Text.Encoding.UTF8, "application/json"),
 					cancellationToken
 				);
+
+				if (IsAuthenticated)
+					return;
 
 				if (response.IsSuccessStatusCode)
 				{
@@ -247,7 +264,7 @@ public static class BVMobileAuthAPI
 						document.RootElement.TryGetProperty("expired", out JsonElement expiredNode)
 						&& expiredNode.GetBoolean();
 
-					bool canLogin =
+					canLogin =
 						document.RootElement.TryGetProperty(
 							"canLogin",
 							out JsonElement canLoginNode
@@ -258,15 +275,6 @@ public static class BVMobileAuthAPI
 							"The mobile sign-in code expired. Please try again."
 						);
 
-					if (canLogin)
-					{
-						await CompleteQuickSignInAsync(
-							code,
-							DateTime.UtcNow.AddMinutes(5),
-							_mobileAuthCancellation?.Token ?? CancellationToken.None
-						);
-						return;
-					}
 				}
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -282,6 +290,14 @@ public static class BVMobileAuthAPI
 				// Polling is best-effort. Android may temporarily lose the
 				// connection while switching to/from the authentication browser.
 				BV.PrintWarn("Quick sign-in poll failed; retrying: ", exception.Message);
+			}
+
+			// Once approved, exchange/validation failures belong to the sign-in
+			// flow, not the best-effort polling retry loop.
+			if (canLogin)
+			{
+				await CompleteQuickSignInAsync(code, expiresAt, cancellationToken);
+				return;
 			}
 
 			await Task.Delay(DeviceCodePollIntervalMs, cancellationToken);
@@ -302,6 +318,7 @@ public static class BVMobileAuthAPI
 
 		try
 		{
+			bool tokenExchanged = false;
 			string escapedCode = Uri.EscapeDataString(code);
 			string loginUrl = Globals.ApiEndpoint.PathJoin(
 				$"/v3/auth/quick-signin/{escapedCode}/login"
@@ -331,6 +348,7 @@ public static class BVMobileAuthAPI
 						&& !string.IsNullOrWhiteSpace(tokenNode.GetString())
 					)
 					{
+						tokenExchanged = true;
 						await LoginWithAuthToken(tokenNode.GetString()!);
 						_authState = "";
 						return;
@@ -348,11 +366,11 @@ public static class BVMobileAuthAPI
 				{
 					throw;
 				}
-				catch (HttpRequestException exception)
+				catch (HttpRequestException exception) when (!tokenExchanged)
 				{
 					BV.PrintWarn("Quick sign-in exchange failed; retrying: ", exception.Message);
 				}
-				catch (InvalidOperationException exception)
+				catch (InvalidOperationException exception) when (!tokenExchanged)
 				{
 					// Godot/native Android transport can report CantConnect this way.
 					BV.PrintWarn("Quick sign-in exchange failed; retrying: ", exception.Message);
@@ -369,41 +387,59 @@ public static class BVMobileAuthAPI
 		}
 	}
 
+	internal static bool IsSessionRejected(Exception exception) =>
+		exception is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized };
+
 	public static async Task LoginWithAuthToken(string userToken)
 	{
+		IsAuthenticated = false;
+		CurrentUserInfo = default;
 		BVAPI.SetAuthToken(userToken);
+		// A quick-sign-in code can only be exchanged once. Keep its credential
+		// even if /auth/me is temporarily unavailable, so startup can retry it.
+		_authData.Token = userToken;
+		_authData.PendingState = null;
+		TrySaveAuthData();
+
+		APIV3AuthMeUser me;
 		try
 		{
-			APIV3AuthMeUser me = await BVAPI.GetCurrentUser();
-
-			_authData.Username = me.Username;
-			_authData.Token = userToken;
-			_authData.UserID = me.Id;
-			_authData.PendingState = null;
-			SaveAuthData();
-			BV.Print("Hello!! ", me.Username);
-
-			CurrentUserInfo = me;
-			UserAuthenticated?.Invoke(me);
+			me = await BVAPI.GetCurrentUser();
 		}
 		catch (Exception ex)
 		{
-			_authData = new();
-			if (FileAccess.FileExists(AuthDataPath))
-				DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(AuthDataPath));
 			BVAPI.SetAuthToken("");
-			if (OS.IsDebugBuild())
+			if (IsSessionRejected(ex))
 			{
-				OS.Alert($"{ex}", "Authentication Failure");
+				_authData = new();
+				if (FileAccess.FileExists(AuthDataPath))
+					DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(AuthDataPath));
+				throw new AuthenticationException("Your session has expired, please log back in again.", ex);
 			}
-			else
-			{
-				OS.Alert(
-					"Your session has expired, please log back in again.",
-					"Authentication Failure"
-				);
-			}
-			AskForAuthentication?.Invoke();
+
+			// Network, server, response parsing, and storage failures do not prove
+			// that the session expired. Never delete a credential for these errors.
+			throw new InvalidOperationException(
+				"Could not verify your session. Please check your connection and reopen the app to retry.", ex);
+		}
+
+		_authData.Username = me.Username;
+		_authData.UserID = me.Id;
+		TrySaveAuthData();
+		CurrentUserInfo = me;
+		IsAuthenticated = true;
+		UserAuthenticated?.Invoke(me);
+	}
+
+	private static void TrySaveAuthData()
+	{
+		try
+		{
+			SaveAuthData();
+		}
+		catch (Exception exception)
+		{
+			BV.PrintWarn("Could not persist mobile authentication: ", exception.Message);
 		}
 	}
 }
