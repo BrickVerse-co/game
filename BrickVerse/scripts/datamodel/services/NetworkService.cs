@@ -547,10 +547,8 @@ public sealed partial class NetworkService : Instance
 			}
 			catch (Exception ex)
 			{
-				if (OS.IsDebugBuild())
-				{
-					BV.PrintErr($"{dispatch.Method.Name} invoke failure: {ex}");
-				}
+				BV.PrintErr($"RPC invocation failed. Method={dispatch.Method.Name}, "
+					+ $"Target={netMsg.Target}, FromPeer={originFromPeer}: {ex}");
 			}
 			finally
 			{
@@ -758,7 +756,8 @@ public sealed partial class NetworkService : Instance
 		BV.PrintErr(
 			$"[JoinFailure] Peer {peerID} disconnected during {stage}. "
 				+ $"PlayerReady={disconnectedPlayer?.IsReady ?? false}, "
-				+ $"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}."
+				+ $"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}. "
+				+ $"Snapshot: {ReplicateSync.GetPlaceReplicationSendStatus(peerID)}."
 		);
 		ReplicateSync.CancelPlaceReplicationSend(peerID);
 		TransformSync.CancelTransformSnapshotSend(peerID);

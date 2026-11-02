@@ -31,6 +31,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	private const int MaxPendingReplicatesPerParent = 1024;
 	private const int PlaceChunksPerFrame = 4;
 	private const int PlaceChunksInFlight = 8;
+	private const ulong PlaceChunkRetryIntervalMs = 2_000;
 	private const int StablePlaceReplicationPolls = 2;
 	private const ulong PlaceReplicationPollIntervalMs = 50;
 	private const ulong PlaceReplicationStallTimeoutMs = 30_000;
@@ -85,6 +86,8 @@ public sealed partial class NetworkReplicateSync : Instance
 		public int StablePollCount { get; set; }
 		public ulong NextPollAtMsec { get; set; }
 		public bool IsFinalRound { get; set; }
+		public ulong LastAcknowledgedAtMsec { get; set; }
+		public ulong LastRetryAtMsec { get; set; }
 		public HashSet<string> SentNetworkIDs { get; } = [];
 		public Action? Completed { get; } = completed;
 	}
@@ -99,7 +102,7 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	static NetworkReplicateSync()
 	{
-		_useNetworkLog = OS.HasFeature("netlog");
+		_useNetworkLog = Globals.GDAvailable && OS.HasFeature("netlog");
 	}
 
 	public override void Init()
@@ -117,7 +120,7 @@ public sealed partial class NetworkReplicateSync : Instance
 		PollPlaceReplication(session);
 	}
 
-	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
+	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable, TransferChannel = 2)]
 	private void NetRecvChunk(
 		byte[] rawBytes,
 		bool isPlaceReplicate,
@@ -151,6 +154,20 @@ public sealed partial class NetworkReplicateSync : Instance
 
 		if (isPlaceReplicate)
 		{
+			// Recovery retransmits already-sent chunks. Re-acknowledge applied
+			// data without applying it twice or resetting the inactivity watchdog.
+			if (round >= 0 && round < _placeRound)
+			{
+				RpcId(1, nameof(NetAckPlaceReplicationChunk), round, chunkIndex);
+				return;
+			}
+			if (round == _placeRound && chunkCount == _placeRoundChunksExpected
+				&& chunkIndex < _placeRoundChunksReceived)
+			{
+				RpcId(1, nameof(NetAckPlaceReplicationChunk), round, _placeRoundChunksReceived - 1);
+				return;
+			}
+
 			int queuedForRound = _incomingChunks.Count(chunk =>
 				chunk.IsPlaceReplication && chunk.Round == round
 			);
@@ -168,6 +185,9 @@ public sealed partial class NetworkReplicateSync : Instance
 			}
 
 			int expectedIndex = _placeRoundChunksReceived + queuedForRound;
+			if (round == _placeRound && chunkCount == _placeRoundChunksExpected
+				&& chunkIndex < expectedIndex)
+				return; // Already queued; acknowledge only after it is applied.
 			if (
 				round != _placeRound
 				|| chunkCount != _placeRoundChunksExpected
@@ -462,6 +482,8 @@ public sealed partial class NetworkReplicateSync : Instance
 		session.ObjectCount = packed.Length;
 		session.NextChunkIndex = 0;
 		session.AcknowledgedChunkCount = 0;
+		session.LastAcknowledgedAtMsec = Time.GetTicksMsec();
+		session.LastRetryAtMsec = session.LastAcknowledgedAtMsec;
 		long totalBytes = compressedChunks.Sum(chunk => (long)chunk.Length);
 		BV.Print(
 			$"[JoinReplication] Peer {session.PeerID} round {session.Round}: objects={packed.Length}, chunks={compressedChunks.Count}, compressedBytes={totalBytes}, final={session.IsFinalRound}."
@@ -485,29 +507,48 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	private void SendNextPlaceReplicationChunks(PlaceReplicationSendSession session)
 	{
+		ulong now = Time.GetTicksMsec();
+		if (session.NextChunkIndex > session.AcknowledgedChunkCount
+			&& now - session.LastAcknowledgedAtMsec >= PlaceChunkRetryIntervalMs
+			&& now - session.LastRetryAtMsec >= PlaceChunkRetryIntervalMs)
+		{
+			session.LastRetryAtMsec = now;
+			BV.PrintWarn($"[JoinReplication] Retrying peer {session.PeerID} round {session.Round}: "
+				+ $"acknowledged={session.AcknowledgedChunkCount}, sent={session.NextChunkIndex}/{session.Chunks.Length}, "
+				+ $"idleMs={now - session.LastAcknowledgedAtMsec}.");
+			// Only retry the bounded in-flight window, never the entire world.
+			for (int index = session.AcknowledgedChunkCount; index < session.NextChunkIndex; index++)
+				SendPlaceReplicationChunk(session, index);
+		}
+
 		int sent = 0;
 		while (
 			session.NextChunkIndex < session.Chunks.Length
 			&& session.NextChunkIndex - session.AcknowledgedChunkCount < PlaceChunksInFlight
 			&& sent++ < PlaceChunksPerFrame
 		)
-		{
-			int chunkIndex = session.NextChunkIndex++;
-			RpcId(
-				session.PeerID,
-				nameof(NetRecvChunk),
-				session.Chunks[chunkIndex],
-				true,
-				session.Round,
-				chunkIndex,
-				session.Chunks.Length,
-				session.ObjectCount,
-				session.IsFinalRound
-			);
-		}
+			SendPlaceReplicationChunk(session, session.NextChunkIndex++);
 	}
 
-	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
+	private void SendPlaceReplicationChunk(PlaceReplicationSendSession session, int chunkIndex)
+	{
+		RpcId(
+			session.PeerID,
+			nameof(NetRecvChunk),
+			session.Chunks[chunkIndex],
+			true,
+			session.Round,
+			chunkIndex,
+			session.Chunks.Length,
+			session.ObjectCount,
+			session.IsFinalRound
+		);
+	}
+
+	internal static int AdvanceChunkAcknowledgement(int acknowledged, int sent, int index) =>
+		index >= acknowledged && index < sent ? index + 1 : acknowledged;
+
+	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable, TransferChannel = 2)]
 	private void NetAckPlaceReplicationChunk(int round, int chunkIndex)
 	{
 		if (!NetService.IsServer)
@@ -522,15 +563,18 @@ public sealed partial class NetworkReplicateSync : Instance
 		)
 			return;
 
-		if (round != session.Round || chunkIndex != session.AcknowledgedChunkCount)
-		{
-			BV.PrintErr(
-				$"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={round}:{chunkIndex}, expected={session.Round}:{session.AcknowledgedChunkCount}."
-			);
-			return;
-		}
+		if (round != session.Round)
+			return; // An acknowledgement for an earlier retransmitted round.
 
-		session.AcknowledgedChunkCount++;
+		int acknowledged = AdvanceChunkAcknowledgement(
+			session.AcknowledgedChunkCount, session.NextChunkIndex, chunkIndex);
+		if (acknowledged == session.AcknowledgedChunkCount)
+			return;
+
+		// The receiver applies chunks in order, so a later acknowledgement also
+		// proves earlier chunks were applied. Never acknowledge unsent data.
+		session.AcknowledgedChunkCount = acknowledged;
+		session.LastAcknowledgedAtMsec = Time.GetTicksMsec();
 		if (session.AcknowledgedChunkCount == session.Chunks.Length)
 		{
 			if (session.IsFinalRound)
@@ -550,6 +594,12 @@ public sealed partial class NetworkReplicateSync : Instance
 		}
 		SendNextPlaceReplicationChunks(session);
 	}
+
+	internal string GetPlaceReplicationSendStatus(int peerID) =>
+		_placeReplicationSendSessions.TryGetValue(peerID, out PlaceReplicationSendSession? session)
+			? $"round={session.Round}, acknowledged={session.AcknowledgedChunkCount}, sent={session.NextChunkIndex}/{session.Chunks.Length}, "
+				+ $"ackIdleMs={Time.GetTicksMsec() - session.LastAcknowledgedAtMsec}"
+			: "no active world snapshot";
 
 	internal void CancelPlaceReplicationSend(int peerID)
 	{
@@ -811,8 +861,11 @@ public sealed partial class NetworkReplicateSync : Instance
 				+ $"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}. "
 				+ $"First unresolved: [{unresolved}]. First pending parents: [{pendingParents}]."
 		);
+		string failure = _placeChunksReceived < _placeChunksExpected
+			? "World data stopped arriving from the server."
+			: "World loading timed out while applying server data.";
 		NetService.DisconnectSelf(
-			$"World loading timed out while applying server data. Please retry. If this keeps happening, share report ID {reportID} with support.",
+			$"{failure} Please retry. If this keeps happening, share report ID {reportID} with support.",
 			DisconnectionCodeEnum.ConnectionTimeout
 		);
 	}
