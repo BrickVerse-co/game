@@ -484,6 +484,9 @@ public partial class Instance : NetworkedObject
 		return null;
 	}
 
+	[ScriptMethod]
+	public Instance? FindFirstDescendant(string name) => FindFirstChild(name, true);
+
 	public T? FindChild<T>(string name) where T : Instance
 	{
 		foreach (Instance child in Children)

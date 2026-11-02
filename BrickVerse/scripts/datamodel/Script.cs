@@ -9,6 +9,8 @@ using BrickVerse.Datamodel.Services;
 using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BrickVerse.Datamodel;
 
@@ -22,6 +24,15 @@ public partial class Script : Instance
 
 	[CloneInclude, SaveInclude]
 	public byte[]? Bytecode { get; internal set; }
+
+	[CloneInclude, SaveInclude]
+	public string CompiledSourceHash { get; internal set; } = "";
+
+	[CloneInclude, SaveInclude]
+	public int CompiledArtifactVersion { get; internal set; }
+
+	[CloneInclude, SaveInclude]
+	public ScriptLanguagesEnum CompiledLanguage { get; internal set; } = ScriptLanguagesEnum.Luau;
 
 	internal readonly Dictionary<object, int> LuauUserdataCache = [];
 	internal readonly HashSet<Scripting.Luau.LuaObject> LuauObjectCache = [];
@@ -51,6 +62,7 @@ public partial class Script : Instance
 		set
 		{
 			_source = value;
+			ClearCompiledArtifact();
 		}
 	}
 
@@ -91,7 +103,7 @@ public partial class Script : Instance
 				&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition language))
 			{
 				ChosenLanguage = language.Language;
-				Bytecode = null;
+				ClearCompiledArtifact();
 			}
 		}
 	}
@@ -113,8 +125,11 @@ public partial class Script : Instance
 
 	public IScriptLanguageProvider LanguageProvider = null!;
 
-	public ScriptLanguagesEnum ChosenLanguage = ScriptLanguagesEnum.Luau;
-	public ScriptPermissionFlags PermissionFlags = 0;
+	[CloneInclude, SaveInclude]
+	public ScriptLanguagesEnum ChosenLanguage { get; internal set; } = ScriptLanguagesEnum.Luau;
+
+	[CloneInclude, SaveInclude]
+	public ScriptPermissionFlags PermissionFlags { get; set; }
 
 	public void TryRun()
 	{
@@ -233,4 +248,26 @@ public partial class Script : Instance
 		if (Bytecode != null) return;
 		Root.ScriptService.CompileScript(this);
 	}
+
+	internal bool HasCurrentCompiledArtifact(string source) => Bytecode != null
+		&& CompiledArtifactVersion == ScriptLanguageRegistry.ArtifactFormatVersion
+		&& CompiledLanguage == ChosenLanguage
+		&& CompiledSourceHash == ComputeSourceHash(source);
+
+	internal void RecordCompiledArtifact(string source)
+	{
+		CompiledSourceHash = ComputeSourceHash(source);
+		CompiledArtifactVersion = ScriptLanguageRegistry.ArtifactFormatVersion;
+		CompiledLanguage = ChosenLanguage;
+	}
+
+	internal void ClearCompiledArtifact()
+	{
+		Bytecode = null;
+		CompiledSourceHash = "";
+		CompiledArtifactVersion = 0;
+	}
+
+	private static string ComputeSourceHash(string source) =>
+		Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source)));
 }

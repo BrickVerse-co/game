@@ -1037,6 +1037,9 @@ public struct APIFeedPostAuthor
 
 	[JsonPropertyName("isBrandAccount")]
 	public bool IsBrandAccount { get; set; }
+
+	[JsonPropertyName("isGovOfficial")]
+	public bool IsGovOfficial { get; set; }
 }
 
 public struct APIFeedPostComment

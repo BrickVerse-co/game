@@ -44,6 +44,9 @@ public partial class Dynamic : Instance
 	private Vector3 _pivotRotation;
 	private bool _isFirstUpdate = true;
 	private bool _isDirty = false;
+	private StreamingModeEnum _streamingMode = StreamingModeEnum.Default;
+	private float _streamingDistance;
+	private bool _isStreamedIn = true;
 
 	private Transform3D _oldPartTransformApplied;
 	private Transform3D _oldGlobalTransformApplied;
@@ -53,6 +56,53 @@ public partial class Dynamic : Instance
 
 	protected virtual float PositionSyncThreshold => 0.5f;
 	protected virtual float RotationSyncThreshold => 5f;
+
+	/// <summary>Controls how this object participates in client-side world streaming.</summary>
+	[Editable, ScriptProperty, SyncVar, DefaultValue(StreamingModeEnum.Default)]
+	public StreamingModeEnum StreamingMode
+	{
+		get => _streamingMode;
+		set
+		{
+			if (_streamingMode == value) return;
+			_streamingMode = value;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Optional stream-out distance override. Zero uses Streaming.MaximumDistance.</summary>
+	[Editable, ScriptProperty, SyncVar, DefaultValue(0f)]
+	public float StreamingDistance
+	{
+		get => _streamingDistance;
+		set
+		{
+			float sanitized = Mathf.Max(0, value);
+			if (Mathf.IsEqualApprox(_streamingDistance, sanitized)) return;
+			_streamingDistance = sanitized;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Whether this object is currently available to the local player's renderer.</summary>
+	[ScriptProperty, NoSync, CloneIgnore, SaveIgnore]
+	public bool IsStreamedIn => _isStreamedIn;
+
+	internal void SetStreamedInState(bool value)
+	{
+		if (_isStreamedIn == value) return;
+		_isStreamedIn = value;
+		OnPropertyChanged(nameof(IsStreamedIn), false);
+	}
+
+	[ScriptEnum("StreamingMode")]
+	public enum StreamingModeEnum
+	{
+		Default,
+		Atomic,
+		Persistent,
+		Nonatomic,
+	}
 
 	/// <summary>Local Creator transform pivot. It changes editor gizmo placement without moving geometry.</summary>
 	[Editable, ScriptProperty]
@@ -103,6 +153,24 @@ public partial class Dynamic : Instance
 				UpdateNetTransformReliable();
 			}
 			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>World-space transforms; setting it preserves Size.</summary>
+	[ScriptProperty, CloneIgnore, NoSync, SaveIgnore]
+	public Transform3D CFrame
+	{
+		get => new(GetGlobalTransform().Basis.Orthonormalized(), GetGlobalPosition());
+		set
+		{
+			if (!value.IsFinite()) throw new ArgumentException("CFrame must contain finite values.", nameof(value));
+			Transform3D next = new(value.Basis.Orthonormalized().Scaled(NodeSize), value.Origin);
+			GrantServerMovementGrace(next.Origin, GetGlobalPosition());
+			SetGlobalTransform(next);
+			if (AutoUpdateNetTransform) UpdateNetTransformReliable();
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(Position), false);
+			OnPropertyChanged(nameof(Rotation), false);
 		}
 	}
 

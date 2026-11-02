@@ -83,14 +83,19 @@ public partial class FeedCommentsDialog : AcceptDialog
 		row.GetNode<Label>("Layout/Content/Header/Author").Text = author;
 		bool isVerified = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isVerified", out JsonElement verified) && verified.ValueKind == JsonValueKind.True;
 		bool isBrand = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isBrandAccount", out JsonElement brand) && brand.ValueKind == JsonValueKind.True;
+		bool isGovOfficial = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("isGovOfficial", out JsonElement government) && government.ValueKind == JsonValueKind.True;
 		TextureRect verifiedBadge = row.GetNode<TextureRect>("Layout/Content/Header/Verified");
-		verifiedBadge.Visible = isVerified || isBrand;
-		verifiedBadge.Texture = GD.Load<Texture2D>(isBrand
-			? "res://assets/textures/client/ui/feed/verified-brand.svg"
-			: "res://assets/textures/client/ui/feed/verified-user.svg");
-		verifiedBadge.TooltipText = isBrand ? "Verified brand" : "Verified account";
+		verifiedBadge.Visible = isVerified || isBrand || isGovOfficial;
+		verifiedBadge.Texture = GD.Load<Texture2D>(isGovOfficial
+			? "res://assets/textures/client/ui/feed/verified-gov.svg"
+			: isBrand
+				? "res://assets/textures/client/ui/feed/verified-brand.svg"
+				: "res://assets/textures/client/ui/feed/verified-user.svg");
+		verifiedBadge.TooltipText = isGovOfficial
+			? "Verified government account"
+			: isBrand ? "Verified brand" : "Verified account";
 		row.GetNode<Label>("Layout/Content/Header/Time").Text = $"@{author.ToLowerInvariant().Replace(" ", "")} · {(DateTime.TryParse(createdAt, out DateTime timestamp) ? RelativeTime(timestamp) : "Just now")}";
-		row.GetNode<Label>("Layout/Content/Body").Text = content;
+		row.GetNode<MobileMarkdown>("Layout/Content/Body").SetMarkdown(content);
 		Button reply = row.GetNode<Button>("Layout/Content/Actions/Reply");
 		Button like = row.GetNode<Button>("Layout/Content/Actions/Like");
 		Button more = row.GetNode<Button>("Layout/Content/Header/More");

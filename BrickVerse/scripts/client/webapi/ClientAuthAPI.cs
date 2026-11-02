@@ -15,6 +15,7 @@ public static class ClientAuthAPI
 	private static readonly object BootstrapLock = new();
 	private static bool _bootstrapped;
 	internal static string JoinToken { get; private set; } = string.Empty;
+	internal static string IntegrityAuthToken { get; private set; } = string.Empty;
 	internal static string CreatorToken { get; private set; } = string.Empty;
 	internal static bool HasJoinToken => !string.IsNullOrWhiteSpace(JoinToken);
 	internal static IClientConnector? ClientConnector { get; private set; }
@@ -78,10 +79,13 @@ public static class ClientAuthAPI
 			?? throw new MissingComponentException("Client Connector component missing");
 	}
 
-	public static Task<APIClientAuthResponseMessage> SendClientConnect()
+	public static async Task<APIClientAuthResponseMessage> SendClientConnect()
 	{
-		return ClientConnector?.Connect()
+		IClientConnector connector = ClientConnector
 			?? throw new MissingComponentException("Client Connector component missing");
+		APIClientAuthResponseMessage response = await connector.Connect();
+		IntegrityAuthToken = response.IntegrityAuthToken;
+		return response;
 	}
 
 	public static Task<APIServerListenResponse> SendServerListen()

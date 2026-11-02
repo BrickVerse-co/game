@@ -62,6 +62,11 @@ public partial class TextEditorRoot : Node
 		{
 			if (editor == PreferredEditorEnum.VSCode)
 				Process.Start(new ProcessStartInfo("code", $"--goto \"{path}:{CodeEditor.GetCaretLine() + 1}:{CodeEditor.GetCaretColumn() + 1}\"") { UseShellExecute = true });
+			else if (editor == PreferredEditorEnum.VisualStudio)
+			{
+				string solution = Path.Combine(Container.TargetSession.ProjectFolderPath, "BrickVerseScripts.sln");
+				Process.Start(new ProcessStartInfo("devenv.exe", $"\"{solution}\" /Edit \"{path}\"") { UseShellExecute = true });
+			}
 			else if (editor == PreferredEditorEnum.Zed)
 				Process.Start(new ProcessStartInfo("zed", $"\"{path}\"") { UseShellExecute = true });
 			else
@@ -187,6 +192,15 @@ public partial class TextEditorRoot : Node
 		CodeEditor.Text = File.ReadAllText(Container.TargetFilePathAbsolute);
 		CodeEditor.ClearUndoHistory();
 		CodeEditor.TextChanged += OnCodeEditTextChanged;
+		_oldText = CodeEditor.Text;
+		if (Container.CodeCompletion == FileTypeEnum.Visual)
+		{
+			InitializeVisualEditor();
+			Saved = true;
+			SavedChanged?.Invoke(true);
+			UpdateStatusBar();
+			return;
+		}
 		InitSyntaxHighlighter(Container.CodeCompletion);
 
 		CreatorSettingsService.Instance.Changed += OnCreatorSettingChanged;

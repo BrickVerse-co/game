@@ -18,7 +18,7 @@ namespace BrickVerse.Scripting.Cpp;
 
 public sealed class CppProvider : IScriptLanguageProvider
 {
-	private const string Header = """
+	internal const string HeaderSource = """
 #pragma once
 #include <stdint.h>
 #define BV_IMPORT(name) __attribute__((import_module("brickverse"), import_name(name)))
@@ -71,7 +71,7 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			string headerPath = Path.Combine(root, "brickverse.h");
 			string outputPath = Path.Combine(root, "script.wasm");
 			File.WriteAllText(sourcePath, source);
-			File.WriteAllText(headerPath, Header);
+			File.WriteAllText(headerPath, HeaderSource);
 			string compiler = ResolveCompiler();
 			using Process process = new() { StartInfo = new ProcessStartInfo { FileName = compiler,
 				WorkingDirectory = root,
@@ -144,7 +144,7 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			Linker linker = new(_engine);
 			linker.Define("brickverse", "global", Function.FromCallback(store, (Caller caller, int p, int n) => api.Global(Read(caller, p, n))));
 			linker.Define("brickverse", "get_f64", Function.FromCallback(store, (Caller caller, int h, int p, int n) => Convert.ToDouble(api.Get(h, Read(caller, p, n)), CultureInfo.InvariantCulture)));
-			linker.Define("brickverse", "get_handle", Function.FromCallback(store, (Caller caller, int h, int p, int n) => Convert.ToInt32(api.Get(h, Read(caller, p, n)), CultureInfo.InvariantCulture)));
+			linker.Define("brickverse", "get_handle", Function.FromCallback(store, (Caller caller, int h, int p, int n) => ReadGuestHandle(api.Get(h, Read(caller, p, n)))));
 			linker.Define("brickverse", "get_string", Function.FromCallback(store, (Caller caller, int h, int p, int n, int output, int capacity) =>
 				Write(caller, output, capacity, Convert.ToString(api.Get(h, Read(caller, p, n)), CultureInfo.InvariantCulture) ?? string.Empty)));
 			linker.Define("brickverse", "set_f64", Function.FromCallback(store, (Caller caller, int h, int p, int n, double v) => api.Set(h, Read(caller, p, n), v)));
@@ -156,7 +156,7 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			linker.Define("brickverse", "connect", Function.FromCallback(store, (int signalHandle, int slot) => api.Connect(signalHandle, args =>
 			{
 				store.Fuel = 5_000_000;
-				int argument = args.Length > 0 ? Convert.ToInt32(args[0], CultureInfo.InvariantCulture) : 0;
+				int argument = args.Length > 0 ? ReadGuestHandle(args[0]) : 0;
 				instance?.GetAction<int, int>("bv_dispatch_player")?.Invoke(slot, argument);
 			})));
 			instance = linker.Instantiate(store, module);
@@ -182,6 +182,11 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 		encoded.AsSpan(0, length).CopyTo(span);
 		if (length < capacity) span[length] = 0;
 		return length;
+	}
+	private static int ReadGuestHandle(object? value)
+	{
+		if (ScriptCapabilityBridge.TryReadGuestHandle(value, out int handle)) return handle;
+		throw new InvalidOperationException("BrickVerse API returned a non-object value where an object handle was required.");
 	}
 	private static void Invoke(State state, string name) { state.Store.Fuel = 5_000_000; state.Instance.GetAction(name)?.Invoke(); }
 	private static void Invoke(State state, string name, double value) { state.Store.Fuel = 5_000_000; state.Instance.GetAction<double>(name)?.Invoke(value); }

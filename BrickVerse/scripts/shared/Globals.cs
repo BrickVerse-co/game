@@ -852,6 +852,10 @@ public sealed partial class Globals : Node
 		{
 			platform = "android";
 		}
+		else if (OS.HasFeature("ios"))
+		{
+			platform = "ios";
+		}
 		else
 		{
 			platform = "linux";

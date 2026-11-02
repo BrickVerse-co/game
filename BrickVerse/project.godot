@@ -503,5 +503,3 @@ openxr/form_factor=0
 openxr/view_configuration=1
 openxr/reference_space=1
 openxr/startup_alert=false
-shaders/enabled=false
-openxr/enabled=false

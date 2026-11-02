@@ -53,7 +53,8 @@ public class NetworkInstance
 
 	public bool IsSilence { get; private set; } = false;
 	public bool IsServer { get; private set; } = false;
-	private volatile bool _shutdownd = false;
+	private int _shutdownState;
+	private bool IsShutdown => Volatile.Read(ref _shutdownState) != 0;
 
 	public NetworkInstance()
 	{
@@ -132,6 +133,7 @@ public class NetworkInstance
 
 	public void SendMessage(int targetID, byte[] data, TransferMode transferMode, int transferChannel = 0)
 	{
+		if (IsShutdown) return;
 		_actionQueue.Enqueue(() =>
 		{
 			ENetPacketPeer? peer = GetPacketPeerFromId(targetID);
@@ -150,6 +152,7 @@ public class NetworkInstance
 
 	public void DisconnectPeer(int targetID, bool force = false)
 	{
+		if (IsShutdown) return;
 		_actionQueue.Enqueue(() =>
 		{
 			ENetPacketPeer? peer = GetPacketPeerFromId(targetID);
@@ -171,8 +174,7 @@ public class NetworkInstance
 
 	public void Shutdown()
 	{
-		if (_shutdownd) return;
-		_shutdownd = true;
+		if (Interlocked.Exchange(ref _shutdownState, 1) != 0) return;
 		// ENetConnection is not safe to destroy while Service/Flush is running.
 		// Let the worker observe shutdown and exit before touching the peer here.
 		try
@@ -189,12 +191,18 @@ public class NetworkInstance
 		}
 		_peer.Flush();
 		_peer.Destroy();
+		IdToPeer.Clear();
+		PeerToId.Clear();
+		_dataServerTokens.Clear();
 		while (_actionQueue.TryDequeue(out _)) { }
 		while (_mainThreadEventQueue.TryDequeue(out _)) { }
+		Interlocked.Exchange(ref _mainThreadDrainScheduled, 0);
+		_networkLoopTask = null;
 	}
 
 	public void BroadcastMessage(byte[] data, TransferMode transferMode, int transferChannel = 0, int[]? except = null)
 	{
+		if (IsShutdown) return;
 		_actionQueue.Enqueue(() =>
 		{
 			foreach ((int id, ENetPacketPeer? peer) in IdToPeer)
@@ -210,7 +218,7 @@ public class NetworkInstance
 	{
 		while (true)
 		{
-			if (_shutdownd) return;
+			if (IsShutdown) return;
 			if (!GodotObject.IsInstanceValid(_peer)) return;
 			try
 			{
@@ -369,7 +377,7 @@ public class NetworkInstance
 
 	private void DrainEvents()
 	{
-		if (_shutdownd)
+		if (IsShutdown)
 		{
 			while (_mainThreadEventQueue.TryDequeue(out _)) { }
 			Interlocked.Exchange(ref _mainThreadDrainScheduled, 0);

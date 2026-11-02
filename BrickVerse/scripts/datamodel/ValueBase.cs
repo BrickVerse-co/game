@@ -11,7 +11,7 @@ namespace BrickVerse.Datamodel;
 public partial class ValueBase : Instance
 {
 	[ScriptProperty]
-	public BVSignal Changed { get; private set; } = new();
+	public new BVSignal Changed { get; private set; } = new();
 
 	protected void InvokeChanged()
 	{

@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using Godot;
 
 namespace BrickVerse.Datamodel.Services;
@@ -13,13 +14,19 @@ namespace BrickVerse.Datamodel.Services;
 [Static("Streaming")]
 public sealed partial class StreamingService : Instance
 {
-	private readonly HashSet<Physical> _streamHidden = [];
+	private readonly HashSet<Dynamic> _streamHidden = [];
 	private bool _enabled;
 	private float _minimumDistance = 128f;
 	private float _maximumDistance = 512f;
 	private bool _smartStreaming = true;
 	private bool _occlusionCulling = true;
 	private double _updateElapsed;
+
+	/// <summary>Fires locally when a streamed object becomes visible to this player.</summary>
+	[ScriptProperty] public BVSignal<Dynamic> InstanceStreamedIn { get; private set; } = new();
+
+	/// <summary>Fires locally when a streamed object leaves this player's streaming radius.</summary>
+	[ScriptProperty] public BVSignal<Dynamic> InstanceStreamedOut { get; private set; } = new();
 
 	[Editable, ScriptProperty, SyncVar]
 	public bool Enabled
@@ -117,22 +124,115 @@ public sealed partial class StreamingService : Instance
 			effectiveMaximum = Mathf.Lerp(_minimumDistance, _maximumDistance, frameBudget);
 		}
 
-		foreach (Physical physical in Root.Objects.Values.OfType<Physical>().ToArray())
+		HashSet<Dynamic> evaluated = [];
+		foreach (Dynamic dynamic in Root.Objects.Values.OfType<Dynamic>().ToArray())
 		{
-			if (!Node.IsInstanceValid(physical.GDNode3D) || IsCharacterPart(physical)) continue;
-			bool shouldStreamOut = physical.GDNode3D.GlobalPosition.DistanceTo(camera.GlobalPosition) > effectiveMaximum;
-			if (shouldStreamOut)
+			Dynamic target = ResolveStreamingTarget(dynamic, out bool persistent);
+			if (!evaluated.Add(target) || !Node.IsInstanceValid(target.GDNode3D)) continue;
+
+			if (persistent || IsCharacterPart(target))
 			{
-				if (!physical.IsHidden && _streamHidden.Add(physical)) physical.GDNode3D.Visible = false;
+				StreamIn(target);
+				continue;
 			}
-			else if (_streamHidden.Remove(physical))
+
+			float maximum = target.StreamingDistance > 0 ? target.StreamingDistance : effectiveMaximum;
+			float minimum = target.StreamingDistance > 0
+				? Mathf.Min(_minimumDistance, target.StreamingDistance * 0.75f)
+				: _minimumDistance;
+			float distance = target.GDNode3D.GlobalPosition.DistanceTo(camera.GlobalPosition);
+
+			// Hysteresis keeps objects from flickering at the boundary: visible
+			// objects leave at MaximumDistance and return at MinimumDistance.
+			if (_streamHidden.Contains(target))
 			{
-				physical.GDNode3D.Visible = !physical.IsHidden;
+				if (distance <= minimum) StreamIn(target);
+			}
+			else if (distance > maximum)
+			{
+				StreamOut(target);
 			}
 		}
 
-		foreach (Physical stale in _streamHidden.Where(item => !Node.IsInstanceValid(item.GDNode3D)).ToArray())
+		foreach (Dynamic stale in _streamHidden.Where(item => item.IsDeleted || !Node.IsInstanceValid(item.GDNode3D)).ToArray())
 			_streamHidden.Remove(stale);
+	}
+
+	private static Dynamic ResolveStreamingTarget(Dynamic dynamic, out bool persistent)
+	{
+		persistent = false;
+		Dynamic target = dynamic;
+		for (Instance? current = dynamic; current != null; current = current.Parent)
+		{
+			if (current is not Dynamic ancestor) continue;
+			if (ancestor.StreamingMode == Dynamic.StreamingModeEnum.Persistent)
+			{
+				persistent = true;
+				return ancestor;
+			}
+			if (ancestor.StreamingMode == Dynamic.StreamingModeEnum.Nonatomic)
+				break;
+			if (ancestor.StreamingMode == Dynamic.StreamingModeEnum.Atomic)
+				target = ancestor;
+		}
+		return target;
+	}
+
+	internal bool ShouldReplicateToPlayer(Player player, NetworkedObject obj, bool isResident)
+	{
+		if (!_enabled || obj is Player || IsOwnedByPlayerCharacter(player, obj)) return true;
+
+		Dynamic? dynamic = obj as Dynamic;
+		for (NetworkedObject? current = obj.NetworkParent; dynamic == null && current != null; current = current.NetworkParent)
+			dynamic = current as Dynamic;
+		if (dynamic == null || !Node.IsInstanceValid(dynamic.GDNode3D)) return true;
+
+		Dynamic target = ResolveStreamingTarget(dynamic, out bool persistent);
+		if (persistent || IsCharacterPart(target) || !Node.IsInstanceValid(target.GDNode3D)) return true;
+
+		float maximum = target.StreamingDistance > 0 ? target.StreamingDistance : _maximumDistance;
+		float minimum = target.StreamingDistance > 0
+			? Mathf.Min(_minimumDistance, target.StreamingDistance * 0.75f)
+			: _minimumDistance;
+		float threshold = isResident ? maximum : minimum;
+		return target.GetGlobalPosition().DistanceTo(player.GetGlobalPosition()) <= threshold;
+	}
+
+	private static bool IsOwnedByPlayerCharacter(Player player, NetworkedObject obj)
+	{
+		for (NetworkedObject? current = obj; current != null; current = current.NetworkParent)
+			if (current == player || current == player.Character) return true;
+		return false;
+	}
+
+	private void StreamOut(Dynamic dynamic)
+	{
+		if (dynamic.IsHidden || !_streamHidden.Add(dynamic)) return;
+		dynamic.GDNode3D.Visible = false;
+		SetGroupStreamingState(dynamic, false);
+	}
+
+	private void StreamIn(Dynamic dynamic)
+	{
+		if (!_streamHidden.Remove(dynamic)) return;
+		if (Node.IsInstanceValid(dynamic.GDNode3D)) dynamic.GDNode3D.Visible = !dynamic.IsHidden;
+		SetGroupStreamingState(dynamic, true);
+	}
+
+	private void SetGroupStreamingState(Dynamic root, bool streamedIn)
+	{
+		SetStreamingState(root, streamedIn);
+		if (root.StreamingMode != Dynamic.StreamingModeEnum.Atomic) return;
+		foreach (Dynamic descendant in root.GetDescendants().OfType<Dynamic>())
+			SetStreamingState(descendant, streamedIn);
+	}
+
+	private void SetStreamingState(Dynamic dynamic, bool streamedIn)
+	{
+		if (dynamic.IsStreamedIn == streamedIn) return;
+		dynamic.SetStreamedInState(streamedIn);
+		if (streamedIn) InstanceStreamedIn.Invoke(dynamic);
+		else InstanceStreamedOut.Invoke(dynamic);
 	}
 
 	private static bool IsCharacterPart(Instance instance)
@@ -144,8 +244,11 @@ public sealed partial class StreamingService : Instance
 
 	private void RestoreHiddenInstances()
 	{
-		foreach (Physical physical in _streamHidden.ToArray())
-			if (Node.IsInstanceValid(physical.GDNode3D)) physical.GDNode3D.Visible = !physical.IsHidden;
+		foreach (Dynamic dynamic in _streamHidden.ToArray())
+		{
+			if (Node.IsInstanceValid(dynamic.GDNode3D)) dynamic.GDNode3D.Visible = !dynamic.IsHidden;
+			SetGroupStreamingState(dynamic, true);
+		}
 		_streamHidden.Clear();
 		if (Root?.RootViewport != null) Root.RootViewport.UseOcclusionCulling = false;
 	}

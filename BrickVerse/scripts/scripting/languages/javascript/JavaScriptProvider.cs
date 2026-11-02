@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Text;
 using System.Threading.Tasks;
 using BrickVerse.Scripting.Managed;
@@ -17,16 +19,20 @@ public class JavaScriptProvider : IScriptLanguageProvider
 {
 	private const string RuntimeBootstrap = """
 const __bv_unwrap = value => {
-    const isHandle = value
-        && typeof value === "object"
-        && Object.prototype.hasOwnProperty.call(value, "__bv_handle");
-    return isHandle ? value.__bv_handle : value;
+    if (!value || typeof value !== "object") return value;
+    const handle = value.__bv_handle;
+    if (Number.isInteger(handle)) return handle;
+    if (Array.isArray(value)) return value.map(__bv_unwrap);
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, __bv_unwrap(item)]));
 };
 
-const __bv_wrap = handle => {
-    if (typeof handle !== "number" || handle === 0) {
-        return handle === 0 ? null : handle;
-    }
+const __bv_is_tagged_handle = value => Array.isArray(value)
+    && value.length === 2
+    && value[0] === "\0brickverse:object-handle"
+    && Number.isInteger(value[1]);
+
+const __bv_proxy = handle => {
+    if (!Number.isInteger(handle) || handle === 0) return null;
 
     return new Proxy(Object.create(null), {
         get: (_, property) => {
@@ -36,7 +42,7 @@ const __bv_wrap = handle => {
 
             const name = String(property);
             if (name === "Connect") {
-                return callback => __bv_wrap(__bv_connect(handle, (...args) => {
+                return callback => __bv_proxy(__bv_connect(handle, (...args) => {
                     callback(...args.map(__bv_wrap));
                 }));
             }
@@ -52,8 +58,14 @@ const __bv_wrap = handle => {
     });
 };
 
+const __bv_wrap = value => {
+    if (__bv_is_tagged_handle(value)) return __bv_proxy(value[1]);
+    if (Array.isArray(value)) return value.map(__bv_wrap);
+    return value;
+};
+
 const bv = Object.freeze({
-    global: name => __bv_wrap(__bv_global(name)),
+    global: name => __bv_proxy(__bv_global(name)),
     get: (target, name) => __bv_wrap(__bv_get(__bv_unwrap(target), name)),
     set: (target, name, value) => __bv_set(__bv_unwrap(target), name, __bv_unwrap(value)),
     call: (target, name, ...args) => __bv_wrap(
@@ -61,7 +73,7 @@ const bv = Object.freeze({
     ),
 });
 
-const game = __bv_wrap(__bv_world_handle);
+const game = __bv_proxy(__bv_world_handle);
 const world = game;
 """;
 
@@ -104,6 +116,10 @@ const console = Object.freeze({
 			api.Connect(handle, args => engine.Invoke(callback, args))));
 		engine.SetValue("__bv_world_handle", api.World);
 		engine.Execute(RuntimeBootstrap);
+		string datatypeGlobals = string.Join("\n", BrickVerse.Datamodel.Services.ScriptService.GlobalDataMap.Keys
+			.OrderBy(name => name, StringComparer.Ordinal)
+			.Select(name => $"globalThis[{JsonSerializer.Serialize(name)}] = bv.global({JsonSerializer.Serialize(name)});"));
+		engine.Execute(datatypeGlobals);
 		// Expose a read-only view rather than the raw DataModel instance. The
 		// integer capability handle remains available through bv, while common
 		// script metadata is convenient and safe to read directly.

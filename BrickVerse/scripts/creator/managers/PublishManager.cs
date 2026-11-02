@@ -47,6 +47,8 @@ public static partial class PublishManager
 			}
 
 			loadOverlay?.Show();
+			loadOverlay?.SetStatus("Compiling scripts...");
+			CreatorService.CompileScriptsForBuild(target);
 			loadOverlay?.SetStatus("Packing model...");
 			byte[] packed = await PackedFormat.PackModel(target, loadOverlay.CreateProgressReporter("Publishing model"));
 
@@ -535,6 +537,9 @@ public static partial class PublishManager
 			AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(metaModule.Source);
 			if (string.IsNullOrWhiteSpace(metadata.Name) || string.IsNullOrWhiteSpace(metadata.Version))
 				throw new InvalidOperationException("Addon metadata must include a name and version.");
+
+			loadOverlay?.SetStatus("Compiling addon scripts...");
+			CreatorService.CompileScriptsForBuild(target, metaModule);
 
 			byte[] packed = await PackedFormat.PackAddon(
 				target,

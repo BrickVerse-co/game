@@ -13,7 +13,7 @@ public interface IServerInterface
 	void SetToken(string token);
 	Task<byte[]> DownloadWorld(long worldID);
 	Task<APIHeartbeatResponse> Heartbeat(string[] playerIDs);
-	Task<APIValidateResponse> ValidatePlayer(string token);
+	Task<APIValidateResponse> ValidatePlayer(string token, string integrityAuthToken);
 	Task DisconnectPlayer(string token);
 	Task LogEvent(ServerEventType eventType, Dictionary<string, string>? data = null);
 	Task Log(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null);

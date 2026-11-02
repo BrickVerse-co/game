@@ -593,6 +593,9 @@ public sealed partial class Tabs : Control
 		}
 		foreach (WorldContainer container in _orderedControls.OfType<WorldContainer>())
 		{
+			CreatorService.CompileScriptsForBuild(container.World.IsPrefabEditor && container.World.PrefabRoot != null
+				? container.World.PrefabRoot
+				: container.World);
 			if (container.World.IsPrefabEditor && container.World.PrefabRoot != null)
 			{
 				container.World.LinkedSession.SaveModel(
@@ -609,6 +612,18 @@ public sealed partial class Tabs : Control
 		}
 		foreach (CreatorSession session in sessions) session.Save();
 		CreatorService.Interface.StatusBar?.SetStatus($"Saved {savedDocuments} open document{(savedDocuments == 1 ? "" : "s")}");
+	}
+
+	public int SaveEditorsForSession(CreatorSession session)
+	{
+		int saved = 0;
+		foreach (TextEditorContainer editor in _orderedControls.OfType<TextEditorContainer>()
+			.Where(editor => ReferenceEquals(editor.TargetSession, session) && !editor.EditorRoot.Saved))
+		{
+			editor.EditorRoot.SaveDocument();
+			saved++;
+		}
+		return saved;
 	}
 
 	public async void CloseCurrentPlace()

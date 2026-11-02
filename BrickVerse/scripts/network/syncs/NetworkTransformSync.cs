@@ -24,6 +24,9 @@ public partial class NetworkTransformSync : Instance
 {
 	private const double BatchInterval = 0.05;
 	private const int MaxSnapshotChunkBytes = 1000;
+	private const int MaxCompressedTransformBytes = 256 * 1024;
+	private const int MaxDecompressedTransformBytes = 8 * 1024 * 1024;
+	private const int MaxDecompressedSnapshotChunkBytes = 512 * 1024;
 	private const int SnapshotObjectsPerChunk = 300;
 	private const int SnapshotChunksInFlight = 4;
 	private const int SnapshotChunksPerFrame = 4;
@@ -103,7 +106,9 @@ public partial class NetworkTransformSync : Instance
 
 	public void SyncAllTransformToPeer(int peerID)
 	{
-		NetworkedObject[] allNetObjs = NetService.Root.GetReplicateDescendants();
+		NetworkedObject[] allNetObjs = NetService.Root.GetReplicateDescendants()
+			.Where(obj => NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj))
+			.ToArray();
 		NetBatchTransformData[] transforms = PackTransforms(allNetObjs);
 		List<byte[]> chunks = [];
 		foreach (NetBatchTransformData[] chunk in ArrayUtils.Chunk(transforms, SnapshotObjectsPerChunk))
@@ -192,8 +197,14 @@ public partial class NetworkTransformSync : Instance
 
 	public void BroadcastChunk(NetworkedObject[] netObjs)
 	{
-		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(netObjs)));
-		Rpc(nameof(NetRecvChunk), rawData, false);
+		if (NetService.NetInstance == null) return;
+		foreach (int peerID in NetService.NetInstance.PeerIds)
+		{
+			NetworkedObject[] visible = netObjs.Where(obj => NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj)).ToArray();
+			if (visible.Length == 0) continue;
+			byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(visible)));
+			RpcId(peerID, nameof(NetRecvChunk), rawData, false);
+		}
 	}
 
 	private static NetBatchTransformData[] PackTransforms(NetworkedObject[] netObjs)
@@ -216,7 +227,9 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvChunk(byte[] rawBytes, bool isFirstInit)
 	{
-		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes))!;
+		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
+			throw new NetworkException("Invalid compressed transform batch size.");
+		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedTransformBytes))!;
 
 		foreach (NetBatchTransformData item in netObjsData)
 		{
@@ -234,6 +247,8 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvTransformSnapshotChunk(byte[] rawBytes, int chunkIndex, int chunkCount)
 	{
+		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
+			throw new NetworkException("Invalid compressed transform snapshot size.");
 		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount)
 			throw new NetworkException($"Invalid transform snapshot chunk {chunkIndex}/{chunkCount}.");
 
@@ -269,7 +284,7 @@ public partial class NetworkTransformSync : Instance
 			try
 			{
 				transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
-					ZstdCompressionUtils.Decompress(rawBytes)
+					ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedSnapshotChunkBytes)
 				) ?? throw new NetworkException("Decoded transform chunk was empty.");
 			}
 			catch (Exception ex)
@@ -361,7 +376,15 @@ public partial class NetworkTransformSync : Instance
 		}
 		else
 		{
-			if (isReliable)
+			if (NetService.IsServer && NetService.NetInstance != null)
+			{
+				foreach (int peerID in NetService.NetInstance.PeerIds)
+				{
+					if (!NetService.ReplicateSync.IsReplicatedToPeer(peerID, dyn)) continue;
+					RpcId(peerID, isReliable ? nameof(NetRecvUpdateTransformReliable) : nameof(NetRecvUpdateTransform), objID, payload, lerpTransform);
+				}
+			}
+			else if (isReliable)
 			{
 				if (_useNetworkLog) { BV.Print($"[Net] [Transform] {dyn.NetworkPath} Reliable update"); }
 
@@ -414,6 +437,11 @@ public partial class NetworkTransformSync : Instance
 			dyn.UpdateTransformFromNet(pending.Transform, true, false);
 			_pendingTransforms.Remove(objID);
 		}
+	}
+
+	internal void DiscardPendingTransform(string netID)
+	{
+		_pendingTransforms.Remove(netID);
 	}
 
 	public void SendTransformToServer(Dynamic dyn, bool lerpTransform = false)
@@ -503,58 +531,27 @@ public partial class NetworkTransformSync : Instance
 	{
 		if (NetService.NetInstance == null || _pendingBatchUpdate.Count == 0) return;
 
-		Dictionary<int, List<BatchTransformData>> reliableExcept = [];
-		Dictionary<int, List<BatchTransformData>> unreliableExcept = [];
-
-		List<BatchTransformData> reliableAll = [];
-		List<BatchTransformData> unreliableAll = [];
-
-		foreach (var (k, pending) in _pendingBatchUpdate)
+		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
-			BatchTransformData batchData = new(
-				k,
-				pending.Transform,
-				pending.LerpTransform
-			);
-
-			if (pending.Reliable)
+			List<BatchTransformData> reliable = [];
+			List<BatchTransformData> unreliable = [];
+			foreach (var (objID, pending) in _pendingBatchUpdate)
 			{
-				if (pending.ExcludePeer == -1)
-				{
-					reliableAll.Add(batchData);
-				}
-				else
-				{
-					GetOrCreateBatch(reliableExcept, pending.ExcludePeer).Add(batchData);
-				}
+				if (pending.ExcludePeer == peerID || !NetService.ReplicateSync.IsReplicatedToPeer(peerID, pending.Dyn)) continue;
+				BatchTransformData data = new(objID, pending.Transform, pending.LerpTransform);
+				(pending.Reliable ? reliable : unreliable).Add(data);
 			}
-			else
-			{
-				if (pending.ExcludePeer == -1)
-				{
-					unreliableAll.Add(batchData);
-				}
-				else
-				{
-					GetOrCreateBatch(unreliableExcept, pending.ExcludePeer).Add(batchData);
-				}
-			}
-		}
 
-		BroadcastGroupedBatch(reliableAll, nameof(NetRecvBatchedTransformsReliable), TransferMode.Reliable);
-		BroadcastGroupedBatch(unreliableAll, nameof(NetRecvBatchedTransformsUnreliable), TransferMode.UnreliableOrdered);
-
-		// Send reliable batches
-		foreach (var (peerID, batch) in reliableExcept)
-		{
-			BroadcastGroupedBatch(batch, nameof(NetRecvBatchedTransformsReliable), TransferMode.Reliable, peerID);
+			SendBatchToPeer(peerID, reliable, nameof(NetRecvBatchedTransformsReliable));
+			SendBatchToPeer(peerID, unreliable, nameof(NetRecvBatchedTransformsUnreliable));
 		}
+	}
 
-		// Send unreliable batches
-		foreach (var (peerID, batch) in unreliableExcept)
-		{
-			BroadcastGroupedBatch(batch, nameof(NetRecvBatchedTransformsUnreliable), TransferMode.UnreliableOrdered, peerID);
-		}
+	private void SendBatchToPeer(int peerID, List<BatchTransformData> batch, string rpcName)
+	{
+		if (batch.Count == 0) return;
+		byte[] compressed = ZstdCompressionUtils.Compress(SerializeUtils.Serialize<BatchTransformData[]>([.. batch]));
+		RpcId(peerID, rpcName, compressed);
 	}
 
 	private void SetPendingBatch(string objID, PendingBatchTransform entry, bool forced = false)
@@ -585,7 +582,8 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.UnreliableOrdered)]
 	private void RecvBatchedTransforms(byte[] transformsRaw, bool isReliable)
 	{
-		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(ZstdCompressionUtils.Decompress(transformsRaw));
+		if (transformsRaw is not { Length: > 0 } || transformsRaw.Length > MaxCompressedTransformBytes) return;
+		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(ZstdCompressionUtils.Decompress(transformsRaw, MaxDecompressedTransformBytes));
 		if (transforms == null) return;
 		foreach (var data in transforms)
 		{
