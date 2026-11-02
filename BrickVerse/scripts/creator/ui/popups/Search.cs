@@ -1,22 +1,30 @@
-using Godot;
-using BrickVerse.Creator.UI;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using BrickVerse.Creator.UI;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 
 public partial class Search : Panel
 {
-	[Export] public LineEdit searchBar = null!;
-	[Export] public PackedScene searchResult = null!;
-	[Export] public VBoxContainer searchResultsContainer = null!;
-	[Export] public Control loadingSpinner = null!;
+	[Export]
+	public LineEdit searchBar = null!;
 
-	[Export] public Label statusText = null!;
+	[Export]
+	public PackedScene searchResult = null!;
+
+	[Export]
+	public VBoxContainer searchResultsContainer = null!;
+
+	[Export]
+	public Control loadingSpinner = null!;
+
+	[Export]
+	public Label statusText = null!;
 
 	private int searchResultIndex = 0;
 
@@ -25,6 +33,7 @@ public partial class Search : Panel
 	private string _typeFilter = ""; // type:Instance or type:File
 
 	private SearchType _searchType = SearchType.All;
+
 	private enum SearchType
 	{
 		All,
@@ -32,6 +41,7 @@ public partial class Search : Panel
 		Location,
 		Content,
 	}
+
 	private bool _loading = false;
 
 	public bool Loading
@@ -55,7 +65,6 @@ public partial class Search : Panel
 		public string Primary = null!;
 		public string Location = null!;
 	}
-
 
 	public class InstanceSearchResult : SearchResult
 	{
@@ -141,10 +150,8 @@ public partial class Search : Panel
 		}
 	}
 
-
 	private void NavigateInstance(Instance instance, string prefix)
 	{
-
 		InstanceSearchResult result = new();
 		result.Primary = instance.Name;
 		result.Type = instance.ClassName;
@@ -158,7 +165,19 @@ public partial class Search : Panel
 		}
 	}
 
-	private string[] _textBasedFiles = ["md", "txt", "bvxl", "bvproject", "json", "xml", "lua", "luau", "cs"];
+	private string[] _textBasedFiles =
+	[
+		"md",
+		"txt",
+		"bvxl",
+		"bvproject",
+		"json",
+		"xml",
+		"lua",
+		"luau",
+		"cs",
+	];
+
 	private bool IsTextBasedFile(string path)
 	{ // file extension checking as its cheap and fast :3
 		string? ext = Path.GetExtension(path);
@@ -208,6 +227,7 @@ public partial class Search : Panel
 	}
 
 	private List<SearchResult> searchCandidates = [];
+
 	private void GetSearchCandidates()
 	{
 		searchCandidates = [];
@@ -223,6 +243,7 @@ public partial class Search : Panel
 		}
 		_ = NavigateDirectory(path, path, 1048576); // 1mb
 	}
+
 	private void ProcessSearch()
 	{
 		Loading = true;
@@ -281,6 +302,7 @@ public partial class Search : Panel
 	}
 
 	private List<SearchResult> searchResults = [];
+
 	private void CalculateSearchResults(string query)
 	{
 		searchResults = [];
@@ -295,9 +317,12 @@ public partial class Search : Panel
 			if (_typeFilter != "")
 			{
 				if (
-					(_typeFilter.ToLower() == "file" && _classFilter == "" && cand is FileSearchResult) ||
-					(_typeFilter.ToLower() == "instance" && cand is InstanceSearchResult)
-					)
+					(
+						_typeFilter.ToLower() == "file"
+						&& _classFilter == ""
+						&& cand is FileSearchResult
+					) || (_typeFilter.ToLower() == "instance" && cand is InstanceSearchResult)
+				)
 				{
 					unrankedResults.Add(cand);
 				}
@@ -335,17 +360,24 @@ public partial class Search : Panel
 				}
 			}
 			if (
-				(_searchType == SearchType.Content || _searchType == SearchType.All) &&
-				result is FileSearchResult resultFile
-				)
+				(_searchType == SearchType.Content || _searchType == SearchType.All)
+				&& result is FileSearchResult resultFile
+			)
 			{
-				if (resultFile.IsText && resultFile.Content != null && resultFile.Content.ToLower().Contains(query))
+				if (
+					resultFile.IsText
+					&& resultFile.Content != null
+					&& resultFile.Content.ToLower().Contains(query)
+				)
 				{
 					result.Matches++;
 				}
 			}
 		}
-		searchResults = unrankedResults.OrderByDescending(res => res.Matches).Where(res => res.Matches > 0).ToList();
+		searchResults = unrankedResults
+			.OrderByDescending(res => res.Matches)
+			.Where(res => res.Matches > 0)
+			.ToList();
 		UpdateResults();
 		Loading = false;
 	}

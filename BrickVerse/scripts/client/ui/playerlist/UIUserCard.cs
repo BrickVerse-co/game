@@ -2,29 +2,41 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Client.UI.Playerlist.Stats;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UIUserCard : Control
 {
-	private const string UserCardStat = "res://scenes/client/ui/playerlist/stats/user_card_stat.tscn";
+	private const string UserCardStat =
+		"res://scenes/client/ui/playerlist/stats/user_card_stat.tscn";
 
 	private readonly Dictionary<Stat, UIUserCardStat> _statToUserCardStat = [];
 
-	[Export] private Label _usernameLabel = null!;
-	[Export] private Control _statsContainer = null!;
-	[Export] private TextureRect _pfpIconRect = null!;
-	[Export] private TextureRect _badgeRect = null!;
-	[Export] private TextureRect _verifiedBadgeRect = null!;
-	[Export] private UIPlayerList _playerList = null!;
+	[Export]
+	private Label _usernameLabel = null!;
+
+	[Export]
+	private Control _statsContainer = null!;
+
+	[Export]
+	private TextureRect _pfpIconRect = null!;
+
+	[Export]
+	private TextureRect _badgeRect = null!;
+
+	[Export]
+	private TextureRect _verifiedBadgeRect = null!;
+
+	[Export]
+	private UIPlayerList _playerList = null!;
 	private readonly BVImageAsset _plrIconAsset = new();
 	private static World Root => CoreUIRoot.Singleton.Root;
 	internal static Player TargetPlayer => Root.Players.LocalPlayer;
@@ -72,18 +84,21 @@ public partial class UIUserCard : Control
 
 	private void AddStat(Stat stat)
 	{
-		if (_statToUserCardStat.ContainsKey(stat)) return;
+		if (_statToUserCardStat.ContainsKey(stat))
+			return;
 
 		stat.PropertyChanged.Connect(_ => OnStatVisibilityChanged(stat));
 
-		if (!stat.Visible) return;
+		if (!stat.Visible)
+			return;
 
 		CreateStatRow(stat);
 	}
 
 	private void CreateStatRow(Stat stat)
 	{
-		if (_statToUserCardStat.ContainsKey(stat)) return;
+		if (_statToUserCardStat.ContainsKey(stat))
+			return;
 
 		var s = Globals.CreateInstanceFromScene<UIUserCardStat>(UserCardStat);
 		s.TargetStat = stat;
@@ -114,7 +129,6 @@ public partial class UIUserCard : Control
 		}
 	}
 
-
 	private int GetInsertIndex(Stat stat)
 	{
 		Stat[] visibleStats = Root.Stats.GetStats(true);
@@ -136,7 +150,6 @@ public partial class UIUserCard : Control
 			RefreshBox();
 		}
 	}
-
 
 	private void OnIconLoaded(Resource resource)
 	{
@@ -175,7 +188,11 @@ public partial class UIUserCard : Control
 			return;
 		}
 
-		if (@event is InputEventMouseButton mouse && mouse.ButtonIndex == MouseButton.Left && !mouse.Pressed)
+		if (
+			@event is InputEventMouseButton mouse
+			&& mouse.ButtonIndex == MouseButton.Left
+			&& !mouse.Pressed
+		)
 		{
 			_playerList?.ToggleLeaderboard();
 			AcceptEvent();

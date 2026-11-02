@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -39,9 +39,7 @@ public sealed partial class Globals : Node
 		UseLocalServer ? "http://localhost:3000" : "https://brickverse.gg";
 
 	public static string ApiEndpoint { get; private set; } =
-		UseLocalServer
-			? "http://localhost:3001/api"
-			: "https://api.brickverse.gg/api";
+		UseLocalServer ? "http://localhost:3001/api" : "https://api.brickverse.gg/api";
 
 	public const float AlphaThreshold = 0.025f;
 	public const string TestUserIdStart = "2";
@@ -54,7 +52,9 @@ public sealed partial class Globals : Node
 	public const string ModelFileExtension = "model";
 	public static readonly string[] ScriptFileExtensions =
 	[
-		.. Scripting.ScriptLanguageRegistry.Definitions.SelectMany(static language => language.Extensions),
+		.. Scripting.ScriptLanguageRegistry.Definitions.SelectMany(static language =>
+			language.Extensions
+		),
 	];
 #endif
 
@@ -144,9 +144,12 @@ public sealed partial class Globals : Node
 	/// </summary>
 	public static bool IsMobileBuild { get; private set; } = false;
 	public static bool IsXRLaunch =>
-		GDAvailable && (OS.HasFeature("xr")
-		|| ReadCmdArgs().TryGetValue("xr-mode", out string? mode)
-			&& mode.Equals("on", StringComparison.OrdinalIgnoreCase));
+		GDAvailable
+		&& (
+			OS.HasFeature("xr")
+			|| ReadCmdArgs().TryGetValue("xr-mode", out string? mode)
+				&& mode.Equals("on", StringComparison.OrdinalIgnoreCase)
+		);
 	public static bool UsesMobileUI => GDAvailable && (OS.HasFeature("mobile-ui") || IsXRLaunch);
 
 	/// <summary>
@@ -371,8 +374,11 @@ public sealed partial class Globals : Node
 			if (!_networkedObjectFactories.TryGetValue(type, out Func<NetworkedObject>? factory))
 			{
 				NewExpression create = System.Linq.Expressions.Expression.New(type);
-				factory = System.Linq.Expressions.Expression.Lambda<Func<NetworkedObject>>(
-					System.Linq.Expressions.Expression.Convert(create, typeof(NetworkedObject))).Compile();
+				factory = System
+					.Linq.Expressions.Expression.Lambda<Func<NetworkedObject>>(
+						System.Linq.Expressions.Expression.Convert(create, typeof(NetworkedObject))
+					)
+					.Compile();
 				_networkedObjectFactories[type] = factory;
 			}
 			return factory();

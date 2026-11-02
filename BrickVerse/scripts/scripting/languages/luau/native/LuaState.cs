@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Godot;
 
 namespace BrickVerse.Scripting.Luau;
 
@@ -31,7 +31,10 @@ public partial class LuaState : IDisposable
 
 	public IntPtr State => _state;
 	public LuaState? Parent => _parent;
-	public bool IsAlive => !_disposed && State != IntPtr.Zero && (Status() == LuaStatus.OK || Status() == LuaStatus.Yield);
+	public bool IsAlive =>
+		!_disposed
+		&& State != IntPtr.Zero
+		&& (Status() == LuaStatus.OK || Status() == LuaStatus.Yield);
 	public bool Loaded { get; set; } = false;
 	internal object SyncRoot => _lock;
 	internal object DomainKey => _lock;
@@ -77,7 +80,12 @@ public partial class LuaState : IDisposable
 
 		byte[] sourceBytes = Encoding.UTF8.GetBytes(sourceCode);
 		IntPtr size = new(sourceBytes.Length);
-		IntPtr bytecodePtr = NativeBindings.luau_compile(sourceCode, size, IntPtr.Zero, out nint outSize);
+		IntPtr bytecodePtr = NativeBindings.luau_compile(
+			sourceCode,
+			size,
+			IntPtr.Zero,
+			out nint outSize
+		);
 		if (bytecodePtr == IntPtr.Zero)
 		{
 			//Marshal.FreeHGlobal(optionsPtr);
@@ -95,7 +103,9 @@ public partial class LuaState : IDisposable
 		lock (_lock)
 		{
 			if (Loaded)
-				throw new Exception("Cannot load when already loaded! Please dispose this VM and create a new one");
+				throw new Exception(
+					"Cannot load when already loaded! Please dispose this VM and create a new one"
+				);
 			int loadResult = NativeBindings.luau_load(_state, name, compiled, compiled.Length, 0);
 			if (loadResult != 0)
 			{
@@ -127,7 +137,7 @@ public partial class LuaState : IDisposable
 	}
 
 	/// <summary>
-	/// Converts the acceptable index idx into an equivalent absolute index (that is, one that does not depend on the stack top). 
+	/// Converts the acceptable index idx into an equivalent absolute index (that is, one that does not depend on the stack top).
 	/// </summary>
 	/// <param name="index"></param>
 	/// <returns></returns>
@@ -143,7 +153,7 @@ public partial class LuaState : IDisposable
 	public static int UpValIndex(int index) => LUA_GLOBALSINDEX - index;
 
 	/// <summary>
-	/// Pushes an integer with value n onto the stack. 
+	/// Pushes an integer with value n onto the stack.
 	/// </summary>
 	/// <param name="n"></param>
 	public void PushInteger(long n)
@@ -304,7 +314,7 @@ public partial class LuaState : IDisposable
 	}
 
 	/// <summary>
-	/// Converts the LuaState value at the given index to the signed integral type lua_Integer. The LuaState value must be an integer, or a number or string convertible to an integer (see §3.4.3); otherwise, lua_tointegerx returns 0. 
+	/// Converts the LuaState value at the given index to the signed integral type lua_Integer. The LuaState value must be an integer, or a number or string convertible to an integer (see §3.4.3); otherwise, lua_tointegerx returns 0.
 	/// </summary>
 	/// <param name="index"></param>
 	/// <returns></returns>
@@ -325,7 +335,6 @@ public partial class LuaState : IDisposable
 	/// <param name="obj"></param>
 	/// <param name="name"></param>
 	/// <returns></returns>
-
 	public bool CallMetamethod(int obj, string name)
 	{
 		lock (_lock)
@@ -445,7 +454,8 @@ public partial class LuaState : IDisposable
 	private static void FunctionGarbageCollect(IntPtr ud)
 	{
 		IntPtr handlePtr = Marshal.ReadIntPtr(ud);
-		if (handlePtr == IntPtr.Zero) return;
+		if (handlePtr == IntPtr.Zero)
+			return;
 		GCHandle handle = GCHandle.FromIntPtr(handlePtr);
 		_pinnedFunctions.TryRemove(handlePtr, out _);
 
@@ -649,8 +659,12 @@ public partial class LuaState : IDisposable
 		lock (_lock)
 		{
 			IntPtr ptr = NativeBindings.lua_namecallatom(_state, out int len);
-			if (ptr == IntPtr.Zero) return null;
-			if (len < 0) { return Marshal.PtrToStringAnsi(ptr); }
+			if (ptr == IntPtr.Zero)
+				return null;
+			if (len < 0)
+			{
+				return Marshal.PtrToStringAnsi(ptr);
+			}
 			return Marshal.PtrToStringAnsi(ptr, len);
 		}
 	}
@@ -727,7 +741,7 @@ public partial class LuaState : IDisposable
 	}
 
 	/// <summary>
-	/// Does the equivalent of t[p] = v, where t is the table at the given index, p is encoded as a light userdata, and v is the value at the top of the stack. 
+	/// Does the equivalent of t[p] = v, where t is the table at the given index, p is encoded as a light userdata, and v is the value at the top of the stack.
 	/// </summary>
 	/// <param name="index"></param>
 	/// <param name="obj"></param>
@@ -738,7 +752,7 @@ public partial class LuaState : IDisposable
 	}
 
 	/// <summary>
-	/// Pushes onto the stack the value t[k], where t is the table at the given index and k is the pointer p represented as a light userdata. The access is raw; that is, it does not invoke the __index metamethod. 
+	/// Pushes onto the stack the value t[k], where t is the table at the given index and k is the pointer p represented as a light userdata. The access is raw; that is, it does not invoke the __index metamethod.
 	/// </summary>
 	/// <param name="index"></param>
 	/// <param name="obj"></param>
@@ -811,7 +825,8 @@ public partial class LuaState : IDisposable
 			if (!_disposed && _state != IntPtr.Zero)
 			{
 				foreach (KeyValuePair<IntPtr, object> entry in DomainLocks)
-					if (ReferenceEquals(entry.Value, _lock)) DomainLocks.TryRemove(entry.Key, out _);
+					if (ReferenceEquals(entry.Value, _lock))
+						DomainLocks.TryRemove(entry.Key, out _);
 				NativeBindings.lua_close(_state);
 				_state = IntPtr.Zero;
 				_disposed = true;
@@ -820,7 +835,5 @@ public partial class LuaState : IDisposable
 		GC.SuppressFinalize(this);
 	}
 
-	public class LuaException(string message) : Exception(message)
-	{
-	}
+	public class LuaException(string message) : Exception(message) { }
 }

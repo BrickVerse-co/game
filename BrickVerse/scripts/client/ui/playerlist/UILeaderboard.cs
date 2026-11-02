@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Shared;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Client.UI.Playerlist;
 
@@ -14,13 +14,23 @@ public partial class UILeaderboard : TouchScrollContainer
 {
 	private const int LeaderboardMaxHeight = 300;
 	private const string ItemPath = "res://scenes/client/ui/playerlist/leaderboard_user_item.tscn";
-	private const string TeamItemPath = "res://scenes/client/ui/playerlist/leaderboard_team_item.tscn";
+	private const string TeamItemPath =
+		"res://scenes/client/ui/playerlist/leaderboard_team_item.tscn";
 
-	[Export] private Control _container = null!;
-	[Export] private Control _layout = null!;
-	[Export] private HBoxContainer _headerRow = null!;
-	[Export] private UIUserCard _userCard = null!;
-	[Export] public UILeaderboardUserOptions UserOptions = null!;
+	[Export]
+	private Control _container = null!;
+
+	[Export]
+	private Control _layout = null!;
+
+	[Export]
+	private HBoxContainer _headerRow = null!;
+
+	[Export]
+	private UIUserCard _userCard = null!;
+
+	[Export]
+	public UILeaderboardUserOptions UserOptions = null!;
 	public CoreUIRoot CoreUI = null!;
 
 	private Datamodel.Stats Stats => CoreUI.Root.Stats;
@@ -170,7 +180,9 @@ public partial class UILeaderboard : TouchScrollContainer
 		if (_playerToItem.ContainsKey(player))
 			return;
 
-		UILeaderboardUserItem card = Globals.CreateInstanceFromScene<UILeaderboardUserItem>(ItemPath);
+		UILeaderboardUserItem card = Globals.CreateInstanceFromScene<UILeaderboardUserItem>(
+			ItemPath
+		);
 		card.TargetPlayer = player;
 		card.Leaderboard = this;
 
@@ -189,7 +201,9 @@ public partial class UILeaderboard : TouchScrollContainer
 
 	private void AddTeam(Team team)
 	{
-		UILeaderboardTeamItem card = Globals.CreateInstanceFromScene<UILeaderboardTeamItem>(TeamItemPath);
+		UILeaderboardTeamItem card = Globals.CreateInstanceFromScene<UILeaderboardTeamItem>(
+			TeamItemPath
+		);
 		card.TargetTeam = team;
 		card.Leaderboard = this;
 
@@ -314,7 +328,9 @@ public partial class UILeaderboard : TouchScrollContainer
 		if (neutralPlayers.Length == 0)
 			return;
 
-		UILeaderboardTeamItem card = Globals.CreateInstanceFromScene<UILeaderboardTeamItem>(TeamItemPath);
+		UILeaderboardTeamItem card = Globals.CreateInstanceFromScene<UILeaderboardTeamItem>(
+			TeamItemPath
+		);
 		card.Leaderboard = this;
 		card.SetNeutral("Neutral Team", new Color(0.56f, 0.61f, 0.66f));
 		_layout.AddChild(card);
@@ -346,7 +362,11 @@ public partial class UILeaderboard : TouchScrollContainer
 
 		if (team == null && _neutralTeamItem == null)
 			CreateNeutralTeam();
-		else if (team != null && _neutralTeamItem != null && !_playerToItem.Keys.Any(p => p.Team == null))
+		else if (
+			team != null
+			&& _neutralTeamItem != null
+			&& !_playerToItem.Keys.Any(p => p.Team == null)
+		)
 		{
 			_neutralTeamItem.QueueFree();
 			_neutralTeamItem = null;
@@ -368,7 +388,8 @@ public partial class UILeaderboard : TouchScrollContainer
 
 	private void OnPlayerStatChanged(Stat stat, object? _)
 	{
-		if (!stat.Visible) return;
+		if (!stat.Visible)
+			return;
 
 		foreach (var item in _teamToItem.Values)
 			item.UpdateStat(stat);
@@ -388,13 +409,14 @@ public partial class UILeaderboard : TouchScrollContainer
 
 		foreach (var stat in Stats.GetStats(true))
 		{
-			if (stat.IsDeleted) continue;
+			if (stat.IsDeleted)
+				continue;
 			Label headerLabel = new()
 			{
 				Text = stat.GetDisplayName(),
 				CustomMinimumSize = new(70, 0),
 				HorizontalAlignment = HorizontalAlignment.Center,
-				TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
+				TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
 			};
 			headerLabel.AddThemeFontSizeOverride("font_size", 13);
 			statsBox.AddChild(headerLabel);
@@ -410,7 +432,11 @@ public partial class UILeaderboard : TouchScrollContainer
 
 		float viewportHeight = GetViewportRect().Size.Y;
 		const float reservedBottom = 240f;
-		return Mathf.Clamp(viewportHeight - reservedBottom - GlobalPosition.Y, 120f, LeaderboardMaxHeight);
+		return Mathf.Clamp(
+			viewportHeight - reservedBottom - GlobalPosition.Y,
+			120f,
+			LeaderboardMaxHeight
+		);
 	}
 
 	private async void LeaderboardUpdate()

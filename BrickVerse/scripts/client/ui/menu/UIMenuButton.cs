@@ -8,7 +8,8 @@ namespace BrickVerse.Client.UI;
 
 public partial class UIMenuButton : Button
 {
-	[Export] private AnimationPlayer _menuAnim = null!;
+	[Export]
+	private AnimationPlayer _menuAnim = null!;
 
 	public override void _Ready()
 	{

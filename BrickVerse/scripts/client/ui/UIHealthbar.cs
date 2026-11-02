@@ -2,18 +2,27 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public partial class UIHealthbar : Control
 {
-	[Export] private ProgressBar _healthBar = null!;
-	[Export] private ProgressBar _staminaBar = null!;
-	[Export] private Label _healthLabel = null!;
-	[Export] private TextureRect _heart = null!;
-	[Export] private AnimationPlayer _staminaBarAnim = null!;
+	[Export]
+	private ProgressBar _healthBar = null!;
+
+	[Export]
+	private ProgressBar _staminaBar = null!;
+
+	[Export]
+	private Label _healthLabel = null!;
+
+	[Export]
+	private TextureRect _heart = null!;
+
+	[Export]
+	private AnimationPlayer _staminaBarAnim = null!;
 	public CoreUIRoot CoreUI = null!;
 
 	private bool _staminaBarAppeared = false;
@@ -35,7 +44,10 @@ public partial class UIHealthbar : Control
 			Player localplayer = CoreUI.Root.Players.LocalPlayer;
 			float health = localplayer.Health;
 			float maxHealth = localplayer.MaxHealth;
-			Color healthClr = _healthOutColor.Lerp(_healthFullColor, Mathf.Clamp(health / maxHealth, 0, 1));
+			Color healthClr = _healthOutColor.Lerp(
+				_healthFullColor,
+				Mathf.Clamp(health / maxHealth, 0, 1)
+			);
 
 			_heart.Modulate = healthClr;
 			_healthBar.Modulate = healthClr;

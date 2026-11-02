@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -29,7 +29,7 @@ public partial class UIScrollView : UIContainer
 				ScrollModeEnum.Auto => ScrollContainer.ScrollMode.Auto,
 				ScrollModeEnum.AlwaysShow => ScrollContainer.ScrollMode.ShowAlways,
 				ScrollModeEnum.NeverShow => ScrollContainer.ScrollMode.ShowNever,
-				_ => ScrollContainer.ScrollMode.Auto
+				_ => ScrollContainer.ScrollMode.Auto,
 			};
 
 			OnPropertyChanged();
@@ -50,7 +50,7 @@ public partial class UIScrollView : UIContainer
 				ScrollModeEnum.Auto => ScrollContainer.ScrollMode.Auto,
 				ScrollModeEnum.AlwaysShow => ScrollContainer.ScrollMode.ShowAlways,
 				ScrollModeEnum.NeverShow => ScrollContainer.ScrollMode.ShowNever,
-				_ => ScrollContainer.ScrollMode.Auto
+				_ => ScrollContainer.ScrollMode.Auto,
 			};
 
 			OnPropertyChanged();
@@ -75,14 +75,18 @@ public partial class UIScrollView : UIContainer
 		ClipDescendants = true;
 
 		// Scroll to start at the last frame
-		Callable.From(() =>
-		{
-			Callable.From(() =>
+		Callable
+			.From(() =>
 			{
-				_scrollContainer.ScrollHorizontal = 0;
-				_scrollContainer.ScrollVertical = 0;
-			}).CallDeferred();
-		}).CallDeferred();
+				Callable
+					.From(() =>
+					{
+						_scrollContainer.ScrollHorizontal = 0;
+						_scrollContainer.ScrollVertical = 0;
+					})
+					.CallDeferred();
+			})
+			.CallDeferred();
 	}
 
 	[ScriptEnum("UIScrollMode")]
@@ -91,6 +95,6 @@ public partial class UIScrollView : UIContainer
 		Disabled,
 		Auto,
 		AlwaysShow,
-		NeverShow
+		NeverShow,
 	}
 }

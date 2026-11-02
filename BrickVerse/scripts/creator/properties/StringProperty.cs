@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Text.RegularExpressions;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -33,7 +33,8 @@ public sealed partial class StringProperty : LineEdit, IProperty<string>
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (string)value;
 	}
 

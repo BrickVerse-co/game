@@ -2,17 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.Settings;
+using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
-
+using Godot;
+using ObsoleteAttribute = BrickVerse.Attributes.ObsoleteAttribute;
 #if CREATOR
 using BrickVerse.Creator;
 using BrickVerse.Creator.Settings;
 #endif
-using BrickVerse.Shared;
-using ObsoleteAttribute = BrickVerse.Attributes.ObsoleteAttribute;
+
 
 namespace BrickVerse.Datamodel;
 
@@ -50,7 +50,6 @@ public sealed partial class Lighting : Instance
 			ApplyGraphicsSettings(ClientSettingsService.Instance);
 		}
 
-
 		UpdateSkybox();
 
 		base.Init();
@@ -86,14 +85,19 @@ public sealed partial class Lighting : Instance
 		environment.SsilEnabled = ssil;
 		environment.SdfgiEnabled = sdfgi;
 
-		environment.SdfgiCascades = settings.Get<int>(SharedSettingKeys.PostProcessing.SdfgiCascades);
-		environment.SdfgiMinCellSize = settings.Get<float>(SharedSettingKeys.PostProcessing.SdfgiCellSize);
+		environment.SdfgiCascades = settings.Get<int>(
+			SharedSettingKeys.PostProcessing.SdfgiCascades
+		);
+		environment.SdfgiMinCellSize = settings.Get<float>(
+			SharedSettingKeys.PostProcessing.SdfgiCellSize
+		);
 		environment.SsilRadius = settings.Get<float>(SharedSettingKeys.PostProcessing.SsilRadius);
 	}
 
 	public void ApplySky(Sky sky)
 	{
-		if (sky.IsHidden) return;
+		if (sky.IsHidden)
+			return;
 		CustomSkyApplied = true;
 		_sky.SkyMaterial = sky.SkyMaterial;
 		_currentSky = sky;
@@ -101,7 +105,10 @@ public sealed partial class Lighting : Instance
 
 	public void RemoveSky(Sky sky)
 	{
-		if (_currentSky != sky) { return; }
+		if (_currentSky != sky)
+		{
+			return;
+		}
 		CustomSkyApplied = false;
 		UpdateSkybox();
 	}
@@ -140,9 +147,10 @@ public sealed partial class Lighting : Instance
 		set
 		{
 			_ambientSource = value;
-			environment.AmbientLightSource = value == AmbientSourceEnum.Skybox
-				? Godot.Environment.AmbientSource.Bg
-				: Godot.Environment.AmbientSource.Color;
+			environment.AmbientLightSource =
+				value == AmbientSourceEnum.Skybox
+					? Godot.Environment.AmbientSource.Bg
+					: Godot.Environment.AmbientSource.Color;
 			OnPropertyChanged();
 		}
 	}
@@ -240,7 +248,6 @@ public sealed partial class Lighting : Instance
 		}
 	}
 
-
 	public SunLight Sun
 	{
 		get
@@ -280,13 +287,13 @@ public sealed partial class Lighting : Instance
 		Sunset2,
 		Sunset3,
 		Sunset4,
-		Sunset5
+		Sunset5,
 	}
 
 	[ScriptEnum]
 	public enum AmbientSourceEnum
 	{
 		Skybox,
-		Color
+		Color,
 	}
 }

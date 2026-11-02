@@ -31,30 +31,18 @@ public static class MathUtils
 
 	public static Vector3 FlipEuler(Vector3 polyRot)
 	{
-		Vector3 godotEuler = new(
-			polyRot.X,
-			-polyRot.Y,
-			-polyRot.Z
-		);
+		Vector3 godotEuler = new(polyRot.X, -polyRot.Y, -polyRot.Z);
 		return godotEuler;
 	}
 
 	public static Vector3 Vector3RadToDeg(Vector3 v)
 	{
-		return new Vector3(
-			Mathf.RadToDeg(v.X),
-			Mathf.RadToDeg(v.Y),
-			Mathf.RadToDeg(v.Z)
-		);
+		return new Vector3(Mathf.RadToDeg(v.X), Mathf.RadToDeg(v.Y), Mathf.RadToDeg(v.Z));
 	}
 
 	public static Vector3 Vector3DegToRad(Vector3 v)
 	{
-		return new(
-			Mathf.DegToRad(v.X),
-			Mathf.DegToRad(v.Y),
-			Mathf.DegToRad(v.Z)
-		);
+		return new(Mathf.DegToRad(v.X), Mathf.DegToRad(v.Y), Mathf.DegToRad(v.Z));
 	}
 
 	/// <summary>

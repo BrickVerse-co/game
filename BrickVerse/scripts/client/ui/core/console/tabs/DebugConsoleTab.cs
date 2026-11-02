@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Scripting;
 using System.Collections.Generic;
 using System.Text;
+using BrickVerse.Scripting;
+using Godot;
 using static BrickVerse.Scripting.LogDispatcher;
 
 namespace BrickVerse.Client.UI;
@@ -32,7 +32,8 @@ public partial class DebugConsoleTab : Control
 	public List<LogData> Logs = [];
 	public HashSet<string> ShownLogs = [];
 
-	[Export] public RichTextLabel TextLabel = null!;
+	[Export]
+	public RichTextLabel TextLabel = null!;
 	public LogDispatcher Logger = null!;
 
 	public override void _Ready()
@@ -45,14 +46,27 @@ public partial class DebugConsoleTab : Control
 		originalParent.AddChild(layout);
 		HBoxContainer toolbar = new();
 		layout.AddChild(toolbar);
-		LineEdit search = new() { PlaceholderText = "Search output…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		search.TextChanged += value => { _search = value; _needsFullRebuild = true; };
+		LineEdit search = new()
+		{
+			PlaceholderText = "Search output…",
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+		};
+		search.TextChanged += value =>
+		{
+			_search = value;
+			_needsFullRebuild = true;
+		};
 		toolbar.AddChild(search);
 		AddFilter(toolbar, "Info", true, value => _showInfo = value);
 		AddFilter(toolbar, "Warnings", true, value => _showWarnings = value);
 		AddFilter(toolbar, "Errors", true, value => _showErrors = value);
 		Button clear = new() { Text = "Clear" };
-		clear.Pressed += () => { Logs.Clear(); ShownLogs.Clear(); _needsFullRebuild = true; };
+		clear.Pressed += () =>
+		{
+			Logs.Clear();
+			ShownLogs.Clear();
+			_needsFullRebuild = true;
+		};
 		toolbar.AddChild(clear);
 		TextLabel.SizeFlagsVertical = SizeFlags.ExpandFill;
 		layout.AddChild(TextLabel);
@@ -63,7 +77,11 @@ public partial class DebugConsoleTab : Control
 	private void AddFilter(Control parent, string label, bool enabled, System.Action<bool> setter)
 	{
 		CheckButton filter = new() { Text = label, ButtonPressed = enabled };
-		filter.Toggled += value => { setter(value); _needsFullRebuild = true; };
+		filter.Toggled += value =>
+		{
+			setter(value);
+			_needsFullRebuild = true;
+		};
 		parent.AddChild(filter);
 	}
 
@@ -97,13 +115,18 @@ public partial class DebugConsoleTab : Control
 
 	private void OnNewLog(LogData data)
 	{
-		if (ShownLogs.Contains(data.ID)) return;
+		if (ShownLogs.Contains(data.ID))
+			return;
 
 		ShownLogs.Add(data.ID);
 
 		// Binary search insertion to maintain sorted order
-		int index = Logs.BinarySearch(data, Comparer<LogData>.Create((a, b) => a.LoggedAt.CompareTo(b.LoggedAt)));
-		if (index < 0) index = ~index;
+		int index = Logs.BinarySearch(
+			data,
+			Comparer<LogData>.Create((a, b) => a.LoggedAt.CompareTo(b.LoggedAt))
+		);
+		if (index < 0)
+			index = ~index;
 		Logs.Insert(index, data);
 
 		// Trim old logs if exceeding limit
@@ -147,7 +170,11 @@ public partial class DebugConsoleTab : Control
 
 	private void AppendSingleLog(LogData item)
 	{
-		if (!ShouldShow(item)) { _lastRenderedIndex++; return; }
+		if (!ShouldShow(item))
+		{
+			_lastRenderedIndex++;
+			return;
+		}
 		_textBuilder.Clear();
 		BuildLogLine(_textBuilder, item);
 		TextLabel.AppendText(_textBuilder.ToString());
@@ -159,7 +186,8 @@ public partial class DebugConsoleTab : Control
 		_textBuilder.Clear();
 
 		foreach (LogData item in Logs)
-			if (ShouldShow(item)) BuildLogLine(_textBuilder, item);
+			if (ShouldShow(item))
+				BuildLogLine(_textBuilder, item);
 
 		TextLabel.Text = _textBuilder.ToString();
 		_lastRenderedIndex = Logs.Count;
@@ -169,9 +197,12 @@ public partial class DebugConsoleTab : Control
 
 	private bool ShouldShow(LogData item)
 	{
-		if (item.LogType == LogTypeEnum.Info && !_showInfo) return false;
-		if (item.LogType == LogTypeEnum.Warning && !_showWarnings) return false;
-		if (item.LogType == LogTypeEnum.Error && !_showErrors) return false;
+		if (item.LogType == LogTypeEnum.Info && !_showInfo)
+			return false;
+		if (item.LogType == LogTypeEnum.Warning && !_showWarnings)
+			return false;
+		if (item.LogType == LogTypeEnum.Error && !_showErrors)
+			return false;
 		return _search.Length == 0
 			|| item.Content.Contains(_search, System.StringComparison.OrdinalIgnoreCase)
 			|| item.Source.Contains(_search, System.StringComparison.OrdinalIgnoreCase);
@@ -181,24 +212,19 @@ public partial class DebugConsoleTab : Control
 	{
 		string dotColor = (item.LogFrom == LogFromEnum.Client) ? ClientColorHex : ServerColorHex;
 
-		sb.Append("[color=")
-			.Append(dotColor)
-			.Append("]•[/color] ");
+		sb.Append("[color=").Append(dotColor).Append("]•[/color] ");
 
 		if (item.LogType == LogTypeEnum.Error)
 			sb.Append("[color=").Append(ErrorColorHex).Append(']');
 		else if (item.LogType == LogTypeEnum.Warning)
 			sb.Append("[color=").Append(WarningColorHex).Append(']');
 
-		sb.Append('[')
-			.Append(item.LoggedAt.ToLongTimeString())
-			.Append("] ");
+		sb.Append('[').Append(item.LoggedAt.ToLongTimeString()).Append("] ");
 
 		if (!string.IsNullOrWhiteSpace(item.Source))
 			sb.Append('[').Append(item.Source).Append("] ");
 
-		sb
-			.Append(item.Content);
+		sb.Append(item.Content);
 
 		if (item.LogType == LogTypeEnum.Error || item.LogType == LogTypeEnum.Warning)
 			sb.Append("[/color]");

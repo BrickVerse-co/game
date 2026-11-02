@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
-using System;
+using Godot;
 
 namespace BrickVerse.Datamodel.Resources;
 
@@ -24,7 +24,8 @@ public partial class ResourceAsset : BaseAsset
 	[ScriptProperty]
 	public bool Loading => !IsResourceLoaded;
 
-	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal Loaded { get; private set; } = new();
 
 	public override void Init()
 	{
@@ -53,11 +54,13 @@ public partial class ResourceAsset : BaseAsset
 
 		_queueLoadResource = true;
 
-		Callable.From(() =>
-		{
-			_queueLoadResource = false;
-			LoadResource();
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				_queueLoadResource = false;
+				LoadResource();
+			})
+			.CallDeferred();
 	}
 
 	public virtual void LoadResource() { }

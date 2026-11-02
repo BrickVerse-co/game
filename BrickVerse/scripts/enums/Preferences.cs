@@ -14,7 +14,7 @@ public enum GraphicsPresetEnum
 	High,
 	Ultra,
 	Photo,
-	Custom
+	Custom,
 }
 
 [ScriptEnum("RenderingMethod")]
@@ -23,9 +23,8 @@ public enum RenderingMethodEnum
 	Auto = -1,
 	Standard = 0,
 	Performance = 1,
-	Compatibility = 2
+	Compatibility = 2,
 }
-
 
 [ScriptEnum("ShadowQuality")]
 public enum ShadowQualityEnum
@@ -34,9 +33,8 @@ public enum ShadowQualityEnum
 	Low,
 	Medium,
 	High,
-	Ultra
+	Ultra,
 }
-
 
 [ScriptEnum("MsaaScale")]
 public enum MsaaScaleEnum
@@ -44,5 +42,5 @@ public enum MsaaScaleEnum
 	Disabled = 0,
 	X2 = 2,
 	X4 = 4,
-	X8 = 8
+	X8 = 8,
 }

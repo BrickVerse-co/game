@@ -1,8 +1,8 @@
 // © 2024-present https://github.com/cengiz-pz
 
-using Godot;
-using BrickVerse.Shared;
 using System;
+using BrickVerse.Shared;
+using Godot;
 
 namespace DeepLinkAddon;
 
@@ -34,7 +34,10 @@ public partial class Deeplink : Node
 
 	private void ConnectSignals()
 	{
-		_pluginSingleton.Connect(DeeplinkReceivedSignalName, new Callable(this, nameof(OnDeeplinkReceived)));
+		_pluginSingleton.Connect(
+			DeeplinkReceivedSignalName,
+			new Callable(this, nameof(OnDeeplinkReceived))
+		);
 	}
 
 	public int Initialize()

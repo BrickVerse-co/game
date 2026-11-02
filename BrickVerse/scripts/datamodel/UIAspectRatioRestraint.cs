@@ -21,6 +21,7 @@ public partial class UIAspectRatioRestraint : Instance
 			UpdateParentSize();
 		}
 	}
+
 	[Editable, ScriptProperty]
 	public AspectRatioScaleTypeEnum ScaleType
 	{
@@ -32,13 +33,15 @@ public partial class UIAspectRatioRestraint : Instance
 			UpdateParentSize();
 		}
 	}
+
 	[Editable, ScriptProperty]
 	public float AspectRatio
 	{
 		get => _aspectRatio;
 		set
 		{
-			if (value == _aspectRatio) return;
+			if (value == _aspectRatio)
+				return;
 			_aspectRatio = value;
 			UpdateParentSize();
 		}
@@ -46,7 +49,8 @@ public partial class UIAspectRatioRestraint : Instance
 
 	private void UpdateParentSize()
 	{
-		if (Parent is not UIField field || field.NodeControl == null) return;
+		if (Parent is not UIField field || field.NodeControl == null)
+			return;
 		field.RecomputeTransform();
 	}
 
@@ -59,7 +63,6 @@ public partial class UIAspectRatioRestraint : Instance
 		}
 		base.EnterTree();
 	}
-
 
 	public override void PostReparent()
 	{
@@ -79,12 +82,13 @@ public partial class UIAspectRatioRestraint : Instance
 public enum DominantAxisEnum
 {
 	Width = 0,
-	Height = 1
+	Height = 1,
 }
+
 [ScriptEnum]
 public enum AspectRatioScaleTypeEnum
 {
 	FitContainer = 0,
 	FitMaxSize = 1,
-	NoLimit = 2
+	NoLimit = 2,
 }

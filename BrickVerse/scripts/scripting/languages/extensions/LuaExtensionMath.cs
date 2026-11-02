@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Scripting.Extensions;
 
@@ -16,7 +16,13 @@ public class LuaExtensionMath : IScriptObject
 	}
 
 	[ScriptMethod("remap")]
-	public static double Remap(double value, double inFrom, double inTo, double outFrom, double outTo)
+	public static double Remap(
+		double value,
+		double inFrom,
+		double inTo,
+		double outFrom,
+		double outTo
+	)
 	{
 		return Mathf.Remap(value, inFrom, inTo, outFrom, outTo);
 	}

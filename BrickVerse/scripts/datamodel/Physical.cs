@@ -2,17 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -22,8 +22,14 @@ public partial class Physical : Dynamic
 	public const float MinMass = 0.01f;
 	private static readonly Dictionary<CollisionObject3D, Physical> _bodyToPhysical = [];
 	private static readonly Dictionary<Node, Physical> _proxyToPhysical = [];
-	private static readonly ConditionalWeakTable<CollisionShape3D, RemoteLinkConfig> _remoteLinkConfigs = [];
-	private static readonly ConditionalWeakTable<CollisionShape3D, TrackedNodesState> _trackedNodes = [];
+	private static readonly ConditionalWeakTable<
+		CollisionShape3D,
+		RemoteLinkConfig
+	> _remoteLinkConfigs = [];
+	private static readonly ConditionalWeakTable<
+		CollisionShape3D,
+		TrackedNodesState
+	> _trackedNodes = [];
 	internal readonly Dictionary<int, Physical> _rootShapeIndexToPhysical = [];
 
 	private sealed class RemoteLinkConfig
@@ -42,7 +48,8 @@ public partial class Physical : Dynamic
 	private const float TouchedGapCheck = 20f;
 	private bool _anchored = true;
 	private bool _canCollide = true;
-	private uint _collisionLayers = 1, _collisionMask = 1;
+	private uint _collisionLayers = 1,
+		_collisionMask = 1;
 	private Vector3 _velocity = Vector3.Zero;
 	private Vector3 _angularVelocity = Vector3.Zero;
 	private uint _rayPassthrough = 0;
@@ -61,11 +68,20 @@ public partial class Physical : Dynamic
 	public List<CollisionShape3D> CollisionRootShapes = [];
 	private readonly HashSet<CollisionShape3D> _pendingAreaShapes = [];
 
-	[ScriptProperty] public BVSignal<Physical> Touched { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Physical> TouchEnded { get; private set; } = new();
-	[ScriptProperty] public BVSignal MouseEnter { get; private set; } = new();
-	[ScriptProperty] public BVSignal MouseExit { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Player> Clicked { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Physical> Touched { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Physical> TouchEnded { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal MouseEnter { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal MouseExit { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Player> Clicked { get; private set; } = new();
 
 	public event Action<CollisionShape3D>? CollisionShapeAdded;
 	public event Action<CollisionShape3D>? CollisionShapeRemoved;
@@ -197,7 +213,11 @@ public partial class Physical : Dynamic
 			}
 
 			// Freeze the object on non physics authority
-			if (Root.SessionType == World.SessionTypeEnum.Client && Root.Network.LocalPeerID != NetTransformAuthority && ExistInNetwork)
+			if (
+				Root.SessionType == World.SessionTypeEnum.Client
+				&& Root.Network.LocalPeerID != NetTransformAuthority
+				&& ExistInNetwork
+			)
 			{
 				finalVal = true;
 			}
@@ -224,7 +244,8 @@ public partial class Physical : Dynamic
 
 	protected void UpdatePhysicsTick()
 	{
-		if (OverridePhysicsProcess) return;
+		if (OverridePhysicsProcess)
+			return;
 		SetPhysicsProcess(!_anchored && !IsAsleep && !IsFrozen);
 	}
 
@@ -234,7 +255,8 @@ public partial class Physical : Dynamic
 
 	internal void UpdateCollision()
 	{
-		if (IsDeleted) return;
+		if (IsDeleted)
+			return;
 
 		ApplyCollisionObjectLayers();
 
@@ -248,7 +270,10 @@ public partial class Physical : Dynamic
 		if (!IsHidden)
 		{
 			// Stop collision override if player's not ready
-			if (this is Player plr && !plr.IsReady) { return; }
+			if (this is Player plr && !plr.IsReady)
+			{
+				return;
+			}
 			bool setTo = !_canCollide;
 
 #if CREATOR
@@ -280,7 +305,8 @@ public partial class Physical : Dynamic
 	{
 		foreach (CollisionShape3D c in CollisionShapes.ToArray())
 		{
-			if (!Node.IsInstanceValid(c)) continue;
+			if (!Node.IsInstanceValid(c))
+				continue;
 			c.Disabled = disabled;
 		}
 	}
@@ -320,10 +346,7 @@ public partial class Physical : Dynamic
 	[Editable, ScriptProperty, SyncVar(Unreliable = true, AllowAuthorWrite = true)]
 	public virtual Vector3 AngularVelocity
 	{
-		get
-		{
-			return _angularVelocity;
-		}
+		get { return _angularVelocity; }
 		set
 		{
 			_angularVelocity = value;
@@ -551,7 +574,8 @@ public partial class Physical : Dynamic
 
 	public static Physical? GetPhysicalFromBody(CollisionObject3D body)
 	{
-		if (_bodyToPhysical.TryGetValue(body, out Physical? val)) return val;
+		if (_bodyToPhysical.TryGetValue(body, out Physical? val))
+			return val;
 		return null;
 	}
 
@@ -615,7 +639,10 @@ public partial class Physical : Dynamic
 	{
 		bool asleep = IsAsleep;
 		UpdateTransformTick(delta);
-		if (Root == null || Root?.Network == null) { return; }
+		if (Root == null || Root?.Network == null)
+		{
+			return;
+		}
 
 		bool localSim = NetTransformAuthority == Root.Network.LocalPeerID || !ExistInNetwork;
 
@@ -636,7 +663,8 @@ public partial class Physical : Dynamic
 	[ScriptMethod]
 	public void SetNetworkAuthority(Player? plr)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Set authority can only be called from server");
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException("Set authority can only be called from server");
 		int peerId = plr?.PeerID ?? 1;
 		NetTransformAuthority = peerId;
 		RpcId(peerId, nameof(NetGivenAuthority));
@@ -668,7 +696,8 @@ public partial class Physical : Dynamic
 	/// <param name="collisionShape"></param>
 	internal void AddCollisionShape(CollisionShape3D collisionShape)
 	{
-		if (CollisionShapes.Contains(collisionShape)) return;
+		if (CollisionShapes.Contains(collisionShape))
+			return;
 		CollisionShapes.Add(collisionShape);
 		AttachCollisionShape(collisionShape);
 		EnsureRemoteTransform(collisionShape);
@@ -694,7 +723,8 @@ public partial class Physical : Dynamic
 	/// <param name="free">Free the shape now?</param>
 	internal void RemoveCollisionShape(CollisionShape3D collisionShape, bool free = true)
 	{
-		if (!CollisionShapes.Contains(collisionShape)) return;
+		if (!CollisionShapes.Contains(collisionShape))
+			return;
 		CollisionShapes.Remove(collisionShape);
 		_pendingAreaShapes.Remove(collisionShape);
 
@@ -714,9 +744,14 @@ public partial class Physical : Dynamic
 		}
 	}
 
-	private void CleanupTrackedNodes(CollisionShape3D collisionShape, Func<TrackedNodesState, List<Node>> selector, bool removeAreaShapes)
+	private void CleanupTrackedNodes(
+		CollisionShape3D collisionShape,
+		Func<TrackedNodesState, List<Node>> selector,
+		bool removeAreaShapes
+	)
 	{
-		if (!_trackedNodes.TryGetValue(collisionShape, out TrackedNodesState? state)) return;
+		if (!_trackedNodes.TryGetValue(collisionShape, out TrackedNodesState? state))
+			return;
 
 		List<Node> createdNodes = selector(state);
 		foreach (Node node in createdNodes)
@@ -748,10 +783,10 @@ public partial class Physical : Dynamic
 		}
 	}
 
-
 	private void CreateAreaShape(CollisionShape3D origin)
 	{
-		if (!Node.IsInstanceValid(origin)) return;
+		if (!Node.IsInstanceValid(origin))
+			return;
 
 		// If is hidden, don't create area shape yet
 		if (IsHidden && PhysicalRoot == null)
@@ -791,7 +826,10 @@ public partial class Physical : Dynamic
 		return _trackedNodes.GetOrCreateValue(collisionShape);
 	}
 
-	private static bool HasValidTrackedNodes(CollisionShape3D collisionShape, Func<TrackedNodesState, List<Node>> selector)
+	private static bool HasValidTrackedNodes(
+		CollisionShape3D collisionShape,
+		Func<TrackedNodesState, List<Node>> selector
+	)
 	{
 		if (!_trackedNodes.TryGetValue(collisionShape, out TrackedNodesState? state))
 		{
@@ -818,7 +856,11 @@ public partial class Physical : Dynamic
 		return false;
 	}
 
-	private static void SetTrackedNodes(CollisionShape3D collisionShape, Func<TrackedNodesState, List<Node>> selector, IEnumerable<Node> nodes)
+	private static void SetTrackedNodes(
+		CollisionShape3D collisionShape,
+		Func<TrackedNodesState, List<Node>> selector,
+		IEnumerable<Node> nodes
+	)
 	{
 		TrackedNodesState state = GetTrackedNodesState(collisionShape);
 		List<Node> trackedNodes = selector(state);
@@ -846,10 +888,7 @@ public partial class Physical : Dynamic
 	private Node3D CreateRemoteLinkNode(CollisionShape3D origin, Node target)
 	{
 		Node3D scaleNode = new();
-		RemoteTransform3D rt = new()
-		{
-			UseGlobalCoordinates = true
-		};
+		RemoteTransform3D rt = new() { UseGlobalCoordinates = true };
 		scaleNode.AddChild(rt);
 
 		AttachRemoteLinkNode(origin, scaleNode);
@@ -860,7 +899,8 @@ public partial class Physical : Dynamic
 
 	private void EnsureRemoteTransform(CollisionShape3D origin)
 	{
-		if (!Node.IsInstanceValid(origin)) return;
+		if (!Node.IsInstanceValid(origin))
+			return;
 
 		if (HasValidTrackedNodes(origin, static state => state.CollisionSyncNodes))
 		{
@@ -873,7 +913,8 @@ public partial class Physical : Dynamic
 
 	private void CreateAreaShapeInternal(CollisionShape3D origin)
 	{
-		if (!Node.IsInstanceValid(origin) || origin.Shape == null) return;
+		if (!Node.IsInstanceValid(origin) || origin.Shape == null)
+			return;
 
 		Shape3D sharedShape = origin.Shape;
 		List<Node> createdNodes = [];
@@ -881,24 +922,14 @@ public partial class Physical : Dynamic
 		CollisionShape3D CreateLinkedShape(Node parent)
 		{
 			// Create Node3D for scaling
-			Node3D scaleNode = new()
-			{
-				Scale = new(1.01f, 1.01f, 1.01f)
-			};
+			Node3D scaleNode = new() { Scale = new(1.01f, 1.01f, 1.01f) };
 
-			CollisionShape3D newShape = new()
-			{
-				Shape = sharedShape,
-				Disabled = IsHidden,
-			};
+			CollisionShape3D newShape = new() { Shape = sharedShape, Disabled = IsHidden };
 
 			parent.AddChild(newShape);
 			createdNodes.Add(newShape);
 
-			RemoteTransform3D rt = new()
-			{
-				UseGlobalCoordinates = true
-			};
+			RemoteTransform3D rt = new() { UseGlobalCoordinates = true };
 			scaleNode.AddChild(rt);
 			createdNodes.Add(scaleNode);
 
@@ -932,7 +963,8 @@ public partial class Physical : Dynamic
 
 	public static Physical? GetPhysicalFromCollider(Node collider)
 	{
-		if (_proxyToPhysical.TryGetValue(collider, out Physical? val)) return val;
+		if (_proxyToPhysical.TryGetValue(collider, out Physical? val))
+			return val;
 		return null;
 	}
 
@@ -956,10 +988,12 @@ public partial class Physical : Dynamic
 
 	private void AttachCollisionShape(CollisionShape3D origin)
 	{
-		if (!Node.IsInstanceValid(origin)) return;
+		if (!Node.IsInstanceValid(origin))
+			return;
 
 		Node targetRoot = GetCollisionShapeRoot();
-		if (!Node.IsInstanceValid(targetRoot)) return;
+		if (!Node.IsInstanceValid(targetRoot))
+			return;
 
 		if (origin.GetParent() == targetRoot)
 		{
@@ -981,7 +1015,8 @@ public partial class Physical : Dynamic
 
 	private void RevertCollisionShape(CollisionShape3D origin)
 	{
-		if (!Node.IsInstanceValid(origin)) return;
+		if (!Node.IsInstanceValid(origin))
+			return;
 
 		if (origin.GetParent() == GDNode)
 		{
@@ -999,8 +1034,10 @@ public partial class Physical : Dynamic
 
 	internal void ApplyForceFromPlayer(Vector3 force)
 	{
-		if (Anchored) return;
-		if (this is not Entity) return;
+		if (Anchored)
+			return;
+		if (this is not Entity)
+			return;
 		((RigidBody3D)GDNode).ApplyCentralImpulse(force);
 	}
 
@@ -1022,7 +1059,12 @@ public partial class Physical : Dynamic
 		}
 	}
 
-	private void BodyShapeEntered(Rid bodyRid, Node3D body, long bodyShapeIndex, long localShapeIndex)
+	private void BodyShapeEntered(
+		Rid bodyRid,
+		Node3D body,
+		long bodyShapeIndex,
+		long localShapeIndex
+	)
 	{
 		if (body is not CollisionObject3D collisionBody)
 			return;
@@ -1034,7 +1076,12 @@ public partial class Physical : Dynamic
 		}
 	}
 
-	private void BodyShapeExited(Rid bodyRid, Node3D body, long bodyShapeIndex, long localShapeIndex)
+	private void BodyShapeExited(
+		Rid bodyRid,
+		Node3D body,
+		long bodyShapeIndex,
+		long localShapeIndex
+	)
 	{
 		if (body is not CollisionObject3D collisionBody)
 			return;
@@ -1100,7 +1147,8 @@ public partial class Physical : Dynamic
 		if (hit != null && hit is Player plr && !plr.IsDead)
 		{
 			// Ignore invalid touches (touches that are out of range)
-			if (!IsTouchedValid(plr)) return;
+			if (!IsTouchedValid(plr))
+				return;
 
 			InternalInvokeTouched(plr);
 		}
@@ -1138,12 +1186,15 @@ public partial class Physical : Dynamic
 
 	private void InternalInvokeTouched(Physical physical)
 	{
-		if (physical == this) return;
+		if (physical == this)
+			return;
 		// Ignore dead NPCs, their position could be inaccurate
-		if (physical is NPC npc && npc.IsDead) return;
+		if (physical is NPC npc && npc.IsDead)
+			return;
 
 		// Ignore player that's not ready
-		if (physical is Player plr && !plr.IsReady) return;
+		if (physical is Player plr && !plr.IsReady)
+			return;
 
 		if (_touchContacts.TryGetValue(physical, out int count))
 		{
@@ -1158,7 +1209,8 @@ public partial class Physical : Dynamic
 	private void InternalInvokeTouchEnded(Physical physical)
 	{
 		// Ignore player that's not ready
-		if (physical is Player plr && !plr.IsReady) return;
+		if (physical is Player plr && !plr.IsReady)
+			return;
 
 		if (!_touchContacts.TryGetValue(physical, out int count))
 			return;
@@ -1180,14 +1232,16 @@ public partial class Physical : Dynamic
 
 	protected void EnsureTouchArea()
 	{
-		if (PhysicalArea != null) return;
-		if (!Node.IsInstanceValid(GDNode3D)) return;
+		if (PhysicalArea != null)
+			return;
+		if (!Node.IsInstanceValid(GDNode3D))
+			return;
 
 		PhysicalArea = new()
 		{
 			Monitorable = true,
 			Monitoring = _canTouch,
-			Scale = new(1.01f, 1.01f, 1.01f)
+			Scale = new(1.01f, 1.01f, 1.01f),
 		};
 
 		SetCollisionMask(2, true);
@@ -1274,13 +1328,17 @@ public partial class Physical : Dynamic
 	public void ApplyImpulse(Vector3 impulse) => ApplyAddForce(impulse, ForceModeEnum.Impulse);
 
 	[ScriptMethod]
-	public void ApplyAngularImpulse(Vector3 impulse) => ApplyAddTorque(impulse, ForceModeEnum.Impulse);
+	public void ApplyAngularImpulse(Vector3 impulse) =>
+		ApplyAddTorque(impulse, ForceModeEnum.Impulse);
 
 	[ScriptMethod]
 	public void ApplyImpulseAtPosition(Vector3 impulse, Vector3 position) =>
 		ApplyAddForceAtPosition(impulse, position, ForceModeEnum.Impulse);
 
-	internal virtual void ApplyAddForce(Vector3 force, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
+	internal virtual void ApplyAddForce(Vector3 force, ForceModeEnum mode)
+	{
+		throw new NotImplementedException(ClassName + " does not support this force function");
+	}
 
 	[ScriptMethod]
 	public void AddTorque(Vector3 force, ForceModeEnum mode = ForceModeEnum.Force)
@@ -1288,15 +1346,29 @@ public partial class Physical : Dynamic
 		ApplyAddTorque(force, mode);
 	}
 
-	internal virtual void ApplyAddTorque(Vector3 force, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
+	internal virtual void ApplyAddTorque(Vector3 force, ForceModeEnum mode)
+	{
+		throw new NotImplementedException(ClassName + " does not support this force function");
+	}
 
 	[ScriptMethod]
-	public void AddForceAtPosition(Vector3 force, Vector3 position, ForceModeEnum mode = ForceModeEnum.Force)
+	public void AddForceAtPosition(
+		Vector3 force,
+		Vector3 position,
+		ForceModeEnum mode = ForceModeEnum.Force
+	)
 	{
 		ApplyAddForceAtPosition(force, position, mode);
 	}
 
-	internal virtual void ApplyAddForceAtPosition(Vector3 force, Vector3 position, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
+	internal virtual void ApplyAddForceAtPosition(
+		Vector3 force,
+		Vector3 position,
+		ForceModeEnum mode
+	)
+	{
+		throw new NotImplementedException(ClassName + " does not support this force function");
+	}
 
 	[ScriptMethod]
 	public void AddRelativeForce(Vector3 force, ForceModeEnum mode = ForceModeEnum.Force)
@@ -1304,7 +1376,10 @@ public partial class Physical : Dynamic
 		ApplyAddRelativeForce(force, mode);
 	}
 
-	internal virtual void ApplyAddRelativeForce(Vector3 force, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
+	internal virtual void ApplyAddRelativeForce(Vector3 force, ForceModeEnum mode)
+	{
+		throw new NotImplementedException(ClassName + " does not support this force function");
+	}
 
 	[ScriptMethod]
 	public void AddRelativeTorque(Vector3 torque, ForceModeEnum mode = ForceModeEnum.Force)
@@ -1312,7 +1387,10 @@ public partial class Physical : Dynamic
 		ApplyAddRelativeTorque(torque, mode);
 	}
 
-	internal virtual void ApplyAddRelativeTorque(Vector3 torque, ForceModeEnum mode) { throw new NotImplementedException(ClassName + " does not support this force function"); }
+	internal virtual void ApplyAddRelativeTorque(Vector3 torque, ForceModeEnum mode)
+	{
+		throw new NotImplementedException(ClassName + " does not support this force function");
+	}
 
 	[ScriptEnum("ForceMode")]
 	public enum ForceModeEnum
@@ -1320,6 +1398,6 @@ public partial class Physical : Dynamic
 		Force,
 		Acceleration,
 		Impulse,
-		VelocityChange
+		VelocityChange,
 	}
 }

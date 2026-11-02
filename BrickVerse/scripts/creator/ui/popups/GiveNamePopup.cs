@@ -2,17 +2,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Creator;
 using System;
+using BrickVerse.Datamodel.Creator;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class GiveNamePopup : PopupWindowBase
 {
-	[Export] private LineEdit _pathEdit = null!;
-	[Export] private Button _createBtn = null!;
-	[Export] private Button _cancelBtn = null!;
+	[Export]
+	private LineEdit _pathEdit = null!;
+
+	[Export]
+	private Button _createBtn = null!;
+
+	[Export]
+	private Button _cancelBtn = null!;
 
 	public string Placeholder = "";
 	public string DefaultValue = "";
@@ -39,7 +44,8 @@ public sealed partial class GiveNamePopup : PopupWindowBase
 
 	private void SubmitName()
 	{
-		if (CreatorService.CurrentSession == null) return;
+		if (CreatorService.CurrentSession == null)
+			return;
 		CreatorSession session = CreatorService.CurrentSession;
 		string folderName = _pathEdit.Text;
 

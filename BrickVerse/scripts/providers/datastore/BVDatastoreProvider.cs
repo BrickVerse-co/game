@@ -2,8 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Client.WebAPI;
-using BrickVerse.Shared;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -12,6 +10,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Providers.Datastore;
 
@@ -57,7 +57,9 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		ValidateKey(key);
 		ConsumeReadRequest();
 
-		string url = Globals.ApiEndpoint + $"/v3/world/server/storage?storeName={Uri.EscapeDataString(_dataStoreName)}&key={Uri.EscapeDataString(key)}";
+		string url =
+			Globals.ApiEndpoint
+			+ $"/v3/world/server/storage?storeName={Uri.EscapeDataString(_dataStoreName)}&key={Uri.EscapeDataString(key)}";
 
 		using HttpResponseMessage response = await _client.GetAsync(url);
 
@@ -69,7 +71,8 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		response.EnsureSuccessStatusCode();
 
 		using JsonDocument document = JsonDocument.Parse(
-			await response.Content.ReadAsStringAsync());
+			await response.Content.ReadAsStringAsync()
+		);
 
 		if (!document.RootElement.TryGetProperty("value", out JsonElement valueRoot))
 		{
@@ -78,8 +81,10 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 
 		JsonElement value = valueRoot;
 
-		if (valueRoot.ValueKind == JsonValueKind.Object &&
-			valueRoot.TryGetProperty("value", out JsonElement wrapped))
+		if (
+			valueRoot.ValueKind == JsonValueKind.Object
+			&& valueRoot.TryGetProperty("value", out JsonElement wrapped)
+		)
 		{
 			value = wrapped;
 		}
@@ -87,7 +92,9 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		return ParseJsonValue(value);
 	}
 
-	[RequiresUnreferencedCode("Serializing datastore payloads relies on reflection-driven JSON metadata.")]
+	[RequiresUnreferencedCode(
+		"Serializing datastore payloads relies on reflection-driven JSON metadata."
+	)]
 	[RequiresDynamicCode("Serializing datastore payloads may require runtime code generation.")]
 	public async Task SetAsync(string key, object? value)
 	{
@@ -101,20 +108,15 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		{
 			["storeName"] = _dataStoreName,
 			["key"] = key,
-			["value"] = new JsonObject
-			{
-				["value"] = JsonSerializer.SerializeToNode(value)
-			}
+			["value"] = new JsonObject { ["value"] = JsonSerializer.SerializeToNode(value) },
 		};
 
-		using StringContent content = new(
-			body.ToJsonString(),
-			Encoding.UTF8,
-			"application/json");
+		using StringContent content = new(body.ToJsonString(), Encoding.UTF8, "application/json");
 
 		using HttpResponseMessage response = await _client.PutAsync(
 			Globals.ApiEndpoint + "/v3/world/server/storage",
-			content);
+			content
+		);
 
 		response.EnsureSuccessStatusCode();
 	}
@@ -151,8 +153,12 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 	{
 		ResetQuotaWindow();
 
-		int limit = MaxReadRequestsPerMinute +
-			(ReadRequestsPerPlayerModifier * _dataStore.DatastoreService.Root.Players.PlayersCount);
+		int limit =
+			MaxReadRequestsPerMinute
+			+ (
+				ReadRequestsPerPlayerModifier
+				* _dataStore.DatastoreService.Root.Players.PlayersCount
+			);
 
 		if (_readRequestsThisMinute >= limit)
 		{
@@ -166,8 +172,12 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 	{
 		ResetQuotaWindow();
 
-		int limit = MaxWriteRequestsPerMinute +
-			(WriteRequestsPerPlayerModifier * _dataStore.DatastoreService.Root.Players.PlayersCount);
+		int limit =
+			MaxWriteRequestsPerMinute
+			+ (
+				WriteRequestsPerPlayerModifier
+				* _dataStore.DatastoreService.Root.Players.PlayersCount
+			);
 
 		if (_writeRequestsThisMinute >= limit)
 		{
@@ -179,8 +189,7 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 
 	private void ResetQuotaWindow()
 	{
-		int currentMinute =
-			(int)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60);
+		int currentMinute = (int)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60);
 
 		if (_quotaMinute == currentMinute)
 		{
@@ -196,8 +205,7 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 	{
 		if (_dataStore == null || string.IsNullOrWhiteSpace(_dataStoreName))
 		{
-			throw new InvalidOperationException(
-				"The datastore provider has not been connected.");
+			throw new InvalidOperationException("The datastore provider has not been connected.");
 		}
 	}
 
@@ -205,34 +213,35 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 	{
 		if (string.IsNullOrWhiteSpace(key))
 		{
-			throw new ArgumentException(
-				"Datastore key cannot be empty.",
-				nameof(key));
+			throw new ArgumentException("Datastore key cannot be empty.", nameof(key));
 		}
 	}
 
 	private static void ValidateValue(object? value)
 	{
-		if (value is null ||
-			value is string ||
-			value is bool ||
-			value is byte ||
-			value is sbyte ||
-			value is short ||
-			value is ushort ||
-			value is int ||
-			value is uint ||
-			value is long ||
-			value is ulong ||
-			value is float ||
-			value is double ||
-			value is decimal)
+		if (
+			value is null
+			|| value is string
+			|| value is bool
+			|| value is byte
+			|| value is sbyte
+			|| value is short
+			|| value is ushort
+			|| value is int
+			|| value is uint
+			|| value is long
+			|| value is ulong
+			|| value is float
+			|| value is double
+			|| value is decimal
+		)
 		{
 			return;
 		}
 
 		throw new InvalidOperationException(
-			"Datastore values must be null, strings, booleans, or numbers.");
+			"Datastore values must be null, strings, booleans, or numbers."
+		);
 	}
 
 	private static object? ParseJsonValue(JsonElement value)
@@ -244,18 +253,13 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 			JsonValueKind.False => false,
 			JsonValueKind.String => value.GetString(),
 
-			JsonValueKind.Number
-				when value.TryGetInt32(out int intValue)
-				=> intValue,
+			JsonValueKind.Number when value.TryGetInt32(out int intValue) => intValue,
 
-			JsonValueKind.Number
-				when value.TryGetInt64(out long longValue)
-				=> longValue,
+			JsonValueKind.Number when value.TryGetInt64(out long longValue) => longValue,
 
-			JsonValueKind.Number
-				=> value.GetDouble(),
+			JsonValueKind.Number => value.GetDouble(),
 
-			_ => null
+			_ => null,
 		};
 	}
 
@@ -264,10 +268,8 @@ public sealed class BVDatastoreProvider : IDatastoreProvider
 		ObjectDisposedException.ThrowIf(_disposed, this);
 	}
 
-	public sealed class DataStoreQuotaException(string message)
-		: Exception(message);
+	public sealed class DataStoreQuotaException(string message) : Exception(message);
 
 	[Obsolete("Use DataStoreQuotaException instead.")]
-	public sealed class PTDatastoreQuotaException(string message)
-		: Exception(message);
+	public sealed class PTDatastoreQuotaException(string message) : Exception(message);
 }

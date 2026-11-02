@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
 using Godot;
 
 namespace BrickVerse.Datamodel;
@@ -20,9 +20,14 @@ public partial class CharacterModel : Dynamic
 	private readonly Dictionary<CharacterModelBlendEnum, float> _blendValues = [];
 	private Animator? _animator = null!;
 
-	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRHeadPose { get; internal set; } = Transform3D.Identity;
-	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRLeftHandPose { get; internal set; } = Transform3D.Identity;
-	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)] public Transform3D XRRightHandPose { get; internal set; } = Transform3D.Identity;
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)]
+	public Transform3D XRHeadPose { get; internal set; } = Transform3D.Identity;
+
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)]
+	public Transform3D XRLeftHandPose { get; internal set; } = Transform3D.Identity;
+
+	[ScriptProperty, SyncVar(AllowAuthorWrite = true, Unreliable = true)]
+	public Transform3D XRRightHandPose { get; internal set; } = Transform3D.Identity;
 
 	[ScriptEnum]
 	public enum CharacterModelStateEnum
@@ -31,7 +36,7 @@ public partial class CharacterModel : Dynamic
 		Walking,
 		Running,
 		Jumping,
-		Climbing
+		Climbing,
 	}
 
 	public enum CharacterModelBlendEnum
@@ -85,7 +90,11 @@ public partial class CharacterModel : Dynamic
 	public override void Init()
 	{
 		base.Init();
-		if (Root != null && Root.Network != null && NetworkService.CheckAuthority(Root.Network.LocalPeerID, NetworkAuthority))
+		if (
+			Root != null
+			&& Root.Network != null
+			&& NetworkService.CheckAuthority(Root.Network.LocalPeerID, NetworkAuthority)
+		)
 		{
 			_peerReadySubscribed = true;
 			Root.Network.PeerPreInit += OnPeerPreInit;
@@ -176,13 +185,16 @@ public partial class CharacterModel : Dynamic
 	}
 
 	public virtual void RecvBlendValue(CharacterModelBlendEnum blendName, float blendValue) { }
+
 	public virtual void RecvSpeedValue(float speedValue) { }
 
 	[ScriptMethod]
 	public virtual Dynamic GetAttachment(CharacterAttachmentEnum attachmentEnum)
 	{
-		return GetDescendants().OfType<Dynamic>()
-			.FirstOrDefault(child => child.Name == attachmentEnum.ToString()) ?? this;
+		return GetDescendants()
+				.OfType<Dynamic>()
+				.FirstOrDefault(child => child.Name == attachmentEnum.ToString())
+			?? this;
 	}
 
 	public virtual void ApplyCameraModifier(Camera camera) { }
@@ -204,6 +216,6 @@ public partial class CharacterModel : Dynamic
 		KneeLeft,
 		KneeRight,
 		FootLeft,
-		FootRight
+		FootRight,
 	}
 }

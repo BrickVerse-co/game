@@ -1,9 +1,9 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Formats;
 using BrickVerse.Scripting;
 using Godot;
-using System;
 
 namespace BrickVerse.Datamodel;
 
@@ -22,18 +22,30 @@ public sealed partial class AnimationTrack : Instance
 	private AnimationPlayer? _objectPlayer;
 	private InstanceAnimationBinding? _instanceBinding;
 
-	[ScriptProperty] public bool IsPlaying => _isPlaying;
+	[ScriptProperty]
+	public bool IsPlaying => _isPlaying;
+
 	[ScriptProperty]
 	public float TimePosition
 	{
 		get => _timePosition;
 		set => Seek(value);
 	}
-	[ScriptProperty] public float Speed => _speed;
-	[ScriptProperty] public Animator? Animator => _animator;
-	[ScriptProperty] public BVSignal Played { get; private set; } = new();
-	[ScriptProperty] public BVSignal Stopped { get; private set; } = new();
-	[ScriptProperty] public BVSignal Ended { get; private set; } = new();
+
+	[ScriptProperty]
+	public float Speed => _speed;
+
+	[ScriptProperty]
+	public Animator? Animator => _animator;
+
+	[ScriptProperty]
+	public BVSignal Played { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Stopped { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Ended { get; private set; } = new();
 
 	[ScriptProperty]
 	public string AnimationData
@@ -41,7 +53,8 @@ public sealed partial class AnimationTrack : Instance
 		get => _animationData;
 		set
 		{
-			if (_animationData == (value ?? "")) return;
+			if (_animationData == (value ?? ""))
+				return;
 			ReleaseObjectPlayer();
 			_instanceBinding?.Dispose();
 			_instanceBinding = null;
@@ -55,14 +68,22 @@ public sealed partial class AnimationTrack : Instance
 	public float Length
 	{
 		get => _length;
-		set { _length = Math.Clamp(value, 0.01f, 3600f); OnPropertyChanged(); }
+		set
+		{
+			_length = Math.Clamp(value, 0.01f, 3600f);
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, DefaultValue("None")]
 	public string LoopMode
 	{
 		get => _loopMode;
-		set { _loopMode = value is "Linear" or "Pingpong" ? value : "None"; OnPropertyChanged(); }
+		set
+		{
+			_loopMode = value is "Linear" or "Pingpong" ? value : "None";
+			OnPropertyChanged();
+		}
 	}
 
 	public void SetClip(BVAnimationClip clip)
@@ -83,14 +104,23 @@ public sealed partial class AnimationTrack : Instance
 
 	public BVAnimationClip? GetClip()
 	{
-		if (string.IsNullOrWhiteSpace(_animationData)) return null;
-		try { return BVAnimationFormat.Read(Convert.FromBase64String(_animationData)); }
-		catch (Exception exception) { Godot.GD.PrintErr("Invalid AnimationTrack data: ", exception.Message); return null; }
+		if (string.IsNullOrWhiteSpace(_animationData))
+			return null;
+		try
+		{
+			return BVAnimationFormat.Read(Convert.FromBase64String(_animationData));
+		}
+		catch (Exception exception)
+		{
+			Godot.GD.PrintErr("Invalid AnimationTrack data: ", exception.Message);
+			return null;
+		}
 	}
 
 	internal void Bind(Animator? animator, string runtimeKey)
 	{
-		if (animator != null) ReleaseObjectPlayer();
+		if (animator != null)
+			ReleaseObjectPlayer();
 		_animator = animator;
 		_runtimeKey = runtimeKey;
 	}
@@ -112,23 +142,35 @@ public sealed partial class AnimationTrack : Instance
 	{
 		bool wasPlaying = _isPlaying;
 		_isPlaying = false;
-		if (wasPlaying) Stopped.Invoke();
-		if (ended) Ended.Invoke();
+		if (wasPlaying)
+			Stopped.Invoke();
+		if (ended)
+			Ended.Invoke();
 	}
 
 	[ScriptMethod]
 	public void Play()
 	{
-		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer)) { _objectPlayer.SpeedScale = _speed; _objectPlayer.Play("sequence/clip", customSpeed: 1); NotifyPlayed(); }
-		else _animator?.PlayAnimationTrack(this);
+		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
+		{
+			_objectPlayer.SpeedScale = _speed;
+			_objectPlayer.Play("sequence/clip", customSpeed: 1);
+			NotifyPlayed();
+		}
+		else
+			_animator?.PlayAnimationTrack(this);
 	}
 
 	/// <summary>Play this sequence relative to any 3D instance, without a skeletal Animator.</summary>
 	[ScriptMethod]
 	public void PlayOn(Dynamic target)
 	{
-		if (target == null || target.IsDeleted || target.Root != Root) throw new InvalidOperationException("Target must be a live 3D instance in the same World.");
-		BVAnimationClip clip = GetClip() ?? throw new InvalidOperationException("AnimationTrack has no valid clip.");
+		if (target == null || target.IsDeleted || target.Root != Root)
+			throw new InvalidOperationException(
+				"Target must be a live 3D instance in the same World."
+			);
+		BVAnimationClip clip =
+			GetClip() ?? throw new InvalidOperationException("AnimationTrack has no valid clip.");
 		Stop();
 		ReleaseObjectPlayer();
 		_objectPlayer = new AnimationPlayer { RootNode = new NodePath("..") };
@@ -136,7 +178,11 @@ public sealed partial class AnimationTrack : Instance
 		AnimationLibrary library = new();
 		library.AddAnimation("clip", BVAnimationFormat.ToAnimation(clip));
 		_objectPlayer.AddAnimationLibrary("sequence", library);
-		_objectPlayer.AnimationFinished += _ => { _timePosition = Length; NotifyStopped(true); };
+		_objectPlayer.AnimationFinished += _ =>
+		{
+			_timePosition = Length;
+			NotifyStopped(true);
+		};
 		SetProcess(true);
 		Play();
 	}
@@ -146,8 +192,11 @@ public sealed partial class AnimationTrack : Instance
 	public void PlayOn(Instance target)
 	{
 		if (target == null || target.IsDeleted || target.Root != Root)
-			throw new InvalidOperationException("Target must be a live instance in the same World.");
-		BVAnimationClip clip = GetClip() ?? throw new InvalidOperationException("AnimationTrack has no valid clip.");
+			throw new InvalidOperationException(
+				"Target must be a live instance in the same World."
+			);
+		BVAnimationClip clip =
+			GetClip() ?? throw new InvalidOperationException("AnimationTrack has no valid clip.");
 		Stop();
 		ReleaseObjectPlayer();
 		_instanceBinding?.Dispose();
@@ -165,18 +214,34 @@ public sealed partial class AnimationTrack : Instance
 			_instanceBinding.Apply(_timePosition);
 			if (_timePosition >= Length)
 			{
-				if (LoopMode == "Linear") Seek(0);
-				else { _timePosition = Length; NotifyStopped(true); }
+				if (LoopMode == "Linear")
+					Seek(0);
+				else
+				{
+					_timePosition = Length;
+					NotifyStopped(true);
+				}
 			}
 		}
 		else if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
-		{ if (_objectPlayer.IsPlaying()) UpdatePlayback((float)_objectPlayer.CurrentAnimationPosition, true); }
-		else if (_objectPlayer != null) { _objectPlayer = null; NotifyStopped(false); }
+		{
+			if (_objectPlayer.IsPlaying())
+				UpdatePlayback((float)_objectPlayer.CurrentAnimationPosition, true);
+		}
+		else if (_objectPlayer != null)
+		{
+			_objectPlayer = null;
+			NotifyStopped(false);
+		}
 	}
 
 	private void ReleaseObjectPlayer()
 	{
-		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer)) { _objectPlayer.Stop(); _objectPlayer.QueueFree(); }
+		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
+		{
+			_objectPlayer.Stop();
+			_objectPlayer.QueueFree();
+		}
 		_objectPlayer = null;
 		NotifyStopped(false);
 	}
@@ -184,26 +249,46 @@ public sealed partial class AnimationTrack : Instance
 	[ScriptMethod]
 	public void Stop()
 	{
-		if (_instanceBinding != null) { _instanceBinding.Dispose(); _instanceBinding = null; _timePosition = 0; NotifyStopped(false); }
-		else if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer)) { _objectPlayer.Stop(); _timePosition = 0; NotifyStopped(false); }
-		else _animator?.StopAnimationTrack(this);
+		if (_instanceBinding != null)
+		{
+			_instanceBinding.Dispose();
+			_instanceBinding = null;
+			_timePosition = 0;
+			NotifyStopped(false);
+		}
+		else if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
+		{
+			_objectPlayer.Stop();
+			_timePosition = 0;
+			NotifyStopped(false);
+		}
+		else
+			_animator?.StopAnimationTrack(this);
 	}
 
 	[ScriptMethod]
 	public void Seek(float seconds)
 	{
 		_timePosition = Mathf.Clamp(seconds, 0, Length);
-		if (_instanceBinding != null) { _instanceBinding.Apply(_timePosition); return; }
-		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer)) _objectPlayer.Seek(_timePosition, true);
-		else _animator?.SeekAnimationTrack(this, _timePosition);
+		if (_instanceBinding != null)
+		{
+			_instanceBinding.Apply(_timePosition);
+			return;
+		}
+		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
+			_objectPlayer.Seek(_timePosition, true);
+		else
+			_animator?.SeekAnimationTrack(this, _timePosition);
 	}
 
 	[ScriptMethod]
 	public void AdjustSpeed(float speed)
 	{
 		_speed = Mathf.Clamp(speed, 0.01f, 8f);
-		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer)) _objectPlayer.SpeedScale = _speed;
-		else _animator?.SetAnimationTrackSpeed(this, _speed);
+		if (_objectPlayer != null && GodotObject.IsInstanceValid(_objectPlayer))
+			_objectPlayer.SpeedScale = _speed;
+		else
+			_animator?.SetAnimationTrackSpeed(this, _speed);
 	}
 
 	internal string RuntimeKey => _runtimeKey;

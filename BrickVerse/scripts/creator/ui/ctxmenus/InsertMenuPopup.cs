@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BrickVerse.Attributes;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Services;
-using BrickVerse.Creator.UI.Popups;
-using BrickVerse.Creator.Utils;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -92,7 +92,18 @@ public partial class InsertMenuPopup : PopupPanel
 		},
 		[new() { Title = "Lighting" }] = new() { "PointLight", "SpotLight" },
 		[new() { Title = "Scripting", RecommendOn = [typeof(ScriptService), typeof(Folder)] }] =
-		new() { "ClickDetector", "DragDetector", "Actor", "ClientScript", "ServerScript", "ModuleScript", "InteractionPrompt", "NetworkEvent", "LocalNetworkEvent" },
+			new()
+			{
+				"ClickDetector",
+				"DragDetector",
+				"Actor",
+				"ClientScript",
+				"ServerScript",
+				"ModuleScript",
+				"InteractionPrompt",
+				"NetworkEvent",
+				"LocalNetworkEvent",
+			},
 		[new() { Title = "Values", RecommendOn = [typeof(Folder)] }] = new()
 		{
 			"BoolValue",
@@ -106,13 +117,41 @@ public partial class InsertMenuPopup : PopupPanel
 			"ColorValue",
 			"InstanceValue",
 		},
-		[new() { Title = "Effects" }] = new() { "Beam", "Highlight", "Particles", "ShaderEffect", "Trail" },
+		[new() { Title = "Effects" }] = new()
+		{
+			"Beam",
+			"Highlight",
+			"Particles",
+			"ShaderEffect",
+			"Trail",
+		},
 		[new() { Title = "Rendering" }] = new() { "LODGroup", "ReflectionCapture", "SceneCapture" },
-		[new() { Title = "Constraints" }] = new() { "AlignPosition", "AlignRotation", "BallSocketConstraint", "HingeConstraint", "MotorConstraint", "PrismaticConstraint", "RopeConstraint", "SliderConstraint", "SpringConstraint", "Weld" },
+		[new() { Title = "Constraints" }] = new()
+		{
+			"AlignPosition",
+			"AlignRotation",
+			"BallSocketConstraint",
+			"HingeConstraint",
+			"MotorConstraint",
+			"PrismaticConstraint",
+			"RopeConstraint",
+			"SliderConstraint",
+			"SpringConstraint",
+			"Weld",
+		},
 		[new() { Title = "Audio" }] = new()
 		{
-			"AudioPlayer", "AudioEmitter", "AudioListener", "AudioDeviceInput", "AudioDeviceOutput",
-			"AudioWire", "AudioFader", "AudioEqualizer", "AudioReverb", "Sound", "SoundGroup"
+			"AudioPlayer",
+			"AudioEmitter",
+			"AudioListener",
+			"AudioDeviceInput",
+			"AudioDeviceOutput",
+			"AudioWire",
+			"AudioFader",
+			"AudioEqualizer",
+			"AudioReverb",
+			"Sound",
+			"SoundGroup",
 		},
 		[new() { Title = "Characters", RecommendOn = [typeof(CharacterModel)] }] = new()
 		{
@@ -198,8 +237,10 @@ public partial class InsertMenuPopup : PopupPanel
 
 	[Export]
 	public Control ItemContainer = null!;
+
 	[Export]
 	public ScrollContainer ItemScroll = null!;
+
 	[Export]
 	public Label ResultSummary = null!;
 	private Button? _bottomFix;
@@ -267,23 +308,31 @@ public partial class InsertMenuPopup : PopupPanel
 		ItemContainer.AddChild(_bottomFix);
 
 		List<(ItemKey cat, List<string> filtered)> toProcess = [];
-		HashSet<string> categorized = insertItems.Values
-			.SelectMany(static items => items)
+		HashSet<string> categorized = insertItems
+			.Values.SelectMany(static items => items)
 			.ToHashSet(StringComparer.Ordinal);
-		List<string> uncategorized = typeof(Instance).Assembly.GetTypes()
-			.Where(static type => type.IsClass
+		List<string> uncategorized = typeof(Instance)
+			.Assembly.GetTypes()
+			.Where(static type =>
+				type.IsClass
 				&& !type.IsAbstract
 				&& typeof(Instance).IsAssignableFrom(type)
 				&& type.IsDefined(typeof(InstantiableAttribute), false)
-				&& !type.IsDefined(typeof(InternalAttribute), false))
+				&& !type.IsDefined(typeof(InternalAttribute), false)
+			)
 			.Select(static type => type.Name)
 			.Where(name => AllowedClasses == null || AllowedClasses.Contains(name))
-			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
-				|| name is not nameof(UnionOperation) and not nameof(NegateOperation))
-			.Where(name => CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
-				|| name is not nameof(TerrainGrass))
-			.Where(name => !categorized.Contains(name)
-				&& (query == null || MatchesSearch(name, query)))
+			.Where(name =>
+				CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling)
+				|| name is not nameof(UnionOperation) and not nameof(NegateOperation)
+			)
+			.Where(name =>
+				CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass)
+				|| name is not nameof(TerrainGrass)
+			)
+			.Where(name =>
+				!categorized.Contains(name) && (query == null || MatchesSearch(name, query))
+			)
 			.OrderBy(static name => name, StringComparer.Ordinal)
 			.ToList();
 
@@ -297,13 +346,13 @@ public partial class InsertMenuPopup : PopupPanel
 			List<string> filtered =
 				query == null
 					? [.. subItems]
-					: subItems
-						.Where(s => MatchesSearch(s, query))
-						.ToList();
+					: subItems.Where(s => MatchesSearch(s, query)).ToList();
 			if (AllowedClasses != null)
 				filtered.RemoveAll(name => !AllowedClasses.Contains(name));
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SolidModeling))
-				filtered.RemoveAll(name => name is nameof(UnionOperation) or nameof(NegateOperation));
+				filtered.RemoveAll(name =>
+					name is nameof(UnionOperation) or nameof(NegateOperation)
+				);
 			if (!CreatorBetaFeatures.IsEnabled(CreatorBetaFeatures.SkinnedGrass))
 				filtered.RemoveAll(name => name is nameof(TerrainGrass));
 
@@ -378,33 +427,49 @@ public partial class InsertMenuPopup : PopupPanel
 
 		ItemScroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 0);
 		int resultCount = toProcess.Sum(group => group.filtered.Count);
-		ResultSummary.Text = query == null
-			? $"{resultCount} objects  ·  ↑↓ navigate  ·  Enter insert"
-			: $"{resultCount} match{(resultCount == 1 ? "" : "es")} for “{query}”";
+		ResultSummary.Text =
+			query == null
+				? $"{resultCount} objects  ·  ↑↓ navigate  ·  Enter insert"
+				: $"{resultCount} match{(resultCount == 1 ? "" : "es")} for “{query}”";
 	}
 
-	private static string GetDescription(string className) => Descriptions.TryGetValue(className, out string? description)
-		? description : $"Create a {SplitClassName(className)} instance";
+	private static string GetDescription(string className) =>
+		Descriptions.TryGetValue(className, out string? description)
+			? description
+			: $"Create a {SplitClassName(className)} instance";
 
 	private static bool MatchesSearch(string className, string query)
 	{
 		string description = GetDescription(className);
 		string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-		return terms.All(term => className.Contains(term, StringComparison.OrdinalIgnoreCase)
+		return terms.All(term =>
+			className.Contains(term, StringComparison.OrdinalIgnoreCase)
 			|| description.Contains(term, StringComparison.OrdinalIgnoreCase)
-			|| IsSubsequence(term, className));
+			|| IsSubsequence(term, className)
+		);
 	}
 
 	private static bool IsSubsequence(string query, string value)
 	{
 		int queryIndex = 0;
 		foreach (char character in value)
-			if (queryIndex < query.Length && char.ToUpperInvariant(character) == char.ToUpperInvariant(query[queryIndex])) queryIndex++;
+			if (
+				queryIndex < query.Length
+				&& char.ToUpperInvariant(character) == char.ToUpperInvariant(query[queryIndex])
+			)
+				queryIndex++;
 		return queryIndex == query.Length;
 	}
 
-	private static string SplitClassName(string value) => string.Concat(value.Select((character, index) =>
-		index > 0 && char.IsUpper(character) && !char.IsUpper(value[index - 1]) ? " " + char.ToLowerInvariant(character) : char.ToLowerInvariant(character).ToString()));
+	private static string SplitClassName(string value) =>
+		string.Concat(
+			value.Select(
+				(character, index) =>
+					index > 0 && char.IsUpper(character) && !char.IsUpper(value[index - 1])
+						? " " + char.ToLowerInvariant(character)
+						: char.ToLowerInvariant(character).ToString()
+			)
+		);
 
 	private void OnSearchTextChanged(string newText)
 	{
@@ -440,17 +505,17 @@ public partial class InsertMenuPopup : PopupPanel
 					parentTo = World.Current.PlayerGUI;
 					break;
 				case UIField when instance is not GUI:
+				{
+					GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
+					if (existingUI == null)
 					{
-						GUI? existingUI = (GUI?)World.Current.PlayerGUI.FindChild("GUI");
-						if (existingUI == null)
-						{
-							existingUI = World.Current.New<GUI>();
-							existingUI.Parent = World.Current.PlayerGUI;
-						}
-
-						parentTo = existingUI;
-						break;
+						existingUI = World.Current.New<GUI>();
+						existingUI.Parent = World.Current.PlayerGUI;
 					}
+
+					parentTo = existingUI;
+					break;
+				}
 				case Script:
 					parentTo = World.Current.ScriptService;
 					break;
@@ -463,7 +528,8 @@ public partial class InsertMenuPopup : PopupPanel
 		instance.Name = className;
 		RecentClasses.Remove(className);
 		RecentClasses.Insert(0, className);
-		if (RecentClasses.Count > RecentLimit) RecentClasses.RemoveRange(RecentLimit, RecentClasses.Count - RecentLimit);
+		if (RecentClasses.Count > RecentLimit)
+			RecentClasses.RemoveRange(RecentLimit, RecentClasses.Count - RecentLimit);
 		instance.CreatorInserted();
 
 		World.Current.CreatorContext.History.CreateInstances([instance], parentTo);

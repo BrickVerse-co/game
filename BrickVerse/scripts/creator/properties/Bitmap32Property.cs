@@ -2,25 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Data;
-using BrickVerse.Utils;
 using System;
 using System.Reflection.Metadata;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
 public sealed partial class Bitmap32Property : FoldableContainer, IProperty<uint>
 {
-	private readonly StyleBoxFlat _onStyle = new()
-	{
-		BgColor = Color.FromHtml("0097FF")
-	};
+	private readonly StyleBoxFlat _onStyle = new() { BgColor = Color.FromHtml("0097FF") };
 
-	private readonly StyleBoxFlat _offStyle = new()
-	{
-		BgColor = Color.FromHtml("00000099")
-	};
+	private readonly StyleBoxFlat _offStyle = new() { BgColor = Color.FromHtml("00000099") };
 
 	private uint _value;
 
@@ -47,7 +41,8 @@ public sealed partial class Bitmap32Property : FoldableContainer, IProperty<uint
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (uint)value;
 	}
 

@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI.Touch;
 
@@ -27,7 +27,8 @@ public partial class CameraTurnArea : InputFallbackBase
 		{
 			_justZoomed = true;
 			Camera? camera = World.Current!.Environment.CurrentCamera;
-			if (camera == null) return;
+			if (camera == null)
+				return;
 			float length = 1 - mag.Factor;
 			float zoomDelta = length * camera.ScrollSensitivity * MobileZoomMultipler;
 			camera.Distance += zoomDelta;

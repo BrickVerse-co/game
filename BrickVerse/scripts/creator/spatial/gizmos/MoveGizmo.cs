@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Utils;
-using BrickVerse.Creator.Settings;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Creator.Spatial;
 
@@ -82,7 +82,7 @@ public partial class MoveGizmo : Node, IGizmo
 				NoDepthTest = true,
 				CullMode = BaseMaterial3D.CullModeEnum.Disabled,
 				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-				AlbedoColor = axisColor
+				AlbedoColor = axisColor,
 			};
 
 			StandardMaterial3D materialHover = (StandardMaterial3D)material.Duplicate();
@@ -153,7 +153,7 @@ public partial class MoveGizmo : Node, IGizmo
 				Visible = false,
 				Layers = 1,
 				IgnoreOcclusionCulling = true,
-				ExtraCullMargin = 100000f
+				ExtraCullMargin = 100000f,
 			};
 			RootGizmos!.Root.GDNode.AddChild(
 				_moveGizmoInstance[i],
@@ -191,8 +191,10 @@ public partial class MoveGizmo : Node, IGizmo
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0 || RootGizmos == null) return;
-		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
+		if (Targets.Count == 0 || RootGizmos == null)
+			return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging)
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -201,14 +203,17 @@ public partial class MoveGizmo : Node, IGizmo
 
 		if (@event is InputEventMouseButton btn)
 		{
-			if (btn.ButtonIndex != MouseButton.Left) return;
+			if (btn.ButtonIndex != MouseButton.Left)
+				return;
 			if (btn.Pressed)
 			{
-				if (!Visible) return;
+				if (!Visible)
+					return;
 				// Do not trust hover state cached by the last mouse-motion event. The
 				// tool or selection may have changed while the pointer stayed still.
 				UpdateAxis(rayOrigin, rayNormal);
-				if (_currentAxis == MoveGizmoAxis.None) return;
+				if (_currentAxis == MoveGizmoAxis.None)
+					return;
 
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
@@ -227,13 +232,17 @@ public partial class MoveGizmo : Node, IGizmo
 				if (RootGizmos != null)
 				{
 					RootGizmos.Root.PlayerGUI.SetCursorShape(
-						_currentAxis != MoveGizmoAxis.None ? Control.CursorShape.Drag : Control.CursorShape.Arrow);
+						_currentAxis != MoveGizmoAxis.None
+							? Control.CursorShape.Drag
+							: Control.CursorShape.Arrow
+					);
 				}
 			}
 		}
 		else if (@event is InputEventMouseMotion)
 		{
-			if (!Visible) return;
+			if (!Visible)
+				return;
 			if (_isMouseDragging)
 			{
 				UpdateDrag();
@@ -248,13 +257,18 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void UpdateDrag()
 	{
-		if (!Visible) return;
-		if (!_isMouseDragging) return;
-		if (_currentAxis == MoveGizmoAxis.None) return;
-		if (!Input.IsMouseButtonPressed(MouseButton.Left)) return;
+		if (!Visible)
+			return;
+		if (!_isMouseDragging)
+			return;
+		if (_currentAxis == MoveGizmoAxis.None)
+			return;
+		if (!Input.IsMouseButtonPressed(MouseButton.Left))
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
-		if (mousePos == _lastDragMousePos) return;
+		if (mousePos == _lastDragMousePos)
+			return;
 
 		_lastDragMousePos = mousePos;
 
@@ -267,8 +281,10 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private void RedrawGizmo()
 	{
-		if (Targets.Count == 0) return;
-		if (!Visible) return;
+		if (Targets.Count == 0)
+			return;
+		if (!Visible)
+			return;
 
 		Transform3D pform = Gizmos.GetCenterPivot([.. Targets]);
 		float gizmoScale = GetGizmoScale(pform);
@@ -309,13 +325,26 @@ public partial class MoveGizmo : Node, IGizmo
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (CreatorService.Interface.MoveGizmoStyle == MoveGizmoStyleEnum.Universal && (i & 1) == 0) continue;
+			if (
+				CreatorService.Interface.MoveGizmoStyle == MoveGizmoStyleEnum.Universal
+				&& (i & 1) == 0
+			)
+				continue;
 			MoveGizmoAxis axis = (MoveGizmoAxis)i;
 			Vector3 axisDirection = GetHandleDirection(pivot, axis);
-			Vector3 grabberPos = pivot.Origin + axisDirection * gizmoScale * (GizmoArrowOffset + (ArrowShaftLength + ArrowHeadLength) * 0.5f);
+			Vector3 grabberPos =
+				pivot.Origin
+				+ axisDirection
+					* gizmoScale
+					* (GizmoArrowOffset + (ArrowShaftLength + ArrowHeadLength) * 0.5f);
 			float grabberRadius = gizmoScale * 0.42f;
 
-			Vector3[] result = Geometry3D.SegmentIntersectsSphere(rayOrigin, rayOrigin + rayNormal * Gizmos.MaxZ, grabberPos, grabberRadius);
+			Vector3[] result = Geometry3D.SegmentIntersectsSphere(
+				rayOrigin,
+				rayOrigin + rayNormal * Gizmos.MaxZ,
+				grabberPos,
+				grabberRadius
+			);
 
 			if (result.Length > 0)
 			{
@@ -360,7 +389,10 @@ public partial class MoveGizmo : Node, IGizmo
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
 
 		Vector3 motionMask = GetHandleDirection(pivot, _currentAxis);
-		Plane plane = new(motionMask.Cross(motionMask.Cross(cameraNormal)).Normalized(), pivot.Origin);
+		Plane plane = new(
+			motionMask.Cross(motionMask.Cross(cameraNormal)).Normalized(),
+			pivot.Origin
+		);
 
 		Vector3? intersection = plane.IntersectsRay(rayOrigin, rayNormal);
 		Vector3? click = plane.IntersectsRay(_startRayOrigin!.Value, _startRayNormal!.Value);
@@ -407,7 +439,8 @@ public partial class MoveGizmo : Node, IGizmo
 
 	private float GetSelectionBoundsRadius()
 	{
-		if (Targets.Count == 0) return 0f;
+		if (Targets.Count == 0)
+			return 0f;
 
 		Aabb? bounds = null;
 		foreach (Dynamic target in Targets)

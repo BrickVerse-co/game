@@ -8,7 +8,8 @@ namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboardOpener : Control
 {
-	[Export] private UIPlayerList _playerList = null!;
+	[Export]
+	private UIPlayerList _playerList = null!;
 
 	private void OpenLB()
 	{
@@ -23,7 +24,11 @@ public partial class UILeaderboardOpener : Control
 
 	public override void _GuiInput(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton mouse && mouse.ButtonIndex == MouseButton.Left && !mouse.Pressed)
+		if (
+			@event is InputEventMouseButton mouse
+			&& mouse.ButtonIndex == MouseButton.Left
+			&& !mouse.Pressed
+		)
 		{
 			OpenLB();
 			AcceptEvent();

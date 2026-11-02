@@ -2,24 +2,43 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Creator.UI.TextEditor;
 
 public sealed partial class TextEditorFind : Control
 {
-	[Export] private LineEdit _searchField = null!;
-	[Export] private LineEdit _replaceField = null!;
-	[Export] private Button _prevButton = null!;
-	[Export] private Button _nextButton = null!;
-	[Export] private Button _closeButton = null!;
-	[Export] private Button _replaceButton = null!;
-	[Export] private Button _replaceAllButton = null!;
-	[Export] private Label _searchIndexLabel = null!;
-	[Export] private BaseButton _caseSenstiveCheck = null!;
-	[Export] private BaseButton _wholeWordCheck = null!;
+	[Export]
+	private LineEdit _searchField = null!;
+
+	[Export]
+	private LineEdit _replaceField = null!;
+
+	[Export]
+	private Button _prevButton = null!;
+
+	[Export]
+	private Button _nextButton = null!;
+
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private Button _replaceButton = null!;
+
+	[Export]
+	private Button _replaceAllButton = null!;
+
+	[Export]
+	private Label _searchIndexLabel = null!;
+
+	[Export]
+	private BaseButton _caseSenstiveCheck = null!;
+
+	[Export]
+	private BaseButton _wholeWordCheck = null!;
 
 	private readonly List<Vector2I> _searchResults = [];
 	private int _currentResultIndex = -1;
@@ -81,7 +100,8 @@ public sealed partial class TextEditorFind : Control
 
 	private void SearchCurrent()
 	{
-		if (!Active) return;
+		if (!Active)
+			return;
 		OnSearch(_searchField.Text);
 	}
 
@@ -123,14 +143,16 @@ public sealed partial class TextEditorFind : Control
 			while (index < lineText.Length)
 			{
 				index = lineText.IndexOf(searchText, index, comparison);
-				if (index == -1) break;
+				if (index == -1)
+					break;
 
 				// Check whole word
 				if (_wholeWordCheck.ButtonPressed)
 				{
 					bool validStart = index == 0 || !IsWordChar(lineText[index - 1]);
-					bool validEnd = index + searchText.Length >= lineText.Length ||
-								   !IsWordChar(lineText[index + searchText.Length]);
+					bool validEnd =
+						index + searchText.Length >= lineText.Length
+						|| !IsWordChar(lineText[index + searchText.Length]);
 
 					if (!validStart || !validEnd)
 					{
@@ -147,7 +169,8 @@ public sealed partial class TextEditorFind : Control
 
 	private void FindNext()
 	{
-		if (_searchResults.Count == 0) return;
+		if (_searchResults.Count == 0)
+			return;
 
 		_currentResultIndex = (_currentResultIndex + 1) % _searchResults.Count;
 		JumpToResult(_currentResultIndex);
@@ -156,7 +179,8 @@ public sealed partial class TextEditorFind : Control
 
 	private void FindPrevious()
 	{
-		if (_searchResults.Count == 0) return;
+		if (_searchResults.Count == 0)
+			return;
 
 		_currentResultIndex--;
 		if (_currentResultIndex < 0)
@@ -173,7 +197,8 @@ public sealed partial class TextEditorFind : Control
 
 	private void JumpToResult(int index)
 	{
-		if (index < 0 || index >= _searchResults.Count) return;
+		if (index < 0 || index >= _searchResults.Count)
+			return;
 
 		var result = _searchResults[index];
 		int line = result.X;
@@ -197,16 +222,19 @@ public sealed partial class TextEditorFind : Control
 
 	private void ReplaceCurrentMatch()
 	{
-		if (_currentResultIndex < 0 || _currentResultIndex >= _searchResults.Count) return;
-		if (string.IsNullOrEmpty(_searchField.Text)) return;
+		if (_currentResultIndex < 0 || _currentResultIndex >= _searchResults.Count)
+			return;
+		if (string.IsNullOrEmpty(_searchField.Text))
+			return;
 
 		var result = _searchResults[_currentResultIndex];
 		int line = result.X;
 		int column = result.Y;
 
 		string lineText = Root.CodeEditor.GetLine(line);
-		string newLineText = lineText.Remove(column, _searchField.Text.Length)
-									 .Insert(column, _replaceField.Text);
+		string newLineText = lineText
+			.Remove(column, _searchField.Text.Length)
+			.Insert(column, _replaceField.Text);
 		Root.CodeEditor.SetLine(line, newLineText);
 
 		SearchCurrent();
@@ -219,8 +247,10 @@ public sealed partial class TextEditorFind : Control
 
 	private void ReplaceAll()
 	{
-		if (_searchResults.Count == 0) return;
-		if (string.IsNullOrEmpty(_searchField.Text)) return;
+		if (_searchResults.Count == 0)
+			return;
+		if (string.IsNullOrEmpty(_searchField.Text))
+			return;
 
 		// Replace from bottom to top to maintain indices
 		for (int i = _searchResults.Count - 1; i >= 0; i--)
@@ -230,15 +260,15 @@ public sealed partial class TextEditorFind : Control
 			int column = result.Y;
 
 			string lineText = Root.CodeEditor.GetLine(line);
-			string newLineText = lineText.Remove(column, _searchField.Text.Length)
-										 .Insert(column, _replaceField.Text);
+			string newLineText = lineText
+				.Remove(column, _searchField.Text.Length)
+				.Insert(column, _replaceField.Text);
 			Root.CodeEditor.SetLine(line, newLineText);
 		}
 
 		// Refresh search results
 		SearchCurrent();
 	}
-
 
 	public void Open(string curText = "")
 	{

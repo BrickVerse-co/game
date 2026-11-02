@@ -12,7 +12,8 @@ public sealed partial class ServerScript : Script
 	public override void Init()
 	{
 		base.Init();
-		if (!Root.Network.IsServer) return;
+		if (!Root.Network.IsServer)
+			return;
 		if (Root.IsLoaded)
 		{
 			OnGameReady();
@@ -25,7 +26,8 @@ public sealed partial class ServerScript : Script
 
 	private void OnGameReady()
 	{
-		if (!Root.Network.IsServer) return;
+		if (!Root.Network.IsServer)
+			return;
 		TryRun();
 	}
 }

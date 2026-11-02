@@ -26,7 +26,8 @@ public partial class BVAudioAsset : AudioAsset
 
 	public override void LoadResource()
 	{
-		if (AudioID == "0") return;
+		if (AudioID == "0")
+			return;
 		AssetLoader.Singleton.GetResource(
 			new() { Type = ResourceType.Sound, ID = AudioID },
 			InvokeResourceLoaded

@@ -1,5 +1,5 @@
-using Godot;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -12,7 +12,7 @@ public static class SettingFieldFactory
 			SettingControlKind.Toggle => new ToggleSettingField { Definition = def },
 			SettingControlKind.Slider => new SliderSettingField { Definition = def },
 			SettingControlKind.Dropdown => new DropdownSettingField { Definition = def },
-			_ => new Label { Text = "Unsupported setting type!" }
+			_ => new Label { Text = "Unsupported setting type!" },
 		};
 	}
 }

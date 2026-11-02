@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -20,7 +20,9 @@ public sealed partial class Text3D : Dynamic
 	private RichTextLabel _richLabel = null!;
 	private Sprite3D _sprite3D = null!;
 	private SubViewport? _subViewport;
-	private BuiltInFontAsset.BuiltInTextFontPresetEnum _fontPreset = BuiltInFontAsset.BuiltInTextFontPresetEnum.Montserrat;
+	private BuiltInFontAsset.BuiltInTextFontPresetEnum _fontPreset = BuiltInFontAsset
+		.BuiltInTextFontPresetEnum
+		.Montserrat;
 	private FontAsset? _fontAsset;
 	private int _outlineWidth;
 	private Color _outlineColor;
@@ -112,7 +114,9 @@ public sealed partial class Text3D : Dynamic
 		get => _label3D.Billboard == BaseMaterial3D.BillboardModeEnum.Enabled;
 		set
 		{
-			_label3D.Billboard = value ? BaseMaterial3D.BillboardModeEnum.Enabled : BaseMaterial3D.BillboardModeEnum.Disabled;
+			_label3D.Billboard = value
+				? BaseMaterial3D.BillboardModeEnum.Enabled
+				: BaseMaterial3D.BillboardModeEnum.Disabled;
 			_sprite3D.Billboard = _label3D.Billboard;
 			OnPropertyChanged();
 		}
@@ -204,17 +208,21 @@ public sealed partial class Text3D : Dynamic
 		}
 	}
 
-	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Use FontAsset instead"), CloneIgnore, SaveIgnore]
+	[
+		Editable,
+		ScriptProperty,
+		NoSync,
+		Attributes.Obsolete("Use FontAsset instead"),
+		CloneIgnore,
+		SaveIgnore
+	]
 	public BuiltInFontAsset.BuiltInTextFontPresetEnum Font
 	{
 		get => _fontPreset;
 		set
 		{
 			_fontPreset = value;
-			FontAsset = new BuiltInFontAsset()
-			{
-				FontPreset = _fontPreset
-			};
+			FontAsset = new BuiltInFontAsset() { FontPreset = _fontPreset };
 		}
 	}
 
@@ -272,12 +280,16 @@ public sealed partial class Text3D : Dynamic
 
 	private void RecomputeSize()
 	{
-		if (!UseRichText) return;
+		if (!UseRichText)
+			return;
 		BV.CallDeferred(() =>
 		{
-			if (!Node.IsInstanceValid(_richLabel)) return;
-			if (!Node.IsInstanceValid(_subViewport)) return;
-			if (!UseRichText) return;
+			if (!Node.IsInstanceValid(_richLabel))
+				return;
+			if (!Node.IsInstanceValid(_subViewport))
+				return;
+			if (!UseRichText)
+				return;
 			Vector2 offset = Vector2.Zero;
 			Vector2I size = new(_richLabel.GetContentWidth(), _richLabel.GetContentHeight());
 			_subViewport.Size = size;
@@ -341,11 +353,16 @@ public sealed partial class Text3D : Dynamic
 
 	private void SetEnableRichTextViewport(bool to)
 	{
-		if (_prevRichTxtEnabled == to) return;
+		if (_prevRichTxtEnabled == to)
+			return;
 		_prevRichTxtEnabled = to;
 		if (to)
 		{
-			_subViewport = new SubViewport() { TransparentBg = true, Msaa2D = Viewport.Msaa.Disabled };
+			_subViewport = new SubViewport()
+			{
+				TransparentBg = true,
+				Msaa2D = Viewport.Msaa.Disabled,
+			};
 			GDNode.AddChild(_subViewport, @internal: Node.InternalMode.Back);
 			_subViewport.RenderTargetUpdateMode = SubViewport.UpdateMode.WhenVisible;
 			_richLabel.Reparent(_subViewport);

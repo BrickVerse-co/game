@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
-using FileAccess = Godot.FileAccess;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using Godot;
+using FileAccess = Godot.FileAccess;
 
 namespace BrickVerse.Shared.Settings;
 
@@ -37,7 +37,11 @@ internal static class SettingsFileUtility
 		}
 	}
 
-	internal static void Load(string path, Dictionary<string, object?> values, IReadOnlyDictionary<string, SettingDef> definitions)
+	internal static void Load(
+		string path,
+		Dictionary<string, object?> values,
+		IReadOnlyDictionary<string, SettingDef> definitions
+	)
 	{
 		if (!FileAccess.FileExists(path))
 			return;
@@ -57,7 +61,9 @@ internal static class SettingsFileUtility
 
 			if (document.RootElement.ValueKind != JsonValueKind.Object)
 			{
-				BV.PrintWarn($"Settings file at '{path}' has unexpected root type {document.RootElement.ValueKind}, ignoring.");
+				BV.PrintWarn(
+					$"Settings file at '{path}' has unexpected root type {document.RootElement.ValueKind}, ignoring."
+				);
 				return;
 			}
 
@@ -87,7 +93,9 @@ internal static class SettingsFileUtility
 	{
 		if (!IsJsonKindCompatible(el.ValueKind, def.ValueKind))
 		{
-			BV.PrintErr($"Settings type mismatch for '{def.Key}': expected {def.ValueKind}, got {el.ValueKind}. Using default.");
+			BV.PrintErr(
+				$"Settings type mismatch for '{def.Key}': expected {def.ValueKind}, got {el.ValueKind}. Using default."
+			);
 			return def.UntypedDefault;
 		}
 
@@ -101,9 +109,9 @@ internal static class SettingsFileUtility
 			{
 				JsonValueKind.String => el.GetString(),
 				JsonValueKind.Number => el.GetInt32(),
-				_ => null
+				_ => null,
 			},
-			_ => null
+			_ => null,
 		};
 	}
 
@@ -114,19 +122,32 @@ internal static class SettingsFileUtility
 			case SettingValueKind.Bool:
 				if (bool.TryParse(value, out bool bv))
 					return bv;
-				BV.PrintErr($"Failed to parse bool setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr(
+					$"Failed to parse bool setting '{def.Key}' from string value '{value}'."
+				);
 				return def.UntypedDefault;
 
 			case SettingValueKind.Int:
 				if (int.TryParse(value, out int iv))
 					return iv;
-				BV.PrintErr($"Failed to parse int setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr(
+					$"Failed to parse int setting '{def.Key}' from string value '{value}'."
+				);
 				return def.UntypedDefault;
 
 			case SettingValueKind.Float:
-				if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float fv))
+				if (
+					float.TryParse(
+						value,
+						System.Globalization.NumberStyles.Float,
+						System.Globalization.CultureInfo.InvariantCulture,
+						out float fv
+					)
+				)
 					return fv;
-				BV.PrintErr($"Failed to parse float setting '{def.Key}' from string value '{value}'.");
+				BV.PrintErr(
+					$"Failed to parse float setting '{def.Key}' from string value '{value}'."
+				);
 				return def.UntypedDefault;
 
 			case SettingValueKind.String:
@@ -151,17 +172,14 @@ internal static class SettingsFileUtility
 			SettingValueKind.Float => jsonKind == JsonValueKind.Number,
 			SettingValueKind.String => jsonKind == JsonValueKind.String,
 			SettingValueKind.Enum => jsonKind is JsonValueKind.String or JsonValueKind.Number,
-			_ => false
+			_ => false,
 		};
 	}
 
 	private static string Serialize(Dictionary<string, object?> values)
 	{
 		using var stream = new MemoryStream();
-		using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
-		{
-			Indented = true
-		}))
+		using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
 		{
 			writer.WriteStartObject();
 
@@ -206,7 +224,9 @@ internal static class SettingsFileUtility
 				break;
 
 			default:
-				throw new InvalidOperationException($"Unsupported setting value type '{value.GetType().FullName}'.");
+				throw new InvalidOperationException(
+					$"Unsupported setting value type '{value.GetType().FullName}'."
+				);
 		}
 	}
 }

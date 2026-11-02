@@ -2,34 +2,56 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Creator.TeamCreate;
-using BrickVerse.Shared;
-using BrickVerse.Creator.UI.Popups;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BrickVerse.Creator.TeamCreate;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Menus;
 
 public partial class PlayOptionsMenu : Control
 {
-	private const string DefaultHeadshot = "https://f004.backblazeb2.com/file/brickverse-ugc-public/defaults/headshot.png";
+	private const string DefaultHeadshot =
+		"https://f004.backblazeb2.com/file/brickverse-ugc-public/defaults/headshot.png";
 
-	[Export] private Button _playBtn = null!;
-	[Export] private Button _playAtCamBtn = null!;
-	[Export] private Button _stopBtn = null!;
-	[Export] private Button _collaborateBtn = null!;
-	[Export] private Button _sessionBtn = null!;
-	[Export] private HBoxContainer _sessionMembers = null!;
-	[Export] private Button _betaFeaturesBtn = null!;
-	[Export] private Button _notificationsBtn = null!;
-	[Export] private TextureRect _internetStatusIcon = null!;
-	[Export] private TextureRect _teamCreateStatusIcon = null!;
-	[Export] private OptionButton _playerCountOption = null!;
+	[Export]
+	private Button _playBtn = null!;
+
+	[Export]
+	private Button _playAtCamBtn = null!;
+
+	[Export]
+	private Button _stopBtn = null!;
+
+	[Export]
+	private Button _collaborateBtn = null!;
+
+	[Export]
+	private Button _sessionBtn = null!;
+
+	[Export]
+	private HBoxContainer _sessionMembers = null!;
+
+	[Export]
+	private Button _betaFeaturesBtn = null!;
+
+	[Export]
+	private Button _notificationsBtn = null!;
+
+	[Export]
+	private TextureRect _internetStatusIcon = null!;
+
+	[Export]
+	private TextureRect _teamCreateStatusIcon = null!;
+
+	[Export]
+	private OptionButton _playerCountOption = null!;
 	private bool _wasLocalTestActive;
 	private bool _lastInternetState;
 	private bool _lastTeamCreateState;
@@ -72,15 +94,17 @@ public partial class PlayOptionsMenu : Control
 	private void RefreshSessionMembers()
 	{
 		TeamCreateService? service = TeamCreateService.Instance;
-		TeamCreateMember[] members = service?.Connected == true
-			? service.Members.ToArray()
-			: [];
-		string signature = string.Join('|', members.Select(member =>
-			$"{member.Id}:{member.Username}:{member.HeadshotUrl}"));
-		if (signature == _memberSignature) return;
+		TeamCreateMember[] members = service?.Connected == true ? service.Members.ToArray() : [];
+		string signature = string.Join(
+			'|',
+			members.Select(member => $"{member.Id}:{member.Username}:{member.HeadshotUrl}")
+		);
+		if (signature == _memberSignature)
+			return;
 		_memberSignature = signature;
 
-		foreach (Node child in _sessionMembers.GetChildren()) child.QueueFree();
+		foreach (Node child in _sessionMembers.GetChildren())
+			child.QueueFree();
 		_sessionMembers.Visible = members.Length > 0;
 		foreach (TeamCreateMember member in members)
 			_sessionMembers.AddChild(CreateMemberHeadshot(member));
@@ -91,16 +115,19 @@ public partial class PlayOptionsMenu : Control
 		PanelContainer frame = new()
 		{
 			CustomMinimumSize = new Vector2(26, 26),
-			TooltipText = member.Username + (member.UserId == TeamCreateService.Instance?.LocalUserId ? " (You)" : ""),
+			TooltipText =
+				member.Username
+				+ (member.UserId == TeamCreateService.Instance?.LocalUserId ? " (You)" : ""),
 			MouseFilter = Control.MouseFilterEnum.Stop,
 			ClipChildren = CanvasItem.ClipChildrenMode.Only,
 		};
 		StyleBoxFlat style = new()
 		{
 			BgColor = new Color("263342"),
-			BorderColor = member.UserId == TeamCreateService.Instance?.LocalUserId
-				? new Color("45d483")
-				: new Color("60758a"),
+			BorderColor =
+				member.UserId == TeamCreateService.Instance?.LocalUserId
+					? new Color("45d483")
+					: new Color("60758a"),
 			BorderWidthLeft = 1,
 			BorderWidthTop = 1,
 			BorderWidthRight = 1,
@@ -122,8 +149,10 @@ public partial class PlayOptionsMenu : Control
 		frame.AddChild(image);
 		image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		string url = NormalizeHeadshotUrl(member.HeadshotUrl);
-		if (_headshotCache.TryGetValue(url, out Texture2D? texture)) image.Texture = texture;
-		else _ = LoadHeadshot(url, image);
+		if (_headshotCache.TryGetValue(url, out Texture2D? texture))
+			image.Texture = texture;
+		else
+			_ = LoadHeadshot(url, image);
 		return frame;
 	}
 
@@ -136,16 +165,24 @@ public partial class PlayOptionsMenu : Control
 			byte[] data = await response.Content.ReadAsByteArrayAsync();
 			Image image = new();
 			Error error = image.LoadPngFromBuffer(data);
-			if (error != Error.Ok) error = image.LoadJpgFromBuffer(data);
-			if (error != Error.Ok) error = image.LoadWebpFromBuffer(data);
+			if (error != Error.Ok)
+				error = image.LoadJpgFromBuffer(data);
+			if (error != Error.Ok)
+				error = image.LoadWebpFromBuffer(data);
 			if (error != Error.Ok)
 			{
-				BV.PrintWarn("Could not decode Team Create toolbar headshot from ", url, ": ", error);
+				BV.PrintWarn(
+					"Could not decode Team Create toolbar headshot from ",
+					url,
+					": ",
+					error
+				);
 				return;
 			}
 			Texture2D texture = ImageTexture.CreateFromImage(image);
 			_headshotCache[url] = texture;
-			if (IsInstanceValid(target)) target.Texture = texture;
+			if (IsInstanceValid(target))
+				target.Texture = texture;
 		}
 		catch (Exception error)
 		{
@@ -155,7 +192,8 @@ public partial class PlayOptionsMenu : Control
 
 	private static string NormalizeHeadshotUrl(string url)
 	{
-		if (string.IsNullOrWhiteSpace(url)) return DefaultHeadshot;
+		if (string.IsNullOrWhiteSpace(url))
+			return DefaultHeadshot;
 		return Uri.IsWellFormedUriString(url, UriKind.Absolute)
 			? url
 			: Globals.ApiEndpoint.PathJoin(url);
@@ -163,7 +201,8 @@ public partial class PlayOptionsMenu : Control
 
 	private void OnPlayerCountSelected(long index)
 	{
-		CreatorService.Singleton.LocalTestPlayerCount = (int)_playerCountOption.GetItemId((int)index);
+		CreatorService.Singleton.LocalTestPlayerCount = (int)
+			_playerCountOption.GetItemId((int)index);
 		_playerCountOption.Text = _playerCountOption.GetItemId((int)index).ToString();
 	}
 
@@ -214,9 +253,7 @@ public partial class PlayOptionsMenu : Control
 		}
 
 		OS.ShellOpen(
-			Globals.MainEndpoint.PathJoin(
-				$"/creator/worlds/edit/{universeId}?tab=collaborators"
-			)
+			Globals.MainEndpoint.PathJoin($"/creator/worlds/edit/{universeId}?tab=collaborators")
 		);
 	}
 
@@ -245,11 +282,13 @@ public partial class PlayOptionsMenu : Control
 		bool teamCreateEnabled = service?.TeamCreateEnabled == true;
 		bool teamCreateConnected = service?.Connected == true;
 		string teamCreateError = service?.LastConnectionError ?? "";
-		if (_statusInitialized
+		if (
+			_statusInitialized
 			&& internetAvailable == _lastInternetState
 			&& teamCreateEnabled == _lastTeamCreateState
 			&& teamCreateConnected == _lastTeamCreateConnected
-			&& teamCreateError == _lastTeamCreateError)
+			&& teamCreateError == _lastTeamCreateError
+		)
 			return;
 
 		_statusInitialized = true;

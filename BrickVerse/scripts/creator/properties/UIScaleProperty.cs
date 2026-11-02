@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Data;
 using System;
+using BrickVerse.Datamodel.Data;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -48,8 +48,10 @@ public sealed partial class UIScaleProperty : HBoxContainer, IProperty<UIScale>
 	{
 		_offset = GetNode<SpinBox>("Offset");
 		_scale = GetNode<SpinBox>("Scale");
-		_offset.TooltipText = "Fixed pixel contribution. Use this for minimum padding or exact adjustments.";
-		_scale.TooltipText = "Percentage of the parent size. Use this to adapt across screen sizes.";
+		_offset.TooltipText =
+			"Fixed pixel contribution. Use this for minimum padding or exact adjustments.";
+		_scale.TooltipText =
+			"Percentage of the parent size. Use this to adapt across screen sizes.";
 
 		_offset.ValueChanged += v =>
 		{

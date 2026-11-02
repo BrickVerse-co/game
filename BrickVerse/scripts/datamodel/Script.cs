@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -69,10 +69,7 @@ public partial class Script : Instance
 	[Editable, ScriptProperty]
 	public bool IsEnabled
 	{
-		get
-		{
-			return _isEnabled;
-		}
+		get { return _isEnabled; }
 		set
 		{
 			_isEnabled = value;
@@ -99,8 +96,13 @@ public partial class Script : Instance
 			}
 			_linkedFile = value;
 			_linkedFile?.LinkTo(this);
-			if (_linkedFile?.LinkedPath is string linkedPath
-				&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition language))
+			if (
+				_linkedFile?.LinkedPath is string linkedPath
+				&& ScriptLanguageRegistry.TryFromPath(
+					linkedPath,
+					out ScriptLanguageDefinition language
+				)
+			)
 			{
 				ChosenLanguage = language.Language;
 				ClearCompiledArtifact();
@@ -112,10 +114,7 @@ public partial class Script : Instance
 	public bool Compatibility
 	{
 		get => _compatibility;
-		set
-		{
-			_compatibility = value;
-		}
+		set { _compatibility = value; }
 	}
 
 	/// <summary>
@@ -133,15 +132,24 @@ public partial class Script : Instance
 
 	public void TryRun()
 	{
-		if (this is ModuleScript) return;
-		if (Root.SessionType != World.SessionTypeEnum.Client) return;
-		if (Ran) return;
-		if (IsHidden) return;
-		if (!IsEnabled) return;
-		if (Source == "" && Bytecode == null) return;
-		if ((this is ServerScript && !Root.IsLoaded) || !IsNetworkReady) return;
-		if (this is ClientScript && Root.Network.IsServer) return;
-		if (this is ServerScript && !Root.Network.IsServer) return;
+		if (this is ModuleScript)
+			return;
+		if (Root.SessionType != World.SessionTypeEnum.Client)
+			return;
+		if (Ran)
+			return;
+		if (IsHidden)
+			return;
+		if (!IsEnabled)
+			return;
+		if (Source == "" && Bytecode == null)
+			return;
+		if ((this is ServerScript && !Root.IsLoaded) || !IsNetworkReady)
+			return;
+		if (this is ClientScript && Root.Network.IsServer)
+			return;
+		if (this is ServerScript && !Root.Network.IsServer)
+			return;
 		Run();
 	}
 
@@ -153,7 +161,8 @@ public partial class Script : Instance
 
 	public void Stop()
 	{
-		if (!Ran) return;
+		if (!Ran)
+			return;
 		ScriptService.Close(this);
 	}
 
@@ -183,8 +192,10 @@ public partial class Script : Instance
 	public override void Process(double delta)
 	{
 		base.Process(delta);
-		if (!ShouldContinue) return;
-		if (LanguageProvider == null) return;
+		if (!ShouldContinue)
+			return;
+		if (LanguageProvider == null)
+			return;
 
 		LanguageProvider.CallUpdate(this, delta);
 	}
@@ -192,8 +203,10 @@ public partial class Script : Instance
 	public override void PhysicsProcess(double delta)
 	{
 		base.PhysicsProcess(delta);
-		if (!ShouldContinue) return;
-		if (LanguageProvider == null) return;
+		if (!ShouldContinue)
+			return;
+		if (LanguageProvider == null)
+			return;
 
 		LanguageProvider.CallFixedUpdate(this, delta);
 	}
@@ -245,11 +258,13 @@ public partial class Script : Instance
 
 	public void TryCompile()
 	{
-		if (Bytecode != null) return;
+		if (Bytecode != null)
+			return;
 		Root.ScriptService.CompileScript(this);
 	}
 
-	internal bool HasCurrentCompiledArtifact(string source) => Bytecode != null
+	internal bool HasCurrentCompiledArtifact(string source) =>
+		Bytecode != null
 		&& CompiledArtifactVersion == ScriptLanguageRegistry.ArtifactFormatVersion
 		&& CompiledLanguage == ChosenLanguage
 		&& CompiledSourceHash == ComputeSourceHash(source);

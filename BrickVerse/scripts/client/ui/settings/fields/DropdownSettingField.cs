@@ -1,6 +1,6 @@
-using Godot;
 using BrickVerse.Client.Settings;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -18,10 +18,22 @@ public sealed partial class DropdownSettingField : MenuButton
 		Flat = false;
 		Text = _selectedLabel;
 
-		AddThemeStyleboxOverride("normal", CreateStyleBox(new Color(0.12f, 0.12f, 0.12f), new Color(0.24f, 0.24f, 0.24f)));
-		AddThemeStyleboxOverride("hover", CreateStyleBox(new Color(0.17f, 0.17f, 0.17f), new Color(0.30f, 0.30f, 0.30f)));
-		AddThemeStyleboxOverride("pressed", CreateStyleBox(new Color(0.20f, 0.20f, 0.20f), new Color(0.36f, 0.36f, 0.36f)));
-		AddThemeStyleboxOverride("focus", CreateStyleBox(new Color(0.16f, 0.16f, 0.16f), new Color(0.08f, 0.59f, 1f)));
+		AddThemeStyleboxOverride(
+			"normal",
+			CreateStyleBox(new Color(0.12f, 0.12f, 0.12f), new Color(0.24f, 0.24f, 0.24f))
+		);
+		AddThemeStyleboxOverride(
+			"hover",
+			CreateStyleBox(new Color(0.17f, 0.17f, 0.17f), new Color(0.30f, 0.30f, 0.30f))
+		);
+		AddThemeStyleboxOverride(
+			"pressed",
+			CreateStyleBox(new Color(0.20f, 0.20f, 0.20f), new Color(0.36f, 0.36f, 0.36f))
+		);
+		AddThemeStyleboxOverride(
+			"focus",
+			CreateStyleBox(new Color(0.16f, 0.16f, 0.16f), new Color(0.08f, 0.59f, 1f))
+		);
 		AddThemeColorOverride("font_color", Colors.White);
 		AddThemeColorOverride("font_hover_color", Colors.White);
 		AddThemeColorOverride("font_pressed_color", Colors.White);
@@ -145,7 +157,7 @@ public sealed partial class DropdownSettingField : MenuButton
 			ContentMarginLeft = 12,
 			ContentMarginTop = 8,
 			ContentMarginRight = 12,
-			ContentMarginBottom = 8
+			ContentMarginBottom = 8,
 		};
 	}
 }

@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel.Resources;
 
@@ -24,14 +24,16 @@ public partial class BaseAsset : NetworkedObject
 
 	private Timer? _timer;
 
-	protected static void RegisterType<T>() where T : BaseAsset
+	protected static void RegisterType<T>()
+		where T : BaseAsset
 	{
 		_allDerivedTypes.Add(typeof(T));
 	}
 
 	public void LinkTo(NetworkedObject obj)
 	{
-		if (LinkedTo.Contains(obj)) return;
+		if (LinkedTo.Contains(obj))
+			return;
 
 		InvalidateTimer();
 		PendingDeletion = false;
@@ -53,7 +55,6 @@ public partial class BaseAsset : NetworkedObject
 				NetworkParent = Root.Assets;
 			}
 		}
-
 	}
 
 	public void UnlinkFrom(NetworkedObject obj)
@@ -74,8 +75,12 @@ public partial class BaseAsset : NetworkedObject
 			// abort NativeAOT Android builds from a .NET worker thread. Assets
 			// owned by that teardown are destroyed with their parent; only defer
 			// deletion while their node is still live in the tree.
-			if ((_timer == null || !Node.IsInstanceValid(_timer)) &&
-				Node.IsInstanceValid(GDNode) && GDNode.IsInsideTree() && !IsDeleted)
+			if (
+				(_timer == null || !Node.IsInstanceValid(_timer))
+				&& Node.IsInstanceValid(GDNode)
+				&& GDNode.IsInsideTree()
+				&& !IsDeleted
+			)
 			{
 				_timer = new();
 				GDNode.AddChild(_timer, @internal: Node.InternalMode.Back);

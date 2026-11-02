@@ -2,23 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
 using BrickVerse.Networking.Synchronizers;
 using BrickVerse.Schemas.Debugger;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Client.Debugger;
 
@@ -27,14 +27,17 @@ public class DebugAgent
 	public bool ClientStarted { get; private set; } = false;
 	private TcpClient _client = null!;
 	private NetworkStream _stream = null!;
-	private readonly List<KeyValuePair<string, TaskCompletionSource<MessageNewServerResponse>>> _pendingServerInstance = [];
+	private readonly List<
+		KeyValuePair<string, TaskCompletionSource<MessageNewServerResponse>>
+	> _pendingServerInstance = [];
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
 
 	private string _address = "";
 
 	public async Task Start(string addresss, int port, string? debugID = null)
 	{
-		if (ClientStarted) return;
+		if (ClientStarted)
+			return;
 
 		_address = addresss;
 		_client = new TcpClient();
@@ -53,12 +56,21 @@ public class DebugAgent
 		if (debugID != null)
 		{
 			BV.Print("Reporting debug ID: ", debugID);
-			await SendMessage(new MessageClientData() { DebugID = debugID, ProcessID = procId, IsServer = BV.IsServer });
+			await SendMessage(
+				new MessageClientData()
+				{
+					DebugID = debugID,
+					ProcessID = procId,
+					IsServer = BV.IsServer,
+				}
+			);
 		}
 		else
 		{
 			BV.Print("No debug ID attached");
-			await SendMessage(new MessageClientData() { ProcessID = procId, IsServer = BV.IsServer });
+			await SendMessage(
+				new MessageClientData() { ProcessID = procId, IsServer = BV.IsServer }
+			);
 		}
 
 		BV.PrintV($"-- Connected to debug server --");
@@ -68,11 +80,16 @@ public class DebugAgent
 	{
 		while (true)
 		{
-			if (!_client.Connected) { ClientStarted = false; break; }
+			if (!_client.Connected)
+			{
+				ClientStarted = false;
+				break;
+			}
 			try
 			{
 				byte[]? buffer = await ReadFrameAsync(_stream);
-				if (buffer == null) break;
+				if (buffer == null)
+					break;
 
 				IDebugMessage? msg = SerializeUtils.Deserialize<IDebugMessage>(buffer);
 				if (msg != null)
@@ -133,15 +150,20 @@ public class DebugAgent
 		}
 		else if (msg is MessageObjPropChange pc)
 		{
-			if (World.Current == null) return;
-			if (!World.Current.Network.IsServer) return;
+			if (World.Current == null)
+				return;
+			if (!World.Current.Network.IsServer)
+				return;
 			NetworkedObject? obj = World.Current.GetObjectFromID(pc.ObjectID);
 			if (obj != null)
 			{
 				PropertyInfo? prop = obj.GetSyncProperty(pc.PropertyName);
 				if (prop != null)
 				{
-					object? val = NetworkPropSync.DeserializePropValue(pc.PropertyValue, prop.PropertyType);
+					object? val = NetworkPropSync.DeserializePropValue(
+						pc.PropertyValue,
+						prop.PropertyType
+					);
 
 					// Call in main thread
 					BV.CallOnMainThread(() =>
@@ -188,7 +210,8 @@ public class DebugAgent
 
 	public async Task SendMessage(IDebugMessage msg)
 	{
-		if (!ClientStarted) return;
+		if (!ClientStarted)
+			return;
 		byte[] data = SerializeUtils.Serialize(msg);
 		try
 		{
@@ -211,27 +234,40 @@ public class DebugAgent
 	private async Task SendRuntimeSnapshot()
 	{
 		World? world = World.Current;
-		if (world == null) return;
+		if (world == null)
+			return;
 
 		Instance[] instances = [world, .. world.GetDescendants()];
-		RuntimeObjectInfo[] objects = instances.Select(instance => new RuntimeObjectInfo
-		{
-			ObjectID = instance.ObjectID,
-			ParentObjectID = instance.Parent?.ObjectID ?? "",
-			Name = instance.Name,
-			ClassName = instance.ClassName,
-			Properties = instance.GetType()
-				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-				.Where(property => property.IsDefined(typeof(EditableAttribute), true) && property.CanRead)
-				.Select(property => new RuntimePropertyInfo
-				{
-					Name = property.Name,
-					TypeName = property.PropertyType.AssemblyQualifiedName ?? property.PropertyType.FullName ?? property.PropertyType.Name,
-					Value = Convert.ToString(property.GetValue(instance), CultureInfo.InvariantCulture) ?? "",
-					CanWrite = property.CanWrite
-				})
-				.ToArray()
-		}).ToArray();
+		RuntimeObjectInfo[] objects = instances
+			.Select(instance => new RuntimeObjectInfo
+			{
+				ObjectID = instance.ObjectID,
+				ParentObjectID = instance.Parent?.ObjectID ?? "",
+				Name = instance.Name,
+				ClassName = instance.ClassName,
+				Properties = instance
+					.GetType()
+					.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+					.Where(property =>
+						property.IsDefined(typeof(EditableAttribute), true) && property.CanRead
+					)
+					.Select(property => new RuntimePropertyInfo
+					{
+						Name = property.Name,
+						TypeName =
+							property.PropertyType.AssemblyQualifiedName
+							?? property.PropertyType.FullName
+							?? property.PropertyType.Name,
+						Value =
+							Convert.ToString(
+								property.GetValue(instance),
+								CultureInfo.InvariantCulture
+							) ?? "",
+						CanWrite = property.CanWrite,
+					})
+					.ToArray(),
+			})
+			.ToArray();
 
 		await SendMessage(new MessageRuntimeSnapshot { Objects = objects });
 	}
@@ -239,38 +275,54 @@ public class DebugAgent
 	private async Task SendRuntimeDiagnostics()
 	{
 		World? world = World.Current;
-		if (world == null) return;
+		if (world == null)
+			return;
 		Instance[] instances = [world, .. world.GetDescendants()];
 		string[] scripts = instances
-			.Where(instance => instance.ClassName.EndsWith("Script", StringComparison.OrdinalIgnoreCase))
+			.Where(instance =>
+				instance.ClassName.EndsWith("Script", StringComparison.OrdinalIgnoreCase)
+			)
 			.Select(instance => $"{instance.Name} [{instance.ClassName}]")
 			.OrderBy(name => name)
 			.ToArray();
 		int ping = world.Players.LocalPlayer?.NetworkPing ?? 0;
-		await SendMessage(new MessageRuntimeDiagnostics
-		{
-			Fps = Performance.GetMonitor(Performance.Monitor.TimeFps),
-			FrameTimeMs = Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d,
-			PhysicsTimeMs = Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000d,
-			StaticMemoryBytes = (long)Performance.GetMonitor(Performance.Monitor.MemoryStatic),
-			VideoMemoryBytes = (long)Performance.GetMonitor(Performance.Monitor.RenderVideoMemUsed),
-			NodeCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount),
-			ObjectCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectCount),
-			DrawCalls = (int)Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame),
-			Active3DObjects = (int)Performance.GetMonitor(Performance.Monitor.RenderTotalObjectsInFrame),
-			Scripts = scripts,
-			IsServer = world.Network.IsServer,
-			NetworkMode = world.Network.NetworkMode.ToString(),
-			Players = world.Players.PlayersCount,
-			PingMs = ping,
-		});
+		await SendMessage(
+			new MessageRuntimeDiagnostics
+			{
+				Fps = Performance.GetMonitor(Performance.Monitor.TimeFps),
+				FrameTimeMs = Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d,
+				PhysicsTimeMs =
+					Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000d,
+				StaticMemoryBytes = (long)Performance.GetMonitor(Performance.Monitor.MemoryStatic),
+				VideoMemoryBytes = (long)
+					Performance.GetMonitor(Performance.Monitor.RenderVideoMemUsed),
+				NodeCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount),
+				ObjectCount = (int)Performance.GetMonitor(Performance.Monitor.ObjectCount),
+				DrawCalls = (int)
+					Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame),
+				Active3DObjects = (int)
+					Performance.GetMonitor(Performance.Monitor.RenderTotalObjectsInFrame),
+				Scripts = scripts,
+				IsServer = world.Network.IsServer,
+				NetworkMode = world.Network.NetworkMode.ToString(),
+				Players = world.Players.PlayersCount,
+				PingMs = ping,
+			}
+		);
 	}
 
 	private static void SetRuntimeProperty(MessageRuntimePropertySet change)
 	{
 		NetworkedObject? target = World.Current?.GetObjectFromID(change.ObjectID);
-		PropertyInfo? property = target?.GetType().GetProperty(change.PropertyName, BindingFlags.Public | BindingFlags.Instance);
-		if (target == null || property == null || !property.CanWrite || !property.IsDefined(typeof(EditableAttribute), true))
+		PropertyInfo? property = target
+			?.GetType()
+			.GetProperty(change.PropertyName, BindingFlags.Public | BindingFlags.Instance);
+		if (
+			target == null
+			|| property == null
+			|| !property.CanWrite
+			|| !property.IsDefined(typeof(EditableAttribute), true)
+		)
 			return;
 
 		try
@@ -287,14 +339,21 @@ public class DebugAgent
 	private static object? ParseRuntimeValue(string raw, Type type)
 	{
 		Type targetType = Nullable.GetUnderlyingType(type) ?? type;
-		if (targetType == typeof(string)) return raw;
-		if (targetType.IsEnum) return Enum.Parse(targetType, raw, true);
+		if (targetType == typeof(string))
+			return raw;
+		if (targetType.IsEnum)
+			return Enum.Parse(targetType, raw, true);
 
-		string[] components = raw.Trim('(', ')', '[', ']').Split(',', StringSplitOptions.TrimEntries);
+		string[] components = raw.Trim('(', ')', '[', ']')
+			.Split(',', StringSplitOptions.TrimEntries);
 		if (targetType == typeof(Vector2) && components.Length == 2)
 			return new Vector2(ParseFloat(components[0]), ParseFloat(components[1]));
 		if (targetType == typeof(Vector3) && components.Length == 3)
-			return new Vector3(ParseFloat(components[0]), ParseFloat(components[1]), ParseFloat(components[2]));
+			return new Vector3(
+				ParseFloat(components[0]),
+				ParseFloat(components[1]),
+				ParseFloat(components[2])
+			);
 		if (targetType == typeof(Color) && (components.Length == 3 || components.Length == 4))
 			return new Color(
 				ParseFloat(components[0]),
@@ -312,23 +371,27 @@ public class DebugAgent
 	private static void ExecuteRuntimeLuau(string source)
 	{
 		World? world = World.Current;
-		if (world == null || string.IsNullOrWhiteSpace(source)) return;
+		if (world == null || string.IsNullOrWhiteSpace(source))
+			return;
 
 		Datamodel.Script script = world.Network.IsServer
 			? world.New<ServerScript>(world.ScriptService)
 			: world.New<ClientScript>(world.ScriptService);
 		script.Name = "RuntimeConsoleExecutor";
 		script.Source = source;
-		script.PermissionFlags = ScriptPermissionFlags.CreatorAccess | ScriptPermissionFlags.ContextAccess;
+		script.PermissionFlags =
+			ScriptPermissionFlags.CreatorAccess | ScriptPermissionFlags.ContextAccess;
 		script.Run();
 	}
 
 	private static async Task<byte[]?> ReadFrameAsync(NetworkStream stream)
 	{
 		byte[] lengthBytes = new byte[sizeof(int)];
-		if (!await ReadExactlyAsync(stream, lengthBytes)) return null;
+		if (!await ReadExactlyAsync(stream, lengthBytes))
+			return null;
 		int length = BitConverter.ToInt32(lengthBytes);
-		if (length <= 0 || length > 64 * 1024 * 1024) throw new InvalidDataException("Invalid debugger frame length.");
+		if (length <= 0 || length > 64 * 1024 * 1024)
+			throw new InvalidDataException("Invalid debugger frame length.");
 		byte[] payload = new byte[length];
 		return await ReadExactlyAsync(stream, payload) ? payload : null;
 	}
@@ -339,7 +402,8 @@ public class DebugAgent
 		while (offset < buffer.Length)
 		{
 			int read = await stream.ReadAsync(buffer.AsMemory(offset));
-			if (read == 0) return false;
+			if (read == 0)
+				return false;
 			offset += read;
 		}
 		return true;
@@ -358,14 +422,16 @@ public class DebugAgent
 
 	public async Task SendLogDispatch(LogDispatcher.LogData data)
 	{
-		await SendMessage(new MessageLogDispatch()
-		{
-			LogType = data.LogType,
-			LogFrom = data.LogFrom,
-			Content = data.Content,
-			Source = data.Source,
-			SourceLine = data.SourceLine
-		});
+		await SendMessage(
+			new MessageLogDispatch()
+			{
+				LogType = data.LogType,
+				LogFrom = data.LogFrom,
+				Content = data.Content,
+				Source = data.Source,
+				SourceLine = data.SourceLine,
+			}
+		);
 	}
 
 	public async Task<MessageNewServerResponse> CreateServerInstance(string toPath)

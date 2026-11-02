@@ -10,6 +10,7 @@ public struct APIServerAuthRequestMessage
 {
 	[JsonPropertyName("clientToken")]
 	public string ClientToken { get; set; }
+
 	[JsonPropertyName("localUserId")]
 	public int LocalUserId { get; set; }
 }
@@ -18,16 +19,21 @@ public struct APIServerListenResponse
 {
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
+
 	[JsonPropertyName("worldId")]
 	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
 	public long WorldID { get; set; }
+
 	[JsonPropertyName("port")]
 	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
 	public int Port { get; set; }
+
 	[JsonPropertyName("serverId")]
 	public string ServerID { get; set; }
+
 	[JsonPropertyName("placePath")]
 	public string? PlacePath { get; set; }
+
 	[JsonPropertyName("maxPlayers")]
 	public int MaxPlayers { get; set; }
 }

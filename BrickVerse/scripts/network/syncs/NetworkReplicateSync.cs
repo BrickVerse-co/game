@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Utils.Compression;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Networking.Synchronizers;
@@ -46,9 +46,18 @@ public sealed partial class NetworkReplicateSync : Instance
 	public event Action<int, int>? InstanceLoadedProgress;
 	private readonly HashSet<string> _removedRef = [];
 	private readonly HashSet<NetReplicateData> _worldReplicateSet = [];
-	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Round, int Index, int Count, int ObjectCount, bool IsFinal)> _incomingChunks = new();
+	private readonly Queue<(
+		byte[] Bytes,
+		bool IsPlaceReplication,
+		int Round,
+		int Index,
+		int Count,
+		int ObjectCount,
+		bool IsFinal
+	)> _incomingChunks = new();
 	private int _queuedIncomingBytes;
-	private readonly Dictionary<int, PlaceReplicationSendSession> _placeReplicationSendSessions = [];
+	private readonly Dictionary<int, PlaceReplicationSendSession> _placeReplicationSendSessions =
+	[];
 	private readonly Dictionary<int, StreamingPeerState> _streamingPeers = [];
 	private double _streamingPollElapsed;
 	private bool _processingIncomingChunk;
@@ -109,7 +118,15 @@ public sealed partial class NetworkReplicateSync : Instance
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
-	private void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate, int round, int chunkIndex, int chunkCount, int objectCount, bool isFinal)
+	private void NetRecvChunk(
+		byte[] rawBytes,
+		bool isPlaceReplicate,
+		int round,
+		int chunkIndex,
+		int chunkCount,
+		int objectCount,
+		bool isFinal
+	)
 	{
 		if (rawBytes == null || rawBytes.Length == 0 || rawBytes.Length > MaxIncomingChunkBytes)
 		{
@@ -117,17 +134,31 @@ public sealed partial class NetworkReplicateSync : Instance
 			return;
 		}
 
-		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount || objectCount < 0
-			|| objectCount > MaxPlaceReplicationObjects || chunkCount > Math.Max(1, objectCount))
+		if (
+			chunkCount <= 0
+			|| chunkIndex < 0
+			|| chunkIndex >= chunkCount
+			|| objectCount < 0
+			|| objectCount > MaxPlaceReplicationObjects
+			|| chunkCount > Math.Max(1, objectCount)
+		)
 		{
-			RejectIncomingChunk($"invalid metadata index={chunkIndex}, count={chunkCount}, objects={objectCount}");
+			RejectIncomingChunk(
+				$"invalid metadata index={chunkIndex}, count={chunkCount}, objects={objectCount}"
+			);
 			return;
 		}
 
 		if (isPlaceReplicate)
 		{
-			int queuedForRound = _incomingChunks.Count(chunk => chunk.IsPlaceReplication && chunk.Round == round);
-			if (round == _placeRound + 1 && chunkIndex == 0 && _placeRoundChunksReceived == _placeRoundChunksExpected)
+			int queuedForRound = _incomingChunks.Count(chunk =>
+				chunk.IsPlaceReplication && chunk.Round == round
+			);
+			if (
+				round == _placeRound + 1
+				&& chunkIndex == 0
+				&& _placeRoundChunksReceived == _placeRoundChunksExpected
+			)
 			{
 				_placeRound = round;
 				_placeRoundChunksReceived = 0;
@@ -137,9 +168,15 @@ public sealed partial class NetworkReplicateSync : Instance
 			}
 
 			int expectedIndex = _placeRoundChunksReceived + queuedForRound;
-			if (round != _placeRound || chunkCount != _placeRoundChunksExpected || chunkIndex != expectedIndex)
+			if (
+				round != _placeRound
+				|| chunkCount != _placeRoundChunksExpected
+				|| chunkIndex != expectedIndex
+			)
 			{
-				RejectIncomingChunk($"inconsistent or out-of-order metadata round={round}, index={chunkIndex}, expectedRound={_placeRound}, expectedIndex={expectedIndex}, count={chunkCount}, objects={objectCount}");
+				RejectIncomingChunk(
+					$"inconsistent or out-of-order metadata round={round}, index={chunkIndex}, expectedRound={_placeRound}, expectedIndex={expectedIndex}, count={chunkCount}, objects={objectCount}"
+				);
 				return;
 			}
 
@@ -156,15 +193,21 @@ public sealed partial class NetworkReplicateSync : Instance
 			return;
 		}
 
-		_incomingChunks.Enqueue((rawBytes, isPlaceReplicate, round, chunkIndex, chunkCount, objectCount, isFinal));
+		_incomingChunks.Enqueue(
+			(rawBytes, isPlaceReplicate, round, chunkIndex, chunkCount, objectCount, isFinal)
+		);
 		_queuedIncomingBytes += rawBytes.Length;
-		if (isPlaceReplicate) _lastReplicationProgressAtMsec = Time.GetTicksMsec();
+		if (isPlaceReplicate)
+			_lastReplicationProgressAtMsec = Time.GetTicksMsec();
 	}
 
 	private void RejectIncomingChunk(string reason)
 	{
 		BV.PrintErr("Rejected world replication chunk: ", reason);
-		NetService.DisconnectSelf("The server sent invalid world data. Please retry.", DisconnectionCodeEnum.ConnectionFailure);
+		NetService.DisconnectSelf(
+			"The server sent invalid world data. Please retry.",
+			DisconnectionCodeEnum.ConnectionFailure
+		);
 	}
 
 	private async void ProcessNextIncomingChunk()
@@ -186,7 +229,10 @@ public sealed partial class NetworkReplicateSync : Instance
 			{
 				var incoming = _incomingChunks.Dequeue();
 				_queuedIncomingBytes -= incoming.Bytes.Length;
-				processedObjects += ProcessIncomingChunk(incoming.Bytes, incoming.IsPlaceReplication);
+				processedObjects += ProcessIncomingChunk(
+					incoming.Bytes,
+					incoming.IsPlaceReplication
+				);
 				_hasProcessedIncomingChunk = true;
 				if (incoming.IsPlaceReplication)
 				{
@@ -201,8 +247,13 @@ public sealed partial class NetworkReplicateSync : Instance
 		catch (Exception ex)
 		{
 			string reportID = Guid.NewGuid().ToString("N")[..8];
-			BV.PrintErr($"[JoinFailure:{reportID}] Failed to apply world data after {_placeChunksReceived}/{_placeChunksExpected} chunks: {ex}");
-			NetService.DisconnectSelf($"Could not load world data. Please retry. If this keeps happening, share report ID {reportID} with support.", DisconnectionCodeEnum.ConnectionFailure);
+			BV.PrintErr(
+				$"[JoinFailure:{reportID}] Failed to apply world data after {_placeChunksReceived}/{_placeChunksExpected} chunks: {ex}"
+			);
+			NetService.DisconnectSelf(
+				$"Could not load world data. Please retry. If this keeps happening, share report ID {reportID} with support.",
+				DisconnectionCodeEnum.ConnectionFailure
+			);
 		}
 		finally
 		{
@@ -214,14 +265,16 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	private int ProcessIncomingChunk(byte[] rawBytes, bool isPlaceReplicate)
 	{
-
-		NetReplicateData[] netObjsData = SerializeUtils.Deserialize<NetReplicateData[]>(ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedChunkBytes))!;
+		NetReplicateData[] netObjsData = SerializeUtils.Deserialize<NetReplicateData[]>(
+			ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedChunkBytes)
+		)!;
 		NetReplicateData[][] chunked = ArrayUtils.Chunk(netObjsData, PlaceReplicationChunkSize);
 
 		foreach (NetReplicateData data in netObjsData)
 		{
 			// If already exists, continue
-			if (Root.NetworkObjects.ContainsKey(data.NetworkID)) continue;
+			if (Root.NetworkObjects.ContainsKey(data.NetworkID))
+				continue;
 			if (isPlaceReplicate)
 			{
 				_worldReplicateSet.Add(data);
@@ -232,7 +285,10 @@ public sealed partial class NetworkReplicateSync : Instance
 		{
 			foreach (NetReplicateData data in chunk)
 			{
-				if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] on the way {data.NodePath}"); }
+				if (_useNetworkLog)
+				{
+					BV.Print($"[Net] [{NetService.LocalPeerID}] on the way {data.NodePath}");
+				}
 				if (isPlaceReplicate && Root.NetworkObjects.ContainsKey(data.NetworkID))
 				{
 					// Existing local objects are already materialized, but still count
@@ -243,8 +299,12 @@ public sealed partial class NetworkReplicateSync : Instance
 
 				if (data.ParentNodeID == null)
 				{
-					if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} no parent"); }
-					if (isPlaceReplicate) _worldReplicateSet.Remove(data);
+					if (_useNetworkLog)
+					{
+						BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} no parent");
+					}
+					if (isPlaceReplicate)
+						_worldReplicateSet.Remove(data);
 					CountInstanceLoaded(null);
 					continue;
 				}
@@ -264,7 +324,12 @@ public sealed partial class NetworkReplicateSync : Instance
 					{
 						if (removedParentPath != "" && parentPath.StartsWith(removedParentPath))
 						{
-							if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} Removed ref {removedParentPath}"); }
+							if (_useNetworkLog)
+							{
+								BV.Print(
+									$"[Net] [{NetService.LocalPeerID}] {data.NodePath} Removed ref {removedParentPath}"
+								);
+							}
 							_removedRef.Remove(removedParentPath);
 							removed = true;
 							break;
@@ -273,8 +338,12 @@ public sealed partial class NetworkReplicateSync : Instance
 
 					if (removed)
 					{
-						if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} removed"); }
-						if (isPlaceReplicate) _worldReplicateSet.Remove(data);
+						if (_useNetworkLog)
+						{
+							BV.Print($"[Net] [{NetService.LocalPeerID}] {data.NodePath} removed");
+						}
+						if (isPlaceReplicate)
+							_worldReplicateSet.Remove(data);
 						CountInstanceLoaded(null);
 						continue;
 					}
@@ -282,18 +351,28 @@ public sealed partial class NetworkReplicateSync : Instance
 
 				if (parentNode != null)
 				{
-					if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] Chunk Replicate {data.NodePath}"); }
+					if (_useNetworkLog)
+					{
+						BV.Print(
+							$"[Net] [{NetService.LocalPeerID}] Chunk Replicate {data.NodePath}"
+						);
+					}
 					parentNode?.RecvReplicate(data);
 				}
 				else
 				{
-					if (!_pendingReplicates.TryGetValue(parentID, out List<NetReplicateData>? value))
+					if (
+						!_pendingReplicates.TryGetValue(parentID, out List<NetReplicateData>? value)
+					)
 					{
 						value = [];
 						_pendingReplicates[parentID] = value;
 					}
 
-					if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] Pending {data.NodePath}"); }
+					if (_useNetworkLog)
+					{
+						BV.Print($"[Net] [{NetService.LocalPeerID}] Pending {data.NodePath}");
+					}
 					value.Add(data);
 				}
 			}
@@ -306,7 +385,8 @@ public sealed partial class NetworkReplicateSync : Instance
 		Player plr,
 		bool isPlaceReplicate = false,
 		Action? completed = null,
-		bool initializeObjects = false)
+		bool initializeObjects = false
+	)
 	{
 		if (isPlaceReplicate)
 		{
@@ -327,17 +407,27 @@ public sealed partial class NetworkReplicateSync : Instance
 			if (isPlaceReplicate)
 				AppendCompressedChunks(chunk, compressedChunks);
 			else
-				compressedChunks.Add(ZstdCompressionUtils.Compress(SerializeUtils.Serialize(chunk)));
+				compressedChunks.Add(
+					ZstdCompressionUtils.Compress(SerializeUtils.Serialize(chunk))
+				);
 		}
-		foreach (byte[] chunk in compressedChunks) totalBytes += chunk.Length;
+		foreach (byte[] chunk in compressedChunks)
+			totalBytes += chunk.Length;
 
 		if (!isPlaceReplicate)
 		{
 			for (int i = 0; i < compressedChunks.Count; i++)
-				RpcId(plr.PeerID, nameof(NetRecvChunk), -1, i, compressedChunks.Count, packed.Length, false);
+				RpcId(
+					plr.PeerID,
+					nameof(NetRecvChunk),
+					-1,
+					i,
+					compressedChunks.Count,
+					packed.Length,
+					false
+				);
 			return;
 		}
-
 	}
 
 	private void PollPlaceReplication(PlaceReplicationSendSession session)
@@ -371,7 +461,9 @@ public sealed partial class NetworkReplicateSync : Instance
 		session.NextChunkIndex = 0;
 		session.AcknowledgedChunkCount = 0;
 		long totalBytes = compressedChunks.Sum(chunk => (long)chunk.Length);
-		BV.Print($"[JoinReplication] Peer {session.PeerID} round {session.Round}: objects={packed.Length}, chunks={compressedChunks.Count}, compressedBytes={totalBytes}, final={session.IsFinalRound}.");
+		BV.Print(
+			$"[JoinReplication] Peer {session.PeerID} round {session.Round}: objects={packed.Length}, chunks={compressedChunks.Count}, compressedBytes={totalBytes}, final={session.IsFinalRound}."
+		);
 		SendNextPlaceReplicationChunks(session);
 	}
 
@@ -392,27 +484,45 @@ public sealed partial class NetworkReplicateSync : Instance
 	private void SendNextPlaceReplicationChunks(PlaceReplicationSendSession session)
 	{
 		int sent = 0;
-		while (session.NextChunkIndex < session.Chunks.Length
+		while (
+			session.NextChunkIndex < session.Chunks.Length
 			&& session.NextChunkIndex - session.AcknowledgedChunkCount < PlaceChunksInFlight
-			&& sent++ < PlaceChunksPerFrame)
+			&& sent++ < PlaceChunksPerFrame
+		)
 		{
 			int chunkIndex = session.NextChunkIndex++;
-			RpcId(session.PeerID, nameof(NetRecvChunk), session.Round, chunkIndex, session.Chunks.Length, session.ObjectCount, session.IsFinalRound);
+			RpcId(
+				session.PeerID,
+				nameof(NetRecvChunk),
+				session.Round,
+				chunkIndex,
+				session.Chunks.Length,
+				session.ObjectCount,
+				session.IsFinalRound
+			);
 		}
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetAckPlaceReplicationChunk(int round, int chunkIndex)
 	{
-		if (!NetService.IsServer) return;
+		if (!NetService.IsServer)
+			return;
 
 		int peerID = RemoteSenderId;
-		if (!_placeReplicationSendSessions.TryGetValue(peerID, out PlaceReplicationSendSession? session))
+		if (
+			!_placeReplicationSendSessions.TryGetValue(
+				peerID,
+				out PlaceReplicationSendSession? session
+			)
+		)
 			return;
 
 		if (round != session.Round || chunkIndex != session.AcknowledgedChunkCount)
 		{
-			BV.PrintErr($"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={round}:{chunkIndex}, expected={session.Round}:{session.AcknowledgedChunkCount}.");
+			BV.PrintErr(
+				$"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={round}:{chunkIndex}, expected={session.Round}:{session.AcknowledgedChunkCount}."
+			);
 			return;
 		}
 
@@ -423,7 +533,9 @@ public sealed partial class NetworkReplicateSync : Instance
 			{
 				_placeReplicationSendSessions.Remove(peerID);
 				_streamingPeers[peerID] = new(session.Player, session.SentNetworkIDs);
-				BV.Print($"[JoinReplication] Peer {peerID} completed dynamic world replication after {session.Round + 1} rounds and {session.SentNetworkIDs.Count} objects.");
+				BV.Print(
+					$"[JoinReplication] Peer {peerID} completed dynamic world replication after {session.Round + 1} rounds and {session.SentNetworkIDs.Count} objects."
+				);
 				session.Completed?.Invoke();
 				return;
 			}
@@ -450,7 +562,13 @@ public sealed partial class NetworkReplicateSync : Instance
 		foreach (NetReplicateData item in objects)
 		{
 			int itemBytes = SerializeUtils.Serialize(item).Length;
-			if (current.Count > 0 && (current.Count >= PlaceReplicationChunkSize || estimatedBytes + itemBytes > MaxPlaceReplicationChunkBytes))
+			if (
+				current.Count > 0
+				&& (
+					current.Count >= PlaceReplicationChunkSize
+					|| estimatedBytes + itemBytes > MaxPlaceReplicationChunkBytes
+				)
+			)
 			{
 				chunks.Add([.. current]);
 				current.Clear();
@@ -471,10 +589,13 @@ public sealed partial class NetworkReplicateSync : Instance
 	public override void Process(double delta)
 	{
 		base.Process(delta);
-		if (NetService.IsDisconnected) return;
+		if (NetService.IsDisconnected)
+			return;
 		if (NetService.IsServer)
 		{
-			foreach (PlaceReplicationSendSession session in _placeReplicationSendSessions.Values.ToArray())
+			foreach (
+				PlaceReplicationSendSession session in _placeReplicationSendSessions.Values.ToArray()
+			)
 			{
 				try
 				{
@@ -485,7 +606,9 @@ public sealed partial class NetworkReplicateSync : Instance
 				{
 					_placeReplicationSendSessions.Remove(session.PeerID);
 					string reportID = Guid.NewGuid().ToString("N")[..8];
-					BV.PrintErr($"[JoinFailure:{reportID}] Failed to poll world objects for peer {session.PeerID}: {ex}");
+					BV.PrintErr(
+						$"[JoinFailure:{reportID}] Failed to poll world objects for peer {session.PeerID}: {ex}"
+					);
 					NetService.DisconnectPeer(
 						session.PeerID,
 						$"Could not prepare world data. Please retry. If this keeps happening, share report ID {reportID} with support.",
@@ -507,11 +630,14 @@ public sealed partial class NetworkReplicateSync : Instance
 					catch (Exception ex)
 					{
 						string reportID = Guid.NewGuid().ToString("N")[..8];
-						BV.PrintErr($"[StreamingFailure:{reportID}] Peer {peer.Player.PeerID}: {ex}");
+						BV.PrintErr(
+							$"[StreamingFailure:{reportID}] Peer {peer.Player.PeerID}: {ex}"
+						);
 						NetService.DisconnectPeer(
 							peer.Player.PeerID,
 							$"World streaming failed. Please retry. If this keeps happening, share report ID {reportID} with support.",
-							DisconnectionCodeEnum.ConnectionFailure);
+							DisconnectionCodeEnum.ConnectionFailure
+						);
 					}
 				}
 			}
@@ -537,7 +663,10 @@ public sealed partial class NetworkReplicateSync : Instance
 		foreach (string key in _pendingReplicates.Keys.ToArray())
 		{
 			NetworkedObject? node = NetService.Root.GetNetObjectFromID(key);
-			if (node == null && _pendingReplicates.TryGetValue(key, out List<NetReplicateData>? pending))
+			if (
+				node == null
+				&& _pendingReplicates.TryGetValue(key, out List<NetReplicateData>? pending)
+			)
 			{
 				// A parent may become available under its stable path without being
 				// registered under the server's ID (notably for pre-created objects).
@@ -576,11 +705,17 @@ public sealed partial class NetworkReplicateSync : Instance
 				state.ResidentIDs.Add(obj.NetworkedObjectID);
 		}
 
-		HashSet<string> leavingIDs = state.ResidentIDs.Where(id => !desiredIDs.Contains(id)).ToHashSet();
+		HashSet<string> leavingIDs = state
+			.ResidentIDs.Where(id => !desiredIDs.Contains(id))
+			.ToHashSet();
 		foreach (string id in leavingIDs)
 		{
 			NetworkedObject? obj = NetService.Root.GetNetObjectFromID(id);
-			if (obj == null || obj.NetworkParent == null || !leavingIDs.Contains(obj.NetworkParent.NetworkedObjectID))
+			if (
+				obj == null
+				|| obj.NetworkParent == null
+				|| !leavingIDs.Contains(obj.NetworkParent.NetworkedObjectID)
+			)
 				RpcId(state.Player.PeerID, nameof(NetRecvReplicateRemove), id);
 			state.ResidentIDs.Remove(id);
 		}
@@ -590,7 +725,12 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		if (_streamingPeers.TryGetValue(peerID, out StreamingPeerState? state))
 			return state.ResidentIDs.Contains(obj.NetworkedObjectID);
-		if (_placeReplicationSendSessions.TryGetValue(peerID, out PlaceReplicationSendSession? joining))
+		if (
+			_placeReplicationSendSessions.TryGetValue(
+				peerID,
+				out PlaceReplicationSendSession? joining
+			)
+		)
 			return joining.SentNetworkIDs.Contains(obj.NetworkedObjectID);
 		return true;
 	}
@@ -598,19 +738,27 @@ public sealed partial class NetworkReplicateSync : Instance
 	private NetworkedObject[] GetDesiredObjects(Player player, HashSet<string> residentIDs)
 	{
 		NetworkedObject[] all = NetService.Root.GetReplicateDescendants();
-		HashSet<string> desiredIDs = all
-			.Where(obj => NetService.Root.Streaming.ShouldReplicateToPlayer(
-				player,
-				obj,
-				residentIDs.Contains(obj.NetworkedObjectID)))
+		HashSet<string> desiredIDs = all.Where(obj =>
+				NetService.Root.Streaming.ShouldReplicateToPlayer(
+					player,
+					obj,
+					residentIDs.Contains(obj.NetworkedObjectID)
+				)
+			)
 			.Select(obj => obj.NetworkedObjectID)
 			.ToHashSet();
 
 		// A streamed object can never arrive before an absent parent. Pull the
 		// complete replicated parent chain into the same residency decision.
-		foreach (NetworkedObject obj in all.Where(obj => desiredIDs.Contains(obj.NetworkedObjectID)))
+		foreach (
+			NetworkedObject obj in all.Where(obj => desiredIDs.Contains(obj.NetworkedObjectID))
+		)
 		{
-			for (NetworkedObject? parent = obj.NetworkParent; parent != null; parent = parent.NetworkParent)
+			for (
+				NetworkedObject? parent = obj.NetworkParent;
+				parent != null;
+				parent = parent.NetworkParent
+			)
 				desiredIDs.Add(parent.NetworkedObjectID);
 		}
 		return all.Where(obj => desiredIDs.Contains(obj.NetworkedObjectID)).ToArray();
@@ -623,35 +771,58 @@ public sealed partial class NetworkReplicateSync : Instance
 
 		ulong now = Time.GetTicksMsec();
 		bool stalled = now - _lastReplicationProgressAtMsec >= PlaceReplicationStallTimeoutMs;
-		bool exceededMaximum = now - _placeReplicationStartedAtMsec >= PlaceReplicationMaximumDurationMs;
+		bool exceededMaximum =
+			now - _placeReplicationStartedAtMsec >= PlaceReplicationMaximumDurationMs;
 		if (!stalled && !exceededMaximum)
 			return;
 
 		string reportID = Guid.NewGuid().ToString("N")[..8];
-		string unresolved = string.Join(" | ", _worldReplicateSet.Take(8).Select(data =>
-			$"{data.ClassName} {data.NodePath} (id={data.NetworkID}, parent={data.ParentNodeID})"));
-		string pendingParents = string.Join(" | ", _pendingReplicates.Take(8).Select(pair =>
-			$"{pair.Key} -> {(pair.Value.Count > 0 ? pair.Value[0].ParentNodePath : "<empty>")}"));
-		BV.PrintErr($"[JoinFailure:{reportID}] World replication {(stalled ? "stalled" : "exceeded maximum duration")}: " +
-			$"elapsed={(now - _placeReplicationStartedAtMsec) / 1000}s, idle={(now - _lastReplicationProgressAtMsec) / 1000}s, " +
-			$"chunks={_placeChunksReceived}/{_placeChunksExpected}, loaded={InstanceLoadedCount - 1}/{InstanceToBeLoadedCount}, " +
-			$"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}. " +
-			$"First unresolved: [{unresolved}]. First pending parents: [{pendingParents}].");
+		string unresolved = string.Join(
+			" | ",
+			_worldReplicateSet
+				.Take(8)
+				.Select(data =>
+					$"{data.ClassName} {data.NodePath} (id={data.NetworkID}, parent={data.ParentNodeID})"
+				)
+		);
+		string pendingParents = string.Join(
+			" | ",
+			_pendingReplicates
+				.Take(8)
+				.Select(pair =>
+					$"{pair.Key} -> {(pair.Value.Count > 0 ? pair.Value[0].ParentNodePath : "<empty>")}"
+				)
+		);
+		BV.PrintErr(
+			$"[JoinFailure:{reportID}] World replication {(stalled ? "stalled" : "exceeded maximum duration")}: "
+				+ $"elapsed={(now - _placeReplicationStartedAtMsec) / 1000}s, idle={(now - _lastReplicationProgressAtMsec) / 1000}s, "
+				+ $"chunks={_placeChunksReceived}/{_placeChunksExpected}, loaded={InstanceLoadedCount - 1}/{InstanceToBeLoadedCount}, "
+				+ $"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}. "
+				+ $"First unresolved: [{unresolved}]. First pending parents: [{pendingParents}]."
+		);
 		NetService.DisconnectSelf(
 			$"World loading timed out while applying server data. Please retry. If this keeps happening, share report ID {reportID} with support.",
-			DisconnectionCodeEnum.ConnectionTimeout);
+			DisconnectionCodeEnum.ConnectionTimeout
+		);
 	}
 
 	public void BroadcastChunk(NetworkedObject[] netObjs)
 	{
-		if (NetService.NetworkMode != NetworkModeEnum.Client) return;
-		if (NetService.NetInstance == null) return;
+		if (NetService.NetworkMode != NetworkModeEnum.Client)
+			return;
+		if (NetService.NetInstance == null)
+			return;
 		NetService.TransformSync.BroadcastChunk(netObjs);
 		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
-			NetworkedObject[] visible = netObjs.Where(obj => IsReplicatedToPeer(peerID, obj)).ToArray();
-			if (visible.Length == 0) continue;
-			byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackNetObjs(visible, false)));
+			NetworkedObject[] visible = netObjs
+				.Where(obj => IsReplicatedToPeer(peerID, obj))
+				.ToArray();
+			if (visible.Length == 0)
+				continue;
+			byte[] rawData = ZstdCompressionUtils.Compress(
+				SerializeUtils.Serialize(PackNetObjs(visible, false))
+			);
 			RpcId(peerID, nameof(NetRecvChunk), rawData, false, -1, 0, 1, visible.Length, false);
 		}
 	}
@@ -671,14 +842,19 @@ public sealed partial class NetworkReplicateSync : Instance
 		foreach (NetworkedObject netObj in netObjs)
 		{
 			// If no sync, continue
-			if (netObj.GetType().IsDefined(typeof(NoSyncAttribute), false)) continue;
+			if (netObj.GetType().IsDefined(typeof(NoSyncAttribute), false))
+				continue;
 
-			if (!netObj.ShouldReplicate) continue;
+			if (!netObj.ShouldReplicate)
+				continue;
 
 			NetReplicateData data = netObj.GetNetReplicateData();
 			data.IsSyncOnce = isSyncOnce;
 			netObjsData.Add(data);
-			if (_useNetworkLog) { BV.Print($"[Net] Packing {netObj.Name}"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] Packing {netObj.Name}");
+			}
 		}
 
 		return [.. netObjsData];
@@ -704,7 +880,9 @@ public sealed partial class NetworkReplicateSync : Instance
 			catch (Exception ex)
 			{
 				string reportID = Guid.NewGuid().ToString("N")[..8];
-				BV.PrintErr($"[JoinFailure:{reportID}] Failed to apply pending object '{data.NodePath}' below '{parent.NetworkPath}': {ex}");
+				BV.PrintErr(
+					$"[JoinFailure:{reportID}] Failed to apply pending object '{data.NodePath}' below '{parent.NetworkPath}': {ex}"
+				);
 				NetService.DisconnectSelf(
 					$"Could not load a world object. Please retry. If this keeps happening, share report ID {reportID} with support.",
 					DisconnectionCodeEnum.ConnectionFailure
@@ -719,7 +897,8 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (obj != null)
 		{
 			// If object is not from world replicate, return
-			if (!_worldReplicateSet.Remove(new() { NetworkID = obj.NetworkedObjectID })) return;
+			if (!_worldReplicateSet.Remove(new() { NetworkID = obj.NetworkedObjectID }))
+				return;
 		}
 		InstanceLoadedCount += 1;
 		_lastReplicationProgressAtMsec = Time.GetTicksMsec();
@@ -736,12 +915,14 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	private void TryCompletePlaceReplication()
 	{
-		if (_placeChunksExpected > 0
+		if (
+			_placeChunksExpected > 0
 			&& _placeChunksReceived == _placeChunksExpected
 			&& _placeFinalRoundReceived
 			&& _incomingChunks.Count == 0
 			&& !_processingIncomingChunk
-			&& _worldReplicateSet.Count == 0)
+			&& _worldReplicateSet.Count == 0
+		)
 		{
 			NetService.NetWorldSyncd();
 		}
@@ -750,15 +931,21 @@ public sealed partial class NetworkReplicateSync : Instance
 	public async void SendNetReplicate(NetworkedObject netObj, bool isSyncOnce = false)
 	{
 		// if not client, return
-		if (NetService.NetworkMode != NetworkModeEnum.Client) return;
+		if (NetService.NetworkMode != NetworkModeEnum.Client)
+			return;
 
 		// don't sync if not ready
-		if (!netObj.Root.IsLoaded) return;
+		if (!netObj.Root.IsLoaded)
+			return;
 
 		// If should not replicate, return
-		if (!netObj.ShouldReplicate) return;
+		if (!netObj.ShouldReplicate)
+			return;
 
-		if (_useNetworkLog) { BV.Print($"[Net] Send Replicate {netObj.Name}"); }
+		if (_useNetworkLog)
+		{
+			BV.Print($"[Net] Send Replicate {netObj.Name}");
+		}
 
 		if (netObj is Dynamic dyn)
 		{
@@ -774,13 +961,18 @@ public sealed partial class NetworkReplicateSync : Instance
 		{
 			foreach (int peerID in NetService.NetInstance.PeerIds)
 			{
-				if (!_streamingPeers.TryGetValue(peerID, out StreamingPeerState? state)) continue;
-				if (!NetService.Root.Streaming.ShouldReplicateToPlayer(state.Player, netObj, false)) continue;
+				if (!_streamingPeers.TryGetValue(peerID, out StreamingPeerState? state))
+					continue;
+				if (!NetService.Root.Streaming.ShouldReplicateToPlayer(state.Player, netObj, false))
+					continue;
 				// Never send a child before its parent is resident. The next streaming
 				// poll will pull the complete dependency chain in as one initialized batch.
-				if (netObj.NetworkParent is { } parent
+				if (
+					netObj.NetworkParent is { } parent
 					&& parent != NetService.Root
-					&& !state.ResidentIDs.Contains(parent.NetworkedObjectID)) continue;
+					&& !state.ResidentIDs.Contains(parent.NetworkedObjectID)
+				)
+					continue;
 				RpcId(peerID, nameof(NetRecvReplicate), data);
 				state.ResidentIDs.Add(netObj.NetworkedObjectID);
 			}
@@ -795,7 +987,8 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		foreach (PlaceReplicationSendSession joining in _placeReplicationSendSessions.Values)
 		{
-			if (!joining.SentNetworkIDs.Remove(netobj.NetworkedObjectID)) continue;
+			if (!joining.SentNetworkIDs.Remove(netobj.NetworkedObjectID))
+				continue;
 			RpcId(joining.PeerID, nameof(NetRecvReplicateRemove), netobj.NetworkedObjectID);
 		}
 
@@ -809,12 +1002,16 @@ public sealed partial class NetworkReplicateSync : Instance
 			{
 				foreach (int targetPeer in NetService.NetInstance.PeerIds)
 				{
-					if (!_streamingPeers.TryGetValue(targetPeer, out StreamingPeerState? state)
-						|| !state.ResidentIDs.Remove(netobj.NetworkedObjectID)) continue;
+					if (
+						!_streamingPeers.TryGetValue(targetPeer, out StreamingPeerState? state)
+						|| !state.ResidentIDs.Remove(netobj.NetworkedObjectID)
+					)
+						continue;
 					RpcId(targetPeer, nameof(NetRecvReplicateRemove), netobj.NetworkedObjectID);
 				}
 			}
-			else Rpc(nameof(NetRecvReplicateRemove), netobj.NetworkedObjectID);
+			else
+				Rpc(nameof(NetRecvReplicateRemove), netobj.NetworkedObjectID);
 		}
 	}
 
@@ -822,7 +1019,8 @@ public sealed partial class NetworkReplicateSync : Instance
 	private async void NetRecvReplicate(byte[] data)
 	{
 		// Ignore if from server itself
-		if (NetService.IsServer) return;
+		if (NetService.IsServer)
+			return;
 		if (data is not { Length: > 0 } || data.Length > MaxSingleReplicateBytes)
 		{
 			BV.PrintErr("Rejected invalid single-object replication payload.");
@@ -844,7 +1042,10 @@ public sealed partial class NetworkReplicateSync : Instance
 		string parentID = replicateData.ParentNodeID;
 		string parentNodePath = replicateData.ParentNodePath;
 
-		if (_useNetworkLog) { BV.Print($"[Net] Recv Replicate {replicateData.NodePath}"); }
+		if (_useNetworkLog)
+		{
+			BV.Print($"[Net] Recv Replicate {replicateData.NodePath}");
+		}
 
 		NetworkedObject? parent = NetService.Root.GetObjectFromID(parentID);
 
@@ -853,7 +1054,9 @@ public sealed partial class NetworkReplicateSync : Instance
 
 		if (parent != null)
 		{
-			NetworkedObject? existingChild = NetService.Root.GetNetObjectFromID(replicateData.NetworkID);
+			NetworkedObject? existingChild = NetService.Root.GetNetObjectFromID(
+				replicateData.NetworkID
+			);
 
 			if (existingChild != null)
 			{
@@ -863,7 +1066,10 @@ public sealed partial class NetworkReplicateSync : Instance
 				{
 					if (parent != existingChild)
 					{
-						if (_useNetworkLog) { BV.Print($"[Net] [@] Reparent {replicateData.NodePath}"); }
+						if (_useNetworkLog)
+						{
+							BV.Print($"[Net] [@] Reparent {replicateData.NodePath}");
+						}
 
 						existingChild.NetworkParent = parent;
 					}
@@ -871,7 +1077,10 @@ public sealed partial class NetworkReplicateSync : Instance
 			}
 			else
 			{
-				if (_useNetworkLog) { BV.Print($"[Net] [+] Add {replicateData.NodePath}"); }
+				if (_useNetworkLog)
+				{
+					BV.Print($"[Net] [+] Add {replicateData.NodePath}");
+				}
 				parent.RecvReplicate(replicateData);
 			}
 		}
@@ -882,7 +1091,10 @@ public sealed partial class NetworkReplicateSync : Instance
 			{
 				if (_pendingReplicates.Count >= MaxPendingReplicateParents)
 				{
-					BV.PrintErr("Pending replication parent limit reached; dropping ", replicateData.NodePath);
+					BV.PrintErr(
+						"Pending replication parent limit reached; dropping ",
+						replicateData.NodePath
+					);
 					return;
 				}
 				value = [];
@@ -893,7 +1105,10 @@ public sealed partial class NetworkReplicateSync : Instance
 				BV.PrintErr("Pending replication limit reached for parent ", parentID);
 				return;
 			}
-			if (_useNetworkLog) { BV.Print($"[Net] [?] Pending {replicateData.NodePath}"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] [?] Pending {replicateData.NodePath}");
+			}
 			value.Add(replicateData);
 		}
 	}
@@ -901,7 +1116,8 @@ public sealed partial class NetworkReplicateSync : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvReplicateRemove(string nodePath)
 	{
-		if (NetService.IsServer) return;
+		if (NetService.IsServer)
+			return;
 		NetService.PropSync.DiscardPendingProps(nodePath);
 		NetService.TransformSync.DiscardPendingTransform(nodePath);
 		NetworkedObject? targetObj = NetService.Root.GetNetObjectFromID(nodePath);
@@ -915,12 +1131,18 @@ public sealed partial class NetworkReplicateSync : Instance
 		// If target still exists, remove
 		if (targetObj != null)
 		{
-			if (_useNetworkLog) { BV.Print($"[Net] [-] Remove {targetObj.NetworkPath}"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] [-] Remove {targetObj.NetworkPath}");
+			}
 			targetObj.ForceDelete();
 		}
 		else
 		{
-			if (_useNetworkLog) { BV.Print($"[Net] [-] [?] Net Obj doesn't exist {nodePath}"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] [-] [?] Net Obj doesn't exist {nodePath}");
+			}
 		}
 	}
 
@@ -931,7 +1153,10 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (_pendingReplicates.TryGetValue(netID, out List<NetReplicateData>? queued))
 		{
 			_pendingReplicates.Remove(netID);
-			if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] Resolve Pending {netID}"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] [{NetService.LocalPeerID}] Resolve Pending {netID}");
+			}
 			ApplyPendingReplicates(netObj, queued);
 		}
 	}

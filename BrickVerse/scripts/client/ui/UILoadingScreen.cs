@@ -2,25 +2,44 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public partial class UILoadingScreen : Control
 {
-	[Export] private Label _statusLabel = null!;
-	[Export] private ProgressBar _statusProgressbar = null!;
-	[Export] public Control? Loader { get; private set; }
-	[Export] private TextureRect _gameThumbnailRect = null!;
-	[Export] private TextureRect _gameIconRect = null!;
-	[Export] private Label _gameTitleLabel = null!;
-	[Export] private Label _gameCreatorLabel = null!;
-	[Export] private Control _gameDetailsContainer = null!;
-	[Export] private AnimationPlayer _animPlay = null!;
-	[Export] private AnimationPlayer _bgAnimPlay = null!;
+	[Export]
+	private Label _statusLabel = null!;
+
+	[Export]
+	private ProgressBar _statusProgressbar = null!;
+
+	[Export]
+	public Control? Loader { get; private set; }
+
+	[Export]
+	private TextureRect _gameThumbnailRect = null!;
+
+	[Export]
+	private TextureRect _gameIconRect = null!;
+
+	[Export]
+	private Label _gameTitleLabel = null!;
+
+	[Export]
+	private Label _gameCreatorLabel = null!;
+
+	[Export]
+	private Control _gameDetailsContainer = null!;
+
+	[Export]
+	private AnimationPlayer _animPlay = null!;
+
+	[Export]
+	private AnimationPlayer _bgAnimPlay = null!;
 
 	private BVImageAsset _gameThumbnailImage = null!;
 	private BVImageAsset _gameIconImage = null!;
@@ -170,7 +189,8 @@ public partial class UILoadingScreen : Control
 
 	private void OnGameThumbnailLoaded(Resource resource)
 	{
-		if (_bgAppeared) return;
+		if (_bgAppeared)
+			return;
 
 		_bgAppeared = true;
 		_gameThumbnailRect.Texture = (Texture2D)resource;
@@ -179,7 +199,8 @@ public partial class UILoadingScreen : Control
 
 	private void AppearInfo()
 	{
-		if (_iconAppeared) return;
+		if (_iconAppeared)
+			return;
 
 		_iconAppeared = true;
 		_gameDetailsContainer.Visible = true;

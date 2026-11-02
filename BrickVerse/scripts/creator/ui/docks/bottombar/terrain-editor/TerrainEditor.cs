@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
-using BrickVerse.Creator.UI.Popups;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -26,54 +26,126 @@ public partial class TerrainEditor : Control
 		Grow,
 		Erode,
 		Grass,
-		Water
+		Water,
 	}
 
 	private enum BrushShape
 	{
 		Sphere,
 		Block,
-		Cylinder
+		Cylinder,
 	}
 
-	[Export] private Button _addButton = null!;
-	[Export] private Button _removeButton = null!;
-	[Export] private Button _paintButton = null!;
-	[Export] private Button _smoothButton = null!;
-	[Export] private Button _flattenButton = null!;
-	[Export] private Button _growButton = null!;
-	[Export] private Button _erodeButton = null!;
-	[Export] private Button _importButton = null!;
-	[Export] private Button _generateButton = null!;
+	[Export]
+	private Button _addButton = null!;
 
-	[Export] private OptionButton _shapeOption = null!;
-	[Export] private OptionButton _materialOption = null!;
-	[Export] private HSlider _sizeSlider = null!;
-	[Export] private SpinBox _sizeSpinBox = null!;
-	[Export] private HSlider _strengthSlider = null!;
-	[Export] private SpinBox _strengthSpinBox = null!;
-	[Export] private HSlider _spacingSlider = null!;
-	[Export] private SpinBox _spacingSpinBox = null!;
-	[Export] private HSlider _intervalSlider = null!;
-	[Export] private SpinBox _intervalSpinBox = null!;
-	[Export] private HSlider _spacingFloorSlider = null!;
-	[Export] private SpinBox _spacingFloorSpinBox = null!;
-	[Export] private HSlider _snapOffsetSlider = null!;
-	[Export] private SpinBox _snapOffsetSpinBox = null!;
-	[Export] private CheckButton _enabledCheck = null!;
-	[Export] private CheckButton _surfaceSnapCheck = null!;
-	[Export] private CheckButton _continuousCheck = null!;
-	[Export] private Button _clearButton = null!;
-	[Export] private Label _statusLabel = null!;
-	[Export] private Button _waterButton = null!;
-	[Export] private TerrainWaterSettingsPanel _waterSettings = null!;
-	[Export] private Button _grassButton = null!;
-	[Export] private TerrainGrassSettingsPanel _grassSettings = null!;
-	[Export] private FileDialog _heightmapDialog = null!;
-	[Export] private TerrainGenerateDialog _generateDialog = null!;
-	[Export] private bool _enabledByDefault = true;
-	[Export(PropertyHint.Range, "0,2,1")] private int _defaultShapeId;
-	[Export(PropertyHint.Range, "0,255,1")] private int _defaultMaterialId = 1;
+	[Export]
+	private Button _removeButton = null!;
+
+	[Export]
+	private Button _paintButton = null!;
+
+	[Export]
+	private Button _smoothButton = null!;
+
+	[Export]
+	private Button _flattenButton = null!;
+
+	[Export]
+	private Button _growButton = null!;
+
+	[Export]
+	private Button _erodeButton = null!;
+
+	[Export]
+	private Button _importButton = null!;
+
+	[Export]
+	private Button _generateButton = null!;
+
+	[Export]
+	private OptionButton _shapeOption = null!;
+
+	[Export]
+	private OptionButton _materialOption = null!;
+
+	[Export]
+	private HSlider _sizeSlider = null!;
+
+	[Export]
+	private SpinBox _sizeSpinBox = null!;
+
+	[Export]
+	private HSlider _strengthSlider = null!;
+
+	[Export]
+	private SpinBox _strengthSpinBox = null!;
+
+	[Export]
+	private HSlider _spacingSlider = null!;
+
+	[Export]
+	private SpinBox _spacingSpinBox = null!;
+
+	[Export]
+	private HSlider _intervalSlider = null!;
+
+	[Export]
+	private SpinBox _intervalSpinBox = null!;
+
+	[Export]
+	private HSlider _spacingFloorSlider = null!;
+
+	[Export]
+	private SpinBox _spacingFloorSpinBox = null!;
+
+	[Export]
+	private HSlider _snapOffsetSlider = null!;
+
+	[Export]
+	private SpinBox _snapOffsetSpinBox = null!;
+
+	[Export]
+	private CheckButton _enabledCheck = null!;
+
+	[Export]
+	private CheckButton _surfaceSnapCheck = null!;
+
+	[Export]
+	private CheckButton _continuousCheck = null!;
+
+	[Export]
+	private Button _clearButton = null!;
+
+	[Export]
+	private Label _statusLabel = null!;
+
+	[Export]
+	private Button _waterButton = null!;
+
+	[Export]
+	private TerrainWaterSettingsPanel _waterSettings = null!;
+
+	[Export]
+	private Button _grassButton = null!;
+
+	[Export]
+	private TerrainGrassSettingsPanel _grassSettings = null!;
+
+	[Export]
+	private FileDialog _heightmapDialog = null!;
+
+	[Export]
+	private TerrainGenerateDialog _generateDialog = null!;
+
+	[Export]
+	private bool _enabledByDefault = true;
+
+	[Export(PropertyHint.Range, "0,2,1")]
+	private int _defaultShapeId;
+
+	[Export(PropertyHint.Range, "0,255,1")]
+	private int _defaultMaterialId = 1;
 
 	private readonly Dictionary<Button, TerrainTool> _toolButtons = [];
 
@@ -101,11 +173,10 @@ public partial class TerrainEditor : Control
 	private float BrushSpacingFloor => (float)_spacingFloorSpinBox.Value;
 	private float BrushSnapOffset => (float)_snapOffsetSpinBox.Value;
 	private int MaterialIndex =>
-		_materialOption.Selected >= 0
-			? _materialOption.GetItemId(_materialOption.Selected)
-			: 0;
+		_materialOption.Selected >= 0 ? _materialOption.GetItemId(_materialOption.Selected) : 0;
 	private Terrain? CurrentTerrain => CreatorService.CurrentGame?.Terrain;
-	private bool IsWaterMaterial => CurrentTerrain?.GetMaterial(MaterialIndex)?.Kind == TerrainMaterialKind.Water;
+	private bool IsWaterMaterial =>
+		CurrentTerrain?.GetMaterial(MaterialIndex)?.Kind == TerrainMaterialKind.Water;
 	private bool IsWaterBrush => IsWaterMaterial && _tool is TerrainTool.Add or TerrainTool.Remove;
 
 	public override void _Ready()
@@ -129,7 +200,11 @@ public partial class TerrainEditor : Control
 		_waterSettings.Visible = false;
 		_waterSettings.ResolveWater = GetWaterLayer;
 		_waterSettings.SetStatus = message => UpdateStatus(message);
-		_waterSettings.EditModeChanged = () => { RebuildPreviewMesh(); UpdateStatus(); };
+		_waterSettings.EditModeChanged = () =>
+		{
+			RebuildPreviewMesh();
+			UpdateStatus();
+		};
 		_waterSettings.RefreshFromLayer();
 		_grassSettings.ResolveGrass = GetGrassLayer;
 		_grassSettings.RefreshFromLayer();
@@ -172,9 +247,12 @@ public partial class TerrainEditor : Control
 
 	private TerrainWater? GetWaterLayer(bool create)
 	{
-		Terrain? terrain = CurrentTerrain; if (terrain == null) return null;
+		Terrain? terrain = CurrentTerrain;
+		if (terrain == null)
+			return null;
 		TerrainWater? water = terrain.GetChildrenOfClass<TerrainWater>().FirstOrDefault();
-		if (water == null && create) water = terrain.New<TerrainWater>(terrain);
+		if (water == null && create)
+			water = terrain.New<TerrainWater>(terrain);
 		return water;
 	}
 
@@ -196,21 +274,26 @@ public partial class TerrainEditor : Control
 
 	private void OnBetaFeatureChanged(string flag, bool enabled)
 	{
-		if (flag == CreatorBetaFeatures.SkinnedGrass) SetGrassBetaEnabled(enabled);
+		if (flag == CreatorBetaFeatures.SkinnedGrass)
+			SetGrassBetaEnabled(enabled);
 	}
 
 	private void SetGrassBetaEnabled(bool enabled)
 	{
-		if (!enabled && _tool == TerrainTool.Grass) SelectTool(TerrainTool.Add);
+		if (!enabled && _tool == TerrainTool.Grass)
+			SelectTool(TerrainTool.Add);
 		_grassButton.Visible = enabled;
 		_grassSettings.Visible = enabled && _tool == TerrainTool.Grass;
 	}
 
 	private TerrainGrass? GetGrassLayer(bool create)
 	{
-		Terrain? terrain = CurrentTerrain; if (terrain == null) return null;
+		Terrain? terrain = CurrentTerrain;
+		if (terrain == null)
+			return null;
 		TerrainGrass? grass = terrain.GetChildrenOfClass<TerrainGrass>().FirstOrDefault();
-		if (grass == null && create) grass = terrain.New<TerrainGrass>(terrain);
+		if (grass == null && create)
+			grass = terrain.New<TerrainGrass>(terrain);
 		return grass;
 	}
 
@@ -247,8 +330,10 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		if (inputEvent is InputEventMouseButton mouseButton &&
-			mouseButton.ButtonIndex == MouseButton.Left)
+		if (
+			inputEvent is InputEventMouseButton mouseButton
+			&& mouseButton.ButtonIndex == MouseButton.Left
+		)
 		{
 			if (mouseButton.Pressed)
 			{
@@ -278,10 +363,22 @@ public partial class TerrainEditor : Control
 			button.SetPressedNoSignal(mappedTool == tool);
 		}
 
-		bool materialEnabled = tool is TerrainTool.Add or TerrainTool.Remove or TerrainTool.Paint or TerrainTool.Flatten;
+		bool materialEnabled =
+			tool
+			is TerrainTool.Add
+				or TerrainTool.Remove
+				or TerrainTool.Paint
+				or TerrainTool.Flatten;
 		_materialOption.Disabled = !materialEnabled;
 
-		bool strengthEnabled = tool is TerrainTool.Paint or TerrainTool.Smooth or TerrainTool.Flatten or TerrainTool.Grow or TerrainTool.Erode or TerrainTool.Grass;
+		bool strengthEnabled =
+			tool
+			is TerrainTool.Paint
+				or TerrainTool.Smooth
+				or TerrainTool.Flatten
+				or TerrainTool.Grow
+				or TerrainTool.Erode
+				or TerrainTool.Grass;
 		_strengthSlider.Editable = strengthEnabled;
 		_strengthSpinBox.Editable = strengthEnabled;
 		_shapeOption.Disabled = false;
@@ -289,7 +386,8 @@ public partial class TerrainEditor : Control
 		UpdatePreviewColor();
 		_grassSettings.Visible = tool == TerrainTool.Grass;
 		_waterSettings.Visible = false;
-		if (tool == TerrainTool.Grass) _grassSettings.RefreshFromLayer();
+		if (tool == TerrainTool.Grass)
+			_grassSettings.RefreshFromLayer();
 		RebuildPreviewMesh();
 		UpdateStatus();
 	}
@@ -312,7 +410,7 @@ public partial class TerrainEditor : Control
 		{
 			1 => BrushShape.Block,
 			2 => BrushShape.Cylinder,
-			_ => BrushShape.Sphere
+			_ => BrushShape.Sphere,
 		};
 
 		RebuildPreviewMesh();
@@ -345,15 +443,19 @@ public partial class TerrainEditor : Control
 		if (IsWaterMaterial)
 		{
 			TerrainWater? water = GetWaterLayer(false);
-			if (water == null) UpdateStatus("No water layer exists.");
-			else { water.ClearVoxelWater(); UpdateStatus("Terrain water cleared."); }
+			if (water == null)
+				UpdateStatus("No water layer exists.");
+			else
+			{
+				water.ClearVoxelWater();
+				UpdateStatus("Terrain water cleared.");
+			}
 			return;
 		}
 		terrain.Clear();
 
 		Camera3D? camera =
-			CreatorService.CurrentGame?.Environment?.CurrentGDCamera ??
-			GetViewport().GetCamera3D();
+			CreatorService.CurrentGame?.Environment?.CurrentGDCamera ?? GetViewport().GetCamera3D();
 
 		if (camera != null)
 		{
@@ -363,10 +465,7 @@ public partial class TerrainEditor : Control
 		UpdateStatus("Terrain cleared.");
 	}
 
-	private static void BindRangeControls(
-		Slider slider,
-		SpinBox spinBox,
-		Action<double> changed)
+	private static void BindRangeControls(Slider slider, SpinBox spinBox, Action<double> changed)
 	{
 		bool syncing = false;
 
@@ -412,7 +511,8 @@ public partial class TerrainEditor : Control
 		}
 
 		_drawing = true;
-		if (IsWaterBrush) GetWaterLayer(true)?.BeginVoxelEdit();
+		if (IsWaterBrush)
+			GetWaterLayer(true)?.BeginVoxelEdit();
 		_hasLastAppliedPosition = false;
 		_lastApplyAtMs = 0.0;
 		_savedAutoSerialise = terrain.AutoSerialise;
@@ -428,7 +528,8 @@ public partial class TerrainEditor : Control
 
 		_drawing = false;
 		_hasLastAppliedPosition = false;
-		if (IsWaterBrush) GetWaterLayer(false)?.EndVoxelEdit();
+		if (IsWaterBrush)
+			GetWaterLayer(false)?.EndVoxelEdit();
 
 		Terrain? terrain = CurrentTerrain;
 
@@ -448,19 +549,22 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		float minimumDistance = Math.Max(BrushSpacingFloor, BrushSize * Math.Max(BrushSpacing, 0.2f));
+		float minimumDistance = Math.Max(
+			BrushSpacingFloor,
+			BrushSize * Math.Max(BrushSpacing, 0.2f)
+		);
 		double nowMs = Time.GetTicksMsec();
 
-		if (!force &&
-			_lastApplyAtMs > 0.0 &&
-			nowMs - _lastApplyAtMs < BrushIntervalMs)
+		if (!force && _lastApplyAtMs > 0.0 && nowMs - _lastApplyAtMs < BrushIntervalMs)
 		{
 			return;
 		}
 
-		if (!force &&
-			_hasLastAppliedPosition &&
-			_lastAppliedPosition.DistanceTo(_brushPosition) < minimumDistance)
+		if (
+			!force
+			&& _hasLastAppliedPosition
+			&& _lastAppliedPosition.DistanceTo(_brushPosition) < minimumDistance
+		)
 		{
 			return;
 		}
@@ -468,9 +572,7 @@ public partial class TerrainEditor : Control
 		float halfSize = BrushSize * 0.5f;
 		Vector3 padding = Vector3.One * (halfSize + 2.0f);
 
-		if (!terrain.IsAreaEditable(
-			_brushPosition - padding,
-			_brushPosition + padding))
+		if (!terrain.IsAreaEditable(_brushPosition - padding, _brushPosition + padding))
 		{
 			UpdateStatus("Loading terrain around the brush…");
 			return;
@@ -501,13 +603,17 @@ public partial class TerrainEditor : Control
 		switch (_tool)
 		{
 			case TerrainTool.Add:
-				if (IsWaterMaterial) ApplyWater(position, size, radius, true);
-				else ApplyAdd(terrain, position, size, radius, material);
+				if (IsWaterMaterial)
+					ApplyWater(position, size, radius, true);
+				else
+					ApplyAdd(terrain, position, size, radius, material);
 				break;
 
 			case TerrainTool.Remove:
-				if (IsWaterMaterial) ApplyWater(position, size, radius, false);
-				else ApplyRemove(terrain, position, size, radius);
+				if (IsWaterMaterial)
+					ApplyWater(position, size, radius, false);
+				else
+					ApplyRemove(terrain, position, size, radius);
 				break;
 
 			case TerrainTool.Paint:
@@ -518,7 +624,8 @@ public partial class TerrainEditor : Control
 				terrain.SmoothBall(
 					position,
 					radius,
-					Math.Max(1, Mathf.RoundToInt(BrushStrength * 6.0f)));
+					Math.Max(1, Mathf.RoundToInt(BrushStrength * 6.0f))
+				);
 				break;
 
 			case TerrainTool.Flatten:
@@ -540,27 +647,56 @@ public partial class TerrainEditor : Control
 					grass = terrain.New<TerrainGrass>(terrain);
 					CreatorService.CurrentGame?.CreatorContext.Selections.SelectOnly(grass);
 				}
-				if (Input.IsKeyPressed(Key.Shift)) grass.Erase(position, radius);
-				else grass.Paint(position, _brushNormal, radius, BrushStrength);
+				if (Input.IsKeyPressed(Key.Shift))
+					grass.Erase(position, radius);
+				else
+					grass.Paint(position, _brushNormal, radius, BrushStrength);
 				break;
 
 			case TerrainTool.Water:
 				TerrainWater? water = GetWaterLayer(true);
-				if (water == null) break;
+				if (water == null)
+					break;
 				switch (_waterSettings.EditMode)
 				{
 					case TerrainWaterSettingsPanel.WaterEditMode.AddWater:
-						if (_shape == BrushShape.Block) water.FillWaterBlock(position, Vector3.One * size); else if (_shape == BrushShape.Cylinder) water.FillWaterCylinder(position, size, radius); else water.FillWaterBall(position, radius);
-						UpdateStatus($"Painted voxel water · {water.GetWaterCellCount():N0} cells."); break;
+						if (_shape == BrushShape.Block)
+							water.FillWaterBlock(position, Vector3.One * size);
+						else if (_shape == BrushShape.Cylinder)
+							water.FillWaterCylinder(position, size, radius);
+						else
+							water.FillWaterBall(position, radius);
+						UpdateStatus(
+							$"Painted voxel water · {water.GetWaterCellCount():N0} cells."
+						);
+						break;
 					case TerrainWaterSettingsPanel.WaterEditMode.DrainWater:
-						if (_shape == BrushShape.Block) water.DrainWaterBlock(position, Vector3.One * size); else if (_shape == BrushShape.Cylinder) water.DrainWaterCylinder(position, size, radius); else water.DrainWaterBall(position, radius);
-						UpdateStatus($"Drained voxel water · {water.GetWaterCellCount():N0} cells remain."); break;
+						if (_shape == BrushShape.Block)
+							water.DrainWaterBlock(position, Vector3.One * size);
+						else if (_shape == BrushShape.Cylinder)
+							water.DrainWaterCylinder(position, size, radius);
+						else
+							water.DrainWaterBall(position, radius);
+						UpdateStatus(
+							$"Drained voxel water · {water.GetWaterCellCount():N0} cells remain."
+						);
+						break;
 					case TerrainWaterSettingsPanel.WaterEditMode.SetOceanLevel:
-						water.OceanEnabled = true; water.WaterLevel = position.Y; UpdateStatus($"Ocean level set to {position.Y:0.##}."); break;
+						water.OceanEnabled = true;
+						water.WaterLevel = position.Y;
+						UpdateStatus($"Ocean level set to {position.Y:0.##}.");
+						break;
 					case TerrainWaterSettingsPanel.WaterEditMode.AddDryVolume:
-						water.AddExclusionBox(position, Vector3.One * Mathf.Max(size, 4), .25f); UpdateStatus($"Added dry volume #{water.GetExclusionCount()}."); break;
+						water.AddExclusionBox(position, Vector3.One * Mathf.Max(size, 4), .25f);
+						UpdateStatus($"Added dry volume #{water.GetExclusionCount()}.");
+						break;
 					case TerrainWaterSettingsPanel.WaterEditMode.RemoveDryVolume:
-						UpdateStatus(water.RemoveExclusionAt(position) ? "Dry volume removed." : "No dry volume found here."); break;
+						UpdateStatus(
+							water.RemoveExclusionAt(position)
+								? "Dry volume removed."
+								: "No dry volume found here."
+						);
+						break;
 				}
 				break;
 		}
@@ -569,21 +705,28 @@ public partial class TerrainEditor : Control
 	private void ApplyWater(Vector3 position, float size, float radius, bool add)
 	{
 		TerrainWater? water = GetWaterLayer(true);
-		if (water == null) return;
+		if (water == null)
+			return;
 		if (_shape == BrushShape.Block)
 		{
-			if (add) water.FillWaterBlock(position, Vector3.One * size);
-			else water.DrainWaterBlock(position, Vector3.One * size);
+			if (add)
+				water.FillWaterBlock(position, Vector3.One * size);
+			else
+				water.DrainWaterBlock(position, Vector3.One * size);
 		}
 		else if (_shape == BrushShape.Cylinder)
 		{
-			if (add) water.FillWaterCylinder(position, size, radius);
-			else water.DrainWaterCylinder(position, size, radius);
+			if (add)
+				water.FillWaterCylinder(position, size, radius);
+			else
+				water.DrainWaterCylinder(position, size, radius);
 		}
 		else
 		{
-			if (add) water.FillWaterBall(position, radius);
-			else water.DrainWaterBall(position, radius);
+			if (add)
+				water.FillWaterBall(position, radius);
+			else
+				water.DrainWaterBall(position, radius);
 		}
 		UpdateStatus(add ? "Water added." : "Water removed.");
 	}
@@ -593,21 +736,25 @@ public partial class TerrainEditor : Control
 		Vector3 position,
 		float size,
 		float radius,
-		int material)
+		int material
+	)
 	{
 		float strength = Mathf.Clamp(BrushStrength, 0.05f, 1.0f);
 		float verticalRange = Math.Max(2.0f, size * strength);
-		Vector3 footprint = _shape == BrushShape.Block
-			? new Vector3(size, verticalRange, size)
-			: new Vector3(radius * 1.7f, verticalRange, radius * 1.7f);
+		Vector3 footprint =
+			_shape == BrushShape.Block
+				? new Vector3(size, verticalRange, size)
+				: new Vector3(radius * 1.7f, verticalRange, radius * 1.7f);
 
 		terrain.FillBlock(
 			new Vector3(position.X, position.Y - verticalRange * 0.5f, position.Z),
 			footprint,
-			material);
+			material
+		);
 		terrain.DigBlock(
 			new Vector3(position.X, position.Y + verticalRange * 0.5f, position.Z),
-			footprint);
+			footprint
+		);
 	}
 
 	private void OpenHeightmapDialog()
@@ -637,20 +784,23 @@ public partial class TerrainEditor : Control
 			byte[] bytes = System.IO.File.ReadAllBytes(path);
 			int side = Mathf.RoundToInt(Mathf.Sqrt(bytes.Length / 2.0f));
 			if (side * side * 2 != bytes.Length)
-				throw new InvalidDataException("RAW heightmaps must be square, unsigned 16-bit little-endian data.");
+				throw new InvalidDataException(
+					"RAW heightmaps must be square, unsigned 16-bit little-endian data."
+				);
 			image = Image.CreateEmpty(side, side, false, Image.Format.Rf);
 			for (int y = 0; y < side; y++)
-				for (int x = 0; x < side; x++)
-				{
-					int offset = (y * side + x) * 2;
-					ushort value = (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
-					image.SetPixel(x, y, new Color(value / 65535.0f, 0, 0));
-				}
+			for (int x = 0; x < side; x++)
+			{
+				int offset = (y * side + x) * 2;
+				ushort value = (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+				image.SetPixel(x, y, new Color(value / 65535.0f, 0, 0));
+			}
 		}
 		else
 		{
 			image = Image.LoadFromFile(path);
-			if (image.IsEmpty()) throw new InvalidDataException("The selected image could not be decoded.");
+			if (image.IsEmpty())
+				throw new InvalidDataException("The selected image could not be decoded.");
 		}
 
 		int largestSide = Math.Max(image.GetWidth(), image.GetHeight());
@@ -660,7 +810,8 @@ public partial class TerrainEditor : Control
 			image.Resize(
 				Math.Max(2, Mathf.RoundToInt(image.GetWidth() * scale)),
 				Math.Max(2, Mathf.RoundToInt(image.GetHeight() * scale)),
-				Image.Interpolation.Lanczos);
+				Image.Interpolation.Lanczos
+			);
 		}
 		BuildTerrainFromHeightSamples(
 			image.GetWidth(),
@@ -673,8 +824,11 @@ public partial class TerrainEditor : Control
 			2.0f,
 			128.0f,
 			MaterialIndex,
-			replaceExisting: true);
-		UpdateStatus($"Imported {Path.GetFileName(path)} ({image.GetWidth()}×{image.GetHeight()}).");
+			replaceExisting: true
+		);
+		UpdateStatus(
+			$"Imported {Path.GetFileName(path)} ({image.GetWidth()}×{image.GetHeight()})."
+		);
 	}
 
 	private void OpenGenerateDialog()
@@ -688,7 +842,8 @@ public partial class TerrainEditor : Control
 		float maximumHeight,
 		float featureSize,
 		int seed,
-		bool replaceExisting)
+		bool replaceExisting
+	)
 	{
 		FastNoiseLite primary = new()
 		{
@@ -716,15 +871,24 @@ public partial class TerrainEditor : Control
 				return preset switch
 				{
 					1 => Mathf.Pow(Mathf.Clamp(noise + fine, 0, 1), 1.8f),
-					2 => Mathf.Clamp((noise + fine) * 1.35f - Mathf.Sqrt(nx * nx + ny * ny) * 0.7f, 0, 1),
-					3 => Mathf.Clamp(0.72f - Mathf.Abs(primary.GetNoise2D(x, y)) * 0.85f + fine, 0.05f, 1),
+					2 => Mathf.Clamp(
+						(noise + fine) * 1.35f - Mathf.Sqrt(nx * nx + ny * ny) * 0.7f,
+						0,
+						1
+					),
+					3 => Mathf.Clamp(
+						0.72f - Mathf.Abs(primary.GetNoise2D(x, y)) * 0.85f + fine,
+						0.05f,
+						1
+					),
 					_ => Mathf.Clamp(noise * 0.7f + fine + 0.12f, 0, 1),
 				};
 			},
 			worldSize / (float)samples,
 			maximumHeight,
 			MaterialIndex,
-			replaceExisting);
+			replaceExisting
+		);
 		UpdateStatus($"Generated {worldSize}×{worldSize} terrain with seed {seed}.");
 	}
 
@@ -735,31 +899,39 @@ public partial class TerrainEditor : Control
 		float cellSize,
 		float maximumHeight,
 		int material,
-		bool replaceExisting)
+		bool replaceExisting
+	)
 	{
 		Terrain? terrain = CurrentTerrain;
-		if (terrain == null) throw new InvalidOperationException("No terrain is loaded.");
+		if (terrain == null)
+			throw new InvalidOperationException("No terrain is loaded.");
 		FinishStroke();
 		bool oldAutoSerialise = terrain.AutoSerialise;
 		terrain.AutoSerialise = false;
 		try
 		{
-			if (replaceExisting) terrain.Clear();
+			if (replaceExisting)
+				terrain.Clear();
 			float originX = -width * cellSize * 0.5f;
 			float originZ = -height * cellSize * 0.5f;
 			const float baseDepth = 16.0f;
 			for (int y = 0; y < height; y++)
-				for (int x = 0; x < width; x++)
-				{
-					float columnHeight = Math.Max(1.0f, Mathf.Clamp(sample(x, y), 0, 1) * maximumHeight);
-					terrain.FillBlock(
-						new Vector3(
-							originX + (x + 0.5f) * cellSize,
-							(columnHeight - baseDepth) * 0.5f,
-							originZ + (y + 0.5f) * cellSize),
-						new Vector3(cellSize + 0.1f, columnHeight + baseDepth, cellSize + 0.1f),
-						material);
-				}
+			for (int x = 0; x < width; x++)
+			{
+				float columnHeight = Math.Max(
+					1.0f,
+					Mathf.Clamp(sample(x, y), 0, 1) * maximumHeight
+				);
+				terrain.FillBlock(
+					new Vector3(
+						originX + (x + 0.5f) * cellSize,
+						(columnHeight - baseDepth) * 0.5f,
+						originZ + (y + 0.5f) * cellSize
+					),
+					new Vector3(cellSize + 0.1f, columnHeight + baseDepth, cellSize + 0.1f),
+					material
+				);
+			}
 			terrain.SaveTerrain();
 		}
 		finally
@@ -768,12 +940,7 @@ public partial class TerrainEditor : Control
 		}
 	}
 
-	private void ApplyAdd(
-		Terrain terrain,
-		Vector3 position,
-		float size,
-		float radius,
-		int material)
+	private void ApplyAdd(Terrain terrain, Vector3 position, float size, float radius, int material)
 	{
 		switch (_shape)
 		{
@@ -791,11 +958,7 @@ public partial class TerrainEditor : Control
 		}
 	}
 
-	private void ApplyRemove(
-		Terrain terrain,
-		Vector3 position,
-		float size,
-		float radius)
+	private void ApplyRemove(Terrain terrain, Vector3 position, float size, float radius)
 	{
 		switch (_shape)
 		{
@@ -816,8 +979,7 @@ public partial class TerrainEditor : Control
 	private void UpdateBrushHit()
 	{
 		Camera3D? camera =
-			CreatorService.CurrentGame?.Environment?.CurrentGDCamera ??
-			GetViewport().GetCamera3D();
+			CreatorService.CurrentGame?.Environment?.CurrentGDCamera ?? GetViewport().GetCamera3D();
 
 		Terrain? terrain = CurrentTerrain;
 
@@ -838,18 +1000,34 @@ public partial class TerrainEditor : Control
 		Vector3 rayEnd = rayOrigin + rayDirection * 10000.0f;
 		TerrainWater? editableWater = IsWaterBrush ? GetWaterLayer(false) : null;
 		bool pickExistingWater = IsWaterMaterial && _tool == TerrainTool.Remove;
-		if (pickExistingWater && editableWater != null && editableWater.TryRaycast(rayOrigin, rayDirection, 10000, out Vector3 waterHit, out Vector3 waterNormal))
+		if (
+			pickExistingWater
+			&& editableWater != null
+			&& editableWater.TryRaycast(
+				rayOrigin,
+				rayDirection,
+				10000,
+				out Vector3 waterHit,
+				out Vector3 waterNormal
+			)
+		)
 		{
-			_brushPosition = waterHit; _brushNormal = waterNormal; _hasBrushHit = true; return;
+			_brushPosition = waterHit;
+			_brushNormal = waterNormal;
+			_hasBrushHit = true;
+			return;
 		}
 
-		if (terrain != null &&
-			terrain.TryRaycast(
+		if (
+			terrain != null
+			&& terrain.TryRaycast(
 				rayOrigin,
 				rayDirection,
 				10000.0f,
 				out Vector3 terrainHitPosition,
-				out Vector3 terrainHitNormal))
+				out Vector3 terrainHitNormal
+			)
+		)
 		{
 			_brushNormal = terrainHitNormal.IsZeroApprox()
 				? Vector3.Up
@@ -863,14 +1041,13 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		PhysicsRayQueryParameters3D query = PhysicsRayQueryParameters3D.Create(
-			rayOrigin,
-			rayEnd);
+		PhysicsRayQueryParameters3D query = PhysicsRayQueryParameters3D.Create(rayOrigin, rayEnd);
 		query.CollideWithAreas = true;
 		query.CollideWithBodies = true;
 
-		Godot.Collections.Dictionary result =
-			camera.GetWorld3D().DirectSpaceState.IntersectRay(query);
+		Godot.Collections.Dictionary result = camera
+			.GetWorld3D()
+			.DirectSpaceState.IntersectRay(query);
 
 		if (result.Count > 0)
 		{
@@ -886,8 +1063,7 @@ public partial class TerrainEditor : Control
 		}
 
 		// Empty worlds need a stable plane for the first additive stroke.
-		if (_tool == TerrainTool.Add &&
-			Mathf.Abs(rayDirection.Y) > 0.0001f)
+		if (_tool == TerrainTool.Add && Mathf.Abs(rayDirection.Y) > 0.0001f)
 		{
 			float planeHeight = IsWaterMaterial ? GetWaterLayer(false)?.WaterLevel ?? 0 : 0;
 			float distance = (planeHeight - rayOrigin.Y) / rayDirection.Y;
@@ -942,7 +1118,9 @@ public partial class TerrainEditor : Control
 			int slot = _materialOption.GetItemId(index);
 			if (CurrentTerrain?.GetMaterial(slot)?.Kind == TerrainMaterialKind.Water)
 			{
-				Texture2D waterIcon = GD.Load<Texture2D>("res://assets/textures/datamodel/TerrainWater.svg");
+				Texture2D waterIcon = GD.Load<Texture2D>(
+					"res://assets/textures/datamodel/TerrainWater.svg"
+				);
 				_materialOption.SetItemIcon(index, waterIcon);
 				popup.SetItemIcon(index, waterIcon);
 				popup.SetItemIconMaxWidth(index, 12);
@@ -960,9 +1138,12 @@ public partial class TerrainEditor : Control
 	{
 		string signature = string.Join(
 			"|",
-			CurrentTerrain?.GetMaterials().Select(
-				material => $"{material.ObjectID}:{material.Slot}:{material.Name}:{material.Kind}:{material.Surface}:{material.Color}"
-			) ?? []
+			CurrentTerrain
+				?.GetMaterials()
+				.Select(material =>
+					$"{material.ObjectID}:{material.Slot}:{material.Name}:{material.Kind}:{material.Surface}:{material.Color}"
+				)
+				?? []
 		);
 		if (_materialSignature == signature)
 			return;
@@ -976,9 +1157,11 @@ public partial class TerrainEditor : Control
 	{
 		if (terrainMaterial != null)
 		{
-			if (terrainMaterial.SurfaceType == TerrainSurfaceType.Custom &&
-				terrainMaterial.GetTexture(terrainMaterial.AlbedoTexture)
-					is Texture2D customAlbedo)
+			if (
+				terrainMaterial.SurfaceType == TerrainSurfaceType.Custom
+				&& terrainMaterial.GetTexture(terrainMaterial.AlbedoTexture)
+					is Texture2D customAlbedo
+			)
 			{
 				return FitIconTexture(customAlbedo, 12);
 			}
@@ -989,8 +1172,10 @@ public partial class TerrainEditor : Control
 			{
 				Variant albedoVariant = shaderMaterial.GetShaderParameter("albedo");
 
-				if (albedoVariant.VariantType == Variant.Type.Object &&
-					albedoVariant.AsGodotObject() is Texture2D albedoTexture)
+				if (
+					albedoVariant.VariantType == Variant.Type.Object
+					&& albedoVariant.AsGodotObject() is Texture2D albedoTexture
+				)
 				{
 					return FitIconTexture(albedoTexture, 12);
 				}
@@ -1042,14 +1227,14 @@ public partial class TerrainEditor : Control
 		_brushPreview = new MeshInstance3D
 		{
 			Name = "TerrainBrushPreview",
-			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 		};
 
 		_brushPreviewOutline = new MeshInstance3D
 		{
 			Name = "TerrainBrushPreviewOutline",
 			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-			TopLevel = false
+			TopLevel = false,
 		};
 		_brushPreview.AddChild(_brushPreviewOutline);
 
@@ -1059,7 +1244,7 @@ public partial class TerrainEditor : Control
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			NoDepthTest = false,
 			CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-			AlbedoColor = new Color(0.25f, 0.7f, 1.0f, 0.32f)
+			AlbedoColor = new Color(0.25f, 0.7f, 1.0f, 0.32f),
 		};
 
 		_previewOutlineMaterial = new StandardMaterial3D
@@ -1068,7 +1253,7 @@ public partial class TerrainEditor : Control
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			NoDepthTest = true,
 			CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-			AlbedoColor = new Color(0.95f, 0.98f, 1.0f, 0.9f)
+			AlbedoColor = new Color(0.95f, 0.98f, 1.0f, 0.9f),
 		};
 		_previewOutlineMaterial.Set("emission_enabled", true);
 		_previewOutlineMaterial.Set("emission", new Color(0.95f, 0.98f, 1.0f, 1.0f));
@@ -1120,15 +1305,15 @@ public partial class TerrainEditor : Control
 				TopRadius = 0.5f,
 				BottomRadius = 0.5f,
 				Height = 1.0f,
-				RadialSegments = 32
+				RadialSegments = 32,
 			},
 			_ => new SphereMesh
 			{
 				Radius = 0.5f,
 				Height = 1.0f,
 				RadialSegments = 32,
-				Rings = 16
-			}
+				Rings = 16,
+			},
 		};
 
 		mesh.Material = _previewMaterial;
@@ -1144,15 +1329,15 @@ public partial class TerrainEditor : Control
 					TopRadius = 0.5f,
 					BottomRadius = 0.5f,
 					Height = 1.0f,
-					RadialSegments = 32
+					RadialSegments = 32,
 				},
 				_ => new SphereMesh
 				{
 					Radius = 0.5f,
 					Height = 1.0f,
 					RadialSegments = 32,
-					Rings = 16
-				}
+					Rings = 16,
+				},
 			};
 
 			outlineMesh.Material = _previewOutlineMaterial;
@@ -1170,10 +1355,7 @@ public partial class TerrainEditor : Control
 		}
 
 		_brushPreview.Visible =
-			IsVisibleInTree() &&
-			IsEditingEnabled() &&
-			_hasBrushHit &&
-			!IsMouseBlockedByUi();
+			IsVisibleInTree() && IsEditingEnabled() && _hasBrushHit && !IsMouseBlockedByUi();
 
 		if (!_brushPreview.Visible)
 		{
@@ -1217,7 +1399,7 @@ public partial class TerrainEditor : Control
 				TerrainTool.Grow => new Color(0.3f, 0.9f, 0.5f, 0.32f),
 				TerrainTool.Erode => new Color(1.0f, 0.45f, 0.35f, 0.32f),
 				TerrainTool.Water => new Color(0.1f, 0.72f, 0.95f, 0.28f),
-				_ => new Color(0.25f, 0.7f, 1.0f, 0.32f)
+				_ => new Color(0.25f, 0.7f, 1.0f, 0.32f),
 			};
 	}
 
@@ -1230,8 +1412,13 @@ public partial class TerrainEditor : Control
 			return false;
 		}
 
-		if (_viewportClickRegion != null &&
-			(hoveredControl == _viewportClickRegion || _viewportClickRegion.IsAncestorOf(hoveredControl)))
+		if (
+			_viewportClickRegion != null
+			&& (
+				hoveredControl == _viewportClickRegion
+				|| _viewportClickRegion.IsAncestorOf(hoveredControl)
+			)
+		)
 		{
 			return false;
 		}
@@ -1258,10 +1445,12 @@ public partial class TerrainEditor : Control
 			return;
 		}
 
-		string materialText = _materialOption.Disabled || _materialOption.Selected < 0
-			? string.Empty
-			: $" · Material {_materialOption.GetItemText(_materialOption.Selected)}";
+		string materialText =
+			_materialOption.Disabled || _materialOption.Selected < 0
+				? string.Empty
+				: $" · Material {_materialOption.GetItemText(_materialOption.Selected)}";
 
-		_statusLabel.Text = $"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · Interval {BrushIntervalMs:0}ms";
+		_statusLabel.Text =
+			$"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · Interval {BrushIntervalMs:0}ms";
 	}
 }

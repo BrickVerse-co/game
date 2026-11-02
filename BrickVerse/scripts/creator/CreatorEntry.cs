@@ -162,9 +162,12 @@ public partial class CreatorEntry : Node
 				{
 					await AddonsManager.InstallAddonFile(filePath);
 					CreatorService.Interface.PopupAlert(
-						$"Installed {Path.GetFileName(filePath)}.", "Addon Installed");
+						$"Installed {Path.GetFileName(filePath)}.",
+						"Addon Installed"
+					);
 				}
-				else await CreatorService.Singleton.CreateNewSession(filePath);
+				else
+					await CreatorService.Singleton.CreateNewSession(filePath);
 			}
 		}
 		catch (Exception error)

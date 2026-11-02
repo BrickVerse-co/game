@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.Settings.Appliers;
 
@@ -52,11 +52,13 @@ public sealed partial class GraphicsSettingsApplier : Node
 			if (!_postProcessingDirty)
 			{
 				_postProcessingDirty = true;
-				Callable.From(() =>
-				{
-					_postProcessingDirty = false;
-					ApplyPostProcessing();
-				}).CallDeferred();
+				Callable
+					.From(() =>
+					{
+						_postProcessingDirty = false;
+						ApplyPostProcessing();
+					})
+					.CallDeferred();
 			}
 		}
 		else
@@ -118,13 +120,15 @@ public sealed partial class GraphicsSettingsApplier : Node
 			MsaaOption.X2 => Viewport.Msaa.Msaa2X,
 			MsaaOption.X4 => Viewport.Msaa.Msaa4X,
 			MsaaOption.X8 => Viewport.Msaa.Msaa8X,
-			_ => viewport.Msaa3D
+			_ => viewport.Msaa3D,
 		};
 	}
 
 	private void ApplyShadowQuality()
 	{
-		ShadowQuality quality = Settings!.Get<ShadowQuality>(SharedSettingKeys.Graphics.ShadowQuality);
+		ShadowQuality quality = Settings!.Get<ShadowQuality>(
+			SharedSettingKeys.Graphics.ShadowQuality
+		);
 
 		RenderingServer.ShadowQuality gdQuality = quality switch
 		{
@@ -133,7 +137,7 @@ public sealed partial class GraphicsSettingsApplier : Node
 			ShadowQuality.Medium => RenderingServer.ShadowQuality.SoftLow,
 			ShadowQuality.High => RenderingServer.ShadowQuality.SoftMedium,
 			ShadowQuality.Ultra => RenderingServer.ShadowQuality.SoftHigh,
-			_ => RenderingServer.ShadowQuality.SoftMedium
+			_ => RenderingServer.ShadowQuality.SoftMedium,
 		};
 
 		int directionalShadowSize = quality switch
@@ -143,7 +147,7 @@ public sealed partial class GraphicsSettingsApplier : Node
 			ShadowQuality.Medium => 2048,
 			ShadowQuality.High => 4096,
 			ShadowQuality.Ultra => 8192,
-			_ => 2048
+			_ => 2048,
 		};
 
 		int positionalShadowSize = quality switch
@@ -153,14 +157,18 @@ public sealed partial class GraphicsSettingsApplier : Node
 			ShadowQuality.Medium => 2048,
 			ShadowQuality.High => 4096,
 			ShadowQuality.Ultra => 4096,
-			_ => 2048
+			_ => 2048,
 		};
 
 		RenderingServer.DirectionalSoftShadowFilterSetQuality(gdQuality);
 		RenderingServer.PositionalSoftShadowFilterSetQuality(gdQuality);
 
 		RenderingServer.DirectionalShadowAtlasSetSize(directionalShadowSize, false);
-		RenderingServer.ViewportSetPositionalShadowAtlasSize(GetRenderViewport().GetViewportRid(), positionalShadowSize, false);
+		RenderingServer.ViewportSetPositionalShadowAtlasSize(
+			GetRenderViewport().GetViewportRid(),
+			positionalShadowSize,
+			false
+		);
 
 		Light.NotifyShadowSettingsChanged();
 	}

@@ -24,8 +24,7 @@ public partial class BVHttpClient
 		HttpRequestMessage,
 		CancellationToken,
 		Task<HttpResponseMessage>
-	>? NativeSender
-	{ get; set; }
+	>? NativeSender { get; set; }
 
 	// Let .NET select the appropriate HTTP transport for the current platform.
 	// This is especially important on Android, where forcing SocketsHttpHandler

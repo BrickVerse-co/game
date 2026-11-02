@@ -10,6 +10,7 @@ public struct APIFriendRequest
 {
 	[JsonPropertyName("userID")]
 	public string userID { get; set; }
+
 	[JsonPropertyName("friendID")]
 	public int FriendID { get; set; }
 }

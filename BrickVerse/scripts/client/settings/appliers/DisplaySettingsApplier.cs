@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.Settings.Appliers;
 
@@ -54,7 +54,9 @@ public sealed partial class DisplaySettingsApplier : Node
 
 	private static void ApplyFullscreen()
 	{
-		bool fullscreen = ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.Fullscreen);
+		bool fullscreen = ClientSettingsService.Instance.Get<bool>(
+			SharedSettingKeys.Display.Fullscreen
+		);
 		var defaultMode = DisplayServer.WindowMode.Maximized;
 		if (Globals.IsInGDEditor)
 		{
@@ -66,7 +68,9 @@ public sealed partial class DisplaySettingsApplier : Node
 	private static void ApplyVsync()
 	{
 		bool vsync = ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.Display.VSync);
-		DisplayServer.WindowSetVsyncMode(vsync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+		DisplayServer.WindowSetVsyncMode(
+			vsync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled
+		);
 	}
 
 	private void ApplyFpsCap()
@@ -98,7 +102,7 @@ public sealed partial class DisplaySettingsApplier : Node
 			FpsPreset.Smooth => 120,
 			FpsPreset.Slick => 144,
 			FpsPreset.Fluid => 240,
-			_ => 0
+			_ => 0,
 		};
 	}
 }

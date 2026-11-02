@@ -9,6 +9,7 @@ public partial class MobileForumReply : PanelContainer
 		GetNode<Label>("Padding/Layout/Header/Author").Text = author;
 		GetNode<Label>("Padding/Layout/Header/Time").Text = timestamp;
 		GetNode<MobileMarkdown>("Padding/Layout/Body").SetMarkdown(markdown);
-		GetNode<MarginContainer>("Padding").AddThemeConstantOverride("margin_left", nested ? 28 : 12);
+		GetNode<MarginContainer>("Padding")
+			.AddThemeConstantOverride("margin_left", nested ? 28 : 12);
 	}
 }

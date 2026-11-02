@@ -2,7 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
 using System.Collections.Generic;
 
 namespace BrickVerse.Shared.Settings;
@@ -31,7 +30,7 @@ public static class SharedSettingsRegistry
 					Description = "Use fullscreen window mode.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = false
+					DefaultValue = false,
 				}
 			},
 			{
@@ -44,7 +43,7 @@ public static class SharedSettingsRegistry
 					Description = "Synchronize frames to display refresh.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -54,7 +53,8 @@ public static class SharedSettingsRegistry
 					Key = SharedSettingKeys.Display.FpsPreset,
 					SectionKey = "display",
 					Label = "FPS Preset",
-					Description = "Set the FPS preset to use.\nIf V-Sync is enabled, framerate won't surpass the display refresh rate.",
+					Description =
+						"Set the FPS preset to use.\nIf V-Sync is enabled, framerate won't surpass the display refresh rate.",
 					ValueKind = SettingValueKind.Enum,
 					ControlKind = SettingControlKind.Dropdown,
 					DefaultValue = FpsPreset.Custom,
@@ -68,7 +68,7 @@ public static class SharedSettingsRegistry
 						new() { Value = FpsPreset.Slick, Label = "Slick (144)" },
 						new() { Value = FpsPreset.Fluid, Label = "Fluid (240)" },
 						new() { Value = FpsPreset.Limitless, Label = "Limitless" },
-					]
+					],
 				}
 			},
 			{
@@ -85,12 +85,14 @@ public static class SharedSettingsRegistry
 					MinValue = 0,
 					MaxValue = 360,
 					Step = 6,
-					Conditions = [
-						new SettingCondition<FpsPreset>() {
+					Conditions =
+					[
+						new SettingCondition<FpsPreset>()
+						{
 							Target = SharedSettingKeys.Display.FpsPreset,
-							Predicate = x => x == FpsPreset.Custom
-						}
-					]
+							Predicate = x => x == FpsPreset.Custom,
+						},
+					],
 				}
 			},
 			{
@@ -112,7 +114,7 @@ public static class SharedSettingsRegistry
 						new() { Value = GraphicsPreset.Ultra, Label = "Ultra" },
 						new() { Value = GraphicsPreset.Photo, Label = "Photo" },
 						new() { Value = GraphicsPreset.Custom, Label = "Custom" },
-					]
+					],
 				}
 			},
 			{
@@ -132,8 +134,12 @@ public static class SharedSettingsRegistry
 						new() { Value = RenderingMethodOption.Auto, Label = "Auto" },
 						new() { Value = RenderingMethodOption.Standard, Label = "Standard" },
 						new() { Value = RenderingMethodOption.Performance, Label = "Performance" },
-						new() { Value = RenderingMethodOption.Compatibility, Label = "Compatibility" },
-					]
+						new()
+						{
+							Value = RenderingMethodOption.Compatibility,
+							Label = "Compatibility",
+						},
+					],
 				}
 			},
 			{
@@ -149,7 +155,7 @@ public static class SharedSettingsRegistry
 					DefaultValue = 1.0f,
 					MinValue = 0.2f,
 					MaxValue = 1.0f,
-					Step = 0.05f
+					Step = 0.05f,
 				}
 			},
 			{
@@ -169,7 +175,7 @@ public static class SharedSettingsRegistry
 						new() { Value = MsaaOption.X2, Label = "2x" },
 						new() { Value = MsaaOption.X4, Label = "4x" },
 						new() { Value = MsaaOption.X8, Label = "8x" },
-					]
+					],
 				}
 			},
 			{
@@ -190,7 +196,7 @@ public static class SharedSettingsRegistry
 						new() { Value = ShadowQuality.Medium, Label = "Medium" },
 						new() { Value = ShadowQuality.High, Label = "High" },
 						new() { Value = ShadowQuality.Ultra, Label = "Ultra" },
-					]
+					],
 				}
 			},
 			{
@@ -206,7 +212,7 @@ public static class SharedSettingsRegistry
 					DefaultValue = 1000f,
 					MinValue = 5f,
 					MaxValue = 1250f,
-					Step = 5f
+					Step = 5f,
 				}
 			},
 			{
@@ -219,7 +225,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle glow/bloom effect.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -232,7 +238,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle ambient occlusion effect.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -245,7 +251,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle screen-space reflections.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -258,7 +264,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle screen-space illuminated lighting.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -271,7 +277,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle SDFGI (semi-real-time global illumination) effect.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -284,7 +290,7 @@ public static class SharedSettingsRegistry
 					Description = "Toggle normal maps on part materials.",
 					ValueKind = SettingValueKind.Bool,
 					ControlKind = SettingControlKind.Toggle,
-					DefaultValue = true
+					DefaultValue = true,
 				}
 			},
 			{
@@ -295,13 +301,14 @@ public static class SharedSettingsRegistry
 					IsAdvanced = true,
 					SectionKey = "post_processing",
 					Label = "SDFGI Cell Size",
-					Description = "Size of SDFGI cells. Larger cells improve performance but reduce quality.",
+					Description =
+						"Size of SDFGI cells. Larger cells improve performance but reduce quality.",
 					ValueKind = SettingValueKind.Float,
 					ControlKind = SettingControlKind.Slider,
 					DefaultValue = 0.8f,
 					MinValue = 0.2f,
 					MaxValue = 2f,
-					Step = 0.1f
+					Step = 0.1f,
 				}
 			},
 			{
@@ -318,7 +325,7 @@ public static class SharedSettingsRegistry
 					DefaultValue = 6,
 					MinValue = 1,
 					MaxValue = 8,
-					Step = 1
+					Step = 1,
 				}
 			},
 			{
@@ -335,7 +342,7 @@ public static class SharedSettingsRegistry
 					DefaultValue = 10f,
 					MinValue = 1f,
 					MaxValue = 50f,
-					Step = 1f
+					Step = 1f,
 				}
 			},
 			{
@@ -345,7 +352,8 @@ public static class SharedSettingsRegistry
 					Key = SharedSettingKeys.Advanced.AssetQueue,
 					SectionKey = "advanced",
 					Label = "Asset Queue",
-					Description = "Change how many assets can load at once. Higher = faster, with more potential lag.",
+					Description =
+						"Change how many assets can load at once. Higher = faster, with more potential lag.",
 					ValueKind = SettingValueKind.Int,
 					ControlKind = SettingControlKind.Dropdown,
 					RequiresRestart = true,
@@ -353,10 +361,18 @@ public static class SharedSettingsRegistry
 					Options =
 					[
 						new() { Value = 5, Label = "Low impact (5)" },
-						new() { Value = AssetLoaders.AssetLoader.DefaultMaxConcurrentRequests, Label = "Default (8)" },
+						new()
+						{
+							Value = AssetLoaders.AssetLoader.DefaultMaxConcurrentRequests,
+							Label = "Default (8)",
+						},
 						new() { Value = 12, Label = "Fast (12)" },
-						new() { Value = AssetLoaders.AssetLoader.MaximumConcurrentRequests, Label = "Maximum (16)" },
-					]
+						new()
+						{
+							Value = AssetLoaders.AssetLoader.MaximumConcurrentRequests,
+							Label = "Maximum (16)",
+						},
+					],
 				}
 			},
 		};

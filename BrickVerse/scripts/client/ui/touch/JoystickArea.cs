@@ -8,9 +8,14 @@ namespace BrickVerse.Client.UI.Touch;
 
 public partial class JoystickArea : InputFallbackBase
 {
-	[Export] public float MaxThumbstickDistance = 220f;
-	[Export] public float Deadzone = 10f;
-	[Export(PropertyHint.Range, "0,1,0.01")] public float SprintThreshold = 0.9f;
+	[Export]
+	public float MaxThumbstickDistance = 220f;
+
+	[Export]
+	public float Deadzone = 10f;
+
+	[Export(PropertyHint.Range, "0,1,0.01")]
+	public float SprintThreshold = 0.9f;
 
 	private bool _dragging = false;
 	private bool _sprinting = false;
@@ -28,7 +33,10 @@ public partial class JoystickArea : InputFallbackBase
 
 	public override void _Process(double delta)
 	{
-		if (!_dragging) { return; }
+		if (!_dragging)
+		{
+			return;
+		}
 
 		Vector2 axis = GetThumbstickAxis();
 
@@ -36,17 +44,9 @@ public partial class JoystickArea : InputFallbackBase
 		_line.AddPoint(_startPos);
 		_line.AddPoint(_startPos + axis * MaxThumbstickDistance);
 
-		InputEventJoypadMotion leftX = new()
-		{
-			Axis = JoyAxis.LeftX,
-			AxisValue = axis.X
-		};
+		InputEventJoypadMotion leftX = new() { Axis = JoyAxis.LeftX, AxisValue = axis.X };
 
-		InputEventJoypadMotion leftY = new()
-		{
-			Axis = JoyAxis.LeftY,
-			AxisValue = axis.Y
-		};
+		InputEventJoypadMotion leftY = new() { Axis = JoyAxis.LeftY, AxisValue = axis.Y };
 		leftX.SetMeta("emulated", 1);
 		leftY.SetMeta("emulated", 1);
 
@@ -72,17 +72,9 @@ public partial class JoystickArea : InputFallbackBase
 
 	private static void SendInputEnd()
 	{
-		InputEventJoypadMotion leftX = new()
-		{
-			Axis = JoyAxis.LeftX,
-			AxisValue = 0
-		};
+		InputEventJoypadMotion leftX = new() { Axis = JoyAxis.LeftX, AxisValue = 0 };
 
-		InputEventJoypadMotion leftY = new()
-		{
-			Axis = JoyAxis.LeftY,
-			AxisValue = 0
-		};
+		InputEventJoypadMotion leftY = new() { Axis = JoyAxis.LeftY, AxisValue = 0 };
 
 		Input.ParseInputEvent(leftX);
 		Input.ParseInputEvent(leftY);
@@ -111,7 +103,11 @@ public partial class JoystickArea : InputFallbackBase
 				AcceptEvent();
 			}
 		}
-		else if (@event is InputEventScreenDrag drag && _dragging && drag.Index == _activeTouchIndex)
+		else if (
+			@event is InputEventScreenDrag drag
+			&& _dragging
+			&& drag.Index == _activeTouchIndex
+		)
 		{
 			_endPos = drag.Position;
 			AcceptEvent();
@@ -128,11 +124,7 @@ public partial class JoystickArea : InputFallbackBase
 
 		_sprinting = sprint;
 
-		InputEventAction sprintEvent = new()
-		{
-			Action = "sprint",
-			Pressed = _sprinting
-		};
+		InputEventAction sprintEvent = new() { Action = "sprint", Pressed = _sprinting };
 
 		sprintEvent.SetMeta("emulated", 1);
 		Input.ParseInputEvent(sprintEvent);

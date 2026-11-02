@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 
 namespace BrickVerse.Client.Settings;
 
@@ -23,7 +23,8 @@ public partial class GraphicsBenchmarker : Node
 
 	public override void _Process(double delta)
 	{
-		if (!_running) return;
+		if (!_running)
+			return;
 
 		_elapsed += delta;
 		_frames++;

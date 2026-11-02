@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Shared.AssetLoaders;
 
@@ -23,7 +23,10 @@ public partial class WebAssetLoader : Node
 
 	private readonly BVHttpClient _client = new();
 	private readonly ConcurrentDictionary<WebCacheItem, WebCacheItem> _cache = [];
-	private readonly ConcurrentDictionary<WebCacheItem, Lazy<Task<WebCacheItem>>> _pendingRequests = [];
+	private readonly ConcurrentDictionary<
+		WebCacheItem,
+		Lazy<Task<WebCacheItem>>
+	> _pendingRequests = [];
 	private readonly SemaphoreSlim _loadSlots = new(MaxConcurrentRequests);
 
 	private async Task<WebCacheItem> LoadResource(WebCacheItem item)
@@ -41,19 +44,23 @@ public partial class WebAssetLoader : Node
 			switch (item.Type)
 			{
 				case WebResourceType.Image:
-					{
-						Image image = ImageBufferDecoder.Decode(buffer, item.URL);
-						image.FixAlphaEdges();
-						Error mipmapError = image.GenerateMipmaps();
-						if (mipmapError != Error.Ok)
-							throw new InvalidOperationException($"Could not generate mipmaps ({mipmapError}).");
-						item.Resource = ImageTexture.CreateFromImage(image);
+				{
+					Image image = ImageBufferDecoder.Decode(buffer, item.URL);
+					image.FixAlphaEdges();
+					Error mipmapError = image.GenerateMipmaps();
+					if (mipmapError != Error.Ok)
+						throw new InvalidOperationException(
+							$"Could not generate mipmaps ({mipmapError})."
+						);
+					item.Resource = ImageTexture.CreateFromImage(image);
 
-						_cache[item] = item;
-						return item;
-					}
+					_cache[item] = item;
+					return item;
+				}
 				default:
-					throw new NotImplementedException($"Resource type {item.Type} not implemented!");
+					throw new NotImplementedException(
+						$"Resource type {item.Type} not implemented!"
+					);
 			}
 		}
 		finally
@@ -70,9 +77,18 @@ public partial class WebAssetLoader : Node
 		}
 		catch (Exception exception)
 		{
-			Callable.From(() => BV.PrintErr(
-				"Failed to load brickverse.gg resource (Type: " + item.Type + ", URL: " + item.URL + "): " + exception.Message
-			)).CallDeferred();
+			Callable
+				.From(() =>
+					BV.PrintErr(
+						"Failed to load brickverse.gg resource (Type: "
+							+ item.Type
+							+ ", URL: "
+							+ item.URL
+							+ "): "
+							+ exception.Message
+					)
+				)
+				.CallDeferred();
 			throw;
 		}
 	}
@@ -115,7 +131,7 @@ public partial class WebAssetLoader : Node
 
 public enum WebResourceType
 {
-	Image
+	Image,
 }
 
 public struct WebCacheItem

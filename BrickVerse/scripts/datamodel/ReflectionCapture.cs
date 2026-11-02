@@ -17,22 +17,78 @@ public sealed partial class ReflectionCapture : Dynamic
 	private uint _cullMask = uint.MaxValue;
 
 	[Editable, ScriptProperty, DefaultValue(1f)]
-	public float Intensity { get => _intensity; set { _intensity = Mathf.Max(0, value); Apply(); OnPropertyChanged(); } }
+	public float Intensity
+	{
+		get => _intensity;
+		set
+		{
+			_intensity = Mathf.Max(0, value);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(100f)]
-	public float MaxDistance { get => _maxDistance; set { _maxDistance = Mathf.Max(0.1f, value); Apply(); OnPropertyChanged(); } }
+	public float MaxDistance
+	{
+		get => _maxDistance;
+		set
+		{
+			_maxDistance = Mathf.Max(0.1f, value);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(true)]
-	public bool BoxProjection { get => _boxProjection; set { _boxProjection = value; Apply(); OnPropertyChanged(); } }
+	public bool BoxProjection
+	{
+		get => _boxProjection;
+		set
+		{
+			_boxProjection = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(false)]
-	public bool Realtime { get => _realtime; set { _realtime = value; Apply(); OnPropertyChanged(); } }
+	public bool Realtime
+	{
+		get => _realtime;
+		set
+		{
+			_realtime = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(true)]
-	public bool EnableShadows { get => _enableShadows; set { _enableShadows = value; if (_probe != null) _probe.EnableShadows = value; OnPropertyChanged(); } }
+	public bool EnableShadows
+	{
+		get => _enableShadows;
+		set
+		{
+			_enableShadows = value;
+			if (_probe != null)
+				_probe.EnableShadows = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty]
-	public uint CullMask { get => _cullMask; set { _cullMask = value; if (_probe != null) _probe.CullMask = value; OnPropertyChanged(); } }
+	public uint CullMask
+	{
+		get => _cullMask;
+		set
+		{
+			_cullMask = value;
+			if (_probe != null)
+				_probe.CullMask = value;
+			OnPropertyChanged();
+		}
+	}
 
 	public override void Init()
 	{
@@ -44,19 +100,27 @@ public sealed partial class ReflectionCapture : Dynamic
 
 	internal override void OnNodeSizeChanged(Vector3 newSize)
 	{
-		if (_probe != null) _probe.Size = new Vector3(Mathf.Max(0.01f, newSize.X), Mathf.Max(0.01f, newSize.Y), Mathf.Max(0.01f, newSize.Z));
+		if (_probe != null)
+			_probe.Size = new Vector3(
+				Mathf.Max(0.01f, newSize.X),
+				Mathf.Max(0.01f, newSize.Y),
+				Mathf.Max(0.01f, newSize.Z)
+			);
 		base.OnNodeSizeChanged(newSize);
 	}
 
 	private void Apply()
 	{
-		if (_probe == null) return;
+		if (_probe == null)
+			return;
 		_probe.Intensity = _intensity;
 		_probe.MaxDistance = _maxDistance;
 		_probe.BoxProjection = _boxProjection;
 		_probe.EnableShadows = _enableShadows;
 		_probe.CullMask = _cullMask;
-		_probe.UpdateMode = _realtime ? ReflectionProbe.UpdateModeEnum.Always : ReflectionProbe.UpdateModeEnum.Once;
+		_probe.UpdateMode = _realtime
+			? ReflectionProbe.UpdateModeEnum.Always
+			: ReflectionProbe.UpdateModeEnum.Once;
 		_probe.Size = NodeSize;
 	}
 }

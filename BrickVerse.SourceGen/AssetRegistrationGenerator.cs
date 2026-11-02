@@ -2,38 +2,44 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace BrickVerse.SourceGen;
 
 [Generator]
 public sealed class AssetRegistrationGenerator : IIncrementalGenerator
 {
-	private const string InstantiableAttributeFullName = "BrickVerse.Attributes.InstantiableAttribute";
+	private const string InstantiableAttributeFullName =
+		"BrickVerse.Attributes.InstantiableAttribute";
 	private const string BaseAssetFullName = "BrickVerse.Datamodel.Resources.BaseAsset";
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		var assetTypes = context.SyntaxProvider
-			.ForAttributeWithMetadataName(
+		var assetTypes = context
+			.SyntaxProvider.ForAttributeWithMetadataName(
 				InstantiableAttributeFullName,
 				predicate: static (node, _) => node is ClassDeclarationSyntax,
-				transform: static (ctx, _) => GetAssetType(ctx.TargetSymbol as INamedTypeSymbol))
+				transform: static (ctx, _) => GetAssetType(ctx.TargetSymbol as INamedTypeSymbol)
+			)
 			.Where(static typeName => typeName is not null)
 			.Collect();
 
-		context.RegisterSourceOutput(assetTypes, static (spc, types) =>
-			spc.AddSource(
-				"AssetRegistration.g.cs",
-				SourceText.From(GenerateSource(types), Encoding.UTF8)));
+		context.RegisterSourceOutput(
+			assetTypes,
+			static (spc, types) =>
+				spc.AddSource(
+					"AssetRegistration.g.cs",
+					SourceText.From(GenerateSource(types), Encoding.UTF8)
+				)
+		);
 	}
 
 	private static string? GetAssetType(INamedTypeSymbol? type)

@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -76,10 +76,7 @@ public partial class Accessory : Dynamic
 	public override void Process(double delta)
 	{
 		base.Process(delta);
-		if (
-			!GodotObject.IsInstanceValid(_attachmentNode)
-			|| !GodotObject.IsInstanceValid(GDNode3D)
-		)
+		if (!GodotObject.IsInstanceValid(_attachmentNode) || !GodotObject.IsInstanceValid(GDNode3D))
 			return;
 
 		Transform3D currentAttachment = _attachmentNode!.GlobalTransform;

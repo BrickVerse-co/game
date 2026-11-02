@@ -76,7 +76,12 @@ public partial class MobileAuthBrowser : Node
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
 
-		void OnCompleted(long result, long responseCode, string[] responseHeaders, byte[] responseBody)
+		void OnCompleted(
+			long result,
+			long responseCode,
+			string[] responseHeaders,
+			byte[] responseBody
+		)
 		{
 			HttpRequest.Result godotResult = (HttpRequest.Result)result;
 			if (godotResult != HttpRequest.Result.Success)
@@ -109,37 +114,41 @@ public partial class MobileAuthBrowser : Node
 
 		// Asset loads may call this transport from a thread-pool worker. Godot
 		// objects must enter the scene tree and start requests on the main thread.
-		Callable.From(() =>
-		{
-			try
+		Callable
+			.From(() =>
 			{
-				requestNode.RequestCompleted += OnCompleted;
-				AddChild(requestNode);
-				started.TrySetResult(
-					requestNode.Request(
-						request.RequestUri.ToString(),
-						[.. headers],
-						method,
-						body
-					)
-				);
-			}
-			catch (Exception exception)
-			{
-				started.TrySetException(exception);
-			}
-		}).CallDeferred();
+				try
+				{
+					requestNode.RequestCompleted += OnCompleted;
+					AddChild(requestNode);
+					started.TrySetResult(
+						requestNode.Request(
+							request.RequestUri.ToString(),
+							[.. headers],
+							method,
+							body
+						)
+					);
+				}
+				catch (Exception exception)
+				{
+					started.TrySetException(exception);
+				}
+			})
+			.CallDeferred();
 
 		Error requestResult = await started.Task.WaitAsync(cancellationToken);
 
 		if (requestResult != Error.Ok)
 		{
-			Callable.From(() =>
-			{
-				requestNode.RequestCompleted -= OnCompleted;
-				if (GodotObject.IsInstanceValid(requestNode))
-					requestNode.QueueFree();
-			}).CallDeferred();
+			Callable
+				.From(() =>
+				{
+					requestNode.RequestCompleted -= OnCompleted;
+					if (GodotObject.IsInstanceValid(requestNode))
+						requestNode.QueueFree();
+				})
+				.CallDeferred();
 			throw new HttpRequestException(
 				$"Godot could not start the HTTP request ({requestResult})."
 			);
@@ -151,14 +160,16 @@ public partial class MobileAuthBrowser : Node
 		}
 		finally
 		{
-			Callable.From(() =>
-			{
-				if (!GodotObject.IsInstanceValid(requestNode))
-					return;
-				requestNode.RequestCompleted -= OnCompleted;
-				requestNode.CancelRequest();
-				requestNode.QueueFree();
-			}).CallDeferred();
+			Callable
+				.From(() =>
+				{
+					if (!GodotObject.IsInstanceValid(requestNode))
+						return;
+					requestNode.RequestCompleted -= OnCompleted;
+					requestNode.CancelRequest();
+					requestNode.QueueFree();
+				})
+				.CallDeferred();
 		}
 	}
 
@@ -179,7 +190,9 @@ public partial class MobileAuthBrowser : Node
 		if (method == HttpMethod.Options)
 			return Godot.HttpClient.Method.Options;
 
-		throw new NotSupportedException($"HTTP method '{method}' is not supported by Godot HTTPRequest.");
+		throw new NotSupportedException(
+			$"HTTP method '{method}' is not supported by Godot HTTPRequest."
+		);
 	}
 
 	public bool Open(string url)

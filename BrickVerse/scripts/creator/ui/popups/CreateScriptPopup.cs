@@ -2,26 +2,43 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
-using BrickVerse.Scripting;
 using System;
 using System.IO;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class CreateScriptPopup : PopupWindowBase
 {
-	[Export] private ButtonGroup _scriptGroup = null!;
-	[Export] private ButtonGroup _languageGroup = null!;
-	[Export] private GridContainer _languageGrid = null!;
-	[Export] private Label _platformSupportLabel = null!;
-	[Export] private LineEdit _pathEdit = null!;
-	[Export] private Button _browseBtn = null!;
-	[Export] private Button _createBtn = null!;
-	[Export] private Button _cancelBtn = null!;
-	[Export] private Label _errorLabel = null!;
+	[Export]
+	private ButtonGroup _scriptGroup = null!;
+
+	[Export]
+	private ButtonGroup _languageGroup = null!;
+
+	[Export]
+	private GridContainer _languageGrid = null!;
+
+	[Export]
+	private Label _platformSupportLabel = null!;
+
+	[Export]
+	private LineEdit _pathEdit = null!;
+
+	[Export]
+	private Button _browseBtn = null!;
+
+	[Export]
+	private Button _createBtn = null!;
+
+	[Export]
+	private Button _cancelBtn = null!;
+
+	[Export]
+	private Label _errorLabel = null!;
 
 	public string? CreateAt = "";
 
@@ -55,10 +72,14 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 			string baseDir = _pathEdit.Text.GetBaseDir();
 
 			string typeFolder = "";
-			if ((baseDir.EndsWith("/server") ||
-				 baseDir.EndsWith("/client") ||
-				 baseDir.EndsWith("/modules")) &&
-				baseDir.GetBaseDir() == "scripts")
+			if (
+				(
+					baseDir.EndsWith("/server")
+					|| baseDir.EndsWith("/client")
+					|| baseDir.EndsWith("/modules")
+				)
+				&& baseDir.GetBaseDir() == "scripts"
+			)
 			{
 				// Removing the script type folder, since we're appending a new one
 				baseDir = baseDir.GetBaseDir();
@@ -88,36 +109,43 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 
 			string pathPrefix = string.IsNullOrEmpty(baseDir) ? "" : baseDir + '/';
 
-			_pathEdit.Text = $"{pathPrefix}{typeFolder}{scriptName}{scriptTypeExtension}.{SelectedLanguage.PrimaryExtension}";
+			_pathEdit.Text =
+				$"{pathPrefix}{typeFolder}{scriptName}{scriptTypeExtension}.{SelectedLanguage.PrimaryExtension}";
 		};
 
 		_browseBtn.Pressed += () =>
 		{
-			CreatorService.Interface.PromptFileSelect(new()
-			{
-				Title = "Choose script path",
-				FileName = _pathEdit.Text.GetFile(),
-				DialogMode = DisplayServer.FileDialogMode.SaveFile,
-				CurrentDirectory = CreatorService.CurrentSession!.GlobalizePath(_pathEdit.Text.GetBaseDir())
-			}, paths =>
-			{
-				try
+			CreatorService.Interface.PromptFileSelect(
+				new()
 				{
-					if (paths.Length == 0) return;
-
-					string path = CreatorService.CurrentSession!.LocalizePath(paths[0]);
-
-					if (!ScriptLanguageRegistry.IsScriptPath(path))
-						path += "." + SelectedLanguage.PrimaryExtension;
-
-					_pathEdit.Text = path;
-				}
-				catch (Exception ex)
+					Title = "Choose script path",
+					FileName = _pathEdit.Text.GetFile(),
+					DialogMode = DisplayServer.FileDialogMode.SaveFile,
+					CurrentDirectory = CreatorService.CurrentSession!.GlobalizePath(
+						_pathEdit.Text.GetBaseDir()
+					),
+				},
+				paths =>
 				{
-					BV.PrintErr(ex);
-					CreatorService.Interface.PopupAlert(ex.Message);
+					try
+					{
+						if (paths.Length == 0)
+							return;
+
+						string path = CreatorService.CurrentSession!.LocalizePath(paths[0]);
+
+						if (!ScriptLanguageRegistry.IsScriptPath(path))
+							path += "." + SelectedLanguage.PrimaryExtension;
+
+						_pathEdit.Text = path;
+					}
+					catch (Exception ex)
+					{
+						BV.PrintErr(ex);
+						CreatorService.Interface.PopupAlert(ex.Message);
+					}
 				}
-			});
+			);
 		};
 
 		_createBtn.Pressed += SubmitCreateScript;
@@ -134,7 +162,8 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 		_errorLabel.Text = msg;
 	}
 
-	private ScriptLanguageDefinition SelectedLanguage => ScriptLanguageRegistry.Get(_selectedLanguage);
+	private ScriptLanguageDefinition SelectedLanguage =>
+		ScriptLanguageRegistry.Get(_selectedLanguage);
 
 	private void BuildLanguageGrid()
 	{
@@ -148,7 +177,8 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 		foreach (ScriptLanguageDefinition language in ScriptLanguageRegistry.Definitions)
 		{
 			dropdown.AddItem(language.DisplayName, (int)language.Language);
-			if (language.Language == _selectedLanguage) dropdown.Select(dropdown.ItemCount - 1);
+			if (language.Language == _selectedLanguage)
+				dropdown.Select(dropdown.ItemCount - 1);
 		}
 		dropdown.ItemSelected += index =>
 		{
@@ -162,19 +192,23 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 	private void UpdatePathLanguage()
 	{
 		string extension = Path.GetExtension(_pathEdit.Text);
-		_pathEdit.Text = extension.Length == 0
-			? _pathEdit.Text + "." + SelectedLanguage.PrimaryExtension
-			: _pathEdit.Text[..^extension.Length] + "." + SelectedLanguage.PrimaryExtension;
+		_pathEdit.Text =
+			extension.Length == 0
+				? _pathEdit.Text + "." + SelectedLanguage.PrimaryExtension
+				: _pathEdit.Text[..^extension.Length] + "." + SelectedLanguage.PrimaryExtension;
 	}
 
 	private void UpdatePlatformSupportMessage()
 	{
-		_platformSupportLabel.Text = ScriptLanguageRegistry.GetPlatformDescription(SelectedLanguage);
+		_platformSupportLabel.Text = ScriptLanguageRegistry.GetPlatformDescription(
+			SelectedLanguage
+		);
 		_platformSupportLabel.AddThemeColorOverride(
 			"font_color",
 			SelectedLanguage.PlatformSupport == ScriptPlatformSupport.All
 				? new Color(0.62f, 0.75f, 0.68f)
-				: new Color(0.95f, 0.24f, 0.24f));
+				: new Color(0.95f, 0.24f, 0.24f)
+		);
 	}
 
 	private void SubmitCreateScript()
@@ -186,8 +220,10 @@ public sealed partial class CreateScriptPopup : PopupWindowBase
 			SetErrorMessage("Give your script a name!");
 			return;
 		}
-		if (!ScriptLanguageRegistry.TryFromPath(_scriptPath, out ScriptLanguageDefinition language)
-			|| language.Language != SelectedLanguage.Language)
+		if (
+			!ScriptLanguageRegistry.TryFromPath(_scriptPath, out ScriptLanguageDefinition language)
+			|| language.Language != SelectedLanguage.Language
+		)
 		{
 			SetErrorMessage($"Script file name must end with .{SelectedLanguage.PrimaryExtension}");
 			return;

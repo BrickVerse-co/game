@@ -2,11 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel;
-using BrickVerse.Enums;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,6 +11,11 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Enums;
+using BrickVerse.Shared;
+using Godot;
 using TurboXml;
 using static BrickVerse.Datamodel.Part;
 using XmlParser = TurboXml.XmlParser;
@@ -24,7 +24,8 @@ namespace BrickVerse.Formats;
 
 public static class XmlFormat
 {
-	private static readonly ShapeEnum[] _partShapes = [
+	private static readonly ShapeEnum[] _partShapes =
+	[
 		ShapeEnum.Brick,
 		ShapeEnum.Sphere,
 		ShapeEnum.Cylinder,
@@ -40,10 +41,11 @@ public static class XmlFormat
 		ShapeEnum.BeveledCorner,
 		ShapeEnum.ConcaveCorner,
 		ShapeEnum.TriangleCorner,
-		ShapeEnum.TriangleConcaveCorner
+		ShapeEnum.TriangleConcaveCorner,
 	];
 
-	private static readonly PartMaterialEnum[] _partMaterials = [
+	private static readonly PartMaterialEnum[] _partMaterials =
+	[
 		PartMaterialEnum.SmoothPlastic,
 		PartMaterialEnum.Wood,
 		PartMaterialEnum.Concrete,
@@ -65,24 +67,29 @@ public static class XmlFormat
 		PartMaterialEnum.MetalGrid,
 		PartMaterialEnum.MetalPlate,
 		PartMaterialEnum.Fabric,
-		PartMaterialEnum.Marble
+		PartMaterialEnum.Marble,
 	];
 
 	private static readonly Dictionary<Type, string> _fixedServiceNames = new()
 	{
-		{typeof(Datamodel.Environment), nameof(Datamodel.Environment) },
-		{typeof(Datamodel.Lighting), nameof(Datamodel.Lighting) },
-		{typeof(Datamodel.Players), nameof(Datamodel.Players) },
-		{typeof(Datamodel.Services.ScriptService), nameof(Datamodel.Services.ScriptService) },
-		{typeof(Datamodel.Hidden), nameof(Datamodel.Hidden) },
-		{typeof(Datamodel.ServerHidden), nameof(Datamodel.ServerHidden) },
-		{typeof(Datamodel.PlayerDefaults), nameof(Datamodel.PlayerDefaults) },
-		{typeof(Datamodel.PlayerGUI), nameof(Datamodel.PlayerGUI) },
+		{ typeof(Datamodel.Environment), nameof(Datamodel.Environment) },
+		{ typeof(Datamodel.Lighting), nameof(Datamodel.Lighting) },
+		{ typeof(Datamodel.Players), nameof(Datamodel.Players) },
+		{ typeof(Datamodel.Services.ScriptService), nameof(Datamodel.Services.ScriptService) },
+		{ typeof(Datamodel.Hidden), nameof(Datamodel.Hidden) },
+		{ typeof(Datamodel.ServerHidden), nameof(Datamodel.ServerHidden) },
+		{ typeof(Datamodel.PlayerDefaults), nameof(Datamodel.PlayerDefaults) },
+		{ typeof(Datamodel.PlayerGUI), nameof(Datamodel.PlayerGUI) },
 	};
 
-	private static readonly ConditionalWeakTable<Type, Dictionary<string, PropertyInfo>> _editablePropertyCache = [];
+	private static readonly ConditionalWeakTable<
+		Type,
+		Dictionary<string, PropertyInfo>
+	> _editablePropertyCache = [];
 	private static readonly Assembly _datamodelAssembly = typeof(World).Assembly;
-	private static readonly ConcurrentDictionary<string, Type?> _datamodelTypeCache = new(StringComparer.Ordinal);
+	private static readonly ConcurrentDictionary<string, Type?> _datamodelTypeCache = new(
+		StringComparer.Ordinal
+	);
 
 	public class GameItem
 	{
@@ -101,7 +108,10 @@ public static class XmlFormat
 		private bool _inProps;
 		private string? _propName;
 		private string? _text;
-		private float _x, _y, _z, _w;
+		private float _x,
+			_y,
+			_z,
+			_w;
 
 		public readonly GameItem Root => _items.Peek();
 
@@ -117,11 +127,13 @@ public static class XmlFormat
 		private static int ParseInt(string? value)
 		{
 			return int.TryParse(
-			value,
-			NumberStyles.AllowLeadingSign,
-			CultureInfo.InvariantCulture,
-			out int result
-		) ? result : 0;
+				value,
+				NumberStyles.AllowLeadingSign,
+				CultureInfo.InvariantCulture,
+				out int result
+			)
+				? result
+				: 0;
 		}
 
 		private static float ParseFloat(string? value)
@@ -131,7 +143,9 @@ public static class XmlFormat
 				NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
 				CultureInfo.InvariantCulture,
 				out float result
-			) ? result : 0;
+			)
+				? result
+				: 0;
 		}
 
 		public void OnBeginTag(ReadOnlySpan<char> name, int line, int column)
@@ -154,7 +168,14 @@ public static class XmlFormat
 			}
 		}
 
-		public void OnAttribute(ReadOnlySpan<char> name, ReadOnlySpan<char> value, int nameLine, int nameColumn, int valueLine, int valueColumn)
+		public void OnAttribute(
+			ReadOnlySpan<char> name,
+			ReadOnlySpan<char> value,
+			int nameLine,
+			int nameColumn,
+			int valueLine,
+			int valueColumn
+		)
 		{
 			if (name.SequenceEqual("class") && _items.TryPeek(out GameItem? item))
 			{
@@ -194,7 +215,11 @@ public static class XmlFormat
 		{
 			if (name.SequenceEqual("Item"))
 			{
-				if (_items.TryPop(out GameItem? item) && _items.TryPeek(out GameItem? parent) && item.Class != null)
+				if (
+					_items.TryPop(out GameItem? item)
+					&& _items.TryPeek(out GameItem? parent)
+					&& item.Class != null
+				)
 				{
 					parent.Children.Add(item);
 				}
@@ -203,7 +228,12 @@ public static class XmlFormat
 			{
 				_inProps = false;
 			}
-			else if (_inProps && _propName != null && _items.TryPeek(out GameItem? item) && item.Class != null)
+			else if (
+				_inProps
+				&& _propName != null
+				&& _items.TryPeek(out GameItem? item)
+				&& item.Class != null
+			)
 			{
 				if (name.SequenceEqual("X") || name.SequenceEqual("R"))
 				{
@@ -417,45 +447,64 @@ public static class XmlFormat
 		item.Properties.Add((property, value));
 	}
 
-	private static PropertyInfo? GetEditableProperty([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string propertyName)
+	private static PropertyInfo? GetEditableProperty(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type,
+		string propertyName
+	)
 	{
-		Dictionary<string, PropertyInfo> properties = _editablePropertyCache.GetValue(type, static targetType =>
-		{
-			Dictionary<string, PropertyInfo> result = new(StringComparer.Ordinal);
+		Dictionary<string, PropertyInfo> properties = _editablePropertyCache.GetValue(
+			type,
+			static targetType =>
+			{
+				Dictionary<string, PropertyInfo> result = new(StringComparer.Ordinal);
 #pragma warning disable IL2070 // Already guaranteed to be editable
-			PropertyInfo[] allProps = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+				PropertyInfo[] allProps = targetType.GetProperties(
+					BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy
+				);
 #pragma warning restore IL2070
 
-			foreach (PropertyInfo property in allProps)
-			{
-				if (!property.IsDefined(typeof(EditableAttribute)))
+				foreach (PropertyInfo property in allProps)
 				{
-					continue;
+					if (!property.IsDefined(typeof(EditableAttribute)))
+					{
+						continue;
+					}
+
+					result[property.Name] = property;
 				}
 
-				result[property.Name] = property;
+				return result;
 			}
-
-			return result;
-		});
+		);
 
 		return properties.GetValueOrDefault(propertyName);
 	}
 
 	private static Type? GetDatamodelType(string className)
 	{
-		return _datamodelTypeCache.GetOrAdd(className, static name =>
-		{
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-			Type? datamodelType = _datamodelAssembly.GetType($"BrickVerse.Datamodel.{name}", throwOnError: false, ignoreCase: false);
-			if (datamodelType != null)
+		return _datamodelTypeCache.GetOrAdd(
+			className,
+			static name =>
 			{
-				return datamodelType;
-			}
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+				Type? datamodelType = _datamodelAssembly.GetType(
+					$"BrickVerse.Datamodel.{name}",
+					throwOnError: false,
+					ignoreCase: false
+				);
+				if (datamodelType != null)
+				{
+					return datamodelType;
+				}
 
-			return _datamodelAssembly.GetType($"BrickVerse.Datamodel.Services.{name}", throwOnError: false, ignoreCase: false);
+				return _datamodelAssembly.GetType(
+					$"BrickVerse.Datamodel.Services.{name}",
+					throwOnError: false,
+					ignoreCase: false
+				);
 #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-		});
+			}
+		);
 	}
 
 	public static async Task LoadFile(World game, string path)
@@ -510,9 +559,11 @@ public static class XmlFormat
 		GameItem root = parser.Root;
 
 		// Skip root and spawn model
-		if (root.Class == typeof(Model) &&
-			root.Children.Count == 1 &&
-			root.Children[0].Class == typeof(Model))
+		if (
+			root.Class == typeof(Model)
+			&& root.Children.Count == 1
+			&& root.Children[0].Class == typeof(Model)
+		)
 		{
 			return root.Children[0];
 		}
@@ -528,7 +579,8 @@ public static class XmlFormat
 			return null;
 		}
 
-		if (item.Class == typeof(Player)) return null;
+		if (item.Class == typeof(Player))
+			return null;
 
 		// Fixed name for services / static classes
 		if (_fixedServiceNames.TryGetValue(item.Class, out string? fixedName))
@@ -597,7 +649,7 @@ public static class XmlFormat
 					(int intVal, Type t) when t == typeof(string) => intVal.ToString() ?? "",
 					// float -> int
 					(float floatVal, Type t) when t == typeof(int) => (int)floatVal,
-					_ => val
+					_ => val,
 				};
 				Property.SetValue(instance, val);
 			}

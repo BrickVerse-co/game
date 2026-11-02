@@ -11,7 +11,7 @@ public enum TextHorizontalAlignmentEnum
 {
 	Left,
 	Center,
-	Right
+	Right,
 }
 
 [ScriptEnum("VerticalAlignment")]
@@ -19,5 +19,5 @@ public enum TextVerticalAlignmentEnum
 {
 	Top,
 	Middle,
-	Bottom
+	Bottom,
 }

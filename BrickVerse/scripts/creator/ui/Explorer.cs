@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
-using BrickVerse.Creator.Managers;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Managers;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -21,6 +21,7 @@ public sealed partial class Explorer : TabContainer
 	private const int ExplorerRowHeight = 27;
 
 	public static Explorer Singleton { get; private set; } = null!;
+
 	public Explorer()
 	{
 		Singleton = this;
@@ -92,7 +93,8 @@ public sealed partial class Explorer : TabContainer
 		}
 
 		// If already exists, return
-		if (_instanceToItem.ContainsKey(instance)) return;
+		if (_instanceToItem.ContainsKey(instance))
+			return;
 
 		ExplorerTree? rootTree = GetTreeFromRoot(instance.Root);
 		TreeItem item;
@@ -121,7 +123,10 @@ public sealed partial class Explorer : TabContainer
 			item.Collapsed = true;
 
 			// Renameable
-			if (!instance.GetType().IsDefined(typeof(StaticAttribute)) && instance is not Datamodel.Script)
+			if (
+				!instance.GetType().IsDefined(typeof(StaticAttribute))
+				&& instance is not Datamodel.Script
+			)
 			{
 				item.SetEditable(0, true);
 			}
@@ -192,14 +197,20 @@ public sealed partial class Explorer : TabContainer
 
 	public static void RefreshIcon(Instance instance)
 	{
-		if (_instanceToItem.TryGetValue(instance, out TreeItem? item) && GodotObject.IsInstanceValid(item))
+		if (
+			_instanceToItem.TryGetValue(instance, out TreeItem? item)
+			&& GodotObject.IsInstanceValid(item)
+		)
 			item.SetIcon(0, CreatorIconRegistry.Resolve(instance));
 	}
 
 	private static void RefreshIcons(CreatorSession session)
 	{
 		foreach ((Instance instance, TreeItem item) in _instanceToItem)
-			if ((instance as World ?? instance.Root)?.LinkedSession == session && GodotObject.IsInstanceValid(item))
+			if (
+				(instance as World ?? instance.Root)?.LinkedSession == session
+				&& GodotObject.IsInstanceValid(item)
+			)
 				item.SetIcon(0, CreatorIconRegistry.Resolve(instance));
 	}
 
@@ -217,16 +228,19 @@ public sealed partial class Explorer : TabContainer
 		return false;
 	}
 
-
 	public static ExplorerTree? GetCurrentTree()
 	{
-		if (CurrentRoot == null) { return null; }
+		if (CurrentRoot == null)
+		{
+			return null;
+		}
 		return GetTreeFromRoot(CurrentRoot);
 	}
 
 	public static ExplorerTree? GetTreeFromRoot(World root)
 	{
-		if (root == null) return null;
+		if (root == null)
+			return null;
 		if (_gameToTab.TryGetValue(root, out ExplorerTab? tab))
 		{
 			return tab.Tree;
@@ -236,7 +250,8 @@ public sealed partial class Explorer : TabContainer
 
 	public static ExplorerTab? GetTabFromRoot(World root)
 	{
-		if (root == null) return null;
+		if (root == null)
+			return null;
 		if (_gameToTab.TryGetValue(root, out ExplorerTab? tab))
 		{
 			return tab;
@@ -296,13 +311,17 @@ public sealed partial class Explorer : TabContainer
 		if (_instanceToItem.TryGetValue(instance, out TreeItem? item))
 		{
 			// lastly, set text
-			Callable.From(() =>
-			{
-				if (instance.IsDeleted) return;
-				if (!Node.IsInstanceValid(item)) return;
+			Callable
+				.From(() =>
+				{
+					if (instance.IsDeleted)
+						return;
+					if (!Node.IsInstanceValid(item))
+						return;
 
-				item.SetText(0, instance.Name);
-			}).CallDeferred();
+					item.SetText(0, instance.Name);
+				})
+				.CallDeferred();
 		}
 	}
 
@@ -352,7 +371,6 @@ public sealed partial class Explorer : TabContainer
 		tree.ScrollToItemFrame(item);
 	}
 
-
 	public static void Reparent(Instance instance, Instance to)
 	{
 		if (!_instanceToItem.TryGetValue(instance, out TreeItem? item))
@@ -374,8 +392,10 @@ public sealed partial class Explorer : TabContainer
 
 	internal static void RefreshTreeItemVisibility(TreeItem item)
 	{
-		bool forceInvisible = item.HasMeta("_force_invisible") && item.GetMeta("_force_invisible").AsBool();
-		bool modelNonEditable = item.HasMeta("_model_non_editable") && item.GetMeta("_model_non_editable").AsBool();
+		bool forceInvisible =
+			item.HasMeta("_force_invisible") && item.GetMeta("_force_invisible").AsBool();
+		bool modelNonEditable =
+			item.HasMeta("_model_non_editable") && item.GetMeta("_model_non_editable").AsBool();
 
 		item.Visible = !forceInvisible && !modelNonEditable;
 		if (item.Visible && GetInstanceFromTreeItem(item) is Instance i)
@@ -416,7 +436,12 @@ public sealed partial class Explorer : TabContainer
 		{
 			if (item.GetButtonById(0, 1) == -1 && instance.LinkedModel != null)
 			{
-				item.AddButton(0, Globals.LoadUIIcon("link"), 1, tooltipText: $"Linked Model ({instance.LinkedModel.LinkedPath})");
+				item.AddButton(
+					0,
+					Globals.LoadUIIcon("link"),
+					1,
+					tooltipText: $"Linked Model ({instance.LinkedModel.LinkedPath})"
+				);
 			}
 			else if (item.GetButtonById(0, 1) != -1 && instance.LinkedModel == null)
 			{
@@ -533,7 +558,8 @@ public sealed partial class Explorer : TabContainer
 		TreeItem targetItem = currentTree.GetEdited();
 		Instance? instance = GetInstanceFromTreeItem(targetItem);
 
-		if (instance == null) return;
+		if (instance == null)
+			return;
 		string newName = targetItem.GetText(0);
 		try
 		{
@@ -545,9 +571,11 @@ public sealed partial class Explorer : TabContainer
 		}
 
 		// Lastly update the name in-case name got rejected
-		Callable.From(() =>
-		{
-			targetItem.SetText(0, instance.Name);
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				targetItem.SetText(0, instance.Name);
+			})
+			.CallDeferred();
 	}
 }

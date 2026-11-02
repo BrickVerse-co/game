@@ -2,9 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Client.WebAPI;
-using BrickVerse.Shared;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -12,6 +9,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -34,10 +34,11 @@ public sealed partial class ConfigService : Instance
 		string universeId = GetUniverseId();
 		string routeType = Root.Network.IsServer ? "server" : "client";
 
-		string url = Globals.ApiEndpoint +
-			$"/v3/world/{routeType}/world-config/" +
-			$"{Uri.EscapeDataString(universeId)}/" +
-			$"{Uri.EscapeDataString(key)}";
+		string url =
+			Globals.ApiEndpoint
+			+ $"/v3/world/{routeType}/world-config/"
+			+ $"{Uri.EscapeDataString(universeId)}/"
+			+ $"{Uri.EscapeDataString(key)}";
 
 		using HttpResponseMessage response = await _client.GetAsync(url);
 
@@ -51,7 +52,9 @@ public sealed partial class ConfigService : Instance
 			throw new UnauthorizedAccessException(
 				await GetErrorMessageAsync(
 					response,
-					"This config is secret and cannot be accessed by the client."));
+					"This config is secret and cannot be accessed by the client."
+				)
+			);
 		}
 
 		await EnsureSuccessAsync(response);
@@ -59,16 +62,12 @@ public sealed partial class ConfigService : Instance
 		string responseBody = await response.Content.ReadAsStringAsync();
 		using JsonDocument document = JsonDocument.Parse(responseBody);
 
-		if (!document.RootElement.TryGetProperty(
-			"data",
-			out JsonElement dataElement))
+		if (!document.RootElement.TryGetProperty("data", out JsonElement dataElement))
 		{
 			return null;
 		}
 
-		if (!dataElement.TryGetProperty(
-			"value",
-			out JsonElement valueElement))
+		if (!dataElement.TryGetProperty("value", out JsonElement valueElement))
 		{
 			return null;
 		}
@@ -77,10 +76,7 @@ public sealed partial class ConfigService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task SetConfigAsync(
-		string key,
-		string value,
-		bool secret = false)
+	public async Task SetConfigAsync(string key, string value, bool secret = false)
 	{
 		EnsureProduction();
 		EnsureServer();
@@ -90,25 +86,21 @@ public sealed partial class ConfigService : Instance
 
 		string universeId = GetUniverseId();
 
-		string url = Globals.ApiEndpoint +
-			"/v3/world/server/world-config/" +
-			$"{Uri.EscapeDataString(universeId)}/" +
-			$"{Uri.EscapeDataString(key)}";
+		string url =
+			Globals.ApiEndpoint
+			+ "/v3/world/server/world-config/"
+			+ $"{Uri.EscapeDataString(universeId)}/"
+			+ $"{Uri.EscapeDataString(key)}";
 
-		JsonObject requestBody = new()
-		{
-			["value"] = value,
-			["secret"] = secret
-		};
+		JsonObject requestBody = new() { ["value"] = value, ["secret"] = secret };
 
 		using StringContent content = new(
 			requestBody.ToJsonString(),
 			Encoding.UTF8,
-			"application/json");
+			"application/json"
+		);
 
-		using HttpResponseMessage response = await _client.PutAsync(
-			url,
-			content);
+		using HttpResponseMessage response = await _client.PutAsync(url, content);
 
 		await EnsureSuccessAsync(response);
 	}
@@ -123,10 +115,11 @@ public sealed partial class ConfigService : Instance
 
 		string universeId = GetUniverseId();
 
-		string url = Globals.ApiEndpoint +
-			"/v3/world/server/world-config/" +
-			$"{Uri.EscapeDataString(universeId)}/" +
-			$"{Uri.EscapeDataString(key)}";
+		string url =
+			Globals.ApiEndpoint
+			+ "/v3/world/server/world-config/"
+			+ $"{Uri.EscapeDataString(universeId)}/"
+			+ $"{Uri.EscapeDataString(key)}";
 
 		using HttpRequestMessage request = new(HttpMethod.Delete, url);
 		using HttpResponseMessage response = await _client.SendAsync(request);
@@ -140,49 +133,43 @@ public sealed partial class ConfigService : Instance
 
 		if (Root.Network.IsServer)
 		{
-			string serverAuthorization =
-				ServerAPI.GetAuthorizationHeaderValue();
+			string serverAuthorization = ServerAPI.GetAuthorizationHeaderValue();
 
 			if (string.IsNullOrWhiteSpace(serverAuthorization))
 			{
-				throw new InvalidOperationException(
-					"Server authorization token is unavailable.");
+				throw new InvalidOperationException("Server authorization token is unavailable.");
 			}
 
-			_client.DefaultRequestHeaders["Authorization"] =
-				NormalizeAuthorizationHeader(serverAuthorization);
+			_client.DefaultRequestHeaders["Authorization"] = NormalizeAuthorizationHeader(
+				serverAuthorization
+			);
 
 			return;
 		}
 
 		if (string.IsNullOrWhiteSpace(ClientAuthAPI.JoinToken))
 		{
-			throw new InvalidOperationException(
-				"Client join authorization token is unavailable.");
+			throw new InvalidOperationException("Client join authorization token is unavailable.");
 		}
 
-		_client.DefaultRequestHeaders["Authorization"] =
-			NormalizeAuthorizationHeader(ClientAuthAPI.JoinToken);
+		_client.DefaultRequestHeaders["Authorization"] = NormalizeAuthorizationHeader(
+			ClientAuthAPI.JoinToken
+		);
 	}
 
 	private string GetUniverseId()
 	{
 		if (Root.UniverseID == 0)
 		{
-			throw new InvalidOperationException(
-				"Universe ID is unavailable.");
+			throw new InvalidOperationException("Universe ID is unavailable.");
 		}
 
 		return Root.UniverseID.ToString();
 	}
 
-	private static string? GetStringClaim(
-		JsonElement payload,
-		string claimName)
+	private static string? GetStringClaim(JsonElement payload, string claimName)
 	{
-		if (!payload.TryGetProperty(
-			claimName,
-			out JsonElement claim))
+		if (!payload.TryGetProperty(claimName, out JsonElement claim))
 		{
 			return null;
 		}
@@ -191,7 +178,7 @@ public sealed partial class ConfigService : Instance
 		{
 			JsonValueKind.String => claim.GetString(),
 			JsonValueKind.Number => claim.ToString(),
-			_ => null
+			_ => null,
 		};
 	}
 
@@ -199,9 +186,7 @@ public sealed partial class ConfigService : Instance
 	{
 		string normalized = token.Trim();
 
-		if (normalized.StartsWith(
-			"Bearer ",
-			StringComparison.OrdinalIgnoreCase))
+		if (normalized.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
 		{
 			return normalized;
 		}
@@ -209,8 +194,7 @@ public sealed partial class ConfigService : Instance
 		return "Bearer " + normalized;
 	}
 
-	private static async Task EnsureSuccessAsync(
-		HttpResponseMessage response)
+	private static async Task EnsureSuccessAsync(HttpResponseMessage response)
 	{
 		if (response.IsSuccessStatusCode)
 		{
@@ -219,21 +203,18 @@ public sealed partial class ConfigService : Instance
 
 		string message = await GetErrorMessageAsync(
 			response,
-			$"Config request failed with HTTP status " +
-			$"{(int)response.StatusCode}.");
+			$"Config request failed with HTTP status " + $"{(int)response.StatusCode}."
+		);
 
-		throw new HttpRequestException(
-			message,
-			null,
-			response.StatusCode);
+		throw new HttpRequestException(message, null, response.StatusCode);
 	}
 
 	private static async Task<string> GetErrorMessageAsync(
 		HttpResponseMessage response,
-		string fallback)
+		string fallback
+	)
 	{
-		string responseBody =
-			await response.Content.ReadAsStringAsync();
+		string responseBody = await response.Content.ReadAsStringAsync();
 
 		if (string.IsNullOrWhiteSpace(responseBody))
 		{
@@ -242,12 +223,9 @@ public sealed partial class ConfigService : Instance
 
 		try
 		{
-			using JsonDocument document =
-				JsonDocument.Parse(responseBody);
+			using JsonDocument document = JsonDocument.Parse(responseBody);
 
-			if (document.RootElement.TryGetProperty(
-				"message",
-				out JsonElement messageElement))
+			if (document.RootElement.TryGetProperty("message", out JsonElement messageElement))
 			{
 				return messageElement.GetString() ?? fallback;
 			}
@@ -269,20 +247,15 @@ public sealed partial class ConfigService : Instance
 			JsonValueKind.True => true,
 			JsonValueKind.False => false,
 
-			JsonValueKind.Number
-				when value.TryGetInt32(out int intValue)
-				=> intValue,
+			JsonValueKind.Number when value.TryGetInt32(out int intValue) => intValue,
 
-			JsonValueKind.Number
-				when value.TryGetInt64(out long longValue)
-				=> longValue,
+			JsonValueKind.Number when value.TryGetInt64(out long longValue) => longValue,
 
 			JsonValueKind.Number => value.GetDouble(),
 
-			JsonValueKind.Object or JsonValueKind.Array =>
-				value.GetRawText(),
+			JsonValueKind.Object or JsonValueKind.Array => value.GetRawText(),
 
-			_ => null
+			_ => null,
 		};
 	}
 
@@ -290,8 +263,7 @@ public sealed partial class ConfigService : Instance
 	{
 		if (!Root.Network.IsProd)
 		{
-			throw new InvalidOperationException(
-				"ConfigService can only be used in production.");
+			throw new InvalidOperationException("ConfigService can only be used in production.");
 		}
 	}
 
@@ -300,7 +272,8 @@ public sealed partial class ConfigService : Instance
 		if (!Root.Network.IsServer)
 		{
 			throw new InvalidOperationException(
-				"This ConfigService method can only be called on the server.");
+				"This ConfigService method can only be called on the server."
+			);
 		}
 	}
 
@@ -308,16 +281,15 @@ public sealed partial class ConfigService : Instance
 	{
 		if (string.IsNullOrWhiteSpace(key))
 		{
-			throw new ArgumentException(
-				"Config key cannot be empty.",
-				nameof(key));
+			throw new ArgumentException("Config key cannot be empty.", nameof(key));
 		}
 
 		if (key.Length > MaxKeyLength)
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(key),
-				$"Config key cannot be longer than {MaxKeyLength} characters.");
+				$"Config key cannot be longer than {MaxKeyLength} characters."
+			);
 		}
 	}
 
@@ -330,16 +302,15 @@ public sealed partial class ConfigService : Instance
 
 		if (value.Length == 0)
 		{
-			throw new ArgumentException(
-				"Config value cannot be empty.",
-				nameof(value));
+			throw new ArgumentException("Config value cannot be empty.", nameof(value));
 		}
 
 		if (value.Length > MaxValueLength)
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(value),
-				$"Config value cannot be longer than {MaxValueLength} characters.");
+				$"Config value cannot be longer than {MaxValueLength} characters."
+			);
 		}
 	}
 }

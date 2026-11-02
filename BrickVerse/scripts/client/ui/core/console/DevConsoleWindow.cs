@@ -3,14 +3,22 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Godot;
+
 namespace BrickVerse.Client.UI;
 
 public partial class DevConsoleWindow : Control
 {
-	[Export] private Button _closeButton = null!;
-	[Export] private Control _dragZone = null!;
-	[Export] private Control _resizeZone = null!;
-	[Export] private Vector2 _minSize = new(400, 100);
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private Control _dragZone = null!;
+
+	[Export]
+	private Control _resizeZone = null!;
+
+	[Export]
+	private Vector2 _minSize = new(400, 100);
 
 	private bool _isDragging = false;
 	private Vector2 _dragOffset = Vector2.Zero;

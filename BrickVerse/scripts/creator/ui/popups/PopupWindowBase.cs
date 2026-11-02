@@ -17,13 +17,14 @@ public partial class PopupWindowBase : Window
 
 	public override void _Input(InputEvent @event)
 	{
-		bool closeShortcut = @event is InputEventKey
-		{
-			Pressed: true,
-			Echo: false,
-			CtrlPressed: true,
-			Keycode: Key.W,
-		};
+		bool closeShortcut =
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				CtrlPressed: true,
+				Keycode: Key.W,
+			};
 		if (@event.IsActionPressed("ui_cancel") || closeShortcut)
 		{
 			QueueFree();

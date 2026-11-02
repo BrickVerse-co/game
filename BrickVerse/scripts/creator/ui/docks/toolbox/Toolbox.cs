@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BrickVerse.Schemas.API;
 using BrickVerse.Creator.Utils;
+using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 using Godot;
@@ -131,15 +131,28 @@ public sealed partial class Toolbox : Control
 		string raw = _searchEdit.Text.Trim();
 		string nextSearch = raw;
 		string nextAuthor = "";
-		if (raw.StartsWith('@')) { nextAuthor = raw[1..].Trim(); nextSearch = ""; }
-		else if (raw.StartsWith("by:", StringComparison.OrdinalIgnoreCase)) { nextAuthor = raw[3..].Trim(); nextSearch = ""; }
-		else if (raw.StartsWith("creator:", StringComparison.OrdinalIgnoreCase)) { nextAuthor = raw[8..].Trim(); nextSearch = ""; }
+		if (raw.StartsWith('@'))
+		{
+			nextAuthor = raw[1..].Trim();
+			nextSearch = "";
+		}
+		else if (raw.StartsWith("by:", StringComparison.OrdinalIgnoreCase))
+		{
+			nextAuthor = raw[3..].Trim();
+			nextSearch = "";
+		}
+		else if (raw.StartsWith("creator:", StringComparison.OrdinalIgnoreCase))
+		{
+			nextAuthor = raw[8..].Trim();
+			nextSearch = "";
+		}
 		if (SearchQuery == nextSearch && AuthorQuery == nextAuthor && !_discoverHome)
 			return;
 		SearchQuery = nextSearch;
 		AuthorQuery = nextAuthor;
 		CurrentPage = 1;
-		_discoverHome = _view == ViewMode.Discover && nextSearch.Length == 0 && nextAuthor.Length == 0;
+		_discoverHome =
+			_view == ViewMode.Discover && nextSearch.Length == 0 && nextAuthor.Length == 0;
 		Refresh();
 	}
 
@@ -259,11 +272,7 @@ public sealed partial class Toolbox : Control
 
 	private void AddCategories()
 	{
-		GridContainer grid = new()
-		{
-			Columns = 2,
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-		};
+		GridContainer grid = new() { Columns = 2, SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		grid.AddThemeConstantOverride("h_separation", 7);
 		grid.AddThemeConstantOverride("v_separation", 7);
 		_resultsContainer.AddChild(grid);
@@ -307,7 +316,11 @@ public sealed partial class Toolbox : Control
 			Alignment = BoxContainer.AlignmentMode.Center,
 		};
 		button.AddChild(content);
-		content.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect, Control.LayoutPresetMode.KeepSize, 6);
+		content.SetAnchorsAndOffsetsPreset(
+			Control.LayoutPreset.FullRect,
+			Control.LayoutPresetMode.KeepSize,
+			6
+		);
 		TextureRect iconView = new()
 		{
 			CustomMinimumSize = new Vector2(26, 26),
@@ -376,7 +389,8 @@ public sealed partial class Toolbox : Control
 			// Inventory is a Creator OAuth route. Refresh first so a long-running
 			// editor session never sends the stale token cached by BVAPI.
 			string accessToken = await CreatorAPI.GetValidAccessTokenAsync();
-			if (version != _requestVersion) return;
+			if (version != _requestVersion)
+				return;
 			BVAPI.SetAuthToken(accessToken);
 			using JsonDocument response = await BVAPI.GetJson("/v3/asset/inventory?limit=50");
 			if (version != _requestVersion)
@@ -416,7 +430,8 @@ public sealed partial class Toolbox : Control
 		}
 		catch (Exception ex)
 		{
-			if (version != _requestVersion) return;
+			if (version != _requestVersion)
+				return;
 			ShowError(version, "Sign in to view your inventory", ex);
 		}
 	}

@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Discord;
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Shared;
-using BrickVerse.Schemas.API;
 using System;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using Discord;
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.Settings;
 #endif
@@ -104,8 +104,18 @@ public sealed partial class PresenceService : Instance
 	public override void Ready()
 	{
 		base.Ready();
-		Root.Players.PlayerAdded.Connect((_) => { QueueUpdatePresence(); });
-		Root.Players.PlayerRemoved.Connect((_) => { QueueUpdatePresence(); });
+		Root.Players.PlayerAdded.Connect(
+			(_) =>
+			{
+				QueueUpdatePresence();
+			}
+		);
+		Root.Players.PlayerRemoved.Connect(
+			(_) =>
+			{
+				QueueUpdatePresence();
+			}
+		);
 		Root.WorldInfoReady += OnWorldInfoReady;
 		Root.WorldMediaReady += OnWorldMediaReady;
 
@@ -145,7 +155,8 @@ public sealed partial class PresenceService : Instance
 
 	public override void Process(double delta)
 	{
-		if (!Root.IsLoaded) return;
+		if (!Root.IsLoaded)
+			return;
 		if (_updateDirty)
 		{
 			_updateDirty = false;
@@ -160,7 +171,8 @@ public sealed partial class PresenceService : Instance
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
 			// TODO: We need a separate global for managing creator presence
-			if (_creatorActivityStarted) return;
+			if (_creatorActivityStarted)
+				return;
 			_creatorActivityStarted = true;
 			_creatorPresence = this;
 		}
@@ -207,7 +219,8 @@ public sealed partial class PresenceService : Instance
 
 	private void SetupDiscord()
 	{
-		if (!OS.HasFeature("discord-rpc")) return;
+		if (!OS.HasFeature("discord-rpc"))
+			return;
 		_discord = new(DiscordAppID, (ulong)CreateFlags.NoRequireDiscord);
 		_activityManager = _discord.GetActivityManager();
 		_activityManager.OnActivityJoin += OnDiscordActivityJoin;
@@ -215,11 +228,14 @@ public sealed partial class PresenceService : Instance
 
 	private void OnDiscordActivityJoin(string secret)
 	{
-		if (!Uri.TryCreate(secret, UriKind.Absolute, out Uri? joinUri)
+		if (
+			!Uri.TryCreate(secret, UriKind.Absolute, out Uri? joinUri)
 			|| !Uri.TryCreate(Globals.MainEndpoint, UriKind.Absolute, out Uri? mainUri)
 			|| joinUri.Scheme != Uri.UriSchemeHttps
 			|| !joinUri.Host.Equals(mainUri.Host, StringComparison.OrdinalIgnoreCase)
-			|| joinUri.AbsolutePath != "/join-game") return;
+			|| joinUri.AbsolutePath != "/join-game"
+		)
+			return;
 		OS.ShellOpen(joinUri.AbsoluteUri);
 	}
 
@@ -233,7 +249,8 @@ public sealed partial class PresenceService : Instance
 		string details;
 		string largeText = "Testing...";
 
-		string loadedWorldName = Root.WorldInfo?.Name
+		string loadedWorldName =
+			Root.WorldInfo?.Name
 			?? (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : string.Empty);
 		if (!string.IsNullOrWhiteSpace(loadedWorldName))
 		{
@@ -258,30 +275,32 @@ public sealed partial class PresenceService : Instance
 			details = _creatorDetails;
 		}
 
-		bool hasCapacity = Root.Players.MaxPlayers <= 0
-			|| Root.Players.MaxPlayers > Root.Players.PlayersCount;
-		bool canJoin = Root.SessionType != World.SessionTypeEnum.Creator
+		bool hasCapacity =
+			Root.Players.MaxPlayers <= 0 || Root.Players.MaxPlayers > Root.Players.PlayersCount;
+		bool canJoin =
+			Root.SessionType != World.SessionTypeEnum.Creator
 			&& Root.WorldID > 0
 			&& !string.IsNullOrWhiteSpace(Root.ServerID)
 			&& hasCapacity;
 		string partyId = canJoin ? $"{Root.WorldID}:{Root.ServerID}" : "";
 		string siteRoot = Globals.MainEndpoint.TrimEnd('/');
-		string worldJoinUrl = $"{siteRoot}/join-game?worldId={Uri.EscapeDataString(Root.WorldID.ToString())}";
-		string serverJoinUrl = $"{siteRoot}/join-game?serverId={Uri.EscapeDataString(Root.ServerID)}";
-		string playerState = Root.Players.MaxPlayers > 0
-			? $"{Root.Players.PlayersCount}/{Root.Players.MaxPlayers} players"
-			: $"{Root.Players.PlayersCount} players";
+		string worldJoinUrl =
+			$"{siteRoot}/join-game?worldId={Uri.EscapeDataString(Root.WorldID.ToString())}";
+		string serverJoinUrl =
+			$"{siteRoot}/join-game?serverId={Uri.EscapeDataString(Root.ServerID)}";
+		string playerState =
+			Root.Players.MaxPlayers > 0
+				? $"{Root.Players.PlayersCount}/{Root.Players.MaxPlayers} players"
+				: $"{Root.Players.PlayersCount} players";
 
 		Discord.Activity activity = new()
 		{
-			State = Root.SessionType == World.SessionTypeEnum.Creator
-				? _creatorState
-				: _state != null ? FilterService.Filter(_state) : playerState,
+			State =
+				Root.SessionType == World.SessionTypeEnum.Creator ? _creatorState
+				: _state != null ? FilterService.Filter(_state)
+				: playerState,
 			Details = details,
-			Timestamps =
-			{
-				Start = _startTime,
-			},
+			Timestamps = { Start = _startTime },
 			Assets =
 			{
 				LargeImage = _imageURL ?? defaultImg,
@@ -301,10 +320,13 @@ public sealed partial class PresenceService : Instance
 			},
 			Secrets =
 			{
-				Match = Root.SessionType != World.SessionTypeEnum.Creator && Root.WorldID > 0 ? worldJoinUrl : "",
+				Match =
+					Root.SessionType != World.SessionTypeEnum.Creator && Root.WorldID > 0
+						? worldJoinUrl
+						: "",
 				Join = canJoin ? serverJoinUrl : "",
 			},
-			Instance = true
+			Instance = true,
 		};
 
 		RelayBrickVersePresence(
@@ -320,12 +342,17 @@ public sealed partial class PresenceService : Instance
 			canJoin ? serverJoinUrl : ""
 		);
 
-		if (_activityManager == null) return;
+		if (_activityManager == null)
+			return;
 
-		_activityManager.UpdateActivity(activity, result =>
-		{
-			if (result != Result.Ok) BV.PrintErr($"Discord activity update failed: {result}");
-		});
+		_activityManager.UpdateActivity(
+			activity,
+			result =>
+			{
+				if (result != Result.Ok)
+					BV.PrintErr($"Discord activity update failed: {result}");
+			}
+		);
 	}
 
 	private void RelayBrickVersePresence(
@@ -338,7 +365,8 @@ public sealed partial class PresenceService : Instance
 		string partyId,
 		int partySize,
 		int partyMax,
-		string joinSecret)
+		string joinSecret
+	)
 	{
 		try
 		{
@@ -351,13 +379,21 @@ public sealed partial class PresenceService : Instance
 					: "BrickVerse",
 				details,
 				state,
-				assets = new { largeImage, largeText, smallImage, smallText },
+				assets = new
+				{
+					largeImage,
+					largeText,
+					smallImage,
+					smallText,
+				},
 				party = new { id = partyId, size = new[] { partySize, partyMax } },
 				secrets = new { join = joinSecret },
 				timestamps = new
 				{
-					start = DateTimeOffset.FromUnixTimeSeconds(_startTime).UtcDateTime.ToString("O")
-				}
+					start = DateTimeOffset
+						.FromUnixTimeSeconds(_startTime)
+						.UtcDateTime.ToString("O"),
+				},
 			};
 			byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload));
 			using UdpClient client = new();
@@ -371,7 +407,8 @@ public sealed partial class PresenceService : Instance
 
 	private void DiscordTick()
 	{
-		if (_discord == null) return;
+		if (_discord == null)
+			return;
 		try
 		{
 			_discord.RunCallbacks();

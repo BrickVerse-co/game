@@ -8,9 +8,14 @@ namespace BrickVerse.Client.UI.Notification;
 
 public partial class UIFriendRequestNotification : UINotificationBase
 {
-	[Export] private AnimationPlayer _animPlay = null!;
-	[Export] private TextureRect _iconRect = null!;
-	[Export] private Button _viewButton = null!;
+	[Export]
+	private AnimationPlayer _animPlay = null!;
+
+	[Export]
+	private TextureRect _iconRect = null!;
+
+	[Export]
+	private Button _viewButton = null!;
 
 	public override void Fire(object? data)
 	{
@@ -29,7 +34,5 @@ public partial class UIFriendRequestNotification : UINotificationBase
 		}
 	}
 
-	public struct FriendRequestNotifyPayload()
-	{
-	}
+	public struct FriendRequestNotifyPayload() { }
 }

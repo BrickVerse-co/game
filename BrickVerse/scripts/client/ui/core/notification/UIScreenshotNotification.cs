@@ -2,16 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI.Notification;
 
 public partial class UIScreenshotNotification : UINotificationBase
 {
-	[Export] public AnimationPlayer AnimPlay = null!;
-	[Export] public TextureRect IconRect = null!;
-	[Export] public Button ViewButton = null!;
+	[Export]
+	public AnimationPlayer AnimPlay = null!;
+
+	[Export]
+	public TextureRect IconRect = null!;
+
+	[Export]
+	public Button ViewButton = null!;
 
 	public override void Fire(object? data)
 	{

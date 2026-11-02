@@ -2,19 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.Gizmos;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
-using System;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public sealed partial class WorldContainer : SubViewportContainer
 {
-	private const string ContainerOverlayPath = "res://scenes/creator/misc/game_container_overlay.tscn";
+	private const string ContainerOverlayPath =
+		"res://scenes/creator/misc/game_container_overlay.tscn";
 	private readonly SubViewport _subViewport = null!;
 	internal SubViewport RenderViewport => _subViewport;
 	private string? _draggingFile;
@@ -30,7 +31,16 @@ public sealed partial class WorldContainer : SubViewportContainer
 	{
 		World = game;
 		World3D world3D = new();
-		AddChild(_subViewport = new() { OwnWorld3D = false, HandleInputLocally = true, World3D = world3D, Msaa3D = Viewport.Msaa.Msaa4X }, true);
+		AddChild(
+			_subViewport = new()
+			{
+				OwnWorld3D = false,
+				HandleInputLocally = true,
+				World3D = world3D,
+				Msaa3D = Viewport.Msaa.Msaa4X,
+			},
+			true
+		);
 		game.Container = this;
 		game.World3D = world3D;
 		_subViewport.AddChild(game.GDNode, true);
@@ -55,7 +65,9 @@ public sealed partial class WorldContainer : SubViewportContainer
 	{
 		if (CreatorSettingsService.Instance != null)
 		{
-			var applier = CreatorSettingsService.Instance.GetNodeOrNull<GraphicsSettingsApplier>(GraphicsSettingsApplier.NodeName);
+			var applier = CreatorSettingsService.Instance.GetNodeOrNull<GraphicsSettingsApplier>(
+				GraphicsSettingsApplier.NodeName
+			);
 			if (applier != null)
 			{
 				applier.RenderViewport = _subViewport;
@@ -76,7 +88,8 @@ public sealed partial class WorldContainer : SubViewportContainer
 		}
 
 		var handledByAxis = _overlayAxis.HandleInput(@event);
-		if (handledByAxis) return;
+		if (handledByAxis)
+			return;
 
 		_subViewport.PushInput(@event);
 		GodotInputEvent?.Invoke(@event);
@@ -112,7 +125,8 @@ public sealed partial class WorldContainer : SubViewportContainer
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
-		if (World.SessionType != World.SessionTypeEnum.Creator) return false;
+		if (World.SessionType != World.SessionTypeEnum.Creator)
+			return false;
 		IDragDataUnion? dragData = DragData.Deserialize(data);
 
 		if (dragData is FileDragData fd)
@@ -122,9 +136,17 @@ public sealed partial class WorldContainer : SubViewportContainer
 
 			if (fileExt == Globals.ModelFileExtension)
 			{
-				if (_draggingFile == targetFile && _draggingModel != null && _draggingModel is Dynamic dyn)
+				if (
+					_draggingFile == targetFile
+					&& _draggingModel != null
+					&& _draggingModel is Dynamic dyn
+				)
 				{
-					Datamodel.Environment.RayResult? ray = World.CreatorContext.Freelook.ScreenPointToRay(World.Input.MousePosition, [dyn]);
+					Datamodel.Environment.RayResult? ray =
+						World.CreatorContext.Freelook.ScreenPointToRay(
+							World.Input.MousePosition,
+							[dyn]
+						);
 					if (ray.HasValue)
 					{
 						dyn.Position = ray.Value.Position;
@@ -157,7 +179,8 @@ public sealed partial class WorldContainer : SubViewportContainer
 
 	private async void ShowInsertModel()
 	{
-		if (_draggingFile == null) return;
+		if (_draggingFile == null)
+			return;
 		_dragFileShown = true;
 		_draggingModel = await World.LinkedSession.InsertModel(_draggingFile, World.Environment);
 	}

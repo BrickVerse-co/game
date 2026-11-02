@@ -25,8 +25,8 @@ public sealed class CompressionUtilsTests
 	{
 		byte[] compressed = ZstdCompressionUtils.Compress(new byte[4096]);
 
-		InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-			() => ZstdCompressionUtils.Decompress(compressed, 1024)
+		InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+			ZstdCompressionUtils.Decompress(compressed, 1024)
 		);
 
 		Assert.Contains("exceeding", exception.Message);

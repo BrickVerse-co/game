@@ -2,15 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
-using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Datamodel.Data;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
-
 
 [MemoryPackable]
 public partial class NumberSeriesDto
@@ -28,7 +27,7 @@ public partial class NumberSeriesDto
 			Points[i] = new NumberPointDto
 			{
 				Offset = numberSeries.GetOffset(i),
-				Value = numberSeries.GetValue(i)
+				Value = numberSeries.GetValue(i),
 			};
 		}
 	}
@@ -56,10 +55,13 @@ public partial class NumberPointDto
 	public float Value { get; set; }
 }
 
-
 public class NumberSeriesJsonConverter : JsonConverter<NumberSeries>
 {
-	public override NumberSeries Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override NumberSeries Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartObject)
 		{
@@ -129,7 +131,11 @@ public class NumberSeriesJsonConverter : JsonConverter<NumberSeries>
 		throw new JsonException("Unexpected end of JSON");
 	}
 
-	public override void Write(Utf8JsonWriter writer, NumberSeries value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		NumberSeries value,
+		JsonSerializerOptions options
+	)
 	{
 		writer.WriteStartObject();
 		writer.WritePropertyName("Points");

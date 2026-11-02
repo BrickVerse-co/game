@@ -2,31 +2,44 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
 using System;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class Vector3Dto
 {
-	[JsonInclude] public float X { get; set; }
-	[JsonInclude] public float Y { get; set; }
-	[JsonInclude] public float Z { get; set; }
+	[JsonInclude]
+	public float X { get; set; }
+
+	[JsonInclude]
+	public float Y { get; set; }
+
+	[JsonInclude]
+	public float Z { get; set; }
 
 	[MemoryPackConstructor, JsonConstructor]
 	public Vector3Dto() { }
-	public Vector3Dto(Vector3 v) { X = v.X; Y = v.Y; Z = v.Z; }
+
+	public Vector3Dto(Vector3 v)
+	{
+		X = v.X;
+		Y = v.Y;
+		Z = v.Z;
+	}
+
 	public Vector3 ToVector3() => new(X, Y, Z);
 
 	public static string ToString(Vector3 src)
 	{
 		// Limit to 4 decimals
-		return string.Join(",",
+		return string.Join(
+			",",
 			src.X.ToString("0.####", CultureInfo.InvariantCulture),
 			src.Y.ToString("0.####", CultureInfo.InvariantCulture),
 			src.Z.ToString("0.####", CultureInfo.InvariantCulture)
@@ -46,7 +59,11 @@ public partial class Vector3Dto
 
 public class Vector3JsonConverter : JsonConverter<Vector3>
 {
-	public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override Vector3 Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 		{

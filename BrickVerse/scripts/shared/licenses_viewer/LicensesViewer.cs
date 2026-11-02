@@ -2,16 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Shared;
 
 public partial class LicensesViewer : Node
 {
 	private const string LicensesPath = "res://licenses/";
-	[Export] public Tree TreeView = null!;
-	[Export] public RichTextLabel ContentLabel = null!;
+
+	[Export]
+	public Tree TreeView = null!;
+
+	[Export]
+	public RichTextLabel ContentLabel = null!;
 
 	private readonly Dictionary<string, string> _licenses = [];
 

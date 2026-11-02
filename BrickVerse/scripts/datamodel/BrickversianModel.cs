@@ -400,20 +400,10 @@ public sealed partial class BrickversianModel : CharacterModel
 			.Where(clothing => !clothing.IsDeleted)
 			.ToArray();
 
-		ReconcileDefaultClothingType(
-			clothings,
-			Clothing.ClothingType.Shirt,
-			"DefaultShirt"
-		);
-		ReconcileDefaultClothingType(
-			clothings,
-			Clothing.ClothingType.Pants,
-			"DefaultPants"
-		);
+		ReconcileDefaultClothingType(clothings, Clothing.ClothingType.Shirt, "DefaultShirt");
+		ReconcileDefaultClothingType(clothings, Clothing.ClothingType.Pants, "DefaultPants");
 
-		return GetChildrenOfClass<Clothing>()
-			.Where(clothing => !clothing.IsDeleted)
-			.ToArray();
+		return GetChildrenOfClass<Clothing>().Where(clothing => !clothing.IsDeleted).ToArray();
 	}
 
 	private void ReconcileDefaultClothingType(
@@ -425,8 +415,8 @@ public sealed partial class BrickversianModel : CharacterModel
 		Clothing[] defaults = clothings
 			.Where(clothing => clothing.Type == type && clothing.Name == defaultName)
 			.ToArray();
-		bool hasCustomClothing = clothings.Any(
-			clothing => clothing.Type == type && clothing.Name != defaultName
+		bool hasCustomClothing = clothings.Any(clothing =>
+			clothing.Type == type && clothing.Name != defaultName
 		);
 
 		if (hasCustomClothing)
@@ -626,7 +616,8 @@ public sealed partial class BrickversianModel : CharacterModel
 			string propName = kvp.Key;
 			float target = kvp.Value;
 			float current = (float)AnimTree.Get(propName);
-			if (!float.IsFinite(current)) current = 0f;
+			if (!float.IsFinite(current))
+				current = 0f;
 
 			float targetBlendSpeed = BlendSpeed;
 			float newValue;
@@ -918,7 +909,8 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	public override void RecvBlendValue(CharacterModelBlendEnum blendName, float blendValue)
 	{
-		if (!float.IsFinite(blendValue)) return;
+		if (!float.IsFinite(blendValue))
+			return;
 		string propName = "";
 		switch (blendName)
 		{
@@ -947,7 +939,8 @@ public sealed partial class BrickversianModel : CharacterModel
 
 	public override void RecvSpeedValue(float speedValue)
 	{
-		if (!float.IsFinite(speedValue)) return;
+		if (!float.IsFinite(speedValue))
+			return;
 		if (AnimTree == null)
 			return;
 		AnimTree.Set("parameters/TimeScale/scale", speedValue);
@@ -1163,16 +1156,17 @@ public sealed partial class BrickversianModel : CharacterModel
 			{
 				try
 				{
-					Accessory? accessory = Root?.Insert != null
-						? Root.Insert.CreateAccessory(
-							asset.ID,
-							asset.MeshID,
-							asset.TextureID,
-							asset.AccessoryType,
-							asset.Name,
-							asset.MeshPosition
-						)
-						: CreateStandalonePreviewAccessory(asset);
+					Accessory? accessory =
+						Root?.Insert != null
+							? Root.Insert.CreateAccessory(
+								asset.ID,
+								asset.MeshID,
+								asset.TextureID,
+								asset.AccessoryType,
+								asset.Name,
+								asset.MeshPosition
+							)
+							: CreateStandalonePreviewAccessory(asset);
 					if (myCount != _loadAppearanceCount)
 					{
 						accessory?.Delete();
@@ -1254,7 +1248,8 @@ public sealed partial class BrickversianModel : CharacterModel
 	/// </summary>
 	private Accessory? CreateStandalonePreviewAccessory(APIAvatarAsset asset)
 	{
-		if (string.IsNullOrWhiteSpace(asset.MeshID)) return null;
+		if (string.IsNullOrWhiteSpace(asset.MeshID))
+			return null;
 
 		BVMeshAsset meshAsset = New<BVMeshAsset>();
 		meshAsset.AssetID = asset.MeshID;
@@ -1273,17 +1268,25 @@ public sealed partial class BrickversianModel : CharacterModel
 			mesh.Texture = texture;
 		}
 
-		accessory.Name = string.IsNullOrWhiteSpace(asset.Name) ? $"Accessory_{asset.ID}" : asset.Name;
+		accessory.Name = string.IsNullOrWhiteSpace(asset.Name)
+			? $"Accessory_{asset.ID}"
+			: asset.Name;
 		accessory.Size = Vector3.One;
-		string kind = (asset.AccessoryType ?? asset.Type ?? "").Replace("_", "").Replace("-", "").Replace(" ", "").ToLowerInvariant();
+		string kind = (asset.AccessoryType ?? asset.Type ?? "")
+			.Replace("_", "")
+			.Replace("-", "")
+			.Replace(" ", "")
+			.ToLowerInvariant();
 		accessory.TargetAttachment = kind switch
 		{
-			"neckaccessory" or "frontaccessory" or "backaccessory" or "shoulderaccessory" => CharacterAttachmentEnum.UpperTorso,
+			"neckaccessory" or "frontaccessory" or "backaccessory" or "shoulderaccessory" =>
+				CharacterAttachmentEnum.UpperTorso,
 			"waistaccessory" => CharacterAttachmentEnum.LowerTorso,
 			_ => CharacterAttachmentEnum.Head,
 		};
 		APIPosition3 position = asset.MeshPosition ?? new APIPosition3();
-		mesh.LocalPosition = new Vector3(position.X, position.Y, position.Z) * Mesh.ImportedAssetScale;
+		mesh.LocalPosition =
+			new Vector3(position.X, position.Y, position.Z) * Mesh.ImportedAssetScale;
 		return accessory;
 	}
 

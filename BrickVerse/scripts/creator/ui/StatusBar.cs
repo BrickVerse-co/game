@@ -2,22 +2,29 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
 using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using Godot;
 using SystemNetHttp = System.Net.Http;
 
 namespace BrickVerse.Creator.UI;
 
 public partial class StatusBar : Control
 {
-	[Export] private Label _titleLabel = null!;
-	[Export] private Label _versionLabel = null!;
-	[Export] private TextureRect _userAvatar = null!;
-	[Export] private Label _userInfoLabel = null!;
+	[Export]
+	private Label _titleLabel = null!;
+
+	[Export]
+	private Label _versionLabel = null!;
+
+	[Export]
+	private TextureRect _userAvatar = null!;
+
+	[Export]
+	private Label _userInfoLabel = null!;
 
 	private readonly SystemNetHttp.HttpClient _http = new();
 
@@ -50,29 +57,37 @@ public partial class StatusBar : Control
 			using SystemNetHttp.HttpResponseMessage response = await _http.GetAsync(
 				Globals.MainEndpoint.PathJoin("/api/v3/build-status")
 			);
-			if (!response.IsSuccessStatusCode || !IsInstanceValid(_versionLabel)) return;
+			if (!response.IsSuccessStatusCode || !IsInstanceValid(_versionLabel))
+				return;
 
 			using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(
 				await response.Content.ReadAsStringAsync()
 			);
-			System.Text.Json.JsonElement creator = document.RootElement.GetProperty("services").GetProperty("creator");
-			string latest = creator.TryGetProperty("latestCommit", out System.Text.Json.JsonElement latestNode)
+			System.Text.Json.JsonElement creator = document
+				.RootElement.GetProperty("services")
+				.GetProperty("creator");
+			string latest =
+				creator.TryGetProperty("latestCommit", out System.Text.Json.JsonElement latestNode)
 				&& latestNode.ValueKind == System.Text.Json.JsonValueKind.String
-				? latestNode.GetString() ?? ""
-				: "";
+					? latestNode.GetString() ?? ""
+					: "";
 			string installed = Globals.BuildCommit;
-			bool known = !string.IsNullOrWhiteSpace(installed) && !string.IsNullOrWhiteSpace(latest);
+			bool known =
+				!string.IsNullOrWhiteSpace(installed) && !string.IsNullOrWhiteSpace(latest);
 			bool current = known && (installed.StartsWith(latest) || latest.StartsWith(installed));
-			string badge = !known ? "Unknown" : current ? "Latest" : "Outdated";
+			string badge =
+				!known ? "Unknown"
+				: current ? "Latest"
+				: "Outdated";
 			_versionLabel.Text += $"  •  {badge}";
-			_versionLabel.TooltipText += $"\nLatest commit: {(string.IsNullOrWhiteSpace(latest) ? "unavailable" : latest)}";
+			_versionLabel.TooltipText +=
+				$"\nLatest commit: {(string.IsNullOrWhiteSpace(latest) ? "unavailable" : latest)}";
 		}
 		catch (System.Exception error)
 		{
 			BV.PrintWarn("Could not check Creator build status: ", error.Message);
 		}
 	}
-
 
 #if CREATOR
 	private void UpdateCreatorUserDisplay()
@@ -100,9 +115,7 @@ public partial class StatusBar : Control
 
 		try
 		{
-			string thumbUrl = !string.IsNullOrWhiteSpace(me.Picture)
-				? me.Picture
-				: me.HeadshotUrl;
+			string thumbUrl = !string.IsNullOrWhiteSpace(me.Picture) ? me.Picture : me.HeadshotUrl;
 
 			if (string.IsNullOrWhiteSpace(thumbUrl))
 				thumbUrl = Globals.ApiEndpoint.PathJoin($"/v3/user/{userId}/thumbnail?size=48");
@@ -125,9 +138,7 @@ public partial class StatusBar : Control
 
 			_userAvatar.Texture = ImageTexture.CreateFromImage(img);
 		}
-		catch
-		{
-		}
+		catch { }
 	}
 
 	public void SetStatus(string text)

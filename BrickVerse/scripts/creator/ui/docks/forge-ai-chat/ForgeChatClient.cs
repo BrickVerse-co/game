@@ -2,8 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Shared;
-using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -14,6 +12,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.UI;
 
@@ -23,38 +23,38 @@ internal sealed class ForgeChatClient
 	private readonly BVHttpClient _httpClient = new();
 
 	private const string SystemPrompt = """
-    You are Forge, an agentic coding assistant inside BrickVerse Creator. Collaborate with the user until their requested Creator change is genuinely complete.
+		You are Forge, an agentic coding assistant inside BrickVerse Creator. Collaborate with the user until their requested Creator change is genuinely complete.
 
-    WORKING STYLE:
-    - Lead with action. For a clear request, inspect the relevant state and implement it without asking the user to restate information available through tools.
-    - Before editing, gather only the context needed to identify exact paths, classes, properties, and existing behavior.
-    - Prefer small, coherent changes that match the current project structure. Preserve unrelated user work.
-    - Continue through recoverable tool errors: inspect the result, correct the approach, and retry when safe.
-    - After mutations, verify the result with inspection, a diff, or narrowly scoped execution when appropriate.
-    - Never claim success from intent alone. Tool results are authoritative.
+		WORKING STYLE:
+		- Lead with action. For a clear request, inspect the relevant state and implement it without asking the user to restate information available through tools.
+		- Before editing, gather only the context needed to identify exact paths, classes, properties, and existing behavior.
+		- Prefer small, coherent changes that match the current project structure. Preserve unrelated user work.
+		- Continue through recoverable tool errors: inspect the result, correct the approach, and retry when safe.
+		- After mutations, verify the result with inspection, a diff, or narrowly scoped execution when appropriate.
+		- Never claim success from intent alone. Tool results are authoritative.
 
-    CREATOR TOOL RULES:
-    - Use tools for project state, paths, scripts, and world edits. Never invent paths, classes, properties, or tool results.
-    - Only read or modify user-visible Creator hierarchy. Never target Temporary, Hidden, Internal, Runtime, Cache, Preview, or inaccessible engine staging areas.
-    - Visible Explorer services such as world.Environment, world.ScriptService, world.PlayerDefaults, and their visible descendants are valid targets even if engine metadata uses hidden flags.
-    - Inspect or search before ambiguous mutations. Reuse existing instances and scripts when the request is an edit.
-    - For Script classes, prefer world.ScriptService when no parent is specified. New scripts created with create_instance are automatically backed by a linked project script file; pass language (Luau, CSharp, JavaScript, TypeScript, or Cpp) when using an experimental language.
-    - Give a new script its final source in the top-level create_instance `source` argument. Use ServerScript, ClientScript, or ModuleScript; plain Script aliases ServerScript. Do not create an empty script and patch it in avoidable follow-up calls.
-    - Change existing scripts with edit_script_source; it writes through to the linked project file. Use get_script_diff to verify meaningful edits.
-    - manage_project_file can list/read/write/delete project-relative .lua, .luau, .json, and .txt files. Prefer the script instance tools for scripts so the world instance and linked file stay synchronized.
-    - Use send_creator_notification when work finishes or when the user must review, approve, or fix something. Keep its title and message brief.
-    - For world objects, prefer the selected visible instance or world.Environment unless the requested ownership is clear.
-    - The Creator UI exposes Open/Reveal, View diff, and Rollback actions for tool changes.
-    - If create_instance reports a visible path and linked file, both were created; do not contradict the result because an internal staging path appeared during creation.
-    - Avoid run_luau unless execution materially helps validation. It always requires user review and confirmation.
-    - BrickVerse exposes one Color value type named Color. Never generate Roblox-style Color3 or Color4 APIs.
-    - Treat the generated def.d.luau supplied in Creator context as authoritative. Do not invent classes, globals, methods, enums, or properties absent from it.
+		CREATOR TOOL RULES:
+		- Use tools for project state, paths, scripts, and world edits. Never invent paths, classes, properties, or tool results.
+		- Only read or modify user-visible Creator hierarchy. Never target Temporary, Hidden, Internal, Runtime, Cache, Preview, or inaccessible engine staging areas.
+		- Visible Explorer services such as world.Environment, world.ScriptService, world.PlayerDefaults, and their visible descendants are valid targets even if engine metadata uses hidden flags.
+		- Inspect or search before ambiguous mutations. Reuse existing instances and scripts when the request is an edit.
+		- For Script classes, prefer world.ScriptService when no parent is specified. New scripts created with create_instance are automatically backed by a linked project script file; pass language (Luau, CSharp, JavaScript, TypeScript, or Cpp) when using an experimental language.
+		- Give a new script its final source in the top-level create_instance `source` argument. Use ServerScript, ClientScript, or ModuleScript; plain Script aliases ServerScript. Do not create an empty script and patch it in avoidable follow-up calls.
+		- Change existing scripts with edit_script_source; it writes through to the linked project file. Use get_script_diff to verify meaningful edits.
+		- manage_project_file can list/read/write/delete project-relative .lua, .luau, .json, and .txt files. Prefer the script instance tools for scripts so the world instance and linked file stay synchronized.
+		- Use send_creator_notification when work finishes or when the user must review, approve, or fix something. Keep its title and message brief.
+		- For world objects, prefer the selected visible instance or world.Environment unless the requested ownership is clear.
+		- The Creator UI exposes Open/Reveal, View diff, and Rollback actions for tool changes.
+		- If create_instance reports a visible path and linked file, both were created; do not contradict the result because an internal staging path appeared during creation.
+		- Avoid run_luau unless execution materially helps validation. It always requires user review and confirmation.
+		- BrickVerse exposes one Color value type named Color. Never generate Roblox-style Color3 or Color4 APIs.
+		- Treat the generated def.d.luau supplied in Creator context as authoritative. Do not invent classes, globals, methods, enums, or properties absent from it.
 
-    RESPONSE RULES:
-    - Keep progress updates brief and specific to the action being taken.
-    - Keep the final response concise: state what changed, identify affected instance/file paths, report verification, and clearly disclose anything unresolved.
-    - Do not paste full scripts into the final response after applying them with tools.
-    """;
+		RESPONSE RULES:
+		- Keep progress updates brief and specific to the action being taken.
+		- Keep the final response concise: state what changed, identify affected instance/file paths, report verification, and clearly disclose anything unresolved.
+		- Do not paste full scripts into the final response after applying them with tools.
+		""";
 
 	public async Task<string> TestConnectionAsync(ForgeProviderSettings settings)
 	{
@@ -66,7 +66,9 @@ internal sealed class ForgeChatClient
 
 		string rawResponse = await SendRequestAsync(settings, messages, null);
 		ForgeChatMessage assistant = ParseAssistantMessage(rawResponse);
-		return string.IsNullOrWhiteSpace(assistant.Content) ? "No text content returned." : assistant.Content.Trim();
+		return string.IsNullOrWhiteSpace(assistant.Content)
+			? "No text content returned."
+			: assistant.Content.Trim();
 	}
 
 	public async Task<ForgeCompletionResult> CompleteTurnAsync(
@@ -76,7 +78,8 @@ internal sealed class ForgeChatClient
 		string? contextSummary,
 		ForgeToolExecutor toolExecutor,
 		Func<string, Task>? activityCallback = null,
-		Func<ForgeRunLuauArgs, Task<bool>>? confirmLuauCallback = null)
+		Func<ForgeRunLuauArgs, Task<bool>>? confirmLuauCallback = null
+	)
 	{
 		List<ForgeChatMessage> working =
 		[
@@ -87,11 +90,13 @@ internal sealed class ForgeChatClient
 
 		if (!string.IsNullOrWhiteSpace(contextSummary))
 		{
-			working.Add(new ForgeChatMessage
-			{
-				Role = "system",
-				Content = "Current Creator context:\n" + contextSummary.Trim(),
-			});
+			working.Add(
+				new ForgeChatMessage
+				{
+					Role = "system",
+					Content = "Current Creator context:\n" + contextSummary.Trim(),
+				}
+			);
 		}
 
 		ForgeChatMessage userMessage = new() { Role = "user", Content = userPrompt.Trim() };
@@ -103,8 +108,15 @@ internal sealed class ForgeChatClient
 		for (int round = 0; round < MaxToolRounds; round++)
 		{
 			RepairToolCallSequence(working);
-			if (activityCallback != null) await activityCallback(round == 0 ? "Analyzing your request…" : "Continuing with project context…");
-			string rawResponse = await SendRequestAsync(settings, working, ForgeToolCatalog.Definitions);
+			if (activityCallback != null)
+				await activityCallback(
+					round == 0 ? "Analyzing your request…" : "Continuing with project context…"
+				);
+			string rawResponse = await SendRequestAsync(
+				settings,
+				working,
+				ForgeToolCatalog.Definitions
+			);
 			ForgeChatMessage assistantMessage = ParseAssistantMessage(rawResponse);
 			working.Add(assistantMessage);
 			result.TranscriptDelta.Add(assistantMessage.Clone());
@@ -112,7 +124,11 @@ internal sealed class ForgeChatClient
 			if (assistantMessage.ToolCalls == null || assistantMessage.ToolCalls.Count == 0)
 			{
 				result.AssistantText = assistantMessage.Content?.Trim() ?? string.Empty;
-				CreatorNotificationCenter.Notify("Forge finished", "Your response is ready.", "success");
+				CreatorNotificationCenter.Notify(
+					"Forge finished",
+					"Your response is ready.",
+					"success"
+				);
 				return result;
 			}
 
@@ -122,25 +138,34 @@ internal sealed class ForgeChatClient
 				toolExecutor.ResetLastEvent();
 				try
 				{
-					if (activityCallback != null) await activityCallback(GetToolActivityText(toolCall.Function.Name));
+					if (activityCallback != null)
+						await activityCallback(GetToolActivityText(toolCall.Function.Name));
 					if (toolCall.Function.Name == "run_luau")
 					{
-						ForgeRunLuauArgs runArgs = toolExecutor.ParseRunLuauArguments(toolCall.Function.Arguments);
-						bool approved = confirmLuauCallback != null && await confirmLuauCallback(runArgs);
+						ForgeRunLuauArgs runArgs = toolExecutor.ParseRunLuauArguments(
+							toolCall.Function.Arguments
+						);
+						bool approved =
+							confirmLuauCallback != null && await confirmLuauCallback(runArgs);
 						toolResult = approved
 							? toolExecutor.RunConfirmedLuau(runArgs)
 							: "The user declined Luau execution. Do not claim the code ran; provide the code and manual steps instead.";
 					}
 					else
 					{
-						toolResult = toolExecutor.Execute(toolCall.Function.Name, toolCall.Function.Arguments);
+						toolResult = toolExecutor.Execute(
+							toolCall.Function.Name,
+							toolCall.Function.Arguments
+						);
 					}
-					ForgeToolEvent toolEvent = toolExecutor.LastEvent ?? new ForgeToolEvent
-					{
-						ToolName = toolCall.Function.Name,
-						Title = GetToolActivityText(toolCall.Function.Name).TrimEnd('…'),
-						Detail = toolResult.Length > 220 ? toolResult[..220] + "…" : toolResult,
-					};
+					ForgeToolEvent toolEvent =
+						toolExecutor.LastEvent
+						?? new ForgeToolEvent
+						{
+							ToolName = toolCall.Function.Name,
+							Title = GetToolActivityText(toolCall.Function.Name).TrimEnd('…'),
+							Detail = toolResult.Length > 220 ? toolResult[..220] + "…" : toolResult,
+						};
 					result.ToolEvents.Add(toolEvent);
 				}
 				catch (Exception ex)
@@ -162,25 +187,35 @@ internal sealed class ForgeChatClient
 		}
 
 		RepairToolCallSequence(working);
-		if (activityCallback != null) await activityCallback("Writing a final response…");
-		working.Add(new ForgeChatMessage
-		{
-			Role = "system",
-			Content = "Tool use is now disabled. Give the user a complete final answer using the gathered results. If an action could not be completed, provide exact code and manual steps. Do not request another tool call.",
-		});
+		if (activityCallback != null)
+			await activityCallback("Writing a final response…");
+		working.Add(
+			new ForgeChatMessage
+			{
+				Role = "system",
+				Content =
+					"Tool use is now disabled. Give the user a complete final answer using the gathered results. If an action could not be completed, provide exact code and manual steps. Do not request another tool call.",
+			}
+		);
 		string finalRaw = await SendRequestAsync(settings, working, null);
 		ForgeChatMessage finalMessage = ParseAssistantMessage(finalRaw);
 		result.AssistantText = string.IsNullOrWhiteSpace(finalMessage.Content)
 			? "Forge completed its inspection but the model returned no final text. Review the tool activity above and try a more capable model."
 			: finalMessage.Content.Trim();
-		result.TranscriptDelta.Add(new ForgeChatMessage { Role = "assistant", Content = result.AssistantText });
+		result.TranscriptDelta.Add(
+			new ForgeChatMessage { Role = "assistant", Content = result.AssistantText }
+		);
 		CreatorNotificationCenter.Notify("Forge finished", "Your response is ready.", "success");
 		return result;
 	}
 
-	private static IEnumerable<ForgeChatMessage> NormalizeTranscript(IEnumerable<ForgeChatMessage> source)
+	private static IEnumerable<ForgeChatMessage> NormalizeTranscript(
+		IEnumerable<ForgeChatMessage> source
+	)
 	{
-		List<ForgeChatMessage> normalized = source.Select(static message => message.Clone()).ToList();
+		List<ForgeChatMessage> normalized = source
+			.Select(static message => message.Clone())
+			.ToList();
 		RepairToolCallSequence(normalized);
 		return normalized;
 	}
@@ -190,7 +225,11 @@ internal sealed class ForgeChatClient
 		for (int i = 0; i < messages.Count; i++)
 		{
 			ForgeChatMessage assistant = messages[i];
-			if (assistant.Role != "assistant" || assistant.ToolCalls == null || assistant.ToolCalls.Count == 0)
+			if (
+				assistant.Role != "assistant"
+				|| assistant.ToolCalls == null
+				|| assistant.ToolCalls.Count == 0
+			)
 				continue;
 
 			HashSet<string> answered = [];
@@ -204,14 +243,19 @@ internal sealed class ForgeChatClient
 
 			foreach (ForgeChatToolCall call in assistant.ToolCalls)
 			{
-				if (answered.Contains(call.Id)) continue;
-				messages.Insert(cursor++, new ForgeChatMessage
-				{
-					Role = "tool",
-					ToolCallId = call.Id,
-					Name = call.Function.Name,
-					Content = "This tool call was interrupted before execution. Continue without assuming it succeeded.",
-				});
+				if (answered.Contains(call.Id))
+					continue;
+				messages.Insert(
+					cursor++,
+					new ForgeChatMessage
+					{
+						Role = "tool",
+						ToolCallId = call.Id,
+						Name = call.Function.Name,
+						Content =
+							"This tool call was interrupted before execution. Continue without assuming it succeeded.",
+					}
+				);
 			}
 		}
 	}
@@ -220,34 +264,42 @@ internal sealed class ForgeChatClient
 	{
 		string id = model.Trim().ToLowerInvariant();
 		int slash = id.LastIndexOf('/');
-		if (slash >= 0) id = id[(slash + 1)..];
-		return !(id.StartsWith("gpt-5", StringComparison.Ordinal)
+		if (slash >= 0)
+			id = id[(slash + 1)..];
+		return !(
+			id.StartsWith("gpt-5", StringComparison.Ordinal)
 			|| id.StartsWith("o1", StringComparison.Ordinal)
 			|| id.StartsWith("o3", StringComparison.Ordinal)
 			|| id.StartsWith("o4", StringComparison.Ordinal)
 			|| id.StartsWith("grok-4", StringComparison.Ordinal)
 			|| id == "forge-free"
-			|| id == "auto");
+			|| id == "auto"
+		);
 	}
 
-	private static string GetToolActivityText(string toolName) => toolName switch
-	{
-		"get_creator_state" => "Reading Creator state…",
-		"list_instantiable_classes" => "Checking available classes…",
-		"search_instances" => "Searching Inspector…",
-		"inspect_instance" => "Inspecting object properties and source…",
-		"select_instances" => "Updating selection…",
-		"create_instance" => "Creating a visible object…",
-		"set_instance_properties" => "Applying property changes…",
-		"delete_instance" => "Deleting an object…",
-		"edit_script_source" => "Editing script…",
-		"get_script_diff" => "Preparing script diff…",
-		"rollback_last_change" => "Rolling back change…",
-		"run_luau" => "Preparing Luau execution preview…",
-		_ => $"Running {toolName}…",
-	};
+	private static string GetToolActivityText(string toolName) =>
+		toolName switch
+		{
+			"get_creator_state" => "Reading Creator state…",
+			"list_instantiable_classes" => "Checking available classes…",
+			"search_instances" => "Searching Inspector…",
+			"inspect_instance" => "Inspecting object properties and source…",
+			"select_instances" => "Updating selection…",
+			"create_instance" => "Creating a visible object…",
+			"set_instance_properties" => "Applying property changes…",
+			"delete_instance" => "Deleting an object…",
+			"edit_script_source" => "Editing script…",
+			"get_script_diff" => "Preparing script diff…",
+			"rollback_last_change" => "Rolling back change…",
+			"run_luau" => "Preparing Luau execution preview…",
+			_ => $"Running {toolName}…",
+		};
 
-	private async Task<string> SendRequestAsync(ForgeProviderSettings settings, List<ForgeChatMessage> messages, List<ForgeChatToolDefinition>? tools)
+	private async Task<string> SendRequestAsync(
+		ForgeProviderSettings settings,
+		List<ForgeChatMessage> messages,
+		List<ForgeChatToolDefinition>? tools
+	)
 	{
 		ForgeChatRequest request = new()
 		{
@@ -257,11 +309,17 @@ internal sealed class ForgeChatClient
 			ToolChoice = tools == null ? null : "auto",
 		};
 
-		request.Temperature = SupportsCustomTemperature(settings.Model) ? settings.Temperature : null;
-		string json = settings.Provider == ForgeProviderKind.Anthropic
-			? BuildAnthropicRequest(request)
-			: JsonSerializer.Serialize(request, ForgeJsonContext.Default.ForgeChatRequest);
-		using HttpRequestMessage httpRequest = new(HttpMethod.Post, settings.GetChatCompletionsEndpoint())
+		request.Temperature = SupportsCustomTemperature(settings.Model)
+			? settings.Temperature
+			: null;
+		string json =
+			settings.Provider == ForgeProviderKind.Anthropic
+				? BuildAnthropicRequest(request)
+				: JsonSerializer.Serialize(request, ForgeJsonContext.Default.ForgeChatRequest);
+		using HttpRequestMessage httpRequest = new(
+			HttpMethod.Post,
+			settings.GetChatCompletionsEndpoint()
+		)
 		{
 			Content = new StringContent(json, Encoding.UTF8, "application/json"),
 		};
@@ -270,10 +328,15 @@ internal sealed class ForgeChatClient
 		{
 			if (string.IsNullOrWhiteSpace(CreatorAPI.Token))
 			{
-				throw new InvalidOperationException("Sign in to BrickVerse before using Forge Free.");
+				throw new InvalidOperationException(
+					"Sign in to BrickVerse before using Forge Free."
+				);
 			}
 
-			httpRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {CreatorAPI.Token}");
+			httpRequest.Headers.TryAddWithoutValidation(
+				"Authorization",
+				$"Bearer {CreatorAPI.Token}"
+			);
 		}
 		else if (!string.IsNullOrWhiteSpace(settings.ApiKey))
 		{
@@ -284,7 +347,10 @@ internal sealed class ForgeChatClient
 			}
 			else
 			{
-				httpRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {settings.ApiKey.Trim()}");
+				httpRequest.Headers.TryAddWithoutValidation(
+					"Authorization",
+					$"Bearer {settings.ApiKey.Trim()}"
+				);
 			}
 		}
 
@@ -296,7 +362,9 @@ internal sealed class ForgeChatClient
 			throw new HttpRequestException(BuildErrorMessage(response, body));
 		}
 
-		return settings.Provider == ForgeProviderKind.Anthropic ? ConvertAnthropicResponse(body) : body;
+		return settings.Provider == ForgeProviderKind.Anthropic
+			? ConvertAnthropicResponse(body)
+			: body;
 	}
 
 	[RequiresUnreferencedCode("Calls System.Text.Json.Nodes.JsonArray.Add<T>(T)")]
@@ -304,31 +372,53 @@ internal sealed class ForgeChatClient
 	private static string BuildAnthropicRequest(ForgeChatRequest request)
 	{
 		JsonArray messages = [];
-		string system = string.Join("\n\n", request.Messages.Where(static message => message.Role == "system").Select(static message => message.Content));
+		string system = string.Join(
+			"\n\n",
+			request
+				.Messages.Where(static message => message.Role == "system")
+				.Select(static message => message.Content)
+		);
 
-		foreach (ForgeChatMessage message in request.Messages.Where(static message => message.Role != "system"))
+		foreach (
+			ForgeChatMessage message in request.Messages.Where(static message =>
+				message.Role != "system"
+			)
+		)
 		{
 			if (message.Role == "tool")
 			{
-				messages.Add(new JsonObject
-				{
-					["role"] = "user",
-					["content"] = new JsonArray(new JsonObject
+				messages.Add(
+					new JsonObject
 					{
-						["type"] = "tool_result",
-						["tool_use_id"] = message.ToolCallId,
-						["content"] = message.Content ?? string.Empty,
-					}),
-				});
+						["role"] = "user",
+						["content"] = new JsonArray(
+							new JsonObject
+							{
+								["type"] = "tool_result",
+								["tool_use_id"] = message.ToolCallId,
+								["content"] = message.Content ?? string.Empty,
+							}
+						),
+					}
+				);
 				continue;
 			}
 
 			JsonArray content = [];
-			if (!string.IsNullOrWhiteSpace(message.Content)) content.Add(new JsonObject { ["type"] = "text", ["text"] = message.Content });
+			if (!string.IsNullOrWhiteSpace(message.Content))
+				content.Add(new JsonObject { ["type"] = "text", ["text"] = message.Content });
 			if (message.ToolCalls != null)
 			{
 				foreach (ForgeChatToolCall call in message.ToolCalls)
-					content.Add(new JsonObject { ["type"] = "tool_use", ["id"] = call.Id, ["name"] = call.Function.Name, ["input"] = JsonNode.Parse(call.Function.Arguments) });
+					content.Add(
+						new JsonObject
+						{
+							["type"] = "tool_use",
+							["id"] = call.Id,
+							["name"] = call.Function.Name,
+							["input"] = JsonNode.Parse(call.Function.Arguments),
+						}
+					);
 			}
 			messages.Add(new JsonObject { ["role"] = message.Role, ["content"] = content });
 		}
@@ -340,12 +430,20 @@ internal sealed class ForgeChatClient
 			["system"] = system,
 			["messages"] = messages,
 		};
-		if (request.Temperature.HasValue) root["temperature"] = request.Temperature.Value;
+		if (request.Temperature.HasValue)
+			root["temperature"] = request.Temperature.Value;
 		if (request.Tools != null)
 		{
 			JsonArray tools = [];
 			foreach (ForgeChatToolDefinition tool in request.Tools)
-				tools.Add(new JsonObject { ["name"] = tool.Function.Name, ["description"] = tool.Function.Description, ["input_schema"] = JsonNode.Parse(tool.Function.Parameters.GetRawText()) });
+				tools.Add(
+					new JsonObject
+					{
+						["name"] = tool.Function.Name,
+						["description"] = tool.Function.Description,
+						["input_schema"] = JsonNode.Parse(tool.Function.Parameters.GetRawText()),
+					}
+				);
 			root["tools"] = tools;
 		}
 		return root.ToJsonString();
@@ -354,32 +452,46 @@ internal sealed class ForgeChatClient
 	[RequiresDynamicCode("Calls System.Text.Json.Nodes.JsonArray.Add<T>(T)")]
 	private static string ConvertAnthropicResponse(string body)
 	{
-		JsonNode root = JsonNode.Parse(body) ?? throw new InvalidDataException("Anthropic returned invalid JSON.");
+		JsonNode root =
+			JsonNode.Parse(body)
+			?? throw new InvalidDataException("Anthropic returned invalid JSON.");
 		JsonArray content = root["content"]?.AsArray() ?? [];
 		JsonArray toolCalls = [];
 		StringBuilder text = new();
 		foreach (JsonNode? block in content)
 		{
 			string? type = block?["type"]?.GetValue<string>();
-			if (type == "text") text.Append(block?["text"]?.GetValue<string>());
+			if (type == "text")
+				text.Append(block?["text"]?.GetValue<string>());
 			if (type == "tool_use")
 			{
-				toolCalls.Add(new JsonObject
-				{
-					["id"] = block?["id"]?.GetValue<string>(),
-					["type"] = "function",
-					["function"] = new JsonObject { ["name"] = block?["name"]?.GetValue<string>(), ["arguments"] = block?["input"]?.ToJsonString() ?? "{}" },
-				});
+				toolCalls.Add(
+					new JsonObject
+					{
+						["id"] = block?["id"]?.GetValue<string>(),
+						["type"] = "function",
+						["function"] = new JsonObject
+						{
+							["name"] = block?["name"]?.GetValue<string>(),
+							["arguments"] = block?["input"]?.ToJsonString() ?? "{}",
+						},
+					}
+				);
 			}
 		}
 		JsonObject message = new() { ["role"] = "assistant", ["content"] = text.ToString() };
-		if (toolCalls.Count > 0) message["tool_calls"] = toolCalls;
-		return new JsonObject { ["choices"] = new JsonArray(new JsonObject { ["message"] = message }) }.ToJsonString();
+		if (toolCalls.Count > 0)
+			message["tool_calls"] = toolCalls;
+		return new JsonObject
+		{
+			["choices"] = new JsonArray(new JsonObject { ["message"] = message }),
+		}.ToJsonString();
 	}
 
 	private static string BuildErrorMessage(HttpResponseMessage response, string body)
 	{
-		string defaultMessage = $"Forge provider request failed: {(int)response.StatusCode} {response.ReasonPhrase}";
+		string defaultMessage =
+			$"Forge provider request failed: {(int)response.StatusCode} {response.ReasonPhrase}";
 		if (string.IsNullOrWhiteSpace(body))
 		{
 			return defaultMessage;
@@ -396,18 +508,17 @@ internal sealed class ForgeChatClient
 					return error.GetString() ?? defaultMessage;
 				}
 
-				if (error.ValueKind == JsonValueKind.Object && error.TryGetProperty("message", out JsonElement message))
+				if (
+					error.ValueKind == JsonValueKind.Object
+					&& error.TryGetProperty("message", out JsonElement message)
+				)
 				{
 					return message.GetString() ?? defaultMessage;
 				}
 			}
 		}
-		catch (InvalidDataException)
-		{
-		}
-		catch (JsonException)
-		{
-		}
+		catch (InvalidDataException) { }
+		catch (JsonException) { }
 
 		return defaultMessage + "\n" + body;
 	}
@@ -429,22 +540,32 @@ internal sealed class ForgeChatClient
 			Content = ExtractContent(messageElement),
 		};
 
-		if (messageElement.TryGetProperty("tool_calls", out JsonElement toolCallsElement) && toolCallsElement.ValueKind == JsonValueKind.Array)
+		if (
+			messageElement.TryGetProperty("tool_calls", out JsonElement toolCallsElement)
+			&& toolCallsElement.ValueKind == JsonValueKind.Array
+		)
 		{
 			message.ToolCalls = [];
 			foreach (JsonElement toolCallElement in toolCallsElement.EnumerateArray())
 			{
 				JsonElement functionElement = toolCallElement.GetProperty("function");
-				message.ToolCalls.Add(new ForgeChatToolCall
-				{
-					Id = toolCallElement.TryGetProperty("id", out JsonElement idElement) ? idElement.GetString() ?? Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString("N"),
-					Type = toolCallElement.TryGetProperty("type", out JsonElement typeElement) ? typeElement.GetString() ?? "function" : "function",
-					Function = new ForgeChatToolFunctionCall
+				message.ToolCalls.Add(
+					new ForgeChatToolCall
 					{
-						Name = functionElement.GetProperty("name").GetString() ?? string.Empty,
-						Arguments = functionElement.GetProperty("arguments").GetString() ?? "{}",
-					},
-				});
+						Id = toolCallElement.TryGetProperty("id", out JsonElement idElement)
+							? idElement.GetString() ?? Guid.NewGuid().ToString("N")
+							: Guid.NewGuid().ToString("N"),
+						Type = toolCallElement.TryGetProperty("type", out JsonElement typeElement)
+							? typeElement.GetString() ?? "function"
+							: "function",
+						Function = new ForgeChatToolFunctionCall
+						{
+							Name = functionElement.GetProperty("name").GetString() ?? string.Empty,
+							Arguments =
+								functionElement.GetProperty("arguments").GetString() ?? "{}",
+						},
+					}
+				);
 			}
 		}
 
@@ -453,7 +574,10 @@ internal sealed class ForgeChatClient
 
 	private static string? ExtractContent(JsonElement messageElement)
 	{
-		if (!messageElement.TryGetProperty("content", out JsonElement contentElement) || contentElement.ValueKind == JsonValueKind.Null)
+		if (
+			!messageElement.TryGetProperty("content", out JsonElement contentElement)
+			|| contentElement.ValueKind == JsonValueKind.Null
+		)
 		{
 			return null;
 		}
@@ -477,7 +601,10 @@ internal sealed class ForgeChatClient
 				continue;
 			}
 
-			if (item.ValueKind == JsonValueKind.Object && item.TryGetProperty("text", out JsonElement textElement))
+			if (
+				item.ValueKind == JsonValueKind.Object
+				&& item.TryGetProperty("text", out JsonElement textElement)
+			)
 			{
 				builder.Append(textElement.GetString());
 			}

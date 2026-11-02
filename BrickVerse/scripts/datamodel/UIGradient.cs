@@ -1,9 +1,9 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using Godot;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BrickVerse.Datamodel;
 
@@ -35,30 +35,132 @@ public sealed partial class UIGradient : Instance
 		""";
 
 	private ColorSeries _color = ColorSeries.New(Colors.White, Colors.Black);
-	private float _rotation, _transparency, _borderThickness = 2;
+	private float _rotation,
+		_transparency,
+		_borderThickness = 2;
 	private bool _enabled = true;
 	private ApplyToEnum _applyTo = ApplyToEnum.Background;
 	private TextureRect? _overlay;
 	private UIField? _connectedField;
 	private readonly Dictionary<CanvasItem, Material?> _previousTextMaterials = [];
 
-	[Editable, ScriptProperty] public ColorSeries Color { get => _color; set { _color = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(0f)] public float Rotation { get => _rotation; set { _rotation = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(0f)] public float Transparency { get => _transparency; set { _transparency = Mathf.Clamp(value, 0, 1); Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(true)] public bool Enabled { get => _enabled; set { _enabled = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(ApplyToEnum.Background)] public ApplyToEnum ApplyTo { get => _applyTo; set { _applyTo = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(2f)] public float BorderThickness { get => _borderThickness; set { _borderThickness = Mathf.Max(0, value); Apply(); OnPropertyChanged(); } }
+	[Editable, ScriptProperty]
+	public ColorSeries Color
+	{
+		get => _color;
+		set
+		{
+			_color = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
-	public override void EnterTree() { ConnectField(); Apply(); base.EnterTree(); }
-	public override void ExitTree() { DisconnectField(); Cleanup(); base.ExitTree(); }
-	public override void PreDelete() { DisconnectField(); Cleanup(); base.PreDelete(); }
-	public override void HiddenChanged(bool to) { Apply(); base.HiddenChanged(to); }
-	protected override void OnParentChanged(Instance? oldParent, Instance? newParent) { DisconnectField(); ConnectField(); Apply(); base.OnParentChanged(oldParent, newParent); }
+	[Editable, ScriptProperty, DefaultValue(0f)]
+	public float Rotation
+	{
+		get => _rotation;
+		set
+		{
+			_rotation = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(0f)]
+	public float Transparency
+	{
+		get => _transparency;
+		set
+		{
+			_transparency = Mathf.Clamp(value, 0, 1);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(true)]
+	public bool Enabled
+	{
+		get => _enabled;
+		set
+		{
+			_enabled = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(ApplyToEnum.Background)]
+	public ApplyToEnum ApplyTo
+	{
+		get => _applyTo;
+		set
+		{
+			_applyTo = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(2f)]
+	public float BorderThickness
+	{
+		get => _borderThickness;
+		set
+		{
+			_borderThickness = Mathf.Max(0, value);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	public override void EnterTree()
+	{
+		ConnectField();
+		Apply();
+		base.EnterTree();
+	}
+
+	public override void ExitTree()
+	{
+		DisconnectField();
+		Cleanup();
+		base.ExitTree();
+	}
+
+	public override void PreDelete()
+	{
+		DisconnectField();
+		Cleanup();
+		base.PreDelete();
+	}
+
+	public override void HiddenChanged(bool to)
+	{
+		Apply();
+		base.HiddenChanged(to);
+	}
+
+	protected override void OnParentChanged(Instance? oldParent, Instance? newParent)
+	{
+		DisconnectField();
+		ConnectField();
+		Apply();
+		base.OnParentChanged(oldParent, newParent);
+	}
 
 	private void Apply()
 	{
 		Cleanup();
-		if (IsHidden || !_enabled || ResolveField() is not UIField field || field.NodeControl == null) return;
+		if (
+			IsHidden
+			|| !_enabled
+			|| ResolveField() is not UIField field
+			|| field.NodeControl == null
+		)
+			return;
 		GradientTexture2D texture = CreateTexture();
 		if (_applyTo == ApplyToEnum.Text)
 		{
@@ -66,60 +168,123 @@ public sealed partial class UIGradient : Instance
 			return;
 		}
 
-		_overlay = new TextureRect { MouseFilter = Control.MouseFilterEnum.Ignore, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale, Texture = texture, Modulate = new Color(1, 1, 1, 1 - _transparency) };
+		_overlay = new TextureRect
+		{
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+			StretchMode = TextureRect.StretchModeEnum.Scale,
+			Texture = texture,
+			Modulate = new Color(1, 1, 1, 1 - _transparency),
+		};
 		_overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		if (_applyTo is ApplyToEnum.Border or ApplyToEnum.UIStroke)
 		{
 			float thickness = ResolveBorderThickness(field);
 			float minimumSize = Mathf.Max(1, Mathf.Min(field.AbsoluteSize.X, field.AbsoluteSize.Y));
-			ShaderMaterial borderMaterial = new() { Shader = new Shader { Code = BorderShaderCode } };
-			borderMaterial.SetShaderParameter("border_width", Mathf.Clamp(thickness / minimumSize, 0, 0.5f));
+			ShaderMaterial borderMaterial = new()
+			{
+				Shader = new Shader { Code = BorderShaderCode },
+			};
+			borderMaterial.SetShaderParameter(
+				"border_width",
+				Mathf.Clamp(thickness / minimumSize, 0, 0.5f)
+			);
 			_overlay.Material = borderMaterial;
 		}
 		else
 		{
-			_overlay.Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Mul };
+			_overlay.Material = new CanvasItemMaterial
+			{
+				BlendMode = CanvasItemMaterial.BlendModeEnum.Mul,
+			};
 		}
 		field.NodeControl.AddChild(_overlay);
-		if (_applyTo == ApplyToEnum.Background) field.NodeControl.MoveChild(_overlay, 0);
+		if (_applyTo == ApplyToEnum.Background)
+			field.NodeControl.MoveChild(_overlay, 0);
 	}
 
-	private UIField? ResolveField() => Parent switch { UIField field => field, UIStroke { Parent: UIField field } => field, _ => null };
-	private void ConnectField() { _connectedField = ResolveField(); _connectedField?.TransformChanged.Connect(Apply); }
-	private void DisconnectField() { _connectedField?.TransformChanged.Disconnect(Apply); _connectedField = null; }
+	private UIField? ResolveField() =>
+		Parent switch
+		{
+			UIField field => field,
+			UIStroke { Parent: UIField field } => field,
+			_ => null,
+		};
+
+	private void ConnectField()
+	{
+		_connectedField = ResolveField();
+		_connectedField?.TransformChanged.Connect(Apply);
+	}
+
+	private void DisconnectField()
+	{
+		_connectedField?.TransformChanged.Disconnect(Apply);
+		_connectedField = null;
+	}
+
 	private GradientTexture2D CreateTexture()
 	{
-		float radians = Mathf.DegToRad(_rotation); Vector2 direction = new(Mathf.Cos(radians), Mathf.Sin(radians));
-		return new() { Gradient = _color.ToGradient(), FillFrom = new Vector2(0.5f, 0.5f) - direction * 0.5f, FillTo = new Vector2(0.5f, 0.5f) + direction * 0.5f, Width = 256, Height = 256 };
+		float radians = Mathf.DegToRad(_rotation);
+		Vector2 direction = new(Mathf.Cos(radians), Mathf.Sin(radians));
+		return new()
+		{
+			Gradient = _color.ToGradient(),
+			FillFrom = new Vector2(0.5f, 0.5f) - direction * 0.5f,
+			FillTo = new Vector2(0.5f, 0.5f) + direction * 0.5f,
+			Width = 256,
+			Height = 256,
+		};
 	}
+
 	private void ApplyToText(UIField field, GradientTexture2D texture)
 	{
 		Shader shader = new() { Code = TextShaderCode };
 		foreach (Node node in field.NodeControl.FindChildren("*", "", true, false))
 		{
-			if (node is not Label and not RichTextLabel and not LineEdit and not TextEdit) continue;
-			CanvasItem item = (CanvasItem)node; _previousTextMaterials.TryAdd(item, item.Material);
+			if (node is not Label and not RichTextLabel and not LineEdit and not TextEdit)
+				continue;
+			CanvasItem item = (CanvasItem)node;
+			_previousTextMaterials.TryAdd(item, item.Material);
 			ShaderMaterial material = new() { Shader = shader };
-			material.SetShaderParameter("gradient_texture", new GradientTexture1D { Gradient = texture.Gradient });
-			material.SetShaderParameter("gradient_rotation", Mathf.DegToRad(_rotation)); material.SetShaderParameter("gradient_alpha", 1 - _transparency);
+			material.SetShaderParameter(
+				"gradient_texture",
+				new GradientTexture1D { Gradient = texture.Gradient }
+			);
+			material.SetShaderParameter("gradient_rotation", Mathf.DegToRad(_rotation));
+			material.SetShaderParameter("gradient_alpha", 1 - _transparency);
 			item.Material = material;
 		}
 	}
+
 	private float ResolveBorderThickness(UIField field)
 	{
-		UIStroke? stroke = Parent as UIStroke ?? field.GetChildren().OfType<UIStroke>().FirstOrDefault();
-		if (_applyTo == ApplyToEnum.UIStroke && stroke != null) return stroke.Thickness.Compute(Mathf.Min(field.AbsoluteSize.X, field.AbsoluteSize.Y));
-		if (field is UIView view && view.BorderWidth > 0) return view.BorderWidth;
+		UIStroke? stroke =
+			Parent as UIStroke ?? field.GetChildren().OfType<UIStroke>().FirstOrDefault();
+		if (_applyTo == ApplyToEnum.UIStroke && stroke != null)
+			return stroke.Thickness.Compute(Mathf.Min(field.AbsoluteSize.X, field.AbsoluteSize.Y));
+		if (field is UIView view && view.BorderWidth > 0)
+			return view.BorderWidth;
 		return _borderThickness;
 	}
+
 	private void Cleanup()
 	{
-		_overlay?.QueueFree(); _overlay = null;
+		_overlay?.QueueFree();
+		_overlay = null;
 		foreach ((CanvasItem item, Material? material) in _previousTextMaterials)
-			if (GodotObject.IsInstanceValid(item)) item.Material = material;
+			if (GodotObject.IsInstanceValid(item))
+				item.Material = material;
 		_previousTextMaterials.Clear();
 	}
 
 	[ScriptEnum("UIGradientApplyTo")]
-	public enum ApplyToEnum { Background, Text, Border, UIStroke, All }
+	public enum ApplyToEnum
+	{
+		Background,
+		Text,
+		Border,
+		UIStroke,
+		All,
+	}
 }

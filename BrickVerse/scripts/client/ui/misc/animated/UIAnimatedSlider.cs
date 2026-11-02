@@ -2,15 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client.UI.Animated;
 
 public partial class UIAnimatedSlider : Control
 {
-	private const string PointPath = "res://scenes/client/ui/misc/animated/animated_slider_point.tscn";
+	private const string PointPath =
+		"res://scenes/client/ui/misc/animated/animated_slider_point.tscn";
 
 	private Color _baseColor = new(1, 1, 1);
 	private PackedScene _pointPacked = null!;
@@ -29,7 +30,8 @@ public partial class UIAnimatedSlider : Control
 
 		_targetSlider.Ready += RefreshSlider;
 
-		int stepCount = (int)Math.Round((_targetSlider.MaxValue - _targetSlider.MinValue) / _targetSlider.Step);
+		int stepCount = (int)
+			Math.Round((_targetSlider.MaxValue - _targetSlider.MinValue) / _targetSlider.Step);
 
 		for (int i = 0; i <= stepCount; i++)
 		{
@@ -66,7 +68,8 @@ public partial class UIAnimatedSlider : Control
 		float lightness = 0.8f;
 		float addBy = 1 / all;
 
-		int currentStep = (int)Math.Round((_targetSlider.Value - _targetSlider.MinValue) / _targetSlider.Step);
+		int currentStep = (int)
+			Math.Round((_targetSlider.Value - _targetSlider.MinValue) / _targetSlider.Step);
 
 		for (int i = 0; i < btns.Count; i++)
 		{

@@ -2,18 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.Managers;
 using System.Text.Json;
+using BrickVerse.Creator.Managers;
+using Godot;
 using static BrickVerse.Creator.Managers.ProjectManager;
 
 namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class TemplatePlaceCard : Button
 {
-	[Export] private TextureRect _thumbnailRect = null!;
-	[Export] private Label _nameLabel = null!;
-	[Export] private Label _descLabel = null!;
+	[Export]
+	private TextureRect _thumbnailRect = null!;
+
+	[Export]
+	private Label _nameLabel = null!;
+
+	[Export]
+	private Label _descLabel = null!;
 	public string TemplateFolderPath = "";
 
 	public override void _Ready()
@@ -21,10 +26,15 @@ public partial class TemplatePlaceCard : Button
 		if (!string.IsNullOrEmpty(TemplateFolderPath))
 		{
 			string f = FileAccess.GetFileAsString(TemplateFolderPath.PathJoin("template.json"));
-			TemplateProjectJSON templateData = JsonSerializer.Deserialize(f, TemplateProjectJSONGenerationContext.Default.TemplateProjectJSON);
+			TemplateProjectJSON templateData = JsonSerializer.Deserialize(
+				f,
+				TemplateProjectJSONGenerationContext.Default.TemplateProjectJSON
+			);
 			_nameLabel.Text = templateData.Name;
 			_descLabel.Text = templateData.Description;
-			_thumbnailRect.Texture = GD.Load<Texture2D>(TemplateFolderPath.PathJoin("thumbnail.png"));
+			_thumbnailRect.Texture = GD.Load<Texture2D>(
+				TemplateFolderPath.PathJoin("thumbnail.png")
+			);
 		}
 	}
 }

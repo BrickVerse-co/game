@@ -25,15 +25,18 @@ public abstract partial class AudioProcessor : AudioNode
 	{
 		EnsureBus();
 		int index = AudioServer.GetBusIndex(BusName);
-		if (index >= 0) AudioServer.SetBusSend(index, AudioGraph.ResolveDownstreamBus(this));
+		if (index >= 0)
+			AudioServer.SetBusSend(index, AudioGraph.ResolveDownstreamBus(this));
 	}
 
 	protected void ApplyEffect()
 	{
 		EnsureBus();
 		int index = AudioServer.GetBusIndex(BusName);
-		if (index < 0) return;
-		while (AudioServer.GetBusEffectCount(index) > 0) AudioServer.RemoveBusEffect(index, 0);
+		if (index < 0)
+			return;
+		while (AudioServer.GetBusEffectCount(index) > 0)
+			AudioServer.RemoveBusEffect(index, 0);
 		AudioEffect effect = CreateEffect();
 		ConfigureEffect(effect);
 		AudioServer.AddBusEffect(index, effect);
@@ -41,7 +44,8 @@ public abstract partial class AudioProcessor : AudioNode
 
 	private void EnsureBus()
 	{
-		if (AudioServer.GetBusIndex(BusName) >= 0) return;
+		if (AudioServer.GetBusIndex(BusName) >= 0)
+			return;
 		AudioServer.AddBus();
 		AudioServer.SetBusName(AudioServer.BusCount - 1, BusName);
 	}
@@ -49,7 +53,8 @@ public abstract partial class AudioProcessor : AudioNode
 	public override void PreDelete()
 	{
 		int index = AudioServer.GetBusIndex(BusName);
-		if (index >= 0) AudioServer.RemoveBus(index);
+		if (index >= 0)
+			AudioServer.RemoveBus(index);
 		base.PreDelete();
 	}
 }

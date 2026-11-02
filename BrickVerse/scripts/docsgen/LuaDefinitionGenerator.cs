@@ -2,7 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Godot;
 using static BrickVerse.DocsGen.APIReferenceGenerator;
 
 namespace BrickVerse.DocsGen;
@@ -43,7 +43,10 @@ public class LuaDefinitionGenerator
 			}
 		}
 
-		File.WriteAllText(atFolder.PathJoin("def.json"), JsonSerializer.Serialize(refer, APIRefGenerationContext.Default.APIReferenceRoot));
+		File.WriteAllText(
+			atFolder.PathJoin("def.json"),
+			JsonSerializer.Serialize(refer, APIRefGenerationContext.Default.APIReferenceRoot)
+		);
 
 		// luau-lsp rejects the entire definitions file when even one referenced
 		// engine type is undeclared. Discover those types from the generated API
@@ -61,9 +64,13 @@ public class LuaDefinitionGenerator
 		builder.AppendLine();
 
 		builder.AppendLine("export type BVSignal<T... = ...any> = {");
-		builder.AppendLine("\tConnect: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,");
+		builder.AppendLine(
+			"\tConnect: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,"
+		);
 		builder.AppendLine("\tDisconnect: (self: BVSignal<T...>, callback: (T...) -> ()) -> nil,");
-		builder.AppendLine("\tOnce: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,");
+		builder.AppendLine(
+			"\tOnce: (self: BVSignal<T...>, callback: (T...) -> ()) -> BVSignalConnection,"
+		);
 		builder.AppendLine("\tWait: (self: BVSignal<T...>) -> T...,");
 		builder.AppendLine("}");
 		builder.AppendLine();
@@ -92,7 +99,8 @@ public class LuaDefinitionGenerator
 		foreach (ScriptClass item in refer.Classes)
 		{
 			// Ignore already declared types
-			if (item.Name == "BVSignal" || item.Name == "BVSignalConnection") continue;
+			if (item.Name == "BVSignal" || item.Name == "BVSignalConnection")
+				continue;
 
 			builder.AppendLine(GenerateClass(item));
 		}
@@ -100,10 +108,13 @@ public class LuaDefinitionGenerator
 		// Static datamodel aliases are runtime globals, not merely class names.
 		// Emit aliases whose spelling differs from their type (for example
 		// `world: World`) and the legacy `game` alias registered by LuauProvider.
-		foreach (ScriptClass item in refer.Classes.Where(item =>
-			item.IsStatic
-			&& !string.IsNullOrWhiteSpace(item.StaticAlias)
-			&& item.StaticAlias != item.Name))
+		foreach (
+			ScriptClass item in refer.Classes.Where(item =>
+				item.IsStatic
+				&& !string.IsNullOrWhiteSpace(item.StaticAlias)
+				&& item.StaticAlias != item.Name
+			)
+		)
 		{
 			builder.AppendLine($"--- Runtime alias for the {item.Name} datamodel service.");
 			builder.AppendLine($"declare {item.StaticAlias}: {item.Name}");
@@ -112,13 +123,17 @@ public class LuaDefinitionGenerator
 		// declarations explicit: not every runtime global is represented by a
 		// static ScriptClass alias in the generated API reference.
 		bool declaresWorldAlias = refer.Classes.Any(item =>
-			item.IsStatic && string.Equals(item.StaticAlias, "world", System.StringComparison.Ordinal));
+			item.IsStatic
+			&& string.Equals(item.StaticAlias, "world", System.StringComparison.Ordinal)
+		);
 		if (!declaresWorldAlias)
 		{
 			builder.AppendLine("--- The root World datamodel.");
 			builder.AppendLine("declare world: World");
 		}
-		builder.AppendLine("--- The root World datamodel. `game` and `world` reference the same object.");
+		builder.AppendLine(
+			"--- The root World datamodel. `game` and `world` reference the same object."
+		);
 		builder.AppendLine("declare game: World");
 		builder.AppendLine("--- Alias for the root World datamodel.");
 		builder.AppendLine("declare workspace: World");
@@ -130,10 +145,16 @@ public class LuaDefinitionGenerator
 		builder.AppendLine("declare function warn(...: any): ()");
 		builder.AppendLine("--- Yields the current thread for at least the requested duration.");
 		builder.AppendLine("declare function wait(duration: number?): number");
-		builder.AppendLine("--- Runs a function on a new scheduled thread (legacy alias for task.spawn).");
+		builder.AppendLine(
+			"--- Runs a function on a new scheduled thread (legacy alias for task.spawn)."
+		);
 		builder.AppendLine("declare function spawn(callback: (...any) -> (), ...: any): ()");
-		builder.AppendLine("--- Runs a function after at least the requested duration (legacy alias for task.delay).");
-		builder.AppendLine("declare function delay(duration: number, callback: (...any) -> (), ...: any): ()");
+		builder.AppendLine(
+			"--- Runs a function after at least the requested duration (legacy alias for task.delay)."
+		);
+		builder.AppendLine(
+			"declare function delay(duration: number, callback: (...any) -> (), ...: any): ()"
+		);
 		builder.AppendLine("--- Seconds elapsed since the current world started.");
 		builder.AppendLine("declare function time(): number");
 		builder.AppendLine("--- Alias for time().");
@@ -144,7 +165,9 @@ public class LuaDefinitionGenerator
 		builder.AppendLine("\twait: (duration: number?) -> number,");
 		builder.AppendLine("\tspawn: (callback: (...any) -> (), ...any) -> thread,");
 		builder.AppendLine("\tdefer: (callback: (...any) -> (), ...any) -> thread,");
-		builder.AppendLine("\tdelay: (duration: number, callback: (...any) -> (), ...any) -> thread,");
+		builder.AppendLine(
+			"\tdelay: (duration: number, callback: (...any) -> (), ...any) -> thread,"
+		);
 		builder.AppendLine("\tcancel: (scheduledThread: thread) -> (),");
 		builder.AppendLine("\tdesynchronize: () -> (),");
 		builder.AppendLine("\tsynchronize: () -> (),");
@@ -160,20 +183,24 @@ public class LuaDefinitionGenerator
 		if (c.IsInstantiable)
 		{
 			// Add new to instantiatables
-			c.Methods.Add(new()
-			{
-				IsStatic = true,
-				Name = "New",
-				Parameters = [
-					new() {
-						Name = "parent",
-						Type = "NetworkedObject",
-						IsOptional = true,
-						DefaultValue = null
-					}
-				],
-				ReturnType = c.Name
-			});
+			c.Methods.Add(
+				new()
+				{
+					IsStatic = true,
+					Name = "New",
+					Parameters =
+					[
+						new()
+						{
+							Name = "parent",
+							Type = "NetworkedObject",
+							IsOptional = true,
+							DefaultValue = null,
+						},
+					],
+					ReturnType = c.Name,
+				}
+			);
 		}
 
 		bool hasStatic = false;
@@ -183,9 +210,16 @@ public class LuaDefinitionGenerator
 
 		foreach (ScriptProperty p in c.Properties)
 		{
-			if (p.IsObsolete) continue;
-			if (p.IsStatic) { hasStatic = true; continue; }
-			builder.AppendLine($"\t--- {p.Name} property ({ProcessType(p.Type ?? "nil")}){(p.IsReadOnly ? "; read-only" : "")}. ");
+			if (p.IsObsolete)
+				continue;
+			if (p.IsStatic)
+			{
+				hasStatic = true;
+				continue;
+			}
+			builder.AppendLine(
+				$"\t--- {p.Name} property ({ProcessType(p.Type ?? "nil")}){(p.IsReadOnly ? "; read-only" : "")}. "
+			);
 			builder.AppendLine($"\t{p.Name} : {ProcessType(p.Type ?? "nil")}");
 		}
 
@@ -193,7 +227,10 @@ public class LuaDefinitionGenerator
 		{
 			if (e.Parameters != null && e.Parameters.Count > 0)
 			{
-				string typeParams = string.Join(", ", e.Parameters.Select(p => ProcessType(p.Type ?? "nil")));
+				string typeParams = string.Join(
+					", ",
+					e.Parameters.Select(p => ProcessType(p.Type ?? "nil"))
+				);
 				builder.AppendLine($"\t{e.Name} : BVSignal<{typeParams}>");
 			}
 			else
@@ -204,26 +241,42 @@ public class LuaDefinitionGenerator
 
 		foreach (ScriptMethod m in c.Methods)
 		{
-			if (m.IsObsolete) continue;
-			if (SkippedMetamethods.Contains(m.Name)) continue;
+			if (m.IsObsolete)
+				continue;
+			if (SkippedMetamethods.Contains(m.Name))
+				continue;
 			if (m.IsStatic && !m.Name.StartsWith("__"))
 			{
 				hasStatic = true;
-				if (!m.IsSemiStatic) { continue; }
+				if (!m.IsSemiStatic)
+				{
+					continue;
+				}
 			}
 			List<string> args = [];
 
 			foreach (ScriptParameter param in m.Parameters)
 			{
-				if (param.Type == null) continue;
-				args.Add($"{param.Name}: {ProcessType(param.Type) + (param.IsOptional ? "?" : "")}");
+				if (param.Type == null)
+					continue;
+				args.Add(
+					$"{param.Name}: {ProcessType(param.Type) + (param.IsOptional ? "?" : "")}"
+				);
 			}
 
-			if (!m.IsSemiStatic) { args.Insert(0, "self"); }
-			else { args[0] = "self"; }
+			if (!m.IsSemiStatic)
+			{
+				args.Insert(0, "self");
+			}
+			else
+			{
+				args[0] = "self";
+			}
 
 			builder.AppendLine($"\t--- Calls {m.Name} on this {c.Name}.");
-			builder.AppendLine($"\tfunction {m.Name}({string.Join(", ", args)}): {ProcessType(m.ReturnType ?? "")}");
+			builder.AppendLine(
+				$"\tfunction {m.Name}({string.Join(", ", args)}): {ProcessType(m.ReturnType ?? "")}"
+			);
 		}
 
 		builder.AppendLine($"end");
@@ -244,25 +297,32 @@ public class LuaDefinitionGenerator
 
 		foreach (ScriptProperty p in c.Properties)
 		{
-			if (!p.IsStatic) continue;
+			if (!p.IsStatic)
+				continue;
 			builder.AppendLine($"\t{p.Name} : {ProcessType(p.Type ?? "nil")},");
 		}
 
 		foreach (ScriptMethod m in c.Methods)
 		{
-			if (m.IsObsolete) continue;
-			if (!m.IsStatic) continue;
+			if (m.IsObsolete)
+				continue;
+			if (!m.IsStatic)
+				continue;
 			// Ignore metamethods
-			if (m.Name.StartsWith("__")) continue;
+			if (m.Name.StartsWith("__"))
+				continue;
 			List<string> args = [];
 
 			foreach (ScriptParameter param in m.Parameters)
 			{
-				if (param.Type == null) continue;
+				if (param.Type == null)
+					continue;
 				args.Add($"{ProcessType(param.Type) + (param.IsOptional ? "?" : "")}");
 			}
 
-			builder.AppendLine($"{m.Name}: ({string.Join(", ", args)}) -> ({ProcessType(m.ReturnType ?? "")}),");
+			builder.AppendLine(
+				$"{m.Name}: ({string.Join(", ", args)}) -> ({ProcessType(m.ReturnType ?? "")}),"
+			);
 		}
 
 		builder.AppendLine($"}}");
@@ -285,38 +345,56 @@ public class LuaDefinitionGenerator
 
 	private static IEnumerable<string> CollectExternalTypeNames(APIReferenceRoot reference)
 	{
-		HashSet<string> declared = reference.Classes.Select(static item => item.Name)
+		HashSet<string> declared = reference
+			.Classes.Select(static item => item.Name)
 			.Concat(reference.Enums.Select(static item => item.Name))
 			.Concat(reference.Enums.Select(static item => item.InternalName))
 			.Concat(["BVSignal", "BVSignalConnection", "Enum"])
 			.ToHashSet(StringComparer.Ordinal);
 		HashSet<string> builtins = new(StringComparer.Ordinal)
 		{
-			"any", "boolean", "buffer", "false", "function", "nil", "never", "number",
-			"string", "table", "thread", "true", "unknown", "self"
+			"any",
+			"boolean",
+			"buffer",
+			"false",
+			"function",
+			"nil",
+			"never",
+			"number",
+			"string",
+			"table",
+			"thread",
+			"true",
+			"unknown",
+			"self",
 		};
 		HashSet<string> referenced = [];
 
 		void AddType(string? type)
 		{
-			if (string.IsNullOrWhiteSpace(type)) return;
+			if (string.IsNullOrWhiteSpace(type))
+				return;
 			foreach (Match match in Regex.Matches(ProcessType(type), @"\b[A-Za-z_][A-Za-z0-9_]*\b"))
 			{
 				string identifier = match.Value;
-				if (!declared.Contains(identifier) && !builtins.Contains(identifier)) referenced.Add(identifier);
+				if (!declared.Contains(identifier) && !builtins.Contains(identifier))
+					referenced.Add(identifier);
 			}
 		}
 
 		foreach (ScriptClass scriptClass in reference.Classes)
 		{
 			AddType(scriptClass.BaseType);
-			foreach (ScriptProperty property in scriptClass.Properties ?? []) AddType(property.Type);
+			foreach (ScriptProperty property in scriptClass.Properties ?? [])
+				AddType(property.Type);
 			foreach (ScriptEvent scriptEvent in scriptClass.Events ?? [])
-				foreach (ScriptParameter parameter in scriptEvent.Parameters ?? []) AddType(parameter.Type);
+			foreach (ScriptParameter parameter in scriptEvent.Parameters ?? [])
+				AddType(parameter.Type);
 			foreach (ScriptMethod method in scriptClass.Methods ?? [])
 			{
 				AddType(method.ReturnType);
-				foreach (ScriptParameter parameter in method.Parameters ?? []) AddType(parameter.Type);
+				foreach (ScriptParameter parameter in method.Parameters ?? [])
+					AddType(parameter.Type);
 			}
 		}
 

@@ -3,9 +3,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using Godot;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Wizards;
 
@@ -85,9 +85,14 @@ public partial class IntroductionWizard : Control
 	public static IntroductionWizard Singleton { get; private set; } = null!;
 
 	// Kept for scene compatibility with the old slideshow scene.
-	[Export] private IntroPage _firstPage = null!;
-	[Export] private TextureRect _bannerImg = null!;
-	[Export] private TabContainer _tabs = null!;
+	[Export]
+	private IntroPage _firstPage = null!;
+
+	[Export]
+	private TextureRect _bannerImg = null!;
+
+	[Export]
+	private TabContainer _tabs = null!;
 
 	private readonly ColorRect[] _dimmers = new ColorRect[4];
 	private Panel _spotlight = null!;
@@ -231,7 +236,8 @@ public partial class IntroductionWizard : Control
 		Label label = new() { MouseFilter = MouseFilterEnum.Ignore };
 		label.AddThemeFontSizeOverride("font_size", size);
 		label.AddThemeColorOverride("font_color", color);
-		if (uppercase) label.Text = label.Text.ToUpperInvariant();
+		if (uppercase)
+			label.Text = label.Text.ToUpperInvariant();
 		return label;
 	}
 
@@ -255,21 +261,30 @@ public partial class IntroductionWizard : Control
 	public override void _Process(double delta)
 	{
 		base._Process(delta);
-		if (!Visible) return;
+		if (!Visible)
+			return;
 		_focusAnimation = Mathf.Min(1, _focusAnimation + (float)delta * 4.5f);
 		LayoutSpotlight();
 	}
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
-		if (!Visible || @event is not InputEventKey { Pressed: true, Echo: false } key) return;
+		if (!Visible || @event is not InputEventKey { Pressed: true, Echo: false } key)
+			return;
 		switch (key.Keycode)
 		{
-			case Key.Escape: Close(); break;
-			case Key.Left: Prev(); break;
+			case Key.Escape:
+				Close();
+				break;
+			case Key.Left:
+				Prev();
+				break;
 			case Key.Right:
-			case Key.Enter: Next(); break;
-			default: return;
+			case Key.Enter:
+				Next();
+				break;
+			default:
+				return;
 		}
 		GetViewport().SetInputAsHandled();
 	}
@@ -284,21 +299,30 @@ public partial class IntroductionWizard : Control
 	public void Close()
 	{
 		Visible = false;
-		using FileAccess f = FileAccess.Open(CreatorInterface.IntroRanFile, FileAccess.ModeFlags.Write);
+		using FileAccess f = FileAccess.Open(
+			CreatorInterface.IntroRanFile,
+			FileAccess.ModeFlags.Write
+		);
 		f.StoreString("1");
-		if (World.Current == null) StartupSplash.Singleton.Open();
+		if (World.Current == null)
+			StartupSplash.Singleton.Open();
 	}
 
 	public void Next()
 	{
-		if (_stepIndex >= Steps.Length - 1) { Close(); return; }
+		if (_stepIndex >= Steps.Length - 1)
+		{
+			Close();
+			return;
+		}
 		_stepIndex++;
 		ShowStep();
 	}
 
 	public void Prev()
 	{
-		if (_stepIndex == 0) return;
+		if (_stepIndex == 0)
+			return;
 		_stepIndex--;
 		ShowStep();
 	}
@@ -313,7 +337,8 @@ public partial class IntroductionWizard : Control
 		_progress.Text = BuildProgressText();
 		_back.Disabled = _stepIndex == 0;
 		_next.Text = _stepIndex == Steps.Length - 1 ? "Finish" : "Next";
-		_target = step.TargetPath == null ? null : GetParent().GetNodeOrNull<Control>(step.TargetPath);
+		_target =
+			step.TargetPath == null ? null : GetParent().GetNodeOrNull<Control>(step.TargetPath);
 		_focusAnimation = 0;
 		AnimateCard();
 		LayoutSpotlight();
@@ -323,7 +348,8 @@ public partial class IntroductionWizard : Control
 	private string BuildProgressText()
 	{
 		string progress = "";
-		for (int i = 0; i < Steps.Length; i++) progress += i == _stepIndex ? "● " : "○ ";
+		for (int i = 0; i < Steps.Length; i++)
+			progress += i == _stepIndex ? "● " : "○ ";
 		return progress.TrimEnd();
 	}
 
@@ -332,7 +358,10 @@ public partial class IntroductionWizard : Control
 		_cardTween?.Kill();
 		_card.Scale = new Vector2(0.94f, 0.94f);
 		_card.Modulate = new Color(1, 1, 1, 0);
-		_cardTween = CreateTween().SetParallel(true).SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+		_cardTween = CreateTween()
+			.SetParallel(true)
+			.SetEase(Tween.EaseType.Out)
+			.SetTrans(Tween.TransitionType.Cubic);
 		_cardTween.TweenProperty(_card, "scale", Vector2.One, 0.22);
 		_cardTween.TweenProperty(_card, "modulate", Colors.White, 0.18);
 	}
@@ -346,7 +375,9 @@ public partial class IntroductionWizard : Control
 		{
 			Rect2 targetRect = _target!.GetGlobalRect();
 			Vector2 localOrigin = GetGlobalRect().Position;
-			focus = new Rect2(targetRect.Position - localOrigin, targetRect.Size).Grow(SpotlightPadding);
+			focus = new Rect2(targetRect.Position - localOrigin, targetRect.Size).Grow(
+				SpotlightPadding
+			);
 			Rect2 expanded = focus.Grow(34);
 			focus = new Rect2(
 				expanded.Position.Lerp(focus.Position, _focusAnimation),
@@ -370,7 +401,8 @@ public partial class IntroductionWizard : Control
 		if (hole.Size == Vector2.Zero)
 		{
 			SetRect(_dimmers[0], Vector2.Zero, viewportSize);
-			for (int i = 1; i < 4; i++) SetRect(_dimmers[i], Vector2.Zero, Vector2.Zero);
+			for (int i = 1; i < 4; i++)
+				SetRect(_dimmers[i], Vector2.Zero, Vector2.Zero);
 			return;
 		}
 
@@ -380,14 +412,23 @@ public partial class IntroductionWizard : Control
 		float bottom = Mathf.Clamp(hole.End.Y, 0, viewportSize.Y);
 		SetRect(_dimmers[0], Vector2.Zero, new Vector2(viewportSize.X, top));
 		SetRect(_dimmers[1], new Vector2(0, top), new Vector2(left, bottom - top));
-		SetRect(_dimmers[2], new Vector2(right, top), new Vector2(viewportSize.X - right, bottom - top));
-		SetRect(_dimmers[3], new Vector2(0, bottom), new Vector2(viewportSize.X, viewportSize.Y - bottom));
+		SetRect(
+			_dimmers[2],
+			new Vector2(right, top),
+			new Vector2(viewportSize.X - right, bottom - top)
+		);
+		SetRect(
+			_dimmers[3],
+			new Vector2(0, bottom),
+			new Vector2(viewportSize.X, viewportSize.Y - bottom)
+		);
 	}
 
 	private void LayoutCard(Vector2 viewportSize, Rect2 focus, bool hasTarget)
 	{
 		Vector2 cardSize = _card.Size;
-		if (cardSize.X < 100) cardSize = new Vector2(410, 280);
+		if (cardSize.X < 100)
+			cardSize = new Vector2(410, 280);
 		const float margin = 22;
 		Vector2 position;
 
@@ -401,7 +442,10 @@ public partial class IntroductionWizard : Control
 		}
 		else if (focus.Position.X >= cardSize.X + margin)
 		{
-			position = new Vector2(focus.Position.X - cardSize.X - margin, focus.GetCenter().Y - cardSize.Y * 0.5f);
+			position = new Vector2(
+				focus.Position.X - cardSize.X - margin,
+				focus.GetCenter().Y - cardSize.Y * 0.5f
+			);
 		}
 		else if (viewportSize.Y - focus.End.Y >= cardSize.Y + margin)
 		{
@@ -409,11 +453,18 @@ public partial class IntroductionWizard : Control
 		}
 		else
 		{
-			position = new Vector2(focus.GetCenter().X - cardSize.X * 0.5f, focus.Position.Y - cardSize.Y - margin);
+			position = new Vector2(
+				focus.GetCenter().X - cardSize.X * 0.5f,
+				focus.Position.Y - cardSize.Y - margin
+			);
 		}
 
 		_card.Position = new Vector2(
-			Mathf.Clamp(position.X, margin, Mathf.Max(margin, viewportSize.X - cardSize.X - margin)),
+			Mathf.Clamp(
+				position.X,
+				margin,
+				Mathf.Max(margin, viewportSize.X - cardSize.X - margin)
+			),
 			Mathf.Clamp(position.Y, margin, Mathf.Max(margin, viewportSize.Y - cardSize.Y - margin))
 		);
 	}

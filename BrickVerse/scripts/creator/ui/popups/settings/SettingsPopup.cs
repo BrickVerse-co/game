@@ -2,36 +2,53 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.Settings;
-using BrickVerse.Creator.UI.Components;
-using BrickVerse.Shared;
-using BrickVerse.Shared.Settings;
-using BrickVerse.Datamodel.Creator;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Components;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class SettingsPopup : PopupWindowBase
 {
-	private const string SettingsPropertyPath = "res://scenes/creator/popups/settings/components/settings_property.tscn";
-	[Export] private Tree _categoryTree = null!;
-	[Export] private Control _layout = null!;
-	[Export] private LineEdit _settingsSearchEdit = null!;
-	[Export] private LineEdit _keybindSearchEdit = null!;
-	[Export] private Label _sectionTitle = null!;
-	[Export] private Label _sectionDescription = null!;
-	[Export] private Button _resetSectionButton = null!;
+	private const string SettingsPropertyPath =
+		"res://scenes/creator/popups/settings/components/settings_property.tscn";
+
+	[Export]
+	private Tree _categoryTree = null!;
+
+	[Export]
+	private Control _layout = null!;
+
+	[Export]
+	private LineEdit _settingsSearchEdit = null!;
+
+	[Export]
+	private LineEdit _keybindSearchEdit = null!;
+
+	[Export]
+	private Label _sectionTitle = null!;
+
+	[Export]
+	private Label _sectionDescription = null!;
+
+	[Export]
+	private Button _resetSectionButton = null!;
 
 	private static readonly Dictionary<string, List<SettingDef>> SectionDefs =
-		CreatorSettingsRegistry.Definitions.Values
-			.GroupBy(d => d.SectionKey)
+		CreatorSettingsRegistry
+			.Definitions.Values.GroupBy(d => d.SectionKey)
 			.ToDictionary(g => g.Key, g => g.ToList());
 
 	private static readonly IReadOnlyList<SettingSectionDef> SortedSections =
-		[.. CreatorSettingsRegistry.Sections.OrderBy(s => s.SortOrder)];
+	[
+		.. CreatorSettingsRegistry.Sections.OrderBy(s => s.SortOrder),
+	];
 
 	private readonly Dictionary<TreeItem, string> _itemToSectionKey = [];
 	private readonly Dictionary<string, List<Control>> _sectionUIs = [];
@@ -40,20 +57,29 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 	private static readonly (string GroupKey, string Label, string[] SettingKeys)[] KeybindGroups =
 	[
-		("tools", "Tools", [
-			CreatorSettingKeys.Keybinds.ToolSelect,
-			CreatorSettingKeys.Keybinds.ToolMove,
-			CreatorSettingKeys.Keybinds.ToolRotate,
-			CreatorSettingKeys.Keybinds.ToolScale,
-		]),
-		("transform", "Transform", [
-			CreatorSettingKeys.Keybinds.RotateSelection,
-			CreatorSettingKeys.Keybinds.TiltSelection,
-		]),
-		("modes", "Modes", [
-			CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
-			CreatorSettingKeys.Keybinds.TogglePivotMode,
-		]),
+		(
+			"tools",
+			"Tools",
+			[
+				CreatorSettingKeys.Keybinds.ToolSelect,
+				CreatorSettingKeys.Keybinds.ToolMove,
+				CreatorSettingKeys.Keybinds.ToolRotate,
+				CreatorSettingKeys.Keybinds.ToolScale,
+			]
+		),
+		(
+			"transform",
+			"Transform",
+			[CreatorSettingKeys.Keybinds.RotateSelection, CreatorSettingKeys.Keybinds.TiltSelection]
+		),
+		(
+			"modes",
+			"Modes",
+			[
+				CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
+				CreatorSettingKeys.Keybinds.TogglePivotMode,
+			]
+		),
 	];
 
 	public override void _Ready()
@@ -63,7 +89,8 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 		foreach (var section in SortedSections)
 		{
-			if (!SectionDefs.TryGetValue(section.Key, out var defs) || defs.Count == 0) continue;
+			if (!SectionDefs.TryGetValue(section.Key, out var defs) || defs.Count == 0)
+				continue;
 
 			TreeItem ch = root.CreateChild();
 			ch.SetText(0, section.Label);
@@ -137,7 +164,10 @@ public sealed partial class SettingsPopup : PopupWindowBase
 				_layout.AddChild(separator);
 				cachedUIs.Add(separator);
 
-				UIViewLicensesRow licensesRow = GD.Load<PackedScene>("res://scenes/shared/settings/licenses_row.tscn").Instantiate<UIViewLicensesRow>();
+				UIViewLicensesRow licensesRow = GD.Load<PackedScene>(
+						"res://scenes/shared/settings/licenses_row.tscn"
+					)
+					.Instantiate<UIViewLicensesRow>();
 				licensesRow.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
 				_layout.AddChild(licensesRow);
 				cachedUIs.Add(licensesRow);
@@ -152,9 +182,19 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 	private async void ResetActiveSection()
 	{
-		if (string.IsNullOrWhiteSpace(_activeSection) || !SectionDefs.TryGetValue(_activeSection, out List<SettingDef>? defs)) return;
-		if (!await CreatorService.Interface.PromptConfirmation($"Reset all {_sectionTitle.Text} settings to their defaults?")) return;
-		foreach (SettingDef def in defs) CreatorSettingsService.Instance.Set<object>(def.Key, def.UntypedDefault);
+		if (
+			string.IsNullOrWhiteSpace(_activeSection)
+			|| !SectionDefs.TryGetValue(_activeSection, out List<SettingDef>? defs)
+		)
+			return;
+		if (
+			!await CreatorService.Interface.PromptConfirmation(
+				$"Reset all {_sectionTitle.Text} settings to their defaults?"
+			)
+		)
+			return;
+		foreach (SettingDef def in defs)
+			CreatorSettingsService.Instance.Set<object>(def.Key, def.UntypedDefault);
 	}
 
 	private void OnSearchChanged(string _)
@@ -168,7 +208,10 @@ public sealed partial class SettingsPopup : PopupWindowBase
 		if (!IsInstanceValid(_keybindSearchEdit))
 			return;
 
-		bool isKeybindSection = _activeSection.Equals("keybinds", StringComparison.OrdinalIgnoreCase);
+		bool isKeybindSection = _activeSection.Equals(
+			"keybinds",
+			StringComparison.OrdinalIgnoreCase
+		);
 		_keybindSearchEdit.Visible = isKeybindSection;
 	}
 
@@ -187,13 +230,18 @@ public sealed partial class SettingsPopup : PopupWindowBase
 			if (child is not SettingsPropertyUI spui)
 				continue;
 
-
-			bool visible = spui.PropertyVisible
+			bool visible =
+				spui.PropertyVisible
 				&& MatchesQuery(spui.SettingDef, settingQuery)
 				&& (!isKeybindSection || MatchesQuery(spui.SettingDef, keybindQuery));
 			spui.Visible = visible;
 
-			if (isKeybindSection && _keybindGroupByControl.TryGetValue(spui, out string? groupKey) && !string.IsNullOrEmpty(groupKey) && visible)
+			if (
+				isKeybindSection
+				&& _keybindGroupByControl.TryGetValue(spui, out string? groupKey)
+				&& !string.IsNullOrEmpty(groupKey)
+				&& visible
+			)
 				visibleGroup[groupKey] = true;
 		}
 
@@ -202,7 +250,11 @@ public sealed partial class SettingsPopup : PopupWindowBase
 			if (child is SettingsPropertyUI)
 				continue;
 
-			if (isKeybindSection && _keybindGroupByControl.TryGetValue(child, out string? groupKey) && !string.IsNullOrEmpty(groupKey))
+			if (
+				isKeybindSection
+				&& _keybindGroupByControl.TryGetValue(child, out string? groupKey)
+				&& !string.IsNullOrEmpty(groupKey)
+			)
 			{
 				child.Visible = visibleGroup.ContainsKey(groupKey);
 				continue;
@@ -228,10 +280,7 @@ public sealed partial class SettingsPopup : PopupWindowBase
 			if (groupDefs.Count == 0)
 				continue;
 
-			Label header = new()
-			{
-				Text = group.Label,
-			};
+			Label header = new() { Text = group.Label };
 			header.AddThemeFontSizeOverride("font_size", 15);
 			_layout.AddChild(header);
 			cachedUIs.Add(header);
@@ -254,7 +303,9 @@ public sealed partial class SettingsPopup : PopupWindowBase
 
 	private static SettingsPropertyUI CreatePropertyUI(SettingDef def)
 	{
-		SettingsPropertyUI ui = Globals.CreateInstanceFromScene<SettingsPropertyUI>(SettingsPropertyPath);
+		SettingsPropertyUI ui = Globals.CreateInstanceFromScene<SettingsPropertyUI>(
+			SettingsPropertyPath
+		);
 		ui.Init(def, CreatorSettingsService.Instance);
 		return ui;
 	}

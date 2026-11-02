@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Enums;
-using System;
+using Godot;
 using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
 namespace BrickVerse.Creator.Properties;
@@ -46,7 +46,8 @@ public sealed partial class ShadowLayerProperty : MarginContainer, IProperty<Sha
 
 	public void Refresh()
 	{
-		if (_colorPreview == null) return;
+		if (_colorPreview == null)
+			return;
 		_colorPreview.BgColor = _value.Color;
 		_offsetX.SetValueNoSignal(_value.Offset.X);
 		_offsetY.SetValueNoSignal(_value.Offset.Y);
@@ -82,7 +83,9 @@ public sealed partial class ShadowLayerProperty : MarginContainer, IProperty<Sha
 	{
 		_colorBtn.Pressed += () =>
 		{
-			ColorPicker.Singleton.SwitchTo(_colorBtn, _value.Color,
+			ColorPicker.Singleton.SwitchTo(
+				_colorBtn,
+				_value.Color,
 				previewColor =>
 				{
 					_value = new ShadowLayer
@@ -98,7 +101,8 @@ public sealed partial class ShadowLayerProperty : MarginContainer, IProperty<Sha
 				() =>
 				{
 					EmitChanged();
-				});
+				}
+			);
 		};
 
 		_offsetX.ValueChanged += v =>

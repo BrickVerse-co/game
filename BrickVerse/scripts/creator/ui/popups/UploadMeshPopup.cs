@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using BrickVerse.Creator.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -18,7 +18,7 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 	public enum MeshOwnerType
 	{
 		User,
-		Guild
+		Guild,
 	}
 
 	public sealed class GuildOption
@@ -45,28 +45,71 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 	public event Action<MeshUploadRequest>? UploadRequested;
 	public event Action? Closed;
 
-	[Export] private Button _closeButton = null!;
-	[Export] private Button _chooseFileButton = null!;
-	[Export] private Button _replaceFileButton = null!;
-	[Export] private Button _personalOwnerButton = null!;
-	[Export] private Button _guildOwnerButton = null!;
-	[Export] private OptionButton _guildDropdown = null!;
-	[Export] private LineEdit _nameInput = null!;
-	[Export] private TextEdit _descriptionInput = null!;
-	[Export] private Button _uploadButton = null!;
-	[Export] private Button _cancelButton = null!;
-	[Export] private Label _fileNameLabel = null!;
-	[Export] private Label _fileTypeLabel = null!;
-	[Export] private Label _surfaceCountLabel = null!;
-	[Export] private Label _vertexCountLabel = null!;
-	[Export] private Label _triangleCountLabel = null!;
-	[Export] private Label _emptyPreviewLabel = null!;
-	[Export] private Label _errorLabel = null!;
-	[Export] private Label _busyLabel = null!;
-	[Export] private SubViewport _previewViewport = null!;
-	[Export] private Node3D _previewRoot = null!;
-	[Export] private Camera3D _previewCamera = null!;
-	[Export] private FileDialog _fileDialog = null!;
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private Button _chooseFileButton = null!;
+
+	[Export]
+	private Button _replaceFileButton = null!;
+
+	[Export]
+	private Button _personalOwnerButton = null!;
+
+	[Export]
+	private Button _guildOwnerButton = null!;
+
+	[Export]
+	private OptionButton _guildDropdown = null!;
+
+	[Export]
+	private LineEdit _nameInput = null!;
+
+	[Export]
+	private TextEdit _descriptionInput = null!;
+
+	[Export]
+	private Button _uploadButton = null!;
+
+	[Export]
+	private Button _cancelButton = null!;
+
+	[Export]
+	private Label _fileNameLabel = null!;
+
+	[Export]
+	private Label _fileTypeLabel = null!;
+
+	[Export]
+	private Label _surfaceCountLabel = null!;
+
+	[Export]
+	private Label _vertexCountLabel = null!;
+
+	[Export]
+	private Label _triangleCountLabel = null!;
+
+	[Export]
+	private Label _emptyPreviewLabel = null!;
+
+	[Export]
+	private Label _errorLabel = null!;
+
+	[Export]
+	private Label _busyLabel = null!;
+
+	[Export]
+	private SubViewport _previewViewport = null!;
+
+	[Export]
+	private Node3D _previewRoot = null!;
+
+	[Export]
+	private Camera3D _previewCamera = null!;
+
+	[Export]
+	private FileDialog _fileDialog = null!;
 
 	private readonly List<GuildOption> _guilds = [];
 	private ArrayMesh? _mesh;
@@ -106,7 +149,9 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 
 		try
 		{
-			CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(limitToEditable: true);
+			CreatorGuildItem[] creatorGuildItems = await CreatorAPI.GetUserGuilds(
+				limitToEditable: true
+			);
 			SetGuilds(creatorGuildItems.Select(g => new GuildOption { Id = g.Id, Name = g.Name }));
 		}
 		catch (Exception ex)
@@ -242,7 +287,9 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 			}
 		}
 
-		throw new InvalidOperationException("Godot did not return a mesh or model scene. Ensure the runtime build includes the required model importer.");
+		throw new InvalidOperationException(
+			"Godot did not return a mesh or model scene. Ensure the runtime build includes the required model importer."
+		);
 	}
 
 	private static ArrayMesh CopyMesh(Godot.Mesh source)
@@ -265,12 +312,18 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 		AppendMeshesRecursive(root, Transform3D.Identity, result);
 
 		if (result.GetSurfaceCount() == 0)
-			throw new InvalidOperationException("No mesh surfaces were found in the selected model.");
+			throw new InvalidOperationException(
+				"No mesh surfaces were found in the selected model."
+			);
 
 		return result;
 	}
 
-	private static void AppendMeshesRecursive(Node node, Transform3D parentTransform, ArrayMesh destination)
+	private static void AppendMeshesRecursive(
+		Node node,
+		Transform3D parentTransform,
+		ArrayMesh destination
+	)
 	{
 		Transform3D currentTransform = parentTransform;
 		if (node is Node3D node3D)
@@ -285,7 +338,9 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 				TransformSurfaceArrays(arrays, currentTransform);
 				destination.AddSurfaceFromArrays(Godot.Mesh.PrimitiveType.Triangles, arrays);
 
-				Material? material = meshInstance.GetSurfaceOverrideMaterial(surface) ?? source.SurfaceGetMaterial(surface);
+				Material? material =
+					meshInstance.GetSurfaceOverrideMaterial(surface)
+					?? source.SurfaceGetMaterial(surface);
 				if (material != null)
 					destination.SurfaceSetMaterial(destination.GetSurfaceCount() - 1, material);
 			}
@@ -295,7 +350,10 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 			AppendMeshesRecursive(child, currentTransform, destination);
 	}
 
-	private static void TransformSurfaceArrays(Godot.Collections.Array arrays, Transform3D transform)
+	private static void TransformSurfaceArrays(
+		Godot.Collections.Array arrays,
+		Transform3D transform
+	)
 	{
 		if (arrays.Count <= (int)Godot.Mesh.ArrayType.Vertex)
 			return;
@@ -330,11 +388,7 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 		_sourcePath = sourcePath;
 		(_vertexCount, _triangleCount) = CalculateMeshStats(mesh);
 
-		MeshInstance3D previewMesh = new()
-		{
-			Name = "UploadedMeshPreview",
-			Mesh = mesh
-		};
+		MeshInstance3D previewMesh = new() { Name = "UploadedMeshPreview", Mesh = mesh };
 		_previewRoot.AddChild(previewMesh);
 
 		Aabb bounds = mesh.GetAabb();
@@ -373,7 +427,8 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 			int[] indices = arrays[(int)Godot.Mesh.ArrayType.Index].AsInt32Array();
 			vertices += surfaceVertices.LongLength;
 
-			triangles += indices.Length > 0 ? indices.LongLength / 3 : surfaceVertices.LongLength / 3;
+			triangles +=
+				indices.Length > 0 ? indices.LongLength / 3 : surfaceVertices.LongLength / 3;
 		}
 
 		return (vertices, triangles);
@@ -441,20 +496,24 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 		try
 		{
 			byte[] serializedMesh = SerializeMesh(_mesh);
-			UploadRequested?.Invoke(new MeshUploadRequest
-			{
-				Name = meshName,
-				Description = description,
-				SourceFileName = Path.GetFileName(_sourcePath),
-				SourceExtension = Path.GetExtension(_sourcePath).TrimStart('.').ToLowerInvariant(),
-				OwnerType = useGuild ? MeshOwnerType.Guild : MeshOwnerType.User,
-				OwnerId = useGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID,
-				GuildId = guildId,
-				SurfaceCount = _mesh.GetSurfaceCount(),
-				VertexCount = _vertexCount,
-				TriangleCount = _triangleCount,
-				SerializedMesh = serializedMesh
-			});
+			UploadRequested?.Invoke(
+				new MeshUploadRequest
+				{
+					Name = meshName,
+					Description = description,
+					SourceFileName = Path.GetFileName(_sourcePath),
+					SourceExtension = Path.GetExtension(_sourcePath)
+						.TrimStart('.')
+						.ToLowerInvariant(),
+					OwnerType = useGuild ? MeshOwnerType.Guild : MeshOwnerType.User,
+					OwnerId = useGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID,
+					GuildId = guildId,
+					SurfaceCount = _mesh.GetSurfaceCount(),
+					VertexCount = _vertexCount,
+					TriangleCount = _triangleCount,
+					SerializedMesh = serializedMesh,
+				}
+			);
 		}
 		catch (Exception ex)
 		{
@@ -574,13 +633,21 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 		_fileTypeLabel ??= GetNode<Label>("Modal/Layout/Body/Left/Stats/FileType/Stack/Value");
 		_surfaceCountLabel ??= GetNode<Label>("Modal/Layout/Body/Left/Stats/Surfaces/Stack/Value");
 		_vertexCountLabel ??= GetNode<Label>("Modal/Layout/Body/Left/Stats/Vertices/Stack/Value");
-		_triangleCountLabel ??= GetNode<Label>("Modal/Layout/Body/Left/Stats/Triangles/Stack/Value");
+		_triangleCountLabel ??= GetNode<Label>(
+			"Modal/Layout/Body/Left/Stats/Triangles/Stack/Value"
+		);
 		_emptyPreviewLabel ??= GetNode<Label>("Modal/Layout/Body/Left/Preview/EmptyPreview");
 		_errorLabel ??= GetNode<Label>("Modal/Layout/Body/Right/Form/Error");
 		_busyLabel ??= GetNode<Label>("Modal/Layout/Footer/Row/Busy");
-		_previewViewport ??= GetNode<SubViewport>("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport");
-		_previewRoot ??= GetNode<Node3D>("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/PreviewRoot");
-		_previewCamera ??= GetNode<Camera3D>("Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/Camera3D");
+		_previewViewport ??= GetNode<SubViewport>(
+			"Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport"
+		);
+		_previewRoot ??= GetNode<Node3D>(
+			"Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/PreviewRoot"
+		);
+		_previewCamera ??= GetNode<Camera3D>(
+			"Modal/Layout/Body/Left/Preview/SubViewportContainer/SubViewport/Camera3D"
+		);
 		_fileDialog ??= GetNode<FileDialog>("FileDialog");
 	}
 }

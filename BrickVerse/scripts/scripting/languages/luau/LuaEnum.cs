@@ -57,7 +57,9 @@ public class LuaEnum : LuaMetatable
 			if (caughtException != null)
 			{
 				LuaState state = LuaState.FromIntPtr(L);
-				return state.Error(caughtException.InnerException?.Message ?? caughtException.Message);
+				return state.Error(
+					caughtException.InnerException?.Message ?? caughtException.Message
+				);
 			}
 
 			return 0;
@@ -96,7 +98,9 @@ public class LuaEnum : LuaMetatable
 			if (caughtException != null)
 			{
 				LuaState state = LuaState.FromIntPtr(L);
-				return state.Error(caughtException.InnerException?.Message ?? caughtException.Message);
+				return state.Error(
+					caughtException.InnerException?.Message ?? caughtException.Message
+				);
 			}
 
 			return 0;

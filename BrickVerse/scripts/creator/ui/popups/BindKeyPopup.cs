@@ -2,21 +2,30 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Enums;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Enums;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class BindKeyPopup : PopupWindowBase
 {
-	[Export] private Button _bindBtn = null!;
-	[Export] private LineEdit _searchEdit = null!;
-	[Export] private Tree _viewTree = null!;
-	[Export] private Button _okBtn = null!;
-	[Export] private Button _cancelBtn = null!;
+	[Export]
+	private Button _bindBtn = null!;
+
+	[Export]
+	private LineEdit _searchEdit = null!;
+
+	[Export]
+	private Tree _viewTree = null!;
+
+	[Export]
+	private Button _okBtn = null!;
+
+	[Export]
+	private Button _cancelBtn = null!;
 
 	private KeyCodeEnum _selectedKeycode = KeyCodeEnum.None;
 	private readonly Dictionary<KeyCodeEnum, TreeItem> _keycodeToItem = [];

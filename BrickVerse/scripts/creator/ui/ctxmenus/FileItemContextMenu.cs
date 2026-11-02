@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.IO;
+using System.Linq;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Formats;
 using BrickVerse.Shared;
-using System.IO;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -75,7 +75,10 @@ public partial class FileItemContextMenu : ContextMenu
 			if (ext == Globals.ModelFileExtension || ext == "bvxw" || ext == "bvworld")
 			{
 				AddCheckItem("Compressed", 81);
-				SetItemChecked(GetItemIndex(81), PolyFormat.IsPolyFileCompressed(Session.GlobalizePath(Target)));
+				SetItemChecked(
+					GetItemIndex(81),
+					PolyFormat.IsPolyFileCompressed(Session.GlobalizePath(Target))
+				);
 				AddSeparator();
 			}
 
@@ -132,7 +135,12 @@ public partial class FileItemContextMenu : ContextMenu
 				CreatorService.Interface.PromptDeleteFiles(Targets);
 				break;
 			case 71: // Run script
-				if (!await CreatorService.Interface.PromptConfirmation("This script will have unrestricted access to your device. Are you sure you want to run it?")) return;
+				if (
+					!await CreatorService.Interface.PromptConfirmation(
+						"This script will have unrestricted access to your device. Are you sure you want to run it?"
+					)
+				)
+					return;
 				Session.RunScript(Targets[0]);
 				break;
 			case 81: // Run script

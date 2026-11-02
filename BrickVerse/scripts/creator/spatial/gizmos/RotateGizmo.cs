@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Spatial;
 
@@ -15,8 +15,12 @@ public partial class RotateGizmo : Node, IGizmo
 	private const float GizmoRingHalfWidth = 0.1f;
 	private Vector3 _ivec = new(0f, 0f, -1f);
 	private Vector3 _ivec2 = new(-1f, 0f, 0f);
-	private Shader _rotateShader = GD.Load<Shader>("res://resources/shaders/gizmos/rotate.gdshader");
-	private Shader _rotateBorderShader = GD.Load<Shader>("res://resources/shaders/gizmos/rotate_border.gdshader");
+	private Shader _rotateShader = GD.Load<Shader>(
+		"res://resources/shaders/gizmos/rotate.gdshader"
+	);
+	private Shader _rotateBorderShader = GD.Load<Shader>(
+		"res://resources/shaders/gizmos/rotate_border.gdshader"
+	);
 
 	public List<Dynamic> Targets { get; set; } = [];
 	public bool Visible { get; set; }
@@ -46,7 +50,7 @@ public partial class RotateGizmo : Node, IGizmo
 		None = -1,
 		RotateX,
 		RotateY,
-		RotateZ
+		RotateZ,
 	}
 
 	public override void _EnterTree()
@@ -71,11 +75,7 @@ public partial class RotateGizmo : Node, IGizmo
 
 			_rotateGizmo[i] = new();
 
-			ShaderMaterial rotateMaterial = new()
-			{
-				Shader = _rotateShader,
-				RenderPriority = 5
-			};
+			ShaderMaterial rotateMaterial = new() { Shader = _rotateShader, RenderPriority = 5 };
 			rotateMaterial.SetShaderParameter("albedo", axisColor);
 
 			_rotateColor[i] = rotateMaterial;
@@ -83,7 +83,7 @@ public partial class RotateGizmo : Node, IGizmo
 			ShaderMaterial rotateHoverMaterial = new()
 			{
 				Shader = _rotateShader,
-				RenderPriority = 5
+				RenderPriority = 5,
 			};
 			rotateHoverMaterial.SetShaderParameter("albedo", axisHoverColor);
 
@@ -165,7 +165,7 @@ public partial class RotateGizmo : Node, IGizmo
 				Visible = false,
 				Layers = 1,
 				IgnoreOcclusionCulling = true,
-				ExtraCullMargin = 100000f
+				ExtraCullMargin = 100000f,
 			};
 			RootGizmos!.Root.GDNode.AddChild(
 				_rotateGizmoInstance[i],
@@ -202,8 +202,10 @@ public partial class RotateGizmo : Node, IGizmo
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0 || RootGizmos == null) return;
-		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
+		if (Targets.Count == 0 || RootGizmos == null)
+			return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging)
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -212,14 +214,17 @@ public partial class RotateGizmo : Node, IGizmo
 
 		if (@event is InputEventMouseButton btn)
 		{
-			if (btn.ButtonIndex != MouseButton.Left) return;
+			if (btn.ButtonIndex != MouseButton.Left)
+				return;
 			if (btn.Pressed)
 			{
-				if (!Visible) return;
+				if (!Visible)
+					return;
 				// Re-pick on mouse-down so a remembered axis from a previous tool
 				// activation cannot begin an unrelated drag.
 				UpdateAxis(rayOrigin, rayNormal, cameraNormal);
-				if (_currentAxis == RotateGizmoAxis.None) return;
+				if (_currentAxis == RotateGizmoAxis.None)
+					return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
@@ -237,7 +242,8 @@ public partial class RotateGizmo : Node, IGizmo
 		}
 		else if (@event is InputEventMouseMotion)
 		{
-			if (!Visible) return;
+			if (!Visible)
+				return;
 			if (_isMouseDragging)
 			{
 				UpdateDrag();
@@ -252,13 +258,18 @@ public partial class RotateGizmo : Node, IGizmo
 
 	private void UpdateDrag()
 	{
-		if (!Visible) return;
-		if (!_isMouseDragging) return;
-		if (_currentAxis == RotateGizmoAxis.None) return;
-		if (!Input.IsMouseButtonPressed(MouseButton.Left)) return;
+		if (!Visible)
+			return;
+		if (!_isMouseDragging)
+			return;
+		if (_currentAxis == RotateGizmoAxis.None)
+			return;
+		if (!Input.IsMouseButtonPressed(MouseButton.Left))
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
-		if (mousePos == _lastDragMousePos) return;
+		if (mousePos == _lastDragMousePos)
+			return;
 
 		_lastDragMousePos = mousePos;
 
@@ -271,19 +282,28 @@ public partial class RotateGizmo : Node, IGizmo
 
 	private void RedrawGizmo()
 	{
-		if (Targets.Count == 0) return;
-		if (!Visible) return;
+		if (Targets.Count == 0)
+			return;
+		if (!Visible)
+			return;
 
 		Transform3D pform = Gizmos.GetCenterPivot([.. Targets]);
-		float gizmoScale = Mathf.Max(0.4f, pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
+		float gizmoScale = Mathf.Max(
+			0.4f,
+			pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f
+		);
 		Vector3 pScale = new(gizmoScale, gizmoScale, gizmoScale);
 
 		for (int i = 0; i < 3; i++)
 		{
 			Transform3D axisTransform = new();
 
-			if (pform.Basis.GetColumn(i).Normalized()
-				.Dot(pform.Basis.GetColumn((i + 1) % 3).Normalized()) < 1f)
+			if (
+				pform
+					.Basis.GetColumn(i)
+					.Normalized()
+					.Dot(pform.Basis.GetColumn((i + 1) % 3).Normalized()) < 1f
+			)
 			{
 				axisTransform = axisTransform.LookingAt(
 					pform.Basis.GetColumn(i).Normalized(),
@@ -318,8 +338,14 @@ public partial class RotateGizmo : Node, IGizmo
 		float colD = 1e20f;
 		int colAxis = -1;
 
-		float rayLength = pivot.Origin.DistanceTo(rayOrigin) + Gizmos.GizmoCircleSize * _gizmoScale * 4f;
-		Vector3[] result = Geometry3D.SegmentIntersectsSphere(rayOrigin, rayOrigin + rayNormal * rayLength, pivot.Origin, _gizmoScale * Gizmos.GizmoCircleSize);
+		float rayLength =
+			pivot.Origin.DistanceTo(rayOrigin) + Gizmos.GizmoCircleSize * _gizmoScale * 4f;
+		Vector3[] result = Geometry3D.SegmentIntersectsSphere(
+			rayOrigin,
+			rayOrigin + rayNormal * rayLength,
+			pivot.Origin,
+			_gizmoScale * Gizmos.GizmoCircleSize
+		);
 
 		if (result.Length == 2)
 		{
@@ -355,7 +381,10 @@ public partial class RotateGizmo : Node, IGizmo
 
 				if (cameraNormal.Dot(rDir) <= 0.005f)
 				{
-					if (dist > _gizmoScale * (Gizmos.GizmoCircleSize - GizmoRingHalfWidth) && dist < _gizmoScale * (Gizmos.GizmoCircleSize + GizmoRingHalfWidth))
+					if (
+						dist > _gizmoScale * (Gizmos.GizmoCircleSize - GizmoRingHalfWidth)
+						&& dist < _gizmoScale * (Gizmos.GizmoCircleSize + GizmoRingHalfWidth)
+					)
 					{
 						float d = rayOrigin.DistanceTo(result2.Value);
 
@@ -376,7 +405,8 @@ public partial class RotateGizmo : Node, IGizmo
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			_rotateGizmo[i].SurfaceSetMaterial(0, i == axis ? _rotateHoverColor[i] : _rotateColor[i]);
+			_rotateGizmo[i]
+				.SurfaceSetMaterial(0, i == axis ? _rotateHoverColor[i] : _rotateColor[i]);
 		}
 
 		_currentAxis = (RotateGizmoAxis)axis;
@@ -402,10 +432,17 @@ public partial class RotateGizmo : Node, IGizmo
 		Vector3 localAxis;
 		switch (_currentAxis)
 		{
-			case RotateGizmoAxis.RotateX: localAxis = Vector3.Right; break;
-			case RotateGizmoAxis.RotateY: localAxis = Vector3.Up; break;
-			case RotateGizmoAxis.RotateZ: localAxis = Vector3.Back; break;
-			default: return;
+			case RotateGizmoAxis.RotateX:
+				localAxis = Vector3.Right;
+				break;
+			case RotateGizmoAxis.RotateY:
+				localAxis = Vector3.Up;
+				break;
+			case RotateGizmoAxis.RotateZ:
+				localAxis = Vector3.Back;
+				break;
+			default:
+				return;
 		}
 
 		Vector3 globalAxis = pivot.Basis.Xform(localAxis).Normalized();

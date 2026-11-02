@@ -2,20 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using MemoryPack;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using BrickVerse.Attributes;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Client.WebAPI.Interfaces;
-#if CREATOR
-using BrickVerse.Creator.UI;
-#endif
 using BrickVerse.Datamodel;
 using BrickVerse.Networking;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using MemoryPack;
+#if CREATOR
+using BrickVerse.Creator.UI;
+#endif
 
 namespace BrickVerse.Scripting;
 
@@ -64,43 +64,49 @@ public partial class LogDispatcher : NetworkedObject
 	public void LogWarning(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
-		DispatchLog(new()
-		{
-			ID = Guid.NewGuid().ToString(),
-			LogType = LogTypeEnum.Warning,
-			Source = ResolveScriptSource(from),
-			SourceLine = sourceLine,
-			Content = content,
-			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
-		});
+		DispatchLog(
+			new()
+			{
+				ID = Guid.NewGuid().ToString(),
+				LogType = LogTypeEnum.Warning,
+				Source = ResolveScriptSource(from),
+				SourceLine = sourceLine,
+				Content = content,
+				LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server,
+			}
+		);
 	}
 
 	public void LogInfo(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintV($"[Lua] {from.NetworkPath} {content}");
-		DispatchLog(new()
-		{
-			ID = Guid.NewGuid().ToString(),
-			LogType = LogTypeEnum.Info,
-			Source = ResolveScriptSource(from),
-			SourceLine = sourceLine,
-			Content = content,
-			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
-		});
+		DispatchLog(
+			new()
+			{
+				ID = Guid.NewGuid().ToString(),
+				LogType = LogTypeEnum.Info,
+				Source = ResolveScriptSource(from),
+				SourceLine = sourceLine,
+				Content = content,
+				LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server,
+			}
+		);
 	}
 
 	public void LogError(Datamodel.Script from, string content, int sourceLine = 0)
 	{
 		BV.PrintErrV($"[Lua] {from.NetworkPath} {content}");
-		DispatchLog(new()
-		{
-			ID = Guid.NewGuid().ToString(),
-			LogType = LogTypeEnum.Error,
-			Source = ResolveScriptSource(from),
-			SourceLine = sourceLine,
-			Content = content,
-			LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server
-		});
+		DispatchLog(
+			new()
+			{
+				ID = Guid.NewGuid().ToString(),
+				LogType = LogTypeEnum.Error,
+				Source = ResolveScriptSource(from),
+				SourceLine = sourceLine,
+				Content = content,
+				LogFrom = (from is ClientScript) ? LogFromEnum.Client : LogFromEnum.Server,
+			}
+		);
 	}
 
 	private static string ResolveScriptSource(Datamodel.Script script)
@@ -111,7 +117,11 @@ public partial class LogDispatcher : NetworkedObject
 
 	internal async void DispatchLog(LogData data, bool preserveSource = false)
 	{
-		if (!preserveSource && Root.Network.IsServer && Root.SessionType == World.SessionTypeEnum.Client)
+		if (
+			!preserveSource
+			&& Root.Network.IsServer
+			&& Root.SessionType == World.SessionTypeEnum.Client
+		)
 		{
 			// Explicitly set on server if is client/ from server
 			data.LogFrom = LogFromEnum.Server;
@@ -125,7 +135,12 @@ public partial class LogDispatcher : NetworkedObject
 				foreach (Player plr in Root.Players.GetPlayers())
 				{
 					// If is creator or in beta program (beta gets the logs), or is solo test
-					if (plr.IsCreator || plr.IsAdmin || Globals.IsBetaBuild || (Root.Entry != null && Root.Entry.IsSoloTest))
+					if (
+						plr.IsCreator
+						|| plr.IsAdmin
+						|| Globals.IsBetaBuild
+						|| (Root.Entry != null && Root.Entry.IsSoloTest)
+					)
 					{
 						RpcId(plr.PeerID, nameof(NetRecvLog), SerializeUtils.Serialize(data));
 					}
@@ -145,17 +160,22 @@ public partial class LogDispatcher : NetworkedObject
 
 		// Creator and local play-tests have their own debugger/output pipeline.
 		// Never upload those logs to the production server-log API.
-		if (Root.Network.IsServer
+		if (
+			Root.Network.IsServer
 			&& Root.Network.IsProd
 			&& Root.SessionType != World.SessionTypeEnum.Creator
-			&& Root.Entry?.IsSoloTest != true)
+			&& Root.Entry?.IsSoloTest != true
+		)
 		{
-			ServerLogSource source = data.LogFrom == LogFromEnum.Client ? ServerLogSource.Client : ServerLogSource.Server;
+			ServerLogSource source =
+				data.LogFrom == LogFromEnum.Client
+					? ServerLogSource.Client
+					: ServerLogSource.Server;
 			ServerLogLevel level = data.LogType switch
 			{
 				LogTypeEnum.Warning => ServerLogLevel.Warning,
 				LogTypeEnum.Error => ServerLogLevel.Error,
-				_ => ServerLogLevel.Info
+				_ => ServerLogLevel.Info,
 			};
 
 			long timestampUnixMs = new DateTimeOffset(data.LoggedAt).ToUnixTimeMilliseconds();
@@ -183,7 +203,7 @@ public partial class LogDispatcher : NetworkedObject
 			Content = TruncateForForward(data.Content),
 			Source = data.Source,
 			SourceLine = data.SourceLine,
-			LoggedAt = data.LoggedAt
+			LoggedAt = data.LoggedAt,
 		};
 
 		RpcId(1, nameof(NetReqClientLog), SerializeUtils.Serialize(payload));
@@ -192,7 +212,10 @@ public partial class LogDispatcher : NetworkedObject
 	private bool CanForwardClientLog()
 	{
 		long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-		while (_clientForwardWindow.Count > 0 && nowMs - _clientForwardWindow.Peek() > ClientForwardLimitWindowMs)
+		while (
+			_clientForwardWindow.Count > 0
+			&& nowMs - _clientForwardWindow.Peek() > ClientForwardLimitWindowMs
+		)
 		{
 			_clientForwardWindow.Dequeue();
 		}
@@ -202,7 +225,9 @@ public partial class LogDispatcher : NetworkedObject
 			_clientForwardDroppedCount++;
 			if (_clientForwardDroppedCount == 1 || _clientForwardDroppedCount % 10 == 0)
 			{
-				BV.PrintWarn($"[ClientLogForward] Rate limited. Dropped {_clientForwardDroppedCount} client log(s).");
+				BV.PrintWarn(
+					$"[ClientLogForward] Rate limited. Dropped {_clientForwardDroppedCount} client log(s)."
+				);
 			}
 
 			return false;
@@ -210,7 +235,9 @@ public partial class LogDispatcher : NetworkedObject
 
 		if (_clientForwardDroppedCount > 0)
 		{
-			BV.Print($"[ClientLogForward] Recovered after dropping {_clientForwardDroppedCount} client log(s).");
+			BV.Print(
+				$"[ClientLogForward] Recovered after dropping {_clientForwardDroppedCount} client log(s)."
+			);
 			_clientForwardDroppedCount = 0;
 		}
 
@@ -286,16 +313,23 @@ public partial class LogDispatcher : NetworkedObject
 			_serverForwardDroppedCounts[peerID] = dropped;
 			if (dropped == 1 || dropped % 10 == 0)
 			{
-				BV.PrintWarn($"[ClientLogForward] Server rate limit exceeded for peer {peerID}. Dropped {dropped} log(s).");
+				BV.PrintWarn(
+					$"[ClientLogForward] Server rate limit exceeded for peer {peerID}. Dropped {dropped} log(s)."
+				);
 			}
 
 			return false;
 		}
 
 		window.Enqueue(nowMs);
-		if (_serverForwardDroppedCounts.Remove(peerID, out int recoveredDropped) && recoveredDropped > 0)
+		if (
+			_serverForwardDroppedCounts.Remove(peerID, out int recoveredDropped)
+			&& recoveredDropped > 0
+		)
 		{
-			BV.Print($"[ClientLogForward] Server limiter recovered for peer {peerID} after dropping {recoveredDropped} log(s).");
+			BV.Print(
+				$"[ClientLogForward] Server limiter recovered for peer {peerID} after dropping {recoveredDropped} log(s)."
+			);
 		}
 
 		return true;
@@ -335,7 +369,11 @@ public partial class LogDispatcher : NetworkedObject
 	private void RegisterLogItem(LogData item)
 	{
 		// Clear loggedAt data if from server and receiver is client (time from sserver may be desynchronized with the client)
-		if (item.LogFrom == LogFromEnum.Server && Root.SessionType == World.SessionTypeEnum.Client && Root.Network.IsProd)
+		if (
+			item.LogFrom == LogFromEnum.Server
+			&& Root.SessionType == World.SessionTypeEnum.Client
+			&& Root.Network.IsProd
+		)
 		{
 			item.LoggedAt = DateTime.UtcNow;
 		}
@@ -377,7 +415,7 @@ public partial class LogDispatcher : NetworkedObject
 	{
 		Info,
 		Error,
-		Warning
+		Warning,
 	}
 
 	public enum LogFromEnum
@@ -385,6 +423,6 @@ public partial class LogDispatcher : NetworkedObject
 		None,
 		Client,
 		Server,
-		Addon
+		Addon,
 	}
 }

@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
+
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
@@ -81,7 +82,7 @@ public partial class Marker3D : Dynamic
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			AlbedoColor = new Color(1, 0, 0), // Red
 			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			NoDepthTest = AppearOnTop
+			NoDepthTest = AppearOnTop,
 		};
 		stX.SetMaterial(matX);
 		stX.AddVertex(Vector3.Zero);
@@ -96,7 +97,7 @@ public partial class Marker3D : Dynamic
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			AlbedoColor = new Color(0, 1, 0), // Green
 			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			NoDepthTest = AppearOnTop
+			NoDepthTest = AppearOnTop,
 		};
 		stY.SetMaterial(matY);
 		stY.AddVertex(Vector3.Zero);
@@ -111,7 +112,7 @@ public partial class Marker3D : Dynamic
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			AlbedoColor = new Color(0, 0, 1), // Blue
 			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			NoDepthTest = AppearOnTop
+			NoDepthTest = AppearOnTop,
 		};
 		stZ.SetMaterial(matZ);
 		stZ.AddVertex(Vector3.Zero);

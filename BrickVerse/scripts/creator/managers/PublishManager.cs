@@ -2,18 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI;
 using BrickVerse.Creator.Utils;
-using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Formats;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using System;
-using System.Threading.Tasks;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Creator.Managers;
 
@@ -41,8 +41,11 @@ public static partial class PublishManager
 				catch (Exception previewException)
 				{
 					BV.PrintWarn("Model preview was skipped: ", previewException.Message);
-					if (!await ConfirmPublishWithoutPreview(previewException.Message)) return;
-					CreatorService.Interface.StatusBar?.SetStatus("Preview skipped; publishing model without a thumbnail");
+					if (!await ConfirmPublishWithoutPreview(previewException.Message))
+						return;
+					CreatorService.Interface.StatusBar?.SetStatus(
+						"Preview skipped; publishing model without a thumbnail"
+					);
 				}
 			}
 
@@ -50,7 +53,10 @@ public static partial class PublishManager
 			loadOverlay?.SetStatus("Compiling scripts...");
 			CreatorService.CompileScriptsForBuild(target);
 			loadOverlay?.SetStatus("Packing model...");
-			byte[] packed = await PackedFormat.PackModel(target, loadOverlay.CreateProgressReporter("Publishing model"));
+			byte[] packed = await PackedFormat.PackModel(
+				target,
+				loadOverlay.CreateProgressReporter("Publishing model")
+			);
 
 			loadOverlay?.SetStatus("Uploading now...");
 
@@ -64,7 +70,11 @@ public static partial class PublishManager
 				previewData: preview
 			);
 
-			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
+			if (
+				CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Creator.OpenWebAfterPublish
+				)
+			)
 				OS.ShellOpen(publishRes.Link);
 			CreatorService.Interface.StatusBar?.SetStatus("Model published");
 		}
@@ -84,7 +94,8 @@ public static partial class PublishManager
 		ConfirmationDialog dialog = new()
 		{
 			Title = "Prefab preview",
-			DialogText = "Create a thumbnail for this prefab? You can position the preview camera before publishing.",
+			DialogText =
+				"Create a thumbnail for this prefab? You can position the preview camera before publishing.",
 			OkButtonText = "Create preview",
 			CancelButtonText = "Skip preview",
 		};
@@ -104,7 +115,8 @@ public static partial class PublishManager
 		ConfirmationDialog dialog = new()
 		{
 			Title = "Preview unavailable",
-			DialogText = $"The preview could not be created:\n\n{reason}\n\nPublish this prefab without a preview?",
+			DialogText =
+				$"The preview could not be created:\n\n{reason}\n\nPublish this prefab without a preview?",
 			OkButtonText = "Publish without preview",
 			CancelButtonText = "Cancel publish",
 		};
@@ -122,7 +134,9 @@ public static partial class PublishManager
 	private static async Task<byte[]?> CaptureModelPreview(Instance target)
 	{
 		if (target is not Dynamic dynamic || !GodotObject.IsInstanceValid(dynamic.GDNode3D))
-			throw new InvalidOperationException("This model is not loaded into the 3D world, so it cannot be framed for a preview yet.");
+			throw new InvalidOperationException(
+				"This model is not loaded into the 3D world, so it cannot be framed for a preview yet."
+			);
 
 		SubViewport viewport = new()
 		{
@@ -155,24 +169,47 @@ public static partial class PublishManager
 			bool hasBounds = false;
 			Vector3 boundsMin = Vector3.Zero;
 			Vector3 boundsMax = Vector3.Zero;
-			ClonePreviewMeshes(dynamic.GDNode3D, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+			ClonePreviewMeshes(
+				dynamic.GDNode3D,
+				previewRoot,
+				rootInverse,
+				ref hasBounds,
+				ref boundsMin,
+				ref boundsMax
+			);
 			foreach (Part part in new[] { target }.Concat(target.GetDescendants()).OfType<Part>())
 			{
 				// Most anchored Parts are rendered through DatamodelBridge MultiMeshes,
 				// so there is no MeshInstance3D below their datamodel node to clone.
 				if (!part.IsMeshSeparated && !part.IsHidden)
-					CloneBatchedPart(part, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+					CloneBatchedPart(
+						part,
+						previewRoot,
+						rootInverse,
+						ref hasBounds,
+						ref boundsMin,
+						ref boundsMax
+					);
 			}
 			if (!hasBounds)
 			{
 				foreach (Dynamic child in target.GetDescendants().OfType<Dynamic>())
 				{
 					if (GodotObject.IsInstanceValid(child.GDNode3D))
-						ClonePreviewMeshes(child.GDNode3D, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+						ClonePreviewMeshes(
+							child.GDNode3D,
+							previewRoot,
+							rootInverse,
+							ref hasBounds,
+							ref boundsMin,
+							ref boundsMax
+						);
 				}
 			}
 			if (!hasBounds)
-				throw new InvalidOperationException("The model has no loaded, renderable geometry for a preview. The prefab was not uploaded yet.");
+				throw new InvalidOperationException(
+					"The model has no loaded, renderable geometry for a preview. The prefab was not uploaded yet."
+				);
 
 			Vector3 center = (boundsMin + boundsMax) * 0.5f;
 			Vector3 size = boundsMax - boundsMin;
@@ -206,7 +243,8 @@ public static partial class PublishManager
 			viewport.AddChild(fillLight);
 
 			bool capturePreview = await ConfirmPreviewCamera(viewport, camera, center, distance);
-			if (!capturePreview) return null;
+			if (!capturePreview)
+				return null;
 
 			// The preview container temporarily sizes the viewport for the on-screen
 			// camera editor. Restore the full export resolution after it is detached.
@@ -258,7 +296,12 @@ public static partial class PublishManager
 		private bool _dragging;
 		private bool _panning;
 
-		public ModelPreviewCameraPopup(SubViewport viewport, Camera3D camera, Vector3 target, float distance)
+		public ModelPreviewCameraPopup(
+			SubViewport viewport,
+			Camera3D camera,
+			Vector3 target,
+			float distance
+		)
 		{
 			_viewport = viewport;
 			_camera = camera;
@@ -303,7 +346,13 @@ public static partial class PublishManager
 			};
 			heading.AddThemeFontSizeOverride("font_size", 20);
 			root.AddChild(heading);
-			root.AddChild(new Label { Text = "Left/right drag: look  •  Middle drag or WASD/QE: move  •  Wheel: zoom  •  Shift: faster" });
+			root.AddChild(
+				new Label
+				{
+					Text =
+						"Left/right drag: look  •  Middle drag or WASD/QE: move  •  Wheel: zoom  •  Shift: faster",
+				}
+			);
 
 			SubViewportContainer preview = new()
 			{
@@ -336,10 +385,14 @@ public static partial class PublishManager
 		{
 			if (@event is InputEventMouseButton button)
 			{
-				if (button.ButtonIndex is MouseButton.Left or MouseButton.Right) _dragging = button.Pressed;
-				if (button.ButtonIndex == MouseButton.Middle) _panning = button.Pressed;
-				if (button.Pressed && button.ButtonIndex == MouseButton.WheelUp) _distance = Mathf.Max(0.5f, _distance * 0.88f);
-				if (button.Pressed && button.ButtonIndex == MouseButton.WheelDown) _distance = Mathf.Min(100f, _distance * 1.14f);
+				if (button.ButtonIndex is MouseButton.Left or MouseButton.Right)
+					_dragging = button.Pressed;
+				if (button.ButtonIndex == MouseButton.Middle)
+					_panning = button.Pressed;
+				if (button.Pressed && button.ButtonIndex == MouseButton.WheelUp)
+					_distance = Mathf.Max(0.5f, _distance * 0.88f);
+				if (button.Pressed && button.ButtonIndex == MouseButton.WheelDown)
+					_distance = Mathf.Min(100f, _distance * 1.14f);
 				UpdateCamera();
 			}
 			else if (_dragging && @event is InputEventMouseMotion motion)
@@ -360,22 +413,32 @@ public static partial class PublishManager
 		public override void _Process(double delta)
 		{
 			Vector3 input = Vector3.Zero;
-			if (Input.IsKeyPressed(Key.W)) input.Z -= 1;
-			if (Input.IsKeyPressed(Key.S)) input.Z += 1;
-			if (Input.IsKeyPressed(Key.A)) input.X -= 1;
-			if (Input.IsKeyPressed(Key.D)) input.X += 1;
-			if (Input.IsKeyPressed(Key.Q)) input.Y -= 1;
-			if (Input.IsKeyPressed(Key.E)) input.Y += 1;
-			if (input == Vector3.Zero) return;
-			float speed = Mathf.Max(0.5f, _distance * 0.8f)
-				* (Input.IsKeyPressed(Key.Shift) ? 3f : 1f) * (float)delta;
+			if (Input.IsKeyPressed(Key.W))
+				input.Z -= 1;
+			if (Input.IsKeyPressed(Key.S))
+				input.Z += 1;
+			if (Input.IsKeyPressed(Key.A))
+				input.X -= 1;
+			if (Input.IsKeyPressed(Key.D))
+				input.X += 1;
+			if (Input.IsKeyPressed(Key.Q))
+				input.Y -= 1;
+			if (Input.IsKeyPressed(Key.E))
+				input.Y += 1;
+			if (input == Vector3.Zero)
+				return;
+			float speed =
+				Mathf.Max(0.5f, _distance * 0.8f)
+				* (Input.IsKeyPressed(Key.Shift) ? 3f : 1f)
+				* (float)delta;
 			Vector3 flatForward = -_camera.GlobalTransform.Basis.Z;
 			flatForward.Y = 0;
 			flatForward = flatForward.Normalized();
 			Vector3 flatRight = _camera.GlobalTransform.Basis.X;
 			flatRight.Y = 0;
 			flatRight = flatRight.Normalized();
-			_target += (flatRight * input.X + Vector3.Up * input.Y + flatForward * -input.Z) * speed;
+			_target +=
+				(flatRight * input.X + Vector3.Up * input.Y + flatForward * -input.Z) * speed;
 			UpdateCamera();
 		}
 
@@ -401,7 +464,8 @@ public static partial class PublishManager
 
 		private void Finish(bool capture)
 		{
-			if (!_completion.TrySetResult(capture)) return;
+			if (!_completion.TrySetResult(capture))
+				return;
 			// The capture continues after the dialog closes, so keep its viewport
 			// alive rather than freeing it with the popup tree.
 			_viewport.Reparent(CreatorService.Interface);
@@ -453,16 +517,32 @@ public static partial class PublishManager
 				CastShadow = source.CastShadow,
 			};
 			for (int surface = 0; surface < source.GetSurfaceOverrideMaterialCount(); surface++)
-				clone.SetSurfaceOverrideMaterial(surface, source.GetSurfaceOverrideMaterial(surface));
+				clone.SetSurfaceOverrideMaterial(
+					surface,
+					source.GetSurfaceOverrideMaterial(surface)
+				);
 			previewRoot.AddChild(clone);
-			ExpandBounds(source.GetAabb(), relativeTransform, ref hasBounds, ref boundsMin, ref boundsMax);
+			ExpandBounds(
+				source.GetAabb(),
+				relativeTransform,
+				ref hasBounds,
+				ref boundsMin,
+				ref boundsMax
+			);
 		}
 
 		// BrickVerse renderers intentionally keep generated Part meshes, imported
 		// mesh containers, and other implementation nodes internal. Godot excludes
 		// those from GetChildren() unless includeInternal is explicitly enabled.
 		foreach (Node child in node.GetChildren(true))
-			ClonePreviewMeshes(child, previewRoot, rootInverse, ref hasBounds, ref boundsMin, ref boundsMax);
+			ClonePreviewMeshes(
+				child,
+				previewRoot,
+				rootInverse,
+				ref hasBounds,
+				ref boundsMin,
+				ref boundsMax
+			);
 	}
 
 	private static void ExpandBounds(
@@ -474,34 +554,35 @@ public static partial class PublishManager
 	)
 	{
 		for (int x = 0; x <= 1; x++)
-			for (int y = 0; y <= 1; y++)
-				for (int z = 0; z <= 1; z++)
-				{
-					Vector3 point = transform * (bounds.Position + new Vector3(
-						bounds.Size.X * x,
-						bounds.Size.Y * y,
-						bounds.Size.Z * z
-					));
-					if (!hasBounds)
-					{
-						boundsMin = point;
-						boundsMax = point;
-						hasBounds = true;
-					}
-					else
-					{
-						boundsMin = new Vector3(
-							Mathf.Min(boundsMin.X, point.X),
-							Mathf.Min(boundsMin.Y, point.Y),
-							Mathf.Min(boundsMin.Z, point.Z)
-						);
-						boundsMax = new Vector3(
-							Mathf.Max(boundsMax.X, point.X),
-							Mathf.Max(boundsMax.Y, point.Y),
-							Mathf.Max(boundsMax.Z, point.Z)
-						);
-					}
-				}
+		for (int y = 0; y <= 1; y++)
+		for (int z = 0; z <= 1; z++)
+		{
+			Vector3 point =
+				transform
+				* (
+					bounds.Position
+					+ new Vector3(bounds.Size.X * x, bounds.Size.Y * y, bounds.Size.Z * z)
+				);
+			if (!hasBounds)
+			{
+				boundsMin = point;
+				boundsMax = point;
+				hasBounds = true;
+			}
+			else
+			{
+				boundsMin = new Vector3(
+					Mathf.Min(boundsMin.X, point.X),
+					Mathf.Min(boundsMin.Y, point.Y),
+					Mathf.Min(boundsMin.Z, point.Z)
+				);
+				boundsMax = new Vector3(
+					Mathf.Max(boundsMax.X, point.X),
+					Mathf.Max(boundsMax.Y, point.Y),
+					Mathf.Max(boundsMax.Z, point.Z)
+				);
+			}
+		}
 	}
 
 	public static async Task PublishAddon(
@@ -524,19 +605,29 @@ public static partial class PublishManager
 				metaModule = new ModuleScript
 				{
 					Name = "AddonMetadata",
-					Source = @"{
-	""Name"": """ + target.Name + @""",
+					Source =
+						@"{
+	""Name"": """
+						+ target.Name
+						+ @""",
 	""Version"": ""1.0.0"",
 	""Description"": ""A new addon"",
 	""Author"": ""Your Name""
-}"
+}",
 				};
 				metaModule.Parent = target;
 			}
 
-			AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(metaModule.Source);
-			if (string.IsNullOrWhiteSpace(metadata.Name) || string.IsNullOrWhiteSpace(metadata.Version))
-				throw new InvalidOperationException("Addon metadata must include a name and version.");
+			AddonsManager.AddonMetadata metadata = AddonsManager.AddonMetadata.FromJson(
+				metaModule.Source
+			);
+			if (
+				string.IsNullOrWhiteSpace(metadata.Name)
+				|| string.IsNullOrWhiteSpace(metadata.Version)
+			)
+				throw new InvalidOperationException(
+					"Addon metadata must include a name and version."
+				);
 
 			loadOverlay?.SetStatus("Compiling addon scripts...");
 			CreatorService.CompileScriptsForBuild(target, metaModule);
@@ -557,7 +648,11 @@ public static partial class PublishManager
 				publishDescription?.Trim() ?? metadata.Description
 			);
 
-			if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.OpenWebAfterPublish))
+			if (
+				CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Creator.OpenWebAfterPublish
+				)
+			)
 				OS.ShellOpen(publishRes.Link);
 			CreatorService.Interface.StatusBar?.SetStatus("Addon published");
 		}
@@ -571,6 +666,4 @@ public static partial class PublishManager
 			loadOverlay?.Hide();
 		}
 	}
-
-
 }

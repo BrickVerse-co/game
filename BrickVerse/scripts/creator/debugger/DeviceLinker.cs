@@ -32,7 +32,8 @@ public static class DeviceLinker
 	public static string? GetConnectAddress()
 	{
 		string? ip = GetLocalIP();
-		if (ip == null) return null;
+		if (ip == null)
+			return null;
 		return $"brickverse://test/{ip}";
 	}
 }

@@ -604,7 +604,8 @@ public sealed partial class NetworkPropSync : Instance
 				BV.PrintErr("Pending property limit reached for ", netID);
 				break;
 			}
-			if (prop.ValueRaw is { Length: <= MaxSerializedPropBytes }) pending.Add(prop);
+			if (prop.ValueRaw is { Length: <= MaxSerializedPropBytes })
+				pending.Add(prop);
 		}
 	}
 
@@ -682,12 +683,15 @@ public sealed partial class NetworkPropSync : Instance
 			: nameof(NetRecvBatchedPropsReliable);
 		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
-			if (peerID == excludePeer) continue;
-			BatchPropObjectData[] visible = payload.Where(item =>
-			{
-				NetworkedObject? obj = NetService.Root.GetNetObjectFromID(item.NetID);
-				return obj != null && NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj);
-			}).ToArray();
+			if (peerID == excludePeer)
+				continue;
+			BatchPropObjectData[] visible = payload
+				.Where(item =>
+				{
+					NetworkedObject? obj = NetService.Root.GetNetObjectFromID(item.NetID);
+					return obj != null && NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj);
+				})
+				.ToArray();
 			if (visible.Length > 0)
 				RpcId(peerID, rpcName, SerializeUtils.Serialize(visible));
 		}
@@ -730,7 +734,8 @@ public sealed partial class NetworkPropSync : Instance
 
 	private void NetRecvBatchedProps(byte[] propsRaw)
 	{
-		if (propsRaw == null || propsRaw.Length > MaxPropBatchBytes) return;
+		if (propsRaw == null || propsRaw.Length > MaxPropBatchBytes)
+			return;
 		BatchPropObjectData[]? objects;
 		try
 		{

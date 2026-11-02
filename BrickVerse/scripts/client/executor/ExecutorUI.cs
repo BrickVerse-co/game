@@ -2,18 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Misc;
+using Godot;
 
 namespace BrickVerse.Client.Executor;
 
 public partial class ExecutorUI : Window
 {
-	[Export] private CodeEdit _codeField = null!;
-	[Export] private Button _runCompatBtn = null!;
-	[Export] private Button _runBtn = null!;
+	[Export]
+	private CodeEdit _codeField = null!;
+
+	[Export]
+	private Button _runCompatBtn = null!;
+
+	[Export]
+	private Button _runBtn = null!;
 
 	public override void _EnterTree()
 	{

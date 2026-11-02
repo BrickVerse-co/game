@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -22,7 +22,11 @@ public partial class PlayerGUI : Instance
 	public override void InitGDNode()
 	{
 		base.InitGDNode();
-		InputFallback = new InputFallbackBase() { FocusMode = Control.FocusModeEnum.Click, MouseFilter = Control.MouseFilterEnum.Pass };
+		InputFallback = new InputFallbackBase()
+		{
+			FocusMode = Control.FocusModeEnum.Click,
+			MouseFilter = Control.MouseFilterEnum.Pass,
+		};
 		GDNode.AddChild(InputFallback, @internal: Node.InternalMode.Front);
 		InputFallback.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 	}
@@ -45,7 +49,8 @@ public partial class PlayerGUI : Instance
 
 	private void OnGameReady()
 	{
-		if (!Root.Input.IsTouchscreen && !OS.HasFeature("mobile-ui")) return;
+		if (!Root.Input.IsTouchscreen && !OS.HasFeature("mobile-ui"))
+			return;
 		PackedScene packed2 = GD.Load<PackedScene>(TouchControlsPath);
 		Node touchUI = packed2.Instantiate();
 		GDNode.AddChild(touchUI, true, @internal: Node.InternalMode.Back);

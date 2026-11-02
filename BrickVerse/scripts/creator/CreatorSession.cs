@@ -2,8 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using BrickVerse.Client;
 using BrickVerse.Creator.LSP;
 using BrickVerse.Creator.Managers;
@@ -17,25 +21,22 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.DocsGen;
 using BrickVerse.Formats;
-using BrickVerse.Shared;
 using BrickVerse.Scripting;
+using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
+using Godot;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator;
 
 public partial class CreatorSession : Node, IDisposable
 {
-	private const string LuauRCContent = @"{
+	private const string LuauRCContent =
+		@"{
 	""languageMode"": ""nocheck""
 }";
-	private const string VSCodeSetupContent = @"{
+	private const string VSCodeSetupContent =
+		@"{
 	""luau-lsp.platform.type"": ""standard"",
 	""luau-lsp.types.definitionFiles"": {
 		""@bvproject"": ""./.bvproject/luau/def.d.luau"",
@@ -91,7 +92,9 @@ public partial class CreatorSession : Node, IDisposable
 		Metadata = PackedFormat.ReadProjectMetadata(projectData);
 		Metadata = await ProjectManager.RefreshRemoteMetadata(Metadata, ProjectFilePath);
 		OldIndexFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectIndexName));
-		InputMapFilePath = Path.GetFullPath(ProjectFolderPath.PathJoin(Globals.ProjectInputMapName));
+		InputMapFilePath = Path.GetFullPath(
+			ProjectFolderPath.PathJoin(Globals.ProjectInputMapName)
+		);
 		BVProjectFolderPath = Path.GetFullPath(ProjectFolderPath.PathJoin(".bvproject"));
 		ReconcileProjectMetadata();
 		FileBrowserTab = FileBrowser.Singleton.Insert(this);
@@ -144,10 +147,14 @@ public partial class CreatorSession : Node, IDisposable
 				.EnumerateFiles(ProjectFolderPath, "*", SearchOption.AllDirectories)
 				.Where(path =>
 					!path.StartsWith(BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)
-					&& (path.EndsWith(".bvxw", StringComparison.OrdinalIgnoreCase)
-						|| path.EndsWith(".bvworld", StringComparison.OrdinalIgnoreCase)))
+					&& (
+						path.EndsWith(".bvxw", StringComparison.OrdinalIgnoreCase)
+						|| path.EndsWith(".bvworld", StringComparison.OrdinalIgnoreCase)
+					)
+				)
 				.OrderByDescending(path =>
-					Path.GetFileName(path).Equals("main.bvxw", StringComparison.OrdinalIgnoreCase))
+					Path.GetFileName(path).Equals("main.bvxw", StringComparison.OrdinalIgnoreCase)
+				)
 				.ThenBy(path => path, StringComparer.OrdinalIgnoreCase)
 				.ToArray();
 
@@ -204,7 +211,8 @@ public partial class CreatorSession : Node, IDisposable
 
 	private void MigrateIndexFile()
 	{
-		if (!File.Exists(OldIndexFilePath)) return;
+		if (!File.Exists(OldIndexFilePath))
+			return;
 
 		BV.Print("Migrating index.json to .meta files...");
 
@@ -213,7 +221,11 @@ public partial class CreatorSession : Node, IDisposable
 
 		try
 		{
-			legacyIndex = JsonSerializer.Deserialize(raw, ProjectJSONGenerationContext.Default.DictionaryStringString) ?? [];
+			legacyIndex =
+				JsonSerializer.Deserialize(
+					raw,
+					ProjectJSONGenerationContext.Default.DictionaryStringString
+				) ?? [];
 		}
 		catch (Exception ex)
 		{
@@ -255,8 +267,10 @@ public partial class CreatorSession : Node, IDisposable
 			// File maintenance is independent of Godot state and can run without
 			// blocking animation/input on the Creator thread.
 			string addonTemp = Path.GetFullPath(BVProjectFolderPath.PathJoin("addon-temp"));
-			if (Directory.Exists(addonTemp)) Directory.Delete(addonTemp, true);
-			if (!Directory.Exists(BVProjectFolderPath)) Directory.CreateDirectory(BVProjectFolderPath);
+			if (Directory.Exists(addonTemp))
+				Directory.Delete(addonTemp, true);
+			if (!Directory.Exists(BVProjectFolderPath))
+				Directory.CreateDirectory(BVProjectFolderPath);
 			MigrateIndexFile();
 		});
 	}
@@ -284,12 +298,22 @@ public partial class CreatorSession : Node, IDisposable
 		string versionData = File.ReadAllText(versionPath);
 
 		string definitionPath = luauPath.PathJoin("def.d.luau");
-		bool definitionsAreComplete = File.Exists(definitionPath)
-			&& File.ReadLines(definitionPath).Any(static line => line.Trim() == "declare game: World")
-			&& File.ReadLines(definitionPath).Any(static line => line.Trim() == "declare script: Script")
-			&& File.ReadLines(definitionPath).Any(static line => line.StartsWith("declare function print(", StringComparison.Ordinal));
+		bool definitionsAreComplete =
+			File.Exists(definitionPath)
+			&& File.ReadLines(definitionPath)
+				.Any(static line => line.Trim() == "declare game: World")
+			&& File.ReadLines(definitionPath)
+				.Any(static line => line.Trim() == "declare script: Script")
+			&& File.ReadLines(definitionPath)
+				.Any(static line =>
+					line.StartsWith("declare function print(", StringComparison.Ordinal)
+				);
 
-		if (versionData != expectedDefinitionVersion || !definitionsAreComplete || Globals.IsInGDEditor)
+		if (
+			versionData != expectedDefinitionVersion
+			|| !definitionsAreComplete
+			|| Globals.IsInGDEditor
+		)
 		{
 			//BV.Print("Generating doc...");
 			LuaDefinitionGenerator.GenerateDocFiles(luauPath);
@@ -308,7 +332,9 @@ public partial class CreatorSession : Node, IDisposable
 
 	private void StartBackupTimer()
 	{
-		float backupInterval = CreatorSettingsService.Instance.Get<float>(CreatorSettingKeys.Backup.BackupInterval);
+		float backupInterval = CreatorSettingsService.Instance.Get<float>(
+			CreatorSettingKeys.Backup.BackupInterval
+		);
 		_backupTimer.Start(backupInterval * 60f);
 	}
 
@@ -318,12 +344,30 @@ public partial class CreatorSession : Node, IDisposable
 		StartBackupTimer();
 	}
 
-	public World OpenWorld(string filePath, World? worldOverride = null, bool migrateCoords = false) =>
-		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: false).GetAwaiter().GetResult();
+	public World OpenWorld(
+		string filePath,
+		World? worldOverride = null,
+		bool migrateCoords = false
+	) =>
+		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: false)
+			.GetAwaiter()
+			.GetResult();
 
-	public Task<World> OpenWorldAsync(string filePath, World? worldOverride = null, bool migrateCoords = false,
-		Action<string>? reportStatus = null, Action<string>? reportDetail = null) =>
-		OpenWorldCore(filePath, worldOverride, migrateCoords, asynchronous: true, reportStatus, reportDetail);
+	public Task<World> OpenWorldAsync(
+		string filePath,
+		World? worldOverride = null,
+		bool migrateCoords = false,
+		Action<string>? reportStatus = null,
+		Action<string>? reportDetail = null
+	) =>
+		OpenWorldCore(
+			filePath,
+			worldOverride,
+			migrateCoords,
+			asynchronous: true,
+			reportStatus,
+			reportDetail
+		);
 
 	public World OpenPrefab(string filePath)
 	{
@@ -335,7 +379,8 @@ public partial class CreatorSession : Node, IDisposable
 		}
 
 		string absolutePath = GlobalizePath(filePath);
-		if (!File.Exists(absolutePath)) throw new FileNotFoundException("Model file not found", absolutePath);
+		if (!File.Exists(absolutePath))
+			throw new FileNotFoundException("Model file not found", absolutePath);
 
 		World root = Globals.LoadInstance<World>();
 		root.SessionType = World.SessionTypeEnum.Creator;
@@ -352,7 +397,9 @@ public partial class CreatorSession : Node, IDisposable
 		DatamodelBridge bridge = new();
 		root.InitEntry();
 		root.GDNode.AddChild(bridge, true, Node.InternalMode.Back);
-		Tabs.Singleton.Insert(new Tabs.GameTab { World = root, Title = $"{Path.GetFileName(filePath)} — Prefab" });
+		Tabs.Singleton.Insert(
+			new Tabs.GameTab { World = root, Title = $"{Path.GetFileName(filePath)} — Prefab" }
+		);
 		OpenedWorlds.Add(root);
 		PrefabPathToRoot[filePath] = root;
 
@@ -363,7 +410,8 @@ public partial class CreatorSession : Node, IDisposable
 			PrefabPathToRoot.Remove(filePath);
 			bridge.QueueFree();
 			AddonsManager.UnregisterRoot(root);
-			if (OpenedWorlds.Count == 0) QueueDispose();
+			if (OpenedWorlds.Count == 0)
+				QueueDispose();
 		}
 		root.Deleted += Deleted;
 
@@ -377,7 +425,8 @@ public partial class CreatorSession : Node, IDisposable
 		Explorer.Singleton?.BeginBulkUpdate(root);
 		try
 		{
-			root.PrefabRoot = PolyFormat.LoadModelFromFile(root, absolutePath, root.Environment)
+			root.PrefabRoot =
+				PolyFormat.LoadModelFromFile(root, absolutePath, root.Environment)
 				?? throw new InvalidDataException($"Failed to load prefab '{filePath}'.");
 			root.PrefabRoot.LinkedModel = root.Assets.GetFileLinkByPath(filePath);
 			root.PrefabRoot.EditableChildren = true;
@@ -399,20 +448,29 @@ public partial class CreatorSession : Node, IDisposable
 		return root;
 	}
 
-	private async Task<World> OpenWorldCore(string filePath, World? worldOverride, bool migrateCoords, bool asynchronous,
-		Action<string>? reportStatus = null, Action<string>? reportDetail = null)
+	private async Task<World> OpenWorldCore(
+		string filePath,
+		World? worldOverride,
+		bool migrateCoords,
+		bool asynchronous,
+		Action<string>? reportStatus = null,
+		Action<string>? reportDetail = null
+	)
 	{
 		filePath = filePath.SanitizePath();
-		if (WorldPathToRoot.ContainsKey(filePath)) throw new InvalidOperationException("World already opened");
+		if (WorldPathToRoot.ContainsKey(filePath))
+			throw new InvalidOperationException("World already opened");
 		string placePath = GlobalizePath(filePath);
-		if (!File.Exists(placePath)) throw new FileNotFoundException("World file not found");
+		if (!File.Exists(placePath))
+			throw new FileNotFoundException("World file not found");
 		_cleanupQueued = false;
 		reportDetail?.Invoke($"Opening {Path.GetFileName(placePath)}");
 		byte[] worldData = asynchronous
 			? await ReadWorldFileAsync(placePath, reportDetail)
 			: File.ReadAllBytes(placePath);
 		reportDetail?.Invoke("Creating the world runtime");
-		if (asynchronous) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		if (asynchronous)
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
 		World root = worldOverride ?? Globals.LoadInstance<World>();
 		bool isMainWorld = string.Equals(
@@ -495,11 +553,23 @@ public partial class CreatorSession : Node, IDisposable
 			Explorer.Singleton?.BeginBulkUpdate(root);
 			try
 			{
-				if (asynchronous) await PolyFormat.LoadWorldAsync(root, worldData, migrateCoords, reportStatus, reportDetail);
-				else PolyFormat.LoadWorld(root, worldData, migrateCoords);
+				if (asynchronous)
+					await PolyFormat.LoadWorldAsync(
+						root,
+						worldData,
+						migrateCoords,
+						reportStatus,
+						reportDetail
+					);
+				else
+					PolyFormat.LoadWorld(root, worldData, migrateCoords);
 				reportStatus?.Invoke("Finalizing world instances");
 				reportDetail?.Invoke("Running instance ready hooks");
-				if (asynchronous) await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
+				if (asynchronous)
+					await root.GDNode.ToSignal(
+						root.GDNode.GetTree(),
+						SceneTree.SignalName.ProcessFrame
+					);
 				root.InvokeReady();
 			}
 			catch (Exception ex)
@@ -554,23 +624,28 @@ public partial class CreatorSession : Node, IDisposable
 		long lastReport = 0;
 		while (offset < length)
 		{
-			int read = await stream.ReadAsync(data.AsMemory(offset, Math.Min(ReadBufferSize, length - offset)));
+			int read = await stream.ReadAsync(
+				data.AsMemory(offset, Math.Min(ReadBufferSize, length - offset))
+			);
 			if (read == 0)
-				throw new EndOfStreamException($"World file ended after {offset:N0} of {length:N0} bytes.");
+				throw new EndOfStreamException(
+					$"World file ended after {offset:N0} of {length:N0} bytes."
+				);
 			offset += read;
 			long now = System.Environment.TickCount64;
 			if (offset == length || now - lastReport >= 100)
 			{
-				reportDetail?.Invoke($"Read {FormatBytes(offset)} of {FormatBytes(length)} ({offset * 100L / Math.Max(1, length)}%)");
+				reportDetail?.Invoke(
+					$"Read {FormatBytes(offset)} of {FormatBytes(length)} ({offset * 100L / Math.Max(1, length)}%)"
+				);
 				lastReport = now;
 			}
 		}
 		return data;
 	}
 
-	private static string FormatBytes(long bytes) => bytes >= 1024 * 1024
-		? $"{bytes / 1024d / 1024d:0.0} MiB"
-		: $"{bytes / 1024d:0.0} KiB";
+	private static string FormatBytes(long bytes) =>
+		bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024d:0.0} MiB" : $"{bytes / 1024d:0.0} KiB";
 
 	public void QueueDispose()
 	{
@@ -584,7 +659,8 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void CloseWorld(string filePath)
 	{
-		if (!WorldPathToRoot.TryGetValue(filePath, out var root)) return;
+		if (!WorldPathToRoot.TryGetValue(filePath, out var root))
+			return;
 		root.ForceDelete();
 	}
 
@@ -593,9 +669,17 @@ public partial class CreatorSession : Node, IDisposable
 		return OpenWorld(Metadata.MainWorld, worldOverride);
 	}
 
-	public Task<World> OpenMainWorldAsync(World? worldOverride = null, Action<string>? reportStatus = null,
-		Action<string>? reportDetail = null) =>
-		OpenWorldAsync(Metadata.MainWorld, worldOverride, reportStatus: reportStatus, reportDetail: reportDetail);
+	public Task<World> OpenMainWorldAsync(
+		World? worldOverride = null,
+		Action<string>? reportStatus = null,
+		Action<string>? reportDetail = null
+	) =>
+		OpenWorldAsync(
+			Metadata.MainWorld,
+			worldOverride,
+			reportStatus: reportStatus,
+			reportDetail: reportDetail
+		);
 
 	public void RescanFolder()
 	{
@@ -605,19 +689,29 @@ public partial class CreatorSession : Node, IDisposable
 		FileToIndex.Clear();
 
 		// Rebuild IndexToFile index
-		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
+		foreach (
+			string metaPath in Directory.EnumerateFiles(
+				ProjectFolderPath,
+				"*" + PackedFormat.MetaExtension,
+				SearchOption.AllDirectories
+			)
+		)
 		{
 			// Compare a normalized relative path rather than absolute strings: project
 			// paths may use '/', while Directory enumeration uses '\\' on Windows.
-			if (IsInternalProjectFile(metaPath)) continue;
+			if (IsInternalProjectFile(metaPath))
+				continue;
 
 			string targetAbsolute = metaPath[..^PackedFormat.MetaExtension.Length];
-			if (!File.Exists(targetAbsolute)) continue; // stale meta, ignore
+			if (!File.Exists(targetAbsolute))
+				continue; // stale meta, ignore
 
 			string? id = PackedFormat.ReadMetaId(metaPath);
-			if (string.IsNullOrEmpty(id)) continue;
+			if (string.IsNullOrEmpty(id))
+				continue;
 
-			string relative = Path.GetRelativePath(ProjectFolderPath, targetAbsolute).SanitizePath();
+			string relative = Path.GetRelativePath(ProjectFolderPath, targetAbsolute)
+				.SanitizePath();
 			IndexToFile[id] = relative;
 			FileToIndex[relative] = id;
 		}
@@ -636,7 +730,13 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void SaveMetadataFile()
 	{
-		File.WriteAllText(ProjectFilePath, JsonSerializer.Serialize(Metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+		File.WriteAllText(
+			ProjectFilePath,
+			JsonSerializer.Serialize(
+				Metadata,
+				ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+			)
+		);
 	}
 
 	public Task<byte[]> OpenFile(string src)
@@ -648,14 +748,19 @@ public partial class CreatorSession : Node, IDisposable
 	public string GlobalizePath(string path)
 	{
 		string a = Path.GetFullPath(Path.Join(ProjectFolderPath, path)).SanitizePath();
-		if (!PathUtils.IsPathInsideDirectory(a, ProjectFolderPath) && a != ProjectFolderPath.SanitizePath()) throw new InvalidOperationException($"Target path is not allowed ({a})");
+		if (
+			!PathUtils.IsPathInsideDirectory(a, ProjectFolderPath)
+			&& a != ProjectFolderPath.SanitizePath()
+		)
+			throw new InvalidOperationException($"Target path is not allowed ({a})");
 		return a;
 	}
 
 	public string LocalizePath(string path)
 	{
 		string a = Path.GetRelativePath(ProjectFolderPath, path).SanitizePath();
-		if (!PathUtils.IsPathInsideDirectory(a, ProjectFolderPath)) throw new InvalidOperationException("Target path is not allowed");
+		if (!PathUtils.IsPathInsideDirectory(a, ProjectFolderPath))
+			throw new InvalidOperationException("Target path is not allowed");
 		return a;
 	}
 
@@ -667,9 +772,12 @@ public partial class CreatorSession : Node, IDisposable
 	public void CreateScript(string atPath)
 	{
 		if (!ScriptLanguageRegistry.TryFromPath(atPath, out ScriptLanguageDefinition language))
-			throw new NotSupportedException($"Unsupported script extension '{Path.GetExtension(atPath)}'");
+			throw new NotSupportedException(
+				$"Unsupported script extension '{Path.GetExtension(atPath)}'"
+			);
 		string scriptPath = Path.Join(ProjectFolderPath, atPath).SanitizePath();
-		string relativeScriptPath = Path.GetRelativePath(ProjectFolderPath, scriptPath).SanitizePath();
+		string relativeScriptPath = Path.GetRelativePath(ProjectFolderPath, scriptPath)
+			.SanitizePath();
 
 		ScriptTypeEnum scriptType = CreatorService.GetScriptTypeFromPath(scriptPath);
 
@@ -681,7 +789,11 @@ public partial class CreatorSession : Node, IDisposable
 			ScriptTypeEnum.Client => ScriptTypeKind.Client,
 			_ => ScriptTypeKind.Module,
 		};
-		string scriptSource = ScriptLanguageRegistry.CreateStarterSource(language.Language, typeKind, scriptName);
+		string scriptSource = ScriptLanguageRegistry.CreateStarterSource(
+			language.Language,
+			typeKind,
+			scriptName
+		);
 
 		string fileBaseFolder = scriptPath.GetBaseDir();
 
@@ -694,7 +806,8 @@ public partial class CreatorSession : Node, IDisposable
 
 		if (CreatorService.Interface.PendingCreateScriptAt != null)
 		{
-			if (World.Current == null) return;
+			if (World.Current == null)
+				return;
 			World currentGame = World.Current;
 			Script? scriptToCreate = null;
 			switch (scriptType)
@@ -713,14 +826,15 @@ public partial class CreatorSession : Node, IDisposable
 			{
 				scriptToCreate.Name = scriptName.ToPascalCase();
 				scriptToCreate.ChosenLanguage = language.Language;
-				scriptToCreate.LinkedScript = currentGame.Assets.GetFileLinkByPath(relativeScriptPath);
+				scriptToCreate.LinkedScript = currentGame.Assets.GetFileLinkByPath(
+					relativeScriptPath
+				);
 				scriptToCreate.Parent = CreatorService.Interface.PendingCreateScriptAt;
 				currentGame.CreatorContext.Selections.DeselectAll();
 				currentGame.CreatorContext.Selections.Select(scriptToCreate);
 			}
 			CreatorService.Interface.PendingCreateScriptAt = null;
 		}
-
 
 		// Add auto select
 		FileBrowserTab.BrowserTree.AutoSelects.Clear();
@@ -735,7 +849,9 @@ public partial class CreatorSession : Node, IDisposable
 
 		if (!atPath.EndsWith(".bvxw") && !atPath.EndsWith(".bvworld"))
 		{
-			throw new InvalidOperationException("World file must end with .bvxw or .bvworld extension");
+			throw new InvalidOperationException(
+				"World file must end with .bvxw or .bvworld extension"
+			);
 		}
 
 		if (File.Exists(globalized))
@@ -780,10 +896,14 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void RemoveFile(string src, bool toRecycleBin = false)
 	{
-		if (src == Globals.ProjectMetaFileName) throw new InvalidOperationException("Cannot delete the project metadata file");
-		if (src == Globals.ProjectInputMapName) throw new InvalidOperationException("Cannot delete the input map");
-		if (World.Current != null && World.Current.WorldFilePath == src) throw new InvalidOperationException("Cannot delete currently opened world");
-		if (src == "") throw new InvalidOperationException("Cannot delete the root folder");
+		if (src == Globals.ProjectMetaFileName)
+			throw new InvalidOperationException("Cannot delete the project metadata file");
+		if (src == Globals.ProjectInputMapName)
+			throw new InvalidOperationException("Cannot delete the input map");
+		if (World.Current != null && World.Current.WorldFilePath == src)
+			throw new InvalidOperationException("Cannot delete currently opened world");
+		if (src == "")
+			throw new InvalidOperationException("Cannot delete the root folder");
 
 		string absoluteSrc = GlobalizePath(src);
 
@@ -821,8 +941,10 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void RenameFile(string src, string renameTo)
 	{
-		if (src == Globals.ProjectMetaFileName) return;
-		if (!FileExists(src)) return;
+		if (src == Globals.ProjectMetaFileName)
+			return;
+		if (!FileExists(src))
+			return;
 		string srcRelative = src.SanitizePath();
 		src = GlobalizePath(src);
 
@@ -917,14 +1039,16 @@ public partial class CreatorSession : Node, IDisposable
 		return finalDest;
 	}
 
-
 	private void UpdateDirectoryIndex(string oldDirPath, string newDirPath)
 	{
 		// Ensure paths end with separator
 		oldDirPath = oldDirPath.TrimEnd('/') + "/";
 		newDirPath = newDirPath.TrimEnd('/') + "/";
 
-		List<KeyValuePair<string, string>> filesToUpdate = [.. IndexToFile.Where(x => x.Value.StartsWith(oldDirPath))];
+		List<KeyValuePair<string, string>> filesToUpdate =
+		[
+			.. IndexToFile.Where(x => x.Value.StartsWith(oldDirPath)),
+		];
 
 		foreach ((string key, string val) in filesToUpdate)
 		{
@@ -1064,12 +1188,17 @@ public partial class CreatorSession : Node, IDisposable
 
 	public void RunScript(string path)
 	{
-		if (World.Current == null) { BV.Print("World current is null, did not run script"); return; }
+		if (World.Current == null)
+		{
+			BV.Print("World current is null, did not run script");
+			return;
+		}
 		Script s = new() { Root = World.Current };
 		path = GlobalizePath(path);
 		s.Source = File.ReadAllText(path);
 		s.ChosenLanguage = ScriptLanguageRegistry.FromPath(path);
-		s.PermissionFlags = Scripting.ScriptPermissionFlags.IORead | Scripting.ScriptPermissionFlags.IOWrite;
+		s.PermissionFlags =
+			Scripting.ScriptPermissionFlags.IORead | Scripting.ScriptPermissionFlags.IOWrite;
 		s.Parent = World.Current.TemporaryContainer;
 		s.Run();
 	}
@@ -1096,9 +1225,16 @@ public partial class CreatorSession : Node, IDisposable
 		List<string> staleIds = [];
 
 		// Clear orphan .meta files
-		foreach (string metaPath in Directory.EnumerateFiles(ProjectFolderPath, "*" + PackedFormat.MetaExtension, SearchOption.AllDirectories))
+		foreach (
+			string metaPath in Directory.EnumerateFiles(
+				ProjectFolderPath,
+				"*" + PackedFormat.MetaExtension,
+				SearchOption.AllDirectories
+			)
+		)
 		{
-			if (IsInternalProjectFile(metaPath)) continue;
+			if (IsInternalProjectFile(metaPath))
+				continue;
 
 			string targetPath = metaPath[..^PackedFormat.MetaExtension.Length];
 			if (!File.Exists(targetPath))
@@ -1141,7 +1277,9 @@ public partial class CreatorSession : Node, IDisposable
 
 	private bool IsInternalProjectFile(string absolutePath)
 	{
-		string relative = Path.GetRelativePath(ProjectFolderPath, absolutePath).Replace('\\', '/').TrimStart('/');
+		string relative = Path.GetRelativePath(ProjectFolderPath, absolutePath)
+			.Replace('\\', '/')
+			.TrimStart('/');
 		return relative.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
 			|| relative.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase);
 	}
@@ -1151,16 +1289,24 @@ public partial class CreatorSession : Node, IDisposable
 		livePath = "";
 		string normalized = internalPath.Replace('\\', '/').TrimStart('/');
 		const string backupPrefix = ".bvproject/backups/";
-		if (!normalized.StartsWith(backupPrefix, StringComparison.OrdinalIgnoreCase)) return false;
+		if (!normalized.StartsWith(backupPrefix, StringComparison.OrdinalIgnoreCase))
+			return false;
 		string afterPrefix = normalized[backupPrefix.Length..];
 		int snapshotSeparator = afterPrefix.IndexOf('/');
-		if (snapshotSeparator < 0 || snapshotSeparator == afterPrefix.Length - 1) return false;
+		if (snapshotSeparator < 0 || snapshotSeparator == afterPrefix.Length - 1)
+			return false;
 		string candidate = afterPrefix[(snapshotSeparator + 1)..].SanitizePath().TrimStart('/');
 		string absolute = GlobalizePath(candidate);
-		if (!File.Exists(absolute)) return false;
+		if (!File.Exists(absolute))
+			return false;
 
 		IndexToFile[linkedId] = candidate;
-		foreach (string stale in FileToIndex.Where(pair => pair.Value == linkedId).Select(pair => pair.Key).ToArray())
+		foreach (
+			string stale in FileToIndex
+				.Where(pair => pair.Value == linkedId)
+				.Select(pair => pair.Key)
+				.ToArray()
+		)
 			FileToIndex.Remove(stale);
 		FileToIndex[candidate] = linkedId;
 		PackedFormat.WriteMetaId(PackedFormat.GetMetaPath(absolute), linkedId);
@@ -1190,7 +1336,6 @@ public partial class CreatorSession : Node, IDisposable
 			v.Negative.AddButton(new() { KeyCode = Enums.KeyCodeEnum.S });
 			v.Negative.AddButton(new() { KeyCode = Enums.KeyCodeEnum.Down });
 
-
 			SaveInputMap();
 		}
 		else
@@ -1217,10 +1362,17 @@ public partial class CreatorSession : Node, IDisposable
 
 	public async Task SaveBackup()
 	{
-		if (_backupInProgress) return;
+		if (_backupInProgress)
+			return;
 		_backupInProgress = true;
-		try { await SaveBackupCore(); }
-		finally { _backupInProgress = false; }
+		try
+		{
+			await SaveBackupCore();
+		}
+		finally
+		{
+			_backupInProgress = false;
+		}
 	}
 
 	private async Task SaveBackupCore()
@@ -1233,25 +1385,41 @@ public partial class CreatorSession : Node, IDisposable
 			Directory.CreateDirectory(backupFolderPath);
 		}
 
-		int maxCount = CreatorSettingsService.Instance.Get<int>(CreatorSettingKeys.Backup.MaxBackupCount);
+		int maxCount = CreatorSettingsService.Instance.Get<int>(
+			CreatorSettingKeys.Backup.MaxBackupCount
+		);
 
-		ProjectSnapshotManager.SnapshotInfo snapshot = await ProjectSnapshotManager.CreateAsync(ProjectFolderPath, backupFolderPath, stagingFolder =>
-		{
-			foreach (World game in OpenedWorlds)
+		ProjectSnapshotManager.SnapshotInfo snapshot = await ProjectSnapshotManager.CreateAsync(
+			ProjectFolderPath,
+			backupFolderPath,
+			stagingFolder =>
 			{
-				if (game.WorldFilePath == null) { BV.PrintWarn("Skipping game instance, no linked world file path"); continue; }
-				string writeTo = ProjectSnapshotManager.ResolveInside(stagingFolder, game.WorldFilePath);
-				Directory.CreateDirectory(Path.GetDirectoryName(writeTo)!);
-				PolyFormat.SaveWorldToFile(game, writeTo);
+				foreach (World game in OpenedWorlds)
+				{
+					if (game.WorldFilePath == null)
+					{
+						BV.PrintWarn("Skipping game instance, no linked world file path");
+						continue;
+					}
+					string writeTo = ProjectSnapshotManager.ResolveInside(
+						stagingFolder,
+						game.WorldFilePath
+					);
+					Directory.CreateDirectory(Path.GetDirectoryName(writeTo)!);
+					PolyFormat.SaveWorldToFile(game, writeTo);
+				}
 			}
-		});
+		);
 		ProjectSnapshotManager.Prune(backupFolderPath, maxCount);
-		CreatorService.Interface.StatusBar?.SetStatus($"Project backed up ({snapshot.FileCount} files)!");
+		CreatorService.Interface.StatusBar?.SetStatus(
+			$"Project backed up ({snapshot.FileCount} files)!"
+		);
 	}
 
 	public void CreateVSCodeConfig()
 	{
-		if (_vscodeFileWritten) return;
+		if (_vscodeFileWritten)
+			return;
 		string p = ProjectFolderPath.PathJoin(".vscode");
 		if (!Directory.Exists(p))
 		{
@@ -1268,7 +1436,8 @@ public partial class CreatorSession : Node, IDisposable
 
 	public new void Dispose()
 	{
-		if (_disposed) return;
+		if (_disposed)
+			return;
 		_disposed = true;
 		_cleanupQueued = false;
 

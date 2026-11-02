@@ -2,30 +2,44 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.IO;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.IO;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class NewProjectWizard : Control
 {
-	public const string TemplatesCardPath = "res://scenes/creator/wizard/new_project/component/template_place_card.tscn";
+	public const string TemplatesCardPath =
+		"res://scenes/creator/wizard/new_project/component/template_place_card.tscn";
 	public const string DefaultProjectName = "MyProject";
 	public bool ReturnToSplash = false;
 
-	[Export] private LineEdit _projectNameEdit = null!;
-	[Export] private LineEdit _projectPathEdit = null!;
-	[Export] private Button _pathBrowseBtn = null!;
-	[Export] private Button _createBtn = null!;
-	[Export] private Button _backBtn = null!;
-	[Export] private Control _templatesContainer = null!;
-	[Export] private BaseButton _gitCheckBtn = null!;
+	[Export]
+	private LineEdit _projectNameEdit = null!;
+
+	[Export]
+	private LineEdit _projectPathEdit = null!;
+
+	[Export]
+	private Button _pathBrowseBtn = null!;
+
+	[Export]
+	private Button _createBtn = null!;
+
+	[Export]
+	private Button _backBtn = null!;
+
+	[Export]
+	private Control _templatesContainer = null!;
+
+	[Export]
+	private BaseButton _gitCheckBtn = null!;
 	private ButtonGroup _templateBtnGroup = new();
 	private string _targetTemplatePath = "";
 	private string _oldNameText = "";
@@ -51,7 +65,8 @@ public partial class NewProjectWizard : Control
 
 	private void OnNameEditTextChanged(string newText)
 	{
-		if (_isSanitizing) return;
+		if (_isSanitizing)
+			return;
 
 		string cleansedName = newText.SanitizeFileName();
 
@@ -90,7 +105,9 @@ public partial class NewProjectWizard : Control
 
 	private TemplatePlaceCard CreateTemplateCard(string p)
 	{
-		TemplatePlaceCard card = Globals.CreateInstanceFromScene<TemplatePlaceCard>(TemplatesCardPath);
+		TemplatePlaceCard card = Globals.CreateInstanceFromScene<TemplatePlaceCard>(
+			TemplatesCardPath
+		);
 		card.TemplateFolderPath = p;
 		card.ButtonGroup = _templateBtnGroup;
 		_templatesContainer.AddChild(card);
@@ -103,7 +120,11 @@ public partial class NewProjectWizard : Control
 		Visible = true;
 		_oldNameText = DefaultProjectName;
 		_projectNameEdit.Text = DefaultProjectName;
-		_projectPathEdit.Text = Path.Join(CreatorService.DefaultProjectsAbsolutePath, DefaultProjectName).SanitizePath();
+		_projectPathEdit.Text = Path.Join(
+				CreatorService.DefaultProjectsAbsolutePath,
+				DefaultProjectName
+			)
+			.SanitizePath();
 	}
 
 	public void Back()
@@ -151,10 +172,16 @@ public partial class NewProjectWizard : Control
 			{
 				Directory.CreateDirectory(projPath);
 			}
-			else if (Directory.GetFiles(projPath).Length != 0 || Directory.GetDirectories(projPath).Length != 0)
+			else if (
+				Directory.GetFiles(projPath).Length != 0
+				|| Directory.GetDirectories(projPath).Length != 0
+			)
 			{
-				bool confirm = await CreatorService.Interface.PromptConfirmation("There are already files in this folder. Proceed anyway?");
-				if (!confirm) return;
+				bool confirm = await CreatorService.Interface.PromptConfirmation(
+					"There are already files in this folder. Proceed anyway?"
+				);
+				if (!confirm)
+					return;
 			}
 			try
 			{
@@ -164,7 +191,11 @@ public partial class NewProjectWizard : Control
 				}
 				else
 				{
-					await ProjectManager.NewProjectFromTemplate(projPath, _targetTemplatePath, new() { ProjectName = projName });
+					await ProjectManager.NewProjectFromTemplate(
+						projPath,
+						_targetTemplatePath,
+						new() { ProjectName = projName }
+					);
 				}
 			}
 			catch (Exception ex)
@@ -197,12 +228,15 @@ public partial class NewProjectWizard : Control
 
 	private void BrowsePath()
 	{
-		CreatorService.Interface.PromptFileSelect(new()
-		{
-			Title = "Choose Destination",
-			CurrentDirectory = _projectPathEdit.Text.GetBaseDir(),
-			DialogMode = DisplayServer.FileDialogMode.OpenDir
-		}, OnPathBrowsed);
+		CreatorService.Interface.PromptFileSelect(
+			new()
+			{
+				Title = "Choose Destination",
+				CurrentDirectory = _projectPathEdit.Text.GetBaseDir(),
+				DialogMode = DisplayServer.FileDialogMode.OpenDir,
+			},
+			OnPathBrowsed
+		);
 	}
 
 	private void OnPathBrowsed(string[] paths)
@@ -223,7 +257,11 @@ public partial class NewProjectWizard : Control
 
 		if (Directory.Exists(path))
 		{
-			if (new DirectoryInfo(path).Name != DefaultProjectName && Directory.GetFiles(path).Length != 0 || Directory.GetDirectories(path).Length != 0)
+			if (
+				new DirectoryInfo(path).Name != DefaultProjectName
+					&& Directory.GetFiles(path).Length != 0
+				|| Directory.GetDirectories(path).Length != 0
+			)
 			{
 				path = path.PathJoin(_projectNameEdit.Text);
 			}

@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Utils;
-using System.Collections.Generic;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Creator.UI;
 
@@ -15,9 +15,7 @@ namespace BrickVerse.Creator.UI;
 [MemoryPackUnion(1, typeof(FileDragData))]
 [MemoryPackUnion(2, typeof(DragData))]
 [MemoryPackUnion(3, typeof(ToolboxAssetDragData))]
-public partial interface IDragDataUnion
-{
-}
+public partial interface IDragDataUnion { }
 
 [MemoryPackable]
 public partial class InstanceDragData : DragData, IDragDataUnion
@@ -85,5 +83,5 @@ public enum DragType
 	None,
 	File,
 	Instance,
-	ToolboxAsset
+	ToolboxAsset,
 }

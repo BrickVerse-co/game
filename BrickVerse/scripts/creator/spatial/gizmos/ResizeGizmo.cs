@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Spatial;
 
@@ -77,7 +77,7 @@ public partial class ResizeGizmo : Node, IGizmo
 				NoDepthTest = true,
 				CullMode = BaseMaterial3D.CullModeEnum.Disabled,
 				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-				AlbedoColor = axisColor
+				AlbedoColor = axisColor,
 			};
 
 			StandardMaterial3D materialHover = (StandardMaterial3D)material.Duplicate();
@@ -90,7 +90,7 @@ public partial class ResizeGizmo : Node, IGizmo
 			{
 				Material = material,
 				Radius = 0.1f,
-				Height = 0.2f
+				Height = 0.2f,
 			};
 		}
 	}
@@ -106,7 +106,7 @@ public partial class ResizeGizmo : Node, IGizmo
 				Visible = false,
 				Layers = 1,
 				IgnoreOcclusionCulling = true,
-				ExtraCullMargin = 100000f
+				ExtraCullMargin = 100000f,
 			};
 			RootGizmos!.Root.GDNode.AddChild(
 				_resizeGizmoInstance[i],
@@ -143,8 +143,10 @@ public partial class ResizeGizmo : Node, IGizmo
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0 || RootGizmos == null) return;
-		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
+		if (Targets.Count == 0 || RootGizmos == null)
+			return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging)
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -153,14 +155,17 @@ public partial class ResizeGizmo : Node, IGizmo
 
 		if (@event is InputEventMouseButton btn)
 		{
-			if (btn.ButtonIndex != MouseButton.Left) return;
+			if (btn.ButtonIndex != MouseButton.Left)
+				return;
 			if (btn.Pressed)
 			{
-				if (!Visible) return;
+				if (!Visible)
+					return;
 				// Re-pick on mouse-down so a stale handle cannot start resizing
 				// after changing tools or selection without moving the pointer.
 				UpdateAxis(rayOrigin, rayNormal);
-				if (_currentAxis == ResizeGizmoAxis.None) return;
+				if (_currentAxis == ResizeGizmoAxis.None)
+					return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
@@ -179,7 +184,8 @@ public partial class ResizeGizmo : Node, IGizmo
 		}
 		else if (@event is InputEventMouseMotion)
 		{
-			if (!Visible) return;
+			if (!Visible)
+				return;
 			if (_isMouseDragging)
 			{
 				UpdateDrag();
@@ -194,13 +200,18 @@ public partial class ResizeGizmo : Node, IGizmo
 
 	private void UpdateDrag()
 	{
-		if (!Visible) return;
-		if (!_isMouseDragging) return;
-		if (_currentAxis == ResizeGizmoAxis.None) return;
-		if (!Input.IsMouseButtonPressed(MouseButton.Left)) return;
+		if (!Visible)
+			return;
+		if (!_isMouseDragging)
+			return;
+		if (_currentAxis == ResizeGizmoAxis.None)
+			return;
+		if (!Input.IsMouseButtonPressed(MouseButton.Left))
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
-		if (mousePos == _lastDragMousePos) return;
+		if (mousePos == _lastDragMousePos)
+			return;
 
 		_lastDragMousePos = mousePos;
 
@@ -213,8 +224,10 @@ public partial class ResizeGizmo : Node, IGizmo
 
 	private void RedrawGizmo()
 	{
-		if (Targets.Count == 0) return;
-		if (!Visible) return;
+		if (Targets.Count == 0)
+			return;
+		if (!Visible)
+			return;
 
 		Dynamic targetDynamic = Targets[0];
 		Transform3D targetTransform = targetDynamic.GetGlobalTransform();
@@ -240,17 +253,20 @@ public partial class ResizeGizmo : Node, IGizmo
 			Transform3D gizmoTransform = new()
 			{
 				Basis = targetRotation,
-				Origin = worldCenter + targetRotation.Xform(localOffsets[i])
+				Origin = worldCenter + targetRotation.Xform(localOffsets[i]),
 			};
 
-			float gizmoScale = Mathf.Max(0.4f, gizmoTransform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
-			gizmoTransform.Basis = gizmoTransform.Basis.Scaled(new Vector3(gizmoScale, gizmoScale, gizmoScale));
+			float gizmoScale = Mathf.Max(
+				0.4f,
+				gizmoTransform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f
+			);
+			gizmoTransform.Basis = gizmoTransform.Basis.Scaled(
+				new Vector3(gizmoScale, gizmoScale, gizmoScale)
+			);
 
 			_resizeGizmoInstance[i].GlobalTransform = gizmoTransform;
 		}
-
 	}
-
 
 	private void SetVisiblity()
 	{
@@ -273,7 +289,12 @@ public partial class ResizeGizmo : Node, IGizmo
 			Vector3 grabberPos = _resizeGizmoInstance[i].GlobalPosition;
 			float grabberRadius = _gizmoScale * Gizmos.GizmoArrowSize;
 
-			Vector3[] result = Geometry3D.SegmentIntersectsSphere(rayOrigin, rayOrigin + rayNormal * Gizmos.MaxZ, grabberPos, grabberRadius);
+			Vector3[] result = Geometry3D.SegmentIntersectsSphere(
+				rayOrigin,
+				rayOrigin + rayNormal * Gizmos.MaxZ,
+				grabberPos,
+				grabberRadius
+			);
 
 			if (result.Length > 0)
 			{

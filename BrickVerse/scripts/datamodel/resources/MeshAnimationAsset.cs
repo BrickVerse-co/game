@@ -29,6 +29,6 @@ public partial class MeshAnimationAsset : ResourceAsset
 		Looped,
 		PingPong,
 		OneShot,
-		OneShotImpluse
+		OneShotImpluse,
 	}
 }

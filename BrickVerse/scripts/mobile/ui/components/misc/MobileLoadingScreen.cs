@@ -36,7 +36,8 @@ public partial class MobileLoadingScreen : Node
 		_elapsed.Text = "";
 		_shownAt = Time.GetTicksMsec();
 		_active = true;
-		if (!_spinner.IsPlaying()) _spinner.Play("spin");
+		if (!_spinner.IsPlaying())
+			_spinner.Play("spin");
 		_animPlay.Play("appear");
 	}
 
@@ -54,7 +55,8 @@ public partial class MobileLoadingScreen : Node
 
 	public override void _Process(double delta)
 	{
-		if (!_active) return;
+		if (!_active)
+			return;
 		ulong seconds = (Time.GetTicksMsec() - _shownAt) / 1000;
 		_elapsed.Text = seconds < 2 ? "" : $"Waiting {seconds}s";
 	}

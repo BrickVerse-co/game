@@ -2,16 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Data;
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
-using BrickVerse.Utils.Compression;
-using BrickVerse.Utils.DTOs;
-using Semver;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,16 +14,30 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.Compression;
+using BrickVerse.Utils.DTOs;
+using Godot;
+using Semver;
 
 namespace BrickVerse.Formats;
 
 public static partial class PolyFormat
 {
-	private static readonly ConditionalWeakTable<Type, Dictionary<string, PropertyInfo>> _propertyCache = [];
+	private static readonly ConditionalWeakTable<
+		Type,
+		Dictionary<string, PropertyInfo>
+	> _propertyCache = [];
 
 	public static object? SerializePropValue(object? propValue)
 	{
-		if (propValue == null) return null;
+		if (propValue == null)
+			return null;
 
 		Type propType = propValue.GetType();
 
@@ -49,7 +53,8 @@ public static partial class PolyFormat
 
 	public static object? DeserializePropValue(object? data, Type targetType)
 	{
-		if (data == null) return null;
+		if (data == null)
+			return null;
 
 		if (data is JsonElement jsonElement)
 		{
@@ -75,23 +80,31 @@ public static partial class PolyFormat
 			switch (element.ValueKind)
 			{
 				case JsonValueKind.String:
+				{
+					string? enumValue = element.GetString();
+					if (
+						enumValue != null
+						&& Enum.TryParse(
+							targetType,
+							enumValue,
+							ignoreCase: true,
+							out object? parsed
+						)
+					)
 					{
-						string? enumValue = element.GetString();
-						if (enumValue != null && Enum.TryParse(targetType, enumValue, ignoreCase: true, out object? parsed))
-						{
-							return parsed;
-						}
-						break;
+						return parsed;
 					}
+					break;
+				}
 				case JsonValueKind.Number:
+				{
+					int enumValue = element.GetInt32();
+					if (Enum.IsDefined(targetType, enumValue))
 					{
-						int enumValue = element.GetInt32();
-						if (Enum.IsDefined(targetType, enumValue))
-						{
-							return Enum.ToObject(targetType, enumValue);
-						}
-						break;
+						return Enum.ToObject(targetType, enumValue);
 					}
+					break;
+				}
 			}
 
 			BV.PrintErr($"Failed to deserialize enum {targetType.Name} from {element.ValueKind}");
@@ -102,16 +115,28 @@ public static partial class PolyFormat
 		{
 			case JsonValueKind.String:
 				if (targetType == typeof(Color))
-					return JsonSerializer.Deserialize(element.GetRawText(), PolyJSONGenerationContext.Default.Color);
+					return JsonSerializer.Deserialize(
+						element.GetRawText(),
+						PolyJSONGenerationContext.Default.Color
+					);
 				break;
 			case JsonValueKind.Array:
 				// Handle Vector arrays
 				if (targetType == typeof(Vector2))
-					return JsonSerializer.Deserialize(element.GetRawText(), PolyJSONGenerationContext.Default.Vector2);
+					return JsonSerializer.Deserialize(
+						element.GetRawText(),
+						PolyJSONGenerationContext.Default.Vector2
+					);
 				if (targetType == typeof(Vector3))
-					return JsonSerializer.Deserialize(element.GetRawText(), PolyJSONGenerationContext.Default.Vector3);
+					return JsonSerializer.Deserialize(
+						element.GetRawText(),
+						PolyJSONGenerationContext.Default.Vector3
+					);
 				if (targetType == typeof(Quaternion))
-					return JsonSerializer.Deserialize(element.GetRawText(), PolyJSONGenerationContext.Default.Quaternion);
+					return JsonSerializer.Deserialize(
+						element.GetRawText(),
+						PolyJSONGenerationContext.Default.Quaternion
+					);
 				break;
 		}
 
@@ -137,19 +162,26 @@ public static partial class PolyFormat
 
 	public static PolyRootData ReadRootDataBytes(byte[] content)
 	{
-		if (content.Length == 0) return new();
+		if (content.Length == 0)
+			return new();
 
 		PolyRootData data;
 
 		if (content[0] == 0x7B)
 		{
 			// Uncompressed
-			data = JsonSerializer.Deserialize(content, PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(
+				content,
+				PolyJSONGenerationContext.Default.PolyRootData
+			);
 		}
 		else
 		{
 			// Compressed
-			data = JsonSerializer.Deserialize(ZstdCompressionUtils.Decompress(content), PolyJSONGenerationContext.Default.PolyRootData);
+			data = JsonSerializer.Deserialize(
+				ZstdCompressionUtils.Decompress(content),
+				PolyJSONGenerationContext.Default.PolyRootData
+			);
 		}
 
 		NormalizeRootData(ref data);
@@ -158,9 +190,7 @@ public static partial class PolyFormat
 
 	private static void NormalizeRootData(ref PolyRootData data)
 	{
-		data.Objects = (data.Objects ?? [])
-			.Where(obj => obj != null)
-			.ToArray();
+		data.Objects = (data.Objects ?? []).Where(obj => obj != null).ToArray();
 		data.NonInstanceObjects = (data.NonInstanceObjects ?? [])
 			.Where(obj => obj != null)
 			.ToArray();
@@ -176,8 +206,8 @@ public static partial class PolyFormat
 					ClassName = "World",
 					ID = "1",
 					Properties = [],
-					Children = []
-				}
+					Children = [],
+				},
 			];
 		}
 
@@ -194,12 +224,11 @@ public static partial class PolyFormat
 
 	private static void NormalizePolyObject(PolyObject? obj)
 	{
-		if (obj == null) return;
+		if (obj == null)
+			return;
 
 		obj.Properties ??= [];
-		obj.Children = (obj.Children ?? [])
-			.Where(child => child != null)
-			.ToArray();
+		obj.Children = (obj.Children ?? []).Where(child => child != null).ToArray();
 
 		foreach (PolyObject child in obj.Children)
 		{
@@ -207,16 +236,44 @@ public static partial class PolyFormat
 		}
 	}
 
-	public static Instance? LoadModel(World root, byte[] content, NetworkedObject? parent = null, PolyObject? overrides = null, PolyLoadContext? globalLoadContext = null, PolyLoadContext? subLoadContext = null)
+	public static Instance? LoadModel(
+		World root,
+		byte[] content,
+		NetworkedObject? parent = null,
+		PolyObject? overrides = null,
+		PolyLoadContext? globalLoadContext = null,
+		PolyLoadContext? subLoadContext = null
+	)
 	{
 		PolyRootData data = ReadRootDataBytes(content);
-		return LoadModelFromRootData(root, data, parent, overrides, globalLoadContext, subLoadContext);
+		return LoadModelFromRootData(
+			root,
+			data,
+			parent,
+			overrides,
+			globalLoadContext,
+			subLoadContext
+		);
 	}
 
-	public static Instance? LoadModelFromRootData(World root, PolyRootData data, NetworkedObject? parent = null, PolyObject? overrides = null, PolyLoadContext? globalLoadContext = null, PolyLoadContext? subLoadContext = null)
+	public static Instance? LoadModelFromRootData(
+		World root,
+		PolyRootData data,
+		NetworkedObject? parent = null,
+		PolyObject? overrides = null,
+		PolyLoadContext? globalLoadContext = null,
+		PolyLoadContext? subLoadContext = null
+	)
 	{
 		parent ??= root.TemporaryContainer;
-		PolyLoadContext context = new() { RootData = data, Root = root, LoadType = data.FileType, IndexToFile = subLoadContext?.IndexToFile ?? [], AssignModelRoot = globalLoadContext?.AssignModelRoot ?? true };
+		PolyLoadContext context = new()
+		{
+			RootData = data,
+			Root = root,
+			LoadType = data.FileType,
+			IndexToFile = subLoadContext?.IndexToFile ?? [],
+			AssignModelRoot = globalLoadContext?.AssignModelRoot ?? true,
+		};
 
 		if (globalLoadContext != null)
 		{
@@ -279,7 +336,13 @@ public static partial class PolyFormat
 
 	public static void InjectModelData(PolyRootData data, Instance to)
 	{
-		PolyLoadContext context = new() { RootData = data, Root = to.Root, LoadType = data.FileType, ModelRoot = to };
+		PolyLoadContext context = new()
+		{
+			RootData = data,
+			Root = to.Root,
+			LoadType = data.FileType,
+			ModelRoot = to,
+		};
 
 		if (data.FileType == PolyFileType.Model)
 		{
@@ -297,7 +360,8 @@ public static partial class PolyFormat
 				}
 			}
 
-			if (data.Objects.Length < 0) return;
+			if (data.Objects.Length < 0)
+				return;
 
 			PolyObject targetObj = data.Objects[0];
 
@@ -318,16 +382,23 @@ public static partial class PolyFormat
 	public static void LoadWorld(World root, byte[] rawdata, bool forceMigrateCords = false)
 	{
 		// Empty world file
-		if (rawdata.Length == 0) return;
+		if (rawdata.Length == 0)
+			return;
 
 		PolyRootData data = ReadRootDataBytes(rawdata);
 		InternalLoadWorld(root, data, forceMigrateCords);
 	}
 
-	public static async Task LoadWorldAsync(World root, byte[] rawdata, bool forceMigrateCords = false,
-		Action<string>? reportStatus = null, Action<string>? reportDetail = null)
+	public static async Task LoadWorldAsync(
+		World root,
+		byte[] rawdata,
+		bool forceMigrateCords = false,
+		Action<string>? reportStatus = null,
+		Action<string>? reportDetail = null
+	)
 	{
-		if (rawdata.Length == 0) return;
+		if (rawdata.Length == 0)
+			return;
 
 		// Deserializing the format does not touch Godot state and is safe off the
 		// render thread. Instance creation stays on the main thread, but is divided
@@ -338,11 +409,14 @@ public static partial class PolyFormat
 		Stopwatch decodeTimer = Stopwatch.StartNew();
 		// Scheduling tiny world files on the thread pool costs far more than their
 		// decompression and JSON parsing. Keep large files off the render thread.
-		PolyRootData data = rawdata.Length < 1024 * 1024
-			? ReadRootDataBytes(rawdata)
-			: await Task.Run(() => ReadRootDataBytes(rawdata));
+		PolyRootData data =
+			rawdata.Length < 1024 * 1024
+				? ReadRootDataBytes(rawdata)
+				: await Task.Run(() => ReadRootDataBytes(rawdata));
 		decodeTimer.Stop();
-		reportDetail?.Invoke($"Decoded world file in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms");
+		reportDetail?.Invoke(
+			$"Decoded world file in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms"
+		);
 		Stopwatch linkedModelTimer = Stopwatch.StartNew();
 		reportDetail?.Invoke("Resolving linked model references");
 		Dictionary<string, PolyRootData> linkedModels = await PreloadLinkedModelsAsync(root, data);
@@ -354,7 +428,8 @@ public static partial class PolyFormat
 			ForceCordMigration = forceMigrateCords,
 			LoadedModel = linkedModels,
 		};
-		if (data.Objects == null || data.Objects.Length == 0 || data.FileType != PolyFileType.World) return;
+		if (data.Objects == null || data.Objects.Length == 0 || data.FileType != PolyFileType.World)
+			return;
 
 		PolyObject rootObj = data.Objects[0];
 		reportDetail?.Invoke("Applying world properties");
@@ -363,7 +438,8 @@ public static partial class PolyFormat
 		foreach (PolyObject item in data.NonInstanceObjects)
 			FromPolyObject(item, context);
 
-		Stack<(PolyObject? Object, NetworkedObject Parent, NetworkedObject? ReadyObject)> pending = new();
+		Stack<(PolyObject? Object, NetworkedObject Parent, NetworkedObject? ReadyObject)> pending =
+			new();
 		int totalObjects = CountObjects(rootObj.Children);
 		for (int index = rootObj.Children.Length - 1; index >= 0; index--)
 			pending.Push((rootObj.Children[index], root, null));
@@ -385,11 +461,19 @@ public static partial class PolyFormat
 				ReportSlowWorldObject(readyObject, "ready", readyStarted);
 				continue;
 			}
-			if (obj == null) continue;
+			if (obj == null)
+				continue;
 
 			long objectStarted = Stopwatch.GetTimestamp();
-			NetworkedObject? created = FromPolyObject(obj, context, parent, deferChildren: true, deferReady: true);
-			if (created == null) continue;
+			NetworkedObject? created = FromPolyObject(
+				obj,
+				context,
+				parent,
+				deferChildren: true,
+				deferReady: true
+			);
+			if (created == null)
+				continue;
 			if (created is Terrain terrain)
 				terrain.BeginMaterialBulkUpdate();
 			ReportSlowWorldObject(created, "construction/properties", objectStarted);
@@ -401,30 +485,44 @@ public static partial class PolyFormat
 			}
 
 			loadedObjects++;
-			reportDetail?.Invoke($"{created.ClassName} '{created.Name}' ({loadedObjects:N0}/{totalObjects:N0})");
+			reportDetail?.Invoke(
+				$"{created.ClassName} '{created.Name}' ({loadedObjects:N0}/{totalObjects:N0})"
+			);
 			// A fixed object count severely underutilized a frame for simple objects.
 			// Spend up to ~12 ms constructing instances, then yield so input and the
 			// loading overlay remain responsive without adding a frame per 64 objects.
 			if (frameBudget.ElapsedMilliseconds >= 12 && root.GDNode.GetTree() != null)
 			{
-				await root.GDNode.ToSignal(root.GDNode.GetTree(), SceneTree.SignalName.ProcessFrame);
+				await root.GDNode.ToSignal(
+					root.GDNode.GetTree(),
+					SceneTree.SignalName.ProcessFrame
+				);
 				frameBudget.Restart();
 			}
 		}
 		loadTimer.Stop();
-		reportStatus?.Invoke($"Loaded {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalSeconds:0.00}s (decoded in {decodeTimer.Elapsed.TotalSeconds:0.00}s)");
+		reportStatus?.Invoke(
+			$"Loaded {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalSeconds:0.00}s (decoded in {decodeTimer.Elapsed.TotalSeconds:0.00}s)"
+		);
 		reportDetail?.Invoke("Finishing editor integration");
-		BV.Print($"World load: decoded {rawdata.Length / 1024d / 1024d:0.0} MiB in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms; preloaded linked models in {linkedModelTimer.Elapsed.TotalMilliseconds:N0} ms; constructed {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalMilliseconds:N0} ms.");
+		BV.Print(
+			$"World load: decoded {rawdata.Length / 1024d / 1024d:0.0} MiB in {decodeTimer.Elapsed.TotalMilliseconds:N0} ms; preloaded linked models in {linkedModelTimer.Elapsed.TotalMilliseconds:N0} ms; constructed {loadedObjects:N0} objects in {loadTimer.Elapsed.TotalMilliseconds:N0} ms."
+		);
 	}
 
 	private static void ReportSlowWorldObject(NetworkedObject obj, string phase, long started)
 	{
 		double milliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
 		if (milliseconds >= 50)
-			BV.Print($"World load: {obj.ClassName} '{obj.Name}' {phase} took {milliseconds:N0} ms.");
+			BV.Print(
+				$"World load: {obj.ClassName} '{obj.Name}' {phase} took {milliseconds:N0} ms."
+			);
 	}
 
-	private static async Task<Dictionary<string, PolyRootData>> PreloadLinkedModelsAsync(World root, PolyRootData world)
+	private static async Task<Dictionary<string, PolyRootData>> PreloadLinkedModelsAsync(
+		World root,
+		PolyRootData world
+	)
 	{
 		Dictionary<string, PolyRootData> loaded = [];
 		HashSet<string> discovered = [];
@@ -433,8 +531,10 @@ public static partial class PolyFormat
 		{
 			List<string> batch = [];
 			while (pending.TryDequeue(out string? id))
-				if (discovered.Add(id)) batch.Add(id);
-			if (batch.Count == 0) continue;
+				if (discovered.Add(id))
+					batch.Add(id);
+			if (batch.Count == 0)
+				continue;
 
 			List<(string Id, PolyRootData? Data)> decoded = [];
 			List<(string Id, byte[] Bytes)> largeModels = [];
@@ -452,17 +552,22 @@ public static partial class PolyFormat
 					largeModels.Add((id, bytes));
 			}
 
-			Task<(string Id, PolyRootData? Data)>[] tasks = largeModels.Select(model => Task.Run(() =>
-				(model.Id, (PolyRootData?)ReadRootDataBytes(model.Bytes)))).ToArray();
+			Task<(string Id, PolyRootData? Data)>[] tasks = largeModels
+				.Select(model =>
+					Task.Run(() => (model.Id, (PolyRootData?)ReadRootDataBytes(model.Bytes)))
+				)
+				.ToArray();
 			if (tasks.Length > 0)
 				decoded.AddRange(await Task.WhenAll(tasks));
 
 			foreach ((string id, PolyRootData? model) in decoded)
 			{
-				if (!model.HasValue) continue;
+				if (!model.HasValue)
+					continue;
 				loaded[id] = model.Value;
 				foreach (string nested in CollectLinkedModelIds(model.Value))
-					if (!discovered.Contains(nested)) pending.Enqueue(nested);
+					if (!discovered.Contains(nested))
+						pending.Enqueue(nested);
 			}
 		}
 		return loaded;
@@ -473,8 +578,10 @@ public static partial class PolyFormat
 		Stack<PolyObject> pending = new((data.Objects ?? []).Concat(data.NonInstanceObjects ?? []));
 		while (pending.TryPop(out PolyObject? item))
 		{
-			if (!string.IsNullOrWhiteSpace(item.LinkedModel)) yield return item.LinkedModel;
-			foreach (PolyObject child in item.Children ?? []) pending.Push(child);
+			if (!string.IsNullOrWhiteSpace(item.LinkedModel))
+				yield return item.LinkedModel;
+			foreach (PolyObject child in item.Children ?? [])
+				pending.Push(child);
 		}
 	}
 
@@ -485,21 +592,34 @@ public static partial class PolyFormat
 		while (pending.TryPop(out PolyObject? item))
 		{
 			count++;
-			if (item.LinkedModel != null) continue;
-			foreach (PolyObject child in item.Children) pending.Push(child);
+			if (item.LinkedModel != null)
+				continue;
+			foreach (PolyObject child in item.Children)
+				pending.Push(child);
 		}
 		return count;
 	}
 
-	private static void InternalLoadWorld(World root, PolyRootData data, bool forceMigrateCords = false)
+	private static void InternalLoadWorld(
+		World root,
+		PolyRootData data,
+		bool forceMigrateCords = false
+	)
 	{
 		Stopwatch sw = new();
 		sw.Start();
-		PolyLoadContext context = new() { RootData = data, Root = root, ForceCordMigration = forceMigrateCords };
+		PolyLoadContext context = new()
+		{
+			RootData = data,
+			Root = root,
+			ForceCordMigration = forceMigrateCords,
+		};
 
 		// Empty world
-		if (data.Objects == null || data.Objects.Length == 0) return;
-		if (data.FileType != PolyFileType.World) return;
+		if (data.Objects == null || data.Objects.Length == 0)
+			return;
+		if (data.FileType != PolyFileType.World)
+			return;
 
 		PolyObject rootObj = data.Objects[0];
 		LoadProperties(rootObj, root, context);
@@ -526,7 +646,8 @@ public static partial class PolyFormat
 		string className = ConvertClassName(obj.ClassName);
 
 		// Prevent spawning player
-		if (className == "Player") return null;
+		if (className == "Player")
+			return null;
 
 		bool hasParent;
 		bool isModelRoot = loadContext.IsRootHint;
@@ -546,7 +667,9 @@ public static partial class PolyFormat
 		{
 			if (loadContext.LoadingModelChain.Contains(obj.LinkedModel))
 			{
-				BV.PrintWarn($"Circular reference detected at {obj.LinkedModel}, model not loaded.");
+				BV.PrintWarn(
+					$"Circular reference detected at {obj.LinkedModel}, model not loaded."
+				);
 				return null;
 			}
 
@@ -659,7 +782,12 @@ public static partial class PolyFormat
 		return netObj;
 	}
 
-	private static void LoadEditableOverrides(PolyObject obj, Instance rootInstance, PolyLoadContext loadContext, PolyLoadContext globalLoadContext)
+	private static void LoadEditableOverrides(
+		PolyObject obj,
+		Instance rootInstance,
+		PolyLoadContext loadContext,
+		PolyLoadContext globalLoadContext
+	)
 	{
 		// NOTE: Retrieve via ID doesn't work for some reason
 		foreach (PolyObject child in GetDescendants(obj))
@@ -699,7 +827,12 @@ public static partial class PolyFormat
 		return [.. i];
 	}
 
-	private static void QueuePendingRef(string objID, NetworkedObject requester, PropertyInfo prop, PolyLoadContext ctx)
+	private static void QueuePendingRef(
+		string objID,
+		NetworkedObject requester,
+		PropertyInfo prop,
+		PolyLoadContext ctx
+	)
 	{
 		if (!ctx.PendingReferences.TryGetValue(objID, out var list))
 		{
@@ -711,7 +844,11 @@ public static partial class PolyFormat
 		list.Add((requester, prop));
 	}
 
-	private static void ResolvePendingRef(string objID, NetworkedObject resolvedObj, PolyLoadContext ctx)
+	private static void ResolvePendingRef(
+		string objID,
+		NetworkedObject resolvedObj,
+		PolyLoadContext ctx
+	)
 	{
 		if (!ctx.PendingReferences.TryGetValue(objID, out var list))
 		{
@@ -720,7 +857,8 @@ public static partial class PolyFormat
 
 		foreach (var (requester, property) in list)
 		{
-			if (requester.IsDeleted) continue;
+			if (requester.IsDeleted)
+				continue;
 
 			try
 			{
@@ -737,7 +875,11 @@ public static partial class PolyFormat
 		ctx.PendingReferences.Remove(objID);
 	}
 
-	private static void LoadProperties(PolyObject obj, NetworkedObject netObj, PolyLoadContext loadContext)
+	private static void LoadProperties(
+		PolyObject obj,
+		NetworkedObject netObj,
+		PolyLoadContext loadContext
+	)
 	{
 		Type dataModelType = netObj.GetType();
 
@@ -746,7 +888,8 @@ public static partial class PolyFormat
 		foreach (KeyValuePair<string, object?> prop in obj.Properties ?? [])
 		{
 			// Could be deleted mid-way
-			if (netObj.IsDeleted) continue;
+			if (netObj.IsDeleted)
+				continue;
 
 			string propName = prop.Key;
 			object? propVal = prop.Value;
@@ -821,36 +964,54 @@ public static partial class PolyFormat
 	}
 
 	private static Dictionary<string, PropertyInfo> GetOrCreatePropertyCache(
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type
+	)
 	{
-		return _propertyCache.GetValue(type, static t =>
-		{
-			Dictionary<string, PropertyInfo> cache = [];
-#pragma warning disable IL2070 // Datamodel types has the reflections needed
-			PropertyInfo[] properties = t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-#pragma warning restore IL2070
-			foreach (PropertyInfo prop in properties)
+		return _propertyCache.GetValue(
+			type,
+			static t =>
 			{
-				if (prop.IsDefined(typeof(EditableAttribute)) || prop.IsDefined(typeof(SaveIncludeAttribute)))
+				Dictionary<string, PropertyInfo> cache = [];
+#pragma warning disable IL2070 // Datamodel types has the reflections needed
+				PropertyInfo[] properties = t.GetProperties(
+					BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
+				);
+#pragma warning restore IL2070
+				foreach (PropertyInfo prop in properties)
 				{
-					cache[prop.Name] = prop;
+					if (
+						prop.IsDefined(typeof(EditableAttribute))
+						|| prop.IsDefined(typeof(SaveIncludeAttribute))
+					)
+					{
+						cache[prop.Name] = prop;
+					}
 				}
+				return cache;
 			}
-			return cache;
-		});
+		);
 	}
 
-	public static PolyObject? ToPolyObject(NetworkedObject obj, PolyRoot root, bool isLinkedChild = false)
+	public static PolyObject? ToPolyObject(
+		NetworkedObject obj,
+		PolyRoot root,
+		bool isLinkedChild = false
+	)
 	{
 		Dictionary<string, object?> objProps = [];
 		Type objType = obj.GetType();
 
-		if (objType.IsDefined(typeof(SaveIgnoreAttribute))) return null;
-		if (obj is Instance preI && !preI.Archivable) return null;
+		if (objType.IsDefined(typeof(SaveIgnoreAttribute)))
+			return null;
+		if (obj is Instance preI && !preI.Archivable)
+			return null;
 
 		IEnumerable<PropertyInfo> creatorProperties = obj.GetEditableProperties();
 
-		IEnumerable<PropertyInfo> saveIncludes = objType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+		IEnumerable<PropertyInfo> saveIncludes = objType
+			.GetProperties(
+				BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy
+			)
 			.Where(p => p.GetCustomAttributeCached<SaveIncludeAttribute>() != null);
 
 		HashSet<string> existingNames = [.. creatorProperties.Select(p => p.Name)];
@@ -860,19 +1021,25 @@ public static partial class PolyFormat
 
 		foreach (PropertyInfo prop in creatorProperties)
 		{
-			if (prop.IsDefinedCached(typeof(Attributes.ObsoleteAttribute))) continue;
-			if (prop.IsDefinedCached(typeof(SaveIgnoreAttribute))) continue;
+			if (prop.IsDefinedCached(typeof(Attributes.ObsoleteAttribute)))
+				continue;
+			if (prop.IsDefinedCached(typeof(SaveIgnoreAttribute)))
+				continue;
 			if (prop.CanRead)
 			{
 				object? val = prop.GetValue(obj);
-				if (val == null) continue;
+				if (val == null)
+					continue;
 
 				DefaultValueAttribute? df = prop.GetCustomAttributeCached<DefaultValueAttribute>();
 				if (df != null)
 				{
 					try
 					{
-						object? convertedDefault = Convert.ChangeType(df.DefaultValue, prop.PropertyType);
+						object? convertedDefault = Convert.ChangeType(
+							df.DefaultValue,
+							prop.PropertyType
+						);
 
 						if (Equals(convertedDefault, val))
 						{
@@ -898,7 +1065,12 @@ public static partial class PolyFormat
 					if (netObj is not Instance)
 					{
 						// Add non instance
-						if (!root.NonInstanceAdded.TryGetValue(netObj.ObjectID, out PolyObject? refObj))
+						if (
+							!root.NonInstanceAdded.TryGetValue(
+								netObj.ObjectID,
+								out PolyObject? refObj
+							)
+						)
 						{
 							refObj = ToPolyObject(netObj, root);
 							if (refObj != null)
@@ -930,7 +1102,7 @@ public static partial class PolyFormat
 			ClassName = obj.ClassName,
 			ID = obj.ObjectID,
 			Properties = objProps,
-			IsLinkedChild = isLinkedChild
+			IsLinkedChild = isLinkedChild,
 		};
 
 		if (obj is Instance instance)
@@ -950,12 +1122,14 @@ public static partial class PolyFormat
 				foreach (Instance child in instance.GetChildren())
 				{
 					Type ct = child.GetType();
-					if (ct.GetCustomAttributeCached<SaveIgnoreAttribute>() != null) continue;
+					if (ct.GetCustomAttributeCached<SaveIgnoreAttribute>() != null)
+						continue;
 					if (child.ModelRoot != null && instance.EditableChildren)
 					{
 						// Save editable children
 						PolyObject? cobj = ToPolyObject(child, root, false);
-						if (cobj == null) continue;
+						if (cobj == null)
+							continue;
 						cobj.IsLinkedChild = false;
 						childs.Add(cobj);
 					}
@@ -963,7 +1137,8 @@ public static partial class PolyFormat
 					{
 						// Save linked children
 						PolyObject? cobj = ToPolyObject(child, root, true);
-						if (cobj == null) continue;
+						if (cobj == null)
+							continue;
 						cobj.IsLinkedChild = true;
 						childs.Add(cobj);
 					}
@@ -971,7 +1146,8 @@ public static partial class PolyFormat
 					{
 						// Save children with no model root
 						PolyObject? cobj = ToPolyObject(child, root, false);
-						if (cobj == null) continue;
+						if (cobj == null)
+							continue;
 						cobj.IsLinkedChild = false;
 						childs.Add(cobj);
 					}
@@ -995,7 +1171,8 @@ public static partial class PolyFormat
 
 	public static PolyRootData SaveModel(Instance instance)
 	{
-		if (instance.GetType().IsDefined(typeof(StaticAttribute))) throw new InvalidOperationException("Static class cannot be made as a model");
+		if (instance.GetType().IsDefined(typeof(StaticAttribute)))
+			throw new InvalidOperationException("Static class cannot be made as a model");
 		PolyRoot root = new() { FileType = PolyFileType.Model };
 		root.Objects.Add(ToPolyObject(instance, root)!);
 
@@ -1064,7 +1241,11 @@ public static partial class PolyFormat
 		File.WriteAllText(path, data);
 	}
 
-	public static Instance? LoadModelFromFile(World root, string path, NetworkedObject? parent = null)
+	public static Instance? LoadModelFromFile(
+		World root,
+		string path,
+		NetworkedObject? parent = null
+	)
 	{
 		byte[] bytes = File.ReadAllBytes(path);
 		return LoadModel(root, bytes, parent);
@@ -1116,7 +1297,10 @@ public static partial class PolyFormat
 		public PolyRootData RootData;
 		public World Root = null!;
 		public Dictionary<string, NetworkedObject> SpawnedObjects = [];
-		public Dictionary<string, List<(NetworkedObject obj, PropertyInfo prop)>> PendingReferences = [];
+		public Dictionary<
+			string,
+			List<(NetworkedObject obj, PropertyInfo prop)>
+		> PendingReferences = [];
 		public bool IsRootHint = false;
 		public Instance? ModelRoot = null;
 		public bool AssignModelRoot = true;
@@ -1144,24 +1328,33 @@ public static partial class PolyFormat
 				Version = Globals.AppVersion,
 				FileType = FileType,
 				Objects = [.. Objects],
-				NonInstanceObjects = [.. NonInstanceObjects]
+				NonInstanceObjects = [.. NonInstanceObjects],
 			};
 		}
 	}
 
 	public partial struct PolyRootData
 	{
-		[JsonInclude] public string Version;
-		[JsonInclude] public PolyFileType FileType;
-		[JsonInclude] public PolyObject[] Objects;
-		[JsonInclude] public PolyObject[] NonInstanceObjects;
-		[JsonIgnore] public string FolderPath;
+		[JsonInclude]
+		public string Version;
+
+		[JsonInclude]
+		public PolyFileType FileType;
+
+		[JsonInclude]
+		public PolyObject[] Objects;
+
+		[JsonInclude]
+		public PolyObject[] NonInstanceObjects;
+
+		[JsonIgnore]
+		public string FolderPath;
 	}
 
 	public enum PolyFileType
 	{
 		World,
-		Model
+		Model,
 	}
 
 	public static string ConvertClassName(string className)
@@ -1188,11 +1381,23 @@ public static partial class PolyFormat
 
 	public static void MigrateAxis(string propName, ref object? val)
 	{
-		if ((propName == nameof(Dynamic.Position) || propName == nameof(Dynamic.LocalPosition) || propName == nameof(Physical.Velocity)) && val is Vector3 v3)
+		if (
+			(
+				propName == nameof(Dynamic.Position)
+				|| propName == nameof(Dynamic.LocalPosition)
+				|| propName == nameof(Physical.Velocity)
+			) && val is Vector3 v3
+		)
 		{
 			val = v3.Flip();
 		}
-		else if ((propName == nameof(Dynamic.Rotation) || propName == nameof(Dynamic.LocalRotation) || propName == nameof(Physical.AngularVelocity)) && val is Vector3 vrot3)
+		else if (
+			(
+				propName == nameof(Dynamic.Rotation)
+				|| propName == nameof(Dynamic.LocalRotation)
+				|| propName == nameof(Physical.AngularVelocity)
+			) && val is Vector3 vrot3
+		)
 		{
 			val = vrot3.FlipEuler();
 		}
@@ -1200,7 +1405,10 @@ public static partial class PolyFormat
 		{
 			val = -f;
 		}
-		else if ((propName == nameof(UIField.PositionRelative) || propName == nameof(UIField.PivotPoint)) && val is Vector2 v2)
+		else if (
+			(propName == nameof(UIField.PositionRelative) || propName == nameof(UIField.PivotPoint))
+			&& val is Vector2 v2
+		)
 		{
 			val = new Vector2(v2.X, 1 - v2.Y);
 		}
@@ -1210,15 +1418,19 @@ public static partial class PolyFormat
 		}
 	}
 
-	[JsonSourceGenerationOptions(WriteIndented = true, Converters = [
-		typeof(Vector2JsonConverter),
-		typeof(Vector3JsonConverter),
-		typeof(UnitQuaternionUInt64JsonConverter),
-		typeof(ColorJsonConverter),
-		typeof(ColorSeriesJsonConverter),
-		typeof(NumberSeriesJsonConverter),
-		typeof(NumberRangeJsonConverter)
-		], NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals)]
+	[JsonSourceGenerationOptions(
+		WriteIndented = true,
+		Converters = [
+			typeof(Vector2JsonConverter),
+			typeof(Vector3JsonConverter),
+			typeof(UnitQuaternionUInt64JsonConverter),
+			typeof(ColorJsonConverter),
+			typeof(ColorSeriesJsonConverter),
+			typeof(NumberSeriesJsonConverter),
+			typeof(NumberRangeJsonConverter),
+		],
+		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+	)]
 	[JsonSerializable(typeof(string))]
 	[JsonSerializable(typeof(bool))]
 	[JsonSerializable(typeof(byte))]
@@ -1232,19 +1444,16 @@ public static partial class PolyFormat
 	[JsonSerializable(typeof(float))]
 	[JsonSerializable(typeof(double))]
 	[JsonSerializable(typeof(decimal))]
-
 	[JsonSerializable(typeof(Vector2))]
 	[JsonSerializable(typeof(Vector3))]
 	[JsonSerializable(typeof(Quaternion))]
 	[JsonSerializable(typeof(Color))]
-
 	[JsonSerializable(typeof(ColorSeries))]
 	[JsonSerializable(typeof(NumberSeries))]
 	[JsonSerializable(typeof(NumberRange))]
 	[JsonSerializable(typeof(UIScale))]
 	[JsonSerializable(typeof(ShadowLayer))]
 	[JsonSerializable(typeof(ShadowLayer[]))]
-
 	[JsonSerializable(typeof(string[]))]
 	[JsonSerializable(typeof(byte[]))]
 	[JsonSerializable(typeof(PolyRootData))]
@@ -1252,7 +1461,5 @@ public static partial class PolyFormat
 	[JsonSerializable(typeof(PolyObject[]))]
 	[JsonSerializable(typeof(List<PolyObject>))]
 	[JsonSerializable(typeof(Dictionary<string, object>))]
-	internal partial class PolyJSONGenerationContext : JsonSerializerContext
-	{
-	}
+	internal partial class PolyJSONGenerationContext : JsonSerializerContext { }
 }

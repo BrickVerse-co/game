@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Creator.UI;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Interfaces;
+using Godot;
 
 namespace BrickVerse.Creator;
 
@@ -81,11 +81,14 @@ public partial class MultiSelectionBox : Control
 						// Get model root if ALT is not pressed
 						top = Gizmos.GetModelRoot(dyn);
 					}
-					if (top == null) continue;
-					if (top is Dynamic pd && pd.Locked) continue;
+					if (top == null)
+						continue;
+					if (top is Dynamic pd && pd.Locked)
+						continue;
 
 					// Don't select model if alt pressed
-					if (altPressed && (top is IGroup)) continue;
+					if (altPressed && (top is IGroup))
+						continue;
 					Overlay.World.CreatorContext.Selections.Select(top);
 				}
 			}
@@ -101,9 +104,11 @@ public partial class MultiSelectionBox : Control
 		CreatorSelections selections = Overlay.World.CreatorContext.Selections;
 		Vector2 mousePosition = GetViewport().GetMousePosition();
 
-		if (@event is InputEventMouseButton rightMouseEvent
+		if (
+			@event is InputEventMouseButton rightMouseEvent
 			&& rightMouseEvent.ButtonIndex == MouseButton.Right
-			&& rightMouseEvent.Pressed)
+			&& rightMouseEvent.Pressed
+		)
 		{
 			_dragging = false;
 			_panel.Visible = false;
@@ -112,14 +117,19 @@ public partial class MultiSelectionBox : Control
 			return;
 		}
 
-		if (@event is InputEventMouseButton mouseEvent && mouseEvent.ButtonIndex == MouseButton.Left)
+		if (
+			@event is InputEventMouseButton mouseEvent
+			&& mouseEvent.ButtonIndex == MouseButton.Left
+		)
 		{
 			if (mouseEvent.Pressed)
 			{
-				if (_dragging == false
+				if (
+					_dragging == false
 					&& !gizmos.HoveringGizmos
 					&& selections.SelectedInstances.Count == 0
-					&& CanMultiSelect(gizmos))
+					&& CanMultiSelect(gizmos)
+				)
 				{
 					_tween?.Stop();
 
@@ -133,15 +143,20 @@ public partial class MultiSelectionBox : Control
 			else if (_dragging)
 			{
 				_dragging = false;
-				if ((_dragStart - mousePosition).Length() > _selectSensitivity && CanMultiSelect(gizmos))
+				if (
+					(_dragStart - mousePosition).Length() > _selectSensitivity
+					&& CanMultiSelect(gizmos)
+				)
 				{
 					_tween = GetTree().CreateTween();
 					_tween.TweenProperty(_panel, "modulate", new Color(1, 1, 1, 0), 0.15f);
-					_tween.TweenCallback(Callable.From(() =>
-					{
-						_panel.Visible = false;
-						_panel.Size = Vector2.Zero;
-					}));
+					_tween.TweenCallback(
+						Callable.From(() =>
+						{
+							_panel.Visible = false;
+							_panel.Size = Vector2.Zero;
+						})
+					);
 
 					CalculateBox(mousePosition);
 				}

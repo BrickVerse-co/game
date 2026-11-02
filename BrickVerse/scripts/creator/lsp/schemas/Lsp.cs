@@ -12,10 +12,13 @@ public class LspRequest
 {
 	[JsonPropertyName("jsonrpc")]
 	public string JsonRpc { get; set; } = "2.0";
+
 	[JsonPropertyName("id")]
 	public int Id { get; set; }
+
 	[JsonPropertyName("method")]
 	public string Method { get; set; } = "";
+
 	[JsonPropertyName("params")]
 	public object? Params { get; set; }
 }
@@ -24,8 +27,10 @@ public class LspNotification
 {
 	[JsonPropertyName("jsonrpc")]
 	public string JsonRpc { get; set; } = "2.0";
+
 	[JsonPropertyName("method")]
 	public string Method { get; set; } = "";
+
 	[JsonPropertyName("params")]
 	public object? Params { get; set; }
 }
@@ -43,8 +48,10 @@ public class LspClientCapabilities
 {
 	[JsonPropertyName("textDocument")]
 	public LspTextDocumentCapabilities? TextDocument { get; set; }
+
 	[JsonPropertyName("workspace")]
 	public LspWorkspaceCapabilities? Workspace { get; set; }
+
 	[JsonPropertyName("general")]
 	public LspGeneralCapabilities? General { get; set; }
 }
@@ -53,8 +60,10 @@ public class LspTextDocumentCapabilities
 {
 	[JsonPropertyName("completion")]
 	public LspCompletionCapability? Completion { get; set; }
+
 	[JsonPropertyName("hover")]
 	public LspHoverCapability? Hover { get; set; }
+
 	[JsonPropertyName("synchronization")]
 	public LspSynchronizationCapability? Synchronization { get; set; }
 }
@@ -81,10 +90,13 @@ public class LspSynchronizationCapability
 {
 	[JsonPropertyName("dynamicRegistration")]
 	public bool? DynamicRegistration { get; set; }
+
 	[JsonPropertyName("didSave")]
 	public bool DidSave { get; set; }
+
 	[JsonPropertyName("willSave")]
 	public bool WillSave { get; set; }
+
 	[JsonPropertyName("willSaveWaitUntil")]
 	public bool WillSaveWaitUntil { get; set; }
 }
@@ -93,10 +105,13 @@ public class LspWorkspaceCapabilities
 {
 	[JsonPropertyName("applyEdit")]
 	public bool ApplyEdit { get; set; }
+
 	[JsonPropertyName("workspaceEdit")]
 	public LspWorkspaceEditCapability? WorkspaceEdit { get; set; }
+
 	[JsonPropertyName("configuration")]
 	public bool Configuration { get; set; }
+
 	[JsonPropertyName("didChangeWatchedFiles")]
 	public LspDidChangeWatchedFilesCapabilities? DidChangeWatchedFiles { get; set; }
 }
@@ -105,6 +120,7 @@ public class LspDidChangeWatchedFilesCapabilities
 {
 	[JsonPropertyName("dynamicRegistration")]
 	public bool? DynamicRegistration { get; set; }
+
 	[JsonPropertyName("relativePatternSupport")]
 	public bool? RelativePatternSupport { get; set; }
 }
@@ -131,10 +147,13 @@ public class LspTextDocumentItem
 {
 	[JsonPropertyName("uri")]
 	public string Uri { get; set; } = "";
+
 	[JsonPropertyName("languageId")]
 	public string LanguageId { get; set; } = "";
+
 	[JsonPropertyName("version")]
 	public int Version { get; set; }
+
 	[JsonPropertyName("text")]
 	public string Text { get; set; } = "";
 }
@@ -167,6 +186,7 @@ public class LspDidChangeParams
 {
 	[JsonPropertyName("textDocument")]
 	public LspVersionedTextDocumentIdentifier? TextDocument { get; set; }
+
 	[JsonPropertyName("contentChanges")]
 	public LspTextDocumentContentChangeEvent[]? ContentChanges { get; set; }
 }
@@ -181,8 +201,10 @@ public class LspCompletionParams
 {
 	[JsonPropertyName("textDocument")]
 	public LspTextDocumentIdentifier? TextDocument { get; set; }
+
 	[JsonPropertyName("position")]
 	public LspPosition? Position { get; set; }
+
 	[JsonPropertyName("context")]
 	public LspCompletionContext? Context { get; set; }
 }
@@ -191,6 +213,7 @@ public class LspTextDocumentPositionParams
 {
 	[JsonPropertyName("textDocument")]
 	public LspTextDocumentIdentifier? TextDocument { get; set; }
+
 	[JsonPropertyName("position")]
 	public LspPosition? Position { get; set; }
 }
@@ -199,6 +222,7 @@ public class LspHover
 {
 	[JsonPropertyName("contents")]
 	public JsonElement Contents { get; set; }
+
 	[JsonPropertyName("range")]
 	public LspRange? Range { get; set; }
 }
@@ -207,6 +231,7 @@ public class LspPosition
 {
 	[JsonPropertyName("line")]
 	public int Line { get; set; }
+
 	[JsonPropertyName("character")]
 	public int Character { get; set; }
 }
@@ -379,14 +404,13 @@ public class LspLocation
 	public LspRange Range { get; set; } = new();
 }
 
-public sealed class EmptyParams
-{
-}
+public sealed class EmptyParams { }
 
 [JsonSourceGenerationOptions(
 	WriteIndented = false,
 	PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-	DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+	DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+)]
 [JsonSerializable(typeof(LspRequest))]
 [JsonSerializable(typeof(LspNotification))]
 [JsonSerializable(typeof(LspResponse))]

@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Layout;
 
@@ -12,8 +12,9 @@ public enum CollapseEdge
 {
 	// (HSplitContainer: Left, VSplitContainer: Top).
 	Start,
+
 	// (HSplitContainer: Right, VSplitContainer: Bottom).
-	End
+	End,
 }
 
 /// <summary>
@@ -25,11 +26,14 @@ public enum CollapseEdge
 public sealed partial class CollapsiblePanel : Control
 {
 	// Id like: left_dock", "right_dock", "bottom_dock", set through Godot.
-	[Export] public string PanelId = "";
+	[Export]
+	public string PanelId = "";
 
-	[Export] public CollapseEdge Edge = CollapseEdge.Start;
+	[Export]
+	public CollapseEdge Edge = CollapseEdge.Start;
 
-	[Export] public int ExpandedSize;
+	[Export]
+	public int ExpandedSize;
 
 	public bool Collapsed { get; private set; }
 
@@ -57,7 +61,8 @@ public sealed partial class CollapsiblePanel : Control
 		if (ExpandedSize <= 0)
 		{
 			ExpandedSize = (int)(_vertical ? Size.Y : Size.X);
-			if (ExpandedSize <= 0) ExpandedSize = 300;
+			if (ExpandedSize <= 0)
+				ExpandedSize = 300;
 		}
 
 		if (!string.IsNullOrEmpty(PanelId))
@@ -74,7 +79,11 @@ public sealed partial class CollapsiblePanel : Control
 	{
 		if (_split != null)
 			_split.Dragged -= OnSplitterDragged;
-		if (!string.IsNullOrEmpty(PanelId) && Registry.TryGetValue(PanelId, out CollapsiblePanel? self) && self == this)
+		if (
+			!string.IsNullOrEmpty(PanelId)
+			&& Registry.TryGetValue(PanelId, out CollapsiblePanel? self)
+			&& self == this
+		)
 			Registry.Remove(PanelId);
 	}
 
@@ -110,7 +119,8 @@ public sealed partial class CollapsiblePanel : Control
 
 	public void SetCollapsed(bool collapsed, bool animate = true)
 	{
-		if (Collapsed == collapsed) return;
+		if (Collapsed == collapsed)
+			return;
 
 		int currentSize = GetCurrentSplitSize();
 
@@ -118,12 +128,12 @@ public sealed partial class CollapsiblePanel : Control
 		{
 			// When Panel is closing: Remember the size off the Panel
 			case true when currentSize > 0:
-				{
-					ExpandedSize = Mathf.Max(currentSize, 80);
-					if (!string.IsNullOrEmpty(PanelId))
-						DockLayoutService.SetExpandedSize(PanelId, ExpandedSize);
-					break;
-				}
+			{
+				ExpandedSize = Mathf.Max(currentSize, 80);
+				if (!string.IsNullOrEmpty(PanelId))
+					DockLayoutService.SetExpandedSize(PanelId, ExpandedSize);
+				break;
+			}
 			// When Panel is opening: Ensure the minimum size of 80px,
 			// to prevent the panel from accidentally being cut off
 			case false:
@@ -132,7 +142,8 @@ public sealed partial class CollapsiblePanel : Control
 		}
 
 		Collapsed = collapsed;
-		if (!string.IsNullOrEmpty(PanelId)) DockLayoutService.SetCollapsed(PanelId, collapsed);
+		if (!string.IsNullOrEmpty(PanelId))
+			DockLayoutService.SetCollapsed(PanelId, collapsed);
 
 		ApplyState(collapsed);
 	}
@@ -155,7 +166,9 @@ public sealed partial class CollapsiblePanel : Control
 
 	private void ApplyMinimumSize(int size)
 	{
-		CustomMinimumSize = _vertical ? new Vector2(CustomMinimumSize.X, size) : new Vector2(size, CustomMinimumSize.Y);
+		CustomMinimumSize = _vertical
+			? new Vector2(CustomMinimumSize.X, size)
+			: new Vector2(size, CustomMinimumSize.Y);
 	}
 
 	private void RestoreExpandedSize()
@@ -190,5 +203,4 @@ public sealed partial class CollapsiblePanel : Control
 	{
 		_split?.QueueSort();
 	}
-
 }

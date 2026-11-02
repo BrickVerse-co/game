@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client.Settings;
 
@@ -20,7 +20,8 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 	public ClientEntry Entry { get; init; } = null!;
 
 	protected override string SettingsPath => SettingsPathConst;
-	protected override IReadOnlyDictionary<string, SettingDef> Registry => ClientSettingsRegistry.Definitions;
+	protected override IReadOnlyDictionary<string, SettingDef> Registry =>
+		ClientSettingsRegistry.Definitions;
 
 	public ClientSettingsService()
 	{
@@ -50,7 +51,9 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 			GraphicsPresetManager.ApplyCurrentPreset(this);
 		}
 
-		RenderingMethodOption renderingMethod = Get<RenderingMethodOption>(SharedSettingKeys.Graphics.RenderingMethod);
+		RenderingMethodOption renderingMethod = Get<RenderingMethodOption>(
+			SharedSettingKeys.Graphics.RenderingMethod
+		);
 		RenderingDeviceSwitcher.Switch(renderingMethod);
 
 		if (!settingsExists)
@@ -66,9 +69,17 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 
 		try
 		{
-			if (_values.TryGetValue(SharedSettingKeys.Graphics.RenderingMethod, out object? rawValue))
+			if (
+				_values.TryGetValue(
+					SharedSettingKeys.Graphics.RenderingMethod,
+					out object? rawValue
+				)
+			)
 			{
-				RenderingMethodOption renderingMethod = (RenderingMethodOption)ClientSettingsRegistry.Definitions[SharedSettingKeys.Graphics.RenderingMethod].ConvertToType(rawValue);
+				RenderingMethodOption renderingMethod = (RenderingMethodOption)
+					ClientSettingsRegistry
+						.Definitions[SharedSettingKeys.Graphics.RenderingMethod]
+						.ConvertToType(rawValue);
 				BV.Print("Current rendering method: " + renderingMethod);
 				if (renderingMethod == RenderingMethodOption.Standard)
 				{
@@ -81,7 +92,10 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 				}
 			}
 
-			using var file = FileAccess.Open(RenderingMethodMigrationPath, FileAccess.ModeFlags.Write);
+			using var file = FileAccess.Open(
+				RenderingMethodMigrationPath,
+				FileAccess.ModeFlags.Write
+			);
 			file.StoreString(Globals.AppVersion);
 		}
 		catch (Exception e)
@@ -120,7 +134,7 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 						GraphicsPreset.Ultra => GraphicsPreset.High,
 						GraphicsPreset.High => GraphicsPreset.Medium,
 						GraphicsPreset.Medium => GraphicsPreset.Low,
-						_ => current
+						_ => current,
 					};
 					Set(SharedSettingKeys.Graphics.Preset, lower);
 				}
@@ -130,7 +144,7 @@ public sealed partial class ClientSettingsService : SettingsServiceBase
 					{
 						GraphicsPreset.Low => GraphicsPreset.Medium,
 						GraphicsPreset.Medium => GraphicsPreset.High,
-						_ => current
+						_ => current,
 					};
 					Set(SharedSettingKeys.Graphics.Preset, higher);
 				}

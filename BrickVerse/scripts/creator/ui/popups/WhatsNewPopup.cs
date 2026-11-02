@@ -4,8 +4,8 @@
 
 using System;
 using System.Threading.Tasks;
-using BrickVerse.Datamodel.Creator;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using Godot;
 using Godot.Collections;
@@ -14,11 +14,15 @@ namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class WhatsNewPopup : PopupWindowBase
 {
-	private const string FeedUrl = "https://raw.githubusercontent.com/BrickVerse-co/game/main/BrickVerse/assets/creator/whats-new.json";
+	private const string FeedUrl =
+		"https://raw.githubusercontent.com/BrickVerse-co/game/main/BrickVerse/assets/creator/whats-new.json";
 	private const string LocalFeedPath = "res://assets/creator/whats-new.json";
 	private const string SeenIdPath = "user://creator/whats-new-seen.txt";
 	private const string ScenePath = "res://scenes/creator/popups/whats_new.tscn";
-	private static readonly System.Net.Http.HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
+	private static readonly System.Net.Http.HttpClient Http = new()
+	{
+		Timeout = TimeSpan.FromSeconds(8),
+	};
 
 	private Dictionary _feed = [];
 
@@ -34,7 +38,8 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 
 	public static async void CheckForUpdates()
 	{
-		if (!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ShowWhatsNew)) return;
+		if (!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ShowWhatsNew))
+			return;
 		await Task.Delay(1400);
 		await ShowLatestAsync(false);
 	}
@@ -46,13 +51,18 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		try
 		{
 			Dictionary? feed = await LoadFeedAsync();
-			if (feed == null) return;
+			if (feed == null)
+				return;
 
 			string id = ReadString(feed, "id");
 			if (!force && id.Length > 0 && Godot.FileAccess.FileExists(SeenIdPath))
 			{
-				using Godot.FileAccess seen = Godot.FileAccess.Open(SeenIdPath, Godot.FileAccess.ModeFlags.Read);
-				if (seen.GetAsText().Trim() == id) return;
+				using Godot.FileAccess seen = Godot.FileAccess.Open(
+					SeenIdPath,
+					Godot.FileAccess.ModeFlags.Read
+				);
+				if (seen.GetAsText().Trim() == id)
+					return;
 			}
 
 			WhatsNewPopup popup = GD.Load<PackedScene>(ScenePath).Instantiate<WhatsNewPopup>();
@@ -60,7 +70,10 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 			CreatorService.Interface.PopupWindow(popup);
 			if (id.Length > 0)
 			{
-				using Godot.FileAccess seen = Godot.FileAccess.Open(SeenIdPath, Godot.FileAccess.ModeFlags.Write);
+				using Godot.FileAccess seen = Godot.FileAccess.Open(
+					SeenIdPath,
+					Godot.FileAccess.ModeFlags.Write
+				);
 				seen.StoreString(id);
 			}
 		}
@@ -79,13 +92,17 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		}
 		catch (Exception error)
 		{
-			BV.Print("Creator What's New feed unavailable; using packaged release notes: ", error.Message);
+			BV.Print(
+				"Creator What's New feed unavailable; using packaged release notes: ",
+				error.Message
+			);
 			json = Godot.FileAccess.FileExists(LocalFeedPath)
 				? Godot.FileAccess.GetFileAsString(LocalFeedPath)
 				: string.Empty;
 		}
 
-		if (string.IsNullOrWhiteSpace(json)) return null;
+		if (string.IsNullOrWhiteSpace(json))
+			return null;
 		Variant parsed = Json.ParseString(json);
 		return parsed.VariantType == Variant.Type.Dictionary ? parsed.AsGodotDictionary() : null;
 	}
@@ -104,7 +121,10 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		layout.AddThemeConstantOverride("separation", 12);
 		margin.AddChild(layout);
 
-		Label eyebrow = new() { Text = ReadString(_feed, "date", "LATEST UPDATE").ToUpperInvariant() };
+		Label eyebrow = new()
+		{
+			Text = ReadString(_feed, "date", "LATEST UPDATE").ToUpperInvariant(),
+		};
 		eyebrow.AddThemeColorOverride("font_color", Color.FromHtml("#0097FF"));
 		eyebrow.AddThemeFontSizeOverride("font_size", 13);
 		layout.AddChild(eyebrow);
@@ -113,7 +133,11 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		title.AddThemeFontSizeOverride("font_size", 27);
 		layout.AddChild(title);
 
-		Label subtitle = new() { Text = ReadString(_feed, "subtitle"), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+		Label subtitle = new()
+		{
+			Text = ReadString(_feed, "subtitle"),
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+		};
 		subtitle.AddThemeFontSizeOverride("font_size", 16);
 		layout.AddChild(subtitle);
 		layout.AddChild(new HSeparator());
@@ -125,11 +149,15 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 		content.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		scroll.AddChild(content);
 
-		if (_feed.TryGetValue("sections", out Variant sectionsValue) && sectionsValue.VariantType == Variant.Type.Array)
+		if (
+			_feed.TryGetValue("sections", out Variant sectionsValue)
+			&& sectionsValue.VariantType == Variant.Type.Array
+		)
 		{
 			foreach (Variant sectionValue in sectionsValue.AsGodotArray())
 			{
-				if (sectionValue.VariantType != Variant.Type.Dictionary) continue;
+				if (sectionValue.VariantType != Variant.Type.Dictionary)
+					continue;
 				Dictionary section = sectionValue.AsGodotDictionary();
 				PanelContainer cardPanel = new() { CustomMinimumSize = new Vector2(0, 116) };
 				MarginContainer cardMargin = new();
@@ -137,12 +165,20 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 				cardMargin.AddThemeConstantOverride("margin_top", 16);
 				cardMargin.AddThemeConstantOverride("margin_right", 18);
 				cardMargin.AddThemeConstantOverride("margin_bottom", 16);
-				RichTextLabel card = new() { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(0, 100) };
+				RichTextLabel card = new()
+				{
+					BbcodeEnabled = true,
+					FitContent = true,
+					CustomMinimumSize = new Vector2(0, 100),
+				};
 				card.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
 				string heading = EscapeBbcode(ReadString(section, "title", "Update"));
 				string body = EscapeBbcode(ReadString(section, "body"));
 				string text = $"[font_size=19][b]{heading}[/b][/font_size]\n{body}";
-				if (section.TryGetValue("items", out Variant itemsValue) && itemsValue.VariantType == Variant.Type.Array)
+				if (
+					section.TryGetValue("items", out Variant itemsValue)
+					&& itemsValue.VariantType == Variant.Type.Array
+				)
 				{
 					foreach (Variant item in itemsValue.AsGodotArray())
 						text += $"\n[color=#0097FF]•[/color]  {EscapeBbcode(item.AsString())}";
@@ -154,21 +190,33 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 			}
 		}
 
-		HBoxContainer footer = new() { Alignment = BoxContainer.AlignmentMode.End, CustomMinimumSize = new Vector2(0, 48) };
+		HBoxContainer footer = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.End,
+			CustomMinimumSize = new Vector2(0, 48),
+		};
 		footer.AddThemeConstantOverride("separation", 8);
 		layout.AddChild(footer);
-		CheckBox doNotShow = new() { Text = "Don't show this again", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+		CheckBox doNotShow = new()
+		{
+			Text = "Don't show this again",
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+		};
 		doNotShow.Toggled += disabled =>
 		{
 			if (disabled)
 				CreatorSettingsService.Instance.Set(CreatorSettingKeys.Creator.ShowWhatsNew, false);
 		};
 		footer.AddChild(doNotShow);
-		if (_feed.TryGetValue("links", out Variant linksValue) && linksValue.VariantType == Variant.Type.Array)
+		if (
+			_feed.TryGetValue("links", out Variant linksValue)
+			&& linksValue.VariantType == Variant.Type.Array
+		)
 		{
 			foreach (Variant linkValue in linksValue.AsGodotArray())
 			{
-				if (linkValue.VariantType != Variant.Type.Dictionary) continue;
+				if (linkValue.VariantType != Variant.Type.Dictionary)
+					continue;
 				Dictionary link = linkValue.AsGodotDictionary();
 				string url = ReadString(link, "url");
 				Button button = CreateActionButton(ReadString(link, "label", "Learn more"), false);
@@ -193,7 +241,8 @@ public sealed partial class WhatsNewPopup : PopupWindowBase
 	private static Button CreateActionButton(string text, bool primary)
 	{
 		Button button = new() { Text = text, CustomMinimumSize = new Vector2(148, 40) };
-		if (primary) button.AddThemeColorOverride("font_color", Colors.White);
+		if (primary)
+			button.AddThemeColorOverride("font_color", Colors.White);
 		return button;
 	}
 

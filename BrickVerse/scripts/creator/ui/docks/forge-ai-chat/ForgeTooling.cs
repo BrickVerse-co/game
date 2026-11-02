@@ -4,19 +4,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using Godot;
-using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Attributes;
+using BrickVerse.Creator.UI.TextEditor;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System.Diagnostics.CodeAnalysis;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -331,11 +331,20 @@ internal sealed class ForgeToolExecutor
 	{
 		using JsonDocument document = JsonDocument.Parse(argumentsJson);
 		JsonElement root = document.RootElement;
-		string title = root.TryGetProperty("title", out JsonElement titleValue) ? titleValue.GetString() ?? "Forge" : "Forge";
-		string message = root.TryGetProperty("message", out JsonElement messageValue) ? messageValue.GetString() ?? "" : "";
-		string kind = root.TryGetProperty("kind", out JsonElement kindValue) ? kindValue.GetString() ?? "info" : "info";
-		bool native = !root.TryGetProperty("native_attention", out JsonElement nativeValue) || nativeValue.ValueKind != JsonValueKind.False;
-		if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(message)) throw new InvalidOperationException("Notification title and message are required.");
+		string title = root.TryGetProperty("title", out JsonElement titleValue)
+			? titleValue.GetString() ?? "Forge"
+			: "Forge";
+		string message = root.TryGetProperty("message", out JsonElement messageValue)
+			? messageValue.GetString() ?? ""
+			: "";
+		string kind = root.TryGetProperty("kind", out JsonElement kindValue)
+			? kindValue.GetString() ?? "info"
+			: "info";
+		bool native =
+			!root.TryGetProperty("native_attention", out JsonElement nativeValue)
+			|| nativeValue.ValueKind != JsonValueKind.False;
+		if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(message))
+			throw new InvalidOperationException("Notification title and message are required.");
 		CreatorNotificationCenter.Notify(title, message, kind, native);
 		return "Notification sent.";
 	}
@@ -487,10 +496,18 @@ internal sealed class ForgeToolExecutor
 	{
 		int maxDepth = 4;
 		int maxNodes = 200;
-		using JsonDocument document = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
-		if (document.RootElement.TryGetProperty("max_depth", out var depth) && depth.TryGetInt32(out var requestedDepth))
+		using JsonDocument document = JsonDocument.Parse(
+			string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson
+		);
+		if (
+			document.RootElement.TryGetProperty("max_depth", out var depth)
+			&& depth.TryGetInt32(out var requestedDepth)
+		)
 			maxDepth = Math.Clamp(requestedDepth, 1, 12);
-		if (document.RootElement.TryGetProperty("max_nodes", out var nodes) && nodes.TryGetInt32(out var requestedNodes))
+		if (
+			document.RootElement.TryGetProperty("max_nodes", out var nodes)
+			&& nodes.TryGetInt32(out var requestedNodes)
+		)
 			maxNodes = Math.Clamp(requestedNodes, 1, 1000);
 
 		return $"World: {_root.WorldName.Or(_root.Name)}\nWorld ID: {_root.WorldID}\nUniverse ID: {_root.UniverseID}\n{DescribeWorldOutline(maxDepth, maxNodes)}";
@@ -584,7 +601,9 @@ internal sealed class ForgeToolExecutor
 		Instance instance =
 			ResolveInstance(args.Path)
 			?? ResolveScriptByLinkedPath(args.Path)
-			?? throw new InvalidOperationException($"Could not resolve script instance or linked project file '{args.Path}'.");
+			?? throw new InvalidOperationException(
+				$"Could not resolve script instance or linked project file '{args.Path}'."
+			);
 		EnsureVisibleCreatorTarget(instance);
 
 		StringBuilder builder = new();
@@ -732,9 +751,7 @@ internal sealed class ForgeToolExecutor
 			parentTo = GetDefaultInsertParent(instance);
 		}
 
-		instance.Name = string.IsNullOrWhiteSpace(args.Name)
-			? className
-			: args.Name.Trim();
+		instance.Name = string.IsNullOrWhiteSpace(args.Name) ? className : args.Name.Trim();
 
 		string? createdScriptFile = null;
 		string propertyResult;
@@ -744,16 +761,31 @@ internal sealed class ForgeToolExecutor
 			{
 				if (!string.IsNullOrWhiteSpace(args.Language))
 				{
-					ScriptLanguageDefinition language = ScriptLanguageRegistry.Definitions.FirstOrDefault(
-						definition => definition.Language.ToString().Equals(args.Language.Trim(), StringComparison.OrdinalIgnoreCase)
-							|| definition.DisplayName.Equals(args.Language.Trim(), StringComparison.OrdinalIgnoreCase)
-							|| definition.PrimaryExtension.Equals(args.Language.Trim().TrimStart('.'), StringComparison.OrdinalIgnoreCase))
-						?? throw new InvalidOperationException($"Unknown script language '{args.Language}'.");
+					ScriptLanguageDefinition language =
+						ScriptLanguageRegistry.Definitions.FirstOrDefault(definition =>
+							definition
+								.Language.ToString()
+								.Equals(args.Language.Trim(), StringComparison.OrdinalIgnoreCase)
+							|| definition.DisplayName.Equals(
+								args.Language.Trim(),
+								StringComparison.OrdinalIgnoreCase
+							)
+							|| definition.PrimaryExtension.Equals(
+								args.Language.Trim().TrimStart('.'),
+								StringComparison.OrdinalIgnoreCase
+							)
+						)
+						?? throw new InvalidOperationException(
+							$"Unknown script language '{args.Language}'."
+						);
 					if (!ScriptLanguageRegistry.IsSupportedOnCurrentPlatform(language.Language))
-						throw new PlatformNotSupportedException($"{language.DisplayName} scripts are not supported on this platform. {ScriptLanguageRegistry.GetPlatformDescription(language)}.");
+						throw new PlatformNotSupportedException(
+							$"{language.DisplayName} scripts are not supported on this platform. {ScriptLanguageRegistry.GetPlatformDescription(language)}."
+						);
 					initialScript.ChosenLanguage = language.Language;
 				}
-				if (args.Source != null) initialScript.Source = args.Source;
+				if (args.Source != null)
+					initialScript.Source = args.Source;
 			}
 			propertyResult = ApplyProperties(instance, args.Properties);
 			createdScriptFile = instance is BrickVerse.Datamodel.Script script
@@ -765,7 +797,11 @@ internal sealed class ForgeToolExecutor
 		catch
 		{
 			instance.Delete();
-			if (createdScriptFile != null && _root.LinkedSession != null && File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile)))
+			if (
+				createdScriptFile != null
+				&& _root.LinkedSession != null
+				&& File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile))
+			)
 				_root.LinkedSession.RemoveFile(createdScriptFile);
 			throw;
 		}
@@ -780,20 +816,24 @@ internal sealed class ForgeToolExecutor
 		}
 
 		string changeId = Guid.NewGuid().ToString("N");
-		_rollback.Add((changeId, () =>
-		{
-			Instance? created = ResolveInstance(createdPath) ?? instance;
-			created?.Delete();
-			if (
-				createdScriptFile != null
-				&& _root.LinkedSession != null
-				&& File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile))
+		_rollback.Add(
+			(
+				changeId,
+				() =>
+				{
+					Instance? created = ResolveInstance(createdPath) ?? instance;
+					created?.Delete();
+					if (
+						createdScriptFile != null
+						&& _root.LinkedSession != null
+						&& File.Exists(_root.LinkedSession.GlobalizePath(createdScriptFile))
+					)
+					{
+						_root.LinkedSession.RemoveFile(createdScriptFile);
+					}
+				}
 			)
-			{
-				_root.LinkedSession.RemoveFile(createdScriptFile);
-			}
-		}
-		));
+		);
 
 		LastEvent = new ForgeToolEvent
 		{
@@ -876,27 +916,37 @@ internal sealed class ForgeToolExecutor
 
 	private string ManageProjectFile(string argumentsJson)
 	{
-		ForgeProjectFileArgs args = JsonSerializer.Deserialize(
-			argumentsJson,
-			ForgeJsonContext.Default.ForgeProjectFileArgs
-		) ?? throw new InvalidOperationException("Missing manage_project_file arguments.");
+		ForgeProjectFileArgs args =
+			JsonSerializer.Deserialize(argumentsJson, ForgeJsonContext.Default.ForgeProjectFileArgs)
+			?? throw new InvalidOperationException("Missing manage_project_file arguments.");
 		if (_root.LinkedSession == null)
 			throw new InvalidOperationException("Open a linked Creator project first.");
 		string action = args.Action.Trim().ToLowerInvariant();
 		if (action == "list")
 			return string.Join("\n", _root.IO.ListProjectFiles().Take(1000));
 		string path = (args.Path ?? string.Empty).Trim().Replace('\\', '/');
-		if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.StartsWith("../") || path.Contains("/../") || path == "..")
+		if (
+			string.IsNullOrWhiteSpace(path)
+			|| Path.IsPathRooted(path)
+			|| path.StartsWith("../")
+			|| path.Contains("/../")
+			|| path == ".."
+		)
 			throw new InvalidOperationException("A project-relative path is required.");
 		string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
 		if (extension is not ("lua" or "luau" or "json" or "txt"))
-			throw new InvalidOperationException("Forge project-file editing is limited to .lua, .luau, .json, and .txt text files.");
+			throw new InvalidOperationException(
+				"Forge project-file editing is limited to .lua, .luau, .json, and .txt text files."
+			);
 		return action switch
 		{
-			"read" => _root.IO.ReadTextFromPath(path) ?? throw new FileNotFoundException("Project file not found.", path),
+			"read" => _root.IO.ReadTextFromPath(path)
+				?? throw new FileNotFoundException("Project file not found.", path),
 			"write" => WriteProjectFile(path, args.Content ?? string.Empty),
 			"delete" => DeleteProjectFile(path),
-			_ => throw new InvalidOperationException("action must be list, read, write, or delete."),
+			_ => throw new InvalidOperationException(
+				"action must be list, read, write, or delete."
+			),
 		};
 	}
 
@@ -907,12 +957,18 @@ internal sealed class ForgeToolExecutor
 		string before = existed ? File.ReadAllText(absolutePath) : string.Empty;
 		_root.IO.WriteTextToPath(path, content);
 		string changeId = Guid.NewGuid().ToString("N");
-		_rollback.Add((changeId, () =>
-		{
-			if (existed) _root.IO.WriteTextToPath(path, before);
-			else if (File.Exists(absolutePath)) _root.LinkedSession.RemoveFile(path, toRecycleBin: true);
-		}
-		));
+		_rollback.Add(
+			(
+				changeId,
+				() =>
+				{
+					if (existed)
+						_root.IO.WriteTextToPath(path, before);
+					else if (File.Exists(absolutePath))
+						_root.LinkedSession.RemoveFile(path, toRecycleBin: true);
+				}
+			)
+		);
 		LastEvent = new ForgeToolEvent
 		{
 			ChangeId = changeId,
@@ -971,19 +1027,19 @@ internal sealed class ForgeToolExecutor
 				return _root.PlayerGUI;
 
 			case UIField when instance is not GUI:
+			{
+				GUI? existingUi = (GUI?)_root.PlayerGUI.FindChild("GUI");
+				if (existingUi != null)
 				{
-					GUI? existingUi = (GUI?)_root.PlayerGUI.FindChild("GUI");
-					if (existingUi != null)
-					{
-						return existingUi;
-					}
-
-					GUI gui = _root.New<GUI>();
-					gui.Name = "GUI";
-					gui.CreatorInserted();
-					_root.CreatorContext.History.CreateInstances([gui], _root.PlayerGUI);
-					return gui;
+					return existingUi;
 				}
+
+				GUI gui = _root.New<GUI>();
+				gui.Name = "GUI";
+				gui.CreatorInserted();
+				_root.CreatorContext.History.CreateInstances([gui], _root.PlayerGUI);
+				return gui;
+			}
 
 			case BrickVerse.Datamodel.Script:
 				return _root.ScriptService;
@@ -1038,15 +1094,23 @@ internal sealed class ForgeToolExecutor
 		string path = instance.LuaPath;
 		string? linkedFile = (instance as BrickVerse.Datamodel.Script)?.LinkedScript?.LinkedPath;
 		instance.Delete();
-		if (linkedFile != null && _root.LinkedSession != null && File.Exists(_root.LinkedSession.GlobalizePath(linkedFile)))
+		if (
+			linkedFile != null
+			&& _root.LinkedSession != null
+			&& File.Exists(_root.LinkedSession.GlobalizePath(linkedFile))
+		)
 			_root.LinkedSession.RemoveFile(linkedFile, toRecycleBin: true);
 		return linkedFile == null
 			? $"Deleted {path}."
 			: $"Deleted {path} and moved its linked project file {linkedFile} to the recycle bin.";
 	}
 
-	[RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
-	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+	[RequiresUnreferencedCode(
+		"Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)"
+	)]
+	[RequiresDynamicCode(
+		"Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)"
+	)]
 	private string EditScriptSource(string argumentsJson)
 	{
 		ForgeEditScriptSourceArgs args =
@@ -1055,7 +1119,9 @@ internal sealed class ForgeToolExecutor
 		Instance instance =
 			ResolveInstance(args.Path)
 			?? ResolveScriptByLinkedPath(args.Path)
-			?? throw new InvalidOperationException($"Could not resolve script instance or linked project file '{args.Path}'.");
+			?? throw new InvalidOperationException(
+				$"Could not resolve script instance or linked project file '{args.Path}'."
+			);
 		EnsureVisibleCreatorTarget(instance);
 		if (instance is not BrickVerse.Datamodel.Script script)
 			throw new InvalidOperationException($"'{args.Path}' is not a Script.");
@@ -1068,12 +1134,16 @@ internal sealed class ForgeToolExecutor
 		string path = script.LuaPath;
 		_scriptDiffs[path] = (before, after);
 		string changeId = Guid.NewGuid().ToString("N");
-		_rollback.Add((changeId, () =>
-		{
-			if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
-				WriteScriptSource(current, before);
-		}
-		));
+		_rollback.Add(
+			(
+				changeId,
+				() =>
+				{
+					if (ResolveInstance(path) is BrickVerse.Datamodel.Script current)
+						WriteScriptSource(current, before);
+				}
+			)
+		);
 		_root.CreatorContext.Selections.SelectOnly(script);
 		LastEvent = new ForgeToolEvent
 		{
@@ -1104,7 +1174,9 @@ internal sealed class ForgeToolExecutor
 		script.Source = source;
 	}
 
-	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+	[RequiresDynamicCode(
+		"Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)"
+	)]
 	private string GetScriptDiff(string argumentsJson)
 	{
 		ForgeScriptDiffArgs args =
@@ -1124,17 +1196,22 @@ internal sealed class ForgeToolExecutor
 		return diff;
 	}
 
-	[RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+	[RequiresDynamicCode(
+		"Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)"
+	)]
 	private string RollbackLastChange(string argumentsJson)
 	{
 		if (_rollback.Count == 0)
 			return "There are no Forge changes to roll back in this request.";
-		ForgeRollbackArgs args = JsonSerializer.Deserialize<ForgeRollbackArgs>(argumentsJson) ?? new();
+		ForgeRollbackArgs args =
+			JsonSerializer.Deserialize<ForgeRollbackArgs>(argumentsJson) ?? new();
 		int index = string.IsNullOrWhiteSpace(args.ChangeId)
 			? _rollback.Count - 1
 			: _rollback.FindLastIndex(change => change.Id == args.ChangeId);
 		if (index < 0)
-			throw new InvalidOperationException("That Forge change is no longer available to roll back in this Creator session.");
+			throw new InvalidOperationException(
+				"That Forge change is no longer available to roll back in this Creator session."
+			);
 		var change = _rollback[index];
 		change.Rollback();
 		_rollback.RemoveAt(index);
@@ -1157,14 +1234,17 @@ internal sealed class ForgeToolExecutor
 		diff.AppendLine("+++ after");
 		if ((long)oldLines.Length * newLines.Length > 1_000_000)
 		{
-			foreach (string line in oldLines) diff.AppendLine("-" + line);
-			foreach (string line in newLines) diff.AppendLine("+" + line);
+			foreach (string line in oldLines)
+				diff.AppendLine("-" + line);
+			foreach (string line in newLines)
+				diff.AppendLine("+" + line);
 			return diff.ToString().TrimEnd();
 		}
 		int[,] lcs = new int[oldLines.Length + 1, newLines.Length + 1];
 		for (int oldIndex = oldLines.Length - 1; oldIndex >= 0; oldIndex--)
-			for (int newIndex = newLines.Length - 1; newIndex >= 0; newIndex--)
-				lcs[oldIndex, newIndex] = oldLines[oldIndex] == newLines[newIndex]
+		for (int newIndex = newLines.Length - 1; newIndex >= 0; newIndex--)
+			lcs[oldIndex, newIndex] =
+				oldLines[oldIndex] == newLines[newIndex]
 					? lcs[oldIndex + 1, newIndex + 1] + 1
 					: Math.Max(lcs[oldIndex + 1, newIndex], lcs[oldIndex, newIndex + 1]);
 		int i = 0;
@@ -1177,7 +1257,10 @@ internal sealed class ForgeToolExecutor
 				i++;
 				j++;
 			}
-			else if (j < newLines.Length && (i == oldLines.Length || lcs[i, j + 1] >= lcs[i + 1, j]))
+			else if (
+				j < newLines.Length
+				&& (i == oldLines.Length || lcs[i, j + 1] >= lcs[i + 1, j])
+			)
 				diff.AppendLine("+" + newLines[j++]);
 			else
 				diff.AppendLine("-" + oldLines[i++]);
@@ -1253,7 +1336,10 @@ internal sealed class ForgeToolExecutor
 		// provide filesystem/Godot-style paths. Normalize both to the same form.
 		normalized = string.Join(
 			'.',
-			normalized.Split(['.', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+			normalized.Split(
+				['.', '/'],
+				StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+			)
 		);
 		if (string.IsNullOrWhiteSpace(normalized))
 			return _root;
@@ -1263,15 +1349,19 @@ internal sealed class ForgeToolExecutor
 
 	private BrickVerse.Datamodel.Script? ResolveScriptByLinkedPath(string? path)
 	{
-		if (string.IsNullOrWhiteSpace(path)) return null;
+		if (string.IsNullOrWhiteSpace(path))
+			return null;
 		string normalized = path.Trim().Replace('\\', '/');
-		return _root.GetDescendants()
+		return _root
+			.GetDescendants()
 			.OfType<BrickVerse.Datamodel.Script>()
-			.FirstOrDefault(script => string.Equals(
-				script.LinkedScript?.LinkedPath?.Replace('\\', '/'),
-				normalized,
-				StringComparison.OrdinalIgnoreCase
-			));
+			.FirstOrDefault(script =>
+				string.Equals(
+					script.LinkedScript?.LinkedPath?.Replace('\\', '/'),
+					normalized,
+					StringComparison.OrdinalIgnoreCase
+				)
+			);
 	}
 
 	private static string FormatInstanceSummary(Instance instance)

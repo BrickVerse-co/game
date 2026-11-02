@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.Properties;
 using System;
 using System.Reflection;
+using BrickVerse.Creator.Properties;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Misc;
 
@@ -24,7 +24,11 @@ public partial class PropertyLabel : Label
 
 	public override void _GuiInput(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton btn && btn.ButtonIndex == MouseButton.Right && btn.Pressed)
+		if (
+			@event is InputEventMouseButton btn
+			&& btn.ButtonIndex == MouseButton.Right
+			&& btn.Pressed
+		)
 		{
 			ItemContextMenu?.Close();
 

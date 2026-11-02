@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
 namespace BrickVerse.Creator.Properties;
@@ -35,7 +35,8 @@ public sealed partial class ColorProperty : Button, IProperty<Color>
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (Color)value;
 	}
 
@@ -53,15 +54,20 @@ public sealed partial class ColorProperty : Button, IProperty<Color>
 
 		Pressed += () =>
 		{
-			ColorPicker.Singleton.SwitchTo(this, _value, previewColor =>
-			{
-				_value = previewColor;
-				PreviewChanged?.Invoke(previewColor);
-				Refresh();
-			}, () =>
-			{
-				ValueChanged?.Invoke(_value);
-			});
+			ColorPicker.Singleton.SwitchTo(
+				this,
+				_value,
+				previewColor =>
+				{
+					_value = previewColor;
+					PreviewChanged?.Invoke(previewColor);
+					Refresh();
+				},
+				() =>
+				{
+					ValueChanged?.Invoke(_value);
+				}
+			);
 		};
 
 		SetNotifyTransform(true);

@@ -9,11 +9,20 @@ namespace BrickVerse.Creator.UI.Components;
 
 public partial class PublishAsPlaceCardUI : Button
 {
-	[Export] private TextureRect _thumbnailRect = null!;
-	[Export] private Label _badgeLabel = null!;
-	[Export] private Label _titleLabel = null!;
-	[Export] private Label _metaLabel = null!;
-	[Export] private Label _descriptionLabel = null!;
+	[Export]
+	private TextureRect _thumbnailRect = null!;
+
+	[Export]
+	private Label _badgeLabel = null!;
+
+	[Export]
+	private Label _titleLabel = null!;
+
+	[Export]
+	private Label _metaLabel = null!;
+
+	[Export]
+	private Label _descriptionLabel = null!;
 
 	public CreatorPlaceItem? Target { get; set; }
 	public bool IsNewWorld { get; set; }
@@ -47,7 +56,9 @@ public partial class PublishAsPlaceCardUI : Button
 
 		if (Target == null)
 		{
-			_thumbnailRect.Texture = GD.Load<Texture2D>("res://assets/textures/ui-icons/replace.svg");
+			_thumbnailRect.Texture = GD.Load<Texture2D>(
+				"res://assets/textures/ui-icons/replace.svg"
+			);
 			return;
 		}
 

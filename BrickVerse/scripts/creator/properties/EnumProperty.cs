@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
 using System;
 using System.Reflection;
+using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -36,7 +36,8 @@ public sealed partial class EnumProperty : OptionButton, IProperty<int>
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = _popup.GetItemIndex((int)value);
 	}
 
@@ -47,7 +48,8 @@ public sealed partial class EnumProperty : OptionButton, IProperty<int>
 
 	public override void _Ready()
 	{
-		CreatorEnumOptionsAttribute? options = PropertyType.GetCustomAttribute<CreatorEnumOptionsAttribute>();
+		CreatorEnumOptionsAttribute? options =
+			PropertyType.GetCustomAttribute<CreatorEnumOptionsAttribute>();
 		string[] enums = Enum.GetNames(PropertyType);
 
 		_popup = GetPopup();

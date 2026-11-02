@@ -9,7 +9,8 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class FeedComposer : AcceptDialog
 {
-	[Signal] public delegate void PostCreatedEventHandler();
+	[Signal]
+	public delegate void PostCreatedEventHandler();
 	private TextEdit _editor = null!;
 
 	public override void _Ready()
@@ -25,26 +26,51 @@ public partial class FeedComposer : AcceptDialog
 	{
 		_editor.Text = "";
 		Vector2 viewport = GetViewport().GetVisibleRect().Size;
-		PopupCentered(new Vector2I(Math.Min(460, (int)viewport.X - 32), Math.Min(340, (int)viewport.Y - 48)));
+		PopupCentered(
+			new Vector2I(Math.Min(460, (int)viewport.X - 32), Math.Min(340, (int)viewport.Y - 48))
+		);
 		_editor.GrabFocus();
 	}
 
 	private async void Submit()
 	{
 		string content = _editor.Text.Trim();
-		if (string.IsNullOrWhiteSpace(content)) return;
-		if (content.Length > 5000) { OS.Alert("Posts can contain up to 5,000 characters.", "Post is too long"); return; }
+		if (string.IsNullOrWhiteSpace(content))
+			return;
+		if (content.Length > 5000)
+		{
+			OS.Alert("Posts can contain up to 5,000 characters.", "Post is too long");
+			return;
+		}
 		GetOkButton().Disabled = true;
 		try
 		{
-			string json = $"{{\"content\":{JsonSerializer.Serialize(content)},\"type\":\"STATUS\"}}";
-			using JsonDocument response = await BVAPI.SendJson(HttpMethod.Post, "/v3/social/posts", json);
-			if (!response.RootElement.TryGetProperty("success", out JsonElement success) || !success.GetBoolean())
-				throw new Exception(response.RootElement.TryGetProperty("message", out JsonElement message) ? message.GetString() : "Post failed");
+			string json =
+				$"{{\"content\":{JsonSerializer.Serialize(content)},\"type\":\"STATUS\"}}";
+			using JsonDocument response = await BVAPI.SendJson(
+				HttpMethod.Post,
+				"/v3/social/posts",
+				json
+			);
+			if (
+				!response.RootElement.TryGetProperty("success", out JsonElement success)
+				|| !success.GetBoolean()
+			)
+				throw new Exception(
+					response.RootElement.TryGetProperty("message", out JsonElement message)
+						? message.GetString()
+						: "Post failed"
+				);
 			EmitSignal(SignalName.PostCreated);
 			Hide();
 		}
-		catch (Exception exception) { OS.Alert(exception.Message, "Could not post"); }
-		finally { GetOkButton().Disabled = false; }
+		catch (Exception exception)
+		{
+			OS.Alert(exception.Message, "Could not post");
+		}
+		finally
+		{
+			GetOkButton().Disabled = false;
+		}
 	}
 }

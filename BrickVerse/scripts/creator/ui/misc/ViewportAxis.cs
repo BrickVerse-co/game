@@ -2,18 +2,27 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public partial class ViewportAxis : Node
 {
-	[Export] public WorldContainerOverlay Overlay = null!;
-	[Export] private Node3D _pivot = null!;
-	[Export] private Node _container = null!;
-	[Export] private Control _speedIndicator = null!;
-	[Export] private ProgressBar _speedBar = null!;
+	[Export]
+	public WorldContainerOverlay Overlay = null!;
+
+	[Export]
+	private Node3D _pivot = null!;
+
+	[Export]
+	private Node _container = null!;
+
+	[Export]
+	private Control _speedIndicator = null!;
+
+	[Export]
+	private ProgressBar _speedBar = null!;
 
 	private BrickVerse.Datamodel.Camera? _worldCamera = null;
 	private SubViewportContainer _rect = null!;
@@ -22,7 +31,8 @@ public partial class ViewportAxis : Node
 	private Area3D _cube = null!;
 	private Label3D? _highlighted = null;
 
-	private Vector3 _tweenStart, _tweenTarget;
+	private Vector3 _tweenStart,
+		_tweenTarget;
 	private float _tweenProgress = 1f;
 	private float _speedIndicatorTime;
 	private const float _tweenDuration = .2f;
@@ -31,9 +41,9 @@ public partial class ViewportAxis : Node
 
 	private readonly Dictionary<Key, (Vector3 noMod, Vector3 withMod)> KeyToRotation = new()
 	{
-		{ Key.Kp1, (new Vector3(0, 0, 0),  new Vector3(0, 180, 0)) },
-		{ Key.Kp3, (new Vector3(0, 90, 0),  new Vector3(0, -90, 0)) },
-		{ Key.Kp7, (new Vector3(-90, 180, 0),  new Vector3(90, 0, 0)) }
+		{ Key.Kp1, (new Vector3(0, 0, 0), new Vector3(0, 180, 0)) },
+		{ Key.Kp3, (new Vector3(0, 90, 0), new Vector3(0, -90, 0)) },
+		{ Key.Kp7, (new Vector3(-90, 180, 0), new Vector3(90, 0, 0)) },
 	};
 
 	public override void _Ready()
@@ -121,8 +131,10 @@ public partial class ViewportAxis : Node
 				}
 				return true;
 			case InputEventKey eventKey:
-				if (eventKey.Echo || !eventKey.Pressed) break;
-				if (!KeyToRotation.TryGetValue(eventKey.Keycode, out var rotations)) break;
+				if (eventKey.Echo || !eventKey.Pressed)
+					break;
+				if (!KeyToRotation.TryGetValue(eventKey.Keycode, out var rotations))
+					break;
 				RotateWorldCamera(eventKey.CtrlPressed ? rotations.withMod : rotations.noMod);
 				return true;
 		}
@@ -132,7 +144,8 @@ public partial class ViewportAxis : Node
 	private bool ProjectMouse()
 	{
 		var mousePos = _rect.GetLocalMousePosition();
-		if (mousePos.X < 0 && mousePos.Y < 0) return false;
+		if (mousePos.X < 0 && mousePos.Y < 0)
+			return false;
 
 		var rayOrigin = _axisCamera.ProjectRayOrigin(mousePos);
 		var rayNormal = _axisCamera.ProjectRayNormal(mousePos);
@@ -149,12 +162,13 @@ public partial class ViewportAxis : Node
 		{ Vector3I.Up, "Top" },
 		{ Vector3I.Down, "Bottom" },
 		{ Vector3I.Forward, "Back" },
-		{ Vector3I.Back, "Front" }
+		{ Vector3I.Back, "Front" },
 	};
 
 	private void Unhighlight()
 	{
-		if (_highlighted == null) return;
+		if (_highlighted == null)
+			return;
 		_highlighted.Modulate = Colors.Black;
 		_highlighted = null;
 	}
@@ -164,13 +178,14 @@ public partial class ViewportAxis : Node
 		var normalI = new Vector3I((int)normal.X, (int)normal.Y, (int)normal.Z);
 		var labelPath = "MeshInstance3D/Label3D" + labelSuffixes[normalI];
 		var toHighlight = _cube.GetNode<Label3D>(labelPath);
-		if (_highlighted == toHighlight) return;
+		if (_highlighted == toHighlight)
+			return;
 
 		Color color = normalI switch
 		{
 			{ X: not 0 } => new Color(0xd60000ff),
 			{ Y: not 0 } => new Color(0x26d165ff),
-			_ => new Color(0x0048ffff)
+			_ => new Color(0x0048ffff),
 		};
 
 		Unhighlight();
@@ -192,7 +207,8 @@ public partial class ViewportAxis : Node
 			Shorten(_tweenStart.Y, rotation.Y),
 			Shorten(_tweenStart.Z, rotation.Z)
 		);
-		if (_tweenStart == _tweenTarget) return;
+		if (_tweenStart == _tweenTarget)
+			return;
 		_tweenProgress = 0f;
 	}
 }

@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Scripting.Datatypes;
 
@@ -13,18 +13,47 @@ public class BVQuaternion : IScriptGDObject
 {
 	internal Quaternion quat;
 
-	[ScriptProperty] public float X { get => quat.X; set => quat.X = value; }
-	[ScriptProperty] public float Y { get => quat.Y; set => quat.Y = value; }
-	[ScriptProperty] public float Z { get => quat.Z; set => quat.Z = value; }
-	[ScriptProperty] public float W { get => quat.W; set => quat.W = value; }
-	[ScriptProperty] public static BVQuaternion Identity => new() { X = 0, Y = 0, Z = 0, W = 1 };
+	[ScriptProperty]
+	public float X
+	{
+		get => quat.X;
+		set => quat.X = value;
+	}
+
+	[ScriptProperty]
+	public float Y
+	{
+		get => quat.Y;
+		set => quat.Y = value;
+	}
+
+	[ScriptProperty]
+	public float Z
+	{
+		get => quat.Z;
+		set => quat.Z = value;
+	}
+
+	[ScriptProperty]
+	public float W
+	{
+		get => quat.W;
+		set => quat.W = value;
+	}
+
+	[ScriptProperty]
+	public static BVQuaternion Identity =>
+		new()
+		{
+			X = 0,
+			Y = 0,
+			Z = 0,
+			W = 1,
+		};
 
 	public static BVQuaternion FromGDClass(Quaternion qu)
 	{
-		return new BVQuaternion()
-		{
-			quat = qu
-		};
+		return new BVQuaternion() { quat = qu };
 	}
 
 	public object ToGDClass()
@@ -46,7 +75,7 @@ public class BVQuaternion : IScriptGDObject
 			X = x,
 			Y = y,
 			Z = z,
-			W = w
+			W = w,
 		};
 	}
 
@@ -57,24 +86,24 @@ public class BVQuaternion : IScriptGDObject
 	}
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Sub)]
-	public static BVQuaternion SubQuaternionQuaternion(BVQuaternion a, BVQuaternion b)
-		=> FromGDClass(a.quat - b.quat);
+	public static BVQuaternion SubQuaternionQuaternion(BVQuaternion a, BVQuaternion b) =>
+		FromGDClass(a.quat - b.quat);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Sub)]
-	public static BVQuaternion SubQuaternionVector(BVQuaternion a, BVector3 v)
-		=> FromGDClass(a.quat - new Quaternion(v.X, v.Y, v.Z, 1));
+	public static BVQuaternion SubQuaternionVector(BVQuaternion a, BVector3 v) =>
+		FromGDClass(a.quat - new Quaternion(v.X, v.Y, v.Z, 1));
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static BVQuaternion MulQuaternionQuaternion(BVQuaternion a, BVQuaternion b)
-		=> FromGDClass(a.quat.Normalized() * b.quat.Normalized());
+	public static BVQuaternion MulQuaternionQuaternion(BVQuaternion a, BVQuaternion b) =>
+		FromGDClass(a.quat.Normalized() * b.quat.Normalized());
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static BVector3 MulQuaternionVector(BVQuaternion a, BVector3 v)
-		=> BVector3.FromGDClass(a.quat.Normalized() * v.vector);
+	public static BVector3 MulQuaternionVector(BVQuaternion a, BVector3 v) =>
+		BVector3.FromGDClass(a.quat.Normalized() * v.vector);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Mul)]
-	public static BVector3 MulVectorQuaternion(BVector3 v, BVQuaternion q)
-	=> BVector3.FromGDClass(q.quat.Normalized() * v.vector);
+	public static BVector3 MulVectorQuaternion(BVector3 v, BVQuaternion q) =>
+		BVector3.FromGDClass(q.quat.Normalized() * v.vector);
 
 	[ScriptMetamethod(ScriptObjectMetamethod.Eq)]
 	public static bool Eq(BVQuaternion a, BVQuaternion b)
@@ -85,7 +114,8 @@ public class BVQuaternion : IScriptGDObject
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
 	public static string ToString(BVQuaternion? v)
 	{
-		if (v == null) return "<Quaternion>";
+		if (v == null)
+			return "<Quaternion>";
 		return $"<Quaternion:({v.quat.X}, {v.quat.Y}, {v.quat.Z}, {v.quat.W})>";
 	}
 
@@ -119,7 +149,6 @@ public class BVQuaternion : IScriptGDObject
 	{
 		return FromGDClass(Quaternion.FromEuler(euler.DegToRad()));
 	}
-
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
 	public static Vector3 ToEuler(BVQuaternion euler)
@@ -207,7 +236,11 @@ public class BVQuaternion : IScriptGDObject
 	}
 
 	[ScriptMethod(ConvertParamsToGD = false, SemiStatic = true)]
-	public static BVQuaternion RotateTowards(BVQuaternion from, BVQuaternion to, float maxDegreesDelta)
+	public static BVQuaternion RotateTowards(
+		BVQuaternion from,
+		BVQuaternion to,
+		float maxDegreesDelta
+	)
 	{
 		Quaternion fromQ = from.quat;
 		Quaternion toQ = to.quat;
@@ -236,5 +269,4 @@ public class BVQuaternion : IScriptGDObject
 	{
 		return FromGDClass(a.quat.Slerpni(b.quat, t));
 	}
-
 }

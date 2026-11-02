@@ -8,7 +8,8 @@ namespace BrickVerse.Client.UI;
 
 public partial class UIInventoryButton : Button
 {
-	[Export] public UIInventory InventoryUI { get; set; } = null!;
+	[Export]
+	public UIInventory InventoryUI { get; set; } = null!;
 
 	public override void _Ready()
 	{

@@ -1,16 +1,17 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
-using Godot;
-using BrickVerse.Utils;
 using System;
 using System.Runtime.InteropServices;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Shared;
 
 public static partial class NativeBinHelper
 {
 	public const string LuaLSEditorExecutablePath = "res://native/luau-lsp/";
+
 	[LibraryImport("libc", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial int chmod(string pathname, int mode);
 
@@ -78,7 +79,8 @@ public static partial class NativeBinHelper
 				basePath = basePath.PathJoin("linux");
 		}
 
-		if (exeName == null) throw new Exception("Unsupported platform for luau-lsp");
+		if (exeName == null)
+			throw new Exception("Unsupported platform for luau-lsp");
 
 		string exePath = basePath.PathJoin(exeName);
 		string exePathGlobal = ProjectSettings.GlobalizePath(exePath).SanitizePath();

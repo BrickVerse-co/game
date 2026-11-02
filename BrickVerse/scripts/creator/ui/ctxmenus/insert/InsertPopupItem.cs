@@ -2,16 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public partial class InsertPopupItem : Button
 {
-	[Export] public TextureRect IconRect = null!;
-	[Export] public Label ClassLabel = null!;
-	[Export] public Label DescriptionLabel = null!;
+	[Export]
+	public TextureRect IconRect = null!;
+
+	[Export]
+	public Label ClassLabel = null!;
+
+	[Export]
+	public Label DescriptionLabel = null!;
 	public string Classname = null!;
 	public string Description = "";
 

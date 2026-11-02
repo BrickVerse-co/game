@@ -28,7 +28,9 @@ internal static class ImageBufferDecoder
 		};
 
 		if (error != Error.Ok || image.GetWidth() <= 0 || image.GetHeight() <= 0)
-			throw new InvalidDataException($"Could not decode image{FormatSource(source)} ({error}).");
+			throw new InvalidDataException(
+				$"Could not decode image{FormatSource(source)} ({error})."
+			);
 
 		return image;
 	}
@@ -44,7 +46,11 @@ internal static class ImageBufferDecoder
 			return ImageFormat.Png;
 		if (bytes.Length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff)
 			return ImageFormat.Jpeg;
-		if (bytes.Length >= 12 && bytes[..4].SequenceEqual("RIFF"u8) && bytes.Slice(8, 4).SequenceEqual("WEBP"u8))
+		if (
+			bytes.Length >= 12
+			&& bytes[..4].SequenceEqual("RIFF"u8)
+			&& bytes.Slice(8, 4).SequenceEqual("WEBP"u8)
+		)
 			return ImageFormat.Webp;
 		if (LooksLikeSvg(bytes))
 			return ImageFormat.Svg;
@@ -69,8 +75,10 @@ internal static class ImageBufferDecoder
 
 	private static string GetExtension(string? source)
 	{
-		if (string.IsNullOrWhiteSpace(source)) return string.Empty;
-		if (Uri.TryCreate(source, UriKind.Absolute, out Uri? uri)) source = uri.AbsolutePath;
+		if (string.IsNullOrWhiteSpace(source))
+			return string.Empty;
+		if (Uri.TryCreate(source, UriKind.Absolute, out Uri? uri))
+			source = uri.AbsolutePath;
 		return Path.GetExtension(source).ToLowerInvariant();
 	}
 

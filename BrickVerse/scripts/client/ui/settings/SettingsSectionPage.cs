@@ -1,8 +1,8 @@
-using Godot;
+using System.Linq;
 using BrickVerse.Client.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared.Settings;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -16,7 +16,9 @@ public sealed partial class SettingsSectionPage : VBoxContainer
 		SizeFlagsVertical = SizeFlags.ExpandFill;
 		AddThemeConstantOverride("separation", 12);
 
-		var defs = ClientSettingsRegistry.Definitions.Values.Where(x => x.SectionKey == SectionKey).ToArray();
+		var defs = ClientSettingsRegistry
+			.Definitions.Values.Where(x => x.SectionKey == SectionKey)
+			.ToArray();
 
 		foreach (var def in defs)
 		{
@@ -25,16 +27,17 @@ public sealed partial class SettingsSectionPage : VBoxContainer
 				continue;
 			}
 
-			if (def.IsAdvanced && !ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.Advanced.ShowAdvancedSettings))
+			if (
+				def.IsAdvanced
+				&& !ClientSettingsService.Instance.Get<bool>(
+					ClientSettingKeys.Advanced.ShowAdvancedSettings
+				)
+			)
 			{
 				continue;
 			}
 
-			SettingRow row = new()
-			{
-				Definition = def,
-				Context = ClientSettingsService.Instance
-			};
+			SettingRow row = new() { Definition = def, Context = ClientSettingsService.Instance };
 
 			AddChild(row);
 		}
@@ -42,14 +45,18 @@ public sealed partial class SettingsSectionPage : VBoxContainer
 		if (SectionKey == "advanced")
 		{
 			AddChild(new HSeparator());
-			AddChild(GD.Load<PackedScene>("res://scenes/shared/settings/licenses_row.tscn").Instantiate<UIViewLicensesRow>());
+			AddChild(
+				GD.Load<PackedScene>("res://scenes/shared/settings/licenses_row.tscn")
+					.Instantiate<UIViewLicensesRow>()
+			);
 		}
 
 		base._Ready();
 	}
 
-	private static bool IsVoiceSetting(string key) => key is
-		ClientSettingKeys.Audio.MicrophoneInputDevice or
-		ClientSettingKeys.Audio.MicrophoneVolume or
-		ClientSettingKeys.Audio.VoiceChatVolume;
+	private static bool IsVoiceSetting(string key) =>
+		key
+			is ClientSettingKeys.Audio.MicrophoneInputDevice
+				or ClientSettingKeys.Audio.MicrophoneVolume
+				or ClientSettingKeys.Audio.VoiceChatVolume;
 }

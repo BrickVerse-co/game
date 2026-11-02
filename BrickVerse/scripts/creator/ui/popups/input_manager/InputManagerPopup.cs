@@ -2,22 +2,32 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Creator.UI.Components;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class InputManagerPopup : PopupWindowBase
 {
-	private const string ActionItemPath = "res://scenes/creator/popups/input_manager/components/action_item.tscn";
-	private const string ActionViewPath = "res://scenes/creator/popups/input_manager/components/action_view.tscn";
-	[Export] private LineEdit _searchEdit = null!;
-	[Export] private MenuButton _addButton = null!;
-	[Export] private Control _viewContainer = null!;
-	[Export] private Control _inputList = null!;
+	private const string ActionItemPath =
+		"res://scenes/creator/popups/input_manager/components/action_item.tscn";
+	private const string ActionViewPath =
+		"res://scenes/creator/popups/input_manager/components/action_view.tscn";
+
+	[Export]
+	private LineEdit _searchEdit = null!;
+
+	[Export]
+	private MenuButton _addButton = null!;
+
+	[Export]
+	private Control _viewContainer = null!;
+
+	[Export]
+	private Control _inputList = null!;
 	private CreatorSession _session = null!;
 	private ButtonGroup _btnGroup = new();
 	private Control? _currentView;
@@ -69,37 +79,42 @@ public sealed partial class InputManagerPopup : PopupWindowBase
 
 	private void OnAddIdPressed(long idx)
 	{
-		CreatorService.Interface.PromptGiveName("Input name...", str =>
-		{
-			if (string.IsNullOrWhiteSpace(str)) return;
-
-			BV.Print("Add new: ", str);
-
-			InputAction newz = null!;
-
-			switch (idx)
+		CreatorService.Interface.PromptGiveName(
+			"Input name...",
+			str =>
 			{
-				case 0: // Button
+				if (string.IsNullOrWhiteSpace(str))
+					return;
+
+				BV.Print("Add new: ", str);
+
+				InputAction newz = null!;
+
+				switch (idx)
+				{
+					case 0: // Button
 					{
 						newz = new InputActionButton() { Name = str };
 						break;
 					}
-				case 1: // Axis
+					case 1: // Axis
 					{
 						newz = new InputActionAxis() { Name = str };
 						break;
 					}
-				case 2: // Vector2
+					case 2: // Vector2
 					{
 						newz = new InputActionVector2() { Name = str };
 						break;
 					}
-			}
-			_session.InputMap.Actions.Add(newz);
+				}
+				_session.InputMap.Actions.Add(newz);
 
-			RefreshActions();
-			ShowInputView(newz);
-		}, "Give Action name...");
+				RefreshActions();
+				ShowInputView(newz);
+			},
+			"Give Action name..."
+		);
 	}
 
 	private void RefreshActions()
@@ -124,7 +139,9 @@ public sealed partial class InputManagerPopup : PopupWindowBase
 	{
 		foreach (InputAction action in _session.InputMap.Actions)
 		{
-			InputActionItemUI item = Globals.CreateInstanceFromScene<InputActionItemUI>(ActionItemPath);
+			InputActionItemUI item = Globals.CreateInstanceFromScene<InputActionItemUI>(
+				ActionItemPath
+			);
 			item.TargetAction = action;
 			item.ButtonGroup = _btnGroup;
 

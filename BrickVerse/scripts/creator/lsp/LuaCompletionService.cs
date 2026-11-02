@@ -2,20 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.LSP.Schemas;
-using BrickVerse.Datamodel;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
+using BrickVerse.Creator.LSP.Schemas;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 using DatamodelScript = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.LSP;
@@ -32,22 +32,45 @@ public class LuaCompletionService(CreatorSession session)
 
 	public event Action<string, List<LspDiagnostic>>? PublishDiagnostics;
 	public IReadOnlyDictionary<string, List<LspDiagnostic>> Diagnostics => _diagnostics;
-	private readonly Dictionary<string, List<LspDiagnostic>> _diagnostics = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, List<LspDiagnostic>> _diagnostics = new(
+		StringComparer.OrdinalIgnoreCase
+	);
 
 	public static readonly string[] LuaKeywords =
 	[
-		"and", "break", "do", "else", "elseif", "end",
-		"false", "for", "function", "if",
-		"in", "local", "nil", "not", "or", "repeat",
-		"return", "then", "true", "until", "while",
-		"continue", "const"
+		"and",
+		"break",
+		"do",
+		"else",
+		"elseif",
+		"end",
+		"false",
+		"for",
+		"function",
+		"if",
+		"in",
+		"local",
+		"nil",
+		"not",
+		"or",
+		"repeat",
+		"return",
+		"then",
+		"true",
+		"until",
+		"while",
+		"continue",
+		"const",
 	];
 
 	public async Task InitAsync()
 	{
 		string definitionPath = Path.Combine(_workspacePath, ".bvproject", "luau", "def.d.luau");
 		if (!File.Exists(definitionPath))
-			throw new FileNotFoundException("Generated BrickVerse Luau definitions were not found.", definitionPath);
+			throw new FileNotFoundException(
+				"Generated BrickVerse Luau definitions were not found.",
+				definitionPath
+			);
 
 		ProcessStartInfo processStartInfo = new()
 		{
@@ -60,10 +83,12 @@ public class LuaCompletionService(CreatorSession session)
 			RedirectStandardError = true,
 			UseShellExecute = false,
 			CreateNoWindow = true,
-			WorkingDirectory = _workspacePath
+			WorkingDirectory = _workspacePath,
 		};
 
-		_luaLSProcess = Process.Start(processStartInfo) ?? throw new Exception("Failed to start language server process");
+		_luaLSProcess =
+			Process.Start(processStartInfo)
+			?? throw new Exception("Failed to start language server process");
 
 		_luaLSProcess.ErrorDataReceived += (sender, e) =>
 		{
@@ -77,9 +102,13 @@ public class LuaCompletionService(CreatorSession session)
 
 		//BV.Print("LuaLS Started");
 
-		_client = new LspClient(_luaLSProcess.StandardOutput.BaseStream, _luaLSProcess.StandardInput.BaseStream);
+		_client = new LspClient(
+			_luaLSProcess.StandardOutput.BaseStream,
+			_luaLSProcess.StandardInput.BaseStream
+		);
 		await _client.InitializeAsync(_workspacePath, _shutdown.Token);
-		if (_isShutdown) return;
+		if (_isShutdown)
+			return;
 
 		_client.PublishDiagnostics += OnPublishDiagnostics;
 
@@ -92,17 +121,20 @@ public class LuaCompletionService(CreatorSession session)
 		if (_client.LspPathToFull.TryGetValue(normalizedUri, out string? fullPath))
 		{
 			// Call publish in main thread
-			Callable.From(() =>
-			{
-				_diagnostics[fullPath] = @params.Diagnostics;
-				PublishDiagnostics?.Invoke(fullPath, @params.Diagnostics);
-			}).CallDeferred();
+			Callable
+				.From(() =>
+				{
+					_diagnostics[fullPath] = @params.Diagnostics;
+					PublishDiagnostics?.Invoke(fullPath, @params.Diagnostics);
+				})
+				.CallDeferred();
 		}
 	}
 
 	public void Shutdown()
 	{
-		if (_isShutdown) return;
+		if (_isShutdown)
+			return;
 		_isShutdown = true;
 		_shutdown.Cancel();
 		_client?.Dispose();
@@ -127,18 +159,23 @@ public class LuaCompletionService(CreatorSession session)
 
 	public async Task UpdateScriptChangeAsync(string scriptPath, string scriptContent)
 	{
-		if (!_versions.ContainsKey(scriptPath)) _versions[scriptPath] = 1;
+		if (!_versions.ContainsKey(scriptPath))
+			_versions[scriptPath] = 1;
 		_versions[scriptPath]++;
 		await _client.DidChangeAsync(scriptPath, scriptContent, _versions[scriptPath]);
 	}
 
-	public async Task<List<CodeEditCompletionItem>> GetCompletionsAsync(CodeEditCompletionContext context, CancellationToken? cancelToken = null)
+	public async Task<List<CodeEditCompletionItem>> GetCompletionsAsync(
+		CodeEditCompletionContext context,
+		CancellationToken? cancelToken = null
+	)
 	{
 		LspCompletionItem[]? completionResult = await _client.RequestCompletionAsync(
 			context.ScriptPath,
 			context.CursorLine,
 			context.CursorColumn,
-			cancelToken ?? CancellationToken.None);
+			cancelToken ?? CancellationToken.None
+		);
 
 		List<CodeEditCompletionItem> items = [];
 
@@ -161,14 +198,21 @@ public class LuaCompletionService(CreatorSession session)
 					_ => CodeEdit.CodeCompletionKind.PlainText,
 				};
 
-				items.Add(new()
-				{
-					DisplayText = item.Label ?? "",
-					Kind = kind,
-					Detail = item.Detail ?? item.LabelDetails?.Description ?? FirstDocumentationLine(item.Documentation?.Value),
-					Documentation = item.Documentation?.Value ?? "",
-					InsertText = string.IsNullOrWhiteSpace(item.InsertText) ? item.Label ?? "" : item.InsertText
-				});
+				items.Add(
+					new()
+					{
+						DisplayText = item.Label ?? "",
+						Kind = kind,
+						Detail =
+							item.Detail
+							?? item.LabelDetails?.Description
+							?? FirstDocumentationLine(item.Documentation?.Value),
+						Documentation = item.Documentation?.Value ?? "",
+						InsertText = string.IsNullOrWhiteSpace(item.InsertText)
+							? item.Label ?? ""
+							: item.InsertText,
+					}
+				);
 			}
 		}
 
@@ -177,90 +221,149 @@ public class LuaCompletionService(CreatorSession session)
 		return items;
 	}
 
-	private void AddDatamodelChildCompletions(CodeEditCompletionContext context, List<CodeEditCompletionItem> items)
+	private void AddDatamodelChildCompletions(
+		CodeEditCompletionContext context,
+		List<CodeEditCompletionItem> items
+	)
 	{
-		if (context.CursorLine < 0 || context.CursorLine >= context.Content.Split('\n').Length) return;
+		if (context.CursorLine < 0 || context.CursorLine >= context.Content.Split('\n').Length)
+			return;
 		string line = context.Content.Split('\n')[context.CursorLine].TrimEnd('\r');
 		int column = Math.Clamp(context.CursorColumn, 0, line.Length);
 		string beforeCaret = line[..column];
-		Match access = Regex.Match(beforeCaret,
-			@"(?<root>world|game|script)(?<path>(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\.(?<prefix>[A-Za-z_][A-Za-z0-9_]*)?$");
-		if (!access.Success) return;
+		Match access = Regex.Match(
+			beforeCaret,
+			@"(?<root>world|game|script)(?<path>(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\.(?<prefix>[A-Za-z_][A-Za-z0-9_]*)?$"
+		);
+		if (!access.Success)
+			return;
 
 		Instance? target = ResolveCompletionRoot(access.Groups["root"].Value, context.ScriptPath);
-		if (target == null) return;
+		if (target == null)
+			return;
 
-		foreach (string segment in access.Groups["path"].Value.Split('.', StringSplitOptions.RemoveEmptyEntries))
+		foreach (
+			string segment in access
+				.Groups["path"]
+				.Value.Split('.', StringSplitOptions.RemoveEmptyEntries)
+		)
 		{
 			target = segment == "Parent" ? target.Parent : target.FindChild(segment);
-			if (target == null) return;
+			if (target == null)
+				return;
 		}
 
 		string prefix = access.Groups["prefix"].Value;
-		HashSet<string> existing = items.Select(static item => item.InsertText).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> existing = items
+			.Select(static item => item.InsertText)
+			.ToHashSet(StringComparer.OrdinalIgnoreCase);
 		List<CodeEditCompletionItem> children = [];
-		foreach (Instance child in target.GetChildren().OrderBy(static child => child.Name, StringComparer.OrdinalIgnoreCase))
+		foreach (
+			Instance child in target
+				.GetChildren()
+				.OrderBy(static child => child.Name, StringComparer.OrdinalIgnoreCase)
+		)
 		{
-			if (!IsValidLuauIdentifier(child.Name)
+			if (
+				!IsValidLuauIdentifier(child.Name)
 				|| !child.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-				|| !existing.Add(child.Name)) continue;
+				|| !existing.Add(child.Name)
+			)
+				continue;
 
-			children.Add(new CodeEditCompletionItem
-			{
-				DisplayText = child.Name,
-				InsertText = child.Name,
-				Kind = CodeEdit.CodeCompletionKind.Member,
-				Detail = $"{child.ClassName} child",
-				Documentation = $"Child instance `{child.Name}` ({child.ClassName}) under `{target.Name}`."
-			});
+			children.Add(
+				new CodeEditCompletionItem
+				{
+					DisplayText = child.Name,
+					InsertText = child.Name,
+					Kind = CodeEdit.CodeCompletionKind.Member,
+					Detail = $"{child.ClassName} child",
+					Documentation =
+						$"Child instance `{child.Name}` ({child.ClassName}) under `{target.Name}`.",
+				}
+			);
 		}
 		items.InsertRange(0, children);
 	}
 
 	private Instance? ResolveCompletionRoot(string rootName, string scriptPath)
 	{
-		World? world = World.Current != null && _session.OpenedWorlds.Contains(World.Current)
-			? World.Current
-			: _session.OpenedWorlds.FirstOrDefault();
-		if (rootName is "world" or "game") return world;
-		if (world == null) return null;
+		World? world =
+			World.Current != null && _session.OpenedWorlds.Contains(World.Current)
+				? World.Current
+				: _session.OpenedWorlds.FirstOrDefault();
+		if (rootName is "world" or "game")
+			return world;
+		if (world == null)
+			return null;
 
 		string relativePath = Path.GetRelativePath(_workspacePath, scriptPath).SanitizePath();
-		return world.GetDescendants().OfType<DatamodelScript>().FirstOrDefault(script =>
-			string.Equals(script.LinkedScript?.LinkedPath?.SanitizePath(), relativePath, StringComparison.OrdinalIgnoreCase));
+		return world
+			.GetDescendants()
+			.OfType<DatamodelScript>()
+			.FirstOrDefault(script =>
+				string.Equals(
+					script.LinkedScript?.LinkedPath?.SanitizePath(),
+					relativePath,
+					StringComparison.OrdinalIgnoreCase
+				)
+			);
 	}
 
 	private static bool IsValidLuauIdentifier(string name) =>
 		!string.IsNullOrWhiteSpace(name)
 		&& (char.IsLetter(name[0]) || name[0] == '_')
-		&& name.Skip(1).All(static character => char.IsLetterOrDigit(character) || character == '_');
+		&& name.Skip(1)
+			.All(static character => char.IsLetterOrDigit(character) || character == '_');
 
 	private static string FirstDocumentationLine(string? documentation)
 	{
-		if (string.IsNullOrWhiteSpace(documentation)) return string.Empty;
+		if (string.IsNullOrWhiteSpace(documentation))
+			return string.Empty;
 		return documentation.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)[0].Trim();
 	}
 
-	public async Task<string?> GetHoverAsync(string scriptPath, int line, int column, CancellationToken cancellationToken)
+	public async Task<string?> GetHoverAsync(
+		string scriptPath,
+		int line,
+		int column,
+		CancellationToken cancellationToken
+	)
 	{
-		LspHover? hover = await _client.RequestHoverAsync(scriptPath, line, column, cancellationToken);
-		if (hover == null) return null;
+		LspHover? hover = await _client.RequestHoverAsync(
+			scriptPath,
+			line,
+			column,
+			cancellationToken
+		);
+		if (hover == null)
+			return null;
 
 		JsonElement contents = hover.Contents;
-		if (contents.ValueKind == JsonValueKind.String) return contents.GetString();
+		if (contents.ValueKind == JsonValueKind.String)
+			return contents.GetString();
 		if (contents.ValueKind == JsonValueKind.Object)
 		{
-			if (contents.TryGetProperty("value", out JsonElement value)) return value.GetString();
-			if (contents.TryGetProperty("language", out _) && contents.TryGetProperty("value", out value)) return value.GetString();
+			if (contents.TryGetProperty("value", out JsonElement value))
+				return value.GetString();
+			if (
+				contents.TryGetProperty("language", out _)
+				&& contents.TryGetProperty("value", out value)
+			)
+				return value.GetString();
 		}
 		if (contents.ValueKind == JsonValueKind.Array)
 		{
 			List<string> sections = [];
 			foreach (JsonElement item in contents.EnumerateArray())
 			{
-				string? value = item.ValueKind == JsonValueKind.String ? item.GetString() :
-					item.TryGetProperty("value", out JsonElement objectValue) ? objectValue.GetString() : null;
-				if (!string.IsNullOrWhiteSpace(value)) sections.Add(value);
+				string? value =
+					item.ValueKind == JsonValueKind.String ? item.GetString()
+					: item.TryGetProperty("value", out JsonElement objectValue)
+						? objectValue.GetString()
+					: null;
+				if (!string.IsNullOrWhiteSpace(value))
+					sections.Add(value);
 			}
 			return string.Join("\n\n", sections);
 		}

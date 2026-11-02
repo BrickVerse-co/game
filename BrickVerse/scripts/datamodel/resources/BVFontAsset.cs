@@ -25,7 +25,8 @@ public partial class BVFontAsset : FontAsset
 
 	public override void LoadResource()
 	{
-		if (string.IsNullOrWhiteSpace(FontID)) return;
+		if (string.IsNullOrWhiteSpace(FontID))
+			return;
 		AssetLoader.Singleton.GetResource(
 			new() { Type = ResourceType.Font, ID = FontID },
 			InvokeResourceLoaded

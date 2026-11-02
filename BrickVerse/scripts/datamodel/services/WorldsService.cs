@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Networking;
 using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -32,20 +32,27 @@ public sealed partial class WorldsService : Instance
 	[ScriptMethod]
 	public async Task<string?> NewServerAsync(NewServerRequestData data)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException(WorldAPINonServerMsg);
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(WorldAPINonServerMsg);
 		if (Root.IsLocalTest)
 		{
-			if (Root.Entry == null) throw new Exception("No client entry");
-			if (Root.Entry.DebugAgent == null) throw new Exception("Debugger not attached, could not start new server");
+			if (Root.Entry == null)
+				throw new Exception("No client entry");
+			if (Root.Entry.DebugAgent == null)
+				throw new Exception("Debugger not attached, could not start new server");
 
 			string newID = Guid.NewGuid().ToString();
-			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(data.WorldPath);
+			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(
+				data.WorldPath
+			);
 			_testServers.Add(newID, newServer);
 			return newID;
 		}
 		else
 		{
-			throw new InvalidOperationException("NewServerAsync can only be called in local test mode");
+			throw new InvalidOperationException(
+				"NewServerAsync can only be called in local test mode"
+			);
 		}
 
 		//return null;
@@ -54,15 +61,21 @@ public sealed partial class WorldsService : Instance
 	[ScriptMethod]
 	public async Task JoinWorldAsync(Player plr, string to)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException(WorldAPINonServerMsg);
-		if (plr.teleporting) throw new Exception("Player is already teleporting");
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(WorldAPINonServerMsg);
+		if (plr.teleporting)
+			throw new Exception("Player is already teleporting");
 		plr.teleporting = true;
 		if (Root.IsLocalTest)
 		{
-			if (Root.Entry == null) throw new Exception("No client entry");
-			if (Root.Entry.DebugAgent == null) throw new Exception("Debugger not attached, could not start new server");
+			if (Root.Entry == null)
+				throw new Exception("No client entry");
+			if (Root.Entry.DebugAgent == null)
+				throw new Exception("Debugger not attached, could not start new server");
 
-			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(to);
+			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(
+				to
+			);
 			_ = TeleportPlayerToTest(plr, newServer);
 		}
 	}
@@ -70,36 +83,46 @@ public sealed partial class WorldsService : Instance
 	[ScriptMethod]
 	public async Task JoinWorldPartyAsync(Player[] plrs, string to)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException(WorldAPINonServerMsg);
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(WorldAPINonServerMsg);
 
 		if (Root.IsLocalTest)
 		{
-			if (Root.Entry == null) throw new Exception("No client entry");
-			if (Root.Entry.DebugAgent == null) throw new Exception("Debugger not attached, could not start new server");
+			if (Root.Entry == null)
+				throw new Exception("No client entry");
+			if (Root.Entry.DebugAgent == null)
+				throw new Exception("Debugger not attached, could not start new server");
 
-			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(to);
+			MessageNewServerResponse newServer = await Root.Entry.DebugAgent.CreateServerInstance(
+				to
+			);
 			foreach (Player plr in plrs)
 			{
-				if (plr.teleporting) continue;
+				if (plr.teleporting)
+					continue;
 				_ = TeleportPlayerToTest(plr, newServer);
 			}
 		}
 		else
 		{
-			throw new InvalidOperationException("JoinWorldPartyAsync can only be called in local test mode");
+			throw new InvalidOperationException(
+				"JoinWorldPartyAsync can only be called in local test mode"
+			);
 		}
 	}
 
 	[ScriptMethod]
 	public async Task JoinPrivateAsync(Player plr, string accessID)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException(WorldAPINonServerMsg);
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(WorldAPINonServerMsg);
 
 		if (Root.IsLocalTest)
 		{
 			if (_testServers.TryGetValue(accessID, out MessageNewServerResponse? res))
 			{
-				if (plr.teleporting) throw new Exception("Player is already teleporting");
+				if (plr.teleporting)
+					throw new Exception("Player is already teleporting");
 				plr.teleporting = true;
 				if (Root.IsLocalTest)
 				{
@@ -113,14 +136,17 @@ public sealed partial class WorldsService : Instance
 		}
 		else
 		{
-			throw new InvalidOperationException("JoinPrivateAsync can only be called in local test mode");
+			throw new InvalidOperationException(
+				"JoinPrivateAsync can only be called in local test mode"
+			);
 		}
 	}
 
 	[ScriptMethod]
 	public async Task JoinPrivatePartyAsync(Player[] players, string accessID)
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException(WorldAPINonServerMsg);
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException(WorldAPINonServerMsg);
 
 		if (Root.IsLocalTest)
 		{
@@ -128,7 +154,8 @@ public sealed partial class WorldsService : Instance
 			{
 				foreach (Player plr in players)
 				{
-					if (plr.teleporting) continue;
+					if (plr.teleporting)
+						continue;
 					_ = TeleportPlayerToTest(plr, res);
 				}
 			}
@@ -139,18 +166,30 @@ public sealed partial class WorldsService : Instance
 		}
 		else
 		{
-			throw new InvalidOperationException("JoinPrivatePartyAsync can only be called in local test mode");
+			throw new InvalidOperationException(
+				"JoinPrivatePartyAsync can only be called in local test mode"
+			);
 		}
 	}
 
 	private async Task TeleportPlayerToTest(Player plr, MessageNewServerResponse newServer)
 	{
 		plr.teleporting = true;
-		RpcId(plr.PeerID, nameof(NetRecvJoinTestPlace), newServer.Address, newServer.Port, newServer.DebugID);
+		RpcId(
+			plr.PeerID,
+			nameof(NetRecvJoinTestPlace),
+			newServer.Address,
+			newServer.Port,
+			newServer.DebugID
+		);
 
 		// Disconnect the player
 		await Globals.Singleton.WaitAsync(1);
-		Root.Network.DisconnectPeer(plr.PeerID, "Teleporting to other world", NetworkService.DisconnectionCodeEnum.Teleport);
+		Root.Network.DisconnectPeer(
+			plr.PeerID,
+			"Teleporting to other world",
+			NetworkService.DisconnectionCodeEnum.Teleport
+		);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
@@ -167,7 +206,7 @@ public sealed partial class WorldsService : Instance
 				ConnectPort = port,
 				TestIsServer = false,
 				TestUserID = userID,
-				TestDebugID = debugID
+				TestDebugID = debugID,
 			};
 			ce.Entry(entryData);
 		}

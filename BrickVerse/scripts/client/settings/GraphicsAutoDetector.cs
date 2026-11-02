@@ -2,12 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared;
 using System;
 using System.Linq;
-
+using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.Settings;
 
@@ -21,22 +20,29 @@ public static class GraphicsAutoDetector
 
 		int score = 0;
 
-		if (cores <= 2) score -= 2;
-		else if (cores <= 4) score -= 1;
-		else if (cores >= 8) score += 1;
+		if (cores <= 2)
+			score -= 2;
+		else if (cores <= 4)
+			score -= 1;
+		else if (cores >= 8)
+			score += 1;
 
-		if (isMobile) score -= 2;
+		if (isMobile)
+			score -= 2;
 
-		if (ContainsAny(gpu, "intel hd", "intel uhd", "vega 3", "vega 8")) score -= 3;
-		else if (ContainsAny(gpu, "iris xe", "radeon graphics", "apple m1", "apple m2")) score -= 1;
-		else if (ContainsAny(gpu, "rtx", "rx 6", "rx 7", "arc a", "apple m3", "apple m4")) score += 2;
+		if (ContainsAny(gpu, "intel hd", "intel uhd", "vega 3", "vega 8"))
+			score -= 3;
+		else if (ContainsAny(gpu, "iris xe", "radeon graphics", "apple m1", "apple m2"))
+			score -= 1;
+		else if (ContainsAny(gpu, "rtx", "rx 6", "rx 7", "arc a", "apple m3", "apple m4"))
+			score += 2;
 
 		return score switch
 		{
 			<= -3 => GraphicsPreset.Low,
 			<= 0 => GraphicsPreset.Medium,
 			<= 2 => GraphicsPreset.High,
-			_ => GraphicsPreset.Ultra
+			_ => GraphicsPreset.Ultra,
 		};
 	}
 

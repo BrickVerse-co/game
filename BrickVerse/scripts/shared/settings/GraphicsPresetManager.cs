@@ -172,7 +172,11 @@ public static class GraphicsPresetManager
 
 	private static int _presetDepth;
 
-	public static void HandlePresetChange(ISettingsContext settings, string key, object normalizedValue)
+	public static void HandlePresetChange(
+		ISettingsContext settings,
+		string key,
+		object normalizedValue
+	)
 	{
 		if (!key.StartsWith(SharedSettingKeys.Graphics.Prefix))
 			return;
@@ -193,7 +197,9 @@ public static class GraphicsPresetManager
 		if (!IsPresetManagedKey(key))
 			return;
 
-		GraphicsPreset currentPreset = settings.Get<GraphicsPreset>(SharedSettingKeys.Graphics.Preset);
+		GraphicsPreset currentPreset = settings.Get<GraphicsPreset>(
+			SharedSettingKeys.Graphics.Preset
+		);
 		if (currentPreset != GraphicsPreset.Custom)
 		{
 			_presetDepth++;

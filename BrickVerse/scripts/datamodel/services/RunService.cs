@@ -11,14 +11,29 @@ public sealed partial class RunService : Instance
 	private double _elapsedTime;
 	private double _physicsElapsedTime;
 
-	[ScriptProperty] public BVSignal<double> RenderStepped { get; private set; } = new();
-	[ScriptProperty] public BVSignal<double> Heartbeat { get; private set; } = new();
-	[ScriptProperty] public BVSignal<double> PhysicsStepped { get; private set; } = new();
-	[ScriptProperty] public double ElapsedTime => _elapsedTime;
-	[ScriptProperty] public double PhysicsElapsedTime => _physicsElapsedTime;
-	[ScriptProperty] public bool IsCreator => Root.SessionType == World.SessionTypeEnum.Creator;
-	[ScriptProperty] public bool IsClient => Root.SessionType == World.SessionTypeEnum.Client;
-	[ScriptProperty] public bool IsServer => Root.Network.IsServer;
+	[ScriptProperty]
+	public BVSignal<double> RenderStepped { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<double> Heartbeat { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<double> PhysicsStepped { get; private set; } = new();
+
+	[ScriptProperty]
+	public double ElapsedTime => _elapsedTime;
+
+	[ScriptProperty]
+	public double PhysicsElapsedTime => _physicsElapsedTime;
+
+	[ScriptProperty]
+	public bool IsCreator => Root.SessionType == World.SessionTypeEnum.Creator;
+
+	[ScriptProperty]
+	public bool IsClient => Root.SessionType == World.SessionTypeEnum.Client;
+
+	[ScriptProperty]
+	public bool IsServer => Root.Network.IsServer;
 
 	public override void Init()
 	{

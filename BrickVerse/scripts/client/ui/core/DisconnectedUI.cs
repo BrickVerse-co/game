@@ -2,18 +2,27 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Services;
+using Godot;
 
 namespace BrickVerse.Client.UI.Core;
 
 public partial class DisconnectedUI : CanvasLayer
 {
-	[Export] private AnimationPlayer _animPlay = null!;
-	[Export] private Label _titleLabel = null!;
-	[Export] private Label _reasonLabel = null!;
-	[Export] private Label _codeLabel = null!;
-	[Export] private Button _quitButton = null!;
+	[Export]
+	private AnimationPlayer _animPlay = null!;
+
+	[Export]
+	private Label _titleLabel = null!;
+
+	[Export]
+	private Label _reasonLabel = null!;
+
+	[Export]
+	private Label _codeLabel = null!;
+
+	[Export]
+	private Button _quitButton = null!;
 
 	private ClientEntry _entry = null!;
 
@@ -47,10 +56,12 @@ public partial class DisconnectedUI : CanvasLayer
 
 	private void OnClientDisconnected(string reason, NetworkService.DisconnectionCodeEnum code)
 	{
-		if (!GodotObject.IsInstanceValid(this)
+		if (
+			!GodotObject.IsInstanceValid(this)
 			|| !GodotObject.IsInstanceValid(_reasonLabel)
 			|| !GodotObject.IsInstanceValid(_codeLabel)
-			|| !GodotObject.IsInstanceValid(_animPlay))
+			|| !GodotObject.IsInstanceValid(_animPlay)
+		)
 		{
 			return;
 		}

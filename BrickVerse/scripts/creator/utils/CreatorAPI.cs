@@ -35,7 +35,7 @@ public static class CreatorAPI
 		"manage_assets", // manage owned assets (create/update models)
 		"publish_worlds", // manage owned worlds (create/update worlds)
 		"read_forge_ai",
-		"manage_forge_ai"
+		"manage_forge_ai",
 	};
 
 	private const string AuthorizePath = "/oauth/authorize";
@@ -88,7 +88,10 @@ public static class CreatorAPI
 		_client.BeforeRequestAsync = EnsureTokenValid;
 	}
 
-	public static Task<CreatorLatestBinaryResponse?> GetLatestCreatorBinary(string platform, string branch)
+	public static Task<CreatorLatestBinaryResponse?> GetLatestCreatorBinary(
+		string platform,
+		string branch
+	)
 	{
 		return _client.GetFromJsonAsync(
 			$"{Globals.MainEndpoint}/api/v3/binaries/{Uri.EscapeDataString(platform)}/{Uri.EscapeDataString(branch)}/creator",
@@ -100,7 +103,9 @@ public static class CreatorAPI
 	{
 		if (!IsUserAuthenticated || string.IsNullOrWhiteSpace(Token))
 			throw new AuthenticationException("Creator authentication is required.");
-		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin(apiPath));
+		using HttpResponseMessage response = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin(apiPath)
+		);
 		response.EnsureSuccessStatusCode();
 		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 	}
@@ -109,7 +114,9 @@ public static class CreatorAPI
 	{
 		if (string.IsNullOrWhiteSpace(assetId))
 			throw new ArgumentException("An asset ID is required.", nameof(assetId));
-		string url = Globals.ApiEndpoint.PathJoin("/v3/world/editor/asset/" + Uri.EscapeDataString(assetId));
+		string url = Globals.ApiEndpoint.PathJoin(
+			"/v3/world/editor/asset/" + Uri.EscapeDataString(assetId)
+		);
 		using HttpResponseMessage response = await _client.GetAsync(url);
 		if (!response.IsSuccessStatusCode)
 		{
@@ -119,7 +126,8 @@ public static class CreatorAPI
 			);
 		}
 		byte[] data = await response.Content.ReadAsByteArrayAsync();
-		if (data.Length == 0) throw new System.IO.InvalidDataException($"Prefab {assetId} returned an empty file.");
+		if (data.Length == 0)
+			throw new System.IO.InvalidDataException($"Prefab {assetId} returned an empty file.");
 		return data;
 	}
 
@@ -229,15 +237,25 @@ public static class CreatorAPI
 		await Task.CompletedTask;
 	}
 
-	public sealed record QuickSignInRequest(string Token, DateTimeOffset ExpiresAt, string VerificationUrl, byte[] QrPng);
+	public sealed record QuickSignInRequest(
+		string Token,
+		DateTimeOffset ExpiresAt,
+		string VerificationUrl,
+		byte[] QrPng
+	);
 
 	public static async Task<QuickSignInRequest> CreateQuickSignInAsync()
 	{
 		string url = Globals.ApiEndpoint.PathJoin("/v3/auth/quick-signin/create?client=creator");
-		using HttpResponseMessage response = await _oauthClient.PostAsync(url, new ByteArrayContent([]));
+		using HttpResponseMessage response = await _oauthClient.PostAsync(
+			url,
+			new ByteArrayContent([])
+		);
 		string body = await response.Content.ReadAsStringAsync();
 		if (!response.IsSuccessStatusCode)
-			throw new HttpRequestException($"Could not start quick sign-in: {(int)response.StatusCode} {body}");
+			throw new HttpRequestException(
+				$"Could not start quick sign-in: {(int)response.StatusCode} {body}"
+			);
 
 		using JsonDocument document = JsonDocument.Parse(body);
 		JsonElement root = document.RootElement;
@@ -264,10 +282,14 @@ public static class CreatorAPI
 			new ByteArrayContent([])
 		);
 		string validationBody = await validation.Content.ReadAsStringAsync();
-		if (!validation.IsSuccessStatusCode) return false;
+		if (!validation.IsSuccessStatusCode)
+			return false;
 		using (JsonDocument document = JsonDocument.Parse(validationBody))
 		{
-			if (!document.RootElement.TryGetProperty("canLogin", out JsonElement canLogin) || !canLogin.GetBoolean())
+			if (
+				!document.RootElement.TryGetProperty("canLogin", out JsonElement canLogin)
+				|| !canLogin.GetBoolean()
+			)
 				return false;
 		}
 
@@ -277,7 +299,9 @@ public static class CreatorAPI
 		);
 		string loginBody = await login.Content.ReadAsStringAsync();
 		if (!login.IsSuccessStatusCode)
-			throw new HttpRequestException($"Quick sign-in failed: {(int)login.StatusCode} {loginBody}");
+			throw new HttpRequestException(
+				$"Quick sign-in failed: {(int)login.StatusCode} {loginBody}"
+			);
 		using JsonDocument loginDocument = JsonDocument.Parse(loginBody);
 		string accessToken = GetString(loginDocument.RootElement, "token");
 		if (string.IsNullOrWhiteSpace(accessToken))
@@ -336,7 +360,10 @@ public static class CreatorAPI
 				}
 			);
 
-			using HttpResponseMessage msg = await _oauthClient.PostAsync(oidc.TokenEndpoint, content);
+			using HttpResponseMessage msg = await _oauthClient.PostAsync(
+				oidc.TokenEndpoint,
+				content
+			);
 			string body = await msg.Content.ReadAsStringAsync();
 
 			if (!msg.IsSuccessStatusCode)
@@ -472,9 +499,7 @@ public static class CreatorAPI
 				RefreshToken = refreshToken ?? "",
 				IdToken = idToken ?? "",
 				ExpiresAt =
-					expiresIn > 0
-						? DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expiresIn
-						: 0,
+					expiresIn > 0 ? DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expiresIn : 0,
 			},
 			saveToken,
 			null
@@ -619,7 +644,11 @@ public static class CreatorAPI
 
 		if (!msg.IsSuccessStatusCode)
 		{
-			if (msg.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+			if (
+				msg.StatusCode
+				is System.Net.HttpStatusCode.Unauthorized
+					or System.Net.HttpStatusCode.Forbidden
+			)
 				throw new AuthenticationException(
 					$"Creator authorization was revoked: {msg.StatusCode}"
 				);
@@ -663,9 +692,7 @@ public static class CreatorAPI
 			if (refreshedSession == null)
 			{
 				ClearAuth();
-				AuthenticationFailed?.Invoke(
-					"Your Creator session expired. Please sign in again."
-				);
+				AuthenticationFailed?.Invoke("Your Creator session expired. Please sign in again.");
 				throw new AuthenticationException(
 					"Creator OAuth refresh token is invalid or expired."
 				);
@@ -682,7 +709,8 @@ public static class CreatorAPI
 	}
 
 	public static async Task<string> GetValidAccessTokenAsync(
-		CancellationToken cancellationToken = default)
+		CancellationToken cancellationToken = default
+	)
 	{
 		await EnsureTokenValid(cancellationToken);
 		if (string.IsNullOrWhiteSpace(Token))
@@ -702,10 +730,7 @@ public static class CreatorAPI
 			await EnsureTokenValid();
 			await GetUserInfo(
 				Token,
-				new OpenIdConfig
-				{
-					UserInfoEndpoint = Globals.ApiEndpoint.PathJoin(UserInfoPath),
-				}
+				new OpenIdConfig { UserInfoEndpoint = Globals.ApiEndpoint.PathJoin(UserInfoPath) }
 			);
 			return true;
 		}
@@ -1044,9 +1069,14 @@ public static class CreatorAPI
 			string url = Globals.ApiEndpoint.PathJoin(
 				$"/v3/world/editor/presence/{worldId}/{state}"
 			);
-			using HttpResponseMessage response = await _client.PostAsync(url, new ByteArrayContent([]));
+			using HttpResponseMessage response = await _client.PostAsync(
+				url,
+				new ByteArrayContent([])
+			);
 			if (!response.IsSuccessStatusCode)
-				BV.PrintErr($"Creator presence update failed: {(int)response.StatusCode} {response.StatusCode}");
+				BV.PrintErr(
+					$"Creator presence update failed: {(int)response.StatusCode} {response.StatusCode}"
+				);
 		}
 		catch (Exception error)
 		{
@@ -1264,10 +1294,7 @@ public static class CreatorAPI
 		int? cursor = null
 	)
 	{
-		CreatorAssetPage page = await GetCreatorAssetPage(
-			assetType,
-			cursor?.ToString()
-		);
+		CreatorAssetPage page = await GetCreatorAssetPage(assetType, cursor?.ToString());
 		return page.Items;
 	}
 
@@ -1293,13 +1320,22 @@ public static class CreatorAPI
 			"sort=" + Uri.EscapeDataString(sort),
 			"scope=" + Uri.EscapeDataString(scope),
 		];
-		if (assetType.HasValue) query.Add("type=" + Uri.EscapeDataString(assetType.Value.ToString().ToUpperInvariant()));
-		if (!string.IsNullOrWhiteSpace(cursor)) query.Add("cursor=" + Uri.EscapeDataString(cursor));
-		if (!string.IsNullOrWhiteSpace(search)) query.Add("search=" + Uri.EscapeDataString(search.Trim()));
-		if (!string.IsNullOrWhiteSpace(creatorType)) query.Add("creatorType=" + Uri.EscapeDataString(creatorType));
-		if (!string.IsNullOrWhiteSpace(creatorId)) query.Add("creatorId=" + Uri.EscapeDataString(creatorId));
-		if (!string.IsNullOrWhiteSpace(privacy)) query.Add("privacy=" + Uri.EscapeDataString(privacy));
-		if (!string.IsNullOrWhiteSpace(moderation)) query.Add("moderation=" + Uri.EscapeDataString(moderation));
+		if (assetType.HasValue)
+			query.Add(
+				"type=" + Uri.EscapeDataString(assetType.Value.ToString().ToUpperInvariant())
+			);
+		if (!string.IsNullOrWhiteSpace(cursor))
+			query.Add("cursor=" + Uri.EscapeDataString(cursor));
+		if (!string.IsNullOrWhiteSpace(search))
+			query.Add("search=" + Uri.EscapeDataString(search.Trim()));
+		if (!string.IsNullOrWhiteSpace(creatorType))
+			query.Add("creatorType=" + Uri.EscapeDataString(creatorType));
+		if (!string.IsNullOrWhiteSpace(creatorId))
+			query.Add("creatorId=" + Uri.EscapeDataString(creatorId));
+		if (!string.IsNullOrWhiteSpace(privacy))
+			query.Add("privacy=" + Uri.EscapeDataString(privacy));
+		if (!string.IsNullOrWhiteSpace(moderation))
+			query.Add("moderation=" + Uri.EscapeDataString(moderation));
 
 		using HttpResponseMessage msg = await _client.GetAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/assets?" + string.Join("&", query))
@@ -1331,10 +1367,11 @@ public static class CreatorAPI
 			assetList.Add(ParseCreatorAssetItem(asset));
 		}
 
-		string? nextCursor = doc.RootElement.TryGetProperty("nextCursor", out JsonElement next)
+		string? nextCursor =
+			doc.RootElement.TryGetProperty("nextCursor", out JsonElement next)
 			&& next.ValueKind == JsonValueKind.String
-			? next.GetString()
-			: null;
+				? next.GetString()
+				: null;
 		return new CreatorAssetPage { Items = [.. assetList], NextCursor = nextCursor };
 	}
 
@@ -1552,12 +1589,14 @@ public static class CreatorAPI
 		form.Add(BVHttpClient.FormString("universeId", resolvedUniverseId.ToString()));
 		form.Add(BVHttpClient.FormString("worldId", resolvedWorldId.ToString()));
 		form.Add(BVHttpClient.FormString("publish", publish ? "true" : "false"));
-		form.Add(BVHttpClient.FormString(
-			"commitMessage",
-			string.IsNullOrWhiteSpace(commitMessage)
-				? (publish ? "Publish from BrickVerse Creator" : "Save from BrickVerse Creator")
-				: commitMessage.Trim()
-		));
+		form.Add(
+			BVHttpClient.FormString(
+				"commitMessage",
+				string.IsNullOrWhiteSpace(commitMessage)
+					? (publish ? "Publish from BrickVerse Creator" : "Save from BrickVerse Creator")
+					: commitMessage.Trim()
+			)
+		);
 
 		if (isNewUniverse)
 		{
@@ -1640,9 +1679,15 @@ public static class CreatorAPI
 
 		if (success)
 		{
-			BV.Print($"Your world has been successfully uploaded. You can view it at: {Globals.MainEndpoint.PathJoin("/worlds/" + nextWorldId)}");
-		} else {
-			BV.PrintErr($"Failed to upload your world. Response (Http Code {(int)msg.StatusCode}): {responseText}");
+			BV.Print(
+				$"Your world has been successfully uploaded. You can view it at: {Globals.MainEndpoint.PathJoin("/worlds/" + nextWorldId)}"
+			);
+		}
+		else
+		{
+			BV.PrintErr(
+				$"Failed to upload your world. Response (Http Code {(int)msg.StatusCode}): {responseText}"
+			);
 		}
 
 		return new CreatorPublishResponse

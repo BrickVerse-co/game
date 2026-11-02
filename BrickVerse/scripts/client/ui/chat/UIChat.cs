@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Client.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -18,18 +18,41 @@ public partial class UIChat : Control
 	private const float AspectRatio = 400f / 240f;
 	private const string ChatLabelPath = "res://scenes/client/ui/chat/chat_label.tscn";
 	private const string MicrophoneIconPath = "res://assets/textures/ui-icons/microphone-bold.svg";
-	private const string MutedMicrophoneIconPath = "res://assets/textures/ui-icons/microphone-slash-bold.svg";
-	[Export] private LineEdit _chatField = null!;
-	[Export] private Control _chatLayout = null!;
-	[Export] private ScrollContainer _chatScroll = null!;
-	[Export] private AnimationPlayer _animPlayer = null!;
-	[Export] private Button _sendButton = null!;
-	[Export] private AnimationPlayer _sendAnim = null!;
-	[Export] private Control _chatFieldPanel = null!;
-	[Export] private Panel _chatPanel = null!;
-	[Export] private TextureRect _resizeHandle = null!;
-	[Export] private UIEmojiPicker _emojiPicker = null!;
-	[Export] private Button _emojiButton = null!;
+	private const string MutedMicrophoneIconPath =
+		"res://assets/textures/ui-icons/microphone-slash-bold.svg";
+
+	[Export]
+	private LineEdit _chatField = null!;
+
+	[Export]
+	private Control _chatLayout = null!;
+
+	[Export]
+	private ScrollContainer _chatScroll = null!;
+
+	[Export]
+	private AnimationPlayer _animPlayer = null!;
+
+	[Export]
+	private Button _sendButton = null!;
+
+	[Export]
+	private AnimationPlayer _sendAnim = null!;
+
+	[Export]
+	private Control _chatFieldPanel = null!;
+
+	[Export]
+	private Panel _chatPanel = null!;
+
+	[Export]
+	private TextureRect _resizeHandle = null!;
+
+	[Export]
+	private UIEmojiPicker _emojiPicker = null!;
+
+	[Export]
+	private Button _emojiButton = null!;
 
 	public CoreUIRoot CoreUI = null!;
 	private World Root => CoreUI.Root;
@@ -55,7 +78,8 @@ public partial class UIChat : Control
 	private PopupMenu? _commandAutocomplete;
 
 	private const float MaxChatWidthValue = 1000f;
-	private float MaxChatWidth => Mathf.Clamp(GetViewportRect().Size.X * 0.45f, _minSize.X, MaxChatWidthValue);
+	private float MaxChatWidth =>
+		Mathf.Clamp(GetViewportRect().Size.X * 0.45f, _minSize.X, MaxChatWidthValue);
 
 	public override void _Ready()
 	{
@@ -69,7 +93,8 @@ public partial class UIChat : Control
 
 	private void CreateVoiceChatButton()
 	{
-		if (!LocalPlayer.CanVoiceChat || _voiceChatButton != null) return;
+		if (!LocalPlayer.CanVoiceChat || _voiceChatButton != null)
+			return;
 
 		_voiceChatButton = new Button
 		{
@@ -81,7 +106,7 @@ public partial class UIChat : Control
 			ExpandIcon = true,
 			Modulate = new Color(1, 1, 1, 0.5f),
 			MouseDefaultCursorShape = CursorShape.PointingHand,
-			TooltipText = "Turn microphone on"
+			TooltipText = "Turn microphone on",
 		};
 		_voiceChatButton.AddThemeConstantOverride("icon_max_width", 24);
 
@@ -93,10 +118,13 @@ public partial class UIChat : Control
 
 	private void OnMicrophoneToggled(bool enabled)
 	{
-		if (_voiceChatButton == null) return;
+		if (_voiceChatButton == null)
+			return;
 		Root.VoiceChat.SetMicrophoneEnabled(enabled);
 		_voiceChatButton.Modulate = enabled ? Colors.White : new Color(1, 1, 1, 0.5f);
-		_voiceChatButton.Icon = enabled ? GD.Load<Texture2D>(MicrophoneIconPath) : GD.Load<Texture2D>(MutedMicrophoneIconPath);
+		_voiceChatButton.Icon = enabled
+			? GD.Load<Texture2D>(MicrophoneIconPath)
+			: GD.Load<Texture2D>(MutedMicrophoneIconPath);
 		_voiceChatButton.TooltipText = enabled ? "Mute microphone" : "Turn microphone on";
 	}
 
@@ -154,32 +182,84 @@ public partial class UIChat : Control
 
 	private void CreateQuickChatButton()
 	{
-		if (!LocalPlayer.CanQuickChat || _quickChatButton != null) return;
-		_quickChatButton = new Button { Text = "Quick Chat", TooltipText = "Choose a safe preset phrase", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+		if (!LocalPlayer.CanQuickChat || _quickChatButton != null)
+			return;
+		_quickChatButton = new Button
+		{
+			Text = "Quick Chat",
+			TooltipText = "Choose a safe preset phrase",
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+		};
 		_chatFieldPanel.AddChild(_quickChatButton);
 		_quickChatButton.Pressed += () =>
 		{
 			PopupPanel wheel = new() { Size = new Vector2I(460, 460), Title = "Quick Chat" };
-			Control surface = new() { CustomMinimumSize = new Vector2(460, 460) }; wheel.AddChild(surface);
-			void Populate(string titleText, IReadOnlyList<(string Label, int Value)> items, System.Action<int> selected)
+			Control surface = new() { CustomMinimumSize = new Vector2(460, 460) };
+			wheel.AddChild(surface);
+			void Populate(
+				string titleText,
+				IReadOnlyList<(string Label, int Value)> items,
+				System.Action<int> selected
+			)
 			{
-				foreach (Node child in surface.GetChildren()) child.QueueFree();
-				Vector2 center = new(230, 230); float radius = 155f;
+				foreach (Node child in surface.GetChildren())
+					child.QueueFree();
+				Vector2 center = new(230, 230);
+				float radius = 155f;
 				for (int i = 0; i < items.Count; i++)
 				{
-					int value = items[i].Value; float angle = -Mathf.Pi / 2f + Mathf.Tau * i / items.Count;
-					Button choice = new() { Text = items[i].Label, Size = new Vector2(145, 48), Position = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius - new Vector2(72.5f, 24f) };
-					choice.Pressed += () => selected(value); surface.AddChild(choice);
+					int value = items[i].Value;
+					float angle = -Mathf.Pi / 2f + Mathf.Tau * i / items.Count;
+					Button choice = new()
+					{
+						Text = items[i].Label,
+						Size = new Vector2(145, 48),
+						Position =
+							center
+							+ new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius
+							- new Vector2(72.5f, 24f),
+					};
+					choice.Pressed += () => selected(value);
+					surface.AddChild(choice);
 				}
-				Label title = new() { Text = titleText, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Position = center - new Vector2(55, 32), Size = new Vector2(110, 64) }; surface.AddChild(title);
+				Label title = new()
+				{
+					Text = titleText,
+					HorizontalAlignment = HorizontalAlignment.Center,
+					VerticalAlignment = VerticalAlignment.Center,
+					Position = center - new Vector2(55, 32),
+					Size = new Vector2(110, 64),
+				};
+				surface.AddChild(title);
 			}
-			void ShowGroups() => Populate("QUICK\nCHAT", QuickChatCatalog.Groups.Select((group, index) => (group.Name, index)).ToArray(), groupIndex =>
-			{
-				QuickChatCatalog.Group group = QuickChatCatalog.Groups[groupIndex]; int offset = QuickChatCatalog.Groups.Take(groupIndex).Sum(item => item.Phrases.Length);
-				Populate(group.Name.ToUpperInvariant(), group.Phrases.Select((phrase, index) => (phrase, offset + index)).ToArray(), phraseIndex => { Root.Chat.SendQuickChat(phraseIndex); wheel.Hide(); wheel.QueueFree(); });
-			});
-			ShowGroups(); AddChild(wheel);
-			Vector2I viewportSize = (Vector2I)GetViewportRect().Size; wheel.Popup(new Rect2I((viewportSize - wheel.Size) / 2, wheel.Size));
+			void ShowGroups() =>
+				Populate(
+					"QUICK\nCHAT",
+					QuickChatCatalog.Groups.Select((group, index) => (group.Name, index)).ToArray(),
+					groupIndex =>
+					{
+						QuickChatCatalog.Group group = QuickChatCatalog.Groups[groupIndex];
+						int offset = QuickChatCatalog
+							.Groups.Take(groupIndex)
+							.Sum(item => item.Phrases.Length);
+						Populate(
+							group.Name.ToUpperInvariant(),
+							group
+								.Phrases.Select((phrase, index) => (phrase, offset + index))
+								.ToArray(),
+							phraseIndex =>
+							{
+								Root.Chat.SendQuickChat(phraseIndex);
+								wheel.Hide();
+								wheel.QueueFree();
+							}
+						);
+					}
+				);
+			ShowGroups();
+			AddChild(wheel);
+			Vector2I viewportSize = (Vector2I)GetViewportRect().Size;
+			wheel.Popup(new Rect2I((viewportSize - wheel.Size) / 2, wheel.Size));
 		};
 	}
 
@@ -194,26 +274,22 @@ public partial class UIChat : Control
 	{
 		return restrictionReason switch
 		{
-			"AGE_RESTRICTED" =>
-				"Chat is disabled due to age restrictions",
+			"AGE_RESTRICTED" => "Chat is disabled due to age restrictions",
 
-			"MUTED" =>
-				"You are muted and cannot chat",
+			"MUTED" => "You are muted and cannot chat",
 
-			"CHAT_MODERATION" =>
-				"Chat is disabled due to moderation restrictions",
+			"CHAT_MODERATION" => "Chat is disabled due to moderation restrictions",
 
-			"UNVERIFIED_EMAIL" =>
-				"Chat is disabled until your email is verified",
+			"UNVERIFIED_EMAIL" => "Chat is disabled until your email is verified",
 
-			_ =>
-				"Chat is disabled for your account"
+			_ => "Chat is disabled for your account",
 		};
 	}
 
 	public override void _ExitTree()
 	{
-		if (_voiceChatButton != null) _voiceChatButton.Toggled -= OnMicrophoneToggled;
+		if (_voiceChatButton != null)
+			_voiceChatButton.Toggled -= OnMicrophoneToggled;
 		Root.Chat.NewChatMessage.Disconnect(OnNewChatMessage);
 		Root.Chat.MessageDeclined.Disconnect(OnMessageDeclined);
 		Root.Chat.MessageReceived.Disconnect(OnMessageReceived);
@@ -289,7 +365,8 @@ public partial class UIChat : Control
 
 	private void SendMessage(string text)
 	{
-		if (!Visible) return;
+		if (!Visible)
+			return;
 
 		// Release focus from chat field now
 		_chatField.ReleaseFocus();
@@ -304,7 +381,8 @@ public partial class UIChat : Control
 		// Handle commands
 		if (text.StartsWith('/'))
 		{
-			if (Root.Chat.TryExecuteLocalCommand(text)) return;
+			if (Root.Chat.TryExecuteLocalCommand(text))
+				return;
 			string[] cmd = text.Split(' ');
 
 			if (cmd[0] == "/spectator")
@@ -319,10 +397,20 @@ public partial class UIChat : Control
 			}
 
 			bool routedChat = cmd[0] is "/w" or "/whisper" or "/t" or "/team" or "/channel";
-			bool serverCommand = routedChat
-				|| Root.Chat.GetCommandSuggestions(cmd[0]).Any(item => item.Equals(cmd[0], System.StringComparison.OrdinalIgnoreCase));
-			if (!serverCommand) { Root.Players.LocalPlayer.PlayEmote(cmd[0][1..]); return; }
-			if (!routedChat) { Root.Chat.SendChatMessage(text); return; }
+			bool serverCommand =
+				routedChat
+				|| Root.Chat.GetCommandSuggestions(cmd[0])
+					.Any(item => item.Equals(cmd[0], System.StringComparison.OrdinalIgnoreCase));
+			if (!serverCommand)
+			{
+				Root.Players.LocalPlayer.PlayEmote(cmd[0][1..]);
+				return;
+			}
+			if (!routedChat)
+			{
+				Root.Chat.SendChatMessage(text);
+				return;
+			}
 		}
 
 		RecordEmojisFromText(text);
@@ -371,7 +459,8 @@ public partial class UIChat : Control
 
 	private void OnMessageDeclined()
 	{
-		if (_pendingMessages.Count == 0) return;
+		if (_pendingMessages.Count == 0)
+			return;
 		UIChatLabel label = _pendingMessages.Dequeue();
 		label.IsDeclined = true;
 	}
@@ -381,15 +470,24 @@ public partial class UIChat : Control
 		return CreateNewChatLabel(from.Name, msg, from.ChatColor, from);
 	}
 
-	public UIChatLabel CreateNewChatLabel(string authorName, string content, Color? chatColor = null, Player? authorPlayer = null)
+	public UIChatLabel CreateNewChatLabel(
+		string authorName,
+		string content,
+		Color? chatColor = null,
+		Player? authorPlayer = null
+	)
 	{
 		UIChatLabel chatLabel = Globals.CreateInstanceFromScene<UIChatLabel>(ChatLabelPath);
 		chatLabel.AuthorName = authorName;
 		chatLabel.AuthorPlayer = authorPlayer;
-		chatLabel.ChatColorsEnabled = Root.PlayerDefaults.ChatColorsEnabled
+		chatLabel.ChatColorsEnabled =
+			Root.PlayerDefaults.ChatColorsEnabled
 			&& ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.Chat.ChatColors);
-		chatLabel.FontPath = ClientSettingsService.Instance.Get<string>(ClientSettingKeys.Chat.ChatFont);
-		chatLabel.FontSize = (int)ClientSettingsService.Instance.Get<float>(ClientSettingKeys.Chat.ChatFontSize);
+		chatLabel.FontPath = ClientSettingsService.Instance.Get<string>(
+			ClientSettingKeys.Chat.ChatFont
+		);
+		chatLabel.FontSize = (int)
+			ClientSettingsService.Instance.Get<float>(ClientSettingKeys.Chat.ChatFontSize);
 		if (chatColor.HasValue)
 		{
 			chatLabel.NameColor = chatColor.Value;
@@ -424,7 +522,10 @@ public partial class UIChat : Control
 
 	public override void _Input(InputEvent @event)
 	{
-		if (_emojiPicker.Visible && @event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mb)
+		if (
+			_emojiPicker.Visible
+			&& @event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mb
+		)
 		{
 			Vector2 clickPos = mb.GlobalPosition;
 			Rect2 pickerRect = new(_emojiPicker.GlobalPosition, _emojiPicker.Size);
@@ -435,7 +536,8 @@ public partial class UIChat : Control
 			}
 		}
 
-		if (!_isResizing) return;
+		if (!_isResizing)
+			return;
 
 		if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
 		{
@@ -462,7 +564,9 @@ public partial class UIChat : Control
 	}
 
 	private void OnResizeHandleMouseEntered() => TweenResizeHandleAlpha(Colors.White, 0.15f);
-	private void OnResizeHandleMouseExited() => TweenResizeHandleAlpha(new Color(1, 1, 1, 0.25f), 0.3f);
+
+	private void OnResizeHandleMouseExited() =>
+		TweenResizeHandleAlpha(new Color(1, 1, 1, 0.25f), 0.3f);
 
 	private void TweenResizeHandleAlpha(Color target, float duration)
 	{
@@ -517,14 +621,18 @@ public partial class UIChat : Control
 			return;
 
 		int cursorPos = _chatField.CaretColumn;
-		if (newText.StartsWith('/') && !newText[..Mathf.Min(cursorPos, newText.Length)].Contains(' '))
+		if (
+			newText.StartsWith('/')
+			&& !newText[..Mathf.Min(cursorPos, newText.Length)].Contains(' ')
+		)
 		{
 			string[] suggestions = Root.Chat.GetCommandSuggestions(newText[..cursorPos]).ToArray();
 			if (suggestions.Length > 0)
 			{
 				_commandAutocomplete?.QueueFree();
 				_commandAutocomplete = new PopupMenu { Unfocusable = true };
-				for (int i = 0; i < suggestions.Length; i++) _commandAutocomplete.AddItem(suggestions[i], i);
+				for (int i = 0; i < suggestions.Length; i++)
+					_commandAutocomplete.AddItem(suggestions[i], i);
 				_commandAutocomplete.IdPressed += id =>
 				{
 					_chatField.Text = suggestions[(int)id] + " ";
@@ -533,7 +641,9 @@ public partial class UIChat : Control
 					_chatField.GrabFocus();
 				};
 				AddChild(_commandAutocomplete);
-				Vector2I at = (Vector2I)(_chatField.GlobalPosition + new Vector2(0, _chatField.Size.Y));
+				Vector2I at = (Vector2I)(
+					_chatField.GlobalPosition + new Vector2(0, _chatField.Size.Y)
+				);
 				_commandAutocomplete.Popup(new Rect2I(at, Vector2I.Zero));
 				_chatField.CallDeferred(Control.MethodName.GrabFocus);
 				return;

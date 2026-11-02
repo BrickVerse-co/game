@@ -2,17 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Scripting;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
 using Godot;
 #if CREATOR
 using BrickVerse.Shared;
 using BrickVerse.Utils;
 #endif
-using System.Collections.Generic;
+
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -23,9 +24,27 @@ public sealed partial class IOService : Instance
 {
 	private const string CreatorTempPath = "brickverse_creator_temp";
 	private static readonly HashSet<string> AllowedExtensions = new(
-		new[] { "bvxw", "bvworld", "bvxm", "bvmodel", "model", "json", "txt", "png", "jpg", "jpeg", "webp", "svg", "ogg", "wav", "mp3", "ogv" }
-			.Concat(ScriptLanguageRegistry.Definitions.SelectMany(language => language.Extensions)),
-		StringComparer.OrdinalIgnoreCase);
+		new[]
+		{
+			"bvxw",
+			"bvworld",
+			"bvxm",
+			"bvmodel",
+			"model",
+			"json",
+			"txt",
+			"png",
+			"jpg",
+			"jpeg",
+			"webp",
+			"svg",
+			"ogg",
+			"wav",
+			"mp3",
+			"ogv",
+		}.Concat(ScriptLanguageRegistry.Definitions.SelectMany(language => language.Extensions)),
+		StringComparer.OrdinalIgnoreCase
+	);
 
 	internal Dictionary<string, byte[]> FileStructure = [];
 	internal Dictionary<string, string> FileToIndex = [];
@@ -44,7 +63,9 @@ public sealed partial class IOService : Instance
 	{
 		string extension = path.GetExtension();
 		if (!AllowedExtensions.Contains(extension))
-			throw new InvalidOperationException($"Reading .{extension} files is not allowed ({path}).");
+			throw new InvalidOperationException(
+				$"Reading .{extension} files is not allowed ({path})."
+			);
 #if CREATOR
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
@@ -99,7 +120,9 @@ public sealed partial class IOService : Instance
 	{
 		string extension = path.GetExtension();
 		if (!AllowedExtensions.Contains(extension))
-			throw new InvalidOperationException($"Writing .{extension} files is not allowed ({path}).");
+			throw new InvalidOperationException(
+				$"Writing .{extension} files is not allowed ({path})."
+			);
 #if CREATOR
 		if (Root.SessionType == World.SessionTypeEnum.Creator)
 		{
@@ -143,11 +166,17 @@ public sealed partial class IOService : Instance
 	public string[] ListProjectFiles()
 	{
 #if CREATOR
-		string[] files = Directory.GetFiles(Root.LinkedSession.ProjectFolderPath, "*", SearchOption.AllDirectories);
+		string[] files = Directory.GetFiles(
+			Root.LinkedSession.ProjectFolderPath,
+			"*",
+			SearchOption.AllDirectories
+		);
 		List<string> finalFiles = [];
 		foreach (string item in files)
 		{
-			finalFiles.Add(Path.GetRelativePath(Root.LinkedSession.ProjectFolderPath, item).SanitizePath());
+			finalFiles.Add(
+				Path.GetRelativePath(Root.LinkedSession.ProjectFolderPath, item).SanitizePath()
+			);
 		}
 		return [.. finalFiles];
 #else
@@ -159,17 +188,19 @@ public sealed partial class IOService : Instance
 	public byte[]? ReadBytesFromID(string id)
 	{
 		string? path = GetPathFromID(id);
-		if (path == null) return null;
+		if (path == null)
+			return null;
 		return ReadBytesFromPath(path);
 	}
-
 
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IORead)]
 	public string? GetPathFromID(string indexID)
 	{
 		if (indexID.StartsWith("temp:"))
-			if (TempIndexToFile.TryGetValue(indexID, out string? spath)) return spath;
-		if (IndexToFile.TryGetValue(indexID, out string? path)) return path;
+			if (TempIndexToFile.TryGetValue(indexID, out string? spath))
+				return spath;
+		if (IndexToFile.TryGetValue(indexID, out string? path))
+			return path;
 		return null;
 	}
 
@@ -177,9 +208,11 @@ public sealed partial class IOService : Instance
 	{
 		// check temp first
 		if (path.StartsWith("@temp"))
-			if (TempFileToIndex.TryGetValue(path, out string? sid)) return sid;
+			if (TempFileToIndex.TryGetValue(path, out string? sid))
+				return sid;
 
-		if (FileToIndex.TryGetValue(path, out string? id)) return id;
+		if (FileToIndex.TryGetValue(path, out string? id))
+			return id;
 		string newId = Guid.NewGuid().ToString();
 
 #if CREATOR
@@ -212,7 +245,9 @@ public sealed partial class IOService : Instance
 	{
 		string extension = Path.GetExtension(sourcePath).TrimStart('.').ToLowerInvariant();
 		if (!AllowedExtensions.Contains(extension))
-			throw new InvalidOperationException($"Files with the .{extension} extension cannot be imported.");
+			throw new InvalidOperationException(
+				$"Files with the .{extension} extension cannot be imported."
+			);
 		if (!File.Exists(sourcePath))
 			throw new FileNotFoundException("The selected file no longer exists.", sourcePath);
 		string temporaryPath = $"@temp/{Guid.NewGuid():N}.{extension}";
@@ -232,7 +267,9 @@ public sealed partial class IOService : Instance
 			TempFileToIndex.Remove(path);
 		}
 		string absolutePath = Path.GetFullPath(Path.Join(TempFilePath, path));
-		if (PathUtils.IsPathInsideDirectory(absolutePath, TempFilePath) && File.Exists(absolutePath))
+		if (
+			PathUtils.IsPathInsideDirectory(absolutePath, TempFilePath) && File.Exists(absolutePath)
+		)
 			File.Delete(absolutePath);
 	}
 #endif

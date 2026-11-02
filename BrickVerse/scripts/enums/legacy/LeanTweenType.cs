@@ -37,5 +37,5 @@ public enum LeanTweenType
 	easeInElastic,
 	easeOutElastic,
 	easeInOutElastic,
-	easeSpring
+	easeSpring,
 }

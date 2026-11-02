@@ -8,10 +8,17 @@ namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class IntroPage : Control
 {
-	[Export] public string ImageName = "";
-	[Export] private Button? _closeBtn = null!;
-	[Export] private Button? _prevBtn = null!;
-	[Export] private Button? _nextBtn = null!;
+	[Export]
+	public string ImageName = "";
+
+	[Export]
+	private Button? _closeBtn = null!;
+
+	[Export]
+	private Button? _prevBtn = null!;
+
+	[Export]
+	private Button? _nextBtn = null!;
 
 	public override void _Ready()
 	{

@@ -2,15 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
-using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Datamodel.Data;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
-
 
 [MemoryPackable]
 public partial class ColorSeriesDto
@@ -28,7 +27,7 @@ public partial class ColorSeriesDto
 			Points[i] = new GradientPointDto
 			{
 				Offset = colorRange.GetOffset(i),
-				Color = colorRange.GetColor(i).ToHtml()
+				Color = colorRange.GetColor(i).ToHtml(),
 			};
 		}
 	}
@@ -56,10 +55,13 @@ public partial class GradientPointDto
 	public string Color { get; set; } = "#ffffffff";
 }
 
-
 public class ColorSeriesJsonConverter : JsonConverter<ColorSeries>
 {
-	public override ColorSeries Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override ColorSeries Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartObject)
 		{
@@ -130,7 +132,11 @@ public class ColorSeriesJsonConverter : JsonConverter<ColorSeries>
 		throw new JsonException("Unexpected end of JSON");
 	}
 
-	public override void Write(Utf8JsonWriter writer, ColorSeries value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		ColorSeries value,
+		JsonSerializerOptions options
+	)
 	{
 		writer.WriteStartObject();
 		writer.WritePropertyName("Points");

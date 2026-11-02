@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -124,7 +124,12 @@ public sealed partial class Tool : RigidBody
 
 	private void OnToolTouched(Physical physical)
 	{
-		if (physical is NPC npc && _holder == null && Parent is not (Inventory or Player) && _equipTimer.IsStopped())
+		if (
+			physical is NPC npc
+			&& _holder == null
+			&& Parent is not (Inventory or Player)
+			&& _equipTimer.IsStopped()
+		)
 		{
 			npc.EquipTool(this);
 		}
@@ -143,10 +148,7 @@ public sealed partial class Tool : RigidBody
 		{
 			CanCollide = true;
 			Anchored = false;
-			_toolCollision = new()
-			{
-				Shape = new BoxShape3D() { Size = GetBounds().Size },
-			};
+			_toolCollision = new() { Shape = new BoxShape3D() { Size = GetBounds().Size } };
 			GDNode.AddChild(_toolCollision, @internal: Node.InternalMode.Back);
 			AddCollisionShape(_toolCollision);
 		}
@@ -203,7 +205,10 @@ public sealed partial class Tool : RigidBody
 		_hasDynChild = Children.Any(i => i is Dynamic);
 		if (Holder != null && Holder.Character != null)
 		{
-			Holder.Character.SetBlendValue(CharacterModel.CharacterModelBlendEnum.ToolHoldRight, _hasDynChild ? 1 : 0);
+			Holder.Character.SetBlendValue(
+				CharacterModel.CharacterModelBlendEnum.ToolHoldRight,
+				_hasDynChild ? 1 : 0
+			);
 		}
 	}
 
@@ -215,7 +220,8 @@ public sealed partial class Tool : RigidBody
 
 	public void OnInput(InputEvent @event)
 	{
-		if (Holder != Root.Players.LocalPlayer) return;
+		if (Holder != Root.Players.LocalPlayer)
+			return;
 		if (@event.IsActionPressed("activate"))
 		{
 			Activate();
@@ -249,26 +255,32 @@ public sealed partial class Tool : RigidBody
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable, CallLocal = true)]
 	private void NetRecvActivate()
 	{
-		if (Holder == null) return;
+		if (Holder == null)
+			return;
 
 		// Only allow from the holder
-		if (Holder is Player plr && RemoteSenderId != plr.PeerID) return;
+		if (Holder is Player plr && RemoteSenderId != plr.PeerID)
+			return;
 
 		// Only allow from server if is NPC
-		if (Holder is not Player && Holder is not null && RemoteSenderId != 1) return;
+		if (Holder is not Player && Holder is not null && RemoteSenderId != 1)
+			return;
 		Activated.Invoke();
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable, CallLocal = true)]
 	private void NetRecvDeactivate()
 	{
-		if (Holder == null) return;
+		if (Holder == null)
+			return;
 
 		// Only allow from the holder
-		if (Holder is Player plr && RemoteSenderId != plr.PeerID) return;
+		if (Holder is Player plr && RemoteSenderId != plr.PeerID)
+			return;
 
 		// Only allow from server if is NPC
-		if (Holder is not Player && Holder is not null && RemoteSenderId != 1) return;
+		if (Holder is not Player && Holder is not null && RemoteSenderId != 1)
+			return;
 		Deactivated.Invoke();
 	}
 
@@ -358,6 +370,7 @@ public sealed partial class Tool : RigidBody
 
 	internal void InvokeDropped()
 	{
-		if (_dropEquipCooldown > 0.05) _equipTimer.Start(_dropEquipCooldown);
+		if (_dropEquipCooldown > 0.05)
+			_equipTimer.Start(_dropEquipCooldown);
 	}
 }

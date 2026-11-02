@@ -75,7 +75,8 @@ public partial class NPC : Physical
 		set
 		{
 			_stepHeight = Mathf.Clamp(value, 0f, 4f);
-			if (CharBody3D != null) CharBody3D.FloorSnapLength = _stepHeight;
+			if (CharBody3D != null)
+				CharBody3D.FloorSnapLength = _stepHeight;
 			OnPropertyChanged();
 		}
 	}
@@ -535,7 +536,12 @@ public partial class NPC : Physical
 
 	public override Node CreateGDNode()
 	{
-		return new CharacterBody3D() { FloorMaxAngle = Mathf.DegToRad(80f), FloorSnapLength = _stepHeight, FloorStopOnSlope = true };
+		return new CharacterBody3D()
+		{
+			FloorMaxAngle = Mathf.DegToRad(80f),
+			FloorSnapLength = _stepHeight,
+			FloorStopOnSlope = true,
+		};
 	}
 
 	public override void InitGDNode()
@@ -1006,33 +1012,59 @@ public partial class NPC : Physical
 	[ScriptMethod]
 	public bool TryStepUp(float delta = 0.0166667f)
 	{
-		if (CharBody3D == null || _stepHeight <= 0 || CharBody3D.GetSlideCollisionCount() == 0) return false;
+		if (CharBody3D == null || _stepHeight <= 0 || CharBody3D.GetSlideCollisionCount() == 0)
+			return false;
 		Vector3 horizontalVelocity = CharacterVelocity.Slide(Vertical);
-		if (horizontalVelocity.LengthSquared() < 0.0001f) return false;
+		if (horizontalVelocity.LengthSquared() < 0.0001f)
+			return false;
 
 		bool hitWall = false;
 		for (int i = 0; i < CharBody3D.GetSlideCollisionCount(); i++)
-			if (Mathf.Abs(CharBody3D.GetSlideCollision(i).GetNormal().Dot(Vertical)) < 0.2f) { hitWall = true; break; }
-		if (!hitWall) return false;
+			if (Mathf.Abs(CharBody3D.GetSlideCollision(i).GetNormal().Dot(Vertical)) < 0.2f)
+			{
+				hitWall = true;
+				break;
+			}
+		if (!hitWall)
+			return false;
 
 		const float margin = 0.03f;
 		Transform3D start = CharBody3D.GlobalTransform;
 		Vector3 upMotion = Vertical * (_stepHeight + margin);
-		if (CharBody3D.TestMove(start, upMotion, new KinematicCollision3D(), margin, true)) return false;
+		if (CharBody3D.TestMove(start, upMotion, new KinematicCollision3D(), margin, true))
+			return false;
 
-		Transform3D raised = start; raised.Origin += upMotion;
-		float forwardDistance = Mathf.Clamp(horizontalVelocity.Length() * Mathf.Max(delta, 0.001f), 0.06f, 0.65f);
+		Transform3D raised = start;
+		raised.Origin += upMotion;
+		float forwardDistance = Mathf.Clamp(
+			horizontalVelocity.Length() * Mathf.Max(delta, 0.001f),
+			0.06f,
+			0.65f
+		);
 		Vector3 forwardMotion = horizontalVelocity.Normalized() * forwardDistance;
-		if (CharBody3D.TestMove(raised, forwardMotion, new KinematicCollision3D(), margin, true)) return false;
+		if (CharBody3D.TestMove(raised, forwardMotion, new KinematicCollision3D(), margin, true))
+			return false;
 
-		Transform3D forward = raised; forward.Origin += forwardMotion;
+		Transform3D forward = raised;
+		forward.Origin += forwardMotion;
 		KinematicCollision3D floorHit = new();
-		if (!CharBody3D.TestMove(forward, -Vertical * (_stepHeight + margin * 2), floorHit, margin, true)) return false;
+		if (
+			!CharBody3D.TestMove(
+				forward,
+				-Vertical * (_stepHeight + margin * 2),
+				floorHit,
+				margin,
+				true
+			)
+		)
+			return false;
 		Vector3 floorNormal = floorHit.GetNormal();
-		if (floorNormal.Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle)) return false;
+		if (floorNormal.Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle))
+			return false;
 		Vector3 landing = forward.Origin + floorHit.GetTravel() + Vertical * margin;
 		float rise = (landing - start.Origin).Dot(Vertical);
-		if (rise <= margin || rise > _stepHeight + margin) return false;
+		if (rise <= margin || rise > _stepHeight + margin)
+			return false;
 
 		start.Origin = landing;
 		CharBody3D.GlobalTransform = start;
@@ -1042,12 +1074,25 @@ public partial class NPC : Physical
 
 	internal void TryTraverseSteps(float delta, bool wasGrounded)
 	{
-		if (!wasGrounded || CharacterVelocity.Dot(Vertical) > 0 || _stepHeight <= 0) return;
-		if (TryStepUp(delta)) return;
-		if (CharBody3D.IsOnFloor()) return;
+		if (!wasGrounded || CharacterVelocity.Dot(Vertical) > 0 || _stepHeight <= 0)
+			return;
+		if (TryStepUp(delta))
+			return;
+		if (CharBody3D.IsOnFloor())
+			return;
 		KinematicCollision3D floorHit = new();
-		if (!CharBody3D.TestMove(CharBody3D.GlobalTransform, -Vertical * (_stepHeight + 0.03f), floorHit, 0.03f, true)) return;
-		if (floorHit.GetNormal().Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle)) return;
+		if (
+			!CharBody3D.TestMove(
+				CharBody3D.GlobalTransform,
+				-Vertical * (_stepHeight + 0.03f),
+				floorHit,
+				0.03f,
+				true
+			)
+		)
+			return;
+		if (floorHit.GetNormal().Dot(Vertical) < Mathf.Cos(CharBody3D.FloorMaxAngle))
+			return;
 		Transform3D transform = CharBody3D.GlobalTransform;
 		transform.Origin += floorHit.GetTravel() + Vertical * 0.03f;
 		CharBody3D.GlobalTransform = transform;
@@ -1119,7 +1164,8 @@ public partial class NPC : Physical
 		}
 
 		IsSitting = true;
-		OverrideNetworkTransform = true; ;
+		OverrideNetworkTransform = true;
+		;
 		SetPhysicsProcess(true);
 		SittingIn = seat;
 		seat.Occupant = this;

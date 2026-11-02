@@ -9,7 +9,6 @@ using BrickVerse.Client;
 using BrickVerse.DocsGen;
 using Godot;
 using static BrickVerse.Shared.Globals;
-
 #if DEBUG
 using BrickVerse.DatamodelTest;
 #endif
@@ -25,9 +24,13 @@ public partial class AppEntry : Node
 		bool isCreator = cmdargs.ContainsKey("creator");
 		bool isLtChild = cmdargs.ContainsKey("ltchild");
 		bool isSolo = cmdargs.ContainsKey("solo");
-		bool hasOnlyStartupSwitches = cmdargs.Count == 0
-			|| cmdargs.Keys.All(static key => key.Equals("console", StringComparison.OrdinalIgnoreCase));
-		bool isStandaloneClientShell = OS.HasFeature("client")
+		bool hasOnlyStartupSwitches =
+			cmdargs.Count == 0
+			|| cmdargs.Keys.All(static key =>
+				key.Equals("console", StringComparison.OrdinalIgnoreCase)
+			);
+		bool isStandaloneClientShell =
+			OS.HasFeature("client")
 			&& !Globals.IsServerBuild
 			&& !OS.HasFeature("creator")
 			&& !OS.HasFeature("renderer")

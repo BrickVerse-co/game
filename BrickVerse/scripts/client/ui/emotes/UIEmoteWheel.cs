@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -18,12 +18,23 @@ public partial class UIEmoteWheel : Control
 	private PackedScene _emoteItemPacked = null!;
 	private PackedScene _dividerPacked = null!;
 
-	[Export] private Control _emoteCursor = null!;
-	[Export] private Control _emotePivot = null!;
-	[Export] private Control _emoteTarget = null!;
-	[Export] private Control _emoteContainer = null!;
-	[Export] private Button _closeButton = null!;
-	[Export] private AnimationPlayer _animPlay = null!;
+	[Export]
+	private Control _emoteCursor = null!;
+
+	[Export]
+	private Control _emotePivot = null!;
+
+	[Export]
+	private Control _emoteTarget = null!;
+
+	[Export]
+	private Control _emoteContainer = null!;
+
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private AnimationPlayer _animPlay = null!;
 
 	private readonly Dictionary<string, UIEmoteItem> _keyToItem = [];
 	private UIEmoteItem? _oldItem = null;
@@ -56,7 +67,8 @@ public partial class UIEmoteWheel : Control
 
 	public void ToggleEmoteWheel()
 	{
-		if (!UseEmoteWheel) return;
+		if (!UseEmoteWheel)
+			return;
 		EmoteWheelActive = !EmoteWheelActive;
 		if (EmoteWheelActive)
 		{
@@ -70,7 +82,8 @@ public partial class UIEmoteWheel : Control
 
 	public void OpenEmoteWheel()
 	{
-		if (!UseEmoteWheel) return;
+		if (!UseEmoteWheel)
+			return;
 		GrabFocus();
 		EmoteWheelActive = true;
 		_oldItem?.IsActive = false;
@@ -88,7 +101,8 @@ public partial class UIEmoteWheel : Control
 	private void PlaceEmotes()
 	{
 		int count = Player.EmoteWheelList.Length;
-		if (count == 0) return;
+		if (count == 0)
+			return;
 		float step = Mathf.Tau / count;
 		for (int i = 0; i < count; i++)
 		{
@@ -100,7 +114,8 @@ public partial class UIEmoteWheel : Control
 	private void PlaceDividers()
 	{
 		int count = Player.EmoteWheelList.Length;
-		if (count < 2 || _dividerPacked == null) return;
+		if (count < 2 || _dividerPacked == null)
+			return;
 		float step = Mathf.Tau / count;
 		for (int i = 0; i < count; i++)
 		{
@@ -119,7 +134,8 @@ public partial class UIEmoteWheel : Control
 	{
 		if (@event.IsActionPressed("ui_accept") || @event.IsActionPressed("lmb"))
 		{
-			if (!EmoteWheelActive) return;
+			if (!EmoteWheelActive)
+				return;
 			if (!_hoveringClose)
 			{
 				string selected = GetSelectedEmoteName();
@@ -129,7 +145,8 @@ public partial class UIEmoteWheel : Control
 		}
 		if (@event.IsActionPressed("toggle_emote"))
 		{
-			if (!CoreUIRoot.Singleton.Root.Input.IsGameFocused && !EmoteWheelActive) return;
+			if (!CoreUIRoot.Singleton.Root.Input.IsGameFocused && !EmoteWheelActive)
+				return;
 			ToggleEmoteWheel();
 		}
 		base._Input(@event);
@@ -187,7 +204,10 @@ public partial class UIEmoteWheel : Control
 
 	public override void _Process(double delta)
 	{
-		if (!EmoteWheelActive) { return; }
+		if (!EmoteWheelActive)
+		{
+			return;
+		}
 		float angle = GetCursorAngle();
 
 		_emoteCursor.Rotation = angle;

@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
 using System.Collections.Generic;
+using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -104,8 +104,11 @@ public abstract partial class Entity : RigidBody
 	}
 
 	internal virtual (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry() => [];
+
 	internal virtual void OnNegatedChanged() { }
-	protected Color GetVisualColor(Color color) => _isNegated ? new Color(color, Mathf.Min(color.A, 0.48f)) : color;
+
+	protected Color GetVisualColor(Color color) =>
+		_isNegated ? new Color(color, Mathf.Min(color.A, 0.48f)) : color;
 
 	internal void UpdateNegateHighlight()
 	{
@@ -115,7 +118,8 @@ public abstract partial class Entity : RigidBody
 			_negateHighlight.QueueFree();
 			_negateHighlight = null;
 		}
-		if (!_isNegated || GDNode3D == null || !GodotObject.IsInstanceValid(GDNode3D)) return;
+		if (!_isNegated || GDNode3D == null || !GodotObject.IsInstanceValid(GDNode3D))
+			return;
 
 		_negateHighlight = new Node3D { Name = "NegateHighlight" };
 		GDNode3D.AddChild(_negateHighlight, false, Node.InternalMode.Back);
@@ -130,7 +134,12 @@ public abstract partial class Entity : RigidBody
 		Transform3D inverse = GDNode3D.GlobalTransform.AffineInverse();
 		foreach ((Godot.Mesh mesh, Transform3D transform) in GetBooleanGeometry())
 		{
-			MeshInstance3D overlay = new() { Mesh = mesh, MaterialOverride = material, Transform = inverse * transform };
+			MeshInstance3D overlay = new()
+			{
+				Mesh = mesh,
+				MaterialOverride = material,
+				Transform = inverse * transform,
+			};
 			_negateHighlight.AddChild(overlay);
 		}
 #endif

@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Networking.Interfaces;
-using BrickVerse.Shared;
 using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
+using BrickVerse.Networking.Interfaces;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -116,14 +116,22 @@ public static class OfficialClientIntegrity
 
 	private static string? FindPackagedManagedBinary(string? root)
 	{
-		if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return null;
+		if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+			return null;
 
 		string direct = Path.Combine(root, "BrickVerse.dll");
-		if (File.Exists(direct)) return direct;
+		if (File.Exists(direct))
+			return direct;
 
 		try
 		{
-			foreach (string candidate in Directory.EnumerateFiles(root, "BrickVerse.dll", SearchOption.AllDirectories))
+			foreach (
+				string candidate in Directory.EnumerateFiles(
+					root,
+					"BrickVerse.dll",
+					SearchOption.AllDirectories
+				)
+			)
 			{
 				return candidate;
 			}
@@ -172,12 +180,15 @@ public static class OfficialClientIntegrity
 /// </summary>
 internal sealed class OfficialNetworkIntegrityCheck : IIntegrityCheck
 {
-	private static readonly byte[] Pepper = Encoding.UTF8.GetBytes("BrickVerse.NetworkIntegrity.v1");
+	private static readonly byte[] Pepper = Encoding.UTF8.GetBytes(
+		"BrickVerse.NetworkIntegrity.v1"
+	);
 
 	public byte[] Generate(string platform)
 	{
 		ClientIntegrityProof proof = OfficialClientIntegrity.CreateProof();
-		string payload = string.Join('|',
+		string payload = string.Join(
+			'|',
 			platform,
 			proof.Version,
 			proof.Platform,
@@ -200,7 +211,5 @@ internal sealed class OfficialNetworkIntegrityCheck : IIntegrityCheck
 		return !string.IsNullOrWhiteSpace(platform) && pk is { Length: 32 };
 	}
 
-	public void Dispose()
-	{
-	}
+	public void Dispose() { }
 }

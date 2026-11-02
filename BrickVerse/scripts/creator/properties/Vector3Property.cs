@@ -2,14 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
 public sealed partial class Vector3Property : HBoxContainer, IProperty<Vector3>
 {
-
 	private SpinBox _x = null!;
 	private SpinBox _y = null!;
 	private SpinBox _z = null!;
@@ -37,7 +36,8 @@ public sealed partial class Vector3Property : HBoxContainer, IProperty<Vector3>
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (Vector3)value;
 	}
 
@@ -72,7 +72,7 @@ public sealed partial class Vector3Property : HBoxContainer, IProperty<Vector3>
 				0 => new Vector3((float)value, current.Y, current.Z),
 				1 => new Vector3(current.X, (float)value, current.Z),
 				2 => new Vector3(current.X, current.Y, (float)value),
-				_ => current
+				_ => current,
 			};
 
 			ValueChanged?.Invoke(newValue);

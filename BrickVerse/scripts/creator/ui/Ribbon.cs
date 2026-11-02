@@ -2,19 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.TeamCreate;
+using BrickVerse.Creator.UI.Docking;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using BrickVerse.Creator.TeamCreate;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BrickVerse.Creator.UI.Popups;
-using BrickVerse.Creator.UI.Docking;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -22,19 +22,43 @@ public sealed partial class Ribbon : Control
 {
 	private static readonly HashSet<string> PartInsertClasses = new(StringComparer.Ordinal)
 	{
-		"Part", "Truss", "Mesh", "EditableMesh", "Seat", "VehicleSeat",
+		"Part",
+		"Truss",
+		"Mesh",
+		"EditableMesh",
+		"Seat",
+		"VehicleSeat",
 	};
 	private static readonly HashSet<string> GuiInsertClasses = new(StringComparer.Ordinal)
 	{
-		"GUI", "GUI3D", "UIView", "UILabel", "UIButton", "UIImage", "UIVideoFrame",
-		"UITextInput", "UIHLayout", "UIVLayout", "UIHFlow", "UIVFlow", "UIGradient",
-		"UIGridLayout", "UIScrollView", "UIViewport", "UICorner", "UIStroke", "UIShadow",
+		"GUI",
+		"GUI3D",
+		"UIView",
+		"UILabel",
+		"UIButton",
+		"UIImage",
+		"UIVideoFrame",
+		"UITextInput",
+		"UIHLayout",
+		"UIVLayout",
+		"UIHFlow",
+		"UIVFlow",
+		"UIGradient",
+		"UIGridLayout",
+		"UIScrollView",
+		"UIViewport",
+		"UICorner",
+		"UIStroke",
+		"UIShadow",
 		"UIAspectRatioRestraint",
 	};
 	private static readonly HashSet<string> ScriptInsertClasses = new(StringComparer.Ordinal)
 	{
-		"ClientScript", "ServerScript", "ModuleScript",
+		"ClientScript",
+		"ServerScript",
+		"ModuleScript",
 	};
+
 	[Export]
 	private ButtonGroup _ribbonGroup = null!;
 
@@ -99,15 +123,20 @@ public sealed partial class Ribbon : Control
 		AddModelTools(model);
 		AddUITools(ui);
 
-		StyleBoxFlat colorPreview = (StyleBoxFlat)colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
+		StyleBoxFlat colorPreview = (StyleBoxFlat)
+			colorButton.GetNode<Panel>("Preview").GetThemeStylebox("panel");
 		colorButton.Pressed += () =>
 		{
-			ColorPicker.Singleton.SwitchTo(colorButton, colorPreview.BgColor, value =>
-			{
-				colorPreview.BgColor = value;
-				paintColorView.Modulate = value;
-				CreatorService.Interface.TargetPartColor = value;
-			});
+			ColorPicker.Singleton.SwitchTo(
+				colorButton,
+				colorPreview.BgColor,
+				value =>
+				{
+					colorPreview.BgColor = value;
+					paintColorView.Modulate = value;
+					CreatorService.Interface.TargetPartColor = value;
+				}
+			);
 		};
 
 		TextureRect materialPreview = materialButton.GetNode<TextureRect>("Preview/Texture");
@@ -118,7 +147,9 @@ public sealed partial class Ribbon : Control
 
 		foreach (string name in Enum.GetNames<Part.PartMaterialEnum>())
 		{
-			string previewPath = "res://assets/textures/parts/".PathJoin(name).PathJoin("albedo.jpg");
+			string previewPath = "res://assets/textures/parts/"
+				.PathJoin(name)
+				.PathJoin("albedo.jpg");
 			Texture2D? previewTex = null;
 			if (ResourceLoader.Exists(previewPath))
 			{
@@ -130,20 +161,23 @@ public sealed partial class Ribbon : Control
 		{
 			materialPreview.Texture = materialContainer.GetItemIcon((int)idx);
 			string materialName = materialContainer.GetItemText((int)idx);
-			if (Enum.TryParse(typeof(Part.PartMaterialEnum), materialName, out object? PartMaterialEnum))
+			if (
+				Enum.TryParse(
+					typeof(Part.PartMaterialEnum),
+					materialName,
+					out object? PartMaterialEnum
+				)
+			)
 			{
-				CreatorService.Interface.TargetPartMaterial = (Part.PartMaterialEnum)PartMaterialEnum;
+				CreatorService.Interface.TargetPartMaterial =
+					(Part.PartMaterialEnum)PartMaterialEnum;
 			}
 		};
 
 		materialButton.Pressed += () =>
 		{
 			Vector2 popupPosition = materialPopupSpawn.GlobalPosition;
-			Rect2I rect = new()
-			{
-				Position = (Vector2I)popupPosition,
-				Size = materialPopup.Size
-			};
+			Rect2I rect = new() { Position = (Vector2I)popupPosition, Size = materialPopup.Size };
 			materialPopup.Popup(rect);
 		};
 		materialContainer.Select(0);
@@ -157,7 +191,8 @@ public sealed partial class Ribbon : Control
 		// Ribbon can become ready before sibling dock hosts. Defer dynamic panel
 		// insertion so DockHost has initialized its body and tab bar first.
 		Callable.From(AddTeamChatPanel).CallDeferred();
-		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged += RefreshTeamChatTab;
+		if (TeamCreateService.Instance != null)
+			TeamCreateService.Instance.StateChanged += RefreshTeamChatTab;
 		RefreshTeamChatTab();
 
 		forgeButton.Pressed += () => DockManager.OpenPanel("Forge");
@@ -173,116 +208,341 @@ public sealed partial class Ribbon : Control
 		OnCurrentControlChanged(Tabs.Singleton.CurrentControl);
 
 		_ribbonGroup.Pressed += OnRibbonChanged;
-		_selectButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Select); };
-		_moveButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Move); };
-		_rotateButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Rotate); };
-		_scaleButton.Toggled += pressed => { if (pressed) ActivateTool(ToolModeEnum.Scale); };
+		_selectButton.Toggled += pressed =>
+		{
+			if (pressed)
+				ActivateTool(ToolModeEnum.Select);
+		};
+		_moveButton.Toggled += pressed =>
+		{
+			if (pressed)
+				ActivateTool(ToolModeEnum.Move);
+		};
+		_rotateButton.Toggled += pressed =>
+		{
+			if (pressed)
+				ActivateTool(ToolModeEnum.Rotate);
+		};
+		_scaleButton.Toggled += pressed =>
+		{
+			if (pressed)
+				ActivateTool(ToolModeEnum.Scale);
+		};
 	}
 
-	private static TextEditor.TextEditorContainer? ActiveTextEditor() => Tabs.Singleton?.CurrentControl as TextEditor.TextEditorContainer;
+	private static TextEditor.TextEditorContainer? ActiveTextEditor() =>
+		Tabs.Singleton?.CurrentControl as TextEditor.TextEditorContainer;
 
 	public override void _Process(double delta)
 	{
 		Instance[] selected = World.Current?.CreatorContext?.Selections?.GetSelected() ?? [];
 		string signature = string.Join(',', selected.Select(instance => instance.ObjectID));
-		if (signature == _lastSelectionSignature) return;
+		if (signature == _lastSelectionSignature)
+			return;
 		_lastSelectionSignature = signature;
-		if (selected.Length == 0) return;
-		_taskTabs.CurrentTab = selected.Any(instance => instance is UIField) ? 2
-			: selected.Any(instance => instance is BrickVerse.Datamodel.Script) ? 3 : 1;
+		if (selected.Length == 0)
+			return;
+		_taskTabs.CurrentTab =
+			selected.Any(instance => instance is UIField) ? 2
+			: selected.Any(instance => instance is BrickVerse.Datamodel.Script) ? 3
+			: 1;
 	}
 
 	private void FormatActiveDocument() => ActiveTextEditor()?.EditorRoot.FormatDocument();
+
 	private void SaveActiveDocument() => ActiveTextEditor()?.EditorRoot.SaveDocument();
+
 	private void FindInActiveDocument() => ActiveTextEditor()?.EditorRoot.OpenFind();
 
 	private void AddModelTools(HBoxContainer model)
 	{
-		AddModelAction(model, "Group", "group", "Group as a Model or Folder", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			menu.AddItem("Group as Model", 0); menu.AddItem("Group as Folder", 1);
-			menu.IdPressed += id => World.Current?.CreatorContext.Selections.GroupSelected(id == 1 ? CreatorHistory.GroupAsEnum.Folder : CreatorHistory.GroupAsEnum.Model);
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(model, "Pivot", "pivot", "Edit the selected object's local pivot with move and rotate handles", button => button.Pressed += () => ActivateTool(ToolModeEnum.Pivot));
-		AddModelAction(model, "Reset Pivot", "reset-pivot", "Restore selected pivots to their object origins", button => button.Pressed += ResetPivots);
-		AddModelAction(model, "Anchor", "anchor", "Anchor or unanchor selected physical instances", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			menu.AddItem("Toggle Selected", 0); menu.AddItem("Anchor All Descendants", 1); menu.AddItem("Unanchor All Descendants", 2);
-			menu.IdPressed += id => SetAnchored((int)id);
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(model, "Lock", "lock", "Lock or unlock selected instances", button => button.Pressed += () => World.Current?.CreatorContext.Selections.ToggleLockSelected());
-		AddModelAction(model, "Align", "align", "Set World or Local transform orientation", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			menu.AddItem("World orientation", 0); menu.AddItem("Local orientation", 1); menu.AddItem("Align rotation to world", 2);
-			menu.IdPressed += id => SetAlignment((int)id);
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(model, "Weld", "weld", "Create a Weld between two selected physical instances", button => button.Pressed += CreateWeld);
-		AddModelAction(model, "Effects", "effects", "Insert an effect, attachment, or light", AddEffectsMenu);
+		AddModelAction(
+			model,
+			"Group",
+			"group",
+			"Group as a Model or Folder",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				menu.AddItem("Group as Model", 0);
+				menu.AddItem("Group as Folder", 1);
+				menu.IdPressed += id =>
+					World.Current?.CreatorContext.Selections.GroupSelected(
+						id == 1
+							? CreatorHistory.GroupAsEnum.Folder
+							: CreatorHistory.GroupAsEnum.Model
+					);
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			model,
+			"Pivot",
+			"pivot",
+			"Edit the selected object's local pivot with move and rotate handles",
+			button => button.Pressed += () => ActivateTool(ToolModeEnum.Pivot)
+		);
+		AddModelAction(
+			model,
+			"Reset Pivot",
+			"reset-pivot",
+			"Restore selected pivots to their object origins",
+			button => button.Pressed += ResetPivots
+		);
+		AddModelAction(
+			model,
+			"Anchor",
+			"anchor",
+			"Anchor or unanchor selected physical instances",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				menu.AddItem("Toggle Selected", 0);
+				menu.AddItem("Anchor All Descendants", 1);
+				menu.AddItem("Unanchor All Descendants", 2);
+				menu.IdPressed += id => SetAnchored((int)id);
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			model,
+			"Lock",
+			"lock",
+			"Lock or unlock selected instances",
+			button =>
+				button.Pressed += () =>
+					World.Current?.CreatorContext.Selections.ToggleLockSelected()
+		);
+		AddModelAction(
+			model,
+			"Align",
+			"align",
+			"Set World or Local transform orientation",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				menu.AddItem("World orientation", 0);
+				menu.AddItem("Local orientation", 1);
+				menu.AddItem("Align rotation to world", 2);
+				menu.IdPressed += id => SetAlignment((int)id);
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			model,
+			"Weld",
+			"weld",
+			"Create a Weld between two selected physical instances",
+			button => button.Pressed += CreateWeld
+		);
+		AddModelAction(
+			model,
+			"Effects",
+			"effects",
+			"Insert an effect, attachment, or light",
+			AddEffectsMenu
+		);
 	}
 
 	private enum UILayoutPreset
 	{
-		TopLeft, TopCenter, TopRight, Center, BottomLeft, BottomCenter, BottomRight,
-		FullScreen, Header, Footer, ResponsiveCard, Responsive, Fixed
+		TopLeft,
+		TopCenter,
+		TopRight,
+		Center,
+		BottomLeft,
+		BottomCenter,
+		BottomRight,
+		FullScreen,
+		Header,
+		Footer,
+		ResponsiveCard,
+		Responsive,
+		Fixed,
 	}
-	private enum UIArrange { Left, CenterX, Right, Top, CenterY, Bottom, MatchWidth, MatchHeight, MatchSize }
+
+	private enum UIArrange
+	{
+		Left,
+		CenterX,
+		Right,
+		Top,
+		CenterY,
+		Bottom,
+		MatchWidth,
+		MatchHeight,
+		MatchSize,
+	}
 
 	private readonly record struct UILayoutState(
-		Vector2 PositionOffset, Vector2 PositionRelative, Vector2 SizeOffset,
-		Vector2 SizeRelative, Vector2 PivotPoint, Vector2 MinimumSize, Vector2 MaximumSize);
+		Vector2 PositionOffset,
+		Vector2 PositionRelative,
+		Vector2 SizeOffset,
+		Vector2 SizeRelative,
+		Vector2 PivotPoint,
+		Vector2 MinimumSize,
+		Vector2 MaximumSize
+	);
 
 	private void AddUITools(HBoxContainer ui)
 	{
-		AddModelAction(ui, "Layout", "align", "Apply responsive anchor and layout presets", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			string[] labels = ["Top Left", "Top Center", "Top Right", "Center", "Bottom Left", "Bottom Center", "Bottom Right", "Stretch Full Screen", "Stretch Header", "Stretch Footer", "Responsive Center Card"];
-			for (int i = 0; i < labels.Length; i++) menu.AddItem(labels[i], i);
-			menu.AddSeparator();
-			menu.AddItem("Convert Current Layout to Responsive", (int)UILayoutPreset.Responsive);
-			menu.AddItem("Convert Current Layout to Fixed Pixels", (int)UILayoutPreset.Fixed);
-			menu.IdPressed += id => ApplyUILayout((UILayoutPreset)id);
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(ui, "Responsive", "scale", "Convert the current visual rectangle to device-independent percentages", button => button.Pressed += () => ApplyUILayout(UILayoutPreset.Responsive));
-		AddModelAction(ui, "Arrange", "align", "Align UI selections or match their sizes to the first selected item", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			string[] labels = ["Align Left", "Align Horizontal Centers", "Align Right", "Align Top", "Align Vertical Centers", "Align Bottom", "Match Width", "Match Height", "Match Size"];
-			for (int i = 0; i < labels.Length; i++) menu.AddItem(labels[i], i);
-			menu.IdPressed += id => ArrangeUI((UIArrange)id);
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(ui, "Constraints", "scale", "Set minimum and maximum responsive size constraints", button =>
-		{
-			PopupMenu menu = new(); button.AddChild(menu);
-			menu.AddItem("Use Current Size as Minimum", 0); menu.AddItem("Use Current Size as Maximum", 1); menu.AddItem("Clear Size Constraints", 2);
-			menu.IdPressed += ApplyUIConstraints;
-			button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
-		});
-		AddModelAction(ui, "Preview", "insert", "Preview common phone, tablet, desktop, console, and safe-area sizes", button => button.Pressed += DeviceEmulatorPopup.Open);
+		AddModelAction(
+			ui,
+			"Layout",
+			"align",
+			"Apply responsive anchor and layout presets",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				string[] labels =
+				[
+					"Top Left",
+					"Top Center",
+					"Top Right",
+					"Center",
+					"Bottom Left",
+					"Bottom Center",
+					"Bottom Right",
+					"Stretch Full Screen",
+					"Stretch Header",
+					"Stretch Footer",
+					"Responsive Center Card",
+				];
+				for (int i = 0; i < labels.Length; i++)
+					menu.AddItem(labels[i], i);
+				menu.AddSeparator();
+				menu.AddItem(
+					"Convert Current Layout to Responsive",
+					(int)UILayoutPreset.Responsive
+				);
+				menu.AddItem("Convert Current Layout to Fixed Pixels", (int)UILayoutPreset.Fixed);
+				menu.IdPressed += id => ApplyUILayout((UILayoutPreset)id);
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			ui,
+			"Responsive",
+			"scale",
+			"Convert the current visual rectangle to device-independent percentages",
+			button => button.Pressed += () => ApplyUILayout(UILayoutPreset.Responsive)
+		);
+		AddModelAction(
+			ui,
+			"Arrange",
+			"align",
+			"Align UI selections or match their sizes to the first selected item",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				string[] labels =
+				[
+					"Align Left",
+					"Align Horizontal Centers",
+					"Align Right",
+					"Align Top",
+					"Align Vertical Centers",
+					"Align Bottom",
+					"Match Width",
+					"Match Height",
+					"Match Size",
+				];
+				for (int i = 0; i < labels.Length; i++)
+					menu.AddItem(labels[i], i);
+				menu.IdPressed += id => ArrangeUI((UIArrange)id);
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			ui,
+			"Constraints",
+			"scale",
+			"Set minimum and maximum responsive size constraints",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				menu.AddItem("Use Current Size as Minimum", 0);
+				menu.AddItem("Use Current Size as Maximum", 1);
+				menu.AddItem("Clear Size Constraints", 2);
+				menu.IdPressed += ApplyUIConstraints;
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(
+						button.GlobalPosition + new Vector2(0, button.Size.Y)
+					);
+					menu.Popup();
+				};
+			}
+		);
+		AddModelAction(
+			ui,
+			"Preview",
+			"insert",
+			"Preview common phone, tablet, desktop, console, and safe-area sizes",
+			button => button.Pressed += DeviceEmulatorPopup.Open
+		);
 	}
 
 	private static void ArrangeUI(UIArrange operation)
 	{
-		World? world = World.Current; if (world == null) return;
-		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
+		World? world = World.Current;
+		if (world == null)
+			return;
+		UIField[] fields = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<UIField>()
+			.ToArray();
 		if (fields.Length < 2)
 		{
-			CreatorService.Interface.PopupAlert("Select at least two UI instances. The first selected instance is the reference.", "Arrange UI");
+			CreatorService.Interface.PopupAlert(
+				"Select at least two UI instances. The first selected instance is the reference.",
+				"Arrange UI"
+			);
 			return;
 		}
 		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
-		UIField reference = fields[0]; Rect2 referenceRect = new(reference.AbsolutePosition, reference.AbsoluteSize);
+		UIField reference = fields[0];
+		Rect2 referenceRect = new(reference.AbsolutePosition, reference.AbsoluteSize);
 		for (int i = 1; i < fields.Length; i++)
 		{
-			UIField field = fields[i]; Rect2 rect = new(field.AbsolutePosition, field.AbsoluteSize);
+			UIField field = fields[i];
+			Rect2 rect = new(field.AbsolutePosition, field.AbsoluteSize);
 			Vector2 positionDelta = operation switch
 			{
 				UIArrange.Left => new(referenceRect.Position.X - rect.Position.X, 0),
@@ -291,7 +551,7 @@ public sealed partial class Ribbon : Control
 				UIArrange.Top => new(0, referenceRect.Position.Y - rect.Position.Y),
 				UIArrange.CenterY => new(0, referenceRect.GetCenter().Y - rect.GetCenter().Y),
 				UIArrange.Bottom => new(0, referenceRect.End.Y - rect.End.Y),
-				_ => Vector2.Zero
+				_ => Vector2.Zero,
 			};
 			field.PositionOffset += positionDelta;
 			Vector2 sizeDelta = operation switch
@@ -299,17 +559,40 @@ public sealed partial class Ribbon : Control
 				UIArrange.MatchWidth => new(referenceRect.Size.X - rect.Size.X, 0),
 				UIArrange.MatchHeight => new(0, referenceRect.Size.Y - rect.Size.Y),
 				UIArrange.MatchSize => referenceRect.Size - rect.Size,
-				_ => Vector2.Zero
+				_ => Vector2.Zero,
 			};
 			field.SizeOffset += sizeDelta;
 		}
 		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
-		world.CreatorContext.History.RecordAppliedAction("Arrange UI", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
+		world.CreatorContext.History.RecordAppliedAction(
+			"Arrange UI",
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], after[i]);
+				}
+			),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], before[i]);
+				}
+			)
+		);
 	}
 
-	private static UILayoutState CaptureUILayout(UIField field) => new(
-		field.PositionOffset, field.PositionRelative, field.SizeOffset,
-		field.SizeRelative, field.PivotPoint, field.MinimumSize, field.MaximumSize);
+	private static UILayoutState CaptureUILayout(UIField field) =>
+		new(
+			field.PositionOffset,
+			field.PositionRelative,
+			field.SizeOffset,
+			field.SizeRelative,
+			field.PivotPoint,
+			field.MinimumSize,
+			field.MaximumSize
+		);
 
 	private static void RestoreUILayout(UIField field, UILayoutState state)
 	{
@@ -324,38 +607,99 @@ public sealed partial class Ribbon : Control
 
 	private static void ApplyUIConstraints(long command)
 	{
-		World? world = World.Current; if (world == null) return;
-		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
-		if (fields.Length == 0) { CreatorService.Interface.PopupAlert("Select one or more UI instances first.", "UI Constraints"); return; }
+		World? world = World.Current;
+		if (world == null)
+			return;
+		UIField[] fields = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<UIField>()
+			.ToArray();
+		if (fields.Length == 0)
+		{
+			CreatorService.Interface.PopupAlert(
+				"Select one or more UI instances first.",
+				"UI Constraints"
+			);
+			return;
+		}
 		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
 		foreach (UIField field in fields)
 		{
-			if (command == 0) field.MinimumSize = field.AbsoluteSize;
-			else if (command == 1) field.MaximumSize = field.AbsoluteSize;
-			else { field.MinimumSize = Vector2.Zero; field.MaximumSize = Vector2.Zero; }
+			if (command == 0)
+				field.MinimumSize = field.AbsoluteSize;
+			else if (command == 1)
+				field.MaximumSize = field.AbsoluteSize;
+			else
+			{
+				field.MinimumSize = Vector2.Zero;
+				field.MaximumSize = Vector2.Zero;
+			}
 		}
 		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
-		world.CreatorContext.History.RecordAppliedAction("Set UI constraints", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
+		world.CreatorContext.History.RecordAppliedAction(
+			"Set UI constraints",
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], after[i]);
+				}
+			),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], before[i]);
+				}
+			)
+		);
 	}
 
 	private static void ApplyUILayout(UILayoutPreset preset)
 	{
-		World? world = World.Current; if (world == null) return;
-		UIField[] fields = world.CreatorContext.Selections.GetSelected().OfType<UIField>().ToArray();
+		World? world = World.Current;
+		if (world == null)
+			return;
+		UIField[] fields = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<UIField>()
+			.ToArray();
 		if (fields.Length == 0)
 		{
-			CreatorService.Interface.PopupAlert("Select one or more UI instances first.", "UI Layout");
+			CreatorService.Interface.PopupAlert(
+				"Select one or more UI instances first.",
+				"UI Layout"
+			);
 			return;
 		}
 		UILayoutState[] before = fields.Select(CaptureUILayout).ToArray();
 		void Apply()
 		{
-			foreach (UIField field in fields) ApplyUILayoutPreset(field, preset);
+			foreach (UIField field in fields)
+				ApplyUILayoutPreset(field, preset);
 		}
 		Apply();
 		UILayoutState[] after = fields.Select(CaptureUILayout).ToArray();
-		world.CreatorContext.History.RecordAppliedAction("Apply UI layout", new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], after[i]); }), new((_) => { for (int i = 0; i < fields.Length; i++) RestoreUILayout(fields[i], before[i]); }));
-		CreatorService.Interface.StatusBar?.SetStatus($"Applied {preset} layout to {fields.Length} UI instance{(fields.Length == 1 ? "" : "s")}");
+		world.CreatorContext.History.RecordAppliedAction(
+			"Apply UI layout",
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], after[i]);
+				}
+			),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < fields.Length; i++)
+						RestoreUILayout(fields[i], before[i]);
+				}
+			)
+		);
+		CreatorService.Interface.StatusBar?.SetStatus(
+			$"Applied {preset} layout to {fields.Length} UI instance{(fields.Length == 1 ? "" : "s")}"
+		);
 	}
 
 	private static void ApplyUILayoutPreset(UIField field, UILayoutPreset preset)
@@ -363,12 +707,16 @@ public sealed partial class Ribbon : Control
 		if (preset is UILayoutPreset.Responsive or UILayoutPreset.Fixed)
 		{
 			Vector2 parentSize = field.NodeControl.GetParentOrNull<Control>()?.Size ?? Vector2.Zero;
-			if (parentSize.X <= 0 || parentSize.Y <= 0) return;
+			if (parentSize.X <= 0 || parentSize.Y <= 0)
+				return;
 			Vector2 size = field.AbsoluteSize;
 			Vector2 anchorPoint = field.NodeControl.Position + field.PivotPoint * size;
 			if (preset == UILayoutPreset.Responsive)
 			{
-				field.PositionRelative = new(anchorPoint.X / parentSize.X, anchorPoint.Y / parentSize.Y);
+				field.PositionRelative = new(
+					anchorPoint.X / parentSize.X,
+					anchorPoint.Y / parentSize.Y
+				);
 				field.PositionOffset = Vector2.Zero;
 				field.SizeRelative = new(size.X / parentSize.X, size.Y / parentSize.Y);
 				field.SizeOffset = Vector2.Zero;
@@ -385,95 +733,279 @@ public sealed partial class Ribbon : Control
 
 		(Vector2 anchor, Vector2 pivot) = preset switch
 		{
-			UILayoutPreset.TopCenter => (new(.5f, 0), new(.5f, 0)), UILayoutPreset.TopRight => (new(1, 0), new(1, 0)),
-			UILayoutPreset.Center => (new(.5f, .5f), new(.5f, .5f)), UILayoutPreset.BottomLeft => (new(0, 1), new(0, 1)),
-			UILayoutPreset.BottomCenter => (new(.5f, 1), new(.5f, 1)), UILayoutPreset.BottomRight => (Vector2.One, Vector2.One),
-			_ => (Vector2.Zero, Vector2.Zero)
+			UILayoutPreset.TopCenter => (new(.5f, 0), new(.5f, 0)),
+			UILayoutPreset.TopRight => (new(1, 0), new(1, 0)),
+			UILayoutPreset.Center => (new(.5f, .5f), new(.5f, .5f)),
+			UILayoutPreset.BottomLeft => (new(0, 1), new(0, 1)),
+			UILayoutPreset.BottomCenter => (new(.5f, 1), new(.5f, 1)),
+			UILayoutPreset.BottomRight => (Vector2.One, Vector2.One),
+			_ => (Vector2.Zero, Vector2.Zero),
 		};
-		field.PositionRelative = anchor; field.PositionOffset = Vector2.Zero; field.PivotPoint = pivot;
+		field.PositionRelative = anchor;
+		field.PositionOffset = Vector2.Zero;
+		field.PivotPoint = pivot;
 		switch (preset)
 		{
-			case UILayoutPreset.FullScreen: field.SizeRelative = Vector2.One; field.SizeOffset = Vector2.Zero; break;
-			case UILayoutPreset.Header: field.SizeRelative = new(1, 0); field.SizeOffset = new(0, 64); break;
-			case UILayoutPreset.Footer: field.PositionRelative = new(0, 1); field.PivotPoint = new(0, 1); field.SizeRelative = new(1, 0); field.SizeOffset = new(0, 64); break;
-			case UILayoutPreset.ResponsiveCard: field.PositionRelative = new(.5f, .5f); field.PivotPoint = new(.5f, .5f); field.SizeRelative = new(.8f, .7f); field.SizeOffset = Vector2.Zero; break;
+			case UILayoutPreset.FullScreen:
+				field.SizeRelative = Vector2.One;
+				field.SizeOffset = Vector2.Zero;
+				break;
+			case UILayoutPreset.Header:
+				field.SizeRelative = new(1, 0);
+				field.SizeOffset = new(0, 64);
+				break;
+			case UILayoutPreset.Footer:
+				field.PositionRelative = new(0, 1);
+				field.PivotPoint = new(0, 1);
+				field.SizeRelative = new(1, 0);
+				field.SizeOffset = new(0, 64);
+				break;
+			case UILayoutPreset.ResponsiveCard:
+				field.PositionRelative = new(.5f, .5f);
+				field.PivotPoint = new(.5f, .5f);
+				field.SizeRelative = new(.8f, .7f);
+				field.SizeOffset = Vector2.Zero;
+				break;
 		}
 	}
 
-	private static void AddModelAction(Container parent, string text, string icon, string tooltip, Action<Button> configure)
+	private static void AddModelAction(
+		Container parent,
+		string text,
+		string icon,
+		string tooltip,
+		Action<Button> configure
+	)
 	{
-		Button button = new() { TooltipText = tooltip, CustomMinimumSize = new Vector2(Mathf.Max(60, text.Length * 7 + 14), 54), FocusMode = FocusModeEnum.None, ClipContents = true };
-		TextureRect iconView = new() { Texture = GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/{icon}.svg"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = new Color("0097ff") };
-		iconView.SetAnchorsPreset(Control.LayoutPreset.FullRect); iconView.OffsetTop = 5; iconView.OffsetBottom = -22;
-		Label label = new() { Text = text, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
-		label.SetAnchorsPreset(Control.LayoutPreset.BottomWide); label.OffsetLeft = 2; label.OffsetTop = -20; label.OffsetRight = -2; label.OffsetBottom = -2;
-		button.AddChild(iconView); button.AddChild(label);
-		parent.AddChild(button); configure(button);
+		Button button = new()
+		{
+			TooltipText = tooltip,
+			CustomMinimumSize = new Vector2(Mathf.Max(60, text.Length * 7 + 14), 54),
+			FocusMode = FocusModeEnum.None,
+			ClipContents = true,
+		};
+		TextureRect iconView = new()
+		{
+			Texture = GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/{icon}.svg"),
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			Modulate = new Color("0097ff"),
+		};
+		iconView.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		iconView.OffsetTop = 5;
+		iconView.OffsetBottom = -22;
+		Label label = new()
+		{
+			Text = text,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+		};
+		label.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+		label.OffsetLeft = 2;
+		label.OffsetTop = -20;
+		label.OffsetRight = -2;
+		label.OffsetBottom = -2;
+		button.AddChild(iconView);
+		button.AddChild(label);
+		parent.AddChild(button);
+		configure(button);
 	}
 
 	private static void ResetPivots()
 	{
-		World? world = World.Current; if (world == null) return;
-		Dynamic[] targets = world.CreatorContext.Selections.GetSelected().OfType<Dynamic>().ToArray(); if (targets.Length == 0) return;
+		World? world = World.Current;
+		if (world == null)
+			return;
+		Dynamic[] targets = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<Dynamic>()
+			.ToArray();
+		if (targets.Length == 0)
+			return;
 		Vector3[] beforeOffsets = targets.Select(target => target.PivotOffset).ToArray();
 		Vector3[] beforeRotations = targets.Select(target => target.PivotRotation).ToArray();
-		world.CreatorContext.History.RecordAppliedAction("Reset pivots", new((_) => { foreach (Dynamic target in targets) { target.PivotOffset = Vector3.Zero; target.PivotRotation = Vector3.Zero; } }), new((_) => { for (int i = 0; i < targets.Length; i++) { targets[i].PivotOffset = beforeOffsets[i]; targets[i].PivotRotation = beforeRotations[i]; } }));
-		foreach (Dynamic target in targets) { target.PivotOffset = Vector3.Zero; target.PivotRotation = Vector3.Zero; }
+		world.CreatorContext.History.RecordAppliedAction(
+			"Reset pivots",
+			new(
+				(_) =>
+				{
+					foreach (Dynamic target in targets)
+					{
+						target.PivotOffset = Vector3.Zero;
+						target.PivotRotation = Vector3.Zero;
+					}
+				}
+			),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < targets.Length; i++)
+					{
+						targets[i].PivotOffset = beforeOffsets[i];
+						targets[i].PivotRotation = beforeRotations[i];
+					}
+				}
+			)
+		);
+		foreach (Dynamic target in targets)
+		{
+			target.PivotOffset = Vector3.Zero;
+			target.PivotRotation = Vector3.Zero;
+		}
 		world.CreatorContext.Gizmos.RefreshVisuals();
 	}
 
 	private static void SetAnchored(int command)
 	{
-		World? world = World.Current; if (world == null) return;
-		IEnumerable<Physical> source = world.CreatorContext.Selections.GetSelected().OfType<Physical>();
-		if (command > 0) source = world.CreatorContext.Selections.GetSelected().SelectMany(item => item.GetDescendants().Prepend(item)).OfType<Physical>();
-		Physical[] items = source.Distinct().ToArray(); if (items.Length == 0) return;
-		bool[] before = items.Select(item => item.Anchored).ToArray(); bool value = command == 0 ? !items.All(item => item.Anchored) : command == 1;
-		world.CreatorContext.History.RecordAppliedAction(value ? "Anchor instances" : "Unanchor instances", new((_) => { foreach (Physical item in items) item.Anchored = value; }), new((_) => { for (int i = 0; i < items.Length; i++) items[i].Anchored = before[i]; }));
-		foreach (Physical item in items) item.Anchored = value;
+		World? world = World.Current;
+		if (world == null)
+			return;
+		IEnumerable<Physical> source = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<Physical>();
+		if (command > 0)
+			source = world
+				.CreatorContext.Selections.GetSelected()
+				.SelectMany(item => item.GetDescendants().Prepend(item))
+				.OfType<Physical>();
+		Physical[] items = source.Distinct().ToArray();
+		if (items.Length == 0)
+			return;
+		bool[] before = items.Select(item => item.Anchored).ToArray();
+		bool value = command == 0 ? !items.All(item => item.Anchored) : command == 1;
+		world.CreatorContext.History.RecordAppliedAction(
+			value ? "Anchor instances" : "Unanchor instances",
+			new(
+				(_) =>
+				{
+					foreach (Physical item in items)
+						item.Anchored = value;
+				}
+			),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < items.Length; i++)
+						items[i].Anchored = before[i];
+				}
+			)
+		);
+		foreach (Physical item in items)
+			item.Anchored = value;
 	}
 
 	private static void CreateWeld()
 	{
-		World? world = World.Current; if (world == null) return;
-		Physical[] parts = world.CreatorContext.Selections.GetSelected().OfType<Physical>().Take(2).ToArray();
-		if (parts.Length != 2) { CreatorService.Interface.PopupAlert("Select exactly two physical instances to create a Weld.", "Weld"); return; }
-		Weld weld = Globals.LoadInstance<Weld>(world); weld.Part0 = parts[0]; weld.Part1 = parts[1];
-		world.CreatorContext.History.CreateInstances([weld], parts[0]); world.CreatorContext.Selections.SelectOnly(weld);
+		World? world = World.Current;
+		if (world == null)
+			return;
+		Physical[] parts = world
+			.CreatorContext.Selections.GetSelected()
+			.OfType<Physical>()
+			.Take(2)
+			.ToArray();
+		if (parts.Length != 2)
+		{
+			CreatorService.Interface.PopupAlert(
+				"Select exactly two physical instances to create a Weld.",
+				"Weld"
+			);
+			return;
+		}
+		Weld weld = Globals.LoadInstance<Weld>(world);
+		weld.Part0 = parts[0];
+		weld.Part1 = parts[1];
+		world.CreatorContext.History.CreateInstances([weld], parts[0]);
+		world.CreatorContext.Selections.SelectOnly(weld);
 	}
 
 	private static void SetAlignment(int command)
 	{
 		if (command < 2)
 		{
-			CreatorSettingsService.Instance.Set(CreatorSettingKeys.Interface.TransformOrientation,
-				command == 0 ? TransformOrientationEnum.Global : TransformOrientationEnum.Local);
-			CreatorService.Interface.StatusBar?.SetStatus(command == 0 ? "Gizmos aligned to World" : "Gizmos aligned to Local");
+			CreatorSettingsService.Instance.Set(
+				CreatorSettingKeys.Interface.TransformOrientation,
+				command == 0 ? TransformOrientationEnum.Global : TransformOrientationEnum.Local
+			);
+			CreatorService.Interface.StatusBar?.SetStatus(
+				command == 0 ? "Gizmos aligned to World" : "Gizmos aligned to Local"
+			);
 			return;
 		}
-		World? world = World.Current; if (world == null) return;
-		Dynamic[] items = world.CreatorContext.Selections.GetSelected().OfType<Dynamic>().ToArray(); if (items.Length == 0) return;
+		World? world = World.Current;
+		if (world == null)
+			return;
+		Dynamic[] items = world.CreatorContext.Selections.GetSelected().OfType<Dynamic>().ToArray();
+		if (items.Length == 0)
+			return;
 		Transform3D[] before = items.Select(item => item.GetGlobalTransform()).ToArray();
-		Action apply = () => { foreach (Dynamic item in items) item.Rotation = Vector3.Zero; };
+		Action apply = () =>
+		{
+			foreach (Dynamic item in items)
+				item.Rotation = Vector3.Zero;
+		};
 		apply();
-		world.CreatorContext.History.RecordAppliedAction("Align rotation to world", new((_) => apply()), new((_) => { for (int i = 0; i < items.Length; i++) items[i].SetGlobalTransform(before[i]); }));
+		world.CreatorContext.History.RecordAppliedAction(
+			"Align rotation to world",
+			new((_) => apply()),
+			new(
+				(_) =>
+				{
+					for (int i = 0; i < items.Length; i++)
+						items[i].SetGlobalTransform(before[i]);
+				}
+			)
+		);
 	}
 
 	private static void AddEffectsMenu(Button button)
 	{
-		(string Label, string ClassName)[] effects = [("Beam", "Beam"), ("Explosion", "Explosion"), ("Fire", "Particles"), ("Particle Emitter", "Particles"), ("Smoke", "Particles"), ("Sparkles", "Particles"), ("Trail", "Trail"), ("Attachment", "Attachment"), ("Point Light", "PointLight"), ("Spot Light", "SpotLight"), ("Surface Light", "SurfaceLight")];
-		PopupMenu menu = new(); button.AddChild(menu);
-		for (int i = 0; i < effects.Length; i++) menu.AddItem(effects[i].Label, i);
+		(string Label, string ClassName)[] effects =
+		[
+			("Beam", "Beam"),
+			("Explosion", "Explosion"),
+			("Fire", "Particles"),
+			("Particle Emitter", "Particles"),
+			("Smoke", "Particles"),
+			("Sparkles", "Particles"),
+			("Trail", "Trail"),
+			("Attachment", "Attachment"),
+			("Point Light", "PointLight"),
+			("Spot Light", "SpotLight"),
+			("Surface Light", "SurfaceLight"),
+		];
+		PopupMenu menu = new();
+		button.AddChild(menu);
+		for (int i = 0; i < effects.Length; i++)
+			menu.AddItem(effects[i].Label, i);
 		menu.IdPressed += id =>
 		{
-			World? world = World.Current; if (world == null) return;
-			Instance parent = world.CreatorContext.Selections.GetSelected().FirstOrDefault() ?? world.Environment;
+			World? world = World.Current;
+			if (world == null)
+				return;
+			Instance parent =
+				world.CreatorContext.Selections.GetSelected().FirstOrDefault() ?? world.Environment;
 			Instance? effect = Globals.LoadInstance<Instance>(effects[(int)id].ClassName, world);
-			if (effect == null) { CreatorService.Interface.StatusBar?.SetStatus($"{effects[(int)id].Label} is not available in this build."); return; }
-			if (effects[(int)id].ClassName == "Particles") effect.Name = effects[(int)id].Label;
-			world.CreatorContext.History.CreateInstances([effect], parent); world.CreatorContext.Selections.SelectOnly(effect);
+			if (effect == null)
+			{
+				CreatorService.Interface.StatusBar?.SetStatus(
+					$"{effects[(int)id].Label} is not available in this build."
+				);
+				return;
+			}
+			if (effects[(int)id].ClassName == "Particles")
+				effect.Name = effects[(int)id].Label;
+			world.CreatorContext.History.CreateInstances([effect], parent);
+			world.CreatorContext.Selections.SelectOnly(effect);
 		};
-		button.Pressed += () => { menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y)); menu.Popup(); };
+		button.Pressed += () =>
+		{
+			menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+			menu.Popup();
+		};
 	}
 
 	private void AddTaskAction(string label, string icon, Action action)
@@ -518,8 +1050,10 @@ public sealed partial class Ribbon : Control
 	{
 		foreach (Node node in root.FindChildren("*", nameof(Button), recursive: true, owned: false))
 		{
-			if (node is not Button button
-				|| button.GetNodeOrNull<TextureRect>("Icon") is not TextureRect icon)
+			if (
+				node is not Button button
+				|| button.GetNodeOrNull<TextureRect>("Icon") is not TextureRect icon
+			)
 				continue;
 
 			button.ClipContents = true;
@@ -542,9 +1076,12 @@ public sealed partial class Ribbon : Control
 		Button script = home.GetNode<Button>("Script");
 		Button import = home.GetNode<Button>("Import");
 
-		part.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: PartInsertClasses);
-		gui.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: GuiInsertClasses);
-		script.Pressed += () => CreatorService.Interface.OpenInsertMenu(allowedClasses: ScriptInsertClasses);
+		part.Pressed += () =>
+			CreatorService.Interface.OpenInsertMenu(allowedClasses: PartInsertClasses);
+		gui.Pressed += () =>
+			CreatorService.Interface.OpenInsertMenu(allowedClasses: GuiInsertClasses);
+		script.Pressed += () =>
+			CreatorService.Interface.OpenInsertMenu(allowedClasses: ScriptInsertClasses);
 		PopulateImportMenu(import);
 	}
 
@@ -552,18 +1089,42 @@ public sealed partial class Ribbon : Control
 	{
 		PopupMenu popup = new() { Name = "ImportPopup" };
 		button.AddChild(popup);
-		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/datamodel/Mesh.svg"), "Mesh", 0);
-		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/ui-icons/image-square.svg"), "Texture", 1);
-		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/datamodel/Sound.svg"), "Sound", 2);
-		popup.AddIconItem(GD.Load<Texture2D>("res://assets/textures/ui-icons/video.svg"), "Video", 3);
+		popup.AddIconItem(
+			GD.Load<Texture2D>("res://assets/textures/datamodel/Mesh.svg"),
+			"Mesh",
+			0
+		);
+		popup.AddIconItem(
+			GD.Load<Texture2D>("res://assets/textures/ui-icons/image-square.svg"),
+			"Texture",
+			1
+		);
+		popup.AddIconItem(
+			GD.Load<Texture2D>("res://assets/textures/datamodel/Sound.svg"),
+			"Sound",
+			2
+		);
+		popup.AddIconItem(
+			GD.Load<Texture2D>("res://assets/textures/ui-icons/video.svg"),
+			"Video",
+			3
+		);
 		popup.IdPressed += id =>
 		{
 			switch (id)
 			{
-				case 0: CreatorService.Interface.OpenUploadMeshMenu(); break;
-				case 1: CreatorService.Interface.OpenUploadTextureMenu(); break;
-				case 2: CreatorService.Interface.OpenUploadSoundMenu(); break;
-				case 3: CreatorService.Interface.OpenUploadVideoMenu(); break;
+				case 0:
+					CreatorService.Interface.OpenUploadMeshMenu();
+					break;
+				case 1:
+					CreatorService.Interface.OpenUploadTextureMenu();
+					break;
+				case 2:
+					CreatorService.Interface.OpenUploadSoundMenu();
+					break;
+				case 3:
+					CreatorService.Interface.OpenUploadVideoMenu();
+					break;
 			}
 		};
 		button.Pressed += () =>
@@ -576,8 +1137,8 @@ public sealed partial class Ribbon : Control
 	private void OnCurrentControlChanged(Control? control)
 	{
 		_showingCodeActions = control is TextEditor.TextEditorContainer;
-		if (_showingCodeActions) _taskTabs.CurrentTab = 3;
-
+		if (_showingCodeActions)
+			_taskTabs.CurrentTab = 3;
 	}
 
 	private void PopulateShapesMenu(Button button)
@@ -601,10 +1162,18 @@ public sealed partial class Ribbon : Control
 		for (int i = 0; i < shapes.Length; i++)
 		{
 			var item = shapes[i];
-			popup.AddIconItem(GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/shapes/{item.Icon}.svg"), item.Label, i);
+			popup.AddIconItem(
+				GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/shapes/{item.Icon}.svg"),
+				item.Label,
+				i
+			);
 			entries[i] = (item.Shape, item.Icosphere, item.Label);
 		}
-		popup.IdPressed += id => { if (entries.TryGetValue((int)id, out var entry)) InsertShape(entry.Shape, entry.Icosphere, entry.Name); };
+		popup.IdPressed += id =>
+		{
+			if (entries.TryGetValue((int)id, out var entry))
+				InsertShape(entry.Shape, entry.Icosphere, entry.Name);
+		};
 		button.Pressed += () =>
 		{
 			Control anchor = button;
@@ -615,25 +1184,32 @@ public sealed partial class Ribbon : Control
 
 	private static void InsertShape(Part.ShapeEnum? shape, bool isIcosphere, string displayName)
 	{
-		World? world = World.Current; if (world == null) return;
+		World? world = World.Current;
+		if (world == null)
+			return;
 		Entity entity;
 		Part? insertedPart = null;
-		if (isIcosphere) entity = Globals.LoadInstance<Icosphere>(world);
+		if (isIcosphere)
+			entity = Globals.LoadInstance<Icosphere>(world);
 		else
 		{
 			insertedPart = Globals.LoadInstance<Part>(world);
 			entity = insertedPart;
 		}
-		entity.Name = displayName; entity.CreatorInserted();
+		entity.Name = displayName;
+		entity.CreatorInserted();
 		world.CreatorContext.History.CreateInstances([entity], world.Environment);
 		// Part.Ready() applies its default shape when the instance enters the tree,
 		// so apply the requested primitive after parenting has completed.
-		if (insertedPart != null) insertedPart.Shape = shape ?? Part.ShapeEnum.Brick;
+		if (insertedPart != null)
+			insertedPart.Shape = shape ?? Part.ShapeEnum.Brick;
 		Datamodel.Environment.RayResult? hit = world.CreatorContext.Freelook.GetPlacementRay();
-		entity.Position = hit != null
-			? hit.Value.Position + hit.Value.Normal * (entity.CalculateBounds().Size.Y / 2f)
-			: world.CreatorContext.Freelook.GetPlacementPosition();
-		if (CreatorService.Interface.MoveSnapEnabled) entity.Position = entity.Position.Snap(CreatorService.Interface.MoveSnapping);
+		entity.Position =
+			hit != null
+				? hit.Value.Position + hit.Value.Normal * (entity.CalculateBounds().Size.Y / 2f)
+				: world.CreatorContext.Freelook.GetPlacementPosition();
+		if (CreatorService.Interface.MoveSnapEnabled)
+			entity.Position = entity.Position.Snap(CreatorService.Interface.MoveSnapping);
 		CreatorBuildEffects.Emit(entity as Dynamic);
 		world.CreatorContext.Selections.SelectOnly(entity);
 		CreatorSoundEffects.PlayPlace();
@@ -642,10 +1218,13 @@ public sealed partial class Ribbon : Control
 
 	public override void _ExitTree()
 	{
-		if (IsInstanceValid(_brushButton)) _brushButton.GuiInput -= OnBrushGuiInput;
+		if (IsInstanceValid(_brushButton))
+			_brushButton.GuiInput -= OnBrushGuiInput;
 
-		if (Tabs.Singleton != null) Tabs.Singleton.CurrentControlChanged -= OnCurrentControlChanged;
-		if (TeamCreateService.Instance != null) TeamCreateService.Instance.StateChanged -= RefreshTeamChatTab;
+		if (Tabs.Singleton != null)
+			Tabs.Singleton.CurrentControlChanged -= OnCurrentControlChanged;
+		if (TeamCreateService.Instance != null)
+			TeamCreateService.Instance.StateChanged -= RefreshTeamChatTab;
 		base._ExitTree();
 	}
 
@@ -655,15 +1234,17 @@ public sealed partial class Ribbon : Control
 		if (rightDock.ContainsPanelId("Team Chat"))
 			return;
 
-		Control teamChat = GD.Load<PackedScene>(
-			"res://scenes/creator/docks/team_chat_dock.tscn"
-		).Instantiate<Control>();
-		rightDock.AddPanel(new DockPanel(
-			"Team Chat",
-			"Team Chat",
-			teamChat,
-			GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg")
-		), suppressSave: true);
+		Control teamChat = GD.Load<PackedScene>("res://scenes/creator/docks/team_chat_dock.tscn")
+			.Instantiate<Control>();
+		rightDock.AddPanel(
+			new DockPanel(
+				"Team Chat",
+				"Team Chat",
+				teamChat,
+				GD.Load<Texture2D>("res://assets/textures/ui-icons/team-create.svg")
+			),
+			suppressSave: true
+		);
 		RefreshTeamChatTab();
 	}
 
@@ -675,8 +1256,12 @@ public sealed partial class Ribbon : Control
 
 	private void OnBrushGuiInput(InputEvent inputEvent)
 	{
-		if (inputEvent is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) return;
-		if (!_brushButton.ButtonPressed || CreatorService.Interface.ToolMode != ToolModeEnum.Brush) return;
+		if (
+			inputEvent is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }
+		)
+			return;
+		if (!_brushButton.ButtonPressed || CreatorService.Interface.ToolMode != ToolModeEnum.Brush)
+			return;
 
 		_selectButton.ButtonPressed = true;
 		CreatorService.Interface.ToolMode = ToolModeEnum.Select;
@@ -693,22 +1278,42 @@ public sealed partial class Ribbon : Control
 			return;
 		}
 
-		if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolSelect, Key.Key1))
+		if (
+			CreatorKeybindResolver.IsPressed(
+				@event,
+				CreatorSettingKeys.Keybinds.ToolSelect,
+				Key.Key1
+			)
+		)
 		{
 			_selectButton.ButtonPressed = true;
 			ActivateTool(ToolModeEnum.Select);
 		}
-		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolMove, Key.Key2))
+		else if (
+			CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolMove, Key.Key2)
+		)
 		{
 			_moveButton.ButtonPressed = true;
 			ActivateTool(ToolModeEnum.Move);
 		}
-		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolRotate, Key.Key3))
+		else if (
+			CreatorKeybindResolver.IsPressed(
+				@event,
+				CreatorSettingKeys.Keybinds.ToolRotate,
+				Key.Key3
+			)
+		)
 		{
 			_rotateButton.ButtonPressed = true;
 			ActivateTool(ToolModeEnum.Rotate);
 		}
-		else if (CreatorKeybindResolver.IsPressed(@event, CreatorSettingKeys.Keybinds.ToolScale, Key.Key4))
+		else if (
+			CreatorKeybindResolver.IsPressed(
+				@event,
+				CreatorSettingKeys.Keybinds.ToolScale,
+				Key.Key4
+			)
+		)
 		{
 			_scaleButton.ButtonPressed = true;
 			ActivateTool(ToolModeEnum.Scale);

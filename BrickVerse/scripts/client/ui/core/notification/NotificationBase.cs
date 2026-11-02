@@ -9,5 +9,6 @@ namespace BrickVerse.Client.UI.Notification;
 public partial class UINotificationBase : Control
 {
 	public UINotification NotificationCenter = null!;
+
 	public virtual void Fire(object? data = null) { }
 }

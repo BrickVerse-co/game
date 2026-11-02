@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
-using System;
+using Godot;
 using Obsolete = BrickVerse.Attributes.ObsoleteAttribute;
 
 namespace BrickVerse.Datamodel;
@@ -15,8 +15,12 @@ namespace BrickVerse.Datamodel;
 public sealed partial class ImageSky : Sky
 {
 	private readonly Texture2D _empty = GD.Load<Texture2D>("res://assets/textures/empty.png");
-	private static readonly Shader _linearShader = GD.Load<Shader>("res://resources/shaders/imagesky_linear.gdshader");
-	private static readonly Shader _nearestShader = GD.Load<Shader>("res://resources/shaders/imagesky_nearest.gdshader");
+	private static readonly Shader _linearShader = GD.Load<Shader>(
+		"res://resources/shaders/imagesky_linear.gdshader"
+	);
+	private static readonly Shader _nearestShader = GD.Load<Shader>(
+		"res://resources/shaders/imagesky_nearest.gdshader"
+	);
 
 	private string _topId = "14168";
 	private string _bottomId = "14166";
@@ -331,7 +335,11 @@ public sealed partial class ImageSky : Sky
 
 	private void RebuildMaterial()
 	{
-		var shader = _textureFilter is TextureFilterEnum.Nearest || _textureFilter is TextureFilterEnum.NearestNoMipmaps ? _nearestShader : _linearShader;
+		var shader =
+			_textureFilter is TextureFilterEnum.Nearest
+			|| _textureFilter is TextureFilterEnum.NearestNoMipmaps
+				? _nearestShader
+				: _linearShader;
 		_mat = new() { Shader = shader };
 		SkyMaterial = _mat;
 		ApplyTextures();

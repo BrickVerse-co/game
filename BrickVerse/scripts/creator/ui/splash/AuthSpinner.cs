@@ -26,6 +26,15 @@ public sealed partial class AuthSpinner : Control
 		Vector2 center = Size * 0.5f;
 		float radius = Mathf.Max(4, Mathf.Min(Size.X, Size.Y) * 0.34f);
 		DrawArc(center, radius, 0, Mathf.Tau, 32, new Color(1, 1, 1, 0.12f), 2.5f, true);
-		DrawArc(center, radius, _phase, _phase + Mathf.Pi * 1.35f, 22, new Color("32a9ff"), 2.5f, true);
+		DrawArc(
+			center,
+			radius,
+			_phase,
+			_phase + Mathf.Pi * 1.35f,
+			22,
+			new Color("32a9ff"),
+			2.5f,
+			true
+		);
 	}
 }

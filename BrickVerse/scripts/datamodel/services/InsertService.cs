@@ -61,13 +61,16 @@ public sealed partial class InsertService : Instance
 		int owner = npc.NetworkAuthority;
 
 		// Default character
-		CharacterModel ptm = usePawnTemplate && npc is Player && Root.PlayerDefaults.PawnTemplate is Pawn template
-			? (Pawn)template.Clone()
-			: DefaultCharacter();
-		if (ptm is not Pawn) npc.Character = ptm;
+		CharacterModel ptm =
+			usePawnTemplate && npc is Player && Root.PlayerDefaults.PawnTemplate is Pawn template
+				? (Pawn)template.Clone()
+				: DefaultCharacter();
+		if (ptm is not Pawn)
+			npc.Character = ptm;
 		ptm.Name = "Character";
 		ptm.Parent = npc;
-		if (ptm is Pawn) npc.Character = ptm;
+		if (ptm is Pawn)
+			npc.Character = ptm;
 		ptm.LocalPosition = Vector3.Zero;
 		ptm.LocalRotation = Vector3.Zero;
 		ptm.LocalSize = Vector3.One;
@@ -127,7 +130,9 @@ public sealed partial class InsertService : Instance
 		if (string.IsNullOrWhiteSpace(id))
 			throw new ArgumentException("A prefab asset ID is required.", nameof(id));
 		byte[] modelBytes = await CreatorAPI.DownloadCreatorAsset(id);
-		BV.Print($"Downloaded prefab {id} ({modelBytes.Length:N0} bytes); importing into the current project.");
+		BV.Print(
+			$"Downloaded prefab {id} ({modelBytes.Length:N0} bytes); importing into the current project."
+		);
 
 		if (optionalName != null)
 		{
@@ -162,7 +167,8 @@ public sealed partial class InsertService : Instance
 		int scriptCount = model is Script ? 1 : 0;
 		foreach (Instance descendant in model.GetDescendants())
 		{
-			if (descendant is Script) scriptCount++;
+			if (descendant is Script)
+				scriptCount++;
 		}
 
 		if (
@@ -267,7 +273,9 @@ public sealed partial class InsertService : Instance
 		return accessory;
 	}
 
-	private static BrickversianModel.CharacterAttachmentEnum GetAccessoryAttachment(string? accessoryType)
+	private static BrickversianModel.CharacterAttachmentEnum GetAccessoryAttachment(
+		string? accessoryType
+	)
 	{
 		string normalized = (accessoryType ?? "")
 			.Replace("_", "", StringComparison.Ordinal)
@@ -414,9 +422,7 @@ public sealed partial class InsertService : Instance
 #if CREATOR
 		if (!string.IsNullOrWhiteSpace(CreatorAPI.Token))
 		{
-			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(
-				CreatorAPI.Token
-			);
+			_httpClient.DefaultRequestHeaders["Authorization"] = BuildBearerToken(CreatorAPI.Token);
 			_httpClient.DefaultRequestHeaders["Cookie"] =
 				"auth_token=" + Uri.EscapeDataString(CreatorAPI.Token);
 		}

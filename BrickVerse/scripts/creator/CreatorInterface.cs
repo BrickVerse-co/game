@@ -161,7 +161,9 @@ public partial class CreatorInterface : Control, IScriptObject
 
 		if (
 			!Godot.FileAccess.FileExists(IntroRanFile)
-			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Creator.ShowInteractiveTutorial)
+			&& CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.Creator.ShowInteractiveTutorial
+			)
 		)
 		{
 			IntroductionWizard.Singleton.Open();
@@ -187,7 +189,8 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	public override void _ExitTree()
 	{
-		if (GetTree() != null) GetTree().NodeAdded -= OnSceneTreeNodeAdded;
+		if (GetTree() != null)
+			GetTree().NodeAdded -= OnSceneTreeNodeAdded;
 		CreatorSettingsService.Instance.Changed -= OnSettingChanged;
 		base._ExitTree();
 	}
@@ -249,7 +252,9 @@ public partial class CreatorInterface : Control, IScriptObject
 		SelectionPivotMode = settings.Get<SelectionPivotModeEnum>(
 			CreatorSettingKeys.Interface.SelectionPivotMode
 		);
-		MoveGizmoStyle = settings.Get<MoveGizmoStyleEnum>(CreatorSettingKeys.Interface.MoveGizmoStyle);
+		MoveGizmoStyle = settings.Get<MoveGizmoStyleEnum>(
+			CreatorSettingKeys.Interface.MoveGizmoStyle
+		);
 		ShowTransformTips = settings.Get<bool>(CreatorSettingKeys.Interface.ShowTransformTips);
 		World.Current?.CreatorContext?.Gizmos?.RefreshVisuals();
 	}
@@ -266,7 +271,8 @@ public partial class CreatorInterface : Control, IScriptObject
 
 	private void OnSceneTreeNodeAdded(Node node)
 	{
-		if (node == this || IsAncestorOf(node)) ApplyThemeRecursively(node);
+		if (node == this || IsAncestorOf(node))
+			ApplyThemeRecursively(node);
 	}
 
 	private void ApplyThemeRecursively(Node root)
@@ -312,14 +318,22 @@ public partial class CreatorInterface : Control, IScriptObject
 		}
 		else if (key.AltPressed && TryGetBookmarkSlot(key.Keycode, out int slot))
 		{
-			if (key.CtrlPressed) ViewportBookmarkManager.Save(slot);
-			else ViewportBookmarkManager.Recall(slot);
+			if (key.CtrlPressed)
+				ViewportBookmarkManager.Save(slot);
+			else
+				ViewportBookmarkManager.Recall(slot);
 			GetViewport().SetInputAsHandled();
 		}
-		else if (key.CtrlPressed && key.AltPressed && TryGetTransformAxis(key.Keycode, out SelectionTransformTools.Axis axis))
+		else if (
+			key.CtrlPressed
+			&& key.AltPressed
+			&& TryGetTransformAxis(key.Keycode, out SelectionTransformTools.Axis axis)
+		)
 		{
-			if (key.ShiftPressed) SelectionTransformTools.Distribute(axis);
-			else SelectionTransformTools.AlignToActive(axis);
+			if (key.ShiftPressed)
+				SelectionTransformTools.Distribute(axis);
+			else
+				SelectionTransformTools.AlignToActive(axis);
 			GetViewport().SetInputAsHandled();
 		}
 		base._UnhandledKeyInput(@event);
@@ -338,7 +352,7 @@ public partial class CreatorInterface : Control, IScriptObject
 			Key.Key7 => 7,
 			Key.Key8 => 8,
 			Key.Key9 => 9,
-			_ => 0
+			_ => 0,
 		};
 		return slot > 0;
 	}
@@ -855,8 +869,16 @@ public partial class CreatorInterface : Control, IScriptObject
 			CustomMinimumSize = new Vector2(420, 38),
 		};
 		dialog.AddChild(input);
-		dialog.Confirmed += () => { tcs.TrySetResult(input.Text.Trim()); dialog.QueueFree(); };
-		dialog.Canceled += () => { tcs.TrySetResult(null); dialog.QueueFree(); };
+		dialog.Confirmed += () =>
+		{
+			tcs.TrySetResult(input.Text.Trim());
+			dialog.QueueFree();
+		};
+		dialog.Canceled += () =>
+		{
+			tcs.TrySetResult(null);
+			dialog.QueueFree();
+		};
 		PopupWindow(dialog);
 		input.GrabFocus();
 		return await tcs.Task;
@@ -994,15 +1016,14 @@ public partial class CreatorInterface : Control, IScriptObject
 	{
 		if (world.WorldID <= 0 || world.UniverseID <= 0)
 		{
-			PopupAlert(
-				"This experience has not been published yet. Use Publish As first."
-			);
+			PopupAlert("This experience has not been published yet. Use Publish As first.");
 			OpenWorldPublish(world, true);
 			return;
 		}
 
 		string? commitMessage = await PromptCommitMessage($"Publish {world.WorldName}");
-		if (commitMessage == null) return;
+		if (commitMessage == null)
+			return;
 
 		LoadOverlay?.SetTitle("Publishing world");
 		LoadOverlay?.SetStatus("Saving current changes");
@@ -1038,9 +1059,11 @@ public partial class CreatorInterface : Control, IScriptObject
 			session.SaveMetadataFile();
 
 			StatusBar?.SetStatus("Published current changes");
-			if (CreatorSettingsService.Instance.Get<bool>(
-				CreatorSettingKeys.Creator.OpenWebAfterPublish
-			))
+			if (
+				CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Creator.OpenWebAfterPublish
+				)
+			)
 				OS.ShellOpen(response.Link);
 		}
 		catch (Exception ex)

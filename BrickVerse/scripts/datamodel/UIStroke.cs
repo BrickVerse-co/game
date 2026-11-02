@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -122,7 +122,8 @@ public partial class UIStroke : Instance
 
 	private void EnsureStrokePanel(UIField field)
 	{
-		if (_strokePanel != null) return;
+		if (_strokePanel != null)
+			return;
 
 		var corners = field.InternalGetCorners();
 		StyleBoxFlat sb = new()

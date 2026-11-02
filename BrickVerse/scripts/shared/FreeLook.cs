@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
 #if CREATOR
 #endif
 using System;
+using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Shared;
 
@@ -39,10 +39,14 @@ public sealed partial class FreeLook : Camera3D
 #if CREATOR
 		if (Root != null && Root.CreatorContext != null)
 		{
-			if (!Root.CreatorContext.IsViewportFocused) { return; }
+			if (!Root.CreatorContext.IsViewportFocused)
+			{
+				return;
+			}
 		}
 #endif
-		if (Input.IsKeyPressed(Key.Ctrl)) return;
+		if (Input.IsKeyPressed(Key.Ctrl))
+			return;
 		Vector2 horizontalInput = Input.GetVector("leftward", "rightward", "forward", "backward");
 		float verticalInput = Input.GetAxis("downward", "upward");
 
@@ -93,7 +97,8 @@ public sealed partial class FreeLook : Camera3D
 				{
 					_isMouseCaptured = false;
 					Input.MouseMode = Input.MouseModeEnum.Visible;
-					Vector2 globalMousePos = GetViewport().GetScreenTransform().Origin + _lastMousePosition;
+					Vector2 globalMousePos =
+						GetViewport().GetScreenTransform().Origin + _lastMousePosition;
 					// this is bugged on macos due to an upstream issue, we should update when this is in main
 					// godotengine/godot#119756
 					Input.WarpMouse(globalMousePos);

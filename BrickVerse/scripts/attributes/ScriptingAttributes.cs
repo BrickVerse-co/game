@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Scripting;
 using System;
+using BrickVerse.Scripting;
 
 namespace BrickVerse.Attributes;
 
@@ -32,6 +32,7 @@ public sealed class ScriptLegacyPropertyAttribute(string propName) : Attribute
 public interface IScriptMethodAttribute
 {
 	string? MethodName { get; set; }
+
 	/// <summary>
 	/// Should the argument types be converted to Godot equivalent
 	/// </summary>
@@ -46,15 +47,18 @@ public interface IScriptMethodAttribute
 public class ScriptMethodAttribute(string? methodName = null) : Attribute, IScriptMethodAttribute
 {
 	public string? MethodName { get; set; } = methodName;
+
 	/// <summary>
 	/// Should the argument types be converted to Godot equivalent
 	/// </summary>
 	public bool ConvertParamsToGD { get; set; } = true;
+
 	/// <summary>
 	/// Should the parameter be get as a function
 	/// </summary>
 	public bool GetParamsAsFunction { get; set; } = false;
 	public ScriptPermissionFlags Permissions { get; set; } = ScriptPermissionFlags.None;
+
 	/// <summary>
 	/// Should the static method also be name called as a regular method.
 	/// This is achieved by implicitly passing self as the first argument.
@@ -65,15 +69,17 @@ public class ScriptMethodAttribute(string? methodName = null) : Attribute, IScri
 [AttributeUsage(AttributeTargets.Parameter)]
 public class ScriptingCallerAttribute : Attribute { }
 
-
 /// <summary>
 /// Mark this method as accessible by legacy scripts
 /// </summary>
 /// <param name="methodName">Name to be overrided in script</param>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class ScriptLegacyMethodAttribute(string methodName) : Attribute, IScriptMethodAttribute
+public sealed class ScriptLegacyMethodAttribute(string methodName)
+	: Attribute,
+		IScriptMethodAttribute
 {
 	public string? MethodName { get; set; } = methodName;
+
 	/// <summary>
 	/// Should the argument types be converted to Godot equivalent
 	/// </summary>
@@ -88,6 +94,7 @@ public sealed class ScriptLegacyMethodAttribute(string methodName) : Attribute, 
 public sealed class ScriptMetamethodAttribute(ScriptObjectMetamethod metamethod) : Attribute
 {
 	public ScriptObjectMetamethod Metamethod { get; } = metamethod;
+
 	/// <summary>
 	/// Should the argument types be converted to Godot equivalent
 	/// </summary>

@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
@@ -12,9 +13,8 @@ using BrickVerse.Shared;
 using BrickVerse.Utils;
 using BrickVerse.Utils.Compression;
 using BrickVerse.Utils.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
+using MemoryPack;
 using static BrickVerse.Datamodel.Services.NetworkService;
 
 namespace BrickVerse.Client.Networking;
@@ -60,7 +60,8 @@ public partial class NetworkTransformSync : Instance
 
 	static NetworkTransformSync()
 	{
-		if (Globals.IsInGDEditor) return;
+		if (Globals.IsInGDEditor)
+			return;
 		_useNetworkLog = OS.HasFeature("netlog");
 	}
 
@@ -80,7 +81,8 @@ public partial class NetworkTransformSync : Instance
 				if (!session.UseLegacyPacing)
 				{
 					session.ElapsedWithoutAck += delta;
-					session.UseLegacyPacing = session.ElapsedWithoutAck >= SnapshotAckFallbackSeconds;
+					session.UseLegacyPacing =
+						session.ElapsedWithoutAck >= SnapshotAckFallbackSeconds;
 				}
 
 				SendNextSnapshotChunks(session);
@@ -106,25 +108,37 @@ public partial class NetworkTransformSync : Instance
 
 	public void SyncAllTransformToPeer(int peerID)
 	{
-		NetworkedObject[] allNetObjs = NetService.Root.GetReplicateDescendants()
+		NetworkedObject[] allNetObjs = NetService
+			.Root.GetReplicateDescendants()
 			.Where(obj => NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj))
 			.ToArray();
 		NetBatchTransformData[] transforms = PackTransforms(allNetObjs);
 		List<byte[]> chunks = [];
-		foreach (NetBatchTransformData[] chunk in ArrayUtils.Chunk(transforms, SnapshotObjectsPerChunk))
+		foreach (
+			NetBatchTransformData[] chunk in ArrayUtils.Chunk(transforms, SnapshotObjectsPerChunk)
+		)
 			AppendCompressedChunks(chunk, chunks);
 
 		if (chunks.Count == 0)
-			chunks.Add(ZstdCompressionUtils.Compress(SerializeUtils.Serialize(Array.Empty<NetBatchTransformData>())));
+			chunks.Add(
+				ZstdCompressionUtils.Compress(
+					SerializeUtils.Serialize(Array.Empty<NetBatchTransformData>())
+				)
+			);
 
 		long compressedBytes = chunks.Sum(chunk => (long)chunk.Length);
 		TransformSnapshotSendSession session = new(peerID, [.. chunks]);
 		_snapshotSendSessions[peerID] = session;
-		BV.Print($"[JoinTransform] Snapshot queued for peer {peerID}: transforms={transforms.Length}, chunks={chunks.Count}, compressedBytes={compressedBytes}, window={SnapshotChunksInFlight}.");
+		BV.Print(
+			$"[JoinTransform] Snapshot queued for peer {peerID}: transforms={transforms.Length}, chunks={chunks.Count}, compressedBytes={compressedBytes}, window={SnapshotChunksInFlight}."
+		);
 		SendNextSnapshotChunks(session);
 	}
 
-	private static void AppendCompressedChunks(NetBatchTransformData[] transforms, List<byte[]> output)
+	private static void AppendCompressedChunks(
+		NetBatchTransformData[] transforms,
+		List<byte[]> output
+	)
 	{
 		byte[] compressed = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(transforms));
 		if (compressed.Length <= MaxSnapshotChunkBytes || transforms.Length <= 1)
@@ -143,26 +157,43 @@ public partial class NetworkTransformSync : Instance
 		if (session.UseLegacyPacing)
 		{
 			int sent = 0;
-			while (session.NextChunkIndex < session.Chunks.Length && sent++ < SnapshotChunksPerFrame)
+			while (
+				session.NextChunkIndex < session.Chunks.Length && sent++ < SnapshotChunksPerFrame
+			)
 			{
 				int index = session.NextChunkIndex++;
-				RpcId(session.PeerID, nameof(NetRecvTransformSnapshotChunk), session.Chunks[index], index, session.Chunks.Length);
+				RpcId(
+					session.PeerID,
+					nameof(NetRecvTransformSnapshotChunk),
+					session.Chunks[index],
+					index,
+					session.Chunks.Length
+				);
 			}
 			return;
 		}
 
-		while (session.NextChunkIndex < session.Chunks.Length
-			&& session.NextChunkIndex - session.AcknowledgedChunkCount < SnapshotChunksInFlight)
+		while (
+			session.NextChunkIndex < session.Chunks.Length
+			&& session.NextChunkIndex - session.AcknowledgedChunkCount < SnapshotChunksInFlight
+		)
 		{
 			int index = session.NextChunkIndex++;
-			RpcId(session.PeerID, nameof(NetRecvTransformSnapshotChunk), session.Chunks[index], index, session.Chunks.Length);
+			RpcId(
+				session.PeerID,
+				nameof(NetRecvTransformSnapshotChunk),
+				session.Chunks[index],
+				index,
+				session.Chunks.Length
+			);
 		}
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetAckTransformSnapshotChunk(int chunkIndex)
 	{
-		if (!NetService.IsServer) return;
+		if (!NetService.IsServer)
+			return;
 
 		int peerID = RemoteSenderId;
 		if (!_snapshotSendSessions.TryGetValue(peerID, out TransformSnapshotSendSession? session))
@@ -175,7 +206,9 @@ public partial class NetworkTransformSync : Instance
 
 		if (chunkIndex != session.AcknowledgedChunkCount)
 		{
-			BV.PrintErr($"[JoinTransform] Out-of-order chunk acknowledgement from peer {peerID}: received={chunkIndex}, expected={session.AcknowledgedChunkCount}.");
+			BV.PrintErr(
+				$"[JoinTransform] Out-of-order chunk acknowledgement from peer {peerID}: received={chunkIndex}, expected={session.AcknowledgedChunkCount}."
+			);
 			return;
 		}
 
@@ -183,7 +216,9 @@ public partial class NetworkTransformSync : Instance
 		if (session.AcknowledgedChunkCount == session.Chunks.Length)
 		{
 			_snapshotSendSessions.Remove(peerID);
-			BV.Print($"[JoinTransform] Peer {peerID} acknowledged all {session.Chunks.Length} transform chunks.");
+			BV.Print(
+				$"[JoinTransform] Peer {peerID} acknowledged all {session.Chunks.Length} transform chunks."
+			);
 			return;
 		}
 
@@ -197,12 +232,18 @@ public partial class NetworkTransformSync : Instance
 
 	public void BroadcastChunk(NetworkedObject[] netObjs)
 	{
-		if (NetService.NetInstance == null) return;
+		if (NetService.NetInstance == null)
+			return;
 		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
-			NetworkedObject[] visible = netObjs.Where(obj => NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj)).ToArray();
-			if (visible.Length == 0) continue;
-			byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackTransforms(visible)));
+			NetworkedObject[] visible = netObjs
+				.Where(obj => NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj))
+				.ToArray();
+			if (visible.Length == 0)
+				continue;
+			byte[] rawData = ZstdCompressionUtils.Compress(
+				SerializeUtils.Serialize(PackTransforms(visible))
+			);
 			RpcId(peerID, nameof(NetRecvChunk), rawData, false);
 		}
 	}
@@ -214,11 +255,13 @@ public partial class NetworkTransformSync : Instance
 		{
 			if (item is Dynamic dyn)
 			{
-				data.Add(new()
-				{
-					NetID = dyn.NetworkedObjectID,
-					Value = TransformPayloadDto.ToArray(dyn.GetLocalTransform())
-				});
+				data.Add(
+					new()
+					{
+						NetID = dyn.NetworkedObjectID,
+						Value = TransformPayloadDto.ToArray(dyn.GetLocalTransform()),
+					}
+				);
 			}
 		}
 		return [.. data];
@@ -229,13 +272,24 @@ public partial class NetworkTransformSync : Instance
 	{
 		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
 			throw new NetworkException("Invalid compressed transform batch size.");
-		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedTransformBytes))!;
+		NetBatchTransformData[] netObjsData = SerializeUtils.Deserialize<NetBatchTransformData[]>(
+			ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedTransformBytes)
+		)!;
 
 		foreach (NetBatchTransformData item in netObjsData)
 		{
 			// There might be newer pending transforms
-			if (_pendingTransforms.ContainsKey(item.NetID)) { continue; }
-			RecvUpdateTransformHandler(item.NetID, TransformPayloadDto.FromArray(item.Value), 1, true, false);
+			if (_pendingTransforms.ContainsKey(item.NetID))
+			{
+				continue;
+			}
+			RecvUpdateTransformHandler(
+				item.NetID,
+				TransformPayloadDto.FromArray(item.Value),
+				1,
+				true,
+				false
+			);
 		}
 
 		if (isFirstInit)
@@ -250,13 +304,17 @@ public partial class NetworkTransformSync : Instance
 		if (rawBytes is not { Length: > 0 } || rawBytes.Length > MaxCompressedTransformBytes)
 			throw new NetworkException("Invalid compressed transform snapshot size.");
 		if (chunkCount <= 0 || chunkIndex < 0 || chunkIndex >= chunkCount)
-			throw new NetworkException($"Invalid transform snapshot chunk {chunkIndex}/{chunkCount}.");
+			throw new NetworkException(
+				$"Invalid transform snapshot chunk {chunkIndex}/{chunkCount}."
+			);
 
 		if (_snapshotChunksExpected == 0)
 			_snapshotChunksExpected = chunkCount;
 
 		if (chunkCount != _snapshotChunksExpected)
-			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}.");
+			throw new NetworkException(
+				$"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {_snapshotChunksReceived}/{_snapshotChunksExpected}."
+			);
 
 		int nextQueuedChunk = _snapshotChunksReceived + _incomingSnapshotChunks.Count;
 		if (chunkIndex < nextQueuedChunk)
@@ -267,7 +325,9 @@ public partial class NetworkTransformSync : Instance
 		}
 
 		if (chunkIndex != nextQueuedChunk)
-			throw new NetworkException($"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {nextQueuedChunk}/{_snapshotChunksExpected}.");
+			throw new NetworkException(
+				$"Out-of-order transform snapshot chunk {chunkIndex}/{chunkCount}; expected {nextQueuedChunk}/{_snapshotChunksExpected}."
+			);
 
 		// Queue reliable snapshot data so a large world cannot monopolize the
 		// Godot main thread while every transform is applied in one RPC drain.
@@ -276,16 +336,21 @@ public partial class NetworkTransformSync : Instance
 
 	private void ProcessIncomingSnapshotChunks()
 	{
-		for (int processed = 0; processed < IncomingSnapshotChunksPerFrame && _incomingSnapshotChunks.Count > 0; processed++)
+		for (
+			int processed = 0;
+			processed < IncomingSnapshotChunksPerFrame && _incomingSnapshotChunks.Count > 0;
+			processed++
+		)
 		{
 			(byte[] rawBytes, int chunkIndex, int chunkCount) = _incomingSnapshotChunks.Dequeue();
 
 			NetBatchTransformData[] transforms;
 			try
 			{
-				transforms = SerializeUtils.Deserialize<NetBatchTransformData[]>(
-					ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedSnapshotChunkBytes)
-				) ?? throw new NetworkException("Decoded transform chunk was empty.");
+				transforms =
+					SerializeUtils.Deserialize<NetBatchTransformData[]>(
+						ZstdCompressionUtils.Decompress(rawBytes, MaxDecompressedSnapshotChunkBytes)
+					) ?? throw new NetworkException("Decoded transform chunk was empty.");
 			}
 			catch (Exception ex)
 			{
@@ -348,17 +413,26 @@ public partial class NetworkTransformSync : Instance
 			NetService.NetTransformSyncd();
 	}
 
-	public void SendUpdateTransform(Dynamic dyn, bool isReliable = false, int sendTo = 0, bool lerpTransform = false)
+	public void SendUpdateTransform(
+		Dynamic dyn,
+		bool isReliable = false,
+		int sendTo = 0,
+		bool lerpTransform = false
+	)
 	{
 		// If not ready, return
-		if (!dyn.IsNetworkReady) return;
-		if (!dyn.Root.IsLoaded) return;
+		if (!dyn.IsNetworkReady)
+			return;
+		if (!dyn.Root.IsLoaded)
+			return;
 
 		// If is in creator, return
-		if (NetService.NetworkMode == NetworkModeEnum.Creator) return;
+		if (NetService.NetworkMode == NetworkModeEnum.Creator)
+			return;
 
 		// Check if self has the network authority
-		if (!CheckDynAuthor(dyn, NetService.LocalPeerID)) return;
+		if (!CheckDynAuthor(dyn, NetService.LocalPeerID))
+			return;
 
 		TransformPayloadDto payload = TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform());
 		string objID = dyn.NetworkedObjectID;
@@ -367,7 +441,13 @@ public partial class NetworkTransformSync : Instance
 		{
 			if (isReliable)
 			{
-				RpcId(sendTo, nameof(NetRecvUpdateTransformReliable), objID, payload, lerpTransform);
+				RpcId(
+					sendTo,
+					nameof(NetRecvUpdateTransformReliable),
+					objID,
+					payload,
+					lerpTransform
+				);
 			}
 			else
 			{
@@ -380,13 +460,25 @@ public partial class NetworkTransformSync : Instance
 			{
 				foreach (int peerID in NetService.NetInstance.PeerIds)
 				{
-					if (!NetService.ReplicateSync.IsReplicatedToPeer(peerID, dyn)) continue;
-					RpcId(peerID, isReliable ? nameof(NetRecvUpdateTransformReliable) : nameof(NetRecvUpdateTransform), objID, payload, lerpTransform);
+					if (!NetService.ReplicateSync.IsReplicatedToPeer(peerID, dyn))
+						continue;
+					RpcId(
+						peerID,
+						isReliable
+							? nameof(NetRecvUpdateTransformReliable)
+							: nameof(NetRecvUpdateTransform),
+						objID,
+						payload,
+						lerpTransform
+					);
 				}
 			}
 			else if (isReliable)
 			{
-				if (_useNetworkLog) { BV.Print($"[Net] [Transform] {dyn.NetworkPath} Reliable update"); }
+				if (_useNetworkLog)
+				{
+					BV.Print($"[Net] [Transform] {dyn.NetworkPath} Reliable update");
+				}
 
 				Rpc(nameof(NetRecvUpdateTransformReliable), objID, payload, lerpTransform);
 			}
@@ -397,35 +489,56 @@ public partial class NetworkTransformSync : Instance
 		}
 	}
 
-
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.UnreliableOrdered)]
-	private void NetRecvUpdateTransform(string objID, TransformPayloadDto transform, bool lerpTransform)
+	private void NetRecvUpdateTransform(
+		string objID,
+		TransformPayloadDto transform,
+		bool lerpTransform
+	)
 	{
 		RecvUpdateTransformHandler(objID, transform, RemoteSenderId, false, lerpTransform);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
-	private void NetRecvUpdateTransformReliable(string objID, TransformPayloadDto transform, bool lerpTransform)
+	private void NetRecvUpdateTransformReliable(
+		string objID,
+		TransformPayloadDto transform,
+		bool lerpTransform
+	)
 	{
 		RecvUpdateTransformHandler(objID, transform, RemoteSenderId, true, lerpTransform);
 	}
 
-	private void RecvUpdateTransformHandler(string objID, TransformPayloadDto transform, int fromPeer, bool isReliable, bool lerpTransform)
+	private void RecvUpdateTransformHandler(
+		string objID,
+		TransformPayloadDto transform,
+		int fromPeer,
+		bool isReliable,
+		bool lerpTransform
+	)
 	{
 		if (NetService.Root.GetNetObjectFromID(objID) is Dynamic dyn)
 		{
-			dyn.UpdateTransformFromNet(dyn.TransformNetworkPass(fromPeer, transform), isReliable, lerpTransform);
+			dyn.UpdateTransformFromNet(
+				dyn.TransformNetworkPass(fromPeer, transform),
+				isReliable,
+				lerpTransform
+			);
 		}
 		else
 		{
-			if (_useNetworkLog) { BV.Print($"[Net] [Transform] [?] {objID} Pending"); }
+			if (_useNetworkLog)
+			{
+				BV.Print($"[Net] [Transform] [?] {objID} Pending");
+			}
 			_pendingTransforms[objID] = new() { Transform = transform, FromPeer = fromPeer };
 		}
 	}
 
 	private static bool CheckDynAuthor(Dynamic dyn, int fromPeer)
 	{
-		return CheckAuthority(fromPeer, dyn.NetworkAuthority) || CheckAuthority(fromPeer, dyn.NetTransformAuthority);
+		return CheckAuthority(fromPeer, dyn.NetworkAuthority)
+			|| CheckAuthority(fromPeer, dyn.NetTransformAuthority);
 	}
 
 	internal void ApplyPendingTransforms(Dynamic dyn)
@@ -447,13 +560,16 @@ public partial class NetworkTransformSync : Instance
 	public void SendTransformToServer(Dynamic dyn, bool lerpTransform = false)
 	{
 		// Return if not ready
-		if (!dyn.IsNetworkReady || !dyn.Root.IsLoaded) return;
+		if (!dyn.IsNetworkReady || !dyn.Root.IsLoaded)
+			return;
 
 		// Ignore in creator
-		if (NetService.NetworkMode == NetworkModeEnum.Creator) return;
+		if (NetService.NetworkMode == NetworkModeEnum.Creator)
+			return;
 
 		// Check authority
-		if (!CheckDynAuthor(dyn, NetService.LocalPeerID)) return;
+		if (!CheckDynAuthor(dyn, NetService.LocalPeerID))
+			return;
 
 		TransformPayloadDto payload = TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform());
 		string objID = dyn.NetworkedObjectID;
@@ -461,21 +577,41 @@ public partial class NetworkTransformSync : Instance
 		RpcId(1, nameof(NetRecvTransformOnServer), objID, payload, lerpTransform);
 	}
 
-	public void BroadcastTransformFromServer(Dynamic dyn, bool lerpTransform, int excludePeer = -1, bool reliable = true)
+	public void BroadcastTransformFromServer(
+		Dynamic dyn,
+		bool lerpTransform,
+		int excludePeer = -1,
+		bool reliable = true
+	)
 	{
-		if (!NetService.IsServer) return;
-		if (!dyn.IsNetworkReady) return;
+		if (!NetService.IsServer)
+			return;
+		if (!dyn.IsNetworkReady)
+			return;
 		string objID = dyn.NetworkedObjectID;
 
-		SetPendingBatch(objID, new(dyn, TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform()), lerpTransform, excludePeer)
-		{
-			Reliable = reliable,
-			Forced = true
-		}, forced: true);
+		SetPendingBatch(
+			objID,
+			new(
+				dyn,
+				TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform()),
+				lerpTransform,
+				excludePeer
+			)
+			{
+				Reliable = reliable,
+				Forced = true,
+			},
+			forced: true
+		);
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.UnreliableOrdered, CallLocal = false)]
-	private void NetRecvTransformOnServer(string objID, TransformPayloadDto transform, bool lerpTransform)
+	private void NetRecvTransformOnServer(
+		string objID,
+		TransformPayloadDto transform,
+		bool lerpTransform
+	)
 	{
 		int fromPeer = RemoteSenderId;
 
@@ -499,22 +635,37 @@ public partial class NetworkTransformSync : Instance
 			TransformPayloadDto processed = dyn.TransformNetworkPass(fromPeer, transform);
 
 			// If is equal approx to last, return
-			if (processed.IsEqualApprox(TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform())))
+			if (
+				processed.IsEqualApprox(
+					TransformPayloadDto.FromGDTransform(dyn.GetLocalTransform())
+				)
+			)
 				return;
 
 			// Update on server
 			dyn.UpdateTransformFromNet(processed, false, lerpTransform);
 
 			// Add to batch pending
-			SetPendingBatch(objID, new(dyn, processed, lerpTransform, fromPeer) { Reliable = false });
+			SetPendingBatch(
+				objID,
+				new(dyn, processed, lerpTransform, fromPeer) { Reliable = false }
+			);
 		}
 	}
 
-	private void BroadcastGroupedBatch(List<BatchTransformData> batch, string rpcName, TransferMode transferMode, int excludePeer = -1)
+	private void BroadcastGroupedBatch(
+		List<BatchTransformData> batch,
+		string rpcName,
+		TransferMode transferMode,
+		int excludePeer = -1
+	)
 	{
-		if (NetService.NetInstance == null || batch.Count == 0) return;
+		if (NetService.NetInstance == null || batch.Count == 0)
+			return;
 
-		byte[] compressed = ZstdCompressionUtils.Compress(SerializeUtils.Serialize<BatchTransformData[]>([.. batch]));
+		byte[] compressed = ZstdCompressionUtils.Compress(
+			SerializeUtils.Serialize<BatchTransformData[]>([.. batch])
+		);
 		byte[] packet = BuildRpcPacket(rpcName, compressed);
 
 		if (excludePeer == -1)
@@ -529,7 +680,8 @@ public partial class NetworkTransformSync : Instance
 
 	private void BroadcastBatchedTransforms()
 	{
-		if (NetService.NetInstance == null || _pendingBatchUpdate.Count == 0) return;
+		if (NetService.NetInstance == null || _pendingBatchUpdate.Count == 0)
+			return;
 
 		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
@@ -537,7 +689,11 @@ public partial class NetworkTransformSync : Instance
 			List<BatchTransformData> unreliable = [];
 			foreach (var (objID, pending) in _pendingBatchUpdate)
 			{
-				if (pending.ExcludePeer == peerID || !NetService.ReplicateSync.IsReplicatedToPeer(peerID, pending.Dyn)) continue;
+				if (
+					pending.ExcludePeer == peerID
+					|| !NetService.ReplicateSync.IsReplicatedToPeer(peerID, pending.Dyn)
+				)
+					continue;
 				BatchTransformData data = new(objID, pending.Transform, pending.LerpTransform);
 				(pending.Reliable ? reliable : unreliable).Add(data);
 			}
@@ -549,8 +705,11 @@ public partial class NetworkTransformSync : Instance
 
 	private void SendBatchToPeer(int peerID, List<BatchTransformData> batch, string rpcName)
 	{
-		if (batch.Count == 0) return;
-		byte[] compressed = ZstdCompressionUtils.Compress(SerializeUtils.Serialize<BatchTransformData[]>([.. batch]));
+		if (batch.Count == 0)
+			return;
+		byte[] compressed = ZstdCompressionUtils.Compress(
+			SerializeUtils.Serialize<BatchTransformData[]>([.. batch])
+		);
 		RpcId(peerID, rpcName, compressed);
 	}
 
@@ -561,7 +720,11 @@ public partial class NetworkTransformSync : Instance
 
 		// Skip if transform is not changed enough to matter
 		// existing.Transform can be null here. Don't ask me why.
-		if (!forced && existing.Transform != null && existing.Transform.IsEqualApprox(entry.Transform))
+		if (
+			!forced
+			&& existing.Transform != null
+			&& existing.Transform.IsEqualApprox(entry.Transform)
+		)
 			return;
 
 		_pendingBatchUpdate[objID] = entry;
@@ -582,19 +745,33 @@ public partial class NetworkTransformSync : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.UnreliableOrdered)]
 	private void RecvBatchedTransforms(byte[] transformsRaw, bool isReliable)
 	{
-		if (transformsRaw is not { Length: > 0 } || transformsRaw.Length > MaxCompressedTransformBytes) return;
-		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(ZstdCompressionUtils.Decompress(transformsRaw, MaxDecompressedTransformBytes));
-		if (transforms == null) return;
+		if (
+			transformsRaw is not { Length: > 0 }
+			|| transformsRaw.Length > MaxCompressedTransformBytes
+		)
+			return;
+		BatchTransformData[]? transforms = SerializeUtils.Deserialize<BatchTransformData[]>(
+			ZstdCompressionUtils.Decompress(transformsRaw, MaxDecompressedTransformBytes)
+		);
+		if (transforms == null)
+			return;
 		foreach (var data in transforms)
 		{
 			if (NetService.Root.GetNetObjectFromID(data.ObjID) is Dynamic dyn)
 			{
-				dyn.UpdateTransformFromNet(TransformPayloadDto.FromArray(data.Transform), isReliable, data.Lerp);
+				dyn.UpdateTransformFromNet(
+					TransformPayloadDto.FromArray(data.Transform),
+					isReliable,
+					data.Lerp
+				);
 			}
 		}
 	}
 
-	private static List<BatchTransformData> GetOrCreateBatch(Dictionary<int, List<BatchTransformData>> dict, int excludePeer)
+	private static List<BatchTransformData> GetOrCreateBatch(
+		Dictionary<int, List<BatchTransformData>> dict,
+		int excludePeer
+	)
 	{
 		if (!dict.TryGetValue(excludePeer, out var list))
 		{
@@ -605,7 +782,12 @@ public partial class NetworkTransformSync : Instance
 		return list;
 	}
 
-	private struct PendingBatchTransform(Dynamic dyn, TransformPayloadDto transform, bool lerpTransform, int excludePeer)
+	private struct PendingBatchTransform(
+		Dynamic dyn,
+		TransformPayloadDto transform,
+		bool lerpTransform,
+		int excludePeer
+	)
 	{
 		public Dynamic Dyn = dyn;
 		public TransformPayloadDto Transform = transform;

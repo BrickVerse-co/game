@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Client.Settings;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -11,7 +11,6 @@ public partial class MinimalPerformanceOverlay : Control
 {
 	private Label _fpsLabel = null!;
 	private Label _pingLabel = null!;
-
 
 	public override void _Ready()
 	{
@@ -23,7 +22,10 @@ public partial class MinimalPerformanceOverlay : Control
 
 	private void UpdateVisible()
 	{
-		Visible = ClientSettingsService.Instance.Get<OverlayMode>(ClientSettingKeys.Overlay.PerformanceOverlayMode) >= OverlayMode.Minimal;
+		Visible =
+			ClientSettingsService.Instance.Get<OverlayMode>(
+				ClientSettingKeys.Overlay.PerformanceOverlayMode
+			) >= OverlayMode.Minimal;
 	}
 
 	private void UpdateAll()

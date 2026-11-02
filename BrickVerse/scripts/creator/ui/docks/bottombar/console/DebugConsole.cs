@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BrickVerse.Datamodel.Creator;
+using Godot;
 using static BrickVerse.Scripting.LogDispatcher;
 
 namespace BrickVerse.Creator.UI;
@@ -29,25 +29,42 @@ public partial class DebugConsole : Control
 
 	private readonly StringBuilder _textBuilder = new();
 
-	[Export] private RichTextLabel _richLabel = null!;
-	[Export] private LineEdit _searchEdit = null!;
-	[Export] private Button _clearBtn = null!;
-	[Export] private Button _filterBtn = null!;
+	[Export]
+	private RichTextLabel _richLabel = null!;
+
+	[Export]
+	private LineEdit _searchEdit = null!;
+
+	[Export]
+	private Button _clearBtn = null!;
+
+	[Export]
+	private Button _filterBtn = null!;
 
 	private ConsoleFilters? _consoleFilters;
 
 	public static DebugConsole Singleton { get; private set; } = null!;
 
-	private readonly List<LogData> _logs = [];              // All Logs
-	private readonly HashSet<LogData> _shownLogs = [];      // Filtered/Searched Logs
+	private readonly List<LogData> _logs = []; // All Logs
+	private readonly HashSet<LogData> _shownLogs = []; // Filtered/Searched Logs
 	private string SearchQuery = "";
 
 	// Type Filter
-	private readonly HashSet<LogTypeEnum> _typeFilters = [LogTypeEnum.Info, LogTypeEnum.Error, LogTypeEnum.Warning];
+	private readonly HashSet<LogTypeEnum> _typeFilters =
+	[
+		LogTypeEnum.Info,
+		LogTypeEnum.Error,
+		LogTypeEnum.Warning,
+	];
 
 	// Source Filter
-	private readonly HashSet<LogFromEnum> _sourceFilters = [LogFromEnum.None, LogFromEnum.Client, LogFromEnum.Server, LogFromEnum.Addon];
-
+	private readonly HashSet<LogFromEnum> _sourceFilters =
+	[
+		LogFromEnum.None,
+		LogFromEnum.Client,
+		LogFromEnum.Server,
+		LogFromEnum.Addon,
+	];
 
 	// How many logs from the unfiltered list have been rendered
 	private int _lastRenderedIndex = 0;
@@ -90,12 +107,12 @@ public partial class DebugConsole : Control
 
 		int size = _richLabel.GetThemeFontSize("normal_font_size", "Label");
 		_currentFontSize = size > 0 ? size : 16;
-
 	}
 
 	private void OnFilterButtonPressed()
 	{
-		if (_consoleFilters == null) return;
+		if (_consoleFilters == null)
+			return;
 
 		if (_consoleFilters.Visible)
 		{
@@ -129,18 +146,28 @@ public partial class DebugConsole : Control
 
 	public override void _Input(InputEvent @event)
 	{
-		if (@event is not InputEventMouseButton { Pressed: true } mb) return;
-		if (!GetGlobalRect().HasPoint(mb.GlobalPosition)) return;
+		if (@event is not InputEventMouseButton { Pressed: true } mb)
+			return;
+		if (!GetGlobalRect().HasPoint(mb.GlobalPosition))
+			return;
 
 		switch (mb)
 		{
 			case { CtrlPressed: true, ButtonIndex: MouseButton.WheelUp }:
-				_currentFontSize = Mathf.Clamp(_currentFontSize + FontSizeStep, MinFontSize, MaxFontSize);
+				_currentFontSize = Mathf.Clamp(
+					_currentFontSize + FontSizeStep,
+					MinFontSize,
+					MaxFontSize
+				);
 				_richLabel.AddThemeFontSizeOverride("normal_font_size", _currentFontSize);
 				GetViewport().SetInputAsHandled();
 				break;
 			case { CtrlPressed: true, ButtonIndex: MouseButton.WheelDown }:
-				_currentFontSize = Mathf.Clamp(_currentFontSize - FontSizeStep, MinFontSize, MaxFontSize);
+				_currentFontSize = Mathf.Clamp(
+					_currentFontSize - FontSizeStep,
+					MinFontSize,
+					MaxFontSize
+				);
 				_richLabel.AddThemeFontSizeOverride("normal_font_size", _currentFontSize);
 				GetViewport().SetInputAsHandled();
 				break;
@@ -215,23 +242,19 @@ public partial class DebugConsole : Control
 	{
 		data.LoggedAt = DateTime.Now;
 
-
-
-
 		// Binary search insertion to maintain sorted order
-		var index = _logs.BinarySearch(data, Comparer<LogData>.Create((a, b) => a.LoggedAt.CompareTo(b.LoggedAt)));
-		if (index < 0) index = ~index;
+		var index = _logs.BinarySearch(
+			data,
+			Comparer<LogData>.Create((a, b) => a.LoggedAt.CompareTo(b.LoggedAt))
+		);
+		if (index < 0)
+			index = ~index;
 		_logs.Insert(index, data);
 
 		// Trim old logs if exceeding limit
 		if (_logs.Count > MaxLogLength)
 		{
 			_logs.RemoveAt(0);
-
-
-
-
-
 
 			ForceFullRebuild();
 			return;
@@ -241,12 +264,7 @@ public partial class DebugConsole : Control
 		if (IsSearching || _typeFilters.Count < 3 || _sourceFilters.Count < 4)
 		{
 			ForceFullRebuild();
-
 		}
-
-
-
-
 		else
 		{
 			if (IsVisibleInTree())
@@ -258,7 +276,8 @@ public partial class DebugConsole : Control
 
 	private void OnVisibilityChanged()
 	{
-		if (!IsVisibleInTree()) return;
+		if (!IsVisibleInTree())
+			return;
 
 		if (_needsFullRebuild)
 			FullRebuild();
@@ -307,7 +326,6 @@ public partial class DebugConsole : Control
 
 			return l.Content.Find(SearchQuery, caseSensitive: false) != -1
 				|| l.Source.Find(SearchQuery, caseSensitive: false) != -1;
-
 		});
 
 		foreach (var item in logsToShow)
@@ -330,12 +348,10 @@ public partial class DebugConsole : Control
 			LogFromEnum.Client => ClientColorHex,
 			LogFromEnum.Server => ServerColorHex,
 			LogFromEnum.Addon => AddonColorHex,
-			_ => NoneColorHex
+			_ => NoneColorHex,
 		};
 
-		sb.Append("[color=")
-			.Append(dotColor)
-			.Append("]•[/color] ");
+		sb.Append("[color=").Append(dotColor).Append("]•[/color] ");
 
 		switch (item.LogType)
 		{
@@ -350,9 +366,7 @@ public partial class DebugConsole : Control
 				break;
 		}
 
-		sb.Append('[')
-			.Append(item.LoggedAt.ToLongTimeString())
-			.Append("] ");
+		sb.Append('[').Append(item.LoggedAt.ToLongTimeString()).Append("] ");
 
 		sb.Append(EscapeBb(item.Content));
 
@@ -363,12 +377,16 @@ public partial class DebugConsole : Control
 
 		if (!string.IsNullOrWhiteSpace(item.Source))
 		{
-			string location = EscapeBb(item.Source) + (item.SourceLine > 0 ? $":{item.SourceLine}" : "");
+			string location =
+				EscapeBb(item.Source) + (item.SourceLine > 0 ? $":{item.SourceLine}" : "");
 			sb.Append("[color=#718096]    -> ");
 			if (item.SourceLine > 0 && CanOpenSource(item.Source))
 			{
-				sb.Append("[url=trace:").Append(item.ID).Append(']')
-					.Append(location).Append("[/url]");
+				sb.Append("[url=trace:")
+					.Append(item.ID)
+					.Append(']')
+					.Append(location)
+					.Append("[/url]");
 			}
 			else
 			{
@@ -384,22 +402,26 @@ public partial class DebugConsole : Control
 			// before escaping once for this RichTextLabel.
 			.Replace("[lb]", "[", StringComparison.OrdinalIgnoreCase)
 			.Replace("[rb]", "]", StringComparison.OrdinalIgnoreCase)
-			.Replace("[", "[lb]").Replace("]", "[rb]");
+			.Replace("[", "[lb]")
+			.Replace("]", "[rb]");
 
 	private static bool CanOpenSource(string source)
 	{
 		CreatorSession? session = CreatorService.CurrentSession;
-		if (session == null || string.IsNullOrWhiteSpace(source)) return false;
+		if (session == null || string.IsNullOrWhiteSpace(source))
+			return false;
 		return System.IO.File.Exists(session.GlobalizePath(source));
 	}
 
 	private void OnTraceClicked(Variant metadata)
 	{
 		string value = metadata.AsString();
-		if (!value.StartsWith("trace:", StringComparison.Ordinal)) return;
+		if (!value.StartsWith("trace:", StringComparison.Ordinal))
+			return;
 		string id = value["trace:".Length..];
 		LogData? item = _logs.FirstOrDefault(log => log.ID == id);
-		if (item == null || item.SourceLine <= 0 || !CanOpenSource(item.Source)) return;
+		if (item == null || item.SourceLine <= 0 || !CanOpenSource(item.Source))
+			return;
 		CreatorService.OpenFile(item.Source, item.SourceLine);
 	}
 }

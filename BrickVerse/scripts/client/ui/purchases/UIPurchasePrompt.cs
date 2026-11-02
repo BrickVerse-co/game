@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Threading.Tasks;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using System;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Client.UI.Purchases;
 
@@ -17,14 +17,29 @@ public partial class UIPurchasePrompt : Control
 	private const float PurchaseHoldSec = 1.5f;
 	private const float PurchaseHoldReleaseSec = 0.15f;
 
-	[Export] private Label _purchaseText = null!;
-	[Export] private Label _priceLabel = null!;
-	[Export] private Button _purchaseButton = null!;
-	[Export] private Control _purchaseHoldFill = null!;
-	[Export] private Control _purchaseHoldDarken = null!;
-	[Export] private Button _cancelButton = null!;
-	[Export] private TextureRect _iconRect = null!;
-	[Export] private AnimationPlayer _animPlay = null!;
+	[Export]
+	private Label _purchaseText = null!;
+
+	[Export]
+	private Label _priceLabel = null!;
+
+	[Export]
+	private Button _purchaseButton = null!;
+
+	[Export]
+	private Control _purchaseHoldFill = null!;
+
+	[Export]
+	private Control _purchaseHoldDarken = null!;
+
+	[Export]
+	private Button _cancelButton = null!;
+
+	[Export]
+	private TextureRect _iconRect = null!;
+
+	[Export]
+	private AnimationPlayer _animPlay = null!;
 
 	private BVImageAsset? _iconImg;
 	private Tween? _holdTween;
@@ -55,9 +70,11 @@ public partial class UIPurchasePrompt : Control
 		_holdTween?.Kill();
 		_holdTween = CreateTween();
 		_holdTween.SetParallel(true);
-		_holdTween.TweenProperty(_purchaseHoldFill, "size:x", _purchaseButton.Size.X, PurchaseHoldSec)
+		_holdTween
+			.TweenProperty(_purchaseHoldFill, "size:x", _purchaseButton.Size.X, PurchaseHoldSec)
 			.From(0f);
-		_holdTween.TweenProperty(_purchaseHoldDarken, "size:x", _purchaseButton.Size.X, PurchaseHoldSec)
+		_holdTween
+			.TweenProperty(_purchaseHoldDarken, "size:x", _purchaseButton.Size.X, PurchaseHoldSec)
 			.From(0f);
 		_holdTween.Chain().TweenCallback(Callable.From(OnPurchaseHoldCompleted));
 	}

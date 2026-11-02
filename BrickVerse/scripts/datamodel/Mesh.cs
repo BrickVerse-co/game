@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
 using BrickVerse.Scripting;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -83,7 +83,8 @@ public sealed partial class Mesh : Entity
 		get => _texture;
 		set
 		{
-			if (_texture == value) return;
+			if (_texture == value)
+				return;
 			if (_texture != null)
 			{
 				_texture.ResourceLoaded -= OnTextureLoaded;
@@ -236,15 +237,18 @@ public sealed partial class Mesh : Entity
 		}
 	}
 
-	[ScriptProperty] public bool Loading { get; private set; } = false;
+	[ScriptProperty]
+	public bool Loading { get; private set; } = false;
 
-	[ScriptProperty] public BVSignal Loaded { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal Loaded { get; private set; } = new();
 
 	internal override (Godot.Mesh Mesh, Transform3D Transform)[] GetBooleanGeometry()
 	{
 		List<(Godot.Mesh, Transform3D)> result = [];
 		foreach (MeshInstance3D instance in _meshInstances)
-			if (instance.Mesh != null) result.Add((instance.Mesh, instance.GlobalTransform));
+			if (instance.Mesh != null)
+				result.Add((instance.Mesh, instance.GlobalTransform));
 		return [.. result];
 	}
 
@@ -255,7 +259,7 @@ public sealed partial class Mesh : Entity
 	{
 		Bounds,
 		Convex,
-		Exact
+		Exact,
 	}
 
 	public override void Init()
@@ -315,12 +319,14 @@ public sealed partial class Mesh : Entity
 
 	private void OnResourceLoaded(Resource resource)
 	{
-		if (_prevResource == resource) return;
+		if (_prevResource == resource)
+			return;
 		_prevResource = resource;
 
 		if (resource is PackedScene scene)
 		{
-			if (!Node.IsInstanceValid(GDNode)) return;
+			if (!Node.IsInstanceValid(GDNode))
+				return;
 			_animPlay = null;
 			if (_meshNode != null && Node.IsInstanceValid(_meshNode))
 			{
@@ -351,14 +357,18 @@ public sealed partial class Mesh : Entity
 					{
 						// Duplicate material, same as above
 						Material? sourceMaterial = m3d.Mesh.SurfaceGetMaterial(i);
-						if (sourceMaterial == null) continue;
+						if (sourceMaterial == null)
+							continue;
 						Material mat = (Material)sourceMaterial.Duplicate();
 						m3d.Mesh.SurfaceSetMaterial(i, mat);
 						_materials.Add(mat);
 						if (mat is StandardMaterial3D sm3d)
 						{
 							mat.SetMeta("_origin_clr", sm3d.AlbedoColor);
-							mat.SetMeta("_origin_hasalpha", sm3d.Transparency != BaseMaterial3D.TransparencyEnum.Disabled);
+							mat.SetMeta(
+								"_origin_hasalpha",
+								sm3d.Transparency != BaseMaterial3D.TransparencyEnum.Disabled
+							);
 						}
 					}
 				}
@@ -366,7 +376,8 @@ public sealed partial class Mesh : Entity
 
 			UpdateColor();
 			RefreshSurfaceAppearance();
-			if (_texture?.Resource is Texture2D texture) ApplyTexture(texture);
+			if (_texture?.Resource is Texture2D texture)
+				ApplyTexture(texture);
 			UpdateShadows();
 			UpdateTextureFilter();
 
@@ -391,7 +402,8 @@ public sealed partial class Mesh : Entity
 
 	private void OnTextureLoaded(Resource resource)
 	{
-		if (resource is Texture2D texture) ApplyTexture(texture);
+		if (resource is Texture2D texture)
+			ApplyTexture(texture);
 	}
 
 	private void ApplyTexture(Texture2D texture)
@@ -409,8 +421,12 @@ public sealed partial class Mesh : Entity
 		Instance? current = this;
 		while (current != null && appearance == null)
 		{
-			appearance = current.GetChildren().OfType<SurfaceAppearance>()
-				.FirstOrDefault(candidate => candidate != ignored && candidate.Enabled && !candidate.IsDeleted);
+			appearance = current
+				.GetChildren()
+				.OfType<SurfaceAppearance>()
+				.FirstOrDefault(candidate =>
+					candidate != ignored && candidate.Enabled && !candidate.IsDeleted
+				);
 			current = current.Parent;
 		}
 		_surfaceAppearance = appearance;
@@ -427,17 +443,27 @@ public sealed partial class Mesh : Entity
 	[ScriptMethod]
 	public void PlayAnimation(string animationName, float speed = 1.0f, bool loop = true)
 	{
-		if (_animPlay == null) { return; }
+		if (_animPlay == null)
+		{
+			return;
+		}
 		Godot.Animation targetAnim = _animPlay.GetAnimation(animationName);
 		if (targetAnim != null)
 		{
-			targetAnim.LoopMode = loop ? Godot.Animation.LoopModeEnum.Linear : Godot.Animation.LoopModeEnum.None;
+			targetAnim.LoopMode = loop
+				? Godot.Animation.LoopModeEnum.Linear
+				: Godot.Animation.LoopModeEnum.None;
 			_animPlay.Play(animationName, -1, speed);
 		}
 	}
 
 	[ScriptLegacyMethod("PlayAnimation")]
-	public void LegacyPlayAnimation(string animationName, string _ = "", float speed = 1.0f, bool loop = true)
+	public void LegacyPlayAnimation(
+		string animationName,
+		string _ = "",
+		float speed = 1.0f,
+		bool loop = true
+	)
 	{
 		PlayAnimation(animationName, speed, loop);
 	}
@@ -445,7 +471,10 @@ public sealed partial class Mesh : Entity
 	[ScriptMethod]
 	public void StopAnimation(string? animationName = null)
 	{
-		if (_animPlay == null) { return; }
+		if (_animPlay == null)
+		{
+			return;
+		}
 		if (animationName != null)
 		{
 			if (_animPlay.CurrentAnimation == animationName)
@@ -462,25 +491,33 @@ public sealed partial class Mesh : Entity
 	[ScriptMethod]
 	public string[] GetAnimations()
 	{
-		if (_animPlay == null) { return []; }
+		if (_animPlay == null)
+		{
+			return [];
+		}
 		return _animPlay.GetAnimationList();
 	}
 
 	[ScriptMethod]
 	public MeshAnimationInfo[] GetAnimationInfo()
 	{
-		if (_animPlay == null) { return []; }
+		if (_animPlay == null)
+		{
+			return [];
+		}
 		List<MeshAnimationInfo> animInfo = [];
 
 		foreach (string animKey in _animPlay.GetAnimationList())
 		{
 			Godot.Animation anim = _animPlay.GetAnimation(animKey);
-			animInfo.Add(new()
-			{
-				Name = animKey,
-				Length = anim.Length,
-				IsPlaying = _animPlay.CurrentAnimation == animKey
-			});
+			animInfo.Add(
+				new()
+				{
+					Name = animKey,
+					Length = anim.Length,
+					IsPlaying = _animPlay.CurrentAnimation == animKey,
+				}
+			);
 		}
 
 		return [.. animInfo];
@@ -501,7 +538,10 @@ public sealed partial class Mesh : Entity
 				}
 				sm.AlbedoColor = setto;
 				if (!hasAlpha)
-					sm.Transparency = setto.A < 1 ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled;
+					sm.Transparency =
+						setto.A < 1
+							? BaseMaterial3D.TransparencyEnum.Alpha
+							: BaseMaterial3D.TransparencyEnum.Disabled;
 			}
 		}
 
@@ -512,7 +552,9 @@ public sealed partial class Mesh : Entity
 	{
 		foreach (MeshInstance3D item in _meshInstances)
 		{
-			item.CastShadow = _castShadows ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off;
+			item.CastShadow = _castShadows
+				? GeometryInstance3D.ShadowCastingSetting.On
+				: GeometryInstance3D.ShadowCastingSetting.Off;
 		}
 	}
 
@@ -555,14 +597,8 @@ public sealed partial class Mesh : Entity
 				if (node is MeshInstance3D meshInstance)
 				{
 					Aabb bounds = meshInstance.GetAabb();
-					BoxShape3D boxShape = new()
-					{
-						Size = bounds.Size
-					};
-					CollisionShape3D collisionShape = new()
-					{
-						Shape = boxShape,
-					};
+					BoxShape3D boxShape = new() { Size = bounds.Size };
+					CollisionShape3D collisionShape = new() { Shape = boxShape };
 					GDNode3D.AddChild(collisionShape);
 
 					SetRemoteLinkTarget(collisionShape, meshInstance);
@@ -571,7 +607,10 @@ public sealed partial class Mesh : Entity
 				}
 			}
 		}
-		else if (CollisionType == CollisionTypeEnum.Convex || CollisionType == CollisionTypeEnum.Exact)
+		else if (
+			CollisionType == CollisionTypeEnum.Convex
+			|| CollisionType == CollisionTypeEnum.Exact
+		)
 		{
 			foreach (Node node in GetDescendantsInternal(_meshNode))
 			{
@@ -583,10 +622,7 @@ public sealed partial class Mesh : Entity
 
 					if (CollisionType == CollisionTypeEnum.Convex)
 					{
-						ConvexPolygonShape3D convex = new()
-						{
-							Points = facesArray
-						};
+						ConvexPolygonShape3D convex = new() { Points = facesArray };
 						shape = convex;
 					}
 					else
@@ -599,7 +635,7 @@ public sealed partial class Mesh : Entity
 					CollisionShape3D collisionShape = new()
 					{
 						Shape = shape,
-						DebugColor = Color.FromString("#F2821B", new Color())
+						DebugColor = Color.FromString("#F2821B", new Color()),
 					};
 
 					GDNode3D.AddChild(collisionShape);
@@ -618,7 +654,6 @@ public sealed partial class Mesh : Entity
 
 		foreach (MeshInstance3D v3d in _meshInstances)
 		{
-
 			if (!v3d.IsVisibleInTree())
 			{
 				continue;
@@ -670,9 +705,14 @@ public sealed partial class Mesh : Entity
 
 	public struct MeshAnimationInfo : IScriptObject
 	{
-		[ScriptProperty] public string Name { get; set; }
-		[ScriptProperty] public double Length { get; set; }
-		[ScriptProperty] public bool IsPlaying { get; set; }
+		[ScriptProperty]
+		public string Name { get; set; }
+
+		[ScriptProperty]
+		public double Length { get; set; }
+
+		[ScriptProperty]
+		public bool IsPlaying { get; set; }
 
 		public override readonly int GetHashCode()
 		{

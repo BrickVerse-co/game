@@ -2,19 +2,30 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UILeaderboardUserOptions : Control
 {
-	[Export] private AnimationPlayer _animPlay = null!;
-	[Export] private Control _optionsLayout = null!;
-	[Export] private Button _addFriendBtn = null!;
-	[Export] private Button _removeFriendBtn = null!;
-	[Export] private Button _viewProfileBtn = null!;
-	[Export] private Control _loaderView = null!;
+	[Export]
+	private AnimationPlayer _animPlay = null!;
+
+	[Export]
+	private Control _optionsLayout = null!;
+
+	[Export]
+	private Button _addFriendBtn = null!;
+
+	[Export]
+	private Button _removeFriendBtn = null!;
+
+	[Export]
+	private Button _viewProfileBtn = null!;
+
+	[Export]
+	private Control _loaderView = null!;
 	public bool Active { get; private set; } = false;
 	public UILeaderboardUserItem? Target;
 	private World _root = null!;
@@ -28,44 +39,68 @@ public partial class UILeaderboardUserOptions : Control
 		_viewProfileBtn.Pressed += OnViewProfile;
 		_addFriendBtn.Pressed += OnAddFriend;
 		_removeFriendBtn.Pressed += OnRemoveFriend;
-		_blockButton = new Button { Text = "Block User", TooltipText = "Hide this user's chat and remove the friendship" };
-		_blockButton.Pressed += OnBlock; _optionsLayout.AddChild(_blockButton);
-		_muteVoiceButton = new Button { Text = "Mute Voice" }; _muteVoiceButton.Pressed += OnMuteVoice; _optionsLayout.AddChild(_muteVoiceButton);
+		_blockButton = new Button
+		{
+			Text = "Block User",
+			TooltipText = "Hide this user's chat and remove the friendship",
+		};
+		_blockButton.Pressed += OnBlock;
+		_optionsLayout.AddChild(_blockButton);
+		_muteVoiceButton = new Button { Text = "Mute Voice" };
+		_muteVoiceButton.Pressed += OnMuteVoice;
+		_optionsLayout.AddChild(_muteVoiceButton);
 		base._Ready();
 	}
 
 	private void OnMuteVoice()
 	{
-		if (Target == null) return;
+		if (Target == null)
+			return;
 		bool muted = _root.VoiceChat.IsPlayerMuted(Target.TargetPlayer);
-		if (muted) _root.VoiceChat.UnmutePlayer(Target.TargetPlayer); else _root.VoiceChat.MutePlayer(Target.TargetPlayer);
+		if (muted)
+			_root.VoiceChat.UnmutePlayer(Target.TargetPlayer);
+		else
+			_root.VoiceChat.MutePlayer(Target.TargetPlayer);
 		_muteVoiceButton.Text = muted ? "Mute Voice" : "Unmute Voice";
 	}
 
 	private void OnBlock()
 	{
-		if (Target == null) return;
-		_root.Social.LocalSendFriendshipRequest(Target.TargetPlayer, Datamodel.Services.SocialService.FriendshipRequestType.Block);
+		if (Target == null)
+			return;
+		_root.Social.LocalSendFriendshipRequest(
+			Target.TargetPlayer,
+			Datamodel.Services.SocialService.FriendshipRequestType.Block
+		);
 		Disappear();
 	}
 
 	private void OnAddFriend()
 	{
-		if (Target == null) return;
-		_root.Social.LocalSendFriendshipRequest(Target.TargetPlayer, Datamodel.Services.SocialService.FriendshipRequestType.Friend);
+		if (Target == null)
+			return;
+		_root.Social.LocalSendFriendshipRequest(
+			Target.TargetPlayer,
+			Datamodel.Services.SocialService.FriendshipRequestType.Friend
+		);
 		Disappear();
 	}
 
 	private void OnRemoveFriend()
 	{
-		if (Target == null) return;
-		_root.Social.LocalSendFriendshipRequest(Target.TargetPlayer, Datamodel.Services.SocialService.FriendshipRequestType.Unfriend);
+		if (Target == null)
+			return;
+		_root.Social.LocalSendFriendshipRequest(
+			Target.TargetPlayer,
+			Datamodel.Services.SocialService.FriendshipRequestType.Unfriend
+		);
 		Disappear();
 	}
 
 	private void OnViewProfile()
 	{
-		if (Target == null) return;
+		if (Target == null)
+			return;
 		OS.ShellOpen($"https://brickverse.gg/@{Target.TargetPlayer.Name}");
 
 		Disappear();
@@ -79,7 +114,8 @@ public partial class UILeaderboardUserOptions : Control
 
 	public async void PopupAt(UILeaderboardUserItem item)
 	{
-		if (Active) return;
+		if (Active)
+			return;
 		_lastReq++;
 		Active = true;
 		Target = item;
@@ -89,26 +125,34 @@ public partial class UILeaderboardUserOptions : Control
 		_animPlay.Stop();
 		_animPlay.Play("appear");
 
-
 		int myReq = _lastReq;
 
 		ShowLoader(true);
 
 		// Fetch friendship status
-		bool isFriends = await _root.Social.WebCheckAreFriends(_root.Players.LocalPlayer.UserID, item.TargetPlayer.UserID);
+		bool isFriends = await _root.Social.WebCheckAreFriends(
+			_root.Players.LocalPlayer.UserID,
+			item.TargetPlayer.UserID
+		);
 
 		// If another option opened
-		if (myReq != _lastReq) return;
+		if (myReq != _lastReq)
+			return;
 		_addFriendBtn.Visible = !isFriends;
 		_removeFriendBtn.Visible = isFriends;
-		_muteVoiceButton.Visible = World.Current?.Players.LocalPlayer?.CanVoiceChat == true && item.TargetPlayer.CanVoiceChat;
-		_muteVoiceButton.Text = _root.VoiceChat.IsPlayerMuted(item.TargetPlayer) ? "Unmute Voice" : "Mute Voice";
+		_muteVoiceButton.Visible =
+			World.Current?.Players.LocalPlayer?.CanVoiceChat == true
+			&& item.TargetPlayer.CanVoiceChat;
+		_muteVoiceButton.Text = _root.VoiceChat.IsPlayerMuted(item.TargetPlayer)
+			? "Unmute Voice"
+			: "Mute Voice";
 		ShowLoader(false);
 	}
 
 	public void Disappear()
 	{
-		if (!Active) return;
+		if (!Active)
+			return;
 		Active = false;
 		Target = null;
 		_animPlay.Stop();

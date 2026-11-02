@@ -2,9 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -12,6 +9,9 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace BrickVerse.SourceGen;
 
@@ -28,12 +28,13 @@ public sealed class ScriptEnumGenerator : IIncrementalGenerator
 		messageFormat: "Enum name '{0}' is already taken. Use ScriptEnum(\"name\") to provide a unique name.",
 		category: "BrickVerse.SourceGen",
 		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+		isEnabledByDefault: true
+	);
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		var enumSymbols = context.SyntaxProvider
-			.ForAttributeWithMetadataName(
+		var enumSymbols = context
+			.SyntaxProvider.ForAttributeWithMetadataName(
 				AttributeFullName,
 				predicate: static (node, _) => node is EnumDeclarationSyntax,
 				transform: static (ctx, _) =>
@@ -41,28 +42,38 @@ public sealed class ScriptEnumGenerator : IIncrementalGenerator
 					var enumSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
 					var attrData = ctx.Attributes[0];
 
-					var location = enumSymbol.Locations.Length > 0
-						? enumSymbol.Locations[0]
-						: Location.None;
+					var location =
+						enumSymbol.Locations.Length > 0 ? enumSymbol.Locations[0] : Location.None;
 
 					return new EnumEntry(
 						GetScriptName(enumSymbol, attrData),
 						enumSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 						GetIsCreatorOnly(attrData),
-						location);
-				})
+						location
+					);
+				}
+			)
 			.Collect();
 
-		context.RegisterSourceOutput(enumSymbols, static (spc, entries) =>
-		{
-			if (ReportDuplicates(spc, entries))
-				return;
+		context.RegisterSourceOutput(
+			enumSymbols,
+			static (spc, entries) =>
+			{
+				if (ReportDuplicates(spc, entries))
+					return;
 
-			spc.AddSource("ScriptEnumMapInitializer.g.cs", SourceText.From(GenerateEnumMapSource(entries), Encoding.UTF8));
-		});
+				spc.AddSource(
+					"ScriptEnumMapInitializer.g.cs",
+					SourceText.From(GenerateEnumMapSource(entries), Encoding.UTF8)
+				);
+			}
+		);
 	}
 
-	private static bool ReportDuplicates(SourceProductionContext spc, ImmutableArray<EnumEntry> entries)
+	private static bool ReportDuplicates(
+		SourceProductionContext spc,
+		ImmutableArray<EnumEntry> entries
+	)
 	{
 		var seen = new Dictionary<string, Location>(StringComparer.Ordinal);
 		bool any = false;
@@ -71,11 +82,15 @@ public sealed class ScriptEnumGenerator : IIncrementalGenerator
 		{
 			if (seen.TryGetValue(entry.ScriptName, out var firstLocation))
 			{
-				spc.ReportDiagnostic(Diagnostic.Create(_duplicateScriptNameRule, entry.Location, entry.ScriptName));
+				spc.ReportDiagnostic(
+					Diagnostic.Create(_duplicateScriptNameRule, entry.Location, entry.ScriptName)
+				);
 
 				if (firstLocation != Location.None)
 				{
-					spc.ReportDiagnostic(Diagnostic.Create(_duplicateScriptNameRule, firstLocation, entry.ScriptName));
+					spc.ReportDiagnostic(
+						Diagnostic.Create(_duplicateScriptNameRule, firstLocation, entry.ScriptName)
+					);
 					seen[entry.ScriptName] = Location.None;
 				}
 
@@ -94,15 +109,19 @@ public sealed class ScriptEnumGenerator : IIncrementalGenerator
 	{
 		foreach (var namedArg in attrData.NamedArguments)
 		{
-			if (namedArg.Key == "Name" &&
-				namedArg.Value.Value is string namedName &&
-				!string.IsNullOrWhiteSpace(namedName))
+			if (
+				namedArg.Key == "Name"
+				&& namedArg.Value.Value is string namedName
+				&& !string.IsNullOrWhiteSpace(namedName)
+			)
 				return namedName;
 		}
 
-		if (attrData.ConstructorArguments.Length > 0 &&
-			attrData.ConstructorArguments[0].Value is string positionalName &&
-			!string.IsNullOrWhiteSpace(positionalName))
+		if (
+			attrData.ConstructorArguments.Length > 0
+			&& attrData.ConstructorArguments[0].Value is string positionalName
+			&& !string.IsNullOrWhiteSpace(positionalName)
+		)
 			return positionalName;
 
 		const string suffix = "Enum";
@@ -173,7 +192,12 @@ public sealed class ScriptEnumGenerator : IIncrementalGenerator
 		return sb.ToString();
 	}
 
-	private readonly struct EnumEntry(string scriptName, string fullTypeRef, bool isCreatorOnly, Location location)
+	private readonly struct EnumEntry(
+		string scriptName,
+		string fullTypeRef,
+		bool isCreatorOnly,
+		Location location
+	)
 	{
 		public readonly string ScriptName = scriptName;
 		public readonly string FullTypeRef = fullTypeRef;

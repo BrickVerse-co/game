@@ -2,15 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public sealed partial class UIMenuPlayers : UIMenuViewBase
 {
-	[Export] private Control _playerCardContainer = null!;
+	[Export]
+	private Control _playerCardContainer = null!;
 
 	private Players _players = null!;
 	private PackedScene _playerCardScene = null!;
@@ -18,7 +19,9 @@ public sealed partial class UIMenuPlayers : UIMenuViewBase
 
 	public override void _Ready()
 	{
-		_playerCardScene = GD.Load<PackedScene>("res://scenes/client/ui/menu/components/player_card.tscn");
+		_playerCardScene = GD.Load<PackedScene>(
+			"res://scenes/client/ui/menu/components/player_card.tscn"
+		);
 		_players = CoreUIRoot.Singleton.Root.Players;
 		_players.PlayerAdded.Connect(AddPlayer);
 		_players.PlayerRemoved.Connect(RemovePlayer);

@@ -1,9 +1,9 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
-using BrickVerse.Utils;
 using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Client.XR;
 
@@ -23,8 +23,12 @@ public sealed partial class XRRuntime : Node3D
 	private World _world = null!;
 
 	public bool IsActive { get; private set; }
-	public Vector2 MoveVector => IsActive && _left != null ? _left.GetVector2("primary") : Vector2.Zero;
-	public bool JumpPressed => IsActive && _right != null && (_right.IsButtonPressed("ax_button") || _right.IsButtonPressed("primary_click"));
+	public Vector2 MoveVector =>
+		IsActive && _left != null ? _left.GetVector2("primary") : Vector2.Zero;
+	public bool JumpPressed =>
+		IsActive
+		&& _right != null
+		&& (_right.IsButtonPressed("ax_button") || _right.IsButtonPressed("primary_click"));
 	public Transform3D HeadPose => _head?.Transform ?? Transform3D.Identity;
 	public Transform3D LeftHandPose => _left?.Transform ?? Transform3D.Identity;
 	public Transform3D RightHandPose => _right?.Transform ?? Transform3D.Identity;
@@ -40,10 +44,16 @@ public sealed partial class XRRuntime : Node3D
 
 	public static bool WasRequested()
 	{
-		if (OS.HasFeature("xr")) return true;
+		if (OS.HasFeature("xr"))
+			return true;
 		string[] args = OS.GetCmdlineArgs();
 		for (int index = 0; index < args.Length; index++)
-			if (args[index] == "--xr-mode" && index + 1 < args.Length && args[index + 1].Equals("on", System.StringComparison.OrdinalIgnoreCase)) return true;
+			if (
+				args[index] == "--xr-mode"
+				&& index + 1 < args.Length
+				&& args[index + 1].Equals("on", System.StringComparison.OrdinalIgnoreCase)
+			)
+				return true;
 		return false;
 	}
 
@@ -74,7 +84,8 @@ public sealed partial class XRRuntime : Node3D
 
 	public override void _Process(double delta)
 	{
-		if (!IsActive || _origin == null || _head == null) return;
+		if (!IsActive || _origin == null || _head == null)
+			return;
 		Player? player = _world.Players?.LocalPlayer;
 		if (player != null)
 		{
@@ -93,26 +104,53 @@ public sealed partial class XRRuntime : Node3D
 
 	private void BridgeGameplayActions()
 	{
-		if (_left == null || _right == null) return;
-		SetAction("activate", _right.IsButtonPressed("trigger_click") || RightTrigger > 0.75f, ref _activatePressed);
-		SetAction("interact", _left.IsButtonPressed("grip_click") || LeftGrip > 0.75f, ref _interactPressed);
-		SetAction("toggle_menu", _right.IsButtonPressed("by_button") || _left.IsButtonPressed("menu_button"), ref _menuPressed);
+		if (_left == null || _right == null)
+			return;
+		SetAction(
+			"activate",
+			_right.IsButtonPressed("trigger_click") || RightTrigger > 0.75f,
+			ref _activatePressed
+		);
+		SetAction(
+			"interact",
+			_left.IsButtonPressed("grip_click") || LeftGrip > 0.75f,
+			ref _interactPressed
+		);
+		SetAction(
+			"toggle_menu",
+			_right.IsButtonPressed("by_button") || _left.IsButtonPressed("menu_button"),
+			ref _menuPressed
+		);
 		SetAction("jump", JumpPressed, ref _jumpPressed);
 	}
 
 	private static void SetAction(string action, bool pressed, ref bool previous)
 	{
-		if (pressed == previous) return;
+		if (pressed == previous)
+			return;
 		previous = pressed;
-		Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = pressed, Strength = pressed ? 1f : 0f });
+		Input.ParseInputEvent(
+			new InputEventAction
+			{
+				Action = action,
+				Pressed = pressed,
+				Strength = pressed ? 1f : 0f,
+			}
+		);
 	}
 
 	private void ApplySnapTurn()
 	{
-		if (_right == null || _origin == null) return;
+		if (_right == null || _origin == null)
+			return;
 		float turn = _right.GetVector2("primary").X;
-		if (Mathf.Abs(turn) < 0.45f) { _snapTurnLatch = 0; return; }
-		if (_snapTurnLatch != 0) return;
+		if (Mathf.Abs(turn) < 0.45f)
+		{
+			_snapTurnLatch = 0;
+			return;
+		}
+		if (_snapTurnLatch != 0)
+			return;
 		_snapTurnLatch = Mathf.Sign(turn);
 		_origin.RotateY(Mathf.DegToRad(-30f * _snapTurnLatch));
 	}
@@ -121,21 +159,30 @@ public sealed partial class XRRuntime : Node3D
 
 	public void NavigateTo(Transform3D destination)
 	{
-		if (_origin == null) return;
+		if (_origin == null)
+			return;
 		Player? player = _world.Players?.LocalPlayer;
-		if (player != null) player.Position = destination.Origin;
+		if (player != null)
+			player.Position = destination.Origin;
 		_origin.GlobalTransform = new Transform3D(destination.Basis, destination.Origin);
 	}
 
 	public void Pulse(bool leftHand, float amplitude, float durationSeconds, float frequency)
 	{
 		XRController3D? controller = leftHand ? _left : _right;
-		controller?.TriggerHapticPulse("haptic", frequency, Mathf.Clamp(amplitude, 0f, 1f), Mathf.Max(durationSeconds, 0f), 0f);
+		controller?.TriggerHapticPulse(
+			"haptic",
+			frequency,
+			Mathf.Clamp(amplitude, 0f, 1f),
+			Mathf.Max(durationSeconds, 0f),
+			0f
+		);
 	}
 
 	public override void _ExitTree()
 	{
-		if (IsActive) GetViewport().UseXR = false;
+		if (IsActive)
+			GetViewport().UseXR = false;
 		IsActive = false;
 	}
 }

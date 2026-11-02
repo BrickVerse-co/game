@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
 using BrickVerse.Scripting;
 using BrickVerse.Utils;
-using System;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -111,10 +111,12 @@ public partial class UITextInput : UIView
 		set
 		{
 			bool changed = _autoSize != value;
-			if (changed && _autoSize) NodeControl.Resized -= UpdateTextSize;
+			if (changed && _autoSize)
+				NodeControl.Resized -= UpdateTextSize;
 
 			_autoSize = value;
-			if (changed && _autoSize) NodeControl.Resized += UpdateTextSize;
+			if (changed && _autoSize)
+				NodeControl.Resized += UpdateTextSize;
 
 			UpdateTextSize();
 			OnPropertyChanged();
@@ -237,17 +239,21 @@ public partial class UITextInput : UIView
 		set
 		{
 			_fontPreset = value;
-			FontAsset = new BuiltInFontAsset()
-			{
-				FontPreset = _fontPreset
-			};
+			FontAsset = new BuiltInFontAsset() { FontPreset = _fontPreset };
 		}
 	}
 
-	[ScriptProperty] public BVSignal<string> Submitted { get; private set; } = new();
-	[ScriptProperty] public new BVSignal<string> Changed { get; private set; } = new();
-	[ScriptProperty] public BVSignal FocusEnter { get; private set; } = new();
-	[ScriptProperty] public BVSignal FocusExit { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<string> Submitted { get; private set; } = new();
+
+	[ScriptProperty]
+	public new BVSignal<string> Changed { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal FocusEnter { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal FocusExit { get; private set; } = new();
 
 	private void OnFontLoaded(Resource resource)
 	{
@@ -261,11 +267,20 @@ public partial class UITextInput : UIView
 		if (_autoSize)
 		{
 			string textDisplayed = !string.IsNullOrEmpty(Text) ? Text : _placeholder;
-			float autoSize = TextUtils.BoundsToTextSize(_textEdit.GetThemeFont("font"), textDisplayed, NodeControl.Size, _multiLine) / UILabel.FontScaleConversion;
-			if (_maxAutoSize > 0 && autoSize > _maxAutoSize) SetTextSize(_maxAutoSize);
-			else SetTextSize(autoSize);
+			float autoSize =
+				TextUtils.BoundsToTextSize(
+					_textEdit.GetThemeFont("font"),
+					textDisplayed,
+					NodeControl.Size,
+					_multiLine
+				) / UILabel.FontScaleConversion;
+			if (_maxAutoSize > 0 && autoSize > _maxAutoSize)
+				SetTextSize(_maxAutoSize);
+			else
+				SetTextSize(autoSize);
 		}
-		else SetTextSize(_fontSize);
+		else
+			SetTextSize(_fontSize);
 	}
 
 	private void SetTextSize(float size)
@@ -293,7 +308,9 @@ public partial class UITextInput : UIView
 		_lineEdit.AddThemeStyleboxOverride("normal", empty);
 		_lineEdit.AddThemeStyleboxOverride("read_only", empty);
 		_lineEdit.AddThemeStyleboxOverride("focus", empty);
-		_textEdit.MouseDefaultCursorShape = _lineEdit.MouseDefaultCursorShape = Control.CursorShape.Ibeam;
+		_textEdit.MouseDefaultCursorShape = _lineEdit.MouseDefaultCursorShape = Control
+			.CursorShape
+			.Ibeam;
 		_textEdit.AddThemeConstantOverride("line_spacing", 0);
 
 		// Set pass
@@ -347,8 +364,14 @@ public partial class UITextInput : UIView
 	[ScriptMethod]
 	public void Focus()
 	{
-		if (_textEdit.Visible) { _textEdit.GrabFocus(); }
-		if (_lineEdit.Visible) { _lineEdit.GrabFocus(); }
+		if (_textEdit.Visible)
+		{
+			_textEdit.GrabFocus();
+		}
+		if (_lineEdit.Visible)
+		{
+			_lineEdit.GrabFocus();
+		}
 	}
 
 	private void OnTextEditFocusEntered()

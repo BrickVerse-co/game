@@ -2,27 +2,28 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Networking;
+using BrickVerse.Schemas.API;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Utils;
+using Godot;
 #if CREATOR
 using BrickVerse.Creator;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Creator.UI;
 #endif
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Schemas.API;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Linq;
-using BrickVerse.Networking;
-using BrickVerse.Shared.AssetLoaders;
-using System.Collections.Concurrent;
+
 
 namespace BrickVerse.Datamodel;
 
@@ -56,8 +57,14 @@ public sealed partial class World : Instance
 	private string _universeName = "";
 	private string _universeDescription = "";
 	private bool _serverUnderLoad = false;
-	private readonly ConcurrentDictionary<string, TaskCompletionSource<NetworkedObject?>> _pendingRequests = [];
-	private readonly ConcurrentDictionary<string, TaskCompletionSource<NetworkedObject?>> _pendingReadyRequests = [];
+	private readonly ConcurrentDictionary<
+		string,
+		TaskCompletionSource<NetworkedObject?>
+	> _pendingRequests = [];
+	private readonly ConcurrentDictionary<
+		string,
+		TaskCompletionSource<NetworkedObject?>
+	> _pendingReadyRequests = [];
 
 	internal int WorldSessionID = 0;
 
@@ -118,7 +125,8 @@ public sealed partial class World : Instance
 	public InputService Input => FindChild<InputService>("Input")!;
 	public VRService VRService => FindChild<VRService>("VRService")!;
 	public FilterService Filter => FindChild<FilterService>("Filter")!;
-	public CollectionService CollectionService => FindChild<CollectionService>("CollectionService")!;
+	public CollectionService CollectionService =>
+		FindChild<CollectionService>("CollectionService")!;
 	public DebrisService Debris => FindChild<DebrisService>("Debris")!;
 	public RunService RunService => FindChild<RunService>("RunService")!;
 	public SchedulerService Scheduler => FindChild<SchedulerService>("Scheduler")!;
@@ -146,7 +154,8 @@ public sealed partial class World : Instance
 	public GeometryService Geometry => FindChild<GeometryService>("GeometryService")!;
 	internal AntiCheatService AntiCheat => FindChild<AntiCheatService>("AntiCheat")!;
 #if CREATOR
-	public CreatorContextService CreatorContext => FindChild<CreatorContextService>("CreatorContext")!;
+	public CreatorContextService CreatorContext =>
+		FindChild<CreatorContextService>("CreatorContext")!;
 #if CREATOR
 	public StudioService? StudioService => FindChild<StudioService>("StudioService");
 #endif
@@ -185,7 +194,9 @@ public sealed partial class World : Instance
 			// Set window title
 			if (value != null && value.LinkedSession != null)
 			{
-				DisplayServer.WindowSetTitle($"{value.LinkedSession.Metadata.ProjectName} - BrickVerse Creator v{Globals.AppVersion}");
+				DisplayServer.WindowSetTitle(
+					$"{value.LinkedSession.Metadata.ProjectName} - BrickVerse Creator v{Globals.AppVersion}"
+				);
 				CreatorService.CurrentSession = value.LinkedSession;
 			}
 #endif
@@ -225,13 +236,37 @@ public sealed partial class World : Instance
 	}
 
 	[ScriptProperty]
-	public string WorldName { get => _worldName; internal set { _worldName = value; OnPropertyChanged(); } }
+	public string WorldName
+	{
+		get => _worldName;
+		internal set
+		{
+			_worldName = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[ScriptProperty]
-	public string UniverseName { get => _universeName; internal set { _universeName = value; OnPropertyChanged(); } }
+	public string UniverseName
+	{
+		get => _universeName;
+		internal set
+		{
+			_universeName = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[ScriptProperty]
-	public string UniverseDescription { get => _universeDescription; internal set { _universeDescription = value; OnPropertyChanged(); } }
+	public string UniverseDescription
+	{
+		get => _universeDescription;
+		internal set
+		{
+			_universeDescription = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[ScriptProperty]
 	public string ServerID
@@ -291,16 +326,28 @@ public sealed partial class World : Instance
 	[ScriptMethod]
 	public Instance? GetService(string className)
 	{
-		if (string.Equals(className, "Workspace", StringComparison.OrdinalIgnoreCase)
-			|| string.Equals(className, "World", StringComparison.OrdinalIgnoreCase))
+		if (
+			string.Equals(className, "Workspace", StringComparison.OrdinalIgnoreCase)
+			|| string.Equals(className, "World", StringComparison.OrdinalIgnoreCase)
+		)
 			return this;
 
-		return Services.ScriptService.GetStaticObjects(this)
-			.FirstOrDefault(pair =>
-				string.Equals(pair.Key, className, StringComparison.OrdinalIgnoreCase)
-				|| string.Equals((pair.Value as Instance)?.ClassName, className, StringComparison.OrdinalIgnoreCase)
-				|| string.Equals(pair.Value?.GetType().Name, className, StringComparison.OrdinalIgnoreCase))
-			.Value as Instance;
+		return Services
+				.ScriptService.GetStaticObjects(this)
+				.FirstOrDefault(pair =>
+					string.Equals(pair.Key, className, StringComparison.OrdinalIgnoreCase)
+					|| string.Equals(
+						(pair.Value as Instance)?.ClassName,
+						className,
+						StringComparison.OrdinalIgnoreCase
+					)
+					|| string.Equals(
+						pair.Value?.GetType().Name,
+						className,
+						StringComparison.OrdinalIgnoreCase
+					)
+				)
+				.Value as Instance;
 	}
 
 	/// <summary>Returns a root DataModel service, or nil when it is unavailable.</summary>
@@ -480,7 +527,10 @@ public sealed partial class World : Instance
 	/// <param name="networkID"></param>
 	/// <param name="timeoutMs"></param>
 	/// <returns></returns>
-	public async Task<NetworkedObject?> WaitForNetObjectAsync(string networkID, int timeoutMs = 5000)
+	public async Task<NetworkedObject?> WaitForNetObjectAsync(
+		string networkID,
+		int timeoutMs = 5000
+	)
 	{
 		NetworkedObject? obj = await WaitForNetObjectExistAsync(networkID, timeoutMs);
 		if (obj != null)
@@ -494,7 +544,10 @@ public sealed partial class World : Instance
 		}
 	}
 
-	private Task<NetworkedObject?> WaitForNetObjectExistAsync(string networkID, int timeoutMs = 5000)
+	private Task<NetworkedObject?> WaitForNetObjectExistAsync(
+		string networkID,
+		int timeoutMs = 5000
+	)
 	{
 		if (NetworkObjects.TryGetValue(networkID, out NetworkedObject? netObj))
 			return Task.FromResult<NetworkedObject?>(netObj);
@@ -512,7 +565,10 @@ public sealed partial class World : Instance
 		return tcs.Task;
 	}
 
-	private Task<NetworkedObject?> WaitForNetObjectReadyAsync(string networkID, int timeoutMs = 5000)
+	private Task<NetworkedObject?> WaitForNetObjectReadyAsync(
+		string networkID,
+		int timeoutMs = 5000
+	)
 	{
 		// Try to get the object first
 		if (!NetworkObjects.TryGetValue(networkID, out NetworkedObject? netObj))
@@ -533,7 +589,6 @@ public sealed partial class World : Instance
 
 		return tcs.Task;
 	}
-
 
 	internal void RegisterNewNetworkedObject(NetworkedObject netObj, string? forceId = null)
 	{
@@ -581,12 +636,15 @@ public sealed partial class World : Instance
 
 	internal void InvokeReady()
 	{
-		if (IsLoaded) return;
-		Callable.From(() =>
-		{
-			IsLoaded = true;
-			Loaded?.Invoke();
-		}).CallDeferred();
+		if (IsLoaded)
+			return;
+		Callable
+			.From(() =>
+			{
+				IsLoaded = true;
+				Loaded?.Invoke();
+			})
+			.CallDeferred();
 	}
 
 	private async void FetchWorldInfo(bool forceRefresh = false)
@@ -607,7 +665,9 @@ public sealed partial class World : Instance
 		if (WorldInfo.HasValue)
 		{
 			// Set Window title to game name
-			DisplayServer.WindowSetTitle($"{TitleEllipsis(WorldInfo.Value.Name, 50)} - BrickVerse v{Globals.AppVersion}");
+			DisplayServer.WindowSetTitle(
+				$"{TitleEllipsis(WorldInfo.Value.Name, 50)} - BrickVerse v{Globals.AppVersion}"
+			);
 			WorldInfoReady?.Invoke(WorldInfo.Value);
 
 			// Update world properties
@@ -627,8 +687,7 @@ public sealed partial class World : Instance
 	}
 
 	private static string TitleEllipsis(string text, int maxLength) =>
-	text.Length > maxLength ? string.Concat(text.AsSpan(0, maxLength), "...") : text;
-
+		text.Length > maxLength ? string.Concat(text.AsSpan(0, maxLength), "...") : text;
 
 	internal void DispatchClientScriptRun()
 	{
@@ -834,7 +893,9 @@ public sealed partial class World : Instance
 				studioService.NetworkParent = this;
 			}
 
-			CreatorContextService? creatorContext = FindChild<CreatorContextService>("CreatorContext");
+			CreatorContextService? creatorContext = FindChild<CreatorContextService>(
+				"CreatorContext"
+			);
 			if (creatorContext == null)
 			{
 				creatorContext = Globals.LoadInstance<CreatorContextService>(Root);
@@ -851,7 +912,9 @@ public sealed partial class World : Instance
 			achievementsService.NetworkParent = this;
 		}
 
-		PathfindingService? pathfindingService = FindChild<PathfindingService>("PathfindingService");
+		PathfindingService? pathfindingService = FindChild<PathfindingService>(
+			"PathfindingService"
+		);
 		if (pathfindingService == null)
 		{
 			pathfindingService = Globals.LoadInstance<PathfindingService>(Root);
@@ -1142,6 +1205,6 @@ public sealed partial class World : Instance
 	{
 		Client,
 		Creator,
-		Renderer
+		Renderer,
 	}
 }

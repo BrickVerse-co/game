@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 
 namespace BrickVerse.Shared;
 
@@ -29,15 +29,19 @@ public static class WindowsDebugConsole
 
 	public static void Initialize(IReadOnlyDictionary<string, string> commandLine)
 	{
-		if (_initialized) return;
+		if (_initialized)
+			return;
 		_initialized = true;
 
-		if (!OperatingSystem.IsWindows()) return;
-		if (!commandLine.ContainsKey("console") && !MarkerRequestsConsole()) return;
+		if (!OperatingSystem.IsWindows())
+			return;
+		if (!commandLine.ContainsKey("console") && !MarkerRequestsConsole())
+			return;
 
 		try
 		{
-			if (GetConsoleWindow() == IntPtr.Zero && !AllocConsole()) return;
+			if (GetConsoleWindow() == IntPtr.Zero && !AllocConsole())
+				return;
 			RedirectStandardStreams();
 			Console.OutputEncoding = Encoding.UTF8;
 			Console.Title = "BrickVerse Debug Console";
@@ -56,8 +60,14 @@ public static class WindowsDebugConsole
 		{
 			try
 			{
-				if (File.Exists(path)
-					&& string.Equals(File.ReadAllText(path).Trim(), "true", StringComparison.OrdinalIgnoreCase))
+				if (
+					File.Exists(path)
+					&& string.Equals(
+						File.ReadAllText(path).Trim(),
+						"true",
+						StringComparison.OrdinalIgnoreCase
+					)
+				)
 					return true;
 			}
 			catch
@@ -80,21 +90,33 @@ public static class WindowsDebugConsole
 			"BrickVerse"
 		);
 		string canonicalPath = Path.Combine(localPrograms, "launch-console.txt");
-		if (!string.Equals(
-			Path.GetFullPath(canonicalPath),
-			Path.GetFullPath(Path.Combine(executableDirectory, "launch-console.txt")),
-			StringComparison.OrdinalIgnoreCase
-		))
+		if (
+			!string.Equals(
+				Path.GetFullPath(canonicalPath),
+				Path.GetFullPath(Path.Combine(executableDirectory, "launch-console.txt")),
+				StringComparison.OrdinalIgnoreCase
+			)
+		)
 			yield return canonicalPath;
 	}
 
 	private static void RedirectStandardStreams()
 	{
-		IntPtr output = CreateFileW("CONOUT$", GenericWrite, FileShare.ReadWrite, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
+		IntPtr output = CreateFileW(
+			"CONOUT$",
+			GenericWrite,
+			FileShare.ReadWrite,
+			IntPtr.Zero,
+			OpenExisting,
+			0,
+			IntPtr.Zero
+		);
 		if (output != new IntPtr(-1))
 		{
 			SetStdHandle(StdOutputHandle, output);
-			StreamWriter writer = new(new FileStream(new SafeFileHandle(output, ownsHandle: false), FileAccess.Write))
+			StreamWriter writer = new(
+				new FileStream(new SafeFileHandle(output, ownsHandle: false), FileAccess.Write)
+			)
 			{
 				AutoFlush = true,
 			};
@@ -103,11 +125,23 @@ public static class WindowsDebugConsole
 			SetStdHandle(StdErrorHandle, output);
 		}
 
-		IntPtr input = CreateFileW("CONIN$", GenericRead, FileShare.ReadWrite, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
+		IntPtr input = CreateFileW(
+			"CONIN$",
+			GenericRead,
+			FileShare.ReadWrite,
+			IntPtr.Zero,
+			OpenExisting,
+			0,
+			IntPtr.Zero
+		);
 		if (input != new IntPtr(-1))
 		{
 			SetStdHandle(StdInputHandle, input);
-			Console.SetIn(new StreamReader(new FileStream(new SafeFileHandle(input, ownsHandle: false), FileAccess.Read)));
+			Console.SetIn(
+				new StreamReader(
+					new FileStream(new SafeFileHandle(input, ownsHandle: false), FileAccess.Read)
+				)
+			);
 		}
 	}
 

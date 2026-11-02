@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
-using BrickVerse.Mobile.Utils;
-using BrickVerse.Shared.AssetLoaders;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using BrickVerse.Datamodel;
+using BrickVerse.Mobile.Utils;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using BrickVerse.Utils;
 using Godot;
 
 namespace BrickVerse.Mobile.UI;
@@ -43,7 +43,9 @@ public partial class ViewAvatarPage : MobileViewBase
 		_previewSkeleton = GetNode<Control>("Layout/Preview/Skeleton");
 		_search = GetNode<LineEdit>("Layout/Search");
 		_cardScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/grid_card.tscn");
-		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/avatar/avatar_item_skeleton.tscn");
+		_skeletonScene = GD.Load<PackedScene>(
+			"res://scenes/mobile/components/avatar/avatar_item_skeleton.tscn"
+		);
 		_discardWarning = GetNode<ConfirmationDialog>("DiscardWarning");
 		_discardWarning.Confirmed += ConfirmNavigation;
 		CreatePreviewModel();
@@ -60,7 +62,8 @@ public partial class ViewAvatarPage : MobileViewBase
 	public override void ShowView(object? args)
 	{
 		base.ShowView(args);
-		if (_inventory.Count == 0) _ = LoadAsync();
+		if (_inventory.Count == 0)
+			_ = LoadAsync();
 	}
 
 	public override void RefreshView() => _ = LoadAsync();
@@ -69,20 +72,30 @@ public partial class ViewAvatarPage : MobileViewBase
 	{
 		_status.Text = "Loading your avatar...";
 		_previewSkeleton.Visible = true;
-		_inventory.Clear(); _equipped.Clear();
-		foreach (Node child in _grid.GetChildren()) child.QueueFree();
-		for (int index = 0; index < 6; index++) _grid.AddChild(_skeletonScene.Instantiate());
+		_inventory.Clear();
+		_equipped.Clear();
+		foreach (Node child in _grid.GetChildren())
+			child.QueueFree();
+		for (int index = 0; index < 6; index++)
+			_grid.AddChild(_skeletonScene.Instantiate());
 		try
 		{
 			using JsonDocument appearances = await BVAPI.GetJson("/v3/character/appearances");
-			if (appearances.RootElement.TryGetProperty("appearances", out JsonElement list) && list.ValueKind == JsonValueKind.Array)
+			if (
+				appearances.RootElement.TryGetProperty("appearances", out JsonElement list)
+				&& list.ValueKind == JsonValueKind.Array
+			)
 			{
 				JsonElement? first = null;
 				bool foundEquipped = false;
 				foreach (JsonElement appearance in list.EnumerateArray())
 				{
 					first ??= appearance.Clone();
-					if (!appearance.TryGetProperty("isEquipped", out JsonElement equipped) || equipped.ValueKind != JsonValueKind.True) continue;
+					if (
+						!appearance.TryGetProperty("isEquipped", out JsonElement equipped)
+						|| equipped.ValueKind != JsonValueKind.True
+					)
+						continue;
 					ReadAppearance(appearance);
 					foundEquipped = true;
 					break;
@@ -90,50 +103,100 @@ public partial class ViewAvatarPage : MobileViewBase
 				if (!foundEquipped && first.HasValue)
 				{
 					string firstId = first.Value.GetProperty("id").ToString();
-					using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Post, $"/v3/character/appearance/{Uri.EscapeDataString(firstId)}/equip");
+					using JsonDocument _ = await BVAPI.SendJson(
+						HttpMethod.Post,
+						$"/v3/character/appearance/{Uri.EscapeDataString(firstId)}/equip"
+					);
 					ReadAppearance(first.Value);
 				}
 				else if (!foundEquipped && !first.HasValue)
 				{
-					using JsonDocument created = await BVAPI.SendJson(HttpMethod.Patch, "/v3/character/appearance", "{\"isEquipped\":true}");
-					if (created.RootElement.TryGetProperty("appearance", out JsonElement appearance)) ReadAppearance(appearance);
+					using JsonDocument created = await BVAPI.SendJson(
+						HttpMethod.Patch,
+						"/v3/character/appearance",
+						"{\"isEquipped\":true}"
+					);
+					if (
+						created.RootElement.TryGetProperty("appearance", out JsonElement appearance)
+					)
+						ReadAppearance(appearance);
 				}
 			}
-			using JsonDocument inventory = await BVAPI.GetJson("/v3/marketplace/inventory?limit=50");
-			foreach (JsonElement owned in inventory.RootElement.GetProperty("items").EnumerateArray())
+			using JsonDocument inventory = await BVAPI.GetJson(
+				"/v3/marketplace/inventory?limit=50"
+			);
+			foreach (
+				JsonElement owned in inventory.RootElement.GetProperty("items").EnumerateArray()
+			)
 			{
 				JsonElement item = owned.GetProperty("item");
-				string itemId = owned.TryGetProperty("itemId", out JsonElement ownedItemId) ? ownedItemId.ToString() : item.GetProperty("id").ToString();
-				_inventory.Add((itemId, item.GetProperty("name").GetString() ?? "Item", item.GetProperty("type").GetString() ?? "Accessory"));
+				string itemId = owned.TryGetProperty("itemId", out JsonElement ownedItemId)
+					? ownedItemId.ToString()
+					: item.GetProperty("id").ToString();
+				_inventory.Add(
+					(
+						itemId,
+						item.GetProperty("name").GetString() ?? "Item",
+						item.GetProperty("type").GetString() ?? "Accessory"
+					)
+				);
 			}
 			_previewModel?.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id, false);
-			_savedEquipped.Clear(); _savedEquipped.UnionWith(_equipped);
+			_savedEquipped.Clear();
+			_savedEquipped.UnionWith(_equipped);
 			_dirty = false;
-			RenderInventory(); _status.Text = $"{_equipped.Count} items equipped";
+			RenderInventory();
+			_status.Text = $"{_equipped.Count} items equipped";
 		}
-		catch (Exception exception) { _previewSkeleton.Visible = false; _status.Text = "Avatar inventory could not be loaded."; BV.PrintErr(exception); }
+		catch (Exception exception)
+		{
+			_previewSkeleton.Visible = false;
+			_status.Text = "Avatar inventory could not be loaded.";
+			BV.PrintErr(exception);
+		}
 	}
 
 	private void RenderInventory()
 	{
-		foreach (Node child in _grid.GetChildren()) child.QueueFree();
-		string filter = _category.CurrentTab == 0 ? "" : _category.GetTabTitle(_category.CurrentTab);
+		foreach (Node child in _grid.GetChildren())
+			child.QueueFree();
+		string filter =
+			_category.CurrentTab == 0 ? "" : _category.GetTabTitle(_category.CurrentTab);
 		string query = _search.Text.Trim();
 		foreach ((string id, string name, string type) in _inventory)
 		{
-			if (!string.IsNullOrWhiteSpace(filter) && !type.Contains(filter, StringComparison.OrdinalIgnoreCase)) continue;
-			if (!string.IsNullOrWhiteSpace(query) && !name.Contains(query, StringComparison.OrdinalIgnoreCase) && !type.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
+			if (
+				!string.IsNullOrWhiteSpace(filter)
+				&& !type.Contains(filter, StringComparison.OrdinalIgnoreCase)
+			)
+				continue;
+			if (
+				!string.IsNullOrWhiteSpace(query)
+				&& !name.Contains(query, StringComparison.OrdinalIgnoreCase)
+				&& !type.Contains(query, StringComparison.OrdinalIgnoreCase)
+			)
+				continue;
 			MobileListCard card = _cardScene.Instantiate<MobileListCard>();
-			_grid.AddChild(card); card.Configure(name, _equipped.Contains(id) ? "Equipped" : type, "", "marketplace-item://" + id); CompactCard(card);
+			_grid.AddChild(card);
+			card.Configure(
+				name,
+				_equipped.Contains(id) ? "Equipped" : type,
+				"",
+				"marketplace-item://" + id
+			);
+			CompactCard(card);
 			card.Pressed += () =>
 			{
-				if (!_equipped.Add(id)) _equipped.Remove(id);
+				if (!_equipped.Add(id))
+					_equipped.Remove(id);
 				else if (IsSingleSlot(type))
 					foreach (var other in _inventory)
-						if (other.Id != id && IsSameSlot(type, other.Type)) _equipped.Remove(other.Id);
+						if (other.Id != id && IsSameSlot(type, other.Type))
+							_equipped.Remove(other.Id);
 				_dirty = !_equipped.SetEquals(_savedEquipped);
 				RenderInventory();
-				_status.Text = $"{_equipped.Count} items selected • {(_dirty ? "Unsaved changes" : "Saved")}";
+				_status.Text =
+					$"{_equipped.Count} items selected • {(_dirty ? "Unsaved changes" : "Saved")}";
 				_previewSkeleton.Visible = true;
 				_previewModel?.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id, false);
 			};
@@ -143,7 +206,8 @@ public partial class ViewAvatarPage : MobileViewBase
 	private static void CompactCard(MobileListCard card)
 	{
 		card.CustomMinimumSize = new Vector2(112, 168);
-		Control imagePanel = card.GetNode<Control>("Content/ImagePanel"); imagePanel.CustomMinimumSize = new Vector2(0, 104);
+		Control imagePanel = card.GetNode<Control>("Content/ImagePanel");
+		imagePanel.CustomMinimumSize = new Vector2(0, 104);
 		card.GetNode<Control>("Content/ImagePanel/Image").CustomMinimumSize = new Vector2(0, 104);
 		card.GetNode<Label>("Content/Copy/Title").AddThemeFontSizeOverride("font_size", 12);
 		card.GetNode<Label>("Content/Copy/Price/Meta").AddThemeFontSizeOverride("font_size", 11);
@@ -153,20 +217,32 @@ public partial class ViewAvatarPage : MobileViewBase
 	private void ReadAppearance(JsonElement appearance)
 	{
 		_appearanceId = appearance.GetProperty("id").ToString();
-		if (!appearance.TryGetProperty("accessories", out JsonElement accessories) || accessories.ValueKind != JsonValueKind.Array) return;
+		if (
+			!appearance.TryGetProperty("accessories", out JsonElement accessories)
+			|| accessories.ValueKind != JsonValueKind.Array
+		)
+			return;
 		foreach (JsonElement accessory in accessories.EnumerateArray())
-			_equipped.Add(accessory.ValueKind == JsonValueKind.Object && accessory.TryGetProperty("id", out JsonElement id) ? id.ToString() : accessory.ToString());
+			_equipped.Add(
+				accessory.ValueKind == JsonValueKind.Object
+				&& accessory.TryGetProperty("id", out JsonElement id)
+					? id.ToString()
+					: accessory.ToString()
+			);
 	}
 
-	private static bool IsSingleSlot(string type) => type.Equals("Shirt", StringComparison.OrdinalIgnoreCase)
+	private static bool IsSingleSlot(string type) =>
+		type.Equals("Shirt", StringComparison.OrdinalIgnoreCase)
 		|| type.Equals("Pants", StringComparison.OrdinalIgnoreCase)
 		|| type.Equals("Face", StringComparison.OrdinalIgnoreCase);
 
-	private static bool IsSameSlot(string left, string right) => left.Equals(right, StringComparison.OrdinalIgnoreCase);
+	private static bool IsSameSlot(string left, string right) =>
+		left.Equals(right, StringComparison.OrdinalIgnoreCase);
 
 	private void Discard()
 	{
-		_equipped.Clear(); _equipped.UnionWith(_savedEquipped);
+		_equipped.Clear();
+		_equipped.UnionWith(_savedEquipped);
 		RenderInventory();
 		_status.Text = "Changes discarded";
 		_dirty = false;
@@ -174,26 +250,44 @@ public partial class ViewAvatarPage : MobileViewBase
 
 	private async void Save()
 	{
-		if (string.IsNullOrWhiteSpace(_appearanceId)) { OS.Alert("Create an appearance on your account first.", "Avatar"); return; }
-		Button save = GetNode<Button>("Layout/Actions/Save"); save.Disabled = true;
+		if (string.IsNullOrWhiteSpace(_appearanceId))
+		{
+			OS.Alert("Create an appearance on your account first.", "Avatar");
+			return;
+		}
+		Button save = GetNode<Button>("Layout/Actions/Save");
+		save.Disabled = true;
 		try
 		{
-			string json = $"{{\"id\":{JsonSerializer.Serialize(_appearanceId)},\"accessories\":{JsonSerializer.Serialize(_equipped)}}}";
-			using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Patch, "/v3/character/appearance", json);
-			_savedEquipped.Clear(); _savedEquipped.UnionWith(_equipped);
+			string json =
+				$"{{\"id\":{JsonSerializer.Serialize(_appearanceId)},\"accessories\":{JsonSerializer.Serialize(_equipped)}}}";
+			using JsonDocument _ = await BVAPI.SendJson(
+				HttpMethod.Patch,
+				"/v3/character/appearance",
+				json
+			);
+			_savedEquipped.Clear();
+			_savedEquipped.UnionWith(_equipped);
 			_dirty = false;
 			_previewModel?.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id, false);
 			_status.Text = "Avatar saved. New thumbnails are rendering.";
 		}
-		catch (Exception exception) { OS.Alert(exception.Message, "Avatar save failed"); }
-		finally { save.Disabled = false; }
+		catch (Exception exception)
+		{
+			OS.Alert(exception.Message, "Avatar save failed");
+		}
+		finally
+		{
+			save.Disabled = false;
+		}
 	}
 
 	private void CreatePreviewModel()
 	{
 		_previewModel = new BrickversianModel();
 		_previewModel.AvatarLoaded += OnPreviewLoaded;
-		GetNode<SubViewport>("Layout/Preview/ViewportContainer/Viewport").AddChild(_previewModel.GDNode);
+		GetNode<SubViewport>("Layout/Preview/ViewportContainer/Viewport")
+			.AddChild(_previewModel.GDNode);
 		_previewModel.InitEntry();
 		_previewModel.Position = Vector3.Zero;
 		GetNode<Camera3D>("Layout/Preview/ViewportContainer/Viewport/Camera").Current = true;
@@ -201,31 +295,52 @@ public partial class ViewAvatarPage : MobileViewBase
 
 	private async void OnPreviewLoaded()
 	{
-		if (_previewModel == null) return;
+		if (_previewModel == null)
+			return;
 		foreach (BrickVerse.Datamodel.Instance child in _previewModel.GetChildren())
 		{
-			if (child is not Accessory and not Clothing) continue;
-			(string Id, string Name, string Type) match = _inventory.Find(item => item.Name.Equals(child.Name, StringComparison.OrdinalIgnoreCase));
-			if (!string.IsNullOrWhiteSpace(match.Id) && !_equipped.Contains(match.Id)) child.Delete();
+			if (child is not Accessory and not Clothing)
+				continue;
+			(string Id, string Name, string Type) match = _inventory.Find(item =>
+				item.Name.Equals(child.Name, StringComparison.OrdinalIgnoreCase)
+			);
+			if (!string.IsNullOrWhiteSpace(match.Id) && !_equipped.Contains(match.Id))
+				child.Delete();
 		}
 		foreach ((string id, string name, string type) in _inventory)
 		{
-			if (!_equipped.Contains(id) || _savedEquipped.Contains(id)) continue;
-			if (type.Equals("Face", StringComparison.OrdinalIgnoreCase) || type.Equals("Shirt", StringComparison.OrdinalIgnoreCase) || type.Equals("Pants", StringComparison.OrdinalIgnoreCase)) continue;
+			if (!_equipped.Contains(id) || _savedEquipped.Contains(id))
+				continue;
+			if (
+				type.Equals("Face", StringComparison.OrdinalIgnoreCase)
+				|| type.Equals("Shirt", StringComparison.OrdinalIgnoreCase)
+				|| type.Equals("Pants", StringComparison.OrdinalIgnoreCase)
+			)
+				continue;
 			try
 			{
 				Accessory? accessory = await _previewModel.Root.Insert.AccessoryAsync(id);
-				if (accessory != null) accessory.Parent = _previewModel;
+				if (accessory != null)
+					accessory.Parent = _previewModel;
 			}
-			catch (Exception exception) { BV.PrintErr($"Could not preview avatar item {id}: {exception.Message}"); }
+			catch (Exception exception)
+			{
+				BV.PrintErr($"Could not preview avatar item {id}: {exception.Message}");
+			}
 		}
-		if (IsInstanceValid(_previewSkeleton)) _previewSkeleton.Visible = false;
+		if (IsInstanceValid(_previewSkeleton))
+			_previewSkeleton.Visible = false;
 	}
 
 	public override bool TryNavigateAway(Action continuation)
 	{
-		if (_allowNavigationOnce) { _allowNavigationOnce = false; return true; }
-		if (!_dirty) return true;
+		if (_allowNavigationOnce)
+		{
+			_allowNavigationOnce = false;
+			return true;
+		}
+		if (!_dirty)
+			return true;
 		_pendingNavigation = continuation;
 		_discardWarning.PopupCentered();
 		return false;
@@ -242,7 +357,8 @@ public partial class ViewAvatarPage : MobileViewBase
 
 	public override void _ExitTree()
 	{
-		if (_previewModel != null) _previewModel.AvatarLoaded -= OnPreviewLoaded;
+		if (_previewModel != null)
+			_previewModel.AvatarLoaded -= OnPreviewLoaded;
 		_previewModel?.Delete();
 		_previewModel = null;
 		base._ExitTree();

@@ -2,19 +2,24 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Reflection;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
-using System.Reflection;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputButtonGroupUI : FoldableContainer
 {
-	private const string ButtonItemPath = "res://scenes/creator/popups/input_manager/components/button_item.tscn";
-	[Export] private Button _addNewBtn = null!;
-	[Export] private Control _listContainer = null!;
+	private const string ButtonItemPath =
+		"res://scenes/creator/popups/input_manager/components/button_item.tscn";
+
+	[Export]
+	private Button _addNewBtn = null!;
+
+	[Export]
+	private Control _listContainer = null!;
 	public InputAction TargetAction = null!;
 	public string PropName = "";
 	public PropertyInfo Property = null!;
@@ -66,7 +71,9 @@ public partial class InputButtonGroupUI : FoldableContainer
 		InputButtonCollection val = GetButtons();
 		foreach (InputButton btn in val)
 		{
-			InputButtonItemUI item = Globals.CreateInstanceFromScene<InputButtonItemUI>(ButtonItemPath);
+			InputButtonItemUI item = Globals.CreateInstanceFromScene<InputButtonItemUI>(
+				ButtonItemPath
+			);
 			item.TargetAction = TargetAction;
 			item.TargetButton = btn;
 			item.GroupParent = this;

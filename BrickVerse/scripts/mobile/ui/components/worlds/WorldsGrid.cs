@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Text.Json;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Text.Json;
+using Godot;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -32,7 +32,9 @@ public partial class WorldsGrid : Control
 		_status = GetNode<Label>("../../Status");
 		Resized += UpdateColumns;
 		UpdateColumns();
-		_skeletonScene = GD.Load<PackedScene>("res://scenes/mobile/components/shared/skeleton_card.tscn");
+		_skeletonScene = GD.Load<PackedScene>(
+			"res://scenes/mobile/components/shared/skeleton_card.tscn"
+		);
 		_search.TextSubmitted += query => LoadWorlds(query);
 		_sort.TabChanged += _ => LoadWorlds(_search.Text);
 		_genre.ItemSelected += _ => LoadWorlds(_search.Text);
@@ -53,22 +55,41 @@ public partial class WorldsGrid : Control
 		try
 		{
 			ClearCards();
-			for (int index = 0; index < 6; index++) AddChild(_skeletonScene.Instantiate());
+			for (int index = 0; index < 6; index++)
+				AddChild(_skeletonScene.Instantiate());
 			string path = "/v3/worlds/discover?limit=30&platform=MOBILE";
-			if (!string.IsNullOrWhiteSpace(search)) path += "&search=" + Uri.EscapeDataString(search);
-			string sort = _genre.Selected > 0 ? "trending_genre" : _sort.CurrentTab switch { 1 => "featured", 2 => "top_trending", 3 => "top_rated", 4 => "top_playing_now", 5 => "up_and_coming", _ => "all" };
+			if (!string.IsNullOrWhiteSpace(search))
+				path += "&search=" + Uri.EscapeDataString(search);
+			string sort =
+				_genre.Selected > 0
+					? "trending_genre"
+					: _sort.CurrentTab switch
+					{
+						1 => "featured",
+						2 => "top_trending",
+						3 => "top_rated",
+						4 => "top_playing_now",
+						5 => "up_and_coming",
+						_ => "all",
+					};
 			path += "&sortBy=" + sort;
 			if (_genre.Selected > 0)
 			{
-				path += "&genre=" + Uri.EscapeDataString(_genre.GetItemText(_genre.Selected).ToUpperInvariant().Replace(' ', '_'));
+				path +=
+					"&genre="
+					+ Uri.EscapeDataString(
+						_genre.GetItemText(_genre.Selected).ToUpperInvariant().Replace(' ', '_')
+					);
 			}
 			using JsonDocument response = await BVAPI.GetJson(path);
-			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
+			if (_disposed || version != _loadVersion || !IsInstanceValid(this))
+				return;
 			ClearCards();
 			JsonElement worlds = response.RootElement.GetProperty("worlds");
 			foreach (JsonElement item in worlds.EnumerateArray())
 			{
-				if (!long.TryParse(item.GetProperty("id").ToString(), out long id)) continue;
+				if (!long.TryParse(item.GetProperty("id").ToString(), out long id))
+					continue;
 				PlaceCard card = _placeCardPacked.Instantiate<PlaceCard>();
 				card.PlaceData = new APIWorldsData
 				{
@@ -82,7 +103,8 @@ public partial class WorldsGrid : Control
 				};
 				string thumbnailId = FindPrimaryThumbnailId(item);
 				card.ThumbnailUrl = await BVAPI.ResolveThumbnailUrl("ASSET", thumbnailId);
-				if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
+				if (_disposed || version != _loadVersion || !IsInstanceValid(this))
+					return;
 				AddChild(card);
 				MobileMotion.Enter(card, GetChildCount() - 1);
 			}
@@ -90,7 +112,8 @@ public partial class WorldsGrid : Control
 		}
 		catch (Exception ex)
 		{
-			if (_disposed || version != _loadVersion || !IsInstanceValid(this)) return;
+			if (_disposed || version != _loadVersion || !IsInstanceValid(this))
+				return;
 			ClearCards();
 			BV.PrintErr(ex);
 			_status.Text = "Worlds could not be loaded. Try another search or refresh this page.";
@@ -106,6 +129,7 @@ public partial class WorldsGrid : Control
 	}
 
 	public void Refresh() => LoadWorlds(_search.Text);
+
 	private void ClearCards()
 	{
 		foreach (Node child in GetChildren())
@@ -114,6 +138,7 @@ public partial class WorldsGrid : Control
 			child.QueueFree();
 		}
 	}
+
 	private void UpdateColumns()
 	{
 		float available = GetViewportRect().Size.X - 40f;
@@ -122,39 +147,58 @@ public partial class WorldsGrid : Control
 
 	private static string ReadString(JsonElement item, string name, string fallback) =>
 		item.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String
-			? value.GetString() ?? fallback : fallback;
+			? value.GetString() ?? fallback
+			: fallback;
+
 	private static int ReadInt(JsonElement item, params string[] names)
 	{
 		foreach (string name in names)
-			if (item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int number)) return number;
+			if (
+				item.TryGetProperty(name, out JsonElement value)
+				&& value.TryGetInt32(out int number)
+			)
+				return number;
 		return 0;
 	}
+
 	private static double? ReadDouble(JsonElement item, params string[] names)
 	{
 		foreach (string name in names)
 		{
-			if (!item.TryGetProperty(name, out JsonElement value) || !value.TryGetDouble(out double number)) continue;
+			if (
+				!item.TryGetProperty(name, out JsonElement value)
+				|| !value.TryGetDouble(out double number)
+			)
+				continue;
 			return number > 1d ? number / 100d : number;
 		}
 		return null;
 	}
+
 	private static string FindPrimaryThumbnailId(JsonElement item)
 	{
-		if (!item.TryGetProperty("universe", out JsonElement universe)
+		if (
+			!item.TryGetProperty("universe", out JsonElement universe)
 			|| !universe.TryGetProperty("universeThumbnails", out JsonElement thumbnails)
-			|| thumbnails.ValueKind != JsonValueKind.Array) return "";
+			|| thumbnails.ValueKind != JsonValueKind.Array
+		)
+			return "";
 		JsonElement? fallback = null;
 		foreach (JsonElement thumbnail in thumbnails.EnumerateArray())
 		{
 			fallback ??= thumbnail;
-			if (thumbnail.TryGetProperty("primary", out JsonElement primary) && primary.GetBoolean())
+			if (
+				thumbnail.TryGetProperty("primary", out JsonElement primary) && primary.GetBoolean()
+			)
 				return ThumbnailId(thumbnail);
 		}
 		return fallback.HasValue ? ThumbnailId(fallback.Value) : "";
 	}
+
 	private static string ThumbnailId(JsonElement thumbnail)
 	{
-		if (!thumbnail.TryGetProperty("thumbnailId", out JsonElement id)) return "";
+		if (!thumbnail.TryGetProperty("thumbnailId", out JsonElement id))
+			return "";
 		return id.ToString();
 	}
 }

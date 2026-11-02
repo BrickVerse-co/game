@@ -59,7 +59,10 @@ public sealed partial class AudioDeviceOutput : AudioNode
 		int index = AudioServer.GetBusIndex(BusName);
 		if (index < 0)
 			return;
-		AudioServer.SetBusSend(index, Root?.FindChild<SoundService>("SoundService")?.BusName ?? "Master");
+		AudioServer.SetBusSend(
+			index,
+			Root?.FindChild<SoundService>("SoundService")?.BusName ?? "Master"
+		);
 		AudioServer.SetBusVolumeDb(index, Mathf.LinearToDb(Mathf.Max(_volume, 0.0001f)));
 		AudioServer.SetBusMute(index, _muted);
 	}

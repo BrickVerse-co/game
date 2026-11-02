@@ -2,20 +2,28 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Schemas.API;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Client.UI.Notification;
 
 public partial class UIAchievementNotification : UINotificationBase
 {
 	private const int NotifyTimeout = 10;
-	[Export] public AnimationPlayer AnimPlay = null!;
-	[Export] public Label AchievementTitle = null!;
-	[Export] public TextureRect AchievementTexture = null!;
-	[Export] public AudioStreamPlayer _soundPlay = null!;
+
+	[Export]
+	public AnimationPlayer AnimPlay = null!;
+
+	[Export]
+	public Label AchievementTitle = null!;
+
+	[Export]
+	public TextureRect AchievementTexture = null!;
+
+	[Export]
+	public AudioStreamPlayer _soundPlay = null!;
 	private BVImageAsset? _badgeImg;
 	private bool _playing = false;
 

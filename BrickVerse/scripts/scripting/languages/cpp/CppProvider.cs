@@ -55,15 +55,21 @@ namespace Game {
 template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n])++n;return T(bv_global(name,n));} }
 """;
 
-	private readonly Config _config = new Config().WithFuelConsumption(true).WithMaximumStackSize(512 * 1024);
+	private readonly Config _config = new Config()
+		.WithFuelConsumption(true)
+		.WithMaximumStackSize(512 * 1024);
 	private readonly Engine _engine;
 	private readonly Dictionary<Script, State> _states = [];
+
 	public CppProvider() => _engine = new Engine(_config);
 
 	public byte[] CompileSource(string source)
 	{
 		ValidateIncludes(source);
-		string root = Path.Combine(Path.GetTempPath(), "brickverse-cpp-" + Guid.NewGuid().ToString("N"));
+		string root = Path.Combine(
+			Path.GetTempPath(),
+			"brickverse-cpp-" + Guid.NewGuid().ToString("N")
+		);
 		Directory.CreateDirectory(root);
 		try
 		{
@@ -73,20 +79,63 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			File.WriteAllText(sourcePath, source);
 			File.WriteAllText(headerPath, HeaderSource);
 			string compiler = ResolveCompiler();
-			using Process process = new() { StartInfo = new ProcessStartInfo { FileName = compiler,
-				WorkingDirectory = root,
-				RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true } };
-			foreach (string argument in new[] { "--target=wasm32", "-std=c++20", "-O2", "-fno-exceptions", "-fno-rtti",
-				"-nostdlib", "-Wl,--no-entry", "-Wl,--export-memory", "-I", root, sourcePath, "-o", outputPath })
+			using Process process = new()
+			{
+				StartInfo = new ProcessStartInfo
+				{
+					FileName = compiler,
+					WorkingDirectory = root,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					UseShellExecute = false,
+					CreateNoWindow = true,
+				},
+			};
+			foreach (
+				string argument in new[]
+				{
+					"--target=wasm32",
+					"-std=c++20",
+					"-O2",
+					"-fno-exceptions",
+					"-fno-rtti",
+					"-nostdlib",
+					"-Wl,--no-entry",
+					"-Wl,--export-memory",
+					"-I",
+					root,
+					sourcePath,
+					"-o",
+					outputPath,
+				}
+			)
 				process.StartInfo.ArgumentList.Add(argument);
-			try { process.Start(); }
-			catch (Exception exception) { throw new InvalidOperationException($"C++ scripting requires a clang++ toolchain with the wasm32 target. Set BV_WASI_CLANG to clang++ (currently resolved to '{compiler}').", exception); }
+			try
+			{
+				process.Start();
+			}
+			catch (Exception exception)
+			{
+				throw new InvalidOperationException(
+					$"C++ scripting requires a clang++ toolchain with the wasm32 target. Set BV_WASI_CLANG to clang++ (currently resolved to '{compiler}').",
+					exception
+				);
+			}
 			string error = process.StandardError.ReadToEnd();
-			if (!process.WaitForExit(30_000)) { process.Kill(true); throw new TimeoutException("C++ compilation timed out"); }
-			if (process.ExitCode != 0) throw new InvalidOperationException("C++ compilation failed: " + error.Trim());
+			if (!process.WaitForExit(30_000))
+			{
+				process.Kill(true);
+				throw new TimeoutException("C++ compilation timed out");
+			}
+			if (process.ExitCode != 0)
+				throw new InvalidOperationException("C++ compilation failed: " + error.Trim());
 			return File.ReadAllBytes(outputPath);
 		}
-		finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+		finally
+		{
+			if (Directory.Exists(root))
+				Directory.Delete(root, true);
+		}
 	}
 
 	private static string ResolveCompiler()
@@ -94,10 +143,14 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 		string? configured = Environment.GetEnvironmentVariable("BV_WASI_CLANG");
 		if (!string.IsNullOrWhiteSpace(configured))
 		{
-			if (File.Exists(configured) || IsOnPath(configured)) return configured;
-			throw new FileNotFoundException($"BV_WASI_CLANG points to a compiler that does not exist: '{configured}'");
+			if (File.Exists(configured) || IsOnPath(configured))
+				return configured;
+			throw new FileNotFoundException(
+				$"BV_WASI_CLANG points to a compiler that does not exist: '{configured}'"
+			);
 		}
-		if (!OperatingSystem.IsWindows()) return "clang++";
+		if (!OperatingSystem.IsWindows())
+			return "clang++";
 		string applicationRoot = AppContext.BaseDirectory;
 		string[] candidates =
 		[
@@ -108,16 +161,19 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			"clang++.exe",
 		];
 		foreach (string candidate in candidates)
-			if (candidate.Contains(':') ? File.Exists(candidate) : IsOnPath(candidate)) return candidate;
+			if (candidate.Contains(':') ? File.Exists(candidate) : IsOnPath(candidate))
+				return candidate;
 		throw new FileNotFoundException(
-			"The C++ script compiler is not installed. Creator expects its bundled tools/llvm/bin/clang++.exe " +
-			"(or tools/wasi-sdk/bin/clang++.exe), LLVM clang++ in PATH, or BV_WASI_CLANG pointing to a WASM-capable clang++.");
+			"The C++ script compiler is not installed. Creator expects its bundled tools/llvm/bin/clang++.exe "
+				+ "(or tools/wasi-sdk/bin/clang++.exe), LLVM clang++ in PATH, or BV_WASI_CLANG pointing to a WASM-capable clang++."
+		);
 	}
 
 	private static bool IsOnPath(string executable)
 	{
 		string path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-		return path.Split(Path.PathSeparator).Any(directory => File.Exists(Path.Combine(directory, executable)));
+		return path.Split(Path.PathSeparator)
+			.Any(directory => File.Exists(Path.Combine(directory, executable)));
 	}
 
 	private static void ValidateIncludes(string source)
@@ -125,10 +181,15 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 		foreach (string line in source.Split('\n'))
 		{
 			string trimmed = line.Trim();
-			if (!trimmed.StartsWith("#include", StringComparison.Ordinal)) continue;
-			if (!trimmed.Equals("#include <brickverse.h>", StringComparison.Ordinal)
-				&& !trimmed.Equals("#include \"brickverse.h\"", StringComparison.Ordinal))
-				throw new UnauthorizedAccessException("C++ scripts may only include the sandbox-provided <brickverse.h> header.");
+			if (!trimmed.StartsWith("#include", StringComparison.Ordinal))
+				continue;
+			if (
+				!trimmed.Equals("#include <brickverse.h>", StringComparison.Ordinal)
+				&& !trimmed.Equals("#include \"brickverse.h\"", StringComparison.Ordinal)
+			)
+				throw new UnauthorizedAccessException(
+					"C++ scripts may only include the sandbox-provided <brickverse.h> header."
+				);
 		}
 	}
 
@@ -140,67 +201,244 @@ template<class T> inline T GetService(const char* name){int32_t n=0;while(name[n
 			ScriptCapabilityBridge api = new(script);
 			using Module module = Module.FromBytes(_engine, script.Name, script.Bytecode!);
 			Store store = new(_engine) { Fuel = 5_000_000 };
-			store.SetLimits(memorySize: 16 * 1024 * 1024, tableElements: 10_000, instances: 1, tables: 4, memories: 1);
+			store.SetLimits(
+				memorySize: 16 * 1024 * 1024,
+				tableElements: 10_000,
+				instances: 1,
+				tables: 4,
+				memories: 1
+			);
 			Linker linker = new(_engine);
-			linker.Define("brickverse", "global", Function.FromCallback(store, (Caller caller, int p, int n) => api.Global(Read(caller, p, n))));
-			linker.Define("brickverse", "get_f64", Function.FromCallback(store, (Caller caller, int h, int p, int n) => Convert.ToDouble(api.Get(h, Read(caller, p, n)), CultureInfo.InvariantCulture)));
-			linker.Define("brickverse", "get_handle", Function.FromCallback(store, (Caller caller, int h, int p, int n) => ReadGuestHandle(api.Get(h, Read(caller, p, n)))));
-			linker.Define("brickverse", "get_string", Function.FromCallback(store, (Caller caller, int h, int p, int n, int output, int capacity) =>
-				Write(caller, output, capacity, Convert.ToString(api.Get(h, Read(caller, p, n)), CultureInfo.InvariantCulture) ?? string.Empty)));
-			linker.Define("brickverse", "set_f64", Function.FromCallback(store, (Caller caller, int h, int p, int n, double v) => api.Set(h, Read(caller, p, n), v)));
-			linker.Define("brickverse", "call0", Function.FromCallback(store, (Caller caller, int h, int p, int n) => Convert.ToDouble(api.Call(h, Read(caller, p, n)), CultureInfo.InvariantCulture)));
-			linker.Define("brickverse", "log", Function.FromCallback(store, (Caller caller, int p, int n) => script.Root.ScriptService.Logger.LogInfo(script, Read(caller, p, n))));
-			linker.Define("brickverse", "warn", Function.FromCallback(store, (Caller caller, int p, int n) => script.Root.ScriptService.Logger.LogWarning(script, Read(caller, p, n))));
-			linker.Define("brickverse", "error", Function.FromCallback(store, (Caller caller, int p, int n) => script.Root.ScriptService.Logger.LogError(script, Read(caller, p, n))));
+			linker.Define(
+				"brickverse",
+				"global",
+				Function.FromCallback(
+					store,
+					(Caller caller, int p, int n) => api.Global(Read(caller, p, n))
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"get_f64",
+				Function.FromCallback(
+					store,
+					(Caller caller, int h, int p, int n) =>
+						Convert.ToDouble(
+							api.Get(h, Read(caller, p, n)),
+							CultureInfo.InvariantCulture
+						)
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"get_handle",
+				Function.FromCallback(
+					store,
+					(Caller caller, int h, int p, int n) =>
+						ReadGuestHandle(api.Get(h, Read(caller, p, n)))
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"get_string",
+				Function.FromCallback(
+					store,
+					(Caller caller, int h, int p, int n, int output, int capacity) =>
+						Write(
+							caller,
+							output,
+							capacity,
+							Convert.ToString(
+								api.Get(h, Read(caller, p, n)),
+								CultureInfo.InvariantCulture
+							) ?? string.Empty
+						)
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"set_f64",
+				Function.FromCallback(
+					store,
+					(Caller caller, int h, int p, int n, double v) =>
+						api.Set(h, Read(caller, p, n), v)
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"call0",
+				Function.FromCallback(
+					store,
+					(Caller caller, int h, int p, int n) =>
+						Convert.ToDouble(
+							api.Call(h, Read(caller, p, n)),
+							CultureInfo.InvariantCulture
+						)
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"log",
+				Function.FromCallback(
+					store,
+					(Caller caller, int p, int n) =>
+						script.Root.ScriptService.Logger.LogInfo(script, Read(caller, p, n))
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"warn",
+				Function.FromCallback(
+					store,
+					(Caller caller, int p, int n) =>
+						script.Root.ScriptService.Logger.LogWarning(script, Read(caller, p, n))
+				)
+			);
+			linker.Define(
+				"brickverse",
+				"error",
+				Function.FromCallback(
+					store,
+					(Caller caller, int p, int n) =>
+						script.Root.ScriptService.Logger.LogError(script, Read(caller, p, n))
+				)
+			);
 			Instance? instance = null;
-			linker.Define("brickverse", "connect", Function.FromCallback(store, (int signalHandle, int slot) => api.Connect(signalHandle, args =>
-			{
-				store.Fuel = 5_000_000;
-				int argument = args.Length > 0 ? ReadGuestHandle(args[0]) : 0;
-				instance?.GetAction<int, int>("bv_dispatch_player")?.Invoke(slot, argument);
-			})));
+			linker.Define(
+				"brickverse",
+				"connect",
+				Function.FromCallback(
+					store,
+					(int signalHandle, int slot) =>
+						api.Connect(
+							signalHandle,
+							args =>
+							{
+								store.Fuel = 5_000_000;
+								int argument = args.Length > 0 ? ReadGuestHandle(args[0]) : 0;
+								instance
+									?.GetAction<int, int>("bv_dispatch_player")
+									?.Invoke(slot, argument);
+							}
+						)
+				)
+			);
 			instance = linker.Instantiate(store, module);
 			State state = new(store, linker, instance);
 			_states[script] = state;
 			Invoke(state, "bv_start");
 		}
-		catch (Exception exception) { script.Root.ScriptService.Logger.LogError(script, exception.InnerException?.Message ?? exception.Message, 0); }
+		catch (Exception exception)
+		{
+			script.Root.ScriptService.Logger.LogError(
+				script,
+				exception.InnerException?.Message ?? exception.Message,
+				0
+			);
+		}
 	}
 
 	private static string Read(Caller caller, int pointer, int length)
 	{
-		if (length < 0 || length > 16_384 || !caller.TryGetMemorySpan<byte>("memory", pointer, length, out Span<byte> span))
+		if (
+			length < 0
+			|| length > 16_384
+			|| !caller.TryGetMemorySpan<byte>("memory", pointer, length, out Span<byte> span)
+		)
 			throw new InvalidOperationException("Guest supplied an invalid string range");
 		return Encoding.UTF8.GetString(span);
 	}
+
 	private static int Write(Caller caller, int pointer, int capacity, string value)
 	{
-		if (capacity < 0 || capacity > 16_384 || !caller.TryGetMemorySpan<byte>("memory", pointer, capacity, out Span<byte> span))
+		if (
+			capacity < 0
+			|| capacity > 16_384
+			|| !caller.TryGetMemorySpan<byte>("memory", pointer, capacity, out Span<byte> span)
+		)
 			throw new InvalidOperationException("Guest supplied an invalid output string range");
 		byte[] encoded = Encoding.UTF8.GetBytes(value);
 		int length = Math.Min(encoded.Length, capacity);
 		encoded.AsSpan(0, length).CopyTo(span);
-		if (length < capacity) span[length] = 0;
+		if (length < capacity)
+			span[length] = 0;
 		return length;
 	}
+
 	private static int ReadGuestHandle(object? value)
 	{
-		if (ScriptCapabilityBridge.TryReadGuestHandle(value, out int handle)) return handle;
-		throw new InvalidOperationException("BrickVerse API returned a non-object value where an object handle was required.");
+		if (ScriptCapabilityBridge.TryReadGuestHandle(value, out int handle))
+			return handle;
+		throw new InvalidOperationException(
+			"BrickVerse API returned a non-object value where an object handle was required."
+		);
 	}
-	private static void Invoke(State state, string name) { state.Store.Fuel = 5_000_000; state.Instance.GetAction(name)?.Invoke(); }
-	private static void Invoke(State state, string name, double value) { state.Store.Fuel = 5_000_000; state.Instance.GetAction<double>(name)?.Invoke(value); }
-	public Task CallAsync(Script script, string funcName, object?[]? args) { if ((args?.Length ?? 0) == 0) Execute(script, s => Invoke(s, funcName)); return Task.CompletedTask; }
-	public void CallUpdate(Script script, double delta) => Execute(script, s => Invoke(s, "bv_update", delta));
-	public void CallFixedUpdate(Script script, double delta) => Execute(script, s => Invoke(s, "bv_fixed_update", delta));
+
+	private static void Invoke(State state, string name)
+	{
+		state.Store.Fuel = 5_000_000;
+		state.Instance.GetAction(name)?.Invoke();
+	}
+
+	private static void Invoke(State state, string name, double value)
+	{
+		state.Store.Fuel = 5_000_000;
+		state.Instance.GetAction<double>(name)?.Invoke(value);
+	}
+
+	public Task CallAsync(Script script, string funcName, object?[]? args)
+	{
+		if ((args?.Length ?? 0) == 0)
+			Execute(script, s => Invoke(s, funcName));
+		return Task.CompletedTask;
+	}
+
+	public void CallUpdate(Script script, double delta) =>
+		Execute(script, s => Invoke(s, "bv_update", delta));
+
+	public void CallFixedUpdate(Script script, double delta) =>
+		Execute(script, s => Invoke(s, "bv_fixed_update", delta));
+
 	private void Execute(Script script, Action<State> action)
 	{
-		if (!_states.TryGetValue(script, out State? state)) return;
-		try { action(state); }
-		catch (Exception exception) { script.Root.ScriptService.Logger.LogError(script, exception.InnerException?.Message ?? exception.Message, 0); }
+		if (!_states.TryGetValue(script, out State? state))
+			return;
+		try
+		{
+			action(state);
+		}
+		catch (Exception exception)
+		{
+			script.Root.ScriptService.Logger.LogError(
+				script,
+				exception.InnerException?.Message ?? exception.Message,
+				0
+			);
+		}
 	}
-	public void Close(Script script) { if (_states.Remove(script, out State? s)) s.Dispose(); }
+
+	public void Close(Script script)
+	{
+		if (_states.Remove(script, out State? s))
+			s.Dispose();
+	}
+
 	public void FreeBVCallback(BVCallback callback) { }
-	public void Dispose() { foreach (Script script in new List<Script>(_states.Keys)) Close(script); _engine.Dispose(); _config.Dispose(); }
-	private sealed record State(Store Store, Linker Linker, Instance Instance) : IDisposable { public void Dispose() { Linker.Dispose(); Store.Dispose(); } }
+
+	public void Dispose()
+	{
+		foreach (Script script in new List<Script>(_states.Keys))
+			Close(script);
+		_engine.Dispose();
+		_config.Dispose();
+	}
+
+	private sealed record State(Store Store, Linker Linker, Instance Instance) : IDisposable
+	{
+		public void Dispose()
+		{
+			Linker.Dispose();
+			Store.Dispose();
+		}
+	}
 }

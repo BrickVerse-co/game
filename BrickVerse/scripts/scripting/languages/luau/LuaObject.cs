@@ -4,6 +4,4 @@
 
 namespace BrickVerse.Scripting.Luau;
 
-public class LuaObject
-{
-}
+public class LuaObject { }

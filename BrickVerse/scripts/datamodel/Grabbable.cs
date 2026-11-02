@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
+using Godot;
 using static BrickVerse.Datamodel.Environment;
 
 namespace BrickVerse.Datamodel;
@@ -79,10 +79,17 @@ public partial class Grabbable : Instance
 		}
 	}
 
-	[ScriptProperty] public Player? Dragger => _dragger;
-	[ScriptProperty] public BVFunction? PermissionPredicate { get; set; }
-	[ScriptProperty] public BVSignal<Player> Grabbed { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Player> Released { get; private set; } = new();
+	[ScriptProperty]
+	public Player? Dragger => _dragger;
+
+	[ScriptProperty]
+	public BVFunction? PermissionPredicate { get; set; }
+
+	[ScriptProperty]
+	public BVSignal<Player> Grabbed { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Player> Released { get; private set; } = new();
 
 	public override void EnterTree()
 	{
@@ -139,7 +146,6 @@ public partial class Grabbable : Instance
 		}
 	}
 
-
 	public void OnInput(InputEvent @event)
 	{
 		if (@event.IsActionReleased("activate"))
@@ -153,11 +159,13 @@ public partial class Grabbable : Instance
 
 	private async void OnClicked(Player by)
 	{
-		if (_dragger != null) return;
+		if (_dragger != null)
+			return;
 		if (_parent != null)
 		{
 			// Check grabbable range
-			if ((by.Position - _parent.Position).Length() > MaxGrabbableRange) return;
+			if ((by.Position - _parent.Position).Length() > MaxGrabbableRange)
+				return;
 		}
 		if (Root.Network.IsServer)
 		{
@@ -171,7 +179,8 @@ public partial class Grabbable : Instance
 				if (PermissionPredicate != null)
 				{
 					object?[] res = await PermissionPredicate.Call(by);
-					if (res.Length != 1) return;
+					if (res.Length != 1)
+						return;
 					if (res[0] is bool b && b)
 					{
 						GiveDragTo(by);
@@ -191,7 +200,8 @@ public partial class Grabbable : Instance
 
 	private void GiveDragTo(Player plr)
 	{
-		if (_parent == null) return;
+		if (_parent == null)
+			return;
 		_dragger = plr;
 		_parent.SetNetworkAuthority(plr);
 		Grabbed.Invoke(plr);
@@ -250,11 +260,17 @@ public partial class Grabbable : Instance
 
 	public override void PhysicsProcess(double delta)
 	{
-		if (Parent == null) return;
-		if (_dragger == null) return;
+		if (Parent == null)
+			return;
+		if (_dragger == null)
+			return;
 
 		// Set to null when deleted
-		if (_dragger.IsDeleted) { _dragger = null; return; }
+		if (_dragger.IsDeleted)
+		{
+			_dragger = null;
+			return;
+		}
 
 		// Process drag physics if enabled
 		if (UseDragForce)
@@ -266,7 +282,8 @@ public partial class Grabbable : Instance
 					Viewport viewport = Globals.Singleton.GetViewport();
 					Camera3D camera = viewport.GetCamera3D();
 					Camera? cam = Root.Environment.CurrentCamera;
-					if (cam == null) return;
+					if (cam == null)
+						return;
 					Vector2 mousePos = Root.Input.MousePosition;
 					Vector3 rayOrigin = camera.ProjectRayOrigin(mousePos);
 					Vector3 rayDir = camera.ProjectRayNormal(mousePos);
@@ -279,14 +296,20 @@ public partial class Grabbable : Instance
 					}
 					else
 					{
-						RayResult? hit = Root.Environment.Raycast(rayOrigin, rayDir, ignoreList: [Parent], passthroughMask: 1 << 2);
+						RayResult? hit = Root.Environment.Raycast(
+							rayOrigin,
+							rayDir,
+							ignoreList: [Parent],
+							passthroughMask: 1 << 2
+						);
 						if (hit != null)
 						{
 							targetPos = hit.Value.Position;
 						}
 					}
 
-					if (targetPos == null) return;
+					if (targetPos == null)
+						return;
 
 					Vector3 anchorPos = _dragger.Position;
 					Vector3 direction = targetPos.Value - anchorPos;
@@ -310,6 +333,6 @@ public partial class Grabbable : Instance
 	{
 		None,
 		Everyone,
-		Scripted
+		Scripted,
 	}
 }

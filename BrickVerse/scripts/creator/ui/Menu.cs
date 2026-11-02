@@ -5,8 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BrickVerse.Creator.UI.Layout;
 using BrickVerse.Creator.UI.Docking;
+using BrickVerse.Creator.UI.Layout;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Datamodel;
@@ -971,7 +971,8 @@ public sealed partial class Menu : PanelContainer
 
 	private Control? GetSideDock(string sideName)
 	{
-		string path = sideName == "Bottom" ? "../Splitter/Center/BottomTabs" : $"../Splitter/{sideName}";
+		string path =
+			sideName == "Bottom" ? "../Splitter/Center/BottomTabs" : $"../Splitter/{sideName}";
 		return GetNodeOrNull<Control>(path);
 	}
 
@@ -1196,15 +1197,15 @@ public sealed partial class Menu : PanelContainer
 		switch (idx)
 		{
 			case 0: // About BrickVerse
-				{
-					CreatorService.Interface.PopupCredits();
-					break;
-				}
+			{
+				CreatorService.Interface.PopupCredits();
+				break;
+			}
 			case 1: // Startup splash
-				{
-					StartupSplash.Singleton.Show();
-					break;
-				}
+			{
+				StartupSplash.Singleton.Show();
+				break;
+			}
 		}
 	}
 }

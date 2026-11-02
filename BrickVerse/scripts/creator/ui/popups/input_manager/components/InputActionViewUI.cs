@@ -2,21 +2,30 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Reflection;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
-using System.Reflection;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputActionViewUI : Control
 {
-	private const string ButtonGroupPath = "res://scenes/creator/popups/input_manager/components/button_group.tscn";
-	[Export] private Label _actionTypeLabel = null!;
-	[Export] private Label _actionNameLabel = null!;
-	[Export] private LineEdit _actionNameEdit = null!;
-	[Export] private Button _deleteBtn = null!;
+	private const string ButtonGroupPath =
+		"res://scenes/creator/popups/input_manager/components/button_group.tscn";
+
+	[Export]
+	private Label _actionTypeLabel = null!;
+
+	[Export]
+	private Label _actionNameLabel = null!;
+
+	[Export]
+	private LineEdit _actionNameEdit = null!;
+
+	[Export]
+	private Button _deleteBtn = null!;
 	public InputManagerPopup Manager = null!;
 	public InputAction TargetAction = null!;
 
@@ -48,7 +57,9 @@ public partial class InputActionViewUI : Control
 		{
 			if (prop.PropertyType == typeof(InputButtonCollection))
 			{
-				InputButtonGroupUI group = Globals.CreateInstanceFromScene<InputButtonGroupUI>(ButtonGroupPath);
+				InputButtonGroupUI group = Globals.CreateInstanceFromScene<InputButtonGroupUI>(
+					ButtonGroupPath
+				);
 				group.TargetAction = TargetAction;
 				group.PropName = prop.Name;
 				group.Property = prop;
@@ -56,7 +67,10 @@ public partial class InputActionViewUI : Control
 			}
 		}
 
-		_actionNameEdit.TextSubmitted += (_) => { OnActionNameChange(); };
+		_actionNameEdit.TextSubmitted += (_) =>
+		{
+			OnActionNameChange();
+		};
 		_actionNameEdit.FocusExited += OnActionNameChange;
 		_deleteBtn.Pressed += OnDeletePressed;
 	}

@@ -2,20 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Formats;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using Godot;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class AnimationPublishPopup : PopupWindowBase
 {
 	private sealed record GuildChoice(string Id, string Name);
+
 	private readonly BVAnimationClip _clip;
 	private readonly List<GuildChoice> _guilds = [];
 	private readonly List<long> _assetIds = [0];
@@ -51,7 +52,9 @@ public sealed partial class AnimationPublishPopup : PopupWindowBase
 				_guildChoice.AddItem(guild.Name);
 			}
 
-			CreatorAssetItem[] assets = await CreatorAPI.GetCreatorAssets(PublishPopup.PublishTypeEnum.Animation);
+			CreatorAssetItem[] assets = await CreatorAPI.GetCreatorAssets(
+				PublishPopup.PublishTypeEnum.Animation
+			);
 			foreach (CreatorAssetItem asset in assets)
 			{
 				_assetIds.Add(asset.Id);
@@ -81,7 +84,9 @@ public sealed partial class AnimationPublishPopup : PopupWindowBase
 		Label heading = new() { Text = "Publish animation" };
 		heading.AddThemeFontSizeOverride("font_size", 22);
 		root.AddChild(heading);
-		root.AddChild(new Label { Text = "Create a new animation asset or publish over one you own." });
+		root.AddChild(
+			new Label { Text = "Create a new animation asset or publish over one you own." }
+		);
 
 		root.AddChild(new Label { Text = "Publish target" });
 		_publishTarget = new OptionButton();
@@ -160,8 +165,16 @@ public sealed partial class AnimationPublishPopup : PopupWindowBase
 	{
 		string name = _name.Text.Trim();
 		string description = _description.Text.Trim();
-		if (name.Length == 0) { ShowError("Name is required."); return; }
-		if (description.Length > 500) { ShowError("Description must be 500 characters or less."); return; }
+		if (name.Length == 0)
+		{
+			ShowError("Name is required.");
+			return;
+		}
+		if (description.Length > 500)
+		{
+			ShowError("Description must be 500 characters or less.");
+			return;
+		}
 		bool isUpdate = _publishTarget.Selected > 0;
 		bool toGuild = !isUpdate && _guild.ButtonPressed;
 		if (toGuild && (_guildChoice.Selected < 0 || _guildChoice.Selected >= _guilds.Count))
@@ -207,6 +220,15 @@ public sealed partial class AnimationPublishPopup : PopupWindowBase
 		_publish.Text = busy ? "Publishing..." : "Publish Animation";
 	}
 
-	private void ShowError(string message) { _error.Text = message; _error.Visible = true; }
-	private void HideError() { _error.Text = ""; _error.Visible = false; }
+	private void ShowError(string message)
+	{
+		_error.Text = message;
+		_error.Visible = true;
+	}
+
+	private void HideError()
+	{
+		_error.Text = "";
+		_error.Visible = false;
+	}
 }

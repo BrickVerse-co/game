@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 using static BrickVerse.Formats.PolyFormat;
 
 namespace BrickVerse.Creator;
@@ -35,13 +35,20 @@ public partial class CreatorClipboard : Node
 
 	public async Task<Instance[]?> GetClipboard()
 	{
-		if (World.Current == null) return null;
-		if (_clipboard == null) return null;
+		if (World.Current == null)
+			return null;
+		if (_clipboard == null)
+			return null;
 		List<Instance> instances = [];
 		foreach (PolyRootData item in _clipboard)
 		{
-			Instance? i = LoadModelFromRootData(World.Current, item, globalLoadContext: new() { AssignModelRoot = false });
-			if (i == null) continue;
+			Instance? i = LoadModelFromRootData(
+				World.Current,
+				item,
+				globalLoadContext: new() { AssignModelRoot = false }
+			);
+			if (i == null)
+				continue;
 			foreach (var item1 in i.GetChildren())
 			{
 				BV.Print("Copied instance child: ", item1.Name);
@@ -53,7 +60,8 @@ public partial class CreatorClipboard : Node
 
 	public async Task SetClipboardToSelected()
 	{
-		if (World.Current == null) return;
+		if (World.Current == null)
+			return;
 		await SetClipboard([.. World.Current.CreatorContext.Selections.SelectedInstances]);
 		string oldClipboard = DisplayServer.ClipboardGet();
 
@@ -65,7 +73,8 @@ public partial class CreatorClipboard : Node
 
 	public async Task PasteClipboard(bool pasteInto = false)
 	{
-		if (World.Current == null) return;
+		if (World.Current == null)
+			return;
 		World root = World.Current;
 		CreatorSelections selections = root.CreatorContext.Selections;
 
@@ -76,7 +85,11 @@ public partial class CreatorClipboard : Node
 		{
 			string oldXML = DecompressLegacyString(oldClipboard.Replace(OldClipboardPrefix, ""));
 
-			Instance? i = await DatamodelLoader.LoadModelBytes(root, oldXML.ToUtf8Buffer(), root.Environment);
+			Instance? i = await DatamodelLoader.LoadModelBytes(
+				root,
+				oldXML.ToUtf8Buffer(),
+				root.Environment
+			);
 
 			if (i != null)
 			{

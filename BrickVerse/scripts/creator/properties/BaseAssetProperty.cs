@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Shared;
 using System;
 using System.Reflection;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -77,7 +77,9 @@ public sealed partial class BaseAssetProperty : Control, IProperty<BaseAsset?>
 
 			foreach (PropertyInfo property in baseAsset.GetEditableProperties())
 			{
-				_propertyLayout.AddChild(UI.Properties.CreatePropertyControl([baseAsset], property));
+				_propertyLayout.AddChild(
+					UI.Properties.CreatePropertyControl([baseAsset], property)
+				);
 			}
 		}
 		else

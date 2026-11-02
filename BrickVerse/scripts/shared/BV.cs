@@ -2,14 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Scripting;
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.UI;
 #endif
-using System;
-using System.Collections.Generic;
+
 
 namespace BrickVerse.Shared;
 
@@ -178,7 +179,8 @@ public static class BV
 		lock (RecentLogLock)
 		{
 			RecentLogs.Enqueue($"[{DateTime.UtcNow:O}] [{data.LogType}] {data.Content}");
-			while (RecentLogs.Count > RecentLogLimit) RecentLogs.Dequeue();
+			while (RecentLogs.Count > RecentLogLimit)
+				RecentLogs.Dequeue();
 		}
 		try
 		{
@@ -208,7 +210,8 @@ public static class BV
 
 	public static string GetRecentLogs()
 	{
-		lock (RecentLogLock) return string.Join(System.Environment.NewLine, RecentLogs);
+		lock (RecentLogLock)
+			return string.Join(System.Environment.NewLine, RecentLogs);
 	}
 
 	public static bool IsMainThread()

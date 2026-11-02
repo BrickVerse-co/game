@@ -15,5 +15,5 @@ public enum ScriptPermissionFlags
 	IORead,
 	IOWrite,
 	CreatorAccess,
-	ContextAccess
+	ContextAccess,
 }

@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -60,7 +60,8 @@ public sealed partial class AudioAssetSubview : Control, IPropertySubview
 
 	public override void _Process(double delta)
 	{
-		if (_player == null || !_isPlaying) return;
+		if (_player == null || !_isPlaying)
+			return;
 
 		float length = (float)_player.Stream.GetLength();
 		float pos = _player.GetPlaybackPosition();
@@ -70,7 +71,8 @@ public sealed partial class AudioAssetSubview : Control, IPropertySubview
 
 	private void OnPreviewPressed()
 	{
-		if (_baseAsset.Resource is not AudioStream stream) return;
+		if (_baseAsset.Resource is not AudioStream stream)
+			return;
 
 		if (_isPlaying)
 			StopPreview();
@@ -98,7 +100,7 @@ public sealed partial class AudioAssetSubview : Control, IPropertySubview
 		{
 			Stream = stream,
 			VolumeDb = Mathf.LinearToDb(_ownerSound?.Volume ?? 1f),
-			PitchScale = _ownerSound?.Pitch ?? 1f
+			PitchScale = _ownerSound?.Pitch ?? 1f,
 		};
 		AddChild(_player);
 		_player.Finished += OnFinished;
@@ -131,7 +133,8 @@ public sealed partial class AudioAssetSubview : Control, IPropertySubview
 
 	private void OnFinished()
 	{
-		if (_player == null) return;
+		if (_player == null)
+			return;
 
 		if (_ownerSound != null && _ownerSound.Loop)
 		{

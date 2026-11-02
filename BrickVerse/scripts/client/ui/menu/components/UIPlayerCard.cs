@@ -2,16 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public partial class UIPlayerCard : Node
 {
-	[Export] private Button _reportButton = null!;
-	[Export] private Button _profileButton = null!;
+	[Export]
+	private Button _reportButton = null!;
+
+	[Export]
+	private Button _profileButton = null!;
 
 	public Player TargetPlayer = null!;
 

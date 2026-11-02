@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
 using BrickVerse.Client.UI.Chat;
 using BrickVerse.Networking;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -30,11 +30,13 @@ public partial class TextChatBox : Dynamic
 			CreateChatBubble.Invoke(msg);
 		}
 	}
+
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
 	private async void SpeakInternal(string msg)
 	{
 		CreateChatBubble.Invoke(msg);
 	}
+
 	public override void Init()
 	{
 		base.Init();

@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using MemoryPack;
-using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Datamodel.Data;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
@@ -19,14 +19,22 @@ public partial class NumberRangeDto
 	[MemoryPackConstructor, JsonConstructor]
 	public NumberRangeDto() { }
 
-	public NumberRangeDto(NumberRange range) { Min = range.Min; Max = range.Max; }
+	public NumberRangeDto(NumberRange range)
+	{
+		Min = range.Min;
+		Max = range.Max;
+	}
 
 	public NumberRange ToNumberRange() => new() { Min = Min, Max = Max };
 }
 
 public class NumberRangeJsonConverter : JsonConverter<NumberRange>
 {
-	public override NumberRange Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override NumberRange Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 			throw new JsonException("Expected array format [min, max]");
@@ -44,7 +52,11 @@ public class NumberRangeJsonConverter : JsonConverter<NumberRange>
 		return new NumberRange { Min = min, Max = max };
 	}
 
-	public override void Write(Utf8JsonWriter writer, NumberRange value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		NumberRange value,
+		JsonSerializerOptions options
+	)
 	{
 		writer.WriteStartArray();
 		writer.WriteNumberValue(value.Min);
