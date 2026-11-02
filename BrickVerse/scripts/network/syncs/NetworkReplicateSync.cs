@@ -420,6 +420,8 @@ public sealed partial class NetworkReplicateSync : Instance
 				RpcId(
 					plr.PeerID,
 					nameof(NetRecvChunk),
+					compressedChunks[i],
+					false,
 					-1,
 					i,
 					compressedChunks.Count,
@@ -494,6 +496,8 @@ public sealed partial class NetworkReplicateSync : Instance
 			RpcId(
 				session.PeerID,
 				nameof(NetRecvChunk),
+				session.Chunks[chunkIndex],
+				true,
 				session.Round,
 				chunkIndex,
 				session.Chunks.Length,
@@ -766,9 +770,16 @@ public sealed partial class NetworkReplicateSync : Instance
 
 	private void CheckPlaceReplicationTimeout()
 	{
-		if (_placeReplicationStartedAtMsec == 0 || NetService.IsPlaceReplicationDone)
+		if (NetService.IsServer || !NetService.ClientConnected || NetService.IsPlaceReplicationDone)
 			return;
 
+		// Start the watchdog before the first chunk: malformed/missing RPCs used
+		// to leave this timestamp unset, allowing the loading screen to wait forever.
+		if (_placeReplicationStartedAtMsec == 0)
+		{
+			_placeReplicationStartedAtMsec = Time.GetTicksMsec();
+			_lastReplicationProgressAtMsec = _placeReplicationStartedAtMsec;
+		}
 		ulong now = Time.GetTicksMsec();
 		bool stalled = now - _lastReplicationProgressAtMsec >= PlaceReplicationStallTimeoutMs;
 		bool exceededMaximum =

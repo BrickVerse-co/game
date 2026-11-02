@@ -45,6 +45,7 @@ public partial class MobileUI : Control
 	private MobileAuthBrowser? _authBrowser;
 	private readonly Dictionary<MobileViewEnum, MobileViewBase> _viewCache = [];
 	private bool _disposed;
+	private static bool _startupAuthCallbackConsumed;
 	private XRMobileShell? _xrShell;
 
 	public override void _Ready()
@@ -60,7 +61,6 @@ public partial class MobileUI : Control
 			_xrShell.Initialize();
 		}
 		Dictionary<string, string> cmdargs = Globals.ReadCmdArgs();
-		cmdargs.TryGetValue("token", out string? mobileToken);
 		cmdargs.TryGetValue("code", out string? mobileCode);
 		cmdargs.TryGetValue("state", out string? mobileState);
 
@@ -81,11 +81,9 @@ public partial class MobileUI : Control
 			BV.Print("Deep-link plugin unavailable; continuing without app links.");
 		}
 
-		_authBrowser = new MobileAuthBrowser();
-		AddChild(_authBrowser, true);
+		_authBrowser = MobileAuthBrowser.GetOrCreate();
 		_authBrowser.CallbackReceived += OnAuthBrowserCallback;
 		BVMobileAuthAPI.InAppBrowserLauncher = _authBrowser.Open;
-		BVHttpClient.NativeSender = _authBrowser.SendAsync;
 
 		if (Globals.IsMobileBuild && !Globals.IsXRLaunch)
 		{
@@ -102,18 +100,6 @@ public partial class MobileUI : Control
 		BVMobileAuthAPI.UserAuthenticated += OnUserAuthenticated;
 		BVMobileAuthAPI.AskForAuthentication += OnAskForAuthentication;
 
-		_ = InitializeAuthenticationAsync();
-		if (mobileToken != null)
-		{
-			_ = CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithAuthToken(mobileToken));
-		}
-		else if (mobileCode != null && mobileState != null)
-		{
-			_ = CompleteAuthenticationAsync(() =>
-				BVMobileAuthAPI.LoginWithCodeAndState(mobileCode, mobileState)
-			);
-		}
-
 		_mainView = GetNode<Control>("Layout/MainView");
 		if (Globals.IsMobileBuild && !Globals.IsXRLaunch)
 		{
@@ -125,6 +111,8 @@ public partial class MobileUI : Control
 		{
 			DisplayServer.WindowSetSize((Vector2I)new Vector2(412, 700));
 		}
+		// Set up controls before authentication can synchronously raise UI events.
+		_ = InitializeAuthenticationAsync(mobileCode, mobileState);
 	}
 
 	public override void _ExitTree()
@@ -137,7 +125,6 @@ public partial class MobileUI : Control
 		if (_authBrowser != null)
 			_authBrowser.CallbackReceived -= OnAuthBrowserCallback;
 		BVMobileAuthAPI.InAppBrowserLauncher = null;
-		BVHttpClient.NativeSender = null;
 		if (ReferenceEquals(Singleton, this))
 			Singleton = null!;
 		base._ExitTree();
@@ -170,11 +157,16 @@ public partial class MobileUI : Control
 		}
 	}
 
-	private async System.Threading.Tasks.Task InitializeAuthenticationAsync()
+	private async System.Threading.Tasks.Task InitializeAuthenticationAsync(string? code, string? state)
 	{
 		try
 		{
-			await BVMobileAuthAPI.SetupClient();
+			bool hasCallback = !_startupAuthCallbackConsumed
+				&& !string.IsNullOrWhiteSpace(code) && !string.IsNullOrWhiteSpace(state);
+			_startupAuthCallbackConsumed = true;
+			await BVMobileAuthAPI.SetupClient(authenticate: !hasCallback);
+			if (hasCallback)
+				await CompleteAuthenticationAsync(() => BVMobileAuthAPI.LoginWithCodeAndState(code!, state!));
 		}
 		catch (Exception exception)
 		{

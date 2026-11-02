@@ -19,6 +19,18 @@ public partial class MobileAuthBrowser : Node
 {
 	private GodotObject? _plugin;
 
+	public static MobileAuthBrowser GetOrCreate()
+	{
+		MobileAuthBrowser? browser = Globals.Singleton.GetNodeOrNull<MobileAuthBrowser>("MobileAuthBrowser");
+		if (browser == null)
+		{
+			browser = new MobileAuthBrowser { Name = "MobileAuthBrowser" };
+			Globals.Singleton.AddChild(browser);
+		}
+		BVHttpClient.NativeSender = browser.SendAsync;
+		return browser;
+	}
+
 	public event Action<string>? CallbackReceived;
 
 	public override void _Ready()
