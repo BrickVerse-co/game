@@ -16,39 +16,85 @@ public partial class Vehicle : RigidBody
 
 	private VehicleBody3D Body => (VehicleBody3D)GDRigidBody;
 
-	[Editable, ScriptProperty, DefaultValue(1200f)] public float MaxEngineForce { get => _maxEngineForce; set { _maxEngineForce = Mathf.Max(0, value); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(30f)] public float MaxSteeringAngle { get => _maxSteeringAngle; set { _maxSteeringAngle = Mathf.Clamp(value, 0, 89); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(40f)] public float BrakeForce { get => _brakeForce; set { _brakeForce = Mathf.Max(0, value); OnPropertyChanged(); } }
-	[ScriptProperty] public float Throttle { get; private set; }
-	[ScriptProperty] public float Steer { get; private set; }
-	[ScriptProperty] public float BrakeInput { get; private set; }
-	[ScriptProperty] public BVSignal<float, float, float> InputChanged { get; private set; } = new();
+	[Editable, ScriptProperty, DefaultValue(1200f)]
+	public float MaxEngineForce
+	{
+		get => _maxEngineForce;
+		set
+		{
+			_maxEngineForce = Mathf.Max(0, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(30f)]
+	public float MaxSteeringAngle
+	{
+		get => _maxSteeringAngle;
+		set
+		{
+			_maxSteeringAngle = Mathf.Clamp(value, 0, 89);
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(40f)]
+	public float BrakeForce
+	{
+		get => _brakeForce;
+		set
+		{
+			_brakeForce = Mathf.Max(0, value);
+			OnPropertyChanged();
+		}
+	}
+
+	[ScriptProperty]
+	public float Throttle { get; private set; }
+
+	[ScriptProperty]
+	public float Steer { get; private set; }
+
+	[ScriptProperty]
+	public float BrakeInput { get; private set; }
+
+	[ScriptProperty]
+	public BVSignal<float, float, float> InputChanged { get; private set; } = new();
+
 	[Editable, ScriptProperty]
 	public VehicleSeat? DriverSeat
 	{
 		get => _driverSeat is { IsDeleted: false } ? _driverSeat : null;
 		set
 		{
-			if (_driverSeat == value) return;
-			if (_driverSeat != null) _driverSeat.InputChanged.Disconnect(OnSeatInputChanged);
+			if (_driverSeat == value)
+				return;
+			if (_driverSeat != null)
+				_driverSeat.InputChanged.Disconnect(OnSeatInputChanged);
 			_driverSeat = value;
-			if (_driverSeat != null) _driverSeat.InputChanged.Connect(OnSeatInputChanged);
+			if (_driverSeat != null)
+				_driverSeat.InputChanged.Connect(OnSeatInputChanged);
 			OnPropertyChanged();
 		}
 	}
 
 	public override Node CreateGDNode() => new VehicleBody3D();
+
 	public override void Ready()
 	{
 		DriverSeat ??= FindFirstChildWhichIsA(nameof(VehicleSeat), true) as VehicleSeat;
 		base.Ready();
 	}
+
 	public override void PreDelete()
 	{
-		if (_driverSeat != null) _driverSeat.InputChanged.Disconnect(OnSeatInputChanged);
+		if (_driverSeat != null)
+			_driverSeat.InputChanged.Disconnect(OnSeatInputChanged);
 		base.PreDelete();
 	}
-	private void OnSeatInputChanged(float throttle, float steer) => SetInput(throttle, steer, throttle == 0 ? 1 : 0);
+
+	private void OnSeatInputChanged(float throttle, float steer) =>
+		SetInput(throttle, steer, throttle == 0 ? 1 : 0);
 
 	[ScriptMethod]
 	public void SetInput(float throttle, float steer, float brake = 0)
