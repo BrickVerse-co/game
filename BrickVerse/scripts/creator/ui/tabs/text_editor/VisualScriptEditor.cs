@@ -16,6 +16,9 @@ public partial class TextEditorRoot
 {
 	private GraphEdit? _visualGraph;
 	private PopupMenu? _wireBlockMenu;
+	private PopupMenu? _nodeMenu;
+	private PopupMenu? _canvasBlockMenu;
+	private Godot.GraphNode? _contextNode;
 	private readonly List<BlockDefinition> _wireCandidates = [];
 	private StringName _pendingWireNode = default!;
 	private int _pendingWirePort;
@@ -28,6 +31,7 @@ public partial class TextEditorRoot
 	private static readonly BlockDefinition[] BlockDefinitions =
 	[
 		new("Events", "Event Begin Play", "event_start", "Runs when this script starts"),
+		new("Notes", "Comment Box", "comment", "Add a resizable note to the graph"),
 		new("Flow", "Branch", "branch", "Choose True or False using a condition"),
 		new("Output", "Print", "print", "Write information to Output"), new("Output", "Warn", "warn", "Write a warning"),
 		new("Output", "Error", "error", "Write an error"),
@@ -79,13 +83,26 @@ public partial class TextEditorRoot
 		_visualGraph.AddValidConnectionType(1, 1);
 		_visualGraph.ConnectionRequest += ConnectVisualNodes;
 		_visualGraph.DisconnectionRequest += DisconnectVisualNodes;
+		_visualGraph.DeleteNodesRequest += DeleteVisualNodes;
 		_visualGraph.ConnectionToEmpty += (node, port, position) => ShowWireBlockMenu(node, (int)port, position, true);
 		_visualGraph.ConnectionFromEmpty += (node, port, position) => ShowWireBlockMenu(node, (int)port, position, false);
+		_visualGraph.PopupRequest += ShowCanvasBlockMenu;
 		_visualGraph.GuiInput += OnVisualGraphInput;
 		layout.AddChild(_visualGraph);
 		_wireBlockMenu = new PopupMenu();
 		_wireBlockMenu.IdPressed += CreateBlockFromWireMenu;
 		_visualGraph.AddChild(_wireBlockMenu);
+		_nodeMenu = new PopupMenu();
+		_nodeMenu.AddItem("Edit Comment", 0);
+		_nodeMenu.AddItem("Duplicate", 1);
+		_nodeMenu.AddSeparator();
+		_nodeMenu.AddItem("Delete", 2);
+		_nodeMenu.IdPressed += OnNodeMenuSelected;
+		_visualGraph.AddChild(_nodeMenu);
+		_canvasBlockMenu = new PopupMenu();
+		PopulateBlockMenu(_canvasBlockMenu, BlockDefinitions);
+		_canvasBlockMenu.IdPressed += id => AddBlock(BlockDefinitions[(int)id].Type, _pendingBlockPosition);
+		_visualGraph.AddChild(_canvasBlockMenu);
 		LoadVisualDocument();
 	}
 
@@ -100,6 +117,7 @@ public partial class TextEditorRoot
 		if (type == "find_child") data.Text = "Part";
 		if (type is "get_property" or "set_property") data.Member = "Name";
 		if (type == "call_method") data.Member = "Destroy";
+		if (type == "comment") { data.Comment = "Comment"; data.Width = 300; data.Height = 140; }
 		Godot.GraphNode? node = CreateVisualNode(data);
 		SerializeVisualDocument();
 		return node;
@@ -128,13 +146,26 @@ public partial class TextEditorRoot
 			Title = BlockTitle(data.Type),
 			PositionOffset = new Vector2(data.X, data.Y),
 		};
+		node.TooltipText = BlockDefinitions.FirstOrDefault(item => item.Type == data.Type)?.Hint ?? data.Type;
 		node.SetMeta("type", data.Type);
+		node.SetMeta("comment", data.Comment ?? "");
+		if (data.Width > 0 || data.Height > 0) node.CustomMinimumSize = new Vector2(Math.Max(180, data.Width), Math.Max(80, data.Height));
+		node.Resizable = data.Type == "comment";
+		ApplyNodeStyle(node, data.Type);
+		node.GuiInput += input => OnVisualNodeInput(node, input);
 		_visualGraph.AddChild(node);
 		bool action = data.Type is "print" or "warn" or "error" or "set_property" or "call_method" or "destroy";
 		bool value = data.Type is "get_service" or "get_property" or "find_child" or "literal" or "number" or "boolean"
 			or "game" or "script" or "to_string" or "not" or "add" or "subtract" or "multiply" or "divide"
 			or "equals" or "less" or "greater" or "and" or "or";
-		if (data.Type == "event_start")
+		if (data.Type == "comment")
+		{
+			TextEdit note = new() { Text = data.Comment ?? "Comment", PlaceholderText = "Write a graph note…",
+				CustomMinimumSize = new Vector2(260, 90), WrapMode = TextEdit.LineWrappingMode.Boundary };
+			note.TextChanged += () => { node.SetMeta("comment", note.Text); SerializeVisualDocument(); };
+			node.AddChild(note);
+		}
+		else if (data.Type == "event_start")
 		{
 			node.AddChild(new Label { Text = "Begin Play" });
 			node.SetSlot(0, false, 0, FlowColor, true, 0, FlowColor);
@@ -193,11 +224,13 @@ public partial class TextEditorRoot
 		}
 		if (data.Text != null) node.SetMeta("text", data.Text);
 		if (data.Member != null) node.SetMeta("member", data.Member);
-		if (data.Type != "event_start")
+		if (data.Type != "comment")
 		{
-			Button delete = new() { Text = "Delete Block", Flat = true };
-			delete.Pressed += () => RemoveVisualNode(node);
-			node.AddChild(delete);
+			LineEdit comment = new() { Text = data.Comment ?? "", PlaceholderText = "Add comment…", Flat = true,
+				TooltipText = "Optional note saved with this block", Visible = !string.IsNullOrWhiteSpace(data.Comment) };
+			comment.TextChanged += text => { node.SetMeta("comment", text); SerializeVisualDocument(); };
+			comment.FocusExited += () => { if (string.IsNullOrWhiteSpace(comment.Text)) comment.Visible = false; };
+			node.AddChild(comment);
 		}
 		return node;
 	}
@@ -254,6 +287,27 @@ public partial class TextEditorRoot
 		_pendingBlockPosition = (releasePosition + _visualGraph.ScrollOffset) / _visualGraph.Zoom;
 		_wireBlockMenu.Position = DisplayServer.MouseGetPosition();
 		_wireBlockMenu.Popup();
+	}
+
+	private void ShowCanvasBlockMenu(Vector2 position)
+	{
+		if (_visualGraph == null || _canvasBlockMenu == null) return;
+		_pendingBlockPosition = (position + _visualGraph.ScrollOffset) / _visualGraph.Zoom;
+		_canvasBlockMenu.Position = DisplayServer.MouseGetPosition();
+		_canvasBlockMenu.Popup();
+	}
+
+	private static void PopulateBlockMenu(PopupMenu menu, IEnumerable<BlockDefinition> definitions)
+	{
+		menu.Clear();
+		string? category = null;
+		int id = 0;
+		foreach (BlockDefinition definition in definitions)
+		{
+			if (category != definition.Category) { menu.AddSeparator(definition.Category); category = definition.Category; }
+			menu.AddItem(definition.Title, id++);
+			menu.SetItemTooltip(menu.ItemCount - 1, definition.Hint);
+		}
 	}
 
 	private void CreateBlockFromWireMenu(long id)
@@ -322,6 +376,102 @@ public partial class TextEditorRoot
 		_visualGraph.ScrollOffset = source.PositionOffset * _visualGraph.Zoom - _visualGraph.Size / 2 + source.Size / 2;
 	}
 
+	private static void ApplyNodeStyle(Godot.GraphNode node, string type)
+	{
+		string category = BlockDefinitions.FirstOrDefault(item => item.Type == type)?.Category ?? "DataModel";
+		Color color = category switch
+		{
+			"Events" => Color.FromHtml("#A9343A"), "Flow" => Color.FromHtml("#A46B22"),
+			"Output" => Color.FromHtml("#8752A1"), "DataModel" => Color.FromHtml("#236A8E"),
+			"Values" => Color.FromHtml("#2D7D62"), "Math" => Color.FromHtml("#385F9B"),
+			"Compare" or "Logic" => Color.FromHtml("#6A4A9A"), "Notes" => Color.FromHtml("#8A762B"),
+			_ => Color.FromHtml("#3D4654"),
+		};
+		StyleBoxFlat title = new() { BgColor = color, CornerRadiusTopLeft = 5, CornerRadiusTopRight = 5,
+			ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 5, ContentMarginBottom = 5 };
+		StyleBoxFlat selected = (StyleBoxFlat)title.Duplicate();
+		selected.BorderWidthLeft = selected.BorderWidthTop = selected.BorderWidthRight = selected.BorderWidthBottom = 2;
+		selected.BorderColor = color.Lightened(0.35f);
+		node.AddThemeStyleboxOverride("titlebar", title);
+		node.AddThemeStyleboxOverride("titlebar_selected", selected);
+	}
+
+	private void OnVisualNodeInput(Godot.GraphNode node, InputEvent input)
+	{
+		if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right })
+		{
+			_contextNode = node;
+			node.Selected = true;
+			_nodeMenu!.Position = DisplayServer.MouseGetPosition();
+			_nodeMenu.Popup();
+			node.AcceptEvent();
+		}
+	}
+
+	private void OnNodeMenuSelected(long id)
+	{
+		if (_contextNode == null || !IsInstanceValid(_contextNode)) return;
+		switch (id)
+		{
+			case 0: FocusNodeComment(_contextNode); break;
+			case 1: DuplicateVisualNode(_contextNode); break;
+			case 2: RemoveVisualNode(_contextNode); break;
+		}
+	}
+
+	private static void FocusNodeComment(Godot.GraphNode node)
+	{
+		if (node.GetChildren().OfType<TextEdit>().LastOrDefault() is TextEdit note) { note.GrabFocus(); note.SelectAll(); return; }
+		if (node.GetChildren().OfType<LineEdit>().LastOrDefault() is LineEdit comment)
+		{ comment.Visible = true; comment.GrabFocus(); comment.SelectAll(); }
+	}
+
+	public override void _UnhandledKeyInput(InputEvent input)
+	{
+		if (_visualGraph != null && input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Delete or Key.Backspace })
+		{ DeleteSelectedVisualNodes(); GetViewport().SetInputAsHandled(); return; }
+		if (_visualGraph != null && input is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.D })
+		{ DuplicateSelectedVisualNodes(); GetViewport().SetInputAsHandled(); return; }
+		base._UnhandledKeyInput(input);
+	}
+
+	private void DeleteVisualNodes(Godot.Collections.Array<StringName> nodes)
+	{
+		foreach (StringName value in nodes)
+			if (_visualGraph?.GetNodeOrNull<Godot.GraphNode>(new NodePath(value.ToString())) is Godot.GraphNode node)
+				RemoveVisualNode(node);
+	}
+
+	private void DeleteSelectedVisualNodes()
+	{
+		if (_visualGraph == null) return;
+		foreach (Godot.GraphNode node in _visualGraph.GetChildren().OfType<Godot.GraphNode>().Where(item => item.Selected).ToArray())
+			RemoveVisualNode(node);
+	}
+
+	private void DuplicateSelectedVisualNodes()
+	{
+		if (_visualGraph == null) return;
+		foreach (Godot.GraphNode node in _visualGraph.GetChildren().OfType<Godot.GraphNode>().Where(item => item.Selected).ToArray())
+			DuplicateVisualNode(node);
+	}
+
+	private void DuplicateVisualNode(Godot.GraphNode node)
+	{
+		VisualNode copy = new()
+		{
+			Id = Guid.NewGuid().ToString("N"), Type = node.GetMeta("type").AsString(),
+			X = node.PositionOffset.X + 36, Y = node.PositionOffset.Y + 36,
+			Text = node.HasMeta("text") ? node.GetMeta("text").AsString() : null,
+			Member = node.HasMeta("member") ? node.GetMeta("member").AsString() : null,
+			Comment = node.HasMeta("comment") ? node.GetMeta("comment").AsString() : null,
+			Width = node.Size.X, Height = node.Size.Y,
+		};
+		Godot.GraphNode? created = CreateVisualNode(copy);
+		if (created != null) { node.Selected = false; created.Selected = true; }
+		SerializeVisualDocument();
+	}
+
 	private void RemoveVisualNode(Godot.GraphNode node)
 	{
 		string id = node.Name;
@@ -338,6 +488,10 @@ public partial class TextEditorRoot
 	private void OnVisualGraphInput(InputEvent input)
 	{
 		if (input.IsActionPressed("save")) { SaveDocument(); _visualGraph!.AcceptEvent(); }
+		else if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Delete or Key.Backspace })
+		{ DeleteSelectedVisualNodes(); _visualGraph!.AcceptEvent(); }
+		else if (input is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.D })
+		{ DuplicateSelectedVisualNodes(); _visualGraph!.AcceptEvent(); }
 		else if (input is InputEventMouseButton { Pressed: false }) SerializeVisualDocument();
 	}
 
@@ -355,6 +509,9 @@ public partial class TextEditorRoot
 				Y = node.PositionOffset.Y,
 				Text = node.HasMeta("text") ? node.GetMeta("text").AsString() : null,
 				Member = node.HasMeta("member") ? node.GetMeta("member").AsString() : null,
+				Comment = node.HasMeta("comment") ? node.GetMeta("comment").AsString() : null,
+				Width = node.Size.X,
+				Height = node.Size.Y,
 			});
 		}
 		CodeEditor.Text = JsonSerializer.Serialize(document, VisualJsonOptions);
@@ -362,7 +519,7 @@ public partial class TextEditorRoot
 
 	private static string BlockTitle(string type) => type switch
 	{
-		"event_start" => "Event Begin Play", "print" => "Print", "warn" => "Warn", "error" => "Error",
+		"event_start" => "Event Begin Play", "comment" => "Comment", "print" => "Print", "warn" => "Warn", "error" => "Error",
 		"get_service" => "Get Service", "get_property" => "Get Property", "set_property" => "Set Property",
 		"call_method" => "Call Method", "literal" => "Text", "number" => "Number", "boolean" => "Boolean",
 		"game" => "Game", "script" => "Script", "find_child" => "Find First Child", "destroy" => "Destroy",

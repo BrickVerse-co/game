@@ -151,6 +151,9 @@ public sealed class GraphNode
 	public float Y { get; set; }
 	public string? Text { get; set; }
 	public string? Member { get; set; }
+	public string? Comment { get; set; }
+	public float Width { get; set; }
+	public float Height { get; set; }
 }
 public sealed class GraphConnection
 {
