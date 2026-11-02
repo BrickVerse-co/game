@@ -59,9 +59,9 @@ public static class ServerAPI
 		return GetServerInterface().Heartbeat(playerIDs);
 	}
 
-	public static Task<APIValidateResponse> ValidatePlayer(string playerToken)
+	public static Task<APIValidateResponse> ValidatePlayer(string playerToken, string integrityAuthToken)
 	{
-		return GetServerInterface().ValidatePlayer(playerToken);
+		return GetServerInterface().ValidatePlayer(playerToken, integrityAuthToken);
 	}
 
 	public static Task DisconnectPlayer(string playerToken)

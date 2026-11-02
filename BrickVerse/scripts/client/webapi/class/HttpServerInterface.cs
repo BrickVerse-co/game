@@ -60,10 +60,12 @@ public sealed class HttpServerInterface : IServerInterface
 		return await ReadJsonResponse(response, "server heartbeat", BrickVerseJsonContext.Default.APIHeartbeatResponse);
 	}
 
-	public async Task<APIValidateResponse> ValidatePlayer(string token)
+	public async Task<APIValidateResponse> ValidatePlayer(string token, string integrityAuthToken)
 	{
 		string escapedToken = Uri.EscapeDataString(token ?? string.Empty);
-		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath($"/v3/world/server/user?joinToken={escapedToken}"));
+		string escapedIntegrityToken = Uri.EscapeDataString(integrityAuthToken ?? string.Empty);
+		using HttpRequestMessage request = CreateRequest(HttpMethod.Get,
+			ApiPath($"/v3/world/server/user?joinToken={escapedToken}&integrityAuthToken={escapedIntegrityToken}"));
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 		return await ReadJsonResponse(response, "player validate", BrickVerseJsonContext.Default.APIValidateResponse);
 	}

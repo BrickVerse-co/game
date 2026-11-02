@@ -60,6 +60,9 @@ public class APIClientAuthResponseMessage : APIServerStatus
 
 	[JsonPropertyName("serverId")]
 	public string ServerID { get; set; } = string.Empty;
+
+	[JsonPropertyName("integrityAuthToken")]
+	public string IntegrityAuthToken { get; set; } = string.Empty;
 }
 
 [JsonSerializable(typeof(APIServerAuthRequestMessage))]

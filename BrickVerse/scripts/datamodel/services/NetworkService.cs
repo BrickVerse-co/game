@@ -39,10 +39,10 @@ public sealed partial class NetworkService : Instance
 	private static readonly ConcurrentDictionary<(Type Type, int MethodId), RpcDispatchInfo> _rpcDispatchCache = new();
 
 	private const double PingIntervalSec = 2;
-	private const int AuthWaitTimeoutSec = 15; // Time wait before user disconnects due to auth timeout
+	private const int AuthWaitTimeoutSec = 30; // Includes backend integrity verification and player lookup.
 	private const int HeartbeatIntervalSec = 10; // Server heartbeat interval
 	private const int HeartbeatBeforeCheckPlayers = 5; // Server wait before checking players
-	private const float ConnectTimeoutSec = 90; // Timeout kick if player is not ready
+	private const float ConnectTimeoutSec = 300; // Accommodate large initial snapshots while the client reports progress.
 	private const ulong IdleTimeoutMs = 10 * 60 * 1000;
 	private const double IdleCheckIntervalSec = 30;
 	private const ulong ActivityReportIntervalMs = 15 * 1000;
@@ -111,6 +111,7 @@ public sealed partial class NetworkService : Instance
 	private bool _heartbeatInFlight;
 	private readonly ConcurrentDictionary<int, ulong> _peerLastActivity = new();
 	private readonly ConcurrentDictionary<int, string> _peerJoinTokens = new();
+	private readonly ConcurrentDictionary<int, byte> _authStartedPeers = new();
 	private readonly ConcurrentDictionary<int, string> _peerJoinStages = new();
 	private ulong _lastActivityReportTime;
 	private bool _localPlayerReady;
@@ -690,6 +691,7 @@ public sealed partial class NetworkService : Instance
 			_peerRateLimiters.Remove(peerID);
 		}
 		_peerJoinTokens.TryRemove(peerID, out string? joinToken);
+		_authStartedPeers.TryRemove(peerID, out _);
 
 		Player? plr = _players.GetPlayerFromPeerID(peerID);
 		if (plr != null)
@@ -832,12 +834,14 @@ public sealed partial class NetworkService : Instance
 		}
 
 		BV.Print($"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}");
-		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken, (int)NetworkMode, (int)platform, platformName, pk);
+		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken,
+			ClientAuthAPI.IntegrityAuthToken, (int)NetworkMode, (int)platform, platformName, pk);
 	}
 
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
-	private async void NetAuthResponse(string testUserID, string userToken, int networkMode, int platform, string platformStr, byte[] pk)
+	private async void NetAuthResponse(string testUserID, string userToken, string integrityAuthToken,
+		int networkMode, int platform, string platformStr, byte[] pk)
 	{
 		if (NetInstance == null)
 			return;
@@ -853,6 +857,18 @@ public sealed partial class NetworkService : Instance
 		if (peerID <= 1)
 		{
 			BV.PrintErr($"Auth rejected: invalid peer id {peerID}");
+			return;
+		}
+		if (!_authStartedPeers.TryAdd(peerID, 0))
+		{
+			SuspiciousPeerActivity?.Invoke(peerID, "duplicate-auth-response", 5);
+			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
+			return;
+		}
+		if (!Enum.IsDefined(typeof(ClientPlatformEnum), platform) || !IsPlatformClaimConsistent((ClientPlatformEnum)platform, platformStr))
+		{
+			SuspiciousPeerActivity?.Invoke(peerID, "invalid-platform-claim", 3);
+			DisconnectPeer(peerID, IntegrityFailureMessage, DisconnectionCodeEnum.IntegrityFail);
 			return;
 		}
 
@@ -909,7 +925,9 @@ public sealed partial class NetworkService : Instance
 			}
 			else
 			{
-				validateRes = await AuthenticatePlayer(userToken);
+				if (string.IsNullOrWhiteSpace(integrityAuthToken))
+					throw new UnauthorizedAccessException("Missing backend integrity authorization token.");
+				validateRes = await AuthenticatePlayer(userToken, integrityAuthToken);
 				_peerJoinTokens[peerID] = userToken;
 				userData = await BVAPI.GetUserFromID(validateRes.UserID);
 			}
@@ -930,7 +948,8 @@ public sealed partial class NetworkService : Instance
 
 		string username = userData.Username;
 
-		if (_players.GetPlayer(username) != null || _players.GetPlayerFromPeerID(peerID) != null)
+		if (_players.GetPlayerByID(userData.Id) != null || _players.GetPlayer(username) != null
+			|| _players.GetPlayerFromPeerID(peerID) != null)
 		{
 			DisconnectPeer(peerID, MultipleDeviceMessage, DisconnectionCodeEnum.MultipleDeviceNotAllowed);
 			return;
@@ -944,7 +963,8 @@ public sealed partial class NetworkService : Instance
 
 			plr = Globals.LoadInstance<Player>(Root)!;
 
-			_players.PeerIDToPlayer.TryAdd(peerID, plr);
+			if (!_players.PeerIDToPlayer.TryAdd(peerID, plr))
+				throw new InvalidOperationException($"Peer {peerID} already has a player mapping.");
 
 			plr.PeerID = peerID;
 			plr.UserID = userData.Id;
@@ -1030,14 +1050,21 @@ public sealed partial class NetworkService : Instance
 		{
 			BV.Print("Auth: starting SyncPlaceToPlayer...");
 			_peerJoinStages[peerID] = "world replication";
-			ReplicateSync.SyncPlaceToPlayer(plr);
+			ReplicateSync.SyncPlaceToPlayer(plr, () =>
+			{
+				if (plr.IsDeleted || IsShuttingDown) return;
+				try
+				{
+					BV.Print($"Auth: world snapshot acknowledged by peer {peerID}; invoking PeerPreInit.");
+					PeerPreInit?.Invoke(peerID);
+				}
+				catch (Exception ex)
+				{
+					BV.PrintErr($"Auth: PeerPreInit failed for peer {peerID}: {ex}");
+					DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
+				}
+			});
 			BV.Print("Auth: SyncPlaceToPlayer returned.");
-
-			// These callbacks send RPCs to world objects (for example Animator).
-			// Queue them after the initial snapshot so the client has those targets
-			// registered before it processes their initialization RPCs.
-			BV.Print("Auth: invoking PeerPreInit...");
-			PeerPreInit?.Invoke(peerID);
 		}
 		catch (Exception ex)
 		{
@@ -1141,9 +1168,9 @@ public sealed partial class NetworkService : Instance
 		BV.Print("BrickVerse Network session started");
 	}
 
-	public static async Task<APIValidateResponse> AuthenticatePlayer(string token)
+	public static async Task<APIValidateResponse> AuthenticatePlayer(string token, string integrityAuthToken)
 	{
-		return await ServerAPI.ValidatePlayer(token);
+		return await ServerAPI.ValidatePlayer(token, integrityAuthToken);
 	}
 
 	/// <summary>
@@ -1449,6 +1476,20 @@ public sealed partial class NetworkService : Instance
 			return Mathf.Min(viewport.X, viewport.Y) >= 720 ? ClientPlatformEnum.Tablet : ClientPlatformEnum.Mobile;
 		}
 		return ClientPlatformEnum.Desktop;
+	}
+
+	private static bool IsPlatformClaimConsistent(ClientPlatformEnum platform, string platformName)
+	{
+		string normalized = (platformName ?? string.Empty).Trim().ToLowerInvariant();
+		if (normalized is not ("windows" or "macos" or "linux" or "android" or "ios")) return false;
+		return platform switch
+		{
+			ClientPlatformEnum.Desktop => normalized is "windows" or "macos" or "linux",
+			ClientPlatformEnum.Mobile or ClientPlatformEnum.Tablet => normalized is "android" or "ios",
+			ClientPlatformEnum.VR => true,
+			ClientPlatformEnum.Console => true,
+			_ => false,
+		};
 	}
 
 	private class RateLimiters

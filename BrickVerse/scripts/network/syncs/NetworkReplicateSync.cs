@@ -30,7 +30,11 @@ public sealed partial class NetworkReplicateSync : Instance
 	private const int MaxPendingReplicateParents = 4096;
 	private const int MaxPendingReplicatesPerParent = 1024;
 	private const int PlaceChunksPerFrame = 4;
-	private const ulong PlaceReplicationTimeoutMs = 90_000;
+	private const int PlaceChunksInFlight = 8;
+	private const int StablePlaceReplicationPolls = 2;
+	private const ulong PlaceReplicationPollIntervalMs = 50;
+	private const ulong PlaceReplicationStallTimeoutMs = 30_000;
+	private const ulong PlaceReplicationMaximumDurationMs = 300_000;
 	internal NetworkService NetService = null!;
 
 	// Queue for pending replicate data (waiting for node to spawn)
@@ -41,24 +45,35 @@ public sealed partial class NetworkReplicateSync : Instance
 	public event Action<int, int>? InstanceLoadedProgress;
 	private readonly HashSet<string> _removedRef = [];
 	private readonly HashSet<NetReplicateData> _worldReplicateSet = [];
-	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Index, int Count, int ObjectCount)> _incomingChunks = new();
+	private readonly Queue<(byte[] Bytes, bool IsPlaceReplication, int Round, int Index, int Count, int ObjectCount, bool IsFinal)> _incomingChunks = new();
 	private int _queuedIncomingBytes;
 	private readonly Dictionary<int, PlaceReplicationSendSession> _placeReplicationSendSessions = [];
 	private bool _processingIncomingChunk;
 	private bool _hasProcessedIncomingChunk;
 	private int _placeChunksReceived;
 	private int _placeChunksExpected;
+	private int _placeRound = -1;
+	private int _placeRoundChunksReceived;
+	private int _placeRoundChunksExpected;
+	private bool _placeFinalRoundReceived;
 	private ulong _placeReplicationStartedAtMsec;
+	private ulong _lastReplicationProgressAtMsec;
 	internal int PlaceChunksReceived => _placeChunksReceived;
 	internal int PlaceChunksExpected => _placeChunksExpected;
 
-	private sealed class PlaceReplicationSendSession(int peerID, byte[][] chunks, int objectCount)
+	private sealed class PlaceReplicationSendSession(int peerID, Action? completed)
 	{
 		public int PeerID { get; } = peerID;
-		public byte[][] Chunks { get; } = chunks;
-		public int ObjectCount { get; } = objectCount;
+		public byte[][] Chunks { get; set; } = [];
+		public int ObjectCount { get; set; }
+		public int Round { get; set; } = -1;
 		public int NextChunkIndex { get; set; }
 		public int AcknowledgedChunkCount { get; set; }
+		public int StablePollCount { get; set; }
+		public ulong NextPollAtMsec { get; set; }
+		public bool IsFinalRound { get; set; }
+		public HashSet<string> SentNetworkIDs { get; } = [];
+		public Action? Completed { get; } = completed;
 	}
 
 	private static readonly bool _useNetworkLog = false;
@@ -74,18 +89,17 @@ public sealed partial class NetworkReplicateSync : Instance
 		base.Init();
 	}
 
-	public void SyncPlaceToPlayer(Player plr)
+	public void SyncPlaceToPlayer(Player plr, Action? completed = null)
 	{
-		World game = NetService.Root;
-		NetworkedObject[] netObjs = game.GetReplicateDescendants();
+		NetService.Root.NetSendAllPropUpdate(plr.PeerID);
 
-		game.NetSendAllPropUpdate(plr.PeerID);
-
-		SendChunk(netObjs, plr, true);
+		PlaceReplicationSendSession session = new(plr.PeerID, completed);
+		_placeReplicationSendSessions[plr.PeerID] = session;
+		PollPlaceReplication(session);
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
-	private void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate, int chunkIndex, int chunkCount, int objectCount)
+	private void NetRecvChunk(byte[] rawBytes, bool isPlaceReplicate, int round, int chunkIndex, int chunkCount, int objectCount, bool isFinal)
 	{
 		if (rawBytes == null || rawBytes.Length == 0 || rawBytes.Length > MaxIncomingChunkBytes)
 		{
@@ -102,18 +116,28 @@ public sealed partial class NetworkReplicateSync : Instance
 
 		if (isPlaceReplicate)
 		{
-			int expectedIndex = _placeChunksReceived + _incomingChunks.Count(chunk => chunk.IsPlaceReplication);
-			if ((_placeChunksExpected != 0 && (_placeChunksExpected != chunkCount || InstanceToBeLoadedCount != objectCount))
-				|| chunkIndex != expectedIndex)
+			int queuedForRound = _incomingChunks.Count(chunk => chunk.IsPlaceReplication && chunk.Round == round);
+			if (round == _placeRound + 1 && chunkIndex == 0 && _placeRoundChunksReceived == _placeRoundChunksExpected)
 			{
-				RejectIncomingChunk($"inconsistent or out-of-order metadata index={chunkIndex}, expected={expectedIndex}, count={chunkCount}, objects={objectCount}");
+				_placeRound = round;
+				_placeRoundChunksReceived = 0;
+				_placeRoundChunksExpected = chunkCount;
+				_placeChunksExpected += chunkCount;
+				InstanceToBeLoadedCount += objectCount;
+			}
+
+			int expectedIndex = _placeRoundChunksReceived + queuedForRound;
+			if (round != _placeRound || chunkCount != _placeRoundChunksExpected || chunkIndex != expectedIndex)
+			{
+				RejectIncomingChunk($"inconsistent or out-of-order metadata round={round}, index={chunkIndex}, expectedRound={_placeRound}, expectedIndex={expectedIndex}, count={chunkCount}, objects={objectCount}");
 				return;
 			}
 
 			if (_placeReplicationStartedAtMsec == 0)
+			{
 				_placeReplicationStartedAtMsec = Time.GetTicksMsec();
-			_placeChunksExpected = chunkCount;
-			InstanceToBeLoadedCount = objectCount;
+				_lastReplicationProgressAtMsec = _placeReplicationStartedAtMsec;
+			}
 		}
 
 		if (_queuedIncomingBytes > MaxQueuedIncomingBytes - rawBytes.Length)
@@ -122,8 +146,9 @@ public sealed partial class NetworkReplicateSync : Instance
 			return;
 		}
 
-		_incomingChunks.Enqueue((rawBytes, isPlaceReplicate, chunkIndex, chunkCount, objectCount));
+		_incomingChunks.Enqueue((rawBytes, isPlaceReplicate, round, chunkIndex, chunkCount, objectCount, isFinal));
 		_queuedIncomingBytes += rawBytes.Length;
+		if (isPlaceReplicate) _lastReplicationProgressAtMsec = Time.GetTicksMsec();
 	}
 
 	private void RejectIncomingChunk(string reason)
@@ -156,7 +181,10 @@ public sealed partial class NetworkReplicateSync : Instance
 				if (incoming.IsPlaceReplication)
 				{
 					_placeChunksReceived++;
-					RpcId(1, nameof(NetAckPlaceReplicationChunk), incoming.Index);
+					_placeRoundChunksReceived++;
+					_placeFinalRoundReceived |= incoming.IsFinal;
+					_lastReplicationProgressAtMsec = Time.GetTicksMsec();
+					RpcId(1, nameof(NetAckPlaceReplicationChunk), incoming.Round, incoming.Index);
 				}
 			}
 		}
@@ -263,9 +291,19 @@ public sealed partial class NetworkReplicateSync : Instance
 		return netObjsData.Length;
 	}
 
-	public void SendChunk(NetworkedObject[] netObjs, Player plr, bool isPlaceReplicate = false)
+	public void SendChunk(NetworkedObject[] netObjs, Player plr, bool isPlaceReplicate = false, Action? completed = null)
 	{
-		NetReplicateData[] packed = PackNetObjs(netObjs);
+		if (isPlaceReplicate)
+		{
+			// Keep this public entry point safe for older callers. The live DataModel is
+			// deliberately polled instead of trusting the caller's stale array.
+			PlaceReplicationSendSession session = new(plr.PeerID, completed);
+			_placeReplicationSendSessions[plr.PeerID] = session;
+			PollPlaceReplication(session);
+			return;
+		}
+
+		NetReplicateData[] packed = PackNetObjs(netObjs, isPlaceReplicate);
 		List<NetReplicateData[]> chunks = BuildChunks(packed);
 		List<byte[]> compressedChunks = [];
 		long totalBytes = 0;
@@ -281,13 +319,45 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (!isPlaceReplicate)
 		{
 			for (int i = 0; i < compressedChunks.Count; i++)
-				RpcId(plr.PeerID, nameof(NetRecvChunk), compressedChunks[i], false, i, compressedChunks.Count, packed.Length);
+				RpcId(plr.PeerID, nameof(NetRecvChunk), -1, i, compressedChunks.Count, packed.Length, false);
 			return;
 		}
 
-		PlaceReplicationSendSession session = new(plr.PeerID, [.. compressedChunks], packed.Length);
-		_placeReplicationSendSessions[plr.PeerID] = session;
-		BV.Print($"[JoinReplication] Snapshot queued for peer {plr.PeerID}: objects={packed.Length}, chunks={compressedChunks.Count}, compressedBytes={totalBytes}, pace={PlaceChunksPerFrame}/frame.");
+	}
+
+	private void PollPlaceReplication(PlaceReplicationSendSession session)
+	{
+		if (session.Chunks.Length != 0 || Time.GetTicksMsec() < session.NextPollAtMsec)
+			return;
+
+		NetworkedObject[] discovered = NetService.Root.GetReplicateDescendants();
+		NetworkedObject[] unsent = discovered
+			.Where(obj => !session.SentNetworkIDs.Contains(obj.NetworkedObjectID))
+			.ToArray();
+		NetReplicateData[] packed = PackNetObjs(unsent, true);
+
+		if (packed.Length == 0 && ++session.StablePollCount < StablePlaceReplicationPolls)
+		{
+			session.NextPollAtMsec = Time.GetTicksMsec() + PlaceReplicationPollIntervalMs;
+			return;
+		}
+
+		session.IsFinalRound = packed.Length == 0;
+		session.StablePollCount = session.IsFinalRound ? session.StablePollCount : 0;
+		foreach (NetReplicateData data in packed)
+			session.SentNetworkIDs.Add(data.NetworkID);
+
+		List<byte[]> compressedChunks = [];
+		foreach (NetReplicateData[] chunk in BuildChunks(packed))
+			AppendCompressedChunks(chunk, compressedChunks);
+
+		session.Round++;
+		session.Chunks = [.. compressedChunks];
+		session.ObjectCount = packed.Length;
+		session.NextChunkIndex = 0;
+		session.AcknowledgedChunkCount = 0;
+		long totalBytes = compressedChunks.Sum(chunk => (long)chunk.Length);
+		BV.Print($"[JoinReplication] Peer {session.PeerID} round {session.Round}: objects={packed.Length}, chunks={compressedChunks.Count}, compressedBytes={totalBytes}, final={session.IsFinalRound}.");
 		SendNextPlaceReplicationChunks(session);
 	}
 
@@ -308,15 +378,17 @@ public sealed partial class NetworkReplicateSync : Instance
 	private void SendNextPlaceReplicationChunks(PlaceReplicationSendSession session)
 	{
 		int sent = 0;
-		while (session.NextChunkIndex < session.Chunks.Length && sent++ < PlaceChunksPerFrame)
+		while (session.NextChunkIndex < session.Chunks.Length
+			&& session.NextChunkIndex - session.AcknowledgedChunkCount < PlaceChunksInFlight
+			&& sent++ < PlaceChunksPerFrame)
 		{
 			int chunkIndex = session.NextChunkIndex++;
-			RpcId(session.PeerID, nameof(NetRecvChunk), session.Chunks[chunkIndex], true, chunkIndex, session.Chunks.Length, session.ObjectCount);
+			RpcId(session.PeerID, nameof(NetRecvChunk), session.Round, chunkIndex, session.Chunks.Length, session.ObjectCount, session.IsFinalRound);
 		}
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
-	private void NetAckPlaceReplicationChunk(int chunkIndex)
+	private void NetAckPlaceReplicationChunk(int round, int chunkIndex)
 	{
 		if (!NetService.IsServer) return;
 
@@ -324,20 +396,28 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (!_placeReplicationSendSessions.TryGetValue(peerID, out PlaceReplicationSendSession? session))
 			return;
 
-		if (chunkIndex != session.AcknowledgedChunkCount)
+		if (round != session.Round || chunkIndex != session.AcknowledgedChunkCount)
 		{
-			BV.PrintErr($"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={chunkIndex}, expected={session.AcknowledgedChunkCount}.");
+			BV.PrintErr($"[JoinReplication] Out-of-order chunk acknowledgement from peer {peerID}: received={round}:{chunkIndex}, expected={session.Round}:{session.AcknowledgedChunkCount}.");
 			return;
 		}
 
 		session.AcknowledgedChunkCount++;
 		if (session.AcknowledgedChunkCount == session.Chunks.Length)
 		{
-			_placeReplicationSendSessions.Remove(peerID);
-			BV.Print($"[JoinReplication] Peer {peerID} acknowledged all {session.Chunks.Length} world chunks.");
+			if (session.IsFinalRound)
+			{
+				_placeReplicationSendSessions.Remove(peerID);
+				BV.Print($"[JoinReplication] Peer {peerID} completed dynamic world replication after {session.Round + 1} rounds and {session.SentNetworkIDs.Count} objects.");
+				session.Completed?.Invoke();
+				return;
+			}
+
+			session.Chunks = [];
+			session.NextPollAtMsec = Time.GetTicksMsec() + PlaceReplicationPollIntervalMs;
 			return;
 		}
-
+		SendNextPlaceReplicationChunks(session);
 	}
 
 	internal void CancelPlaceReplicationSend(int peerID)
@@ -379,7 +459,24 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (NetService.IsServer)
 		{
 			foreach (PlaceReplicationSendSession session in _placeReplicationSendSessions.Values.ToArray())
-				SendNextPlaceReplicationChunks(session);
+			{
+				try
+				{
+					PollPlaceReplication(session);
+					SendNextPlaceReplicationChunks(session);
+				}
+				catch (Exception ex)
+				{
+					_placeReplicationSendSessions.Remove(session.PeerID);
+					string reportID = Guid.NewGuid().ToString("N")[..8];
+					BV.PrintErr($"[JoinFailure:{reportID}] Failed to poll world objects for peer {session.PeerID}: {ex}");
+					NetService.DisconnectPeer(
+						session.PeerID,
+						$"Could not prepare world data. Please retry. If this keeps happening, share report ID {reportID} with support.",
+						DisconnectionCodeEnum.ConnectionFailure
+					);
+				}
+			}
 		}
 		ProcessNextIncomingChunk();
 		CheckPlaceReplicationTimeout();
@@ -413,7 +510,7 @@ public sealed partial class NetworkReplicateSync : Instance
 			}
 			if (node != null)
 			{
-				CheckLeftoverReplication(node);
+				ResolvePendingReplications(key, node);
 			}
 		}
 	}
@@ -423,7 +520,10 @@ public sealed partial class NetworkReplicateSync : Instance
 		if (_placeReplicationStartedAtMsec == 0 || NetService.IsPlaceReplicationDone)
 			return;
 
-		if (Time.GetTicksMsec() - _placeReplicationStartedAtMsec < PlaceReplicationTimeoutMs)
+		ulong now = Time.GetTicksMsec();
+		bool stalled = now - _lastReplicationProgressAtMsec >= PlaceReplicationStallTimeoutMs;
+		bool exceededMaximum = now - _placeReplicationStartedAtMsec >= PlaceReplicationMaximumDurationMs;
+		if (!stalled && !exceededMaximum)
 			return;
 
 		string reportID = Guid.NewGuid().ToString("N")[..8];
@@ -431,7 +531,8 @@ public sealed partial class NetworkReplicateSync : Instance
 			$"{data.ClassName} {data.NodePath} (id={data.NetworkID}, parent={data.ParentNodeID})"));
 		string pendingParents = string.Join(" | ", _pendingReplicates.Take(8).Select(pair =>
 			$"{pair.Key} -> {(pair.Value.Count > 0 ? pair.Value[0].ParentNodePath : "<empty>")}"));
-		BV.PrintErr($"[JoinFailure:{reportID}] World replication timed out after {PlaceReplicationTimeoutMs / 1000}s: " +
+		BV.PrintErr($"[JoinFailure:{reportID}] World replication {(stalled ? "stalled" : "exceeded maximum duration")}: " +
+			$"elapsed={(now - _placeReplicationStartedAtMsec) / 1000}s, idle={(now - _lastReplicationProgressAtMsec) / 1000}s, " +
 			$"chunks={_placeChunksReceived}/{_placeChunksExpected}, loaded={InstanceLoadedCount - 1}/{InstanceToBeLoadedCount}, " +
 			$"unresolvedObjects={_worldReplicateSet.Count}, pendingParents={_pendingReplicates.Count}, queuedChunks={_incomingChunks.Count}. " +
 			$"First unresolved: [{unresolved}]. First pending parents: [{pendingParents}].");
@@ -444,11 +545,11 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		if (NetService.NetworkMode != NetworkModeEnum.Client) return;
 		NetService.TransformSync.BroadcastChunk(netObjs);
-		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackNetObjs(netObjs)));
+		byte[] rawData = ZstdCompressionUtils.Compress(SerializeUtils.Serialize(PackNetObjs(netObjs, false)));
 
 		//GD.PushWarning("Broadcast chunk ", netObjs.Length);
 
-		Rpc(nameof(NetRecvChunk), rawData, false, 0, 1, netObjs.Length);
+		Rpc(nameof(NetRecvChunk), rawData, false, -1, 0, 1, netObjs.Length, false);
 	}
 
 	public static void MarkChunkOverride(NetworkedObject[] netObjs)
@@ -459,7 +560,7 @@ public sealed partial class NetworkReplicateSync : Instance
 		}
 	}
 
-	private static NetReplicateData[] PackNetObjs(NetworkedObject[] netObjs)
+	private static NetReplicateData[] PackNetObjs(NetworkedObject[] netObjs, bool isSyncOnce)
 	{
 		List<NetReplicateData> netObjsData = [];
 
@@ -471,7 +572,7 @@ public sealed partial class NetworkReplicateSync : Instance
 			if (!netObj.ShouldReplicate) continue;
 
 			NetReplicateData data = netObj.GetNetReplicateData();
-			data.IsSyncOnce = true;
+			data.IsSyncOnce = isSyncOnce;
 			netObjsData.Add(data);
 			if (_useNetworkLog) { BV.Print($"[Net] Packing {netObj.Name}"); }
 		}
@@ -479,17 +580,33 @@ public sealed partial class NetworkReplicateSync : Instance
 		return [.. netObjsData];
 	}
 
-	private void CheckLeftoverReplication(NetworkedObject node)
+	private void ResolvePendingReplications(string pendingParentID, NetworkedObject node)
 	{
-		string netID = node.NetworkedObjectID;
-
-		if (_pendingReplicates.TryGetValue(netID, out List<NetReplicateData>? list))
+		if (_pendingReplicates.TryGetValue(pendingParentID, out List<NetReplicateData>? list))
 		{
-			foreach (NetReplicateData data in list)
+			_pendingReplicates.Remove(pendingParentID);
+			ApplyPendingReplicates(node, list);
+		}
+	}
+
+	private void ApplyPendingReplicates(NetworkedObject parent, List<NetReplicateData> pending)
+	{
+		foreach (NetReplicateData data in pending)
+		{
+			try
 			{
-				node.RecvReplicate(data);
+				parent.RecvReplicate(data);
 			}
-			_pendingReplicates.Remove(netID);
+			catch (Exception ex)
+			{
+				string reportID = Guid.NewGuid().ToString("N")[..8];
+				BV.PrintErr($"[JoinFailure:{reportID}] Failed to apply pending object '{data.NodePath}' below '{parent.NetworkPath}': {ex}");
+				NetService.DisconnectSelf(
+					$"Could not load a world object. Please retry. If this keeps happening, share report ID {reportID} with support.",
+					DisconnectionCodeEnum.ConnectionFailure
+				);
+				return;
+			}
 		}
 	}
 
@@ -501,6 +618,7 @@ public sealed partial class NetworkReplicateSync : Instance
 			if (!_worldReplicateSet.Remove(new() { NetworkID = obj.NetworkedObjectID })) return;
 		}
 		InstanceLoadedCount += 1;
+		_lastReplicationProgressAtMsec = Time.GetTicksMsec();
 		if (InstanceToBeLoadedCount != 0 && !NetService.IsPlaceReplicationDone)
 		{
 			InstanceLoadedProgress?.Invoke(InstanceLoadedCount, InstanceToBeLoadedCount);
@@ -516,6 +634,7 @@ public sealed partial class NetworkReplicateSync : Instance
 	{
 		if (_placeChunksExpected > 0
 			&& _placeChunksReceived == _placeChunksExpected
+			&& _placeFinalRoundReceived
 			&& _incomingChunks.Count == 0
 			&& !_processingIncomingChunk
 			&& _worldReplicateSet.Count == 0)
@@ -674,12 +793,7 @@ public sealed partial class NetworkReplicateSync : Instance
 		{
 			_pendingReplicates.Remove(netID);
 			if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] Resolve Pending {netID}"); }
-			foreach (NetReplicateData r in queued)
-			{
-				if (_useNetworkLog) { BV.Print($"[Net] [{NetService.LocalPeerID}] {netID} Resolve Pending Replicate {r.Name}"); }
-
-				netObj.RecvReplicate(r);
-			}
+			ApplyPendingReplicates(netObj, queued);
 		}
 	}
 }

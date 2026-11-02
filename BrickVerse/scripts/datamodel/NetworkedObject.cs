@@ -1432,7 +1432,9 @@ public partial class NetworkedObject : IScriptObject
 
 		if (netobj == null)
 		{
-			BV.Print("Unknown class: " + className);
+			string message = $"The server replicated unsupported class '{className}' at '{data.NodePath}'.";
+			if (data.IsSyncOnce) throw new NetworkException(message);
+			BV.PrintErr(message);
 			return;
 		}
 

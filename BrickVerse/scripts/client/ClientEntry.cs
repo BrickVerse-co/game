@@ -64,6 +64,7 @@ public sealed partial class ClientEntry : Node3D
 	private readonly List<int> _localTestClientProcessIds = [];
 
 	private Godot.Timer? _serverStatusPollTimer;
+	private bool _serverStatusPollInFlight;
 	private APIClientAuthResponseMessage? _clientConnectionInfo;
 	private string? _debugServerAddress;
 	private int? _debugServerPort;
@@ -705,7 +706,7 @@ public sealed partial class ClientEntry : Node3D
 
 	private void StartServerStatusPolling()
 	{
-		_serverStatusPollTimer = new Godot.Timer();
+		_serverStatusPollTimer = new Godot.Timer { OneShot = true };
 		AddChild(_serverStatusPollTimer);
 
 		_serverStatusPollTimer.Timeout += PollServerStatus;
@@ -714,11 +715,12 @@ public sealed partial class ClientEntry : Node3D
 
 	private async void PollServerStatus()
 	{
-		if (_serverStatusPollTimer == null || _clientConnectionInfo == null)
+		if (_serverStatusPollTimer == null || _clientConnectionInfo == null || _serverStatusPollInFlight)
 		{
 			return;
 		}
 
+		_serverStatusPollInFlight = true;
 		try
 		{
 			APIServerStatus status = await ClientAuthAPI.CheckServerStatus();
@@ -737,6 +739,9 @@ public sealed partial class ClientEntry : Node3D
 
 			if (status.Status == "STARTED")
 			{
+				// Integrity authorization is deliberately short-lived. Refresh it only
+				// once the server is ready so a long wake-up cannot expire the token.
+				_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
 				BV.Print("Server is ready, connecting to ", _clientConnectionInfo.IP, ":", _clientConnectionInfo.Port);
 				TargetServerReady?.Invoke();
 				NetworkService.CreateClient(_clientConnectionInfo.IP, _clientConnectionInfo.Port);
@@ -749,8 +754,12 @@ public sealed partial class ClientEntry : Node3D
 		{
 			GD.PushError(ex);
 		}
-
-		_serverStatusPollTimer!.Start(ServerStatusPollIntervalSeconds);
+		finally
+		{
+			_serverStatusPollInFlight = false;
+			if (_serverStatusPollTimer != null && !NetworkService.IsDisconnected)
+				_serverStatusPollTimer.Start(ServerStatusPollIntervalSeconds);
+		}
 	}
 
 	public override void _UnhandledKeyInput(InputEvent @event)
