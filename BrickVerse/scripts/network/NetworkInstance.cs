@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BrickVerse.Shared;
@@ -23,7 +24,10 @@ public class NetworkInstance
 		.CompressionMode
 		.Zlib;
 	private const int BandwidthInLimit = 0;
-	private const int BandwidthOutLimit = 30 * 1024;
+
+	// A small advertised bandwidth also shrinks ENet's reliable window. Keep
+	// protocol acknowledgements flowing independently of gameplay rate limits.
+	private const int BandwidthOutLimit = 0;
 	private const int BandwidthPerPlayer = 200 * 1024; // 200 KB/s per player
 	private long _lastMessageTicks = DateTime.UtcNow.Ticks;
 	private readonly Dictionary<int, string> _dataServerTokens = [];
@@ -31,6 +35,27 @@ public class NetworkInstance
 	private const int DefaultCapacity = 67;
 	private const int DefaultPort = 21441;
 	private const int MinimumTimeout = 5;
+	private const int ActionsPerPoll = 32;
+	private const int EventsPerPoll = 256;
+	private const int FramesPerPoll = 32;
+	private readonly Dictionary<
+		(ENetPacketPeer Peer, int Channel),
+		Queue<PendingSend>
+	> _pendingSends = [];
+	private int _nextSendChannel;
+	private readonly NetworkPacketFraming _framing = new();
+	private int _nextMessageId;
+	private long _lastStatisticsPoll;
+	private readonly ConcurrentDictionary<ENetConnection.HostStatistic, double> _statistics = new();
+	private static readonly ENetConnection.HostStatistic[] HostStatistics =
+		Enum.GetValues<ENetConnection.HostStatistic>();
+
+	private sealed class PendingSend(IEnumerator<byte[]> frames, TransferMode mode)
+	{
+		public IEnumerator<byte[]> Frames { get; } = frames;
+		public TransferMode Mode { get; } = mode;
+		public bool HasFrame;
+	}
 
 	private readonly ENetConnection _peer;
 
@@ -103,8 +128,8 @@ public class NetworkInstance
 	/// <param name="_">used to be player count</param>
 	public void AdaptBandwidth(int _)
 	{
-		// TODO: TEMP FIX, unlimit out bandwidth
-		_peer.BandwidthLimit(0, 0);
+		if (!IsShutdown)
+			_actionQueue.Enqueue(() => _peer.BandwidthLimit(0, 0));
 	}
 
 	private void PostPeerCreate()
@@ -152,11 +177,7 @@ public class NetworkInstance
 				GD.PushWarning(targetID, " doesn't exist");
 				return;
 			}
-			Error err = peer.Send(transferChannel, data, (int)transferMode);
-			if (err != Error.Ok)
-			{
-				GD.PushError("Send error: ", err);
-			}
+			SendFramedMessage(peer, data, transferMode, transferChannel);
 		});
 	}
 
@@ -205,6 +226,10 @@ public class NetworkInstance
 		_peer.Destroy();
 		IdToPeer.Clear();
 		PeerToId.Clear();
+		foreach (var queue in _pendingSends.Values)
+			while (queue.TryDequeue(out var message))
+				message.Frames.Dispose();
+		_pendingSends.Clear();
 		_dataServerTokens.Clear();
 		while (_actionQueue.TryDequeue(out _)) { }
 		while (_mainThreadEventQueue.TryDequeue(out _)) { }
@@ -229,9 +254,77 @@ public class NetworkInstance
 					continue;
 				if (except != null && except.Contains(id))
 					continue;
-				peer?.Send(transferChannel, data, (int)transferMode);
+				SendFramedMessage(peer, data, transferMode, transferChannel);
 			}
 		});
+	}
+
+	private void SendFramedMessage(ENetPacketPeer peer, byte[] data, TransferMode mode, int channel)
+	{
+		if (data.Length == 0 || data.Length > NetworkPacketFraming.MaxMessageSize)
+			throw new InvalidOperationException("Invalid outbound network message length.");
+		uint id = unchecked((uint)Interlocked.Increment(ref _nextMessageId));
+		var key = (peer, channel);
+		if (!_pendingSends.TryGetValue(key, out var queue))
+		{
+			queue = new();
+			_pendingSends.Add(key, queue);
+		}
+		queue.Enqueue(new PendingSend(NetworkPacketFraming.Encode(data, id).GetEnumerator(), mode));
+	}
+
+	private void ProcessOutgoingFrames()
+	{
+		var channels = _pendingSends.Keys.ToArray();
+		if (channels.Length == 0)
+			return;
+		for (int work = 0; work < FramesPerPoll && !IsShutdown; work++)
+		{
+			int index = _nextSendChannel++ % channels.Length;
+			if (_nextSendChannel == int.MaxValue)
+				_nextSendChannel = 0;
+			var key = channels[index];
+			if (!_pendingSends.TryGetValue(key, out var queue))
+				continue;
+			var message = queue.Peek();
+			if (!key.Peer.IsActive() || key.Peer.GetState() != ENetPacketPeer.PeerState.Connected)
+			{
+				DiscardPendingSends(key.Peer);
+				continue;
+			}
+			if (!message.HasFrame && !message.Frames.MoveNext())
+			{
+				message.Frames.Dispose();
+				queue.Dequeue();
+				if (queue.Count == 0)
+					_pendingSends.Remove(key);
+				continue;
+			}
+			message.HasFrame = true;
+			// Preserve message order within each peer/channel while polling the
+			// socket between bounded batches, even for multi-megabyte messages.
+			_peer.Flush();
+			Error error = key.Peer.Send(key.Channel, message.Frames.Current, (int)message.Mode);
+			if (error != Error.Ok)
+			{
+				GD.PushError($"ENet send failed: {error}");
+				DiscardPendingSends(key.Peer);
+				key.Peer.PeerDisconnect();
+				continue; // Always return to Service so disconnects can complete.
+			}
+			_peer.Flush();
+			message.HasFrame = false;
+		}
+	}
+
+	private void DiscardPendingSends(ENetPacketPeer peer)
+	{
+		foreach (var key in _pendingSends.Keys.Where(key => key.Peer == peer).ToArray())
+		{
+			while (_pendingSends[key].TryDequeue(out var pending))
+				pending.Frames.Dispose();
+			_pendingSends.Remove(key);
+		}
 	}
 
 	private void NetworkLoop()
@@ -245,9 +338,11 @@ public class NetworkInstance
 			try
 			{
 				ProcessActionQueue();
+				ProcessOutgoingFrames();
 				ProcessNetwork();
 				CheckSilence();
 				_peer.Flush();
+				PollStatistics();
 			}
 			catch (Exception ex)
 			{
@@ -256,16 +351,37 @@ public class NetworkInstance
 		}
 	}
 
-	public double PopStatistic(ENetConnection.HostStatistic hs)
+	public double PopStatistic(ENetConnection.HostStatistic statistic)
 	{
-		return _peer.PopStatistic(hs);
+		// UI readers consume cached counters; only the network worker may call
+		// ENetConnection methods while Service/Flush are active.
+		while (_statistics.TryGetValue(statistic, out double value))
+			if (_statistics.TryUpdate(statistic, 0, value))
+				return value;
+		return 0;
+	}
+
+	private void PollStatistics()
+	{
+		long now = System.Environment.TickCount64;
+		if (now - _lastStatisticsPoll < 250)
+			return;
+		_lastStatisticsPoll = now;
+		_framing.Expire(now);
+		foreach (var statistic in HostStatistics)
+		{
+			double value = _peer.PopStatistic(statistic);
+			_statistics.AddOrUpdate(statistic, value, (_, previous) => previous + value);
+		}
 	}
 
 	private void ProcessNetwork()
 	{
-		Godot.Collections.Array serviceData = _peer.Service(MinimumTimeout);
-		while (true)
+		for (int processed = 0; processed < EventsPerPoll && !IsShutdown; processed++)
 		{
+			Godot.Collections.Array serviceData = _peer.Service(
+				processed == 0 ? MinimumTimeout : 0
+			);
 			ENetConnection.EventType eventType = (ENetConnection.EventType)(int)serviceData[0];
 			if (eventType == ENetConnection.EventType.None)
 				break;
@@ -299,6 +415,9 @@ public class NetworkInstance
 
 				IdToPeer[peerID] = fromPeer;
 				PeerToId[fromPeer] = peerID;
+				// Let the application's 30-second progress watchdog decide stalled
+				// joins; exponential transport backoff must not kill recoverable gaps.
+				fromPeer.SetTimeout(32, 30_000, 60_000);
 
 				if (IsServer)
 				{
@@ -318,6 +437,7 @@ public class NetworkInstance
 				}
 				IdToPeer.TryRemove(peerID, out _);
 				PeerToId.TryRemove(fromPeer, out _);
+				_framing.RemovePeer(peerID);
 				if (IsServer)
 				{
 					EnqueueEvent(new PeerDisconnectedEvent(peerID));
@@ -346,20 +466,48 @@ public class NetworkInstance
 						(int)ENetPacketPeer.FlagUnsequenced => TransferMode.Unreliable,
 						_ => TransferMode.Unreliable,
 					};
-					byte[] data = fromPeer.GetPacket();
-
-					EnqueueEvent(new MessageReceivedEvent(peerID, data, m));
+					byte[] packet = fromPeer.GetPacket();
+					if (!NetworkPacketFraming.IsCompatible(packet))
+					{
+						GD.PushError($"Incompatible network framing from peer {peerID}.");
+						if (IsServer)
+							fromPeer.PeerDisconnect();
+						else
+							EnqueueEvent(
+								new ClientErrorEvent(NetInstanceErrorEnum.ProtocolMismatch)
+							);
+						return;
+					}
+					byte[]? data;
+					try
+					{
+						data = _framing.Decode(peerID, packet, m, System.Environment.TickCount64);
+					}
+					catch (System.IO.InvalidDataException exception)
+					{
+						GD.PushError(
+							$"Invalid network frame from peer {peerID}: {exception.Message}"
+						);
+						_framing.RemovePeer(peerID);
+						if (IsServer)
+							fromPeer.PeerDisconnect();
+						else
+							EnqueueEvent(new ClientErrorEvent(NetInstanceErrorEnum.NetworkError));
+						return;
+					}
+					if (data != null)
+						EnqueueEvent(new MessageReceivedEvent(peerID, data, m));
 				}
 			}
 			else if (eventType == ENetConnection.EventType.Error)
 			{
 				BV.PrintErr("Client error");
 				EnqueueEvent(new ClientErrorEvent(NetInstanceErrorEnum.NetworkError));
+				Thread.Sleep(MinimumTimeout);
+				return; // A persistent host error must not trap the send/receive pump.
 			}
 			else if (eventType == ENetConnection.EventType.None)
 				return;
-
-			serviceData = _peer.Service(0);
 		}
 	}
 
@@ -390,7 +538,13 @@ public class NetworkInstance
 
 	private void ProcessActionQueue()
 	{
-		while (_actionQueue.TryDequeue(out Action? action))
+		for (
+			int processed = 0;
+			processed < ActionsPerPoll
+				&& !IsShutdown
+				&& _actionQueue.TryDequeue(out Action? action);
+			processed++
+		)
 		{
 			try
 			{
@@ -476,6 +630,7 @@ public class NetworkInstance
 		DataChannelConnectFailure,
 		DataChannelAuthFailure,
 		NetworkError,
+		ProtocolMismatch,
 	}
 
 	private abstract record DeferredNetworkEvent;
