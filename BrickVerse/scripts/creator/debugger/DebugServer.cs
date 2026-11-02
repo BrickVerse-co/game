@@ -2,18 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Creator.Debugger;
 
@@ -39,7 +39,8 @@ public class DebugServer
 
 	public void Start()
 	{
-		if (ServerStarted) return;
+		if (ServerStarted)
+			return;
 		IPAddress localAddr = IPAddress.Parse("127.0.0.1");
 		_server = new TcpListener(localAddr, Port);
 		_server.Start();
@@ -69,7 +70,8 @@ public class DebugServer
 			while (ServerStarted)
 			{
 				byte[]? buffer = await ReadFrameAsync(stream);
-				if (buffer == null) break;
+				if (buffer == null)
+					break;
 
 				IDebugMessage? msg = SerializeUtils.Deserialize<IDebugMessage>(buffer);
 				if (msg != null)
@@ -96,7 +98,8 @@ public class DebugServer
 				BV.CallOnMainThread(() => RuntimeDisconnected?.Invoke(data.ProcessID));
 			}
 			_tcpClients.Remove(client);
-			if (_clientSendLocks.Remove(client, out SemaphoreSlim? sendLock)) sendLock.Dispose();
+			if (_clientSendLocks.Remove(client, out SemaphoreSlim? sendLock))
+				sendLock.Dispose();
 			foreach ((string id, TcpClient c) in _idToClient)
 			{
 				if (c == client)
@@ -112,12 +115,15 @@ public class DebugServer
 	{
 		if (msg is MessageClientData data)
 		{
-			_clientToData.Add(from, new()
-			{
-				DebugID = data.DebugID,
-				ProcessID = data.ProcessID,
-				IsServer = data.IsServer,
-			});
+			_clientToData.Add(
+				from,
+				new()
+				{
+					DebugID = data.DebugID,
+					ProcessID = data.ProcessID,
+					IsServer = data.IsServer,
+				}
+			);
 
 			if (data.ProcessID != 0)
 			{
@@ -127,7 +133,15 @@ public class DebugServer
 		}
 		else if (msg is MessageLogDispatch log)
 		{
-			BV.DispatchLog(new() { Content = log.Content, Source = log.Source, LogFrom = log.LogFrom, LogType = log.LogType });
+			BV.DispatchLog(
+				new()
+				{
+					Content = log.Content,
+					Source = log.Source,
+					LogFrom = log.LogFrom,
+					LogType = log.LogType,
+				}
+			);
 			if (_clientToData.TryGetValue(from, out ClientData logClient))
 			{
 				BV.CallOnMainThread(() => RuntimeLogReceived?.Invoke(logClient.ProcessID, log));
@@ -137,13 +151,17 @@ public class DebugServer
 		{
 			if (_clientToData.TryGetValue(from, out ClientData runtime))
 			{
-				BV.CallOnMainThread(() => RuntimeSnapshotReceived?.Invoke(runtime.ProcessID, snapshot));
+				BV.CallOnMainThread(() =>
+					RuntimeSnapshotReceived?.Invoke(runtime.ProcessID, snapshot)
+				);
 			}
 		}
 		else if (msg is MessageRuntimeDiagnostics diagnostics)
 		{
 			if (_clientToData.TryGetValue(from, out ClientData runtime))
-				BV.CallOnMainThread(() => RuntimeDiagnosticsReceived?.Invoke(runtime.ProcessID, diagnostics));
+				BV.CallOnMainThread(() =>
+					RuntimeDiagnosticsReceived?.Invoke(runtime.ProcessID, diagnostics)
+				);
 		}
 		else if (msg is MessageNewServerRequest req)
 		{
@@ -155,7 +173,8 @@ public class DebugServer
 				string originPlacePath = worldPath;
 
 				// Fix .bvxw or .bvworld extension
-				if (!worldPath.EndsWith(".bvxw") && !worldPath.EndsWith(".bvworld")) worldPath += ".bvxw";
+				if (!worldPath.EndsWith(".bvxw") && !worldPath.EndsWith(".bvworld"))
+					worldPath += ".bvxw";
 
 				// call on main thread
 				BV.CallOnMainThread(async () =>
@@ -168,13 +187,28 @@ public class DebugServer
 
 						_pendingServerInstance.Add(cdata.DebugID, tcs);
 
-						await CreatorService.Singleton.StartLocalTestOnEntry(session.ProjectFolderPath, worldPath, cdata.DebugID, port, true);
+						await CreatorService.Singleton.StartLocalTestOnEntry(
+							session.ProjectFolderPath,
+							worldPath,
+							cdata.DebugID,
+							port,
+							true
+						);
 
 						BV.Print($"Awaiting server start.. ({worldPath})");
 						await tcs.Task.WaitAsync(WorldServerAllocTimeout);
 						BV.Print("New server started!");
 
-						SendMessage(from, new MessageNewServerResponse() { WorldPath = originPlacePath, Address = "127.0.0.1", Port = port, DebugID = cdata.DebugID });
+						SendMessage(
+							from,
+							new MessageNewServerResponse()
+							{
+								WorldPath = originPlacePath,
+								Address = "127.0.0.1",
+								Port = port,
+								DebugID = cdata.DebugID,
+							}
+						);
 					}
 					catch (Exception ex)
 					{
@@ -191,7 +225,9 @@ public class DebugServer
 		{
 			if (_clientToData.TryGetValue(from, out ClientData cdata))
 			{
-				if (_pendingServerInstance.TryGetValue(cdata.DebugID, out TaskCompletionSource? tcs))
+				if (
+					_pendingServerInstance.TryGetValue(cdata.DebugID, out TaskCompletionSource? tcs)
+				)
 				{
 					BV.Print("Server start resolved");
 					tcs.SetResult();
@@ -212,7 +248,8 @@ public class DebugServer
 	{
 		byte[] data = SerializeUtils.Serialize(msg);
 		NetworkStream stream = client.GetStream();
-		if (!_clientSendLocks.TryGetValue(client, out SemaphoreSlim? sendLock)) return;
+		if (!_clientSendLocks.TryGetValue(client, out SemaphoreSlim? sendLock))
+			return;
 		await sendLock.WaitAsync();
 		try
 		{
@@ -230,13 +267,21 @@ public class DebugServer
 	public void RequestRuntimeDiagnostics(int processId) =>
 		SendToProcess(processId, new MessageRuntimeDiagnosticsRequest());
 
-	public void SetRuntimeProperty(int processId, string objectId, string propertyName, string value) =>
-		SendToProcess(processId, new MessageRuntimePropertySet
-		{
-			ObjectID = objectId,
-			PropertyName = propertyName,
-			Value = value
-		});
+	public void SetRuntimeProperty(
+		int processId,
+		string objectId,
+		string propertyName,
+		string value
+	) =>
+		SendToProcess(
+			processId,
+			new MessageRuntimePropertySet
+			{
+				ObjectID = objectId,
+				PropertyName = propertyName,
+				Value = value,
+			}
+		);
 
 	public void ExecuteRuntimeLuau(int processId, string source) =>
 		SendToProcess(processId, new MessageRuntimeExecute { Source = source });
@@ -245,14 +290,17 @@ public class DebugServer
 		SendToProcess(processId, new MessageRuntimeRename { ObjectID = objectId, Name = name });
 
 	public void SetRuntimeViewportRect(int processId, Rect2I rect, bool visible) =>
-		SendToProcess(processId, new MessageRuntimeViewportRect
-		{
-			X = rect.Position.X,
-			Y = rect.Position.Y,
-			Width = rect.Size.X,
-			Height = rect.Size.Y,
-			Visible = visible
-		});
+		SendToProcess(
+			processId,
+			new MessageRuntimeViewportRect
+			{
+				X = rect.Position.X,
+				Y = rect.Position.Y,
+				Width = rect.Size.X,
+				Height = rect.Size.Y,
+				Visible = visible,
+			}
+		);
 
 	public void SetRuntimeDeviceEmulation(int processId, MessageRuntimeDeviceEmulation state) =>
 		SendToProcess(processId, state);
@@ -272,9 +320,11 @@ public class DebugServer
 	private static async Task<byte[]?> ReadFrameAsync(NetworkStream stream)
 	{
 		byte[] lengthBytes = new byte[sizeof(int)];
-		if (!await ReadExactlyAsync(stream, lengthBytes)) return null;
+		if (!await ReadExactlyAsync(stream, lengthBytes))
+			return null;
 		int length = BitConverter.ToInt32(lengthBytes);
-		if (length <= 0 || length > 64 * 1024 * 1024) throw new InvalidDataException("Invalid debugger frame length.");
+		if (length <= 0 || length > 64 * 1024 * 1024)
+			throw new InvalidDataException("Invalid debugger frame length.");
 		byte[] payload = new byte[length];
 		return await ReadExactlyAsync(stream, payload) ? payload : null;
 	}
@@ -285,7 +335,8 @@ public class DebugServer
 		while (offset < buffer.Length)
 		{
 			int read = await stream.ReadAsync(buffer.AsMemory(offset));
-			if (read == 0) return false;
+			if (read == 0)
+				return false;
 			offset += read;
 		}
 		return true;

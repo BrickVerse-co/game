@@ -32,7 +32,8 @@ public interface ISettingCondition
 public class SettingCondition<T> : ISettingCondition
 {
 	private Func<object?, bool>? _cachedUntypedPredicate;
-	public Func<object?, bool> UntypedPredicate => _cachedUntypedPredicate ??= o => Predicate((T)o!);
+	public Func<object?, bool> UntypedPredicate =>
+		_cachedUntypedPredicate ??= o => Predicate((T)o!);
 	public required string Target { get; init; }
 	public required Func<T, bool> Predicate { get; init; }
 }
@@ -82,8 +83,8 @@ public class SettingDef<T> : SettingDef
 	public override object? UntypedMaxValue => MaxValue;
 	public override object? UntypedStep => Step;
 	private IReadOnlyList<ISettingOption>? _cachedUntypedOptions;
-	public override IReadOnlyList<ISettingOption>? UntypedOptions
-		=> _cachedUntypedOptions ??= Options?.Cast<ISettingOption>().ToArray();
+	public override IReadOnlyList<ISettingOption>? UntypedOptions =>
+		_cachedUntypedOptions ??= Options?.Cast<ISettingOption>().ToArray();
 
 	public override object ConvertToType(object? value)
 	{
@@ -121,17 +122,21 @@ public class SettingDef<T> : SettingDef
 			_ when t == typeof(float) => SettingValueKind.Float,
 			_ when t == typeof(string) => SettingValueKind.String,
 			_ when t.IsEnum => SettingValueKind.Enum,
-			_ => throw new InvalidOperationException($"SettingDef<T> has unsupported type {t.Name}.")
+			_ => throw new InvalidOperationException(
+				$"SettingDef<T> has unsupported type {t.Name}."
+			),
 		};
 
 		if (ValueKind != expectedKind)
 			throw new InvalidOperationException(
-				$"Setting '{Key}': ValueKind is {ValueKind} but generic type T is {t.Name}. Expected ValueKind.{expectedKind}.");
+				$"Setting '{Key}': ValueKind is {ValueKind} but generic type T is {t.Name}. Expected ValueKind.{expectedKind}."
+			);
 		if (MinValue is not null && MaxValue is not null && MinValue is IComparable<T> minComp)
 		{
 			if (minComp.CompareTo(MaxValue) > 0)
 				throw new InvalidOperationException(
-					$"Setting '{Key}': MinValue ({MinValue}) is greater than MaxValue ({MaxValue}).");
+					$"Setting '{Key}': MinValue ({MinValue}) is greater than MaxValue ({MaxValue})."
+				);
 		}
 	}
 }

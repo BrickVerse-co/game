@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Client.WebAPI.Interfaces;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -41,14 +41,18 @@ public static class ServerAPI
 
 	private static IServerInterface GetServerInterface()
 	{
-		return ServerInterface ?? throw new MissingComponentException("Missing server interface component");
+		return ServerInterface
+			?? throw new MissingComponentException("Missing server interface component");
 	}
 
 	public static Task<byte[]> DownloadWorld(long worldID)
 	{
 		if (worldID <= 0)
 		{
-			throw new ArgumentOutOfRangeException(nameof(worldID), "worldID must be greater than zero.");
+			throw new ArgumentOutOfRangeException(
+				nameof(worldID),
+				"worldID must be greater than zero."
+			);
 		}
 
 		return GetServerInterface().DownloadWorld(worldID);
@@ -59,7 +63,10 @@ public static class ServerAPI
 		return GetServerInterface().Heartbeat(playerIDs);
 	}
 
-	public static Task<APIValidateResponse> ValidatePlayer(string playerToken, string integrityAuthToken)
+	public static Task<APIValidateResponse> ValidatePlayer(
+		string playerToken,
+		string integrityAuthToken
+	)
 	{
 		return GetServerInterface().ValidatePlayer(playerToken, integrityAuthToken);
 	}
@@ -69,12 +76,20 @@ public static class ServerAPI
 		return GetServerInterface().DisconnectPlayer(playerToken);
 	}
 
-	public static Task LogServerEvent(ServerEventType eventType, Dictionary<string, string>? data = null)
+	public static Task LogServerEvent(
+		ServerEventType eventType,
+		Dictionary<string, string>? data = null
+	)
 	{
 		return GetServerInterface().LogEvent(eventType, data);
 	}
 
-	public static Task LogServerLog(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null)
+	public static Task LogServerLog(
+		string log,
+		ServerLogSource source = ServerLogSource.Server,
+		ServerLogLevel level = ServerLogLevel.Info,
+		long? timestampUnixMs = null
+	)
 	{
 		return GetServerInterface().Log(log, source, level, timestampUnixMs);
 	}

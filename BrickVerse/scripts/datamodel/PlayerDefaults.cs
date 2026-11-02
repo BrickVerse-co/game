@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -40,7 +40,9 @@ public sealed partial class PlayerDefaults : HiddenBase
 		set
 		{
 			if (value != null && value.Parent != this)
-				throw new System.ArgumentException("PawnTemplate must be a child of PlayerDefaults.");
+				throw new System.ArgumentException(
+					"PawnTemplate must be a child of PlayerDefaults."
+				);
 			_pawnTemplate = value;
 			OnPropertyChanged();
 		}
@@ -95,7 +97,11 @@ public sealed partial class PlayerDefaults : HiddenBase
 	public float StepHeight
 	{
 		get => _stepHeight;
-		set { _stepHeight = Mathf.Clamp(value, 0f, 4f); OnPropertyChanged(); }
+		set
+		{
+			_stepHeight = Mathf.Clamp(value, 0f, 4f);
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
@@ -120,13 +126,17 @@ public sealed partial class PlayerDefaults : HiddenBase
 		}
 	}
 
-
 	[Editable, ScriptProperty]
 	public bool ChatColorsEnabled
 	{
 		get => _chatColorsEnabled;
-		set { _chatColorsEnabled = value; OnPropertyChanged(); }
+		set
+		{
+			_chatColorsEnabled = value;
+			OnPropertyChanged();
+		}
 	}
+
 	[Editable, ScriptProperty]
 	public bool CanMove
 	{
@@ -137,7 +147,6 @@ public sealed partial class PlayerDefaults : HiddenBase
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty]
 	public float StaminaBurn
@@ -165,10 +174,7 @@ public sealed partial class PlayerDefaults : HiddenBase
 	public bool StaminaEnabled
 	{
 		get => UseStamina;
-		set
-		{
-			UseStamina = value;
-		}
+		set { UseStamina = value; }
 	}
 
 	[Editable, ScriptProperty, SyncVar(Unreliable = true)]
@@ -203,7 +209,6 @@ public sealed partial class PlayerDefaults : HiddenBase
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty]
 	public bool UseHeadTurning

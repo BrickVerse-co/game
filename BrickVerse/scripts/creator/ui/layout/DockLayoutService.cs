@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Layout;
 
@@ -18,7 +18,8 @@ public static class DockLayoutService
 
 	private static ConfigFile GetFile()
 	{
-		if (_cache != null) return _cache;
+		if (_cache != null)
+			return _cache;
 
 		_cache = new ConfigFile();
 		_cache.Load(LayoutPath);
@@ -30,45 +31,31 @@ public static class DockLayoutService
 
 	public static bool GetCollapsed(string panelId, bool defaultValue = false)
 	{
-		return (bool)GetFile().GetValue(
-			Section,
-			$"{panelId}_collapsed",
-			defaultValue);
+		return (bool)GetFile().GetValue(Section, $"{panelId}_collapsed", defaultValue);
 	}
 
 	public static void SetCollapsed(string panelId, bool collapsed)
 	{
-		GetFile().SetValue(
-			Section,
-			$"{panelId}_collapsed",
-			collapsed);
+		GetFile().SetValue(Section, $"{panelId}_collapsed", collapsed);
 
 		Flush();
 	}
 
 	public static int GetExpandedSize(string panelId, int defaultValue)
 	{
-		return (int)GetFile().GetValue(
-			Section,
-			$"{panelId}_size",
-			defaultValue);
+		return (int)GetFile().GetValue(Section, $"{panelId}_size", defaultValue);
 	}
 
 	public static void SetExpandedSize(string panelId, int size)
 	{
-		GetFile().SetValue(
-			Section,
-			$"{panelId}_size",
-			size);
+		GetFile().SetValue(Section, $"{panelId}_size", size);
 
 		Flush();
 	}
 
 	public static void SaveDockLayout(DockLayoutData data)
 	{
-		string json = JsonSerializer.Serialize(
-			data,
-			DockLayoutJsonContext.Default.DockLayoutData);
+		string json = JsonSerializer.Serialize(data, DockLayoutJsonContext.Default.DockLayoutData);
 
 		GetFile().SetValue(Section, "dock_layout", json);
 		Flush();
@@ -79,19 +66,14 @@ public static class DockLayoutService
 		if (!GetFile().HasSectionKey(Section, "dock_layout"))
 			return null;
 
-		string json = (string)GetFile().GetValue(
-			Section,
-			"dock_layout",
-			"");
+		string json = (string)GetFile().GetValue(Section, "dock_layout", "");
 
 		if (string.IsNullOrEmpty(json))
 			return null;
 
 		try
 		{
-			return JsonSerializer.Deserialize(
-				json,
-				DockLayoutJsonContext.Default.DockLayoutData);
+			return JsonSerializer.Deserialize(json, DockLayoutJsonContext.Default.DockLayoutData);
 		}
 		catch (JsonException)
 		{
@@ -126,6 +108,4 @@ public sealed class DockZoneData
 
 [JsonSerializable(typeof(DockLayoutData))]
 [JsonSerializable(typeof(DockZoneData))]
-internal partial class DockLayoutJsonContext : JsonSerializerContext
-{
-}
+internal partial class DockLayoutJsonContext : JsonSerializerContext { }

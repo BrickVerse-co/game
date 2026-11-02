@@ -2,25 +2,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class UnitQuaternionDto
 {
-	[JsonInclude] public uint Rotation { get; set; }
+	[JsonInclude]
+	public uint Rotation { get; set; }
 
 	// Constant used for compression.
 	static readonly float _oneSqrtTwo = (float)(1.0f / Math.Sqrt(2.0f));
 
 	[MemoryPackConstructor, JsonConstructor]
 	public UnitQuaternionDto() { }
-	public UnitQuaternionDto(Quaternion v) { Rotation = ToCompressed(v); }
+
+	public UnitQuaternionDto(Quaternion v)
+	{
+		Rotation = ToCompressed(v);
+	}
+
 	public Quaternion ToQuaternion() => FromCompressed(Rotation);
 
 	public static string ToString(Quaternion src)
@@ -39,7 +45,10 @@ public partial class UnitQuaternionDto
 		int largestComponent = 0;
 		for (int i = 1; i < 4; i++)
 		{
-			if (Math.Abs(src[i]) > Math.Abs(src[largestComponent])) { largestComponent = i; }
+			if (Math.Abs(src[i]) > Math.Abs(src[largestComponent]))
+			{
+				largestComponent = i;
+			}
 		}
 
 		uint negate = (uint)(src[largestComponent] < 0 ? 1 : 0);
@@ -70,7 +79,10 @@ public partial class UnitQuaternionDto
 				uint negbit = (src >> 9) & 1;
 				src = src >> 10;
 				result[i] = _oneSqrtTwo * (float)magnitude / 511;
-				if (negbit == (uint)1) { result[i] = -result[i]; }
+				if (negbit == (uint)1)
+				{
+					result[i] = -result[i];
+				}
 				sumSquares += result[i] * result[i];
 			}
 		}
@@ -81,7 +93,11 @@ public partial class UnitQuaternionDto
 
 public class UnitQuaternionJsonConverter : JsonConverter<Quaternion>
 {
-	public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override Quaternion Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 		{
@@ -100,7 +116,11 @@ public class UnitQuaternionJsonConverter : JsonConverter<Quaternion>
 		return UnitQuaternionDto.FromCompressed(compressed);
 	}
 
-	public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		Quaternion value,
+		JsonSerializerOptions options
+	)
 	{
 		uint compressed = UnitQuaternionDto.ToCompressed(value);
 		writer.WriteStartArray();

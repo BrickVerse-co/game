@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Scripting.Libraries;
 
@@ -37,7 +37,8 @@ public class LuaLibJSON : IScriptObject
 	[ScriptLegacyMethod("parse")]
 	public static dynamic? LegacyParse(object? obj)
 	{
-		if (obj is not string str) throw new ArgumentException("Argument must be a JSON string");
+		if (obj is not string str)
+			throw new ArgumentException("Argument must be a JSON string");
 		return Parse(str);
 	}
 
@@ -84,11 +85,11 @@ public class LuaLibJSON : IScriptObject
 		}
 	}
 
-
 	[ScriptMethod("serialize")]
 	public static string Serialize(object? data)
 	{
-		if (data == null || data is JSONNull) return "null";
+		if (data == null || data is JSONNull)
+			return "null";
 		try
 		{
 			return JsonSerializer.Serialize(data, typeof(object), LuaJSONGenerationContext.Default);
@@ -102,7 +103,9 @@ public class LuaLibJSON : IScriptObject
 			}
 			else
 			{
-				throw new InvalidOperationException("Tried to serialize an invalid JSON. Make sure your table only contains the primitive types (Instances are not supported)");
+				throw new InvalidOperationException(
+					"Tried to serialize an invalid JSON. Make sure your table only contains the primitive types (Instances are not supported)"
+				);
 			}
 		}
 	}
@@ -137,14 +140,21 @@ internal partial class LuaJSONGenerationContext : JsonSerializerContext { }
 internal sealed class JSONNull : IScriptObject
 {
 	public static readonly JSONNull Value = new();
+
 	JSONNull() { }
 }
 
 internal sealed class JSONNullConverter : JsonConverter<JSONNull>
 {
-	public override JSONNull? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-		=> throw new NotSupportedException();
+	public override JSONNull? Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	) => throw new NotSupportedException();
 
-	public override void Write(Utf8JsonWriter writer, JSONNull value, JsonSerializerOptions options)
-		=> writer.WriteNullValue();
+	public override void Write(
+		Utf8JsonWriter writer,
+		JSONNull value,
+		JsonSerializerOptions options
+	) => writer.WriteNullValue();
 }

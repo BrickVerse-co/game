@@ -2,18 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using MemoryPack;
-using BrickVerse.Attributes;
-using BrickVerse.Networking.Synchronizers;
-using BrickVerse.Scripting;
-#if DEBUG
-using BrickVerse.Shared;
-#endif
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Scripting;
+using BrickVerse.Utils;
+using MemoryPack;
+#if DEBUG
+using BrickVerse.Shared;
+#endif
+
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -80,7 +81,9 @@ public partial class InternalNetMsg : IScriptObject
 	public static async Task<InternalNetMsg> DeserializeAsync(byte[] rawdata)
 	{
 		using MemoryStream stream = new(rawdata);
-		InternalNetMsgPayload? payload = await SerializeUtils.DeserializeAsync<InternalNetMsgPayload>(stream) ?? throw new Exception("Message is invalid");
+		InternalNetMsgPayload? payload =
+			await SerializeUtils.DeserializeAsync<InternalNetMsgPayload>(stream)
+			?? throw new Exception("Message is invalid");
 		InternalNetMsg msg = new()
 		{
 			BroadcastAll = payload.BroadcastAll,
@@ -97,7 +100,9 @@ public partial class InternalNetMsg : IScriptObject
 
 	public static InternalNetMsg Deserialize(byte[] rawdata)
 	{
-		InternalNetMsgPayload payload = SerializeUtils.Deserialize<InternalNetMsgPayload>(rawdata) ?? throw new Exception("Message is invalid");
+		InternalNetMsgPayload payload =
+			SerializeUtils.Deserialize<InternalNetMsgPayload>(rawdata)
+			?? throw new Exception("Message is invalid");
 
 		return new InternalNetMsg()
 		{

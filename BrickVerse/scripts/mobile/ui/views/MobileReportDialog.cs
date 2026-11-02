@@ -32,7 +32,8 @@ public partial class MobileReportDialog : Window
 
 	public static MobileReportDialog Open(Node owner, string targetType, string targetId)
 	{
-		MobileReportDialog dialog = GD.Load<PackedScene>("res://scenes/mobile/views/report.tscn").Instantiate<MobileReportDialog>();
+		MobileReportDialog dialog = GD.Load<PackedScene>("res://scenes/mobile/views/report.tscn")
+			.Instantiate<MobileReportDialog>();
 		owner.GetTree().Root.AddChild(dialog);
 		dialog._targetType = targetType;
 		dialog._targetId = targetId;
@@ -46,16 +47,26 @@ public partial class MobileReportDialog : Window
 		try
 		{
 			using JsonDocument document = await BVAPI.GetJson("/v3/social/report/config");
-			if (document.RootElement.TryGetProperty("reasons", out JsonElement reasons) && reasons.ValueKind == JsonValueKind.Array)
+			if (
+				document.RootElement.TryGetProperty("reasons", out JsonElement reasons)
+				&& reasons.ValueKind == JsonValueKind.Array
+			)
 				foreach (JsonElement reason in reasons.EnumerateArray())
 				{
-					string label = reason.TryGetProperty("label", out JsonElement labelNode) ? labelNode.GetString() ?? "Other" : "Other";
-					string value = reason.TryGetProperty("value", out JsonElement valueNode) ? valueNode.GetString() ?? "other" : "other";
+					string label = reason.TryGetProperty("label", out JsonElement labelNode)
+						? labelNode.GetString() ?? "Other"
+						: "Other";
+					string value = reason.TryGetProperty("value", out JsonElement valueNode)
+						? valueNode.GetString() ?? "other"
+						: "other";
 					_reason.AddItem(label);
 					_reason.SetItemMetadata(_reason.ItemCount - 1, value);
 				}
 		}
-		catch (Exception exception) { BV.PrintErr(exception); }
+		catch (Exception exception)
+		{
+			BV.PrintErr(exception);
+		}
 		if (_reason.ItemCount == 0)
 		{
 			_reason.AddItem("Other policy violation");
@@ -70,8 +81,20 @@ public partial class MobileReportDialog : Window
 		try
 		{
 			string reason = _reason.GetItemMetadata(_reason.Selected).AsString();
-			string json = JsonSerializer.Serialize(new { targetType = _targetType, targetId = _targetId, reason, description = _description.Text.Trim() });
-			using JsonDocument _ = await BVAPI.SendJson(HttpMethod.Post, "/v3/social/reports", json);
+			string json = JsonSerializer.Serialize(
+				new
+				{
+					targetType = _targetType,
+					targetId = _targetId,
+					reason,
+					description = _description.Text.Trim(),
+				}
+			);
+			using JsonDocument _ = await BVAPI.SendJson(
+				HttpMethod.Post,
+				"/v3/social/reports",
+				json
+			);
 			_status.Text = "Report submitted. Thank you for helping keep BrickVerse safe.";
 			_submit.Text = "Submitted";
 		}

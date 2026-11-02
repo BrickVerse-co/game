@@ -151,13 +151,26 @@ public sealed class PaginationInfo
 
 public sealed class CreatorLatestBinaryResponse
 {
-	[JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
-	[JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
-	[JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
-	[JsonPropertyName("buildNumber")] public int? BuildNumber { get; set; }
-	[JsonPropertyName("platform")] public string Platform { get; set; } = string.Empty;
-	[JsonPropertyName("branch")] public string Branch { get; set; } = string.Empty;
-	[JsonPropertyName("app")] public string App { get; set; } = string.Empty;
+	[JsonPropertyName("url")]
+	public string Url { get; set; } = string.Empty;
+
+	[JsonPropertyName("createdAt")]
+	public DateTime CreatedAt { get; set; }
+
+	[JsonPropertyName("version")]
+	public string Version { get; set; } = string.Empty;
+
+	[JsonPropertyName("buildNumber")]
+	public int? BuildNumber { get; set; }
+
+	[JsonPropertyName("platform")]
+	public string Platform { get; set; } = string.Empty;
+
+	[JsonPropertyName("branch")]
+	public string Branch { get; set; } = string.Empty;
+
+	[JsonPropertyName("app")]
+	public string App { get; set; } = string.Empty;
 }
 
 public sealed class CreatorWorldListResponse
@@ -198,7 +211,6 @@ public sealed class CreatorWorldListItem
 [JsonSerializable(typeof(CreatorWorldListResponse))]
 [JsonSerializable(typeof(CreatorWorldListItem))]
 [JsonSerializable(typeof(CreatorWorldListItem[]))]
-
 [JsonSerializable(typeof(CreatorPublishResponse))]
 [JsonSerializable(typeof(CreatorPlaceItem))]
 [JsonSerializable(typeof(CreatorPlaceItem[]))]

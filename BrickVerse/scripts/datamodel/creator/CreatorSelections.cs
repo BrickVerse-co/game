@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Creator;
 using BrickVerse.Creator.UI;
 using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Scripting;
 using BrickVerse.Shared.Misc;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Godot;
 using static BrickVerse.Datamodel.Creator.CreatorHistory;
 
 namespace BrickVerse.Datamodel.Creator;
@@ -25,8 +25,11 @@ public sealed partial class CreatorSelections : Instance
 	private bool _propertiesDirty = false;
 	private TaskCompletionSource<Instance>? _pickTcs;
 
-	[ScriptProperty] public BVSignal<Instance> Selected { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Instance> Deselected { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Instance> Selected { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Instance> Deselected { get; private set; } = new();
 
 	private InputHelper _inputHelper = null!;
 
@@ -193,7 +196,8 @@ public sealed partial class CreatorSelections : Instance
 			commonParent = commonParent.Parent;
 		}
 
-		if (commonParent == null) throw new System.Exception("Cannot group instances at root level.");
+		if (commonParent == null)
+			throw new System.Exception("Cannot group instances at root level.");
 
 		Instance model = asWhat switch
 		{
@@ -248,7 +252,8 @@ public sealed partial class CreatorSelections : Instance
 
 		foreach (Instance item in models)
 		{
-			if (item is not IGroup and not RigidBody) continue;
+			if (item is not IGroup and not RigidBody)
+				continue;
 			foreach (Instance modelItem in item.GetChildren())
 			{
 				modelItem.Reparent(item.Parent!);
@@ -353,7 +358,9 @@ public sealed partial class CreatorSelections : Instance
 
 	public Task<Instance> RequestPickInstance()
 	{
-		CreatorService.Interface.StartFollowCursorLabel("Click to pick an instance, or press Esc to cancel.");
+		CreatorService.Interface.StartFollowCursorLabel(
+			"Click to pick an instance, or press Esc to cancel."
+		);
 		_pickTcs = new();
 		return _pickTcs.Task;
 	}

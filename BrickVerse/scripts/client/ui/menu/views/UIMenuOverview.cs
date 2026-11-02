@@ -2,25 +2,44 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public sealed partial class UIMenuOverview : UIMenuViewBase
 {
-	[Export] private Label _placeTypeLabel = null!;
-	[Export] private Label _placeNameLabel = null!;
-	[Export] private Label _placeCreatorLabel = null!;
-	[Export] private TextureRect _placeThumbnailRect = null!;
-	[Export] private TextureRect _statPlayerImage = null!;
-	[Export] private Label _statPlayerNameLabel = null!;
-	[Export] private Label _statTimePlayedLabel = null!;
-	[Export] private Label _statPlayerCountLabel = null!;
-	[Export] private Label _statInstanceCountLabel = null!;
-	[Export] private Button _reportButton = null!;
+	[Export]
+	private Label _placeTypeLabel = null!;
+
+	[Export]
+	private Label _placeNameLabel = null!;
+
+	[Export]
+	private Label _placeCreatorLabel = null!;
+
+	[Export]
+	private TextureRect _placeThumbnailRect = null!;
+
+	[Export]
+	private TextureRect _statPlayerImage = null!;
+
+	[Export]
+	private Label _statPlayerNameLabel = null!;
+
+	[Export]
+	private Label _statTimePlayedLabel = null!;
+
+	[Export]
+	private Label _statPlayerCountLabel = null!;
+
+	[Export]
+	private Label _statInstanceCountLabel = null!;
+
+	[Export]
+	private Button _reportButton = null!;
 	private TextureRect _hero = null!;
 
 	private BVImageAsset? _userAvatarImage;
@@ -44,7 +63,8 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 
 	private void OnReport()
 	{
-		if (Menu.CoreUI.Root.IsLocalTest) return;
+		if (Menu.CoreUI.Root.IsLocalTest)
+			return;
 		OS.ShellOpen("https://brickverse.gg/report?type=universe&id=" + Menu.CoreUI.Root.WorldID);
 	}
 
@@ -119,7 +139,8 @@ public sealed partial class UIMenuOverview : UIMenuViewBase
 		World root = Menu.CoreUI.Root;
 		_statInstanceCountLabel.Text = root.InstanceCount.ToString() + " Instances";
 		_statTimePlayedLabel.Text = "Playing for " + TimeUtils.FormatSeconds((long)root.UpTime);
-		_statPlayerCountLabel.Text = root.Players.PlayersCount.ToString() + " players in the server";
+		_statPlayerCountLabel.Text =
+			root.Players.PlayersCount.ToString() + " players in the server";
 		base._Process(delta);
 	}
 

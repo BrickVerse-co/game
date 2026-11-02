@@ -1,10 +1,10 @@
-using BrickVerse.Datamodel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using BrickVerse.Datamodel;
 
 namespace BrickVerse.Scripting;
 
@@ -21,7 +21,9 @@ internal static class ParallelLuauScheduler
 
 	private static readonly ConcurrentDictionary<Actor, DomainQueue> Domains = [];
 	private static readonly ConditionalWeakTable<Actor, object> RetiredActors = new();
-	private static readonly SemaphoreSlim Workers = new(Math.Max(1, System.Environment.ProcessorCount - 1));
+	private static readonly SemaphoreSlim Workers = new(
+		Math.Max(1, System.Environment.ProcessorCount - 1)
+	);
 	private static long _scheduled;
 	private static long _completed;
 
@@ -32,11 +34,13 @@ internal static class ParallelLuauScheduler
 
 	internal static Task Schedule(Actor actor, Action action)
 	{
-		if (RetiredActors.TryGetValue(actor, out _)) return Task.CompletedTask;
+		if (RetiredActors.TryGetValue(actor, out _))
+			return Task.CompletedTask;
 		DomainQueue queue = Domains.GetOrAdd(actor, static _ => new());
 		lock (queue.Sync)
 		{
-			if (queue.Retired) return Task.CompletedTask;
+			if (queue.Retired)
+				return Task.CompletedTask;
 			queue.Pending++;
 			Interlocked.Increment(ref _scheduled);
 			Task previous = queue.Tail;
@@ -45,9 +49,20 @@ internal static class ParallelLuauScheduler
 		}
 	}
 
-	private static async Task RunQueued(Task previous, DomainQueue queue, Actor actor, Action action)
+	private static async Task RunQueued(
+		Task previous,
+		DomainQueue queue,
+		Actor actor,
+		Action action
+	)
 	{
-		try { await previous.ConfigureAwait(false); } catch { /* A failed callback must not poison the Actor queue. */ }
+		try
+		{
+			await previous.ConfigureAwait(false);
+		}
+		catch
+		{ /* A failed callback must not poison the Actor queue. */
+		}
 		await Workers.WaitAsync().ConfigureAwait(false);
 		try
 		{
@@ -58,14 +73,16 @@ internal static class ParallelLuauScheduler
 		{
 			Workers.Release();
 			Interlocked.Increment(ref _completed);
-			lock (queue.Sync) queue.Pending--;
+			lock (queue.Sync)
+				queue.Pending--;
 		}
 	}
 
 	internal static Task Retire(Actor actor)
 	{
 		RetiredActors.GetValue(actor, static _ => new object());
-		if (!Domains.TryGetValue(actor, out DomainQueue? queue)) return Task.CompletedTask;
+		if (!Domains.TryGetValue(actor, out DomainQueue? queue))
+			return Task.CompletedTask;
 		lock (queue.Sync)
 		{
 			queue.Retired = true;
@@ -75,7 +92,11 @@ internal static class ParallelLuauScheduler
 
 	private static async Task RetireAfter(Task tail, Actor actor, DomainQueue queue)
 	{
-		try { await tail.ConfigureAwait(false); } catch { }
+		try
+		{
+			await tail.ConfigureAwait(false);
+		}
+		catch { }
 		Domains.TryRemove(new KeyValuePair<Actor, DomainQueue>(actor, queue));
 	}
 }

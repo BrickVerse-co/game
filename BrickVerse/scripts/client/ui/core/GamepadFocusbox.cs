@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Client;
 
@@ -24,12 +24,20 @@ public partial class GamepadFocusbox : Control
 
 	public override void _Input(InputEvent @event)
 	{
-		if (@event is InputEventJoypadButton || @event is InputEventJoypadMotion joyMotion && Mathf.Abs(joyMotion.AxisValue) > 0.2f)
+		if (
+			@event is InputEventJoypadButton
+			|| @event is InputEventJoypadMotion joyMotion && Mathf.Abs(joyMotion.AxisValue) > 0.2f
+		)
 		{
-			if (@event.HasMeta("emulated")) return;
+			if (@event.HasMeta("emulated"))
+				return;
 			_isGamepadActive = true;
 		}
-		else if (@event is InputEventKey || @event is InputEventMouseButton || @event is InputEventMouseMotion)
+		else if (
+			@event is InputEventKey
+			|| @event is InputEventMouseButton
+			|| @event is InputEventMouseMotion
+		)
 		{
 			_isGamepadActive = false;
 			Visible = false;
@@ -38,7 +46,10 @@ public partial class GamepadFocusbox : Control
 
 	public override void _Process(double delta)
 	{
-		if (!_isGamepadActive) { return; }
+		if (!_isGamepadActive)
+		{
+			return;
+		}
 
 		Control? focusOwner = GetViewport().GuiGetFocusOwner();
 		if (focusOwner != null)

@@ -2,8 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Creator.LSP.Schemas;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +9,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using BrickVerse.Creator.LSP.Schemas;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Creator.LSP;
 
@@ -25,8 +25,12 @@ public class LspClient : IDisposable
 	private readonly CancellationTokenSource _cts = new();
 	private int _disposed;
 
-	public readonly Dictionary<string, string> LspPathToFull = new(StringComparer.OrdinalIgnoreCase);
-	public readonly Dictionary<string, string> FullToLspPath = new(StringComparer.OrdinalIgnoreCase);
+	public readonly Dictionary<string, string> LspPathToFull = new(
+		StringComparer.OrdinalIgnoreCase
+	);
+	public readonly Dictionary<string, string> FullToLspPath = new(
+		StringComparer.OrdinalIgnoreCase
+	);
 	public event Action<LspPublishDiagnosticsParams>? PublishDiagnostics;
 
 	public LspClient(Stream input, Stream output)
@@ -36,7 +40,10 @@ public class LspClient : IDisposable
 		_readerTask = Task.Run(ReadMessagesAsync);
 	}
 
-	public async Task InitializeAsync(string workspacePath, CancellationToken cancellationToken = default)
+	public async Task InitializeAsync(
+		string workspacePath,
+		CancellationToken cancellationToken = default
+	)
 	{
 		LspInitializeParams initParams = new()
 		{
@@ -45,36 +52,24 @@ public class LspClient : IDisposable
 			{
 				TextDocument = new()
 				{
-					Completion = new()
-					{
-						CompletionItem = new() { SnippetSupport = false }
-					},
-					Hover = new()
-					{
-						ContentFormat = ["plaintext"]
-					},
+					Completion = new() { CompletionItem = new() { SnippetSupport = false } },
+					Hover = new() { ContentFormat = ["plaintext"] },
 					Synchronization = new()
 					{
 						DidSave = true,
 						WillSave = true,
-						WillSaveWaitUntil = true
-					}
+						WillSaveWaitUntil = true,
+					},
 				},
 				Workspace = new()
 				{
 					ApplyEdit = true,
 					WorkspaceEdit = new() { DocumentChanges = true },
 					Configuration = true,
-					DidChangeWatchedFiles = new()
-					{
-						DynamicRegistration = true
-					}
+					DidChangeWatchedFiles = new() { DynamicRegistration = true },
 				},
-				General = new()
-				{
-					PositionEncodings = ["utf-8"]
-				}
-			}
+				General = new() { PositionEncodings = ["utf-8"] },
+			},
 		};
 
 		await SendRequestAsync<LspInitializeResult>("initialize", initParams, cancellationToken);
@@ -87,67 +82,93 @@ public class LspClient : IDisposable
 		string p = PathToUri(path);
 		LspPathToFull[p] = path;
 		FullToLspPath[path] = p;
-		return SendNotificationAsync("textDocument/didOpen", new LspDidOpenParams
-		{
-			TextDocument = new LspTextDocumentItem
+		return SendNotificationAsync(
+			"textDocument/didOpen",
+			new LspDidOpenParams
 			{
-				Uri = p,
-				LanguageId = languageId,
-				Version = 1,
-				Text = text
+				TextDocument = new LspTextDocumentItem
+				{
+					Uri = p,
+					LanguageId = languageId,
+					Version = 1,
+					Text = text,
+				},
 			}
-		});
+		);
 	}
 
 	public Task DidCloseAsync(string path)
 	{
-		if (FullToLspPath.Remove(path, out string? p)) LspPathToFull.Remove(p);
-		return SendNotificationAsync("textDocument/didClose", new LspDidCloseParams
-		{
-			TextDocument = new() { Uri = PathToUri(path) }
-		});
+		if (FullToLspPath.Remove(path, out string? p))
+			LspPathToFull.Remove(p);
+		return SendNotificationAsync(
+			"textDocument/didClose",
+			new LspDidCloseParams { TextDocument = new() { Uri = PathToUri(path) } }
+		);
 	}
 
 	public Task DidChangeAsync(string path, string text, int version)
 	{
-		return SendNotificationAsync("textDocument/didChange", new LspDidChangeParams
-		{
-			TextDocument = new()
+		return SendNotificationAsync(
+			"textDocument/didChange",
+			new LspDidChangeParams
 			{
-				Uri = PathToUri(path),
-				Version = version
-			},
-			ContentChanges = [new() { Text = text }]
-		});
+				TextDocument = new() { Uri = PathToUri(path), Version = version },
+				ContentChanges = [new() { Text = text }],
+			}
+		);
 	}
 
-	public async Task<LspCompletionItem[]?> RequestCompletionAsync(string path, int line, int character, CancellationToken cancellationToken)
+	public async Task<LspCompletionItem[]?> RequestCompletionAsync(
+		string path,
+		int line,
+		int character,
+		CancellationToken cancellationToken
+	)
 	{
-		JsonElement rawResult = await SendRequestAsync<JsonElement>("textDocument/completion", new LspCompletionParams
-		{
-			TextDocument = new() { Uri = PathToUri(path) },
-			Position = new() { Line = line, Character = character },
-			Context = new() { TriggerKind = 1 }
-		}, cancellationToken);
+		JsonElement rawResult = await SendRequestAsync<JsonElement>(
+			"textDocument/completion",
+			new LspCompletionParams
+			{
+				TextDocument = new() { Uri = PathToUri(path) },
+				Position = new() { Line = line, Character = character },
+				Context = new() { TriggerKind = 1 },
+			},
+			cancellationToken
+		);
 
 		return rawResult.Deserialize(LspJsonContext.Default.LspCompletionItemArray);
 	}
 
-	public async Task<LspHover?> RequestHoverAsync(string path, int line, int character, CancellationToken cancellationToken)
+	public async Task<LspHover?> RequestHoverAsync(
+		string path,
+		int line,
+		int character,
+		CancellationToken cancellationToken
+	)
 	{
-		JsonElement rawResult = await SendRequestAsync<JsonElement>("textDocument/hover", new LspTextDocumentPositionParams
-		{
-			TextDocument = new() { Uri = PathToUri(path) },
-			Position = new() { Line = line, Character = character }
-		}, cancellationToken);
+		JsonElement rawResult = await SendRequestAsync<JsonElement>(
+			"textDocument/hover",
+			new LspTextDocumentPositionParams
+			{
+				TextDocument = new() { Uri = PathToUri(path) },
+				Position = new() { Line = line, Character = character },
+			},
+			cancellationToken
+		);
 
-		if (rawResult.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined) return null;
+		if (rawResult.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+			return null;
 		return rawResult.Deserialize(LspJsonContext.Default.LspHover);
 	}
 
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
 #pragma warning disable IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.
-	private async Task<T?> SendRequestAsync<T>(string method, object? parameters = null, CancellationToken cancellationToken = default)
+	private async Task<T?> SendRequestAsync<T>(
+		string method,
+		object? parameters = null,
+		CancellationToken cancellationToken = default
+	)
 	{
 		int id = Interlocked.Increment(ref _requestId);
 		TaskCompletionSource<JsonElement> tcs = new();
@@ -155,13 +176,22 @@ public class LspClient : IDisposable
 
 		try
 		{
-			LspRequest request = new() { Id = id, Method = method, Params = parameters };
+			LspRequest request = new()
+			{
+				Id = id,
+				Method = method,
+				Params = parameters,
+			};
 			await WriteMessageAsync(request, cancellationToken);
 
-			using CancellationTokenSource combined = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+			using CancellationTokenSource combined =
+				CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
 			JsonElement result = await tcs.Task.WaitAsync(combined.Token);
 
-			return JsonSerializer.Deserialize<T>(result.GetRawText(), LspJsonContext.Default.Options);
+			return JsonSerializer.Deserialize<T>(
+				result.GetRawText(),
+				LspJsonContext.Default.Options
+			);
 		}
 		finally
 		{
@@ -177,12 +207,17 @@ public class LspClient : IDisposable
 
 	private async Task WriteMessageAsync(object message, CancellationToken cancellationToken)
 	{
-		if (Volatile.Read(ref _disposed) != 0) throw new ObjectDisposedException(nameof(LspClient));
-		using CancellationTokenSource combined = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+		if (Volatile.Read(ref _disposed) != 0)
+			throw new ObjectDisposedException(nameof(LspClient));
+		using CancellationTokenSource combined = CancellationTokenSource.CreateLinkedTokenSource(
+			cancellationToken,
+			_cts.Token
+		);
 		await _writeLock.WaitAsync(combined.Token);
 		try
 		{
-			if (Volatile.Read(ref _disposed) != 0) throw new ObjectDisposedException(nameof(LspClient));
+			if (Volatile.Read(ref _disposed) != 0)
+				throw new ObjectDisposedException(nameof(LspClient));
 			string json = JsonSerializer.Serialize(message, LspJsonContext.Default.Options);
 			byte[] content = Encoding.UTF8.GetBytes(json);
 			byte[] header = Encoding.ASCII.GetBytes($"Content-Length: {content.Length}\r\n\r\n");
@@ -209,7 +244,8 @@ public class LspClient : IDisposable
 			while (!_cts.Token.IsCancellationRequested)
 			{
 				int contentLength = await ReadHeaderAsync(headerBuffer);
-				if (contentLength <= 0) break;
+				if (contentLength <= 0)
+					break;
 
 				if (contentLength > contentBuffer.Length)
 					contentBuffer = new byte[contentLength];
@@ -217,8 +253,12 @@ public class LspClient : IDisposable
 				int bytesRead = 0;
 				while (bytesRead < contentLength)
 				{
-					int read = await _input.ReadAsync(contentBuffer.AsMemory(bytesRead, contentLength - bytesRead), _cts.Token);
-					if (read == 0) return;
+					int read = await _input.ReadAsync(
+						contentBuffer.AsMemory(bytesRead, contentLength - bytesRead),
+						_cts.Token
+					);
+					if (read == 0)
+						return;
 					bytesRead += read;
 				}
 
@@ -241,11 +281,18 @@ public class LspClient : IDisposable
 		while (true)
 		{
 			int b = _input.ReadByte();
-			if (b == -1) return -1;
+			if (b == -1)
+				return -1;
 
 			buffer[pos++] = (byte)b;
 
-			if (pos >= 4 && buffer[pos - 4] == '\r' && buffer[pos - 3] == '\n' && buffer[pos - 2] == '\r' && buffer[pos - 1] == '\n')
+			if (
+				pos >= 4
+				&& buffer[pos - 4] == '\r'
+				&& buffer[pos - 3] == '\n'
+				&& buffer[pos - 2] == '\r'
+				&& buffer[pos - 1] == '\n'
+			)
 			{
 				string headerText = Encoding.ASCII.GetString(buffer, 0, pos - 4);
 				foreach (string line in headerText.Split('\n'))
@@ -267,8 +314,10 @@ public class LspClient : IDisposable
 			using JsonDocument doc = JsonDocument.Parse(json);
 			JsonElement root = doc.RootElement;
 
-			if (root.TryGetProperty("method", out JsonElement methodProp) &&
-				root.TryGetProperty("id", out JsonElement serverRequestId))
+			if (
+				root.TryGetProperty("method", out JsonElement methodProp)
+				&& root.TryGetProperty("id", out JsonElement serverRequestId)
+			)
 			{
 				// Server is requesting
 				string method = methodProp.GetString() ?? "";
@@ -277,7 +326,10 @@ public class LspClient : IDisposable
 			}
 
 			// Check if this is a response
-			if (root.TryGetProperty("id", out JsonElement idProp) && idProp.ValueKind == JsonValueKind.Number)
+			if (
+				root.TryGetProperty("id", out JsonElement idProp)
+				&& idProp.ValueKind == JsonValueKind.Number
+			)
 			{
 				int id = idProp.GetInt32();
 				if (_pendingRequests.TryGetValue(id, out var tcs))
@@ -292,7 +344,10 @@ public class LspClient : IDisposable
 					}
 				}
 			}
-			else if (root.TryGetProperty("method", out JsonElement methodNoti) && methodNoti.ValueKind == JsonValueKind.String)
+			else if (
+				root.TryGetProperty("method", out JsonElement methodNoti)
+				&& methodNoti.ValueKind == JsonValueKind.String
+			)
 			{
 				// This is a notification
 				string method = methodNoti.GetString() ?? "";
@@ -338,7 +393,7 @@ public class LspClient : IDisposable
 				LspResponse response = new()
 				{
 					Id = id.Clone(),
-					Result = new object[] { new(), new() }
+					Result = new object[] { new(), new() },
 				};
 
 				await WriteMessageAsync(response, CancellationToken.None);
@@ -346,11 +401,7 @@ public class LspClient : IDisposable
 			else
 			{
 				// For other, send empty result
-				LspResponse response = new()
-				{
-					Id = id.Clone(),
-					Result = new EmptyParams()
-				};
+				LspResponse response = new() { Id = id.Clone(), Result = new EmptyParams() };
 
 				await WriteMessageAsync(response, CancellationToken.None);
 			}
@@ -368,7 +419,8 @@ public class LspClient : IDisposable
 
 	public void Dispose()
 	{
-		if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+		if (Interlocked.Exchange(ref _disposed, 1) != 0)
+			return;
 		_cts.Cancel();
 		foreach (TaskCompletionSource<JsonElement> pending in _pendingRequests.Values)
 		{

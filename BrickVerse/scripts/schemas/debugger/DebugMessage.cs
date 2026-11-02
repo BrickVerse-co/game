@@ -25,9 +25,7 @@ namespace BrickVerse.Schemas.Debugger;
 [MemoryPackUnion(14, typeof(MessageRuntimeDeviceEmulation))]
 [MemoryPackUnion(15, typeof(MessageRuntimeDiagnosticsRequest))]
 [MemoryPackUnion(16, typeof(MessageRuntimeDiagnostics))]
-public partial interface IDebugMessage
-{
-}
+public partial interface IDebugMessage { }
 
 [MemoryPackable]
 public partial class MessageClientData : IDebugMessage
@@ -40,7 +38,6 @@ public partial class MessageClientData : IDebugMessage
 
 [MemoryPackable]
 public partial class MessageShutdown : IDebugMessage { }
-
 
 [MemoryPackable]
 public partial class MessageLaunchWorld : IDebugMessage { }
@@ -61,9 +58,7 @@ public partial class MessageNewServerResponse : IDebugMessage
 }
 
 [MemoryPackable]
-public partial class MessageServerReady : IDebugMessage
-{
-}
+public partial class MessageServerReady : IDebugMessage { }
 
 [MemoryPackable]
 public partial class MessageObjPropChange : IDebugMessage

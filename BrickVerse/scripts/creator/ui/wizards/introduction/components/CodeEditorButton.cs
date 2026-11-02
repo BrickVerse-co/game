@@ -2,18 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Creator.Settings;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
 public partial class CodeEditorButton : Button
 {
-	[Export] public PreferredEditorEnum Editor;
+	[Export]
+	public PreferredEditorEnum Editor;
 
 	public override void _Pressed()
 	{
-		if (!IsVisibleInTree()) return;
+		if (!IsVisibleInTree())
+			return;
 		CreatorSettingsService.Instance.Set(CreatorSettingKeys.CodeEditor.PreferredEditor, Editor);
 		base._Pressed();
 	}

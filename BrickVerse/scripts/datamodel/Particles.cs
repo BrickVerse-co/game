@@ -2,13 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
-using System;
-
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.Spatial;
 #endif
@@ -50,7 +49,6 @@ public sealed partial class Particles : Dynamic
 	private NumberRange _orbitalVelocity;
 	private NumberSeries _orbitalVelocityOverLifetime = new(0f, 0f);
 
-
 	private NumberRange _damping;
 	private NumberSeries _dampingOverLifetime = new(0f, 0f);
 
@@ -89,8 +87,10 @@ public sealed partial class Particles : Dynamic
 		get => _particles.Emitting;
 		set
 		{
-			if (value) Play();
-			else Stop();
+			if (value)
+				Play();
+			else
+				Stop();
 		}
 	}
 
@@ -456,7 +456,11 @@ public sealed partial class Particles : Dynamic
 			float[] vals = value.GetValues();
 			for (int i = 0; i < vals.Length; i++)
 			{
-				if (vals[i] != 0f) { allZero = false; break; }
+				if (vals[i] != 0f)
+				{
+					allZero = false;
+					break;
+				}
 			}
 			_particle.ScaleOverVelocityCurve = allZero ? null : value.ToCurveTexture();
 
@@ -594,7 +598,11 @@ public sealed partial class Particles : Dynamic
 			float[] vals = value.GetValues();
 			for (int i = 0; i < vals.Length; i++)
 			{
-				if (vals[i] != 0f) { allZero = false; break; }
+				if (vals[i] != 0f)
+				{
+					allZero = false;
+					break;
+				}
 			}
 			_particle.ScaleCurve = allZero ? null : value.ToCurveTexture();
 
@@ -643,7 +651,9 @@ public sealed partial class Particles : Dynamic
 		set
 		{
 			_shaded = value;
-			_material.ShadingMode = _shaded ? BaseMaterial3D.ShadingModeEnum.PerPixel : BaseMaterial3D.ShadingModeEnum.Unshaded;
+			_material.ShadingMode = _shaded
+				? BaseMaterial3D.ShadingModeEnum.PerPixel
+				: BaseMaterial3D.ShadingModeEnum.Unshaded;
 			OnPropertyChanged();
 		}
 	}
@@ -658,8 +668,12 @@ public sealed partial class Particles : Dynamic
 
 			_particle.EmissionShape = _emissionShape switch
 			{
-				ParticleEmissionShapeEnum.Sphere => ParticleProcessMaterial.EmissionShapeEnum.Sphere,
-				ParticleEmissionShapeEnum.SphereSurface => ParticleProcessMaterial.EmissionShapeEnum.SphereSurface,
+				ParticleEmissionShapeEnum.Sphere => ParticleProcessMaterial
+					.EmissionShapeEnum
+					.Sphere,
+				ParticleEmissionShapeEnum.SphereSurface => ParticleProcessMaterial
+					.EmissionShapeEnum
+					.SphereSurface,
 				ParticleEmissionShapeEnum.Box => ParticleProcessMaterial.EmissionShapeEnum.Box,
 				ParticleEmissionShapeEnum.Ring => ParticleProcessMaterial.EmissionShapeEnum.Ring,
 				_ => ParticleProcessMaterial.EmissionShapeEnum.Point,
@@ -734,8 +748,17 @@ public sealed partial class Particles : Dynamic
 #endif
 		base.Init();
 		_particle = new();
-		GDNode3D.AddChild(_particles = new() { ProcessMaterial = _particle }, false, Node.InternalMode.Front);
-		_material = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Transparency = BaseMaterial3D.TransparencyEnum.Alpha };
+		GDNode3D.AddChild(
+			_particles = new() { ProcessMaterial = _particle },
+			false,
+			Node.InternalMode.Front
+		);
+		_material = new()
+		{
+			VertexColorUseAsAlbedo = true,
+			VertexColorIsSrgb = true,
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+		};
 		_mesh = new QuadMesh() { Material = _material };
 
 		_material.BillboardKeepScale = true;
@@ -794,7 +817,10 @@ public sealed partial class Particles : Dynamic
 		Aabb captured = _particles.CaptureAabb();
 		if (captured.Size != Vector3.Zero)
 			// Double the size
-			_particles.VisibilityAabb = new Aabb(captured.Position - captured.Size * 0.5f, captured.Size * 2f);
+			_particles.VisibilityAabb = new Aabb(
+				captured.Position - captured.Size * 0.5f,
+				captured.Size * 2f
+			);
 	}
 
 	[ScriptMethod]
@@ -809,7 +835,8 @@ public sealed partial class Particles : Dynamic
 	[ScriptMethod]
 	public void Pause()
 	{
-		if (_paused) return;
+		if (_paused)
+			return;
 
 		_previousSpeedScale = _speedScale;
 		SpeedScale = 0f;
@@ -853,7 +880,11 @@ public sealed partial class Particles : Dynamic
 	}
 #endif
 
-	[NetRpc(Networking.AuthorityMode.Authority, CallLocal = true, TransferMode = Networking.TransferMode.Reliable)]
+	[NetRpc(
+		Networking.AuthorityMode.Authority,
+		CallLocal = true,
+		TransferMode = Networking.TransferMode.Reliable
+	)]
 	private void NetEmit(int count)
 	{
 		GpuParticles3D temp = (GpuParticles3D)_particles.Duplicate();
@@ -876,7 +907,7 @@ public sealed partial class Particles : Dynamic
 	public enum ParticleSimulationSpaceEnum
 	{
 		Local,
-		World
+		World,
 	}
 
 	[ScriptEnum]
@@ -886,13 +917,13 @@ public sealed partial class Particles : Dynamic
 		Sphere,
 		SphereSurface,
 		Box,
-		Ring
+		Ring,
 	}
 
 	[ScriptEnum]
 	public enum ParticleOrientationEnum
 	{
 		FaceCamera,
-		FaceCameraFixedY
+		FaceCameraFixedY,
 	}
 }

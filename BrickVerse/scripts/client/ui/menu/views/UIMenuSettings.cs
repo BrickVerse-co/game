@@ -2,22 +2,24 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Linq;
 using BrickVerse.Client.Settings;
 using BrickVerse.Datamodel;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public sealed partial class UIMenuSettings : UIMenuViewBase
 {
-	[Export] private Control _viewContainer = null!;
-	[Export] private VBoxContainer _categoryContainer = null!;
+	[Export]
+	private Control _viewContainer = null!;
+
+	[Export]
+	private VBoxContainer _categoryContainer = null!;
 
 	private readonly ButtonGroup _categoryButtonGroup = new();
 	private readonly System.Collections.Generic.Dictionary<string, Button> _categoryButtons = [];
 	private string? _currentSectionKey;
-
 
 	public override void _Ready()
 	{
@@ -55,16 +57,35 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 
 		if (World.Current?.GameSettings != null)
 		{
-			foreach (string category in World.Current.GameSettings.GetSettings().Select(x => string.IsNullOrWhiteSpace(x.Category) ? "Game" : x.Category).Distinct())
+			foreach (
+				string category in World
+					.Current.GameSettings.GetSettings()
+					.Select(x => string.IsNullOrWhiteSpace(x.Category) ? "Game" : x.Category)
+					.Distinct()
+			)
 			{
 				string sectionKey = "game:" + category;
-				Button btn = CreateCategoryButton(category, "res://assets/textures/ui-icons/settings.svg"); btn.ButtonGroup = _categoryButtonGroup;
-				btn.Pressed += () => SwitchSection(sectionKey); _categoryContainer.AddChild(btn); _categoryButtons[sectionKey] = btn;
+				Button btn = CreateCategoryButton(
+					category,
+					"res://assets/textures/ui-icons/settings.svg"
+				);
+				btn.ButtonGroup = _categoryButtonGroup;
+				btn.Pressed += () => SwitchSection(sectionKey);
+				_categoryContainer.AddChild(btn);
+				_categoryButtons[sectionKey] = btn;
 			}
 		}
 	}
 
-	private static Button CreateCategoryButton(string label, string iconPath) => CreateCategoryButton(new Shared.Settings.SettingSectionDef { Key = label, Label = label, IconPath = iconPath });
+	private static Button CreateCategoryButton(string label, string iconPath) =>
+		CreateCategoryButton(
+			new Shared.Settings.SettingSectionDef
+			{
+				Key = label,
+				Label = label,
+				IconPath = iconPath,
+			}
+		);
 
 	private static Button CreateCategoryButton(Shared.Settings.SettingSectionDef section)
 	{
@@ -75,13 +96,10 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseDefaultCursorShape = CursorShape.PointingHand,
 			Text = string.Empty,
-			FocusMode = FocusModeEnum.All
+			FocusMode = FocusModeEnum.All,
 		};
 
-		HBoxContainer layout = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore
-		};
+		HBoxContainer layout = new() { MouseFilter = MouseFilterEnum.Ignore };
 		layout.AddThemeConstantOverride("separation", 12);
 		layout.SetAnchorsPreset(LayoutPreset.FullRect);
 		layout.OffsetLeft = 16;
@@ -96,7 +114,7 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 				CustomMinimumSize = new Vector2(28, 0),
 				Texture = GD.Load<Texture2D>(section.IconPath),
 				ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			};
 			layout.AddChild(icon);
 		}
@@ -105,7 +123,7 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 		{
 			MouseFilter = MouseFilterEnum.Ignore,
 			Text = section.Label,
-			VerticalAlignment = VerticalAlignment.Center
+			VerticalAlignment = VerticalAlignment.Center,
 		};
 		label.AddThemeFontSizeOverride("font_size", 16);
 		layout.AddChild(label);
@@ -128,15 +146,20 @@ public sealed partial class UIMenuSettings : UIMenuViewBase
 			child.QueueFree();
 		}
 
-		if (key.StartsWith("game:")) _viewContainer.AddChild(new GameSettingsPage { Category = key[5..] });
-		else _viewContainer.AddChild(new SettingsSectionPage { SectionKey = key });
+		if (key.StartsWith("game:"))
+			_viewContainer.AddChild(new GameSettingsPage { Category = key[5..] });
+		else
+			_viewContainer.AddChild(new SettingsSectionPage { SectionKey = key });
 	}
 
 	public void SwitchToGameSettings()
 	{
-		string? key = _categoryButtons.Keys.FirstOrDefault(x => x.Equals("game:Game", System.StringComparison.OrdinalIgnoreCase))
-			?? _categoryButtons.Keys.FirstOrDefault(x => x.StartsWith("game:"));
-		if (key != null) SwitchSection(key);
+		string? key =
+			_categoryButtons.Keys.FirstOrDefault(x =>
+				x.Equals("game:Game", System.StringComparison.OrdinalIgnoreCase)
+			) ?? _categoryButtons.Keys.FirstOrDefault(x => x.StartsWith("game:"));
+		if (key != null)
+			SwitchSection(key);
 	}
 
 	private void UpdateCategoryButtons()

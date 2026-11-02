@@ -10,7 +10,6 @@ using Godot;
 using BrickVerse.Datamodel.Creator;
 #endif
 
-
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
@@ -105,7 +104,12 @@ public partial class UIField : Instance
 	public Vector2 MinimumSize
 	{
 		get => _minimumSize;
-		set { _minimumSize = value.Max(Vector2.Zero); QueueRecomputeTransform(); OnPropertyChanged(); }
+		set
+		{
+			_minimumSize = value.Max(Vector2.Zero);
+			QueueRecomputeTransform();
+			OnPropertyChanged();
+		}
 	}
 
 	/// <summary>Maximum rendered size in pixels after responsive scale is evaluated. Zero disables an axis.</summary>
@@ -113,7 +117,12 @@ public partial class UIField : Instance
 	public Vector2 MaximumSize
 	{
 		get => _maximumSize;
-		set { _maximumSize = value.Max(Vector2.Zero); QueueRecomputeTransform(); OnPropertyChanged(); }
+		set
+		{
+			_maximumSize = value.Max(Vector2.Zero);
+			QueueRecomputeTransform();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
@@ -666,10 +675,14 @@ public partial class UIField : Instance
 			}
 		}
 
-		if (_minimumSize.X > 0) size.X = Mathf.Max(size.X, _minimumSize.X);
-		if (_minimumSize.Y > 0) size.Y = Mathf.Max(size.Y, _minimumSize.Y);
-		if (_maximumSize.X > 0) size.X = Mathf.Min(size.X, _maximumSize.X);
-		if (_maximumSize.Y > 0) size.Y = Mathf.Min(size.Y, _maximumSize.Y);
+		if (_minimumSize.X > 0)
+			size.X = Mathf.Max(size.X, _minimumSize.X);
+		if (_minimumSize.Y > 0)
+			size.Y = Mathf.Max(size.Y, _minimumSize.Y);
+		if (_maximumSize.X > 0)
+			size.X = Mathf.Min(size.X, _maximumSize.X);
+		if (_maximumSize.Y > 0)
+			size.Y = Mathf.Min(size.Y, _maximumSize.Y);
 		size = size.Max(Vector2.Zero);
 
 		NodeControl.CustomMinimumSize = size;

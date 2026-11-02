@@ -2,11 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Enums;
-using BrickVerse.Scripting;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +9,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Enums;
+using BrickVerse.Scripting;
+using Godot;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -60,7 +60,6 @@ public class InputButtonCollection : IEnumerable, IScriptObject
 	}
 }
 
-
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 [JsonDerivedType(typeof(InputActionVector2), "Vector2")]
 [JsonDerivedType(typeof(InputActionButton), "Button")]
@@ -80,12 +79,15 @@ public abstract class InputAction : IScriptObject
 	}
 
 	public event Action? Renamed;
-	[JsonIgnore] public InputService InputService = null!;
+
+	[JsonIgnore]
+	public InputService InputService = null!;
 }
 
 public class InputButton : IScriptObject
 {
-	[ScriptProperty] public KeyCodeEnum KeyCode { get; set; } = KeyCodeEnum.None;
+	[ScriptProperty]
+	public KeyCodeEnum KeyCode { get; set; } = KeyCodeEnum.None;
 
 	[ScriptMethod]
 	public static InputButton New()
@@ -118,31 +120,50 @@ public class InputButton : IScriptObject
 
 public class InputActionVector2 : InputAction
 {
-	[ScriptProperty] public InputButtonCollection Up { get; set; } = [];
-	[ScriptProperty] public InputButtonCollection Down { get; set; } = [];
-	[ScriptProperty] public InputButtonCollection Left { get; set; } = [];
-	[ScriptProperty] public InputButtonCollection Right { get; set; } = [];
+	[ScriptProperty]
+	public InputButtonCollection Up { get; set; } = [];
 
-	[ScriptProperty, JsonIgnore] public Vector2 Value { get; internal set; }
+	[ScriptProperty]
+	public InputButtonCollection Down { get; set; } = [];
+
+	[ScriptProperty]
+	public InputButtonCollection Left { get; set; } = [];
+
+	[ScriptProperty]
+	public InputButtonCollection Right { get; set; } = [];
+
+	[ScriptProperty, JsonIgnore]
+	public Vector2 Value { get; internal set; }
 }
 
 public class InputActionButton : InputAction
 {
-	[ScriptProperty] public InputButtonCollection Buttons { get; set; } = [];
+	[ScriptProperty]
+	public InputButtonCollection Buttons { get; set; } = [];
 
-	[ScriptProperty, JsonIgnore] public bool IsPressed { get; set; }
-	[ScriptProperty, JsonIgnore] public float Weight { get; set; }
+	[ScriptProperty, JsonIgnore]
+	public bool IsPressed { get; set; }
 
-	[ScriptProperty, JsonIgnore] public BVSignal Pressed { get; private set; } = new();
-	[ScriptProperty, JsonIgnore] public BVSignal Released { get; private set; } = new();
+	[ScriptProperty, JsonIgnore]
+	public float Weight { get; set; }
+
+	[ScriptProperty, JsonIgnore]
+	public BVSignal Pressed { get; private set; } = new();
+
+	[ScriptProperty, JsonIgnore]
+	public BVSignal Released { get; private set; } = new();
 }
 
 public class InputActionAxis : InputAction
 {
-	[ScriptProperty] public InputButtonCollection Negative { get; set; } = [];
-	[ScriptProperty] public InputButtonCollection Positive { get; set; } = [];
+	[ScriptProperty]
+	public InputButtonCollection Negative { get; set; } = [];
 
-	[ScriptProperty, JsonIgnore] public float Value { get; internal set; }
+	[ScriptProperty]
+	public InputButtonCollection Positive { get; set; } = [];
+
+	[ScriptProperty, JsonIgnore]
+	public float Value { get; internal set; }
 }
 
 public class InputMapData
@@ -177,7 +198,8 @@ public class InputMapData
 
 	public static InputMapData LoadFromString(string str)
 	{
-		return JsonSerializer.Deserialize(str, InputActionsGenerationContext.Default.InputMapData) ?? new();
+		return JsonSerializer.Deserialize(str, InputActionsGenerationContext.Default.InputMapData)
+			?? new();
 	}
 
 	public string SaveToString()
@@ -188,7 +210,11 @@ public class InputMapData
 
 public class InputButtonCollectionJsonConverter : JsonConverter<InputButtonCollection>
 {
-	public override InputButtonCollection Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override InputButtonCollection Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 		{
@@ -204,7 +230,10 @@ public class InputButtonCollectionJsonConverter : JsonConverter<InputButtonColle
 				return new InputButtonCollection(buttons);
 			}
 
-			InputButton? button = JsonSerializer.Deserialize(ref reader, InputActionsGenerationContext.Default.InputButton);
+			InputButton? button = JsonSerializer.Deserialize(
+				ref reader,
+				InputActionsGenerationContext.Default.InputButton
+			);
 			if (button != null)
 			{
 				buttons.Add(button);
@@ -214,31 +243,39 @@ public class InputButtonCollectionJsonConverter : JsonConverter<InputButtonColle
 		throw new JsonException("Expected end of array");
 	}
 
-	public override void Write(Utf8JsonWriter writer, InputButtonCollection value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		InputButtonCollection value,
+		JsonSerializerOptions options
+	)
 	{
 		writer.WriteStartArray();
 
 		foreach (InputButton button in value)
 		{
-			JsonSerializer.Serialize(writer, button, InputActionsGenerationContext.Default.InputButton);
+			JsonSerializer.Serialize(
+				writer,
+				button,
+				InputActionsGenerationContext.Default.InputButton
+			);
 		}
 
 		writer.WriteEndArray();
 	}
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true, Converters = [typeof(InputButtonCollectionJsonConverter)])]
+[JsonSourceGenerationOptions(
+	WriteIndented = true,
+	Converters = [typeof(InputButtonCollectionJsonConverter)]
+)]
 [JsonSerializable(typeof(InputMapData))]
 [JsonSerializable(typeof(InputAction))]
 [JsonSerializable(typeof(InputButton))]
-
 [JsonSerializable(typeof(InputActionVector2))]
 [JsonSerializable(typeof(InputActionButton))]
 [JsonSerializable(typeof(InputActionAxis))]
-
 [JsonSerializable(typeof(List<InputAction>))]
 [JsonSerializable(typeof(InputButtonCollection))]
-
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(KeyCodeEnum))]
 public partial class InputActionsGenerationContext : JsonSerializerContext { }

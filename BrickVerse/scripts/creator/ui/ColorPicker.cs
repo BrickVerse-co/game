@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 using static Godot.ColorPicker;
 
 namespace BrickVerse.Creator.UI;
@@ -11,6 +11,7 @@ namespace BrickVerse.Creator.UI;
 public sealed partial class ColorPicker : PanelContainer
 {
 	public static ColorPicker Singleton { get; private set; } = null!;
+
 	public ColorPicker()
 	{
 		Singleton = this;
@@ -34,7 +35,12 @@ public sealed partial class ColorPicker : PanelContainer
 		};
 	}
 
-	public void SwitchTo(Button button, Color current, ColorChangedEventHandler callback, Action? finishedCallback = null)
+	public void SwitchTo(
+		Button button,
+		Color current,
+		ColorChangedEventHandler callback,
+		Action? finishedCallback = null
+	)
 	{
 		if (button == _button)
 		{

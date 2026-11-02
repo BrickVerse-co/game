@@ -8,10 +8,17 @@ namespace BrickVerse.Client.UI.Notification;
 
 public partial class UIMessageNotification : UINotificationBase
 {
-	[Export] public AnimationPlayer AnimPlay = null!;
-	[Export] public Label TitleLabel = null!;
-	[Export] public Label SubTitleLabel = null!;
-	[Export] public TextureRect IconRect = null!;
+	[Export]
+	public AnimationPlayer AnimPlay = null!;
+
+	[Export]
+	public Label TitleLabel = null!;
+
+	[Export]
+	public Label SubTitleLabel = null!;
+
+	[Export]
+	public TextureRect IconRect = null!;
 
 	public override void Fire(object? data)
 	{

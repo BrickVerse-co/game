@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Shared;
+using Godot;
+
 namespace BrickVerse.Creator.Spatial;
 
 public partial class ArrowSpatial : Node3D
@@ -26,7 +27,11 @@ public partial class ArrowSpatial : Node3D
 
 	public override void _Ready()
 	{
-		if (Globals.CurrentAppEntry != Globals.AppEntryEnum.Creator) { Visible = false; return; }
+		if (Globals.CurrentAppEntry != Globals.AppEntryEnum.Creator)
+		{
+			Visible = false;
+			return;
+		}
 		_meshInstance = new MeshInstance3D();
 		AddChild(_meshInstance);
 		RenderGizmo();
@@ -78,7 +83,7 @@ public partial class ArrowSpatial : Node3D
 		{
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
 			AlbedoColor = GizmoColor,
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 		};
 
 		st.SetMaterial(mat);

@@ -2,19 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
-using BrickVerse.Providers.AssetLoaders;
-using BrickVerse.Shared.AssetLoaders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using BrickVerse.Providers.AssetLoaders;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Shared.AssetLoaders;
+using Godot;
 
 namespace BrickVerse.Utils;
 
@@ -30,21 +30,25 @@ public static class BVAPI
 		if (string.IsNullOrWhiteSpace(token))
 			return;
 
-		_client.DefaultRequestHeaders["Authorization"] =
-			$"Bearer {token}";
+		_client.DefaultRequestHeaders["Authorization"] = $"Bearer {token}";
 
-		_client.DefaultRequestHeaders["Cookie"] =
-			$"auth_token={token}";
+		_client.DefaultRequestHeaders["Cookie"] = $"auth_token={token}";
 	}
 
 	public static async Task<JsonDocument> GetJson(string apiPath)
 	{
-		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin(apiPath));
+		using HttpResponseMessage response = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin(apiPath)
+		);
 		response.EnsureSuccessStatusCode();
 		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 	}
 
-	public static async Task<JsonDocument> SendJson(HttpMethod method, string apiPath, string json = "{}")
+	public static async Task<JsonDocument> SendJson(
+		HttpMethod method,
+		string apiPath,
+		string json = "{}"
+	)
 	{
 		using HttpRequestMessage request = new(method, Globals.ApiEndpoint.PathJoin(apiPath))
 		{
@@ -58,38 +62,63 @@ public static class BVAPI
 
 	public static async Task<string> ResolveThumbnailUrl(string type, string id)
 	{
-		if (string.IsNullOrWhiteSpace(id)) return "";
-		using JsonDocument response = await GetJson($"/v3/thumbnails/{Uri.EscapeDataString(type)}/{Uri.EscapeDataString(id)}");
-		return response.RootElement.TryGetProperty("url", out JsonElement url) && url.ValueKind == JsonValueKind.String
-			? url.GetString() ?? "" : "";
+		if (string.IsNullOrWhiteSpace(id))
+			return "";
+		using JsonDocument response = await GetJson(
+			$"/v3/thumbnails/{Uri.EscapeDataString(type)}/{Uri.EscapeDataString(id)}"
+		);
+		return
+			response.RootElement.TryGetProperty("url", out JsonElement url)
+			&& url.ValueKind == JsonValueKind.String
+			? url.GetString() ?? ""
+			: "";
 	}
 
 	public static async Task<string> GetUniverseThumbnailUrl(long universeId)
 	{
 		using JsonDocument response = await GetJson($"/v3/universe/{universeId}/thumbnails");
-		if (!response.RootElement.TryGetProperty("thumbnails", out JsonElement thumbnails) || thumbnails.ValueKind != JsonValueKind.Array) return "";
+		if (
+			!response.RootElement.TryGetProperty("thumbnails", out JsonElement thumbnails)
+			|| thumbnails.ValueKind != JsonValueKind.Array
+		)
+			return "";
 		JsonElement? selected = null;
 		foreach (JsonElement thumbnail in thumbnails.EnumerateArray())
 		{
-			if (!thumbnail.TryGetProperty("thumbnailId", out JsonElement id) || id.ValueKind == JsonValueKind.Null) continue;
+			if (
+				!thumbnail.TryGetProperty("thumbnailId", out JsonElement id)
+				|| id.ValueKind == JsonValueKind.Null
+			)
+				continue;
 			selected ??= thumbnail;
-			if (thumbnail.TryGetProperty("primary", out JsonElement primary) && primary.ValueKind == JsonValueKind.True) { selected = thumbnail; break; }
+			if (
+				thumbnail.TryGetProperty("primary", out JsonElement primary)
+				&& primary.ValueKind == JsonValueKind.True
+			)
+			{
+				selected = thumbnail;
+				break;
+			}
 		}
-		if (!selected.HasValue || !selected.Value.TryGetProperty("thumbnailId", out JsonElement selectedId)) return "";
+		if (
+			!selected.HasValue
+			|| !selected.Value.TryGetProperty("thumbnailId", out JsonElement selectedId)
+		)
+			return "";
 		return await ResolveThumbnailUrl("ASSET", selectedId.ToString());
 	}
 
 	private static string NormalizeToken(string token)
 	{
-		if (string.IsNullOrWhiteSpace(token)) return "";
+		if (string.IsNullOrWhiteSpace(token))
+			return "";
 		string normalized = token.Trim();
 		return normalized.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
 			? normalized["Bearer ".Length..].Trim()
 			: normalized;
 	}
 
-	public static Task<APIUserInfo> GetUserFromID(string userID)
-		=> GetUserProfileFromID(userID);
+	public static Task<APIUserInfo> GetUserFromID(string userID) => GetUserProfileFromID(userID);
 
 	private static async Task<APIUserInfo> GetUserProfileFromID(string userID)
 	{
@@ -136,12 +165,18 @@ public static class BVAPI
 		return response.User;
 	}
 
-	public static async Task<APIJoinPlaceResponse> RequestJoinGame(APIJoinPlaceRequest req, Action<string, string>? onStatus = null)
+	public static async Task<APIJoinPlaceResponse> RequestJoinGame(
+		APIJoinPlaceRequest req,
+		Action<string, string>? onStatus = null
+	)
 	{
 		onStatus?.Invoke("Preparing world", "Checking the experience and your access…");
 		APIV3WorldRoot worldInfo = await GetWorldRootFromID(req.PlaceID);
 		onStatus?.Invoke("Finding a server", "Looking for an available server near you…");
-		string platform = Globals.IsXRLaunch ? "VR" : Globals.IsMobileBuild ? "MOBILE" : "PC";
+		string platform =
+			Globals.IsXRLaunch ? "VR"
+			: Globals.IsMobileBuild ? "MOBILE"
+			: "PC";
 		APIV3JoinWorldRequest joinRequest = new()
 		{
 			UniverseId = worldInfo.Universe.Id,
@@ -153,46 +188,101 @@ public static class BVAPI
 			APIGenerationContext.Default.APIV3JoinWorldRequest
 		);
 		using JsonDocument queued = await SendJson(HttpMethod.Post, "/v3/world/join", requestJson);
-		onStatus?.Invoke("Joining world", queued.RootElement.TryGetProperty("message", out JsonElement queuedMessage) ? queuedMessage.GetString() ?? "Your join request is queued." : "Your join request is queued.");
-		if (queued.RootElement.TryGetProperty("joinToken", out JsonElement immediateToken) && immediateToken.ValueKind == JsonValueKind.String)
-			return new APIJoinPlaceResponse { Success = true, Token = immediateToken.GetString() ?? "" };
-		if (!queued.RootElement.TryGetProperty("requestId", out JsonElement requestNode) || requestNode.ValueKind != JsonValueKind.String)
-			throw new Exception(queued.RootElement.TryGetProperty("message", out JsonElement message) ? message.GetString() : "The server did not create a join request.");
+		onStatus?.Invoke(
+			"Joining world",
+			queued.RootElement.TryGetProperty("message", out JsonElement queuedMessage)
+				? queuedMessage.GetString() ?? "Your join request is queued."
+				: "Your join request is queued."
+		);
+		if (
+			queued.RootElement.TryGetProperty("joinToken", out JsonElement immediateToken)
+			&& immediateToken.ValueKind == JsonValueKind.String
+		)
+			return new APIJoinPlaceResponse
+			{
+				Success = true,
+				Token = immediateToken.GetString() ?? "",
+			};
+		if (
+			!queued.RootElement.TryGetProperty("requestId", out JsonElement requestNode)
+			|| requestNode.ValueKind != JsonValueKind.String
+		)
+			throw new Exception(
+				queued.RootElement.TryGetProperty("message", out JsonElement message)
+					? message.GetString()
+					: "The server did not create a join request."
+			);
 
 		string requestId = requestNode.GetString()!;
 		DateTime deadline = DateTime.UtcNow.AddMinutes(8);
 		while (DateTime.UtcNow < deadline)
 		{
 			await Task.Delay(1000);
-			using JsonDocument status = await GetJson("/v3/world/join/" + Uri.EscapeDataString(requestId));
-			string state = status.RootElement.TryGetProperty("status", out JsonElement stateNode) ? stateNode.GetString() ?? "" : "";
-			string detail = status.RootElement.TryGetProperty("message", out JsonElement statusMessage) ? statusMessage.GetString() ?? "" : "";
-			onStatus?.Invoke(StatusTitle(state), string.IsNullOrWhiteSpace(detail) ? StatusDetail(state) : detail);
-			if (state == "READY" && status.RootElement.TryGetProperty("joinToken", out JsonElement token) && token.ValueKind == JsonValueKind.String)
+			using JsonDocument status = await GetJson(
+				"/v3/world/join/" + Uri.EscapeDataString(requestId)
+			);
+			string state = status.RootElement.TryGetProperty("status", out JsonElement stateNode)
+				? stateNode.GetString() ?? ""
+				: "";
+			string detail = status.RootElement.TryGetProperty(
+				"message",
+				out JsonElement statusMessage
+			)
+				? statusMessage.GetString() ?? ""
+				: "";
+			onStatus?.Invoke(
+				StatusTitle(state),
+				string.IsNullOrWhiteSpace(detail) ? StatusDetail(state) : detail
+			);
+			if (
+				state == "READY"
+				&& status.RootElement.TryGetProperty("joinToken", out JsonElement token)
+				&& token.ValueKind == JsonValueKind.String
+			)
 				return new APIJoinPlaceResponse { Success = true, Token = token.GetString() ?? "" };
-			if (state == "FAILED" || (status.RootElement.TryGetProperty("success", out JsonElement success) && success.ValueKind == JsonValueKind.False))
-				throw new Exception(status.RootElement.TryGetProperty("message", out JsonElement failure) ? failure.GetString() : "Unable to join this world.");
+			if (
+				state == "FAILED"
+				|| (
+					status.RootElement.TryGetProperty("success", out JsonElement success)
+					&& success.ValueKind == JsonValueKind.False
+				)
+			)
+				throw new Exception(
+					status.RootElement.TryGetProperty("message", out JsonElement failure)
+						? failure.GetString()
+						: "Unable to join this world."
+				);
 		}
-		try { using JsonDocument _ = await SendJson(HttpMethod.Delete, "/v3/world/join/" + Uri.EscapeDataString(requestId)); } catch { }
+		try
+		{
+			using JsonDocument _ = await SendJson(
+				HttpMethod.Delete,
+				"/v3/world/join/" + Uri.EscapeDataString(requestId)
+			);
+		}
+		catch { }
 		throw new TimeoutException("The game server took too long to start. Please try again.");
 	}
 
-	private static string StatusTitle(string state) => state switch
-	{
-		"QUEUED" => "Join queued",
-		"FINDING_SERVER" => "Finding a server",
-		"BOOTING_SERVER" => "Starting a server",
-		"AUTHORIZING_CLIENT" => "Securing your session",
-		"READY" => "World ready",
-		_ => "Joining world",
-	};
+	private static string StatusTitle(string state) =>
+		state switch
+		{
+			"QUEUED" => "Join queued",
+			"FINDING_SERVER" => "Finding a server",
+			"BOOTING_SERVER" => "Starting a server",
+			"AUTHORIZING_CLIENT" => "Securing your session",
+			"READY" => "World ready",
+			_ => "Joining world",
+		};
 
-	private static string StatusDetail(string state) => state switch
-	{
-		"BOOTING_SERVER" => "No server was ready, so a new one is starting. This can take a minute.",
-		"AUTHORIZING_CLIENT" => "Creating your secure game session…",
-		_ => "This can take longer when an experience server is waking up.",
-	};
+	private static string StatusDetail(string state) =>
+		state switch
+		{
+			"BOOTING_SERVER" =>
+				"No server was ready, so a new one is starting. This can take a minute.",
+			"AUTHORIZING_CLIENT" => "Creating your secure game session…",
+			_ => "This can take longer when an experience server is waking up.",
+		};
 
 	public static async Task<APIAvatarResponse> GetUserAvatarFromID(string userID)
 	{
@@ -203,8 +293,8 @@ public static class BVAPI
 
 		APIV3CharacterAppearance appearance = response.Appearance;
 		APIV3CharacterAccessory[] appearanceAccessories = appearance.Accessories ?? [];
-		Task<APIAvatarAsset>[] accessoryTasks = appearanceAccessories.Select(
-			async item =>
+		Task<APIAvatarAsset>[] accessoryTasks = appearanceAccessories
+			.Select(async item =>
 			{
 				string marketplaceId = item.Id ?? "0";
 				APIMarketplace3DItem metadata = new()
@@ -215,19 +305,31 @@ public static class BVAPI
 				};
 				try
 				{
-					APIMarketplace3DResponse metadataResponse = await GetMarketplace3D(marketplaceId);
+					APIMarketplace3DResponse metadataResponse = await GetMarketplace3D(
+						marketplaceId
+					);
 					if (metadataResponse.Success)
 					{
 						metadata = metadataResponse.Item;
-						BVAssetProvider.RegisterDirectAssetUrl(ResourceType.Mesh, metadata.MeshId, metadata.MeshUrl);
-						BVAssetProvider.RegisterDirectAssetUrl(ResourceType.Texture, metadata.TextureId, metadata.TextureUrl);
+						BVAssetProvider.RegisterDirectAssetUrl(
+							ResourceType.Mesh,
+							metadata.MeshId,
+							metadata.MeshUrl
+						);
+						BVAssetProvider.RegisterDirectAssetUrl(
+							ResourceType.Texture,
+							metadata.TextureId,
+							metadata.TextureUrl
+						);
 					}
 				}
 				catch (Exception exception)
 				{
 					BV.PrintWarn(
-						"Could not resolve avatar marketplace item ", marketplaceId,
-						": ", exception.Message
+						"Could not resolve avatar marketplace item ",
+						marketplaceId,
+						": ",
+						exception.Message
 					);
 				}
 
@@ -243,8 +345,8 @@ public static class BVAPI
 					Thumbnail = item.ThumbnailUrl ?? "",
 					Path = "",
 				};
-			}
-		).ToArray();
+			})
+			.ToArray();
 		APIAvatarAsset[] assets = await Task.WhenAll(accessoryTasks);
 
 		return new APIAvatarResponse
@@ -268,9 +370,11 @@ public static class BVAPI
 
 	private static string NormalizeAppearanceColor(string? color)
 	{
-		if (string.IsNullOrWhiteSpace(color)) return "#ffffff";
+		if (string.IsNullOrWhiteSpace(color))
+			return "#ffffff";
 		string normalized = color.Trim();
-		if (!normalized.StartsWith('#')) normalized = "#" + normalized;
+		if (!normalized.StartsWith('#'))
+			normalized = "#" + normalized;
 		return normalized;
 	}
 
@@ -282,9 +386,10 @@ public static class BVAPI
 		{
 			Type = info.Universe.CreatorType.ToLowerInvariant(),
 			Id = long.TryParse(info.Universe.CreatorId, out long creatorId) ? creatorId : 0,
-			Name = info.Universe.CreatorType == "GUILD"
-				? (info.Universe.CreatorGuild?.Name ?? "")
-				: (info.Universe.CreatorUser?.Username ?? ""),
+			Name =
+				info.Universe.CreatorType == "GUILD"
+					? (info.Universe.CreatorGuild?.Name ?? "")
+					: (info.Universe.CreatorUser?.Username ?? ""),
 			Thumbnail = "",
 		};
 
@@ -306,7 +411,15 @@ public static class BVAPI
 			{
 				Likes = info.World.TotalLikes,
 				Dislikes = info.World.TotalDislikes,
-				Percent = info.World.TotalLikes + info.World.TotalDislikes == 0 ? "0" : Math.Round(info.World.TotalLikes * 100d / (info.World.TotalLikes + info.World.TotalDislikes)).ToString(),
+				Percent =
+					info.World.TotalLikes + info.World.TotalDislikes == 0
+						? "0"
+						: Math.Round(
+								info.World.TotalLikes
+									* 100d
+									/ (info.World.TotalLikes + info.World.TotalDislikes)
+							)
+							.ToString(),
 			},
 			IsLikedBy = info.World.IsLikedBy,
 			IsDislikedBy = info.World.IsDislikedBy,
@@ -315,8 +428,7 @@ public static class BVAPI
 		};
 	}
 
-	public static Task<APIV3SocialGuild> GetGuildFromID(long guildID)
-		=> GetGuildInfoV3(guildID);
+	public static Task<APIV3SocialGuild> GetGuildFromID(long guildID) => GetGuildInfoV3(guildID);
 
 	private static async Task<APIV3SocialGuild> GetGuildInfoV3(long guildID)
 	{
@@ -341,7 +453,10 @@ public static class BVAPI
 	public static async Task<APIPlaceMedia[]?> GetWorldMedia(long placeID)
 	{
 		APIV3WorldRoot info = await GetWorldRootFromID(placeID);
-		if (info.Universe.UniverseThumbnails == null || info.Universe.UniverseThumbnails.Length == 0)
+		if (
+			info.Universe.UniverseThumbnails == null
+			|| info.Universe.UniverseThumbnails.Length == 0
+		)
 		{
 			return [];
 		}
@@ -349,12 +464,16 @@ public static class BVAPI
 		List<APIPlaceMedia> media = [];
 		foreach (APIV3UniverseThumbnail thumb in info.Universe.UniverseThumbnails)
 		{
-			media.Add(new APIPlaceMedia
-			{
-				Id = thumb.ThumbnailId ?? "0",
-				Type = "image",
-				Url = Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + (thumb.ThumbnailId ?? "0")),
-			});
+			media.Add(
+				new APIPlaceMedia
+				{
+					Id = thumb.ThumbnailId ?? "0",
+					Type = "image",
+					Url = Globals.ApiEndpoint.PathJoin(
+						"/v3/thumbnails/asset/" + (thumb.ThumbnailId ?? "0")
+					),
+				}
+			);
 		}
 
 		return [.. media];
@@ -384,8 +503,7 @@ public static class BVAPI
 		);
 	}
 
-	public static Task<APIStoreItem> GetStoreItem(string id)
-		=> GetAssetStoreItem(id);
+	public static Task<APIStoreItem> GetStoreItem(string id) => GetAssetStoreItem(id);
 
 	public static Task<APIMarketplace3DResponse> GetMarketplace3D(string id)
 	{
@@ -447,7 +565,7 @@ public static class BVAPI
 			LibraryQueryTypeEnum.Mesh => "MESH",
 			LibraryQueryTypeEnum.Addon => "PLUGIN",
 			LibraryQueryTypeEnum.Font => "FONT",
-			_ => ""
+			_ => "",
 		};
 
 		const int pageSize = 24;
@@ -488,19 +606,23 @@ public static class BVAPI
 		List<APILibraryItem> mapped = new(current.Assets.Length);
 		foreach (APIV3AssetDiscoverItem item in current.Assets)
 		{
-			mapped.Add(new APILibraryItem
-			{
-				ID = item.Id ?? "0",
-				Name = item.Name,
-				ThumbnailUrl = item.ThumbnailUrl
-					?? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.Id),
-				CreatorID = item.CreatorId ?? "0",
-				CreatorType = item.CreatorType ?? "",
-				CreatorName = item.CreatorName ?? item.CreatorId ?? "Unknown Creator",
-				CreatorUrl = item.CreatorType == "GUILD"
-					? Globals.MainEndpoint.PathJoin("/guilds/" + item.CreatorId)
-					: Globals.MainEndpoint.PathJoin("/users/" + item.CreatorId),
-			});
+			mapped.Add(
+				new APILibraryItem
+				{
+					ID = item.Id ?? "0",
+					Name = item.Name,
+					ThumbnailUrl =
+						item.ThumbnailUrl
+						?? Globals.ApiEndpoint.PathJoin("/v3/thumbnails/asset/" + item.Id),
+					CreatorID = item.CreatorId ?? "0",
+					CreatorType = item.CreatorType ?? "",
+					CreatorName = item.CreatorName ?? item.CreatorId ?? "Unknown Creator",
+					CreatorUrl =
+						item.CreatorType == "GUILD"
+							? Globals.MainEndpoint.PathJoin("/guilds/" + item.CreatorId)
+							: Globals.MainEndpoint.PathJoin("/users/" + item.CreatorId),
+				}
+			);
 		}
 
 		return new APILibraryResponse

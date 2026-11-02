@@ -2,20 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Networking;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Diagnostics.CodeAnalysis;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -65,14 +65,20 @@ public sealed partial class SocialService : Instance
 		Player? to = Root.Players.GetPlayerByID(toUserID);
 		if (to != null)
 		{
-			Root.CoreUI.CoreUI.NotificationCenter.FireMessage("You just sent a friend request to " + to.Name, "Friend Request Sent!");
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(
+				"You just sent a friend request to " + to.Name,
+				"Friend Request Sent!"
+			);
 		}
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private async void RecvFriendRequestFailure()
 	{
-		Root.CoreUI.CoreUI.NotificationCenter.FireMessage("Something went wrong, please try again.", "Cannot send friend request");
+		Root.CoreUI.CoreUI.NotificationCenter.FireMessage(
+			"Something went wrong, please try again.",
+			"Cannot send friend request"
+		);
 	}
 
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
@@ -81,13 +87,24 @@ public sealed partial class SocialService : Instance
 		Player? from = Root.Players.GetPlayerByID(fromUserID);
 		if (from != null)
 		{
-			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(from.Name + " just send you a friend request!", "Friend Request");
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(
+				from.Name + " just send you a friend request!",
+				"Friend Request"
+			);
 		}
 	}
 
-	[RequiresUnreferencedCode("Serializing friend request payloads relies on reflection-driven JSON metadata.")]
-	[RequiresDynamicCode("Serializing friend request payloads may require runtime code generation.")]
-	public async Task WebSendFriendshipRequest(string senderID, string recipientID, FriendshipRequestType req)
+	[RequiresUnreferencedCode(
+		"Serializing friend request payloads relies on reflection-driven JSON metadata."
+	)]
+	[RequiresDynamicCode(
+		"Serializing friend request payloads may require runtime code generation."
+	)]
+	public async Task WebSendFriendshipRequest(
+		string senderID,
+		string recipientID,
+		FriendshipRequestType req
+	)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 		string body = JsonSerializer.Serialize(
@@ -97,7 +114,10 @@ public sealed partial class SocialService : Instance
 
 		if (req == FriendshipRequestType.Friend)
 		{
-			using HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/world/server/social/friends/request"));
+			using HttpRequestMessage msg = new(
+				HttpMethod.Post,
+				Globals.ApiEndpoint.PathJoin("/v3/world/server/social/friends/request")
+			);
 			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
 			using HttpResponseMessage response = await _client.SendAsync(msg);
 			response.EnsureSuccessStatusCode();
@@ -106,7 +126,10 @@ public sealed partial class SocialService : Instance
 
 		if (req == FriendshipRequestType.Unfriend)
 		{
-			using HttpRequestMessage msg = new(HttpMethod.Delete, Globals.ApiEndpoint.PathJoin("/v3/world/server/social/friends"));
+			using HttpRequestMessage msg = new(
+				HttpMethod.Delete,
+				Globals.ApiEndpoint.PathJoin("/v3/world/server/social/friends")
+			);
 			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
 			using HttpResponseMessage response = await _client.SendAsync(msg);
 			response.EnsureSuccessStatusCode();
@@ -115,10 +138,18 @@ public sealed partial class SocialService : Instance
 
 		if (req == FriendshipRequestType.Block)
 		{
-			using HttpRequestMessage msg = new(HttpMethod.Post, Globals.ApiEndpoint.PathJoin("/v3/world/server/social/blocks"));
+			using HttpRequestMessage msg = new(
+				HttpMethod.Post,
+				Globals.ApiEndpoint.PathJoin("/v3/world/server/social/blocks")
+			);
 			msg.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
-			using HttpResponseMessage response = await _client.SendAsync(msg); response.EnsureSuccessStatusCode();
-			_blockCache[BlockCacheKey(senderID, recipientID)] = (true, DateTime.UtcNow.AddSeconds(20)); return;
+			using HttpResponseMessage response = await _client.SendAsync(msg);
+			response.EnsureSuccessStatusCode();
+			_blockCache[BlockCacheKey(senderID, recipientID)] = (
+				true,
+				DateTime.UtcNow.AddSeconds(20)
+			);
+			return;
 		}
 
 		throw new NotSupportedException("Unsupported relationship type");
@@ -127,9 +158,11 @@ public sealed partial class SocialService : Instance
 	public async Task<bool> WebCheckAreFriends(string fromID, string toID)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
-		string data = await _client.GetStringAsync(Globals.ApiEndpoint.PathJoin(
-			$"/v3/world/server/social/are-friends?userId={Uri.EscapeDataString(fromID)}&otherUserId={Uri.EscapeDataString(toID)}"
-		));
+		string data = await _client.GetStringAsync(
+			Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/server/social/are-friends?userId={Uri.EscapeDataString(fromID)}&otherUserId={Uri.EscapeDataString(toID)}"
+			)
+		);
 		using JsonDocument doc = JsonDocument.Parse(data);
 		return doc.RootElement.TryGetProperty("areFriends", out JsonElement areFriends)
 			&& areFriends.ValueKind == JsonValueKind.True;
@@ -137,22 +170,32 @@ public sealed partial class SocialService : Instance
 
 	public async Task<bool> WebIsBlockedEitherWay(string userId, string otherUserId)
 	{
-		if (Root.IsLocalTest) return false;
+		if (Root.IsLocalTest)
+			return false;
 		string key = BlockCacheKey(userId, otherUserId);
-		if (_blockCache.TryGetValue(key, out var cached) && cached.Expires > DateTime.UtcNow) return cached.Blocked;
+		if (_blockCache.TryGetValue(key, out var cached) && cached.Expires > DateTime.UtcNow)
+			return cached.Blocked;
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
-		string data = await _client.GetStringAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/social/is-blocked?userId={Uri.EscapeDataString(userId)}&otherUserId={Uri.EscapeDataString(otherUserId)}"));
+		string data = await _client.GetStringAsync(
+			Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/server/social/is-blocked?userId={Uri.EscapeDataString(userId)}&otherUserId={Uri.EscapeDataString(otherUserId)}"
+			)
+		);
 		using JsonDocument doc = JsonDocument.Parse(data);
-		bool result = doc.RootElement.TryGetProperty("blocked", out JsonElement blocked) && blocked.ValueKind == JsonValueKind.True;
-		_blockCache[key] = (result, DateTime.UtcNow.AddSeconds(20)); return result;
+		bool result =
+			doc.RootElement.TryGetProperty("blocked", out JsonElement blocked)
+			&& blocked.ValueKind == JsonValueKind.True;
+		_blockCache[key] = (result, DateTime.UtcNow.AddSeconds(20));
+		return result;
 	}
 
-	private static string BlockCacheKey(string first, string second) => string.CompareOrdinal(first, second) <= 0 ? first + ":" + second : second + ":" + first;
+	private static string BlockCacheKey(string first, string second) =>
+		string.CompareOrdinal(first, second) <= 0 ? first + ":" + second : second + ":" + first;
 
 	public enum FriendshipRequestType
 	{
 		Friend,
 		Unfriend,
-		Block
+		Block,
 	}
 }

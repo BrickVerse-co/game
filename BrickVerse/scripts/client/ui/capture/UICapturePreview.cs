@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Services;
+using Godot;
 
 namespace BrickVerse.Client.UI.Capture;
 
@@ -11,17 +11,38 @@ public partial class UICapturePreview : Control
 {
 	public CoreUIRoot CoreUI = null!;
 
-	[Export] private TextureRect _pictureRect = null!;
-	[Export] private Button _firstShareBtn = null!;
-	[Export] private Button _saveBtn = null!;
-	[Export] private Button _firstCloseBtn = null!;
-	[Export] private Button _shareBtn = null!;
-	[Export] private Button _cancelBtn = null!;
-	[Export] private Control _captionWritePage = null!;
-	[Export] private Control _firstMenuPage = null!;
-	[Export] private TextEdit _captionTextEdit = null!;
-	[Export] private AnimationPlayer _animPlay = null!;
-	[Export] private AnimationPlayer _shareAnimPlay = null!;
+	[Export]
+	private TextureRect _pictureRect = null!;
+
+	[Export]
+	private Button _firstShareBtn = null!;
+
+	[Export]
+	private Button _saveBtn = null!;
+
+	[Export]
+	private Button _firstCloseBtn = null!;
+
+	[Export]
+	private Button _shareBtn = null!;
+
+	[Export]
+	private Button _cancelBtn = null!;
+
+	[Export]
+	private Control _captionWritePage = null!;
+
+	[Export]
+	private Control _firstMenuPage = null!;
+
+	[Export]
+	private TextEdit _captionTextEdit = null!;
+
+	[Export]
+	private AnimationPlayer _animPlay = null!;
+
+	[Export]
+	private AnimationPlayer _shareAnimPlay = null!;
 
 	private CaptureService _capture = null!;
 

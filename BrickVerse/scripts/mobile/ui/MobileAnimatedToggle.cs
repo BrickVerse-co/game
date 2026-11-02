@@ -15,6 +15,8 @@ public partial class MobileAnimatedToggle : CheckButton
 	private void AnimateState(bool enabled)
 	{
 		Color target = enabled ? new Color(0.68f, 0.87f, 1f) : Colors.White;
-		CreateTween().TweenProperty(this, "modulate", target, 0.16).SetTrans(Tween.TransitionType.Cubic);
+		CreateTween()
+			.TweenProperty(this, "modulate", target, 0.16)
+			.SetTrans(Tween.TransitionType.Cubic);
 	}
 }

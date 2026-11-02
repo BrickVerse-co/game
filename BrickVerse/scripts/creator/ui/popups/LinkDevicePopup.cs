@@ -2,22 +2,28 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Shared;
+using Godot;
 using QRCoder;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public sealed partial class LinkDevicePopup : PopupWindowBase
 {
-	[Export] private TextureRect _textureRect = null!;
+	[Export]
+	private TextureRect _textureRect = null!;
 
 	public override void _Ready()
 	{
 		string? connectAddress = DeviceLinker.GetConnectAddress();
-		if (connectAddress == null) return;
+		if (connectAddress == null)
+			return;
 		BV.Print(connectAddress);
-		byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode(connectAddress, QRCodeGenerator.ECCLevel.Q, 20);
+		byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode(
+			connectAddress,
+			QRCodeGenerator.ECCLevel.Q,
+			20
+		);
 
 		Image image = new();
 		image.LoadPngFromBuffer(qrCodeImage);

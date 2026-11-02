@@ -22,7 +22,6 @@ using Godot;
 using BrickVerse.Creator.Utils;
 #endif
 
-
 namespace BrickVerse.Providers.AssetLoaders;
 
 public class BVAssetProvider : IAssetProvider
@@ -30,9 +29,14 @@ public class BVAssetProvider : IAssetProvider
 	private static readonly TimeSpan DiskCacheLifetime = TimeSpan.FromHours(12);
 	private static readonly TimeSpan DiskCacheRetention = TimeSpan.FromDays(14);
 	private const long MaxDiskCacheBytes = 2L * 1024 * 1024 * 1024;
-	private static readonly string DiskCacheDirectory = ProjectSettings.GlobalizePath("user://asset_cache/raw");
+	private static readonly string DiskCacheDirectory = ProjectSettings.GlobalizePath(
+		"user://asset_cache/raw"
+	);
 	private readonly BVHttpClient _client = new();
-	private static readonly ConcurrentDictionary<(ResourceType Type, string Id), string> DirectAssetUrls = new();
+	private static readonly ConcurrentDictionary<
+		(ResourceType Type, string Id),
+		string
+	> DirectAssetUrls = new();
 
 	public BVAssetProvider()
 	{
@@ -51,11 +55,16 @@ public class BVAssetProvider : IAssetProvider
 		byte[] buffer;
 		if (item.ID.StartsWith("temp:", StringComparison.Ordinal))
 		{
-			buffer = BrickVerse.Datamodel.World.Current?.IO.ReadBytesFromID(item.ID)
-				?? throw new FileNotFoundException("The temporary asset is no longer available.", item.ID);
+			buffer =
+				BrickVerse.Datamodel.World.Current?.IO.ReadBytesFromID(item.ID)
+				?? throw new FileNotFoundException(
+					"The temporary asset is no longer available.",
+					item.ID
+				);
 			url = item.ID;
 		}
-		else try
+		else
+			try
 			{
 				buffer = await GetResourceBuffer(url, item.Type, item.ID);
 			}
@@ -66,56 +75,62 @@ public class BVAssetProvider : IAssetProvider
 		item.SizeBytes = buffer.LongLength;
 		item.DirectURL = url;
 		string extension = item.ID.StartsWith("temp:", StringComparison.Ordinal)
-			? Path.GetExtension(BrickVerse.Datamodel.World.Current?.IO.GetPathFromID(item.ID) ?? string.Empty).ToLowerInvariant()
+			? Path.GetExtension(
+					BrickVerse.Datamodel.World.Current?.IO.GetPathFromID(item.ID) ?? string.Empty
+				)
+				.ToLowerInvariant()
 			: string.Empty;
 
 		switch (item.Type)
 		{
 			case ResourceType.Animation:
-				{
-					item.Resource = BVAnimationFormat.ToLibrary(BVAnimationFormat.Read(buffer));
-					return item;
-				}
+			{
+				item.Resource = BVAnimationFormat.ToLibrary(BVAnimationFormat.Read(buffer));
+				return item;
+			}
 			case ResourceType.Mesh:
+			{
+				try
 				{
-					try
-					{
-						item.Resource = await LoadGlb(buffer, item.ID);
-					}
-					catch (Exception exception)
-					{
-						return await UseUnavailableMesh(item, url, exception);
-					}
-
-					return item;
+					item.Resource = await LoadGlb(buffer, item.ID);
 				}
+				catch (Exception exception)
+				{
+					return await UseUnavailableMesh(item, url, exception);
+				}
+
+				return item;
+			}
 			case ResourceType.Sound:
+			{
+				item.Resource = extension switch
 				{
-					item.Resource = extension switch
-					{
-						".mp3" => AudioStreamMP3.LoadFromBuffer(buffer),
-						".wav" => AudioStreamWav.LoadFromBuffer(buffer, []),
-						_ => AudioStreamOggVorbis.LoadFromBuffer(buffer),
-					};
+					".mp3" => AudioStreamMP3.LoadFromBuffer(buffer),
+					".wav" => AudioStreamWav.LoadFromBuffer(buffer, []),
+					_ => AudioStreamOggVorbis.LoadFromBuffer(buffer),
+				};
 
-					return item;
-				}
+				return item;
+			}
 			case ResourceType.Font:
-				{
-					FontFile font = new() { Data = buffer };
-					item.Resource = font;
-					return item;
-				}
+			{
+				FontFile font = new() { Data = buffer };
+				item.Resource = font;
+				return item;
+			}
 			case ResourceType.Video:
-				{
-					string directory = "user://asset_cache/videos";
-					DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(directory));
-					string filePath = directory.PathJoin(item.ID + ".ogv");
-					using Godot.FileAccess file = Godot.FileAccess.Open(filePath, Godot.FileAccess.ModeFlags.Write);
-					file.StoreBuffer(buffer);
-					item.Resource = new VideoStreamTheora { File = filePath };
-					return item;
-				}
+			{
+				string directory = "user://asset_cache/videos";
+				DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(directory));
+				string filePath = directory.PathJoin(item.ID + ".ogv");
+				using Godot.FileAccess file = Godot.FileAccess.Open(
+					filePath,
+					Godot.FileAccess.ModeFlags.Write
+				);
+				file.StoreBuffer(buffer);
+				item.Resource = new VideoStreamTheora { File = filePath };
+				return item;
+			}
 			case ResourceType.Texture:
 			case ResourceType.AssetThumbnail:
 			case ResourceType.UniverseThumbnail:
@@ -123,27 +138,32 @@ public class BVAssetProvider : IAssetProvider
 			case ResourceType.UserHeadshot:
 			case ResourceType.GuildIcon:
 			case ResourceType.GuildBanner:
+			{
+				Image image = ImageBufferDecoder.Decode(
+					buffer,
+					extension.Length > 0 ? extension : url
+				);
+				image.FixAlphaEdges();
+
+				if (item.Resize != null)
 				{
-					Image image = ImageBufferDecoder.Decode(buffer, extension.Length > 0 ? extension : url);
-					image.FixAlphaEdges();
-
-					if (item.Resize != null)
-					{
-						image.Resize(
-							item.Resize.Value.X,
-							item.Resize.Value.Y,
-							Image.Interpolation.Lanczos
-						);
-					}
-
-					Error mipmapError = image.GenerateMipmaps();
-					if (mipmapError != Error.Ok)
-						throw new InvalidDataException($"Could not generate mipmaps for image {item.ID} ({mipmapError}).");
-
-					item.Resource = ImageTexture.CreateFromImage(image);
-
-					return item;
+					image.Resize(
+						item.Resize.Value.X,
+						item.Resize.Value.Y,
+						Image.Interpolation.Lanczos
+					);
 				}
+
+				Error mipmapError = image.GenerateMipmaps();
+				if (mipmapError != Error.Ok)
+					throw new InvalidDataException(
+						$"Could not generate mipmaps for image {item.ID} ({mipmapError})."
+					);
+
+				item.Resource = ImageTexture.CreateFromImage(image);
+
+				return item;
+			}
 			default:
 				throw new NotImplementedException();
 		}
@@ -390,7 +410,8 @@ public class BVAssetProvider : IAssetProvider
 
 	public string GetAssetServeURL(string id, ResourceType itemType)
 	{
-		if (DirectAssetUrls.TryGetValue((itemType, id), out string? directUrl)) return directUrl;
+		if (DirectAssetUrls.TryGetValue((itemType, id), out string? directUrl))
+			return directUrl;
 		if (itemType is ResourceType.UserBodyshot or ResourceType.UserHeadshot)
 		{
 			return Globals.ApiEndpoint.PathJoin(
@@ -464,7 +485,8 @@ public class BVAssetProvider : IAssetProvider
 
 		string cachePath = GetDiskCachePath(itemType, assetId);
 		byte[]? diskCached = await ReadFreshDiskCache(cachePath);
-		if (diskCached != null) return diskCached;
+		if (diskCached != null)
+			return diskCached;
 
 		for (int attempt = 0; attempt < 2; attempt++)
 		{
@@ -512,7 +534,10 @@ public class BVAssetProvider : IAssetProvider
 	private static string GetDiskCachePath(ResourceType type, string assetId)
 	{
 		byte[] keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{type}:{assetId}"));
-		return Path.Combine(DiskCacheDirectory, Convert.ToHexString(keyBytes).ToLowerInvariant() + ".bin");
+		return Path.Combine(
+			DiskCacheDirectory,
+			Convert.ToHexString(keyBytes).ToLowerInvariant() + ".bin"
+		);
 	}
 
 	private static async Task<byte[]?> ReadFreshDiskCache(string cachePath)
@@ -520,16 +545,21 @@ public class BVAssetProvider : IAssetProvider
 		try
 		{
 			FileInfo info = new(cachePath);
-			if (!info.Exists || DateTime.UtcNow - info.LastWriteTimeUtc > DiskCacheLifetime) return null;
+			if (!info.Exists || DateTime.UtcNow - info.LastWriteTimeUtc > DiskCacheLifetime)
+				return null;
 			byte[] data = await File.ReadAllBytesAsync(cachePath);
 			return data.Length > 0 ? data : null;
 		}
-		catch { return null; }
+		catch
+		{
+			return null;
+		}
 	}
 
 	private static async Task WriteDiskCache(string cachePath, byte[] data)
 	{
-		if (data.Length == 0) return;
+		if (data.Length == 0)
+			return;
 		try
 		{
 			Directory.CreateDirectory(DiskCacheDirectory);
@@ -557,8 +587,10 @@ public class BVAssetProvider : IAssetProvider
 			{
 				bool expired = DateTime.UtcNow - file.LastWriteTimeUtc > DiskCacheRetention;
 				bool overLimit = retainedBytes + file.Length > MaxDiskCacheBytes;
-				if (expired || overLimit) file.Delete();
-				else retainedBytes += file.Length;
+				if (expired || overLimit)
+					file.Delete();
+				else
+					retainedBytes += file.Length;
 			}
 		}
 		catch (Exception exception)
@@ -698,8 +730,17 @@ public class BVAssetProvider : IAssetProvider
 		{
 			RemoveNonMeshNodes(child); // recurse first
 
-			if (child is not (MeshInstance3D or Skeleton3D or AnimationPlayer or AnimationTree or BoneAttachment3D) &&
-				child.GetType() != typeof(Node3D))
+			if (
+				child
+					is not (
+						MeshInstance3D
+						or Skeleton3D
+						or AnimationPlayer
+						or AnimationTree
+						or BoneAttachment3D
+					)
+				&& child.GetType() != typeof(Node3D)
+			)
 			{
 				child.Free();
 			}

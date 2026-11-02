@@ -4,9 +4,9 @@
 
 using BrickVerse.Mobile.Utils;
 using BrickVerse.Schemas.API;
-using Godot;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -14,6 +14,7 @@ public partial class ViewHomePage : MobileViewBase
 {
 	private Label _usernameLabel = null!;
 	private TextureRect _bodyshot = null!;
+
 	//private BrickversianModel _polytorian = null!;
 
 	public override void _EnterTree()
@@ -28,19 +29,27 @@ public partial class ViewHomePage : MobileViewBase
 	{
 		_usernameLabel = GetNode<Label>("ScrollContainer/VBoxContainer/Control/Layout/Username");
 		_bodyshot = GetNode<TextureRect>("ScrollContainer/VBoxContainer/Control/TextureRect");
-		Button terms = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Terms");
-		Button privacy = GetNode<Button>("ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Privacy");
+		Button terms = GetNode<Button>(
+			"ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Terms"
+		);
+		Button privacy = GetNode<Button>(
+			"ScrollContainer/VBoxContainer/PanelContainer/Layout/Footer/Links/Privacy"
+		);
 		Button search = GetNode<Button>("TopActions/Search");
 		Button notifications = GetNode<Button>("TopActions/Notifications");
 		search.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Search);
-		notifications.Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Notifications, MobileViewEnum.Notifications);
-		terms.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/terms/terms-of-service");
-		privacy.Pressed += () => OS.ShellOpen("https://resources.brickverse.gg/legal/privacy/privacy-policy");
+		notifications.Pressed += () =>
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.Notifications, MobileViewEnum.Notifications);
+		terms.Pressed += () =>
+			OS.ShellOpen("https://resources.brickverse.gg/legal/terms/terms-of-service");
+		privacy.Pressed += () =>
+			OS.ShellOpen("https://resources.brickverse.gg/legal/privacy/privacy-policy");
 		MobileMotion.Bind(terms);
 		MobileMotion.Bind(privacy);
 		MobileMotion.Bind(search);
 		MobileMotion.Bind(notifications);
-		if (BVMobileAuthAPI.IsAuthenticated) LoadView();
+		if (BVMobileAuthAPI.IsAuthenticated)
+			LoadView();
 	}
 
 	public override void _ExitTree()
@@ -68,8 +77,19 @@ public partial class ViewHomePage : MobileViewBase
 		_usernameLabel.Text = BVMobileAuthAPI.CurrentUserInfo.Username;
 		try
 		{
-			string url = await BVAPI.ResolveThumbnailUrl("USER_BODYSHOT", BVMobileAuthAPI.CurrentUserInfo.Id);
-			if (!string.IsNullOrWhiteSpace(url)) WebAssetLoader.Singleton.GetResource(new() { Type = WebResourceType.Image, URL = url }, resource => { if (IsInstanceValid(_bodyshot)) _bodyshot.Texture = (Texture2D)resource; });
+			string url = await BVAPI.ResolveThumbnailUrl(
+				"USER_BODYSHOT",
+				BVMobileAuthAPI.CurrentUserInfo.Id
+			);
+			if (!string.IsNullOrWhiteSpace(url))
+				WebAssetLoader.Singleton.GetResource(
+					new() { Type = WebResourceType.Image, URL = url },
+					resource =>
+					{
+						if (IsInstanceValid(_bodyshot))
+							_bodyshot.Texture = (Texture2D)resource;
+					}
+				);
 		}
 		catch { }
 		//_polytorian.LoadAppearance(BVMobileAuthAPI.CurrentUserInfo.Id);

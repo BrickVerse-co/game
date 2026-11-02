@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Shared.Settings;
 using System.Collections.Generic;
+using BrickVerse.Shared.Settings;
 
 namespace BrickVerse.Creator.Settings;
 
@@ -13,16 +13,82 @@ public static class CreatorSettingsRegistry
 
 	public static readonly IReadOnlyList<SettingSectionDef> Sections =
 	[
-		new() { Key = "creator", Label = "Creator", Description = "Publishing, cloud projects, sounds, tutorials, and play testing.", IconPath = DefaultSectionIcon, SortOrder = 0 },
-		new() { Key = "interface", Label = "Interface", Description = "Appearance, scaling, snapping, and transform behavior.", IconPath = DefaultSectionIcon, SortOrder = 1 },
-		new() { Key = "keybinds", Label = "Keybinds", Description = "Customize shortcuts for tools and common editing actions.", IconPath = DefaultSectionIcon, SortOrder = 2 },
-		new() { Key = "display", Label = "Display", IconPath = "res://assets/textures/ui-icons/camera.svg", SortOrder = 3 },
-		new() { Key = "graphics", Label = "Graphics", IconPath = "res://assets/textures/ui-icons/mountain.svg", SortOrder = 4 },
-		new() { Key = "post_processing", Label = "Post Processing", IconPath = "res://assets/textures/ui-icons/rocket.svg", SortOrder = 5 },
-		new() { Key = "backup", Label = "Backup", Description = "Control automatic recovery snapshots and retention.", IconPath = DefaultSectionIcon, SortOrder = 6 },
-		new() { Key = "code_editor", Label = "Code Editor", Description = "Editing, formatting, assistance, and display preferences.", IconPath = DefaultSectionIcon, SortOrder = 7 },
-		new() { Key = "popups", Label = "Confirmations", Description = "Choose which safety prompts and completion messages appear.", IconPath = DefaultSectionIcon, SortOrder = 8 },
-		new() { Key = "advanced", Label = "Advanced", IconPath = DefaultSectionIcon, SortOrder = 9 }
+		new()
+		{
+			Key = "creator",
+			Label = "Creator",
+			Description = "Publishing, cloud projects, sounds, tutorials, and play testing.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 0,
+		},
+		new()
+		{
+			Key = "interface",
+			Label = "Interface",
+			Description = "Appearance, scaling, snapping, and transform behavior.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 1,
+		},
+		new()
+		{
+			Key = "keybinds",
+			Label = "Keybinds",
+			Description = "Customize shortcuts for tools and common editing actions.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 2,
+		},
+		new()
+		{
+			Key = "display",
+			Label = "Display",
+			IconPath = "res://assets/textures/ui-icons/camera.svg",
+			SortOrder = 3,
+		},
+		new()
+		{
+			Key = "graphics",
+			Label = "Graphics",
+			IconPath = "res://assets/textures/ui-icons/mountain.svg",
+			SortOrder = 4,
+		},
+		new()
+		{
+			Key = "post_processing",
+			Label = "Post Processing",
+			IconPath = "res://assets/textures/ui-icons/rocket.svg",
+			SortOrder = 5,
+		},
+		new()
+		{
+			Key = "backup",
+			Label = "Backup",
+			Description = "Control automatic recovery snapshots and retention.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 6,
+		},
+		new()
+		{
+			Key = "code_editor",
+			Label = "Code Editor",
+			Description = "Editing, formatting, assistance, and display preferences.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 7,
+		},
+		new()
+		{
+			Key = "popups",
+			Label = "Confirmations",
+			Description = "Choose which safety prompts and completion messages appear.",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 8,
+		},
+		new()
+		{
+			Key = "advanced",
+			Label = "Advanced",
+			IconPath = DefaultSectionIcon,
+			SortOrder = 9,
+		},
 	];
 
 	public static readonly IReadOnlyDictionary<string, SettingDef> Definitions = Build();
@@ -33,7 +99,8 @@ public static class CreatorSettingsRegistry
 		SharedSettingsRegistry.AddSharedTo(defs);
 
 		// Creator
-		defs.Add(CreatorSettingKeys.Creator.SoundEffectsEnabled,
+		defs.Add(
+			CreatorSettingKeys.Creator.SoundEffectsEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.SoundEffectsEnabled,
@@ -42,29 +109,76 @@ public static class CreatorSettingsRegistry
 				Description = "Play feedback sounds for placing parts and other Creator actions.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.BuildParticlesEnabled,
+		defs.Add(
+			CreatorSettingKeys.Creator.BuildParticlesEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.BuildParticlesEnabled,
 				SectionKey = "creator",
 				Label = "Build Particles",
-				Description = "Show a small brick-like particle burst when placing or duplicating objects.",
+				Description =
+					"Show a small brick-like particle burst when placing or duplicating objects.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.SoundEffectsVolume,
-			new SettingDef<float> { Key = CreatorSettingKeys.Creator.SoundEffectsVolume, SectionKey = "creator", Label = "Sound Effects Volume", Description = "Master volume for Creator feedback sounds.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 75f, MinValue = 0f, MaxValue = 100f, Step = 1f });
-		defs.Add(CreatorSettingKeys.Creator.BuildSoundVolume,
-			new SettingDef<float> { Key = CreatorSettingKeys.Creator.BuildSoundVolume, SectionKey = "creator", Label = "Building Sounds Volume", Description = "Volume for placing, transforming, deleting, undoing, and redoing.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 85f, MinValue = 0f, MaxValue = 100f, Step = 1f });
-		defs.Add(CreatorSettingKeys.Creator.UiSoundVolume,
-			new SettingDef<float> { Key = CreatorSettingKeys.Creator.UiSoundVolume, SectionKey = "creator", Label = "UI and Hover Volume", Description = "Volume for buttons, mouse hover feedback, and modal transitions.", ValueKind = SettingValueKind.Float, ControlKind = SettingControlKind.Slider, DefaultValue = 55f, MinValue = 0f, MaxValue = 100f, Step = 1f });
+		defs.Add(
+			CreatorSettingKeys.Creator.SoundEffectsVolume,
+			new SettingDef<float>
+			{
+				Key = CreatorSettingKeys.Creator.SoundEffectsVolume,
+				SectionKey = "creator",
+				Label = "Sound Effects Volume",
+				Description = "Master volume for Creator feedback sounds.",
+				ValueKind = SettingValueKind.Float,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 75f,
+				MinValue = 0f,
+				MaxValue = 100f,
+				Step = 1f,
+			}
+		);
+		defs.Add(
+			CreatorSettingKeys.Creator.BuildSoundVolume,
+			new SettingDef<float>
+			{
+				Key = CreatorSettingKeys.Creator.BuildSoundVolume,
+				SectionKey = "creator",
+				Label = "Building Sounds Volume",
+				Description = "Volume for placing, transforming, deleting, undoing, and redoing.",
+				ValueKind = SettingValueKind.Float,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 85f,
+				MinValue = 0f,
+				MaxValue = 100f,
+				Step = 1f,
+			}
+		);
+		defs.Add(
+			CreatorSettingKeys.Creator.UiSoundVolume,
+			new SettingDef<float>
+			{
+				Key = CreatorSettingKeys.Creator.UiSoundVolume,
+				SectionKey = "creator",
+				Label = "UI and Hover Volume",
+				Description = "Volume for buttons, mouse hover feedback, and modal transitions.",
+				ValueKind = SettingValueKind.Float,
+				ControlKind = SettingControlKind.Slider,
+				DefaultValue = 55f,
+				MinValue = 0f,
+				MaxValue = 100f,
+				Step = 1f,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.OpenWebAfterPublish,
+		defs.Add(
+			CreatorSettingKeys.Creator.OpenWebAfterPublish,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.OpenWebAfterPublish,
@@ -73,82 +187,102 @@ public static class CreatorSettingsRegistry
 				Description = "Open the published item in a browser after publishing.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.DetailedRichPresence,
+		defs.Add(
+			CreatorSettingKeys.Creator.DetailedRichPresence,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.DetailedRichPresence,
 				SectionKey = "creator",
 				Label = "Detailed Rich Presence",
-				Description = "Show the current script, world, or play-test activity in Discord Rich Presence.",
+				Description =
+					"Show the current script, world, or play-test activity in Discord Rich Presence.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = false
-			});
+				DefaultValue = false,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.PromptForWorldProjectLocation,
+		defs.Add(
+			CreatorSettingKeys.Creator.PromptForWorldProjectLocation,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.PromptForWorldProjectLocation,
 				SectionKey = "creator",
 				Label = "Choose Project Folder When Opening Worlds",
-				Description = "Ask where to create a local project the first time a cloud world is opened. When disabled, Creator uses Documents/BrickVerseCreator/My Worlds automatically.",
+				Description =
+					"Ask where to create a local project the first time a cloud world is opened. When disabled, Creator uses Documents/BrickVerseCreator/My Worlds automatically.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = false
-			});
+				DefaultValue = false,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.ConfirmCloudDownload,
+		defs.Add(
+			CreatorSettingKeys.Creator.ConfirmCloudDownload,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.ConfirmCloudDownload,
 				SectionKey = "creator",
 				Label = "Confirm Cloud Downloads",
-				Description = "Ask before downloading a cloud-only world into a new local Creator project.",
+				Description =
+					"Ask before downloading a cloud-only world into a new local Creator project.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen,
+		defs.Add(
+			CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.RefreshCloudProjectsOnOpen,
 				SectionKey = "creator",
 				Label = "Refresh Cloud Projects When Opened",
-				Description = "Fetch the newest personal and editable guild projects whenever the Cloud tab is opened.",
+				Description =
+					"Fetch the newest personal and editable guild projects whenever the Cloud tab is opened.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.ShowInteractiveTutorial,
+		defs.Add(
+			CreatorSettingKeys.Creator.ShowInteractiveTutorial,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.ShowInteractiveTutorial,
 				SectionKey = "creator",
 				Label = "Interactive Getting Started Tutorial",
-				Description = "Show the optional, skippable Creator walkthrough for new installations.",
+				Description =
+					"Show the optional, skippable Creator walkthrough for new installations.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.ShowWhatsNew,
+		defs.Add(
+			CreatorSettingKeys.Creator.ShowWhatsNew,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.ShowWhatsNew,
 				SectionKey = "creator",
 				Label = "Show What's New",
-				Description = "Automatically show release highlights after Creator updates. They remain available from the Help menu.",
+				Description =
+					"Automatically show release highlights after Creator updates. They remain available from the Help menu.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.ShowUpdateNotifications,
+		defs.Add(
+			CreatorSettingKeys.Creator.ShowUpdateNotifications,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Creator.ShowUpdateNotifications,
@@ -157,28 +291,37 @@ public static class CreatorSettingsRegistry
 				Description = "Notify you at startup when a newer Creator build is available.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Creator.PlayTestPresentation,
+		defs.Add(
+			CreatorSettingKeys.Creator.PlayTestPresentation,
 			new SettingDef<PlayTestPresentationEnum>
 			{
 				Key = CreatorSettingKeys.Creator.PlayTestPresentation,
 				SectionKey = "creator",
 				Label = "Play-test Window",
-				Description = "Attach play-tests over the active world viewport, or launch them as independent resizable windows.",
+				Description =
+					"Attach play-tests over the active world viewport, or launch them as independent resizable windows.",
 				ValueKind = SettingValueKind.Enum,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = PlayTestPresentationEnum.Attached,
 				Options =
 				[
-					new() { Value = PlayTestPresentationEnum.Attached, Label = "Attached to Creator" },
+					new()
+					{
+						Value = PlayTestPresentationEnum.Attached,
+						Label = "Attached to Creator",
+					},
 					new() { Value = PlayTestPresentationEnum.Windowed, Label = "Separate Window" },
-				]
-			});
+				],
+			}
+		);
 
 		// Interface
-		defs.Add(CreatorSettingKeys.Interface.UiScale,
+		defs.Add(
+			CreatorSettingKeys.Interface.UiScale,
 			new SettingDef<float>
 			{
 				Key = CreatorSettingKeys.Interface.UiScale,
@@ -190,10 +333,12 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 1.0f,
 				MinValue = 0.5f,
 				MaxValue = 5f,
-				Step = 0.25f
-			});
+				Step = 0.25f,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.ThemeMode,
+		defs.Add(
+			CreatorSettingKeys.Interface.ThemeMode,
 			new SettingDef<CreatorThemeModeEnum>
 			{
 				Key = CreatorSettingKeys.Interface.ThemeMode,
@@ -207,10 +352,12 @@ public static class CreatorSettingsRegistry
 				[
 					new() { Value = CreatorThemeModeEnum.Dark, Label = "Dark" },
 					new() { Value = CreatorThemeModeEnum.Light, Label = "Light" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.MoveSnapEnabled,
+		defs.Add(
+			CreatorSettingKeys.Interface.MoveSnapEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Interface.MoveSnapEnabled,
@@ -219,10 +366,12 @@ public static class CreatorSettingsRegistry
 				Description = "Enable grid snapping while moving selections.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.MoveSnapStep,
+		defs.Add(
+			CreatorSettingKeys.Interface.MoveSnapStep,
 			new SettingDef<float>
 			{
 				Key = CreatorSettingKeys.Interface.MoveSnapStep,
@@ -234,10 +383,12 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 1f,
 				MinValue = 0.1f,
 				MaxValue = 16f,
-				Step = 0.1f
-			});
+				Step = 0.1f,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.RotateSnapEnabled,
+		defs.Add(
+			CreatorSettingKeys.Interface.RotateSnapEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Interface.RotateSnapEnabled,
@@ -246,10 +397,12 @@ public static class CreatorSettingsRegistry
 				Description = "Enable angular snapping while rotating selections.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.RotateSnapStep,
+		defs.Add(
+			CreatorSettingKeys.Interface.RotateSnapStep,
 			new SettingDef<float>
 			{
 				Key = CreatorSettingKeys.Interface.RotateSnapStep,
@@ -261,34 +414,42 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 45f,
 				MinValue = 1f,
 				MaxValue = 90f,
-				Step = 1f
-			});
+				Step = 1f,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.SnapToPartEnabled,
+		defs.Add(
+			CreatorSettingKeys.Interface.SnapToPartEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Interface.SnapToPartEnabled,
 				SectionKey = "interface",
 				Label = "Snap To Part",
-				Description = "Drag selections onto the hit part surface instead of floating on a plane.",
+				Description =
+					"Drag selections onto the hit part surface instead of floating on a plane.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.DuplicateOnDragEnabled,
+		defs.Add(
+			CreatorSettingKeys.Interface.DuplicateOnDragEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Interface.DuplicateOnDragEnabled,
 				SectionKey = "interface",
 				Label = "Duplicate On Ctrl+Drag",
-				Description = "When enabled, holding Ctrl before dragging creates a duplicate and drags the copy.",
+				Description =
+					"When enabled, holding Ctrl before dragging creates a duplicate and drags the copy.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.TransformOrientation,
+		defs.Add(
+			CreatorSettingKeys.Interface.TransformOrientation,
 			new SettingDef<TransformOrientationEnum>
 			{
 				Key = CreatorSettingKeys.Interface.TransformOrientation,
@@ -302,33 +463,43 @@ public static class CreatorSettingsRegistry
 				[
 					new() { Value = TransformOrientationEnum.Global, Label = "Global" },
 					new() { Value = TransformOrientationEnum.Local, Label = "Local" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.SelectionPivotMode,
+		defs.Add(
+			CreatorSettingKeys.Interface.SelectionPivotMode,
 			new SettingDef<SelectionPivotModeEnum>
 			{
 				Key = CreatorSettingKeys.Interface.SelectionPivotMode,
 				SectionKey = "interface",
 				Label = "Selection Pivot",
-				Description = "Choose whether transforms pivot around the selection center or primary selected instance.",
+				Description =
+					"Choose whether transforms pivot around the selection center or primary selected instance.",
 				ValueKind = SettingValueKind.Enum,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = SelectionPivotModeEnum.Center,
 				Options =
 				[
 					new() { Value = SelectionPivotModeEnum.Center, Label = "Center" },
-					new() { Value = SelectionPivotModeEnum.PrimarySelection, Label = "Primary Selection" },
-				]
-			});
+					new()
+					{
+						Value = SelectionPivotModeEnum.PrimarySelection,
+						Label = "Primary Selection",
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.MoveGizmoStyle,
+		defs.Add(
+			CreatorSettingKeys.Interface.MoveGizmoStyle,
 			new SettingDef<MoveGizmoStyleEnum>
 			{
 				Key = CreatorSettingKeys.Interface.MoveGizmoStyle,
 				SectionKey = "interface",
 				Label = "Move Gizmo Design",
-				Description = "Choose the classic six-direction handles or the compact Unreal/Blender-style handles.",
+				Description =
+					"Choose the classic six-direction handles or the compact Unreal/Blender-style handles.",
 				ValueKind = SettingValueKind.Enum,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = MoveGizmoStyleEnum.Classic,
@@ -336,23 +507,28 @@ public static class CreatorSettingsRegistry
 				[
 					new() { Value = MoveGizmoStyleEnum.Classic, Label = "Classic" },
 					new() { Value = MoveGizmoStyleEnum.Universal, Label = "Unreal / Blender" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Interface.ShowTransformTips,
+		defs.Add(
+			CreatorSettingKeys.Interface.ShowTransformTips,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Interface.ShowTransformTips,
 				SectionKey = "interface",
 				Label = "Show Transform Tips",
-				Description = "Show tool controls and shortcuts in the bottom-right of the viewport.",
+				Description =
+					"Show tool controls and shortcuts in the bottom-right of the viewport.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
 		// Keybinds
-		defs.Add(CreatorSettingKeys.Keybinds.ToolSelect,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.ToolSelect,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.ToolSelect,
@@ -361,10 +537,12 @@ public static class CreatorSettingsRegistry
 				Description = "Keyboard key for Select tool (for example: Key1, Q, F1).",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "Key1"
-			});
+				DefaultValue = "Key1",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.ToolMove,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.ToolMove,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.ToolMove,
@@ -373,10 +551,12 @@ public static class CreatorSettingsRegistry
 				Description = "Keyboard key for Move tool.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "Key2"
-			});
+				DefaultValue = "Key2",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.ToolRotate,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.ToolRotate,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.ToolRotate,
@@ -385,10 +565,12 @@ public static class CreatorSettingsRegistry
 				Description = "Keyboard key for Rotate tool.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "Key3"
-			});
+				DefaultValue = "Key3",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.ToolScale,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.ToolScale,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.ToolScale,
@@ -397,10 +579,12 @@ public static class CreatorSettingsRegistry
 				Description = "Keyboard key for Scale tool.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "Key4"
-			});
+				DefaultValue = "Key4",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.RotateSelection,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.RotateSelection,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.RotateSelection,
@@ -409,10 +593,12 @@ public static class CreatorSettingsRegistry
 				Description = "Shortcut key to rotate selected instances by 90 degrees.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "R"
-			});
+				DefaultValue = "R",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.TiltSelection,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.TiltSelection,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.TiltSelection,
@@ -421,10 +607,12 @@ public static class CreatorSettingsRegistry
 				Description = "Shortcut key to tilt selected instances by 90 degrees.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "T"
-			});
+				DefaultValue = "T",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
@@ -433,10 +621,12 @@ public static class CreatorSettingsRegistry
 				Description = "Shortcut to toggle transform orientation between Global and Local.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "L"
-			});
+				DefaultValue = "L",
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Keybinds.TogglePivotMode,
+		defs.Add(
+			CreatorSettingKeys.Keybinds.TogglePivotMode,
 			new SettingDef<string>
 			{
 				Key = CreatorSettingKeys.Keybinds.TogglePivotMode,
@@ -445,11 +635,13 @@ public static class CreatorSettingsRegistry
 				Description = "Shortcut to toggle pivot mode between Center and Primary Selection.",
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
-				DefaultValue = "P"
-			});
+				DefaultValue = "P",
+			}
+		);
 
 		// Backup
-		defs.Add(CreatorSettingKeys.Backup.MaxBackupCount,
+		defs.Add(
+			CreatorSettingKeys.Backup.MaxBackupCount,
 			new SettingDef<int>
 			{
 				Key = CreatorSettingKeys.Backup.MaxBackupCount,
@@ -461,10 +653,12 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 10,
 				MinValue = 1,
 				MaxValue = 50,
-				Step = 1
-			});
+				Step = 1,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Backup.BackupInterval,
+		defs.Add(
+			CreatorSettingKeys.Backup.BackupInterval,
 			new SettingDef<float>
 			{
 				Key = CreatorSettingKeys.Backup.BackupInterval,
@@ -476,31 +670,48 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 4f,
 				MinValue = 1f,
 				MaxValue = 60f,
-				Step = 1f
-			});
+				Step = 1f,
+			}
+		);
 
 		// Code Editor
-		defs.Add(CreatorSettingKeys.CodeEditor.ColorTheme,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.ColorTheme,
 			new SettingDef<CodeEditorColorThemeEnum>
 			{
 				Key = CreatorSettingKeys.CodeEditor.ColorTheme,
 				SectionKey = "code_editor",
 				Label = "Color Theme",
-				Description = "Choose the built-in editor palette for code backgrounds, text, comments, strings, keywords and symbols.",
+				Description =
+					"Choose the built-in editor palette for code backgrounds, text, comments, strings, keywords and symbols.",
 				ValueKind = SettingValueKind.Enum,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = CodeEditorColorThemeEnum.BrickVerse,
 				Options =
 				[
-					new() { Value = CodeEditorColorThemeEnum.BrickVerse, Label = "BrickVerse Dark" },
-					new() { Value = CodeEditorColorThemeEnum.VisualStudioDark, Label = "Visual Studio Dark" },
+					new()
+					{
+						Value = CodeEditorColorThemeEnum.BrickVerse,
+						Label = "BrickVerse Dark",
+					},
+					new()
+					{
+						Value = CodeEditorColorThemeEnum.VisualStudioDark,
+						Label = "Visual Studio Dark",
+					},
 					new() { Value = CodeEditorColorThemeEnum.Dracula, Label = "Dracula" },
 					new() { Value = CodeEditorColorThemeEnum.Light, Label = "Light" },
-					new() { Value = CodeEditorColorThemeEnum.HighContrast, Label = "High Contrast" },
-				]
-			});
+					new()
+					{
+						Value = CodeEditorColorThemeEnum.HighContrast,
+						Label = "High Contrast",
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.FontSize,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.FontSize,
 			new SettingDef<int>
 			{
 				Key = CreatorSettingKeys.CodeEditor.FontSize,
@@ -512,10 +723,12 @@ public static class CreatorSettingsRegistry
 				DefaultValue = 14,
 				MinValue = 10,
 				MaxValue = 28,
-				Step = 1
-			});
+				Step = 1,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.PreferredEditor,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.PreferredEditor,
 			new SettingDef<PreferredEditorEnum>
 			{
 				Key = CreatorSettingKeys.CodeEditor.PreferredEditor,
@@ -532,34 +745,42 @@ public static class CreatorSettingsRegistry
 					new() { Value = PreferredEditorEnum.VSCode, Label = "VS Code" },
 					new() { Value = PreferredEditorEnum.VisualStudio, Label = "Visual Studio" },
 					new() { Value = PreferredEditorEnum.Zed, Label = "Zed" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.InlineSuggestions,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.InlineSuggestions,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.InlineSuggestions,
 				SectionKey = "code_editor",
 				Label = "Inline Suggestions",
-				Description = "Show a local, type-aware completion after the caret. Press Tab to accept it.",
+				Description =
+					"Show a local, type-aware completion after the caret. Press Tab to accept it.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.HoverDocumentation,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.HoverDocumentation,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.HoverDocumentation,
 				SectionKey = "code_editor",
 				Label = "Hover Documentation",
-				Description = "Show Luau types and API documentation when hovering over globals, methods, and properties.",
+				Description =
+					"Show Luau types and API documentation when hovering over globals, methods, and properties.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.FormatOnSave,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.FormatOnSave,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.FormatOnSave,
@@ -568,22 +789,27 @@ public static class CreatorSettingsRegistry
 				Description = "Format Luau documents with StyLua before saving.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = false
-			});
+				DefaultValue = false,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.AutoSave,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.AutoSave,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.AutoSave,
 				SectionKey = "code_editor",
 				Label = "Auto Save",
-				Description = "Automatically save built-in code editor changes after you stop typing.",
+				Description =
+					"Automatically save built-in code editor changes after you stop typing.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.IndentationMode,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.IndentationMode,
 			new SettingDef<IndentationModeEnum>
 			{
 				Key = CreatorSettingKeys.CodeEditor.IndentationMode,
@@ -598,15 +824,19 @@ public static class CreatorSettingsRegistry
 					new() { Value = IndentationModeEnum.Tabs, Label = "Tabs" },
 					new() { Value = IndentationModeEnum.Spaces, Label = "Spaces" },
 				],
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.IndentationSize,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.IndentationSize,
 			new SettingDef<int>
 			{
 				Key = CreatorSettingKeys.CodeEditor.IndentationSize,
@@ -619,15 +849,19 @@ public static class CreatorSettingsRegistry
 				MinValue = 1,
 				MaxValue = 8,
 				Step = 1,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.ShowLineNumbers,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.ShowLineNumbers,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.ShowLineNumbers,
@@ -637,15 +871,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.HighlightCurrentLine,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.HighlightCurrentLine,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.HighlightCurrentLine,
@@ -655,15 +893,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.WordWrap,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.WordWrap,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.WordWrap,
@@ -673,15 +915,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = false,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.ShowWhitespace,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.ShowWhitespace,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.ShowWhitespace,
@@ -691,15 +937,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = false,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.MinimapEnabled,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.MinimapEnabled,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.MinimapEnabled,
@@ -709,15 +959,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = false,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.CursorBlink,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.CursorBlink,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.CodeEditor.CursorBlink,
@@ -727,15 +981,19 @@ public static class CreatorSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.CursorBlinkSpeed,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.CursorBlinkSpeed,
 			new SettingDef<float>
 			{
 				Key = CreatorSettingKeys.CodeEditor.CursorBlinkSpeed,
@@ -748,15 +1006,19 @@ public static class CreatorSettingsRegistry
 				MinValue = 0.2f,
 				MaxValue = 1.5f,
 				Step = 0.05f,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.CodeEditor.CursorWidth,
+		defs.Add(
+			CreatorSettingKeys.CodeEditor.CursorWidth,
 			new SettingDef<int>
 			{
 				Key = CreatorSettingKeys.CodeEditor.CursorWidth,
@@ -769,16 +1031,20 @@ public static class CreatorSettingsRegistry
 				MinValue = 1,
 				MaxValue = 5,
 				Step = 1,
-				Conditions = [
-					new SettingCondition<PreferredEditorEnum>() {
+				Conditions =
+				[
+					new SettingCondition<PreferredEditorEnum>()
+					{
 						Target = CreatorSettingKeys.CodeEditor.PreferredEditor,
-						Predicate = x => x == PreferredEditorEnum.BuiltIn
-					}
-				]
-			});
+						Predicate = x => x == PreferredEditorEnum.BuiltIn,
+					},
+				],
+			}
+		);
 
 		// Popups
-		defs.Add(CreatorSettingKeys.Popups.CloseModelWarning,
+		defs.Add(
+			CreatorSettingKeys.Popups.CloseModelWarning,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.CloseModelWarning,
@@ -787,10 +1053,12 @@ public static class CreatorSettingsRegistry
 				Description = "Show warning when closing an unsaved model.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.MoveFileConfirmation,
+		defs.Add(
+			CreatorSettingKeys.Popups.MoveFileConfirmation,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.MoveFileConfirmation,
@@ -799,10 +1067,12 @@ public static class CreatorSettingsRegistry
 				Description = "Show confirmation when moving files.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.CloseTabWarning,
+		defs.Add(
+			CreatorSettingKeys.Popups.CloseTabWarning,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.CloseTabWarning,
@@ -811,34 +1081,42 @@ public static class CreatorSettingsRegistry
 				Description = "Show warning when closing a modified tab.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.ClosePlaceWarning,
+		defs.Add(
+			CreatorSettingKeys.Popups.ClosePlaceWarning,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.ClosePlaceWarning,
 				SectionKey = "popups",
 				Label = "Close Place Warning",
-				Description = "Ask for confirmation when F4 or Close Place closes the active world.",
+				Description =
+					"Ask for confirmation when F4 or Close Place closes the active world.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.ExecutorConfirmation,
+		defs.Add(
+			CreatorSettingKeys.Popups.ExecutorConfirmation,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.ExecutorConfirmation,
 				SectionKey = "popups",
 				Label = "Executor Confirmation",
-				Description = "Ask for confirmation before running Luau from the Creator Output executor.",
+				Description =
+					"Ask for confirmation before running Luau from the Creator Output executor.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.ExecutorSuccess,
+		defs.Add(
+			CreatorSettingKeys.Popups.ExecutorSuccess,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.ExecutorSuccess,
@@ -847,20 +1125,24 @@ public static class CreatorSettingsRegistry
 				Description = "Show a completion popup after Luau finishes successfully.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(CreatorSettingKeys.Popups.PrefabScriptWarning,
+		defs.Add(
+			CreatorSettingKeys.Popups.PrefabScriptWarning,
 			new SettingDef<bool>
 			{
 				Key = CreatorSettingKeys.Popups.PrefabScriptWarning,
 				SectionKey = "popups",
 				Label = "Prefab Script Warning",
-				Description = "Warn before inserting a prefab or model that contains executable scripts.",
+				Description =
+					"Warn before inserting a prefab or model that contains executable scripts.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
 		SettingDef.ValidateAll(defs.Values);
 		return defs;

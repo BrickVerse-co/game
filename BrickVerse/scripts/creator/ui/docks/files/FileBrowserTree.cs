@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.IO;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -157,10 +157,7 @@ public partial class FileBrowserTree : Tree
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		return new FileDragData()
-		{
-			Files = GetSelectedFiles()
-		}.Serialize();
+		return new FileDragData() { Files = GetSelectedFiles() }.Serialize();
 	}
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
@@ -185,7 +182,13 @@ public partial class FileBrowserTree : Tree
 
 		if (dragData is FileDragData fileDrag)
 		{
-			if (!await CreatorService.Interface.PromptConfirmation($"Move {fileDrag.Files.Length} file(s)?", dismissKey: CreatorSettingKeys.Popups.MoveFileConfirmation)) return;
+			if (
+				!await CreatorService.Interface.PromptConfirmation(
+					$"Move {fileDrag.Files.Length} file(s)?",
+					dismissKey: CreatorSettingKeys.Popups.MoveFileConfirmation
+				)
+			)
+				return;
 			AutoSelects.Clear();
 			foreach (string file in fileDrag.Files)
 			{
@@ -221,8 +224,12 @@ public partial class FileBrowserTree : Tree
 						CreatorService.Interface.PopupAlert("Cannot save to non model file");
 						return;
 					}
-					bool confirm = await CreatorService.Interface.PromptConfirmation(createPath.GetFile() + " already exists, do you want to override it?", "Warning!");
-					if (!confirm) return;
+					bool confirm = await CreatorService.Interface.PromptConfirmation(
+						createPath.GetFile() + " already exists, do you want to override it?",
+						"Warning!"
+					);
+					if (!confirm)
+						return;
 				}
 
 				try

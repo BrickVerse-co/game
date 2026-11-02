@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
-using System.Threading.Tasks;
 
 namespace BrickVerse.Datamodel;
 
@@ -17,10 +17,12 @@ namespace BrickVerse.Datamodel;
 public sealed partial class LocalNetworkEvent : NetworkEvent
 {
 	/// <summary>Raised synchronously in the current runtime when Fire is called.</summary>
-	[ScriptProperty] public BVSignal Invoked { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal Invoked { get; private set; } = new();
 
 	/// <summary>Optional callback used when this instance is invoked as a function.</summary>
-	[ScriptProperty] public BVFunction? Callback { get; set; }
+	[ScriptProperty]
+	public BVFunction? Callback { get; set; }
 
 	/// <summary>Raises the local event with the supplied arguments.</summary>
 	[ScriptMethod]
@@ -35,7 +37,9 @@ public sealed partial class LocalNetworkEvent : NetworkEvent
 	public async Task<object?[]> InvokeFunction(params object?[] args)
 	{
 		if (Callback == null)
-			throw new System.InvalidOperationException($"LocalNetworkEvent {LuaPath} has no Callback.");
+			throw new System.InvalidOperationException(
+				$"LocalNetworkEvent {LuaPath} has no Callback."
+			);
 		return await Callback.Call(args ?? []);
 	}
 }

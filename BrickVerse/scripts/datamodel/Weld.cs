@@ -3,8 +3,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Collections.Generic;
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -37,8 +37,10 @@ public partial class Weld : Instance
 		get => _part0;
 		set
 		{
-			if (_part0 == value) return;
-			if (value != null && value == _part1) return;
+			if (_part0 == value)
+				return;
+			if (value != null && value == _part1)
+				return;
 			Unregister(_part0);
 			_part0 = value;
 			Register(_part0);
@@ -53,8 +55,10 @@ public partial class Weld : Instance
 		get => _part1;
 		set
 		{
-			if (_part1 == value) return;
-			if (value != null && value == _part0) return;
+			if (_part1 == value)
+				return;
+			if (value != null && value == _part0)
+				return;
 			Unregister(_part1);
 			_part1 = value;
 			Register(_part1);
@@ -69,7 +73,8 @@ public partial class Weld : Instance
 		get => _c0;
 		set
 		{
-			if (_c0 == value) return;
+			if (_c0 == value)
+				return;
 			_c0 = value;
 			OnPropertyChanged();
 			RequestRebuild();
@@ -82,7 +87,8 @@ public partial class Weld : Instance
 		get => _c1;
 		set
 		{
-			if (_c1 == value) return;
+			if (_c1 == value)
+				return;
 			_c1 = value;
 			OnPropertyChanged();
 			RequestRebuild();
@@ -95,7 +101,8 @@ public partial class Weld : Instance
 		get => _enabled;
 		set
 		{
-			if (_enabled == value) return;
+			if (_enabled == value)
+				return;
 			_enabled = value;
 			OnPropertyChanged();
 			RequestRebuild();
@@ -140,10 +147,10 @@ public partial class Weld : Instance
 		base.PreDelete();
 	}
 
-
 	void Register(Instance? part)
 	{
-		if (part == null || part.IsDeleted) return;
+		if (part == null || part.IsDeleted)
+			return;
 		if (!_connections.TryGetValue(part, out List<Weld>? list))
 		{
 			list = new List<Weld>();
@@ -158,7 +165,8 @@ public partial class Weld : Instance
 
 	void Unregister(Instance? part)
 	{
-		if (part == null) return;
+		if (part == null)
+			return;
 		if (_connections.TryGetValue(part, out List<Weld>? list))
 		{
 			list.Remove(this);
@@ -227,23 +235,30 @@ public partial class Weld : Instance
 		_needsRebuild = false;
 		DestroyJoint();
 
-		if (!_enabled) return;
-		if (_part0 == null || _part1 == null) return;
-		if (_part0 == _part1) return;
-		if (_part0.IsDeleted || _part1.IsDeleted) return;
-		if (_part0 is not Dynamic dyn0 || _part1 is not Dynamic dyn1) return;
+		if (!_enabled)
+			return;
+		if (_part0 == null || _part1 == null)
+			return;
+		if (_part0 == _part1)
+			return;
+		if (_part0.IsDeleted || _part1.IsDeleted)
+			return;
+		if (_part0 is not Dynamic dyn0 || _part1 is not Dynamic dyn1)
+			return;
 
 		Node3D node0 = dyn0.GDNode3D;
 		Node3D node1 = dyn1.GDNode3D;
 
-		if (node0 == null || node1 == null) return;
+		if (node0 == null || node1 == null)
+			return;
 		if (!node0.IsInsideTree() || !node1.IsInsideTree())
 		{
 			_needsRebuild = true;
 			return;
 		}
 
-		if (node0 is not PhysicsBody3D body0 || node1 is not PhysicsBody3D body1) return;
+		if (node0 is not PhysicsBody3D body0 || node1 is not PhysicsBody3D body1)
+			return;
 
 		Transform3D part0Transform = node0.GlobalTransform;
 		TryAutoComputeC0(part0Transform, node1.GlobalTransform);
@@ -251,9 +266,12 @@ public partial class Weld : Instance
 		Transform3D targetPart1 = part0Transform * _c0 * _c1.AffineInverse();
 
 		Vector3 part1Size = dyn1.Size;
-		dyn1.SetGlobalTransform(new Transform3D(
-			targetPart1.Basis.Orthonormalized().Scaled(part1Size),
-			targetPart1.Origin));
+		dyn1.SetGlobalTransform(
+			new Transform3D(
+				targetPart1.Basis.Orthonormalized().Scaled(part1Size),
+				targetPart1.Origin
+			)
+		);
 
 		_joint = new Generic6DofJoint3D();
 		GDNode.AddChild(_joint);
@@ -280,7 +298,8 @@ public partial class Weld : Instance
 
 	void LockLinearAxis(string axis)
 	{
-		if (_joint == null) return;
+		if (_joint == null)
+			return;
 		_joint.Set($"{axis}/enabled", true);
 		_joint.Set($"{axis}/lower_distance", 0f);
 		_joint.Set($"{axis}/upper_distance", 0f);
@@ -288,7 +307,8 @@ public partial class Weld : Instance
 
 	void LockAngularAxis(string axis)
 	{
-		if (_joint == null) return;
+		if (_joint == null)
+			return;
 		_joint.Set($"{axis}/enabled", true);
 		_joint.Set($"{axis}/lower_angle", 0f);
 		_joint.Set($"{axis}/upper_angle", 0f);

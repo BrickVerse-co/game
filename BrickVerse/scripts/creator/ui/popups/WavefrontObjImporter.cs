@@ -1,8 +1,8 @@
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
@@ -10,12 +10,14 @@ namespace BrickVerse.Creator.UI.Popups;
 internal static class WavefrontObjImporter
 {
 	private readonly record struct VertexRef(int Position, int UV, int Normal);
+
 	private sealed class Surface(string name)
 	{
 		public string Name { get; } = name;
 		public string MaterialName { get; set; } = "";
 		public List<VertexRef[]> Faces { get; } = [];
 	}
+
 	private sealed class MaterialSpec
 	{
 		public Color Diffuse = Colors.White;
@@ -30,15 +32,18 @@ internal static class WavefrontObjImporter
 		List<Vector3> normals = [];
 		Dictionary<string, Surface> surfaces = new(StringComparer.OrdinalIgnoreCase);
 		Dictionary<string, MaterialSpec> materials = new(StringComparer.OrdinalIgnoreCase);
-		string objectName = "default", materialName = "";
+		string objectName = "default",
+			materialName = "";
 		Surface current = GetSurface();
 
 		foreach (string rawLine in File.ReadLines(path))
 		{
 			string line = rawLine.Trim();
-			if (line.Length == 0 || line[0] == '#') continue;
+			if (line.Length == 0 || line[0] == '#')
+				continue;
 			string[] parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-			if (parts.Length == 0) continue;
+			if (parts.Length == 0)
+				continue;
 			switch (parts[0])
 			{
 				case "v" when parts.Length >= 4:
@@ -48,7 +53,9 @@ internal static class WavefrontObjImporter
 					uvs.Add(new(Parse(parts[1]), 1f - Parse(parts[2])));
 					break;
 				case "vn" when parts.Length >= 4:
-					normals.Add(new Vector3(Parse(parts[1]), Parse(parts[2]), Parse(parts[3])).Normalized());
+					normals.Add(
+						new Vector3(Parse(parts[1]), Parse(parts[2]), Parse(parts[3])).Normalized()
+					);
 					break;
 				case "g":
 				case "o":
@@ -60,21 +67,33 @@ internal static class WavefrontObjImporter
 					current = GetSurface();
 					break;
 				case "mtllib" when parts.Length > 1:
-					for (int i = 1; i < parts.Length; i++) LoadMaterialLibrary(Path.Combine(Path.GetDirectoryName(path) ?? "", parts[i]), materials);
+					for (int i = 1; i < parts.Length; i++)
+						LoadMaterialLibrary(
+							Path.Combine(Path.GetDirectoryName(path) ?? "", parts[i]),
+							materials
+						);
 					break;
 				case "f" when parts.Length >= 4:
 					VertexRef[] face = new VertexRef[parts.Length - 1];
-					for (int i = 1; i < parts.Length; i++) face[i - 1] = ParseVertex(parts[i], positions.Count, uvs.Count, normals.Count);
+					for (int i = 1; i < parts.Length; i++)
+						face[i - 1] = ParseVertex(
+							parts[i],
+							positions.Count,
+							uvs.Count,
+							normals.Count
+						);
 					current.Faces.Add(face);
 					break;
 			}
 		}
 
-		if (positions.Count == 0) throw new InvalidDataException("The OBJ contains no vertices.");
+		if (positions.Count == 0)
+			throw new InvalidDataException("The OBJ contains no vertices.");
 		ArrayMesh mesh = new();
 		foreach (Surface surface in surfaces.Values)
 		{
-			if (surface.Faces.Count == 0) continue;
+			if (surface.Faces.Count == 0)
+				continue;
 			SurfaceTool tool = new();
 			tool.Begin(Godot.Mesh.PrimitiveType.Triangles);
 			bool needsNormals = false;
@@ -87,22 +106,30 @@ internal static class WavefrontObjImporter
 					Add(face[triangle + 1]);
 				}
 			}
-			if (needsNormals) tool.GenerateNormals();
+			if (needsNormals)
+				tool.GenerateNormals();
 			tool.Index();
 			tool.Commit(mesh);
-			if (!string.IsNullOrWhiteSpace(surface.MaterialName) && materials.TryGetValue(surface.MaterialName, out MaterialSpec? spec))
+			if (
+				!string.IsNullOrWhiteSpace(surface.MaterialName)
+				&& materials.TryGetValue(surface.MaterialName, out MaterialSpec? spec)
+			)
 				mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, CreateMaterial(spec));
 
 			void Add(VertexRef vertex)
 			{
-				if (vertex.UV >= 0) tool.SetUV(uvs[vertex.UV]);
-				if (vertex.Normal >= 0) tool.SetNormal(normals[vertex.Normal]);
-				else needsNormals = true;
+				if (vertex.UV >= 0)
+					tool.SetUV(uvs[vertex.UV]);
+				if (vertex.Normal >= 0)
+					tool.SetNormal(normals[vertex.Normal]);
+				else
+					needsNormals = true;
 				tool.AddVertex(positions[vertex.Position]);
 			}
 		}
 
-		if (mesh.GetSurfaceCount() == 0) throw new InvalidDataException("The OBJ contains no polygon faces.");
+		if (mesh.GetSurfaceCount() == 0)
+			throw new InvalidDataException("The OBJ contains no polygon faces.");
 		return mesh;
 
 		Surface GetSurface()
@@ -119,14 +146,17 @@ internal static class WavefrontObjImporter
 
 	private static void LoadMaterialLibrary(string path, Dictionary<string, MaterialSpec> materials)
 	{
-		if (!File.Exists(path)) return;
+		if (!File.Exists(path))
+			return;
 		MaterialSpec? current = null;
 		foreach (string rawLine in File.ReadLines(path))
 		{
 			string line = rawLine.Trim();
-			if (line.Length == 0 || line[0] == '#') continue;
+			if (line.Length == 0 || line[0] == '#')
+				continue;
 			string[] parts = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-			if (parts.Length == 0) continue;
+			if (parts.Length == 0)
+				continue;
 			switch (parts[0].ToLowerInvariant())
 			{
 				case "newmtl" when parts.Length > 1:
@@ -143,7 +173,12 @@ internal static class WavefrontObjImporter
 					current.Opacity = 1f - Mathf.Clamp(Parse(parts[1]), 0, 1);
 					break;
 				case "map_kd" when current != null && parts.Length >= 2:
-					current.TexturePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path) ?? "", string.Join(' ', parts[1..])));
+					current.TexturePath = Path.GetFullPath(
+						Path.Combine(
+							Path.GetDirectoryName(path) ?? "",
+							string.Join(' ', parts[1..])
+						)
+					);
 					break;
 			}
 		}
@@ -154,13 +189,17 @@ internal static class WavefrontObjImporter
 		StandardMaterial3D material = new()
 		{
 			AlbedoColor = new Color(spec.Diffuse, spec.Opacity),
-			Transparency = spec.Opacity < 0.999f ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled,
+			Transparency =
+				spec.Opacity < 0.999f
+					? BaseMaterial3D.TransparencyEnum.Alpha
+					: BaseMaterial3D.TransparencyEnum.Disabled,
 			TextureFilter = BaseMaterial3D.TextureFilterEnum.LinearWithMipmapsAnisotropic,
 		};
 		if (!string.IsNullOrWhiteSpace(spec.TexturePath) && File.Exists(spec.TexturePath))
 		{
 			Godot.Image image = Godot.Image.LoadFromFile(spec.TexturePath);
-			if (!image.IsEmpty()) material.AlbedoTexture = ImageTexture.CreateFromImage(image);
+			if (!image.IsEmpty())
+				material.AlbedoTexture = ImageTexture.CreateFromImage(image);
 		}
 		return material;
 	}
@@ -178,19 +217,31 @@ internal static class WavefrontObjImporter
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
-			if (required) throw new InvalidDataException("An OBJ face is missing a vertex index.");
+			if (required)
+				throw new InvalidDataException("An OBJ face is missing a vertex index.");
 			return -1;
 		}
-		if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) || index == 0)
+		if (
+			!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index)
+			|| index == 0
+		)
 			throw new InvalidDataException($"Invalid OBJ index '{value}'.");
 		int resolved = index > 0 ? index - 1 : count + index;
-		if (resolved < 0 || resolved >= count) throw new InvalidDataException($"OBJ index {index} is outside the available data.");
+		if (resolved < 0 || resolved >= count)
+			throw new InvalidDataException($"OBJ index {index} is outside the available data.");
 		return resolved;
 	}
 
 	private static float Parse(string value)
 	{
-		if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float result))
+		if (
+			!float.TryParse(
+				value,
+				NumberStyles.Float,
+				CultureInfo.InvariantCulture,
+				out float result
+			)
+		)
 			throw new InvalidDataException($"Invalid OBJ number '{value}'.");
 		return result;
 	}

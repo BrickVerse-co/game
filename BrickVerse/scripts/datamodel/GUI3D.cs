@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Shared;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -33,11 +33,12 @@ public partial class GUI3D : Dynamic
 		set
 		{
 			_shaded = value;
-			_material.ShadingMode = value ? BaseMaterial3D.ShadingModeEnum.PerPixel : BaseMaterial3D.ShadingModeEnum.Unshaded;
+			_material.ShadingMode = value
+				? BaseMaterial3D.ShadingModeEnum.PerPixel
+				: BaseMaterial3D.ShadingModeEnum.Unshaded;
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty]
 	public bool FaceCamera
@@ -46,7 +47,9 @@ public partial class GUI3D : Dynamic
 		set
 		{
 			_faceCamera = value;
-			_material.BillboardMode = value ? BaseMaterial3D.BillboardModeEnum.Enabled : BaseMaterial3D.BillboardModeEnum.Disabled;
+			_material.BillboardMode = value
+				? BaseMaterial3D.BillboardModeEnum.Enabled
+				: BaseMaterial3D.BillboardModeEnum.Disabled;
 			UpdateSize();
 			SetProcess(value);
 			OnPropertyChanged();
@@ -60,7 +63,9 @@ public partial class GUI3D : Dynamic
 		set
 		{
 			_transparent = value;
-			_material.Transparency = value ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled;
+			_material.Transparency = value
+				? BaseMaterial3D.TransparencyEnum.Alpha
+				: BaseMaterial3D.TransparencyEnum.Disabled;
 			_subViewport.TransparentBg = value;
 			OnPropertyChanged();
 		}
@@ -153,13 +158,20 @@ public partial class GUI3D : Dynamic
 	private void HandleMouse(InputEventMouse @event)
 	{
 		Vector3? pre = FindMouse(@event.GlobalPosition);
-		if (pre == null) { _mouseInArea = false; return; }
+		if (pre == null)
+		{
+			_mouseInArea = false;
+			return;
+		}
 
 		Vector3 mousePos3D = pre.Value;
 		mousePos3D = _area.GlobalTransform.AffineInverse() * mousePos3D;
 
 		Vector2 mousePos2D = new(mousePos3D.X, mousePos3D.Y);
-		Vector2 viewportPos = new(Mathf.Remap(mousePos2D.X, 0.5f, -0.5f, 0, AbsoluteSize.X), Mathf.Remap(mousePos2D.Y, 0.5f, -0.5f, 0, AbsoluteSize.Y));
+		Vector2 viewportPos = new(
+			Mathf.Remap(mousePos2D.X, 0.5f, -0.5f, 0, AbsoluteSize.X),
+			Mathf.Remap(mousePos2D.Y, 0.5f, -0.5f, 0, AbsoluteSize.Y)
+		);
 
 		@event.Position = viewportPos;
 		@event.GlobalPosition = viewportPos;
@@ -227,7 +239,7 @@ public partial class GUI3D : Dynamic
 			_area.ToGlobal(new Vector3(Size.X / 2, Size.Y / 2, 0)),
 			_area.ToGlobal(new Vector3(Size.X / 2, -Size.Y / 2, 0)),
 			_area.ToGlobal(new Vector3(-Size.X / 2, Size.Y / 2, 0)),
-			_area.ToGlobal(new Vector3(-Size.X / 2, -Size.Y / 2, 0))
+			_area.ToGlobal(new Vector3(-Size.X / 2, -Size.Y / 2, 0)),
 		];
 
 		// Get the furthest distance between the camera and collision to avoid raycasting too far or too short

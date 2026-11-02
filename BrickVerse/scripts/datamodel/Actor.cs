@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Interfaces;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
-using BrickVerse.Scripting.Luau;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Interfaces;
+using BrickVerse.Scripting;
+using BrickVerse.Scripting.Luau;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Datamodel;
 
@@ -22,16 +22,20 @@ public sealed partial class Actor : Instance, IGroup
 	[ScriptMethod]
 	public BVSignalConnection BindToMessage(string topic, BVCallback callback)
 	{
-		if (string.IsNullOrWhiteSpace(topic)) throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
+		if (string.IsNullOrWhiteSpace(topic))
+			throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
 		return GetMessage(topic).Connect(callback);
 	}
 
 	[ScriptMethod]
 	public BVSignalConnection BindToMessageParallel(string topic, BVCallback callback)
 	{
-		if (string.IsNullOrWhiteSpace(topic)) throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
+		if (string.IsNullOrWhiteSpace(topic))
+			throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
 		if (callback.FromScript?.GetActor() != this)
-			throw new InvalidOperationException("BindToMessageParallel callbacks must be created by a script beneath this Actor.");
+			throw new InvalidOperationException(
+				"BindToMessageParallel callbacks must be created by a script beneath this Actor."
+			);
 		callback.InvokeInParallel = true;
 		callback.ParallelActor = this;
 		return GetMessage(topic).Connect(callback);
@@ -40,11 +44,16 @@ public sealed partial class Actor : Instance, IGroup
 	[ScriptMethod, ParallelSafe]
 	public void SendMessage(string topic, params object?[] arguments)
 	{
-		if (string.IsNullOrWhiteSpace(topic)) throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
+		if (string.IsNullOrWhiteSpace(topic))
+			throw new ArgumentException("Actor message topic cannot be empty.", nameof(topic));
 		BVSignal? signal;
-		lock (_messages) if (!_messages.TryGetValue(topic, out signal)) return;
-		if (ParallelLuauContext.IsParallel) BV.CallOnMainThread(() => signal.InvokeDirect(arguments));
-		else BV.CallDeferred(() => signal.InvokeDirect(arguments));
+		lock (_messages)
+			if (!_messages.TryGetValue(topic, out signal))
+				return;
+		if (ParallelLuauContext.IsParallel)
+			BV.CallOnMainThread(() => signal.InvokeDirect(arguments));
+		else
+			BV.CallDeferred(() => signal.InvokeDirect(arguments));
 	}
 
 	private BVSignal GetMessage(string topic)
@@ -64,12 +73,16 @@ public sealed partial class Actor : Instance, IGroup
 	{
 		lock (_messages)
 		{
-			foreach (BVSignal signal in _messages.Values) signal.DisconnectAll();
+			foreach (BVSignal signal in _messages.Values)
+				signal.DisconnectAll();
 			_messages.Clear();
 		}
-		_ = ParallelLuauScheduler.Retire(this).ContinueWith(
-			_ => LuauProvider.Singleton.ReleaseExecutionDomain(this),
-			TaskScheduler.Default);
+		_ = ParallelLuauScheduler
+			.Retire(this)
+			.ContinueWith(
+				_ => LuauProvider.Singleton.ReleaseExecutionDomain(this),
+				TaskScheduler.Default
+			);
 		base.PreDelete();
 	}
 }

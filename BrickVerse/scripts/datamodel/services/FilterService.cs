@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -80,7 +80,8 @@ public sealed partial class FilterService : Instance
 		foreach (string filter in _profanityList)
 		{
 			string f = filter.Trim();
-			if (!f.Contains(' ') && !f.Contains(@"\s")) continue;
+			if (!f.Contains(' ') && !f.Contains(@"\s"))
+				continue;
 			if (IsRegexEntry(f))
 			{
 				if (Matches(matchInput, f))

@@ -1,6 +1,6 @@
-using Godot;
 using BrickVerse.Client.Settings;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 

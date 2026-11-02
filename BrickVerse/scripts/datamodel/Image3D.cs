@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
 using BrickVerse.Shared;
-using System;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -18,7 +18,9 @@ public sealed partial class Image3D : Dynamic
 	private string _imageID = "";
 	private ImageTypeEnum _imageType;
 	private readonly StandardMaterial3D _material = new();
-	private BaseMaterial3D.TransparencyEnum _transparencyType = BaseMaterial3D.TransparencyEnum.Disabled;
+	private BaseMaterial3D.TransparencyEnum _transparencyType = BaseMaterial3D
+		.TransparencyEnum
+		.Disabled;
 	private MeshInstance3D _mesh = null!;
 
 	private Texture2D? _prevImg;
@@ -63,7 +65,14 @@ public sealed partial class Image3D : Dynamic
 		}
 	}
 
-	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Use Asset instead"), CloneIgnore, SaveIgnore]
+	[
+		Editable,
+		ScriptProperty,
+		NoSync,
+		Attributes.Obsolete("Use Asset instead"),
+		CloneIgnore,
+		SaveIgnore
+	]
 	public string ImageID
 	{
 		get => _imageID;
@@ -75,7 +84,14 @@ public sealed partial class Image3D : Dynamic
 		}
 	}
 
-	[Editable, ScriptProperty, NoSync, Attributes.Obsolete("Use Asset instead"), CloneIgnore, SaveIgnore]
+	[
+		Editable,
+		ScriptProperty,
+		NoSync,
+		Attributes.Obsolete("Use Asset instead"),
+		CloneIgnore,
+		SaveIgnore
+	]
 	public ImageTypeEnum ImageType
 	{
 		get => _imageType;
@@ -86,7 +102,6 @@ public sealed partial class Image3D : Dynamic
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty]
 	public Vector2 TextureScale
@@ -132,11 +147,12 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_castShadows = value;
-			_mesh.CastShadow = value ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off;
+			_mesh.CastShadow = value
+				? GeometryInstance3D.ShadowCastingSetting.On
+				: GeometryInstance3D.ShadowCastingSetting.Off;
 			OnPropertyChanged();
 		}
 	}
-
 
 	[Editable, ScriptProperty, DefaultValue(true)]
 	public bool Shaded
@@ -145,7 +161,9 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_shaded = value;
-			_material.ShadingMode = value ? BaseMaterial3D.ShadingModeEnum.PerPixel : BaseMaterial3D.ShadingModeEnum.Unshaded;
+			_material.ShadingMode = value
+				? BaseMaterial3D.ShadingModeEnum.PerPixel
+				: BaseMaterial3D.ShadingModeEnum.Unshaded;
 			OnPropertyChanged();
 		}
 	}
@@ -157,7 +175,9 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_faceCamera = value;
-			_material.BillboardMode = value ? BaseMaterial3D.BillboardModeEnum.Enabled : BaseMaterial3D.BillboardModeEnum.Disabled;
+			_material.BillboardMode = value
+				? BaseMaterial3D.BillboardModeEnum.Enabled
+				: BaseMaterial3D.BillboardModeEnum.Disabled;
 			OnPropertyChanged();
 		}
 	}
@@ -169,7 +189,9 @@ public sealed partial class Image3D : Dynamic
 		set
 		{
 			_doubleSided = value;
-			_material.CullMode = value ? BaseMaterial3D.CullModeEnum.Disabled : BaseMaterial3D.CullModeEnum.Back;
+			_material.CullMode = value
+				? BaseMaterial3D.CullModeEnum.Disabled
+				: BaseMaterial3D.CullModeEnum.Back;
 			OnPropertyChanged();
 		}
 	}
@@ -235,7 +257,8 @@ public sealed partial class Image3D : Dynamic
 	{
 		if (r is Texture2D tex)
 		{
-			if (_prevImg == tex) return;
+			if (_prevImg == tex)
+				return;
 			_prevImg = tex;
 			_material.AlbedoTexture = tex;
 
@@ -253,8 +276,7 @@ public sealed partial class Image3D : Dynamic
 	// Updates _material.Transparency depending on _color.A
 	private void UpdateMaterialTransparency()
 	{
-		_material.Transparency = (_color.A == 1)
-			? _transparencyType
-			: BaseMaterial3D.TransparencyEnum.Alpha;
+		_material.Transparency =
+			(_color.A == 1) ? _transparencyType : BaseMaterial3D.TransparencyEnum.Alpha;
 	}
 }

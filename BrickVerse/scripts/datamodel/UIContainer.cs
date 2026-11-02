@@ -7,6 +7,4 @@ using BrickVerse.Attributes;
 namespace BrickVerse.Datamodel;
 
 [Abstract]
-public partial class UIContainer : UIField
-{
-}
+public partial class UIContainer : UIField { }

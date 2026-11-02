@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
-using System;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -102,7 +102,8 @@ public sealed partial class ShadowLayerArrayProperty : VBoxContainer, IProperty<
 
 	private void RemoveLayerAt(int index)
 	{
-		if (_value.Length <= 1 || index < 0 || index >= _value.Length) return;
+		if (_value.Length <= 1 || index < 0 || index >= _value.Length)
+			return;
 
 		var newValue = new ShadowLayer[_value.Length - 1];
 		if (index > 0)

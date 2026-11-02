@@ -66,38 +66,85 @@ public static class ScriptLanguageRegistry
 
 	private static readonly ScriptLanguageDefinition[] _definitions =
 	[
-		new(ScriptLanguagesEnum.Luau, "Luau", "luau", ["luau", "lua"], true,
-			"local module = {}\n\nreturn module", ScriptPlatformSupport.All),
-		new(ScriptLanguagesEnum.CSharp, "C#", "cs", ["cs"], true,
+		new(
+			ScriptLanguagesEnum.Luau,
+			"Luau",
+			"luau",
+			["luau", "lua"],
+			true,
+			"local module = {}\n\nreturn module",
+			ScriptPlatformSupport.All
+		),
+		new(
+			ScriptLanguagesEnum.CSharp,
+			"C#",
+			"cs",
+			["cs"],
+			true,
 			"using BrickVerse.Scripting.Managed;\n\npublic sealed class Module : BrickVerseScript\n{\n}\n",
-			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer),
-		new(ScriptLanguagesEnum.JavaScript, "JavaScript", "js", ["js", "mjs"], false,
+			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer
+		),
+		new(
+			ScriptLanguagesEnum.JavaScript,
+			"JavaScript",
+			"js",
+			["js", "mjs"],
+			false,
 			"const module = {};\n",
-			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer),
-		new(ScriptLanguagesEnum.TypeScript, "TypeScript", "ts", ["ts", "tsx"], true,
+			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer
+		),
+		new(
+			ScriptLanguagesEnum.TypeScript,
+			"TypeScript",
+			"ts",
+			["ts", "tsx"],
+			true,
 			"const module: Record<string, unknown> = {};\n",
-			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer),
-		new(ScriptLanguagesEnum.Cpp, "C++ (WebAssembly)", "cpp", ["cpp", "cc", "cxx"], true,
+			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer
+		),
+		new(
+			ScriptLanguagesEnum.Cpp,
+			"C++ (WebAssembly)",
+			"cpp",
+			["cpp", "cc", "cxx"],
+			true,
 			"#include <brickverse.h>\n\nBV_EXPORT(\"bv_start\") void start() {}\nBV_EXPORT(\"bv_update\") void update(double delta) {}\nBV_EXPORT(\"bv_fixed_update\") void fixed_update(double delta) {}\n",
-			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer),
-		new(ScriptLanguagesEnum.Visual, "Visual (Experimental)", "bvgraph", ["bvgraph"], true,
-			"{\"version\":1,\"nodes\":[],\"connections\":[]}", ScriptPlatformSupport.All),
+			ScriptPlatformSupport.Desktop | ScriptPlatformSupport.DedicatedServer
+		),
+		new(
+			ScriptLanguagesEnum.Visual,
+			"Visual (Experimental)",
+			"bvgraph",
+			["bvgraph"],
+			true,
+			"{\"version\":1,\"nodes\":[],\"connections\":[]}",
+			ScriptPlatformSupport.All
+		),
 	];
 
 	private static readonly Dictionary<ScriptLanguagesEnum, ScriptLanguageDefinition> _byLanguage =
 		_definitions.ToDictionary(static definition => definition.Language);
 
-	private static readonly Dictionary<string, ScriptLanguageDefinition> _byExtension =
-		_definitions
-			.SelectMany(static definition => definition.Extensions.Select(extension => (extension, definition)))
-			.ToDictionary(static pair => pair.extension, static pair => pair.definition, StringComparer.OrdinalIgnoreCase);
+	private static readonly Dictionary<string, ScriptLanguageDefinition> _byExtension = _definitions
+		.SelectMany(static definition =>
+			definition.Extensions.Select(extension => (extension, definition))
+		)
+		.ToDictionary(
+			static pair => pair.extension,
+			static pair => pair.definition,
+			StringComparer.OrdinalIgnoreCase
+		);
 
 	public static IReadOnlyList<ScriptLanguageDefinition> Definitions => _definitions;
 
 	public static ScriptLanguageDefinition Get(ScriptLanguagesEnum language) =>
 		_byLanguage.TryGetValue(language, out ScriptLanguageDefinition? definition)
 			? definition
-			: throw new ArgumentOutOfRangeException(nameof(language), language, "Unknown script language");
+			: throw new ArgumentOutOfRangeException(
+				nameof(language),
+				language,
+				"Unknown script language"
+			);
 
 	public static bool TryFromPath(string path, out ScriptLanguageDefinition definition)
 	{
@@ -108,15 +155,18 @@ public static class ScriptLanguageRegistry
 	public static ScriptLanguagesEnum FromPath(string path) =>
 		TryFromPath(path, out ScriptLanguageDefinition definition)
 			? definition.Language
-			: throw new NotSupportedException($"'{Path.GetExtension(path)}' is not a supported script extension");
+			: throw new NotSupportedException(
+				$"'{Path.GetExtension(path)}' is not a supported script extension"
+			);
 
 	public static bool IsScriptPath(string path) => TryFromPath(path, out _);
 
 	public static bool IsSupportedOnCurrentPlatform(ScriptLanguagesEnum language)
 	{
-		ScriptPlatformSupport current = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS()
-			? ScriptPlatformSupport.Mobile
-			: ScriptPlatformSupport.Desktop;
+		ScriptPlatformSupport current =
+			OperatingSystem.IsAndroid() || OperatingSystem.IsIOS()
+				? ScriptPlatformSupport.Mobile
+				: ScriptPlatformSupport.Desktop;
 		return Get(language).PlatformSupport.HasFlag(current);
 	}
 
@@ -125,7 +175,11 @@ public static class ScriptLanguageRegistry
 			? "All supported platforms"
 			: "Creator, desktop, and dedicated server only; not supported on Android or iOS";
 
-	public static string CreateFileName(string name, ScriptTypeKind type, ScriptLanguagesEnum language)
+	public static string CreateFileName(
+		string name,
+		ScriptTypeKind type,
+		ScriptLanguagesEnum language
+	)
 	{
 		string role = type switch
 		{
@@ -136,12 +190,18 @@ public static class ScriptLanguageRegistry
 		return $"{name}{role}.{Get(language).PrimaryExtension}";
 	}
 
-	public static string CreateStarterSource(ScriptLanguagesEnum language, ScriptTypeKind type, string scriptName = "Main")
+	public static string CreateStarterSource(
+		ScriptLanguagesEnum language,
+		ScriptTypeKind type,
+		string scriptName = "Main"
+	)
 	{
 		ScriptLanguageDefinition definition = Get(language);
-		if (type == ScriptTypeKind.Module && language != ScriptLanguagesEnum.CSharp) return definition.EmptyModuleSource;
+		if (type == ScriptTypeKind.Module && language != ScriptLanguagesEnum.CSharp)
+			return definition.EmptyModuleSource;
 		string csharpTypeName = new(scriptName.Where(char.IsLetterOrDigit).ToArray());
-		if (string.IsNullOrWhiteSpace(csharpTypeName) || !char.IsLetter(csharpTypeName[0])) csharpTypeName = "Script" + csharpTypeName;
+		if (string.IsNullOrWhiteSpace(csharpTypeName) || !char.IsLetter(csharpTypeName[0]))
+			csharpTypeName = "Script" + csharpTypeName;
 		csharpTypeName += type switch
 		{
 			ScriptTypeKind.Server => "ServerScript",
@@ -150,11 +210,16 @@ public static class ScriptLanguageRegistry
 		};
 		return language switch
 		{
-			ScriptLanguagesEnum.CSharp => $"using BrickVerse.Scripting.Managed;\n\npublic sealed class {csharpTypeName} : BrickVerseScript\n{{\n\tpublic override void Start()\n\t{{\n\t\tPlayers players = Game.GetService<Players>(\"Players\");\n\t\tplayers.PlayerAdded.Connect(player => Print(player.Name));\n\t}}\n}}\n",
-			ScriptLanguagesEnum.JavaScript => "const Players = game.GetService(\"Players\");\n\nPlayers.PlayerAdded.Connect(player => {\n    console.log(player.Name);\n});\n",
-			ScriptLanguagesEnum.TypeScript => "const Players = game.GetService<Players>(\"Players\");\n\nPlayers.PlayerAdded.Connect((player: Player) => {\n    console.log(player.Name);\n});\n",
-			ScriptLanguagesEnum.Cpp => "#include <brickverse.h>\n\nBV_EXPORT(\"bv_start\") void start()\n{\n    auto players = Game::GetService<Players>(\"Players\");\n    players.PlayerAdded([](Player player) {\n        BV::Print(player.Name());\n    });\n}\n",
-			ScriptLanguagesEnum.Visual => "{\"version\":1,\"nodes\":[{\"id\":\"begin\",\"type\":\"event_start\",\"x\":80,\"y\":120},{\"id\":\"hello\",\"type\":\"print\",\"x\":380,\"y\":120,\"text\":\"Hello from Visual Script!\"}],\"connections\":[{\"from\":\"begin\",\"fromPort\":0,\"to\":\"hello\",\"toPort\":0}]}",
+			ScriptLanguagesEnum.CSharp =>
+				$"using BrickVerse.Scripting.Managed;\n\npublic sealed class {csharpTypeName} : BrickVerseScript\n{{\n\tpublic override void Start()\n\t{{\n\t\tPlayers players = Game.GetService<Players>(\"Players\");\n\t\tplayers.PlayerAdded.Connect(player => Print(player.Name));\n\t}}\n}}\n",
+			ScriptLanguagesEnum.JavaScript =>
+				"const Players = game.GetService(\"Players\");\n\nPlayers.PlayerAdded.Connect(player => {\n    console.log(player.Name);\n});\n",
+			ScriptLanguagesEnum.TypeScript =>
+				"const Players = game.GetService<Players>(\"Players\");\n\nPlayers.PlayerAdded.Connect((player: Player) => {\n    console.log(player.Name);\n});\n",
+			ScriptLanguagesEnum.Cpp =>
+				"#include <brickverse.h>\n\nBV_EXPORT(\"bv_start\") void start()\n{\n    auto players = Game::GetService<Players>(\"Players\");\n    players.PlayerAdded([](Player player) {\n        BV::Print(player.Name());\n    });\n}\n",
+			ScriptLanguagesEnum.Visual =>
+				"{\"version\":1,\"nodes\":[{\"id\":\"begin\",\"type\":\"event_start\",\"x\":80,\"y\":120},{\"id\":\"hello\",\"type\":\"print\",\"x\":380,\"y\":120,\"text\":\"Hello from Visual Script!\"}],\"connections\":[{\"from\":\"begin\",\"fromPort\":0,\"to\":\"hello\",\"toPort\":0}]}",
 			_ => "",
 		};
 	}

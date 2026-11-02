@@ -11,5 +11,5 @@ public enum BorderModeEnum
 {
 	Inset,
 	Middle,
-	Outline
+	Outline,
 }

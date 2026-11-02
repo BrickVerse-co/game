@@ -2,6 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI;
@@ -10,9 +13,6 @@ using BrickVerse.Datamodel.Resources;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using Godot;
-using System.Collections.Generic;
-using System;
-using System.Threading.Tasks;
 
 namespace BrickVerse.Datamodel.Creator;
 
@@ -35,7 +35,12 @@ public sealed partial class CreatorAddons : Instance
 		{
 			CleanupAddonObject(addonObject);
 		}
-		AddonObject obj = new() { Identifier = identifier, Root = Root, ScriptSource = caller };
+		AddonObject obj = new()
+		{
+			Identifier = identifier,
+			Root = Root,
+			ScriptSource = caller,
+		};
 		obj.Creator = new CreatorAddonService(obj);
 		_identifierToAddon[identifier] = obj;
 		_scriptToAddon.Add(caller, obj);
@@ -71,10 +76,15 @@ public sealed partial class CreatorAddons : Instance
 
 		public World Root = null!;
 		public Script ScriptSource = null!;
-		[ScriptProperty] public CreatorAddonService Creator { get; internal set; } = null!;
 
-		[ScriptProperty] public string Identifier { get; internal set; } = "";
-		[ScriptProperty] public BVSignal CleanupReceived { get; private set; } = new();
+		[ScriptProperty]
+		public CreatorAddonService Creator { get; internal set; } = null!;
+
+		[ScriptProperty]
+		public string Identifier { get; internal set; } = "";
+
+		[ScriptProperty]
+		public BVSignal CleanupReceived { get; private set; } = new();
 
 		[ScriptProperty]
 		public string AddonName
@@ -101,12 +111,16 @@ public sealed partial class CreatorAddons : Instance
 		public readonly List<AddonToolItem> ToolItems = [];
 
 		[ScriptMethod]
-		public static async Task RequestPermissions([ScriptingCaller] Script caller, AddonPermissionEnum[] perms)
+		public static async Task RequestPermissions(
+			[ScriptingCaller] Script caller,
+			AddonPermissionEnum[] perms
+		)
 		{
 			var data = AddonsManager.GetAddonSession(caller);
 			if (data != null)
 			{
-				if (AddonsManager.GetHasAskedForPerms(data.Path)) return;
+				if (AddonsManager.GetHasAskedForPerms(data.Path))
+					return;
 				bool res = await CreatorService.Interface.PromptAddonReqPerm(perms, data.Data);
 
 				if (res)
@@ -141,17 +155,29 @@ public sealed partial class CreatorAddons : Instance
 		private readonly List<AddonDockWidget> _widgets = [];
 
 		[ScriptMethod]
-		public AddonHistoryTrack CreateHistoryTrack(string title) => new(_addon.Root.CreatorContext.History, title);
+		public AddonHistoryTrack CreateHistoryTrack(string title) =>
+			new(_addon.Root.CreatorContext.History, title);
 
 		[ScriptMethod]
-		public AddonDockWidget CreateDockWidget(string title, string preferredHost = "right.primary")
+		public AddonDockWidget CreateDockWidget(
+			string title,
+			string preferredHost = "right.primary"
+		)
 		{
 			string panelId = $"addon.{_addon.Identifier}.{Guid.NewGuid():N}";
 			AddonDockWidget widget = new(panelId, title, _addon.Root);
-			if (!DockManager.AddPanel(new DockPanel(panelId, title, widget.RootControl), preferredHost))
+			if (
+				!DockManager.AddPanel(
+					new DockPanel(panelId, title, widget.RootControl),
+					preferredHost
+				)
+			)
 			{
 				// A layout may not include the requested host; use the standard right dock.
-				DockManager.AddPanel(new DockPanel(panelId, title, widget.RootControl), "right.primary");
+				DockManager.AddPanel(
+					new DockPanel(panelId, title, widget.RootControl),
+					"right.primary"
+				);
 			}
 			_widgets.Add(widget);
 			return widget;
@@ -179,7 +205,10 @@ public sealed partial class CreatorAddons : Instance
 		[ScriptMethod]
 		public void Record(BVCallback redo, BVCallback undo)
 		{
-			if (_committed) throw new InvalidOperationException("This history track has already been committed.");
+			if (_committed)
+				throw new InvalidOperationException(
+					"This history track has already been committed."
+				);
 			_history.AddDoCallback(redo);
 			_history.AddUndoCallback(undo);
 		}
@@ -187,7 +216,8 @@ public sealed partial class CreatorAddons : Instance
 		[ScriptMethod]
 		public void Commit()
 		{
-			if (_committed) return;
+			if (_committed)
+				return;
 			_history.CommitAction();
 			_committed = true;
 		}
@@ -195,11 +225,11 @@ public sealed partial class CreatorAddons : Instance
 		[ScriptMethod]
 		public void Cancel()
 		{
-			if (_committed) return;
+			if (_committed)
+				return;
 			_history.CancelAction();
 			_committed = true;
 		}
-
 	}
 
 	public sealed class AddonDockWidget : IScriptObject
@@ -211,7 +241,12 @@ public sealed partial class CreatorAddons : Instance
 		internal AddonDockWidget(string panelId, string title, World world)
 		{
 			_panelId = panelId;
-			RootControl = new VBoxContainer { Name = "AddonDockWidget", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+			RootControl = new VBoxContainer
+			{
+				Name = "AddonDockWidget",
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+			};
 			_uiRoot = Globals.LoadInstance<UIView>(world);
 			_uiRoot.Name = title;
 			_uiRoot.OverrideParentCheck = true;
@@ -230,8 +265,12 @@ public sealed partial class CreatorAddons : Instance
 		[ScriptMethod]
 		public UIField CreateUI(string className)
 		{
-			UIField field = Globals.LoadInstance<UIField>(className, _uiRoot.Root)
-				?? throw new ArgumentException($"'{className}' is not an instantiable UIField.", nameof(className));
+			UIField field =
+				Globals.LoadInstance<UIField>(className, _uiRoot.Root)
+				?? throw new ArgumentException(
+					$"'{className}' is not an instantiable UIField.",
+					nameof(className)
+				);
 			field.Parent = _uiRoot;
 			return field;
 		}
@@ -241,7 +280,10 @@ public sealed partial class CreatorAddons : Instance
 		public void MountUI(UIField field)
 		{
 			ArgumentNullException.ThrowIfNull(field);
-			if (field.Root != _uiRoot.Root) throw new InvalidOperationException("Dock UI must belong to the same Creator world as the addon.");
+			if (field.Root != _uiRoot.Root)
+				throw new InvalidOperationException(
+					"Dock UI must belong to the same Creator world as the addon."
+				);
 			field.Parent = _uiRoot;
 		}
 
@@ -249,7 +291,8 @@ public sealed partial class CreatorAddons : Instance
 		public AddonDockLabel CreateLabel(string text)
 		{
 			Label label = new() { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-			RootControl.AddChild(label); return new AddonDockLabel(label);
+			RootControl.AddChild(label);
+			return new AddonDockLabel(label);
 		}
 
 		[ScriptMethod]
@@ -258,12 +301,18 @@ public sealed partial class CreatorAddons : Instance
 			Button button = new() { Text = text };
 			AddonDockButton item = new(button);
 			button.Pressed += () => item.Pressed.Invoke();
-			RootControl.AddChild(button); return item;
+			RootControl.AddChild(button);
+			return item;
 		}
 
-		[ScriptMethod] public void Show() => DockManager.OpenPanel(_panelId);
-		[ScriptMethod] public void Hide() => DockManager.ClosePanel(_panelId);
-		[ScriptMethod] public void Destroy()
+		[ScriptMethod]
+		public void Show() => DockManager.OpenPanel(_panelId);
+
+		[ScriptMethod]
+		public void Hide() => DockManager.ClosePanel(_panelId);
+
+		[ScriptMethod]
+		public void Destroy()
 		{
 			DockManager.ClosePanel(_panelId, suppressSave: true);
 			RootControl.Resized -= ResizeUIRoot;
@@ -275,27 +324,42 @@ public sealed partial class CreatorAddons : Instance
 	public sealed class AddonDockLabel(Label label) : IScriptObject
 	{
 		private readonly Label _label = label;
-		[ScriptProperty] public string Text { get => _label.Text; set => _label.Text = value; }
+
+		[ScriptProperty]
+		public string Text
+		{
+			get => _label.Text;
+			set => _label.Text = value;
+		}
 	}
 
 	public sealed class AddonDockButton(Button button) : IScriptObject
 	{
 		private readonly Button _button = button;
-		[ScriptProperty] public string Text { get => _button.Text; set => _button.Text = value; }
-		[ScriptProperty] public BVSignal Pressed { get; private set; } = new();
+
+		[ScriptProperty]
+		public string Text
+		{
+			get => _button.Text;
+			set => _button.Text = value;
+		}
+
+		[ScriptProperty]
+		public BVSignal Pressed { get; private set; } = new();
 	}
 
 	public class AddonToolItem(string txt) : IScriptObject
 	{
 		public string Text = txt;
 
-		[ScriptProperty] public BVSignal Pressed { get; private set; } = new();
+		[ScriptProperty]
+		public BVSignal Pressed { get; private set; } = new();
 	}
 
 	[ScriptEnum(IsCreatorOnly = true)]
 	public enum AddonPermissionEnum
 	{
 		IORead,
-		IOWrite
+		IOWrite,
 	}
 }

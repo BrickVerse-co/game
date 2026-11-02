@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -16,7 +16,12 @@ public partial class UIViewport : UIField
 	public override Node CreateGDNode()
 	{
 		SubViewportContainer container = new() { FocusMode = Control.FocusModeEnum.None };
-		_subViewport = new() { HandleInputLocally = false, TransparentBg = true, OwnWorld3D = true };
+		_subViewport = new()
+		{
+			HandleInputLocally = false,
+			TransparentBg = true,
+			OwnWorld3D = true,
+		};
 
 		_worldEnv = new();
 		_subViewport.AddChild(_worldEnv);

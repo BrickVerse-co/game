@@ -3,7 +3,17 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - "BrickVerse/**"
+      - "BrickVerse.SourceGen/**"
+      - "dm-tests/**"
+      - "global.json"
+      - ".github/workflows/dm-test.yaml"
   workflow_dispatch:
+
+concurrency:
+  group: dm-test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: 4.7.0
@@ -14,6 +24,7 @@ jobs:
   datamodel-tests:
     name: Datamodel Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5

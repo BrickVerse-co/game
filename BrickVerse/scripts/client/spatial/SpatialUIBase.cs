@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -11,12 +11,18 @@ public partial class SpatialUIBase : Sprite3D
 {
 	public override void _Process(double delta)
 	{
-		if (World.Current == null) { Visible = false; return; }
+		if (World.Current == null)
+		{
+			Visible = false;
+			return;
+		}
 		Camera? cam = World.Current!.Environment.CurrentCamera;
 
 		if (cam != null)
 		{
-			Visible = (cam.Position - GlobalPosition).Length() < World.Current.CoreUI.ChatBubbleRenderDistance;
+			Visible =
+				(cam.Position - GlobalPosition).Length()
+				< World.Current.CoreUI.ChatBubbleRenderDistance;
 		}
 	}
 }

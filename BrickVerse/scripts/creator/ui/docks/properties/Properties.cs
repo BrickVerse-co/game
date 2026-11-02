@@ -2,23 +2,24 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using BrickVerse.Attributes;
 using BrickVerse.Creator.Properties;
 using BrickVerse.Creator.UI.Misc;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public sealed partial class Properties : TabContainer
 {
 	public static Properties Singleton { get; private set; } = null!;
+
 	public Properties()
 	{
 		Singleton = this;
@@ -26,9 +27,15 @@ public sealed partial class Properties : TabContainer
 
 	private static readonly Type _editable = typeof(EditableAttribute);
 	private static readonly Type _obsolete = typeof(Attributes.ObsoleteAttribute);
-	private PackedScene _propertiesPacked = GD.Load<PackedScene>("res://scenes/creator/docks/properties/properties_view.tscn");
-	private static readonly Texture2D _arrowDown = GD.Load<Texture2D>("res://assets/textures/ui-icons/chevron-down.svg");
-	private static readonly Texture2D _arrowRight = GD.Load<Texture2D>("res://assets/textures/ui-icons/chevron-right.svg");
+	private PackedScene _propertiesPacked = GD.Load<PackedScene>(
+		"res://scenes/creator/docks/properties/properties_view.tscn"
+	);
+	private static readonly Texture2D _arrowDown = GD.Load<Texture2D>(
+		"res://assets/textures/ui-icons/chevron-down.svg"
+	);
+	private static readonly Texture2D _arrowRight = GD.Load<Texture2D>(
+		"res://assets/textures/ui-icons/chevron-right.svg"
+	);
 	private static readonly Dictionary<string, bool> _foldedSections = [];
 	private static readonly Dictionary<World, List<PropertyConnection>> _gameToConnections = [];
 
@@ -83,7 +90,6 @@ public sealed partial class Properties : TabContainer
 		connections.Clear();
 	}
 
-
 	public static void Show(Instance instance)
 	{
 		WalkProperties(Clear(instance), instance, instance.GetType());
@@ -92,7 +98,8 @@ public sealed partial class Properties : TabContainer
 
 	public static void ShowMultiple(List<Instance> instances)
 	{
-		if (instances.Count == 0) return;
+		if (instances.Count == 0)
+			return;
 		VBoxContainer list = Clear(instances[0]);
 		GetView(instances[0].Root).TagsView.Show(instances);
 
@@ -106,7 +113,8 @@ public sealed partial class Properties : TabContainer
 
 	private static HashSet<Type> GetCommonTypes(List<Instance> instances)
 	{
-		if (instances.Count == 0) return [];
+		if (instances.Count == 0)
+			return [];
 
 		HashSet<Type> commonTypes = [];
 		Type? type = instances[0].GetType();
@@ -132,7 +140,6 @@ public sealed partial class Properties : TabContainer
 		return commonTypes;
 	}
 
-
 	public static VBoxContainer Clear(Instance instance)
 	{
 		return ClearRoot(instance.Root);
@@ -156,23 +163,36 @@ public sealed partial class Properties : TabContainer
 		return _gameToView[root];
 	}
 
-	private static void WalkProperties(VBoxContainer list, Instance instance, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, List<Instance>? multiple = null)
+	private static void WalkProperties(
+		VBoxContainer list,
+		Instance instance,
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type,
+		List<Instance>? multiple = null
+	)
 	{
 		VBoxContainer layout = new() { MouseFilter = MouseFilterEnum.Ignore };
 
 		bool hasProperties = false;
 
-		foreach (PropertyInfo property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+		foreach (
+			PropertyInfo property in type.GetProperties(
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+			)
+		)
 		{
-			if (!property.IsDefined(_editable, false)) continue;
-			if (property.IsDefined(_obsolete, false)) continue;
+			if (!property.IsDefined(_editable, false))
+				continue;
+			if (property.IsDefined(_obsolete, false))
+				continue;
 
 			// Skip if is hidden
 			EditableAttribute? editableAttr = property.GetCustomAttribute<EditableAttribute>();
-			if (editableAttr != null && editableAttr.IsHidden) continue;
+			if (editableAttr != null && editableAttr.IsHidden)
+				continue;
 
 			MethodInfo? getter = property.GetGetMethod(false);
-			if (getter == null || getter != getter.GetBaseDefinition()) continue;
+			if (getter == null || getter != getter.GetBaseDefinition())
+				continue;
 
 			// Use multiple instances if available, otherwise just the single one.
 			List<NetworkedObject> targets = multiple != null ? new(multiple) : [instance];
@@ -195,7 +215,7 @@ public sealed partial class Properties : TabContainer
 				Texture = Globals.LoadIcon(type.Name),
 				ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 				StretchMode = TextureRect.StretchModeEnum.KeepAspect,
-				CustomMinimumSize = new(18, 18)
+				CustomMinimumSize = new(18, 18),
 			};
 
 			Label title = new()
@@ -214,41 +234,42 @@ public sealed partial class Properties : TabContainer
 				ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 				StretchMode = TextureRect.StretchModeEnum.KeepAspect,
 				CustomMinimumSize = new(14, 14),
-				Modulate = new(0x888888ff)
+				Modulate = new(0x888888ff),
 			};
 
-			HBoxContainer hbox = new()
-			{
-				MouseFilter = MouseFilterEnum.Pass
-			};
+			HBoxContainer hbox = new() { MouseFilter = MouseFilterEnum.Pass };
 			hbox.AddChild(icon);
 			hbox.AddChild(title);
 			hbox.AddChild(arrow);
 
-			PanelContainer header = new()
-			{
-				MouseDefaultCursorShape = CursorShape.PointingHand
-			};
-			header.AddThemeStyleboxOverride("panel", new StyleBoxFlat()
-			{
-				BgColor = new(0x161616ff),
-				CornerRadiusTopLeft = 6,
-				CornerRadiusTopRight = 6,
-				CornerRadiusBottomRight = 6,
-				CornerRadiusBottomLeft = 6,
-				ExpandMarginLeft = 4,
-				ContentMarginLeft = 2,
-				ContentMarginTop = 4,
-				ContentMarginRight = 6,
-				ContentMarginBottom = 4
-			});
+			PanelContainer header = new() { MouseDefaultCursorShape = CursorShape.PointingHand };
+			header.AddThemeStyleboxOverride(
+				"panel",
+				new StyleBoxFlat()
+				{
+					BgColor = new(0x161616ff),
+					CornerRadiusTopLeft = 6,
+					CornerRadiusTopRight = 6,
+					CornerRadiusBottomRight = 6,
+					CornerRadiusBottomLeft = 6,
+					ExpandMarginLeft = 4,
+					ContentMarginLeft = 2,
+					ContentMarginTop = 4,
+					ContentMarginRight = 6,
+					ContentMarginBottom = 4,
+				}
+			);
 			header.AddChild(hbox);
 			list.AddChild(header);
 			list.AddChild(layout);
 
 			header.GuiInput += (@event) =>
 			{
-				if (@event is InputEventMouseButton button && button.ButtonIndex == MouseButton.Left && button.Pressed)
+				if (
+					@event is InputEventMouseButton button
+					&& button.ButtonIndex == MouseButton.Left
+					&& button.Pressed
+				)
 				{
 					ToggleSection(type.Name, layout, arrow);
 				}
@@ -270,7 +291,10 @@ public sealed partial class Properties : TabContainer
 		arrow.Texture = folded ? _arrowRight : _arrowDown;
 	}
 
-	public static Control CreatePropertyControl(List<NetworkedObject> networkedObjects, PropertyInfo property)
+	public static Control CreatePropertyControl(
+		List<NetworkedObject> networkedObjects,
+		PropertyInfo property
+	)
 	{
 		HBoxContainer container = new();
 		PropertyLabel t = new()
@@ -283,12 +307,15 @@ public sealed partial class Properties : TabContainer
 			MouseFilter = MouseFilterEnum.Pass,
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			SizeFlagsStretchRatio = 0.4f,
-			Property = property
+			Property = property,
 		};
 
 		var editableAttr = property.GetCustomAttribute<EditableAttribute>();
 
-		IProperty input = Globals.LoadProperty(property.PropertyType, editableAttr?.CustomPropertyControl);
+		IProperty input = Globals.LoadProperty(
+			property.PropertyType,
+			editableAttr?.CustomPropertyControl
+		);
 		Control c = (Control)input;
 		c.SizeFlagsStretchRatio = 0.6f;
 
@@ -311,97 +338,107 @@ public sealed partial class Properties : TabContainer
 		container.AddChild((Node)input);
 
 		// Wait one frame for property to be ready
-		Callable.From(() =>
-		{
-			Dictionary<NetworkedObject, object?> previewOldValues = [];
-
-			NetworkedObject first = networkedObjects[0];
-			input.SetValue(property.GetValue(first));
-			World root = first.Root;
-
-			CreatorHistory history = first.Root.CreatorContext.History;
-
-			if (input is ColorProperty clr)
+		Callable
+			.From(() =>
 			{
-				foreach (NetworkedObject item in networkedObjects)
-					previewOldValues[item] = property.GetValue(item);
+				Dictionary<NetworkedObject, object?> previewOldValues = [];
 
-				clr.PreviewChanged += val =>
+				NetworkedObject first = networkedObjects[0];
+				input.SetValue(property.GetValue(first));
+				World root = first.Root;
+
+				CreatorHistory history = first.Root.CreatorContext.History;
+
+				if (input is ColorProperty clr)
 				{
 					foreach (NetworkedObject item in networkedObjects)
+						previewOldValues[item] = property.GetValue(item);
+
+					clr.PreviewChanged += val =>
 					{
-						property.SetValue(item, val);
+						foreach (NetworkedObject item in networkedObjects)
+						{
+							property.SetValue(item, val);
+						}
+					};
+				}
+
+				NetworkedObject target = networkedObjects[0];
+
+				Action<string> handler = (propName) =>
+				{
+					if (propName == property.Name && IsInstanceValid((Node)input))
+					{
+						object? value = property.GetValue(target);
+						input.SetValue(value);
 					}
 				};
-			}
 
-			NetworkedObject target = networkedObjects[0];
-
-			Action<string> handler = (propName) =>
-			{
-				if (propName == property.Name && IsInstanceValid((Node)input))
+				PropertyConnection connection = new()
 				{
-					object? value = property.GetValue(target);
-					input.SetValue(value);
-				}
-			};
+					Target = target,
+					Input = input,
+					Property = property,
+					Handler = handler,
+				};
 
-			PropertyConnection connection = new()
-			{
-				Target = target,
-				Input = input,
-				Property = property,
-				Handler = handler
-			};
+				target.PropertyChanged.Connect(handler);
 
-			target.PropertyChanged.Connect(handler);
-
-			if (_gameToConnections.TryGetValue(root, out List<PropertyConnection>? connections))
-			{
-				connections.Add(connection);
-			}
-
-			void valueChanged(object? val)
-			{
-				Dictionary<NetworkedObject, object?> oldValues;
-
-				if (input is ColorProperty && previewOldValues.Count > 0)
+				if (_gameToConnections.TryGetValue(root, out List<PropertyConnection>? connections))
 				{
-					oldValues = new(previewOldValues);
-					previewOldValues.Clear();
-				}
-				else
-				{
-					oldValues = [];
-					foreach (NetworkedObject item in networkedObjects)
-						oldValues[item] = property.GetValue(item);
+					connections.Add(connection);
 				}
 
-				history.NewAction($"Change property {property.Name}");
-				history.AddDoCallback(new((_) =>
+				void valueChanged(object? val)
 				{
-					foreach (NetworkedObject item in networkedObjects)
+					Dictionary<NetworkedObject, object?> oldValues;
+
+					if (input is ColorProperty && previewOldValues.Count > 0)
 					{
-						property.SetValue(item, val);
+						oldValues = new(previewOldValues);
+						previewOldValues.Clear();
 					}
-					input.SetValue(val);
-				}));
-
-				history.AddUndoCallback(new((_) =>
-				{
-					foreach (NetworkedObject item in networkedObjects)
+					else
 					{
-						property.SetValue(item, oldValues[item]);
+						oldValues = [];
+						foreach (NetworkedObject item in networkedObjects)
+							oldValues[item] = property.GetValue(item);
 					}
-					input.SetValue(oldValues[networkedObjects[0]]);
-				}));
 
-				history.CommitAction();
-			}
+					history.NewAction($"Change property {property.Name}");
+					history.AddDoCallback(
+						new(
+							(_) =>
+							{
+								foreach (NetworkedObject item in networkedObjects)
+								{
+									property.SetValue(item, val);
+								}
+								input.SetValue(val);
+							}
+						)
+					);
 
-			input.ValueChanged += valueChanged;
-			t.Pasted += valueChanged;
-		}).CallDeferred();
+					history.AddUndoCallback(
+						new(
+							(_) =>
+							{
+								foreach (NetworkedObject item in networkedObjects)
+								{
+									property.SetValue(item, oldValues[item]);
+								}
+								input.SetValue(oldValues[networkedObjects[0]]);
+							}
+						)
+					);
+
+					history.CommitAction();
+				}
+
+				input.ValueChanged += valueChanged;
+				t.Pasted += valueChanged;
+			})
+			.CallDeferred();
 
 		return container;
 	}

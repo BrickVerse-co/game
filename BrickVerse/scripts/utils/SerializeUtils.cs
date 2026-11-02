@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using MemoryPack;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
+using MemoryPack;
 
 namespace BrickVerse.Utils;
 
@@ -27,7 +27,9 @@ public static class SerializeUtils
 		return MemoryPackSerializer.Serialize(data);
 	}
 
-	public static T? Deserialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(byte[] data)
+	public static T? Deserialize<
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T
+	>(byte[] data)
 	{
 		return MemoryPackSerializer.Deserialize<T>(data);
 	}
@@ -52,7 +54,9 @@ public static class SerializeUtils
 		return MemoryPackSerializer.SerializeAsync(stream, value);
 	}
 
-	public static ValueTask<T?> DeserializeAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(Stream stream)
+	public static ValueTask<T?> DeserializeAsync<
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T
+	>(Stream stream)
 	{
 		return MemoryPackSerializer.DeserializeAsync<T>(stream);
 	}

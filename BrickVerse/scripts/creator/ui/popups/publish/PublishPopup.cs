@@ -2,34 +2,55 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using Humanizer;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Components;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
-using BrickVerse.Creator.Utils;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
-using System;
-using System.Collections.Generic;
+using Godot;
+using Humanizer;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 public partial class PublishPopup : PopupWindowBase
 {
-	private const string PublishItemPopup = "res://scenes/creator/popups/publish/components/publish_item_card.tscn";
-	[Export] private Control _listContainer = null!;
-	[Export] private Control _itemInfoView = null!;
-	[Export] private Label _itemNameLabel = null!;
-	[Export] private Label _itemLastUpdatedLabel = null!;
-	[Export] private Label _itemCreatedAtLabel = null!;
-	[Export] private TextureRect _itemIconRect = null!;
-	[Export] private Control _loadingView = null!;
-	[Export] private Button _newButton = null!;
-	[Export] private Button _cancelButton = null!;
-	[Export] private Button _publishButton = null!;
+	private const string PublishItemPopup =
+		"res://scenes/creator/popups/publish/components/publish_item_card.tscn";
+
+	[Export]
+	private Control _listContainer = null!;
+
+	[Export]
+	private Control _itemInfoView = null!;
+
+	[Export]
+	private Label _itemNameLabel = null!;
+
+	[Export]
+	private Label _itemLastUpdatedLabel = null!;
+
+	[Export]
+	private Label _itemCreatedAtLabel = null!;
+
+	[Export]
+	private TextureRect _itemIconRect = null!;
+
+	[Export]
+	private Control _loadingView = null!;
+
+	[Export]
+	private Button _newButton = null!;
+
+	[Export]
+	private Button _cancelButton = null!;
+
+	[Export]
+	private Button _publishButton = null!;
 
 	private ButtonGroup _itemItemGroup = new();
 	private long _targetID = 0;
@@ -77,7 +98,11 @@ public partial class PublishPopup : PopupWindowBase
 	{
 		VBoxContainer filters = new() { Name = "AssetFilters" };
 		filters.AddThemeConstantOverride("separation", 8);
-		_searchInput = new LineEdit { PlaceholderText = $"Search {PublishType.ToString().ToLowerInvariant()}s...", ClearButtonEnabled = true };
+		_searchInput = new LineEdit
+		{
+			PlaceholderText = $"Search {PublishType.ToString().ToLowerInvariant()}s...",
+			ClearButtonEnabled = true,
+		};
 		filters.AddChild(_searchInput);
 
 		HBoxContainer row = new();
@@ -161,7 +186,8 @@ public partial class PublishPopup : PopupWindowBase
 
 	private void NextPage()
 	{
-		if (string.IsNullOrEmpty(_nextCursor)) return;
+		if (string.IsNullOrEmpty(_nextCursor))
+			return;
 		_cursorHistory.Add(_nextCursor);
 		_page++;
 		FetchPublishedItems();
@@ -169,7 +195,8 @@ public partial class PublishPopup : PopupWindowBase
 
 	private void PreviousPage()
 	{
-		if (_page <= 1) return;
+		if (_page <= 1)
+			return;
 		_cursorHistory.RemoveAt(_cursorHistory.Count - 1);
 		_page--;
 		FetchPublishedItems();
@@ -196,8 +223,18 @@ public partial class PublishPopup : PopupWindowBase
 			Size = new Vector2I(520, 310),
 		};
 		VBoxContainer fields = new();
-		LineEdit name = new() { Text = Target.Name, PlaceholderText = $"{PublishType} name", MaxLength = 100 };
-		TextEdit description = new() { PlaceholderText = "Optional description", CustomMinimumSize = new Vector2(0, 100), WrapMode = TextEdit.LineWrappingMode.Boundary };
+		LineEdit name = new()
+		{
+			Text = Target.Name,
+			PlaceholderText = $"{PublishType} name",
+			MaxLength = 100,
+		};
+		TextEdit description = new()
+		{
+			PlaceholderText = "Optional description",
+			CustomMinimumSize = new Vector2(0, 100),
+			WrapMode = TextEdit.LineWrappingMode.Boundary,
+		};
 		fields.AddChild(new Label { Text = "Name" });
 		fields.AddChild(name);
 		fields.AddChild(new Label { Text = "Description (optional)" });
@@ -206,7 +243,9 @@ public partial class PublishPopup : PopupWindowBase
 		AddChild(dialog);
 		dialog.Confirmed += () =>
 		{
-			string finalName = string.IsNullOrWhiteSpace(name.Text) ? Target.Name : name.Text.Trim();
+			string finalName = string.IsNullOrWhiteSpace(name.Text)
+				? Target.Name
+				: name.Text.Trim();
 			Publish(0, finalName, description.Text.Trim());
 		};
 		dialog.Canceled += dialog.QueueFree;
@@ -235,10 +274,13 @@ public partial class PublishPopup : PopupWindowBase
 
 		if (!string.IsNullOrEmpty(item.IconUrl))
 		{
-			WebAssetLoader.Singleton.GetResource(new() { URL = item.IconUrl }, r =>
-			{
-				_itemIconRect.Texture = (Texture2D)r;
-			});
+			WebAssetLoader.Singleton.GetResource(
+				new() { URL = item.IconUrl },
+				r =>
+				{
+					_itemIconRect.Texture = (Texture2D)r;
+				}
+			);
 		}
 		else
 		{
@@ -266,10 +308,24 @@ public partial class PublishPopup : PopupWindowBase
 
 		try
 		{
-			(string ownerType, string ownerId) = _owners.GetValueOrDefault(_ownerInput.Selected, ("USER", CreatorAPI.UserID));
+			(string ownerType, string ownerId) = _owners.GetValueOrDefault(
+				_ownerInput.Selected,
+				("USER", CreatorAPI.UserID)
+			);
 			string[] sorts = ["UPDATED_DESC", "CREATED_DESC", "CREATED_ASC", "NAME_ASC"];
-			string? privacy = _privacyInput.Selected switch { 1 => "Public", 2 => "Ownership", _ => null };
-			string? moderation = _moderationInput.Selected switch { 1 => "APPROVED", 2 => "PENDING", 3 => "REJECTED", _ => null };
+			string? privacy = _privacyInput.Selected switch
+			{
+				1 => "Public",
+				2 => "Ownership",
+				_ => null,
+			};
+			string? moderation = _moderationInput.Selected switch
+			{
+				1 => "APPROVED",
+				2 => "PENDING",
+				3 => "REJECTED",
+				_ => null,
+			};
 			result = await CreatorAPI.GetCreatorAssetPage(
 				PublishType,
 				_cursorHistory[^1],
@@ -291,7 +347,8 @@ public partial class PublishPopup : PopupWindowBase
 			QueueFree();
 			return;
 		}
-		if (generation != _fetchGeneration || !GodotObject.IsInstanceValid(this)) return;
+		if (generation != _fetchGeneration || !GodotObject.IsInstanceValid(this))
+			return;
 
 		_loadingView.Visible = false;
 		CreatorAssetItem[] items = result.Items;

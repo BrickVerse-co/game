@@ -9,8 +9,11 @@ namespace BrickVerse.Datamodel.Data;
 
 public partial class NewServerRequestData : IScriptObject
 {
-	[ScriptProperty] public string WorldPath { get; set; } = "";
-	[ScriptProperty] public int MaxPlayers { get; set; } = 12;
+	[ScriptProperty]
+	public string WorldPath { get; set; } = "";
+
+	[ScriptProperty]
+	public int MaxPlayers { get; set; } = 12;
 
 	[ScriptMethod]
 	public static NewServerRequestData New()

@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Shared;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel.Resources;
 
@@ -34,9 +34,15 @@ public partial class BuiltInAudioAsset : AudioAsset
 
 	public override void LoadResource()
 	{
-		InvokeResourceLoaded(GD.Load<AudioStream>(Globals.BuiltInAudioLocation.PathJoin(AudioMapping[_audioPreset])));
+		InvokeResourceLoaded(
+			GD.Load<AudioStream>(Globals.BuiltInAudioLocation.PathJoin(AudioMapping[_audioPreset]))
+		);
 	}
 
 	[ScriptEnum]
-	public enum BuiltInAudioPresetEnum { Jump, Explosion };
+	public enum BuiltInAudioPresetEnum
+	{
+		Jump,
+		Explosion,
+	};
 }

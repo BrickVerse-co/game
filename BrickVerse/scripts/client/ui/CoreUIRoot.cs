@@ -2,14 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Client.UI.Capture;
 using BrickVerse.Client.UI.Chat;
 using BrickVerse.Client.UI.Playerlist;
 using BrickVerse.Client.UI.Purchases;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
-
+using Godot;
 #if DEBUG && !EXPORTDEBUG
 using BrickVerse.Shared;
 #endif
@@ -19,29 +18,58 @@ namespace BrickVerse.Client.UI;
 public partial class CoreUIRoot : CanvasLayer
 {
 	public static CoreUIRoot Singleton { get; private set; } = null!;
+
 	public CoreUIRoot()
 	{
 		Singleton = this;
 	}
 
 	[ExportSubgroup("UI Elements")]
-	[Export] public UIGameMenu GameMenu = null!;
-	[Export] public UIMenuButton MenuButton = null!;
-	[Export] public UIUserCard UserCard = null!;
-	[Export] public UIChat Chat = null!;
-	[Export] public UIChatButton ChatButton = null!;
-	[Export] public UIHealthbar HealthBar = null!;
-	[Export] public UILeaderboard Leaderboard = null!;
-	[Export] public UIInventory Inventory = null!;
-	[Export] public UIEmoteWheel EmoteWheel = null!;
-	[Export] public UINotification NotificationCenter = null!;
-	[Export] public UICapturePreview CapturePreview = null!;
-	[Export] public UIPurchasePrompt PurchasePrompt = null!;
-	[Export] public TextureRect CtrlLockCursor = null!;
-	[Export] public DevConsoleWindow DevWindow = null!;
+	[Export]
+	public UIGameMenu GameMenu = null!;
+
+	[Export]
+	public UIMenuButton MenuButton = null!;
+
+	[Export]
+	public UIUserCard UserCard = null!;
+
+	[Export]
+	public UIChat Chat = null!;
+
+	[Export]
+	public UIChatButton ChatButton = null!;
+
+	[Export]
+	public UIHealthbar HealthBar = null!;
+
+	[Export]
+	public UILeaderboard Leaderboard = null!;
+
+	[Export]
+	public UIInventory Inventory = null!;
+
+	[Export]
+	public UIEmoteWheel EmoteWheel = null!;
+
+	[Export]
+	public UINotification NotificationCenter = null!;
+
+	[Export]
+	public UICapturePreview CapturePreview = null!;
+
+	[Export]
+	public UIPurchasePrompt PurchasePrompt = null!;
+
+	[Export]
+	public TextureRect CtrlLockCursor = null!;
+
+	[Export]
+	public DevConsoleWindow DevWindow = null!;
 
 	[ExportSubgroup("Filepaths")]
-	[Export] public string CtrlLockCursorsFilepath = null!;
+	[Export]
+	public string CtrlLockCursorsFilepath = null!;
 
 	/// <summary>
 	/// Determine if CoreUI has active popup, this overrides Input.IsGameFocused
@@ -67,7 +95,11 @@ public partial class CoreUIRoot : CanvasLayer
 #if DEBUG && !EXPORTDEBUG
 		if (OS.HasFeature("executor"))
 		{
-			AddChild(Globals.CreateInstanceFromScene<Node>("res://scenes/client/ui/executor/executor.tscn"));
+			AddChild(
+				Globals.CreateInstanceFromScene<Node>(
+					"res://scenes/client/ui/executor/executor.tscn"
+				)
+			);
 		}
 #endif
 

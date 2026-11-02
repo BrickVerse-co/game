@@ -8,5 +8,5 @@ public enum SoundAttenuationModeEnum
 	Disabled,
 	Linear,
 	Squared,
-	Logarithmic
+	Logarithmic,
 }

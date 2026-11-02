@@ -1,7 +1,7 @@
-using Godot;
+using System.Globalization;
 using BrickVerse.Client.Settings;
 using BrickVerse.Shared.Settings;
-using System.Globalization;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -18,7 +18,7 @@ public sealed partial class SliderSettingField : HBoxContainer
 		_slider = new HSlider
 		{
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ShrinkCenter
+			SizeFlagsVertical = SizeFlags.ShrinkCenter,
 		};
 		AddChild(_slider);
 
@@ -26,7 +26,7 @@ public sealed partial class SliderSettingField : HBoxContainer
 		{
 			CustomMinimumSize = new Vector2(64, 0),
 			HorizontalAlignment = HorizontalAlignment.Right,
-			VerticalAlignment = VerticalAlignment.Center
+			VerticalAlignment = VerticalAlignment.Center,
 		};
 		AddChild(_valueLabel);
 

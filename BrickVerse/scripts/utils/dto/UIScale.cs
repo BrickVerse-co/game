@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using MemoryPack;
-using BrickVerse.Datamodel.Data;
 using System;
 using System.Text.Json.Serialization;
+using BrickVerse.Datamodel.Data;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
@@ -18,7 +18,11 @@ public partial class UIScaleDto
 	[MemoryPackConstructor, JsonConstructor]
 	public UIScaleDto() { }
 
-	public UIScaleDto(UIScale scale) { Offset = scale.Offset; Scale = scale.Scale; }
+	public UIScaleDto(UIScale scale)
+	{
+		Offset = scale.Offset;
+		Scale = scale.Scale;
+	}
 
 	public UIScale ToUIScale() => new(Offset, Scale);
 }

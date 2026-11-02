@@ -11,8 +11,10 @@ public struct APIHeartbeatResponse
 {
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
+
 	[JsonPropertyName("remove")]
 	public List<string>? Remove { get; set; }
+
 	[JsonPropertyName("shouldShutdown")]
 	public bool ShouldShutdown { get; set; }
 }
@@ -27,8 +29,10 @@ public struct APIValidateResponse
 
 	[JsonPropertyName("canChat")]
 	public bool CanChat { get; set; }
+
 	[JsonPropertyName("canQuickChat")]
 	public bool CanQuickChat { get; set; }
+
 	[JsonPropertyName("canVoiceChat")]
 	public bool CanVoiceChat { get; set; }
 
@@ -85,6 +89,7 @@ public struct SocialFriendRequest
 {
 	[JsonPropertyName("senderId")]
 	public string SenderId { get; set; }
+
 	[JsonPropertyName("recipientId")]
 	public string RecipientId { get; set; }
 }

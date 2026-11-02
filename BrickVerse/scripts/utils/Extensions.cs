@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Globalization;
-using System.Linq;
 using System.IO;
+using System.Linq;
+using Godot;
 
 namespace BrickVerse.Utils;
 
@@ -45,7 +45,11 @@ public static class Vector3Extension
 {
 	public static Vector3 Pow(this Vector3 vector, float exponent)
 	{
-		return new(Mathf.Pow(vector.X, exponent), Mathf.Pow(vector.Y, exponent), Mathf.Pow(vector.Z, exponent));
+		return new(
+			Mathf.Pow(vector.X, exponent),
+			Mathf.Pow(vector.Y, exponent),
+			Mathf.Pow(vector.Z, exponent)
+		);
 	}
 
 	public static Vector3 Snap(this Vector3 value, float step)
@@ -113,20 +117,16 @@ public static class BasisExtension
 
 	public static Vector3 Xform(this Basis basis, Vector3 vector)
 	{
-		return new(
-		basis.Row0.Dot(vector),
-		basis.Row1.Dot(vector),
-		basis.Row2.Dot(vector)
-	);
+		return new(basis.Row0.Dot(vector), basis.Row1.Dot(vector), basis.Row2.Dot(vector));
 	}
 
 	public static Vector3 XformInv(this Basis basis, Vector3 vector)
 	{
 		return new(
-		(basis.Row0[0] * vector.X) + (basis.Row1[0] * vector.Y) + (basis.Row2[0] * vector.Z),
-		(basis.Row0[1] * vector.X) + (basis.Row1[1] * vector.Y) + (basis.Row2[1] * vector.Z),
-		(basis.Row0[2] * vector.X) + (basis.Row1[2] * vector.Y) + (basis.Row2[2] * vector.Z)
-	);
+			(basis.Row0[0] * vector.X) + (basis.Row1[0] * vector.Y) + (basis.Row2[0] * vector.Z),
+			(basis.Row0[1] * vector.X) + (basis.Row1[1] * vector.Y) + (basis.Row2[1] * vector.Z),
+			(basis.Row0[2] * vector.X) + (basis.Row1[2] * vector.Y) + (basis.Row2[2] * vector.Z)
+		);
 	}
 }
 
@@ -141,12 +141,20 @@ public static class AabbExtension
 				to = new(aabb.Position.X, aabb.Position.Y, aabb.Position.Z);
 				break;
 			case 1:
-				from = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y, aabb.Position.Z + aabb.Size.Z);
+				from = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y, aabb.Position.Z);
 				break;
 			case 2:
 				from = new(aabb.Position.X, aabb.Position.Y, aabb.Position.Z + aabb.Size.Z);
-				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y, aabb.Position.Z + aabb.Size.Z);
+				to = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				break;
 			case 3:
 				from = new(aabb.Position.X, aabb.Position.Y, aabb.Position.Z);
@@ -154,23 +162,51 @@ public static class AabbExtension
 				break;
 			case 4:
 				from = new(aabb.Position.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z);
-				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z);
+				to = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z
+				);
 				break;
 			case 5:
-				from = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z);
-				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
+				from = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z
+				);
+				to = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				break;
 			case 6:
-				from = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
-				to = new(aabb.Position.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
+				from = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
+				to = new(
+					aabb.Position.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				break;
 			case 7:
-				from = new(aabb.Position.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
+				from = new(
+					aabb.Position.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				to = new(aabb.Position.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z);
 				break;
 			case 8:
 				from = new(aabb.Position.X, aabb.Position.Y, aabb.Position.Z + aabb.Size.Z);
-				to = new(aabb.Position.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
+				to = new(
+					aabb.Position.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				break;
 			case 9:
 				from = new(aabb.Position.X, aabb.Position.Y, aabb.Position.Z);
@@ -178,11 +214,23 @@ public static class AabbExtension
 				break;
 			case 10:
 				from = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y, aabb.Position.Z);
-				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z);
+				to = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z
+				);
 				break;
 			case 11:
-				from = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y, aabb.Position.Z + aabb.Size.Z);
-				to = new(aabb.Position.X + aabb.Size.X, aabb.Position.Y + aabb.Size.Y, aabb.Position.Z + aabb.Size.Z);
+				from = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
+				to = new(
+					aabb.Position.X + aabb.Size.X,
+					aabb.Position.Y + aabb.Size.Y,
+					aabb.Position.Z + aabb.Size.Z
+				);
 				break;
 			default:
 				throw new IndexOutOfRangeException();
@@ -210,11 +258,21 @@ public static class NodeExtension
 	}
 }
 
-
 public static class StringExtension
 {
 	private static readonly char[] InvalidFileNameChars =
-			[.. Path.GetInvalidFileNameChars(), '\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+	[
+		.. Path.GetInvalidFileNameChars(),
+		'\\',
+		'/',
+		':',
+		'*',
+		'?',
+		'"',
+		'<',
+		'>',
+		'|',
+	];
 
 	public static string SanitizePath(this string s)
 	{
@@ -256,7 +314,11 @@ public static class StringExtension
 		if (string.IsNullOrEmpty(s))
 			return s;
 
-		return new string([.. s.Where(c => char.IsLetterOrDigit(c) || char.IsWhiteSpace(c) || c == '_' || c == '-')]);
+		return new string([
+			.. s.Where(c =>
+				char.IsLetterOrDigit(c) || char.IsWhiteSpace(c) || c == '_' || c == '-'
+			),
+		]);
 	}
 }
 

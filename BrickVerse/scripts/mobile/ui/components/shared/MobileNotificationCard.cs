@@ -24,9 +24,13 @@ public partial class MobileNotificationCard : Button
 		_title.Text = title;
 		_message.Text = message;
 		_unread.Visible = !isRead;
-		DateTime utc = createdAt.Kind == DateTimeKind.Utc ? createdAt : DateTime.SpecifyKind(createdAt, DateTimeKind.Utc);
+		DateTime utc =
+			createdAt.Kind == DateTimeKind.Utc
+				? createdAt
+				: DateTime.SpecifyKind(createdAt, DateTimeKind.Utc);
 		TimeSpan elapsed = DateTime.UtcNow - utc;
-		_time.Text = elapsed.TotalMinutes < 1 ? "Now"
+		_time.Text =
+			elapsed.TotalMinutes < 1 ? "Now"
 			: elapsed.TotalHours < 1 ? $"{(int)elapsed.TotalMinutes}m"
 			: elapsed.TotalDays < 1 ? $"{(int)elapsed.TotalHours}h"
 			: elapsed.TotalDays < 7 ? $"{(int)elapsed.TotalDays}d"

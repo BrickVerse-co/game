@@ -50,11 +50,22 @@ internal partial class NativeBindings
 
 	[LibraryImport(CompilerLibraryName, StringMarshalling = StringMarshalling.Utf8)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	internal static partial IntPtr luau_compile(string source, IntPtr size, IntPtr options, out IntPtr outsize);
+	internal static partial IntPtr luau_compile(
+		string source,
+		IntPtr size,
+		IntPtr options,
+		out IntPtr outsize
+	);
 
 	[LibraryImport(LuaLibraryName, StringMarshalling = StringMarshalling.Utf8)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	internal static partial int luau_load(IntPtr L, string name, byte[] bytecode, long size, int flags);
+	internal static partial int luau_load(
+		IntPtr L,
+		string name,
+		byte[] bytecode,
+		long size,
+		int flags
+	);
 
 	[LibraryImport(LuaLibraryName)]
 	[UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
@@ -164,7 +175,13 @@ internal partial class NativeBindings
 
 	[LibraryImport(LuaLibraryName, StringMarshalling = StringMarshalling.Utf8)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	internal static partial void lua_pushcclosurek(IntPtr L, LuaFunction fn, string? debugname, int nup, LuaContinuation? cont);
+	internal static partial void lua_pushcclosurek(
+		IntPtr L,
+		LuaFunction fn,
+		string? debugname,
+		int nup,
+		LuaContinuation? cont
+	);
 
 	[LibraryImport(LuaLibraryName)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -176,7 +193,11 @@ internal partial class NativeBindings
 
 	[LibraryImport(LuaLibraryName)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	internal static partial IntPtr lua_newuserdatadtor(IntPtr L, UIntPtr sz, LuaUserdataDestructor? dtor);
+	internal static partial IntPtr lua_newuserdatadtor(
+		IntPtr L,
+		UIntPtr sz,
+		LuaUserdataDestructor? dtor
+	);
 
 	internal static IntPtr lua_newuserdata(IntPtr L, UIntPtr size)
 	{

@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using BrickVerse.Client;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Godot;
 using Mesh = BrickVerse.Datamodel.Mesh;
 
 namespace BrickVerse.Renderer;
@@ -29,16 +29,10 @@ public partial class RendererViewport : SubViewport
 		Size = new(800, 800);
 
 		Root = Globals.LoadInstance<World>();
-		DatamodelBridge bridge = new()
-		{
-			Name = "DatamodelBridge"
-		};
+		DatamodelBridge bridge = new() { Name = "DatamodelBridge" };
 		AddChild(bridge, true);
 
-		NetworkService networkService = new()
-		{
-			Name = "NetworkService",
-		};
+		NetworkService networkService = new() { Name = "NetworkService" };
 		NetworkService = networkService;
 
 		Root.SessionType = World.SessionTypeEnum.Renderer;
@@ -67,7 +61,10 @@ public partial class RendererViewport : SubViewport
 		Root.World3D.Environment = n.GetNode<WorldEnvironment>("WorldEnvironment").Environment;
 	}
 
-	public async Task AddAvatar(string id, AvatarPhotoTypeEnum photoType = AvatarPhotoTypeEnum.FullAvatar)
+	public async Task AddAvatar(
+		string id,
+		AvatarPhotoTypeEnum photoType = AvatarPhotoTypeEnum.FullAvatar
+	)
 	{
 		Camera cam = Root.Environment.CurrentCamera!;
 		Camera3D c3d = cam.Camera3D;
@@ -80,7 +77,10 @@ public partial class RendererViewport : SubViewport
 
 		ptm.SetAnimationOverrideTo(true);
 		AnimationPlayer ply = ptm.AnimTree.GetNode<AnimationPlayer>(ptm.AnimTree.AnimPlayer);
-		BrickversianModel.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(id, loadToolNpc: true);
+		BrickversianModel.AvatarLoadResponse loadRes = await ptm.InternalLoadAppearance(
+			id,
+			loadToolNpc: true
+		);
 
 		if (loadRes.HasTool)
 		{
@@ -92,17 +92,17 @@ public partial class RendererViewport : SubViewport
 		switch (photoType)
 		{
 			case AvatarPhotoTypeEnum.FullAvatar:
-				{
-					c3d.GlobalPosition = new(0, 1.75f, 5);
-					c3d.GlobalRotationDegrees = new(-15, 0, 0);
-					break;
-				}
+			{
+				c3d.GlobalPosition = new(0, 1.75f, 5);
+				c3d.GlobalRotationDegrees = new(-15, 0, 0);
+				break;
+			}
 			case AvatarPhotoTypeEnum.Headshot:
-				{
-					c3d.GlobalPosition = new(-0.05f, 1.7f, 2.5f);
-					c3d.GlobalRotationDegrees = new(0, 0, 0);
-					break;
-				}
+			{
+				c3d.GlobalPosition = new(-0.05f, 1.7f, 2.5f);
+				c3d.GlobalRotationDegrees = new(0, 0, 0);
+				break;
+			}
 		}
 	}
 
@@ -141,7 +141,14 @@ public partial class RendererViewport : SubViewport
 		return img.SavePngToBuffer();
 	}
 
-	private static void FocusToBounds(Node3D target, Camera3D cam, float yawDeg = 20f, float pitchDeg = -15f, float padding = 0.01f, Vector3? up = null)
+	private static void FocusToBounds(
+		Node3D target,
+		Camera3D cam,
+		float yawDeg = 20f,
+		float pitchDeg = -15f,
+		float padding = 0.01f,
+		Vector3? up = null
+	)
 	{
 		if (target == null || cam == null)
 		{
@@ -190,7 +197,6 @@ public partial class RendererViewport : SubViewport
 
 		cam.Near = MathF.Max(0.01f, distance - paddedR * 2f);
 		cam.Far = MathF.Max(cam.Near + 1f, distance + paddedR * 4f);
-
 	}
 
 	private static bool TryGetWorldAabb(Node3D root, out Vector3 min, out Vector3 max)
@@ -220,33 +226,48 @@ public partial class RendererViewport : SubViewport
 		return found;
 	}
 
-	private static void EncapsulateTransformedAabb(ref Vector3 min, ref Vector3 max, Aabb local, Transform3D xf)
+	private static void EncapsulateTransformedAabb(
+		ref Vector3 min,
+		ref Vector3 max,
+		Aabb local,
+		Transform3D xf
+	)
 	{
 		Vector3 p = local.Position;
 		Vector3 s = local.Size;
-		Span<Vector3> corners = [
-			new Vector3(p.X,       p.Y,       p.Z),
-			new Vector3(p.X+s.X,   p.Y,       p.Z),
-			new Vector3(p.X,       p.Y+s.Y,   p.Z),
-			new Vector3(p.X,       p.Y,       p.Z+s.Z),
-			new Vector3(p.X+s.X,   p.Y+s.Y,   p.Z),
-			new Vector3(p.X+s.X,   p.Y,       p.Z+s.Z),
-			new Vector3(p.X,       p.Y+s.Y,   p.Z+s.Z),
-			new Vector3(p.X+s.X,   p.Y+s.Y,   p.Z+s.Z),
+		Span<Vector3> corners =
+		[
+			new Vector3(p.X, p.Y, p.Z),
+			new Vector3(p.X + s.X, p.Y, p.Z),
+			new Vector3(p.X, p.Y + s.Y, p.Z),
+			new Vector3(p.X, p.Y, p.Z + s.Z),
+			new Vector3(p.X + s.X, p.Y + s.Y, p.Z),
+			new Vector3(p.X + s.X, p.Y, p.Z + s.Z),
+			new Vector3(p.X, p.Y + s.Y, p.Z + s.Z),
+			new Vector3(p.X + s.X, p.Y + s.Y, p.Z + s.Z),
 		];
 
 		for (int i = 0; i < 8; i++)
 		{
 			Vector3 w = xf * corners[i];
-			if (w.X < min.X) min.X = w.X; if (w.Y < min.Y) min.Y = w.Y; if (w.Z < min.Z) min.Z = w.Z;
-			if (w.X > max.X) max.X = w.X; if (w.Y > max.Y) max.Y = w.Y; if (w.Z > max.Z) max.Z = w.Z;
+			if (w.X < min.X)
+				min.X = w.X;
+			if (w.Y < min.Y)
+				min.Y = w.Y;
+			if (w.Z < min.Z)
+				min.Z = w.Z;
+			if (w.X > max.X)
+				max.X = w.X;
+			if (w.Y > max.Y)
+				max.Y = w.Y;
+			if (w.Z > max.Z)
+				max.Z = w.Z;
 		}
 	}
-
 
 	public enum AvatarPhotoTypeEnum
 	{
 		FullAvatar,
-		Headshot
+		Headshot,
 	}
 }

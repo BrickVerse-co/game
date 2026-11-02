@@ -42,6 +42,5 @@ public partial class UIAnimatedToggle : Node
 		{
 			_animPlay.Play("switch_off");
 		}
-
 	}
 }

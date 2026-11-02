@@ -2,13 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using Godot;
 #if CREATOR
 using BrickVerse.Datamodel.Creator;
 #endif
 
-using BrickVerse.Datamodel.Services;
+
 
 namespace BrickVerse.Datamodel;
 
@@ -86,11 +87,13 @@ public partial class GUI : Instance
 	protected override void OnParentChanged(Instance? oldParent, Instance? newParent)
 	{
 		RecomputeVisible();
-		Callable.From(() =>
-		{
-			_control.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-			RecomputeChildTransforms();
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				_control.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+				RecomputeChildTransforms();
+			})
+			.CallDeferred();
 		base.OnParentChanged(oldParent, newParent);
 	}
 
@@ -98,9 +101,9 @@ public partial class GUI : Instance
 	{
 		bool isValidParent = Parent is PlayerGUI or GUI3D
 #if CREATOR
-		or CreatorGUI
+				or CreatorGUI
 #endif
-			;
+		;
 
 		_control.Visible = _visible && isValidParent;
 	}

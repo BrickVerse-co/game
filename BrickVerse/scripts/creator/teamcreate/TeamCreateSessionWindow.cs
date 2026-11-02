@@ -1,5 +1,5 @@
-using Godot;
 using BrickVerse.Creator.UI;
+using Godot;
 
 namespace BrickVerse.Creator.TeamCreate;
 
@@ -43,10 +43,18 @@ public sealed partial class TeamCreateSessionWindow : Window
 		};
 		stopFollowing.Pressed += _service.StopFollowing;
 		controls.AddChild(stopFollowing);
-		Button reconnect = new() { Text = "Reconnect", TooltipText = "Leave and rejoin this Team Create session" };
+		Button reconnect = new()
+		{
+			Text = "Reconnect",
+			TooltipText = "Leave and rejoin this Team Create session",
+		};
 		reconnect.Pressed += _service.Reconnect;
 		controls.AddChild(reconnect);
-		Button disconnect = new() { Text = "Disconnect", TooltipText = "Disconnect until you reconnect manually" };
+		Button disconnect = new()
+		{
+			Text = "Disconnect",
+			TooltipText = "Disconnect until you reconnect manually",
+		};
 		disconnect.Pressed += _service.Disconnect;
 		controls.AddChild(disconnect);
 		layout.AddChild(controls);
@@ -63,7 +71,8 @@ public sealed partial class TeamCreateSessionWindow : Window
 		warning.AddChild(warningMargin);
 		Label warningText = new()
 		{
-			Text = "Privacy: traffic is relayed through BrickVerse servers. Collaborators do not receive your IP address.",
+			Text =
+				"Privacy: traffic is relayed through BrickVerse servers. Collaborators do not receive your IP address.",
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
 		};
 		warningMargin.AddChild(warningText);
@@ -84,7 +93,8 @@ public sealed partial class TeamCreateSessionWindow : Window
 		_status.Text = _service.Connected
 			? $"Connected via private relay • {_service.Members.Count} user(s)"
 			: "Team Create is off or not connected for this universe.";
-		foreach (Node child in _memberList.GetChildren()) child.QueueFree();
+		foreach (Node child in _memberList.GetChildren())
+			child.QueueFree();
 
 		foreach (TeamCreateMember member in _service.Members)
 		{
@@ -96,7 +106,8 @@ public sealed partial class TeamCreateSessionWindow : Window
 				Text = "●  " + member.Username,
 				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			};
-			if (isLocalMember) name.Text += " (You)";
+			if (isLocalMember)
+				name.Text += " (You)";
 			row.AddChild(name);
 			Button follow = new()
 			{

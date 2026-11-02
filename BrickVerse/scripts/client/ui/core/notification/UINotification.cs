@@ -2,15 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Client.UI.Notification;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public partial class UINotification : Control
 {
 	private const string NotificationLocation = "res://scenes/client/ui/core/notification";
-	[Export] private Control _container = null!;
+
+	[Export]
+	private Control _container = null!;
 	public CoreUIRoot CoreUI { get; set; } = null!;
 
 	public override void _Ready()
@@ -21,13 +23,25 @@ public partial class UINotification : Control
 
 	private void OnGotAchievement(string id)
 	{
-		if (!CoreUI.Root.Achievements.NotifyAchievements) return;
-		FireNotification(NotificationType.Achievement, new UIAchievementNotification.AchievementNotifyPayload() { Id = id });
+		if (!CoreUI.Root.Achievements.NotifyAchievements)
+			return;
+		FireNotification(
+			NotificationType.Achievement,
+			new UIAchievementNotification.AchievementNotifyPayload() { Id = id }
+		);
 	}
 
 	public void FireMessage(string title, string subTitle = "", Texture2D? image = null)
 	{
-		FireNotification(NotificationType.Message, new UIMessageNotification.MessageNotifyPayload() { Title = title, SubTitle = subTitle, Icon = image });
+		FireNotification(
+			NotificationType.Message,
+			new UIMessageNotification.MessageNotifyPayload()
+			{
+				Title = title,
+				SubTitle = subTitle,
+				Icon = image,
+			}
+		);
 	}
 
 	public void FireNotification(NotificationType notifyType, object? payload = null)
@@ -61,6 +75,6 @@ public partial class UINotification : Control
 		Achievement,
 		Message,
 		Screenshot,
-		FriendRequest
+		FriendRequest,
 	}
 }

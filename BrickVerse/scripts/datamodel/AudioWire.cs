@@ -17,34 +17,80 @@ public sealed partial class AudioWire : Instance
 	public Instance? SourceInstance
 	{
 		get => _source;
-		set { if (_source == value) return; NotifyDisconnected(); _source = value; Refresh(); OnPropertyChanged(); }
+		set
+		{
+			if (_source == value)
+				return;
+			NotifyDisconnected();
+			_source = value;
+			Refresh();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public string SourceName
 	{
 		get => _sourceName;
-		set { string next = string.IsNullOrWhiteSpace(value) ? "Output" : value.Trim(); if (_sourceName == next) return; NotifyDisconnected(); _sourceName = next; Refresh(); OnPropertyChanged(); }
+		set
+		{
+			string next = string.IsNullOrWhiteSpace(value) ? "Output" : value.Trim();
+			if (_sourceName == next)
+				return;
+			NotifyDisconnected();
+			_sourceName = next;
+			Refresh();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public Instance? TargetInstance
 	{
 		get => _target;
-		set { if (_target == value) return; NotifyDisconnected(); _target = value; Refresh(); OnPropertyChanged(); }
+		set
+		{
+			if (_target == value)
+				return;
+			NotifyDisconnected();
+			_target = value;
+			Refresh();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public string TargetName
 	{
 		get => _targetName;
-		set { string next = string.IsNullOrWhiteSpace(value) ? "Input" : value.Trim(); if (_targetName == next) return; NotifyDisconnected(); _targetName = next; Refresh(); OnPropertyChanged(); }
+		set
+		{
+			string next = string.IsNullOrWhiteSpace(value) ? "Input" : value.Trim();
+			if (_targetName == next)
+				return;
+			NotifyDisconnected();
+			_targetName = next;
+			Refresh();
+			OnPropertyChanged();
+		}
 	}
 
 	[ScriptProperty, SaveIgnore, CloneIgnore]
-	public bool Connected => _source is IAudioWireNode source && _target is IAudioWireNode target && _source != _target && _source.Root == Root && _target.Root == Root && source.HasOutputPin(_sourceName) && target.HasInputPin(_targetName) && !AudioGraph.WouldCycle(this);
+	public bool Connected =>
+		_source is IAudioWireNode source
+		&& _target is IAudioWireNode target
+		&& _source != _target
+		&& _source.Root == Root
+		&& _target.Root == Root
+		&& source.HasOutputPin(_sourceName)
+		&& target.HasInputPin(_targetName)
+		&& !AudioGraph.WouldCycle(this);
 
-	public override void Ready() { Refresh(); base.Ready(); }
+	public override void Ready()
+	{
+		Refresh();
+		base.Ready();
+	}
 
 	public override void PreDelete()
 	{
@@ -55,15 +101,18 @@ public sealed partial class AudioWire : Instance
 	private void Refresh()
 	{
 		bool connected = Connected;
-		if (connected && !_lastConnected) Notify(true);
+		if (connected && !_lastConnected)
+			Notify(true);
 		_lastConnected = connected;
-		if (Root != null) AudioGraph.Rebuild(Root);
+		if (Root != null)
+			AudioGraph.Rebuild(Root);
 		OnPropertyChanged(nameof(Connected));
 	}
 
 	private void NotifyDisconnected()
 	{
-		if (_lastConnected) Notify(false);
+		if (_lastConnected)
+			Notify(false);
 		_lastConnected = false;
 	}
 

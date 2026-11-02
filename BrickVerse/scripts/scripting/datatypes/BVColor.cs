@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Scripting.Datatypes;
 
@@ -11,58 +11,167 @@ public class BVColor : IScriptGDObject
 {
 	Color color;
 
-	[ScriptProperty] public float R { get => color.R; set => color.R = value; }
-	[ScriptProperty] public float G { get => color.G; set => color.G = value; }
-	[ScriptProperty] public float B { get => color.B; set => color.B = value; }
-	[ScriptProperty] public float A { get => color.A; set => color.A = value; }
+	[ScriptProperty]
+	public float R
+	{
+		get => color.R;
+		set => color.R = value;
+	}
+
+	[ScriptProperty]
+	public float G
+	{
+		get => color.G;
+		set => color.G = value;
+	}
+
+	[ScriptProperty]
+	public float B
+	{
+		get => color.B;
+		set => color.B = value;
+	}
+
+	[ScriptProperty]
+	public float A
+	{
+		get => color.A;
+		set => color.A = value;
+	}
 
 	/// <summary>
 	/// Shorthand for Color.New(0, 0, 0, 0).
 	/// </summary>
-	[ScriptProperty] public static BVColor Transparent => new() { R = 0f, G = 0f, B = 0f, A = 0f };
+	[ScriptProperty]
+	public static BVColor Transparent =>
+		new()
+		{
+			R = 0f,
+			G = 0f,
+			B = 0f,
+			A = 0f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New().
 	/// </summary>
-	[ScriptProperty] public static BVColor Black => new() { R = 0f, G = 0f, B = 0f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Black =>
+		new()
+		{
+			R = 0f,
+			G = 0f,
+			B = 0f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(0.5).
 	/// </summary>
-	[ScriptProperty] public static BVColor Gray => new() { R = 0.5f, G = 0.5f, B = 0.5f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Gray =>
+		new()
+		{
+			R = 0.5f,
+			G = 0.5f,
+			B = 0.5f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(1).
 	/// </summary>
-	[ScriptProperty] public static BVColor White => new() { R = 1f, G = 1f, B = 1f, A = 1f };
+	[ScriptProperty]
+	public static BVColor White =>
+		new()
+		{
+			R = 1f,
+			G = 1f,
+			B = 1f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(1, 0, 0).
 	/// </summary>
-	[ScriptProperty] public static BVColor Red => new() { R = 1f, G = 0f, B = 0f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Red =>
+		new()
+		{
+			R = 1f,
+			G = 0f,
+			B = 0f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(1, 1, 0).
 	/// </summary>
-	[ScriptProperty] public static BVColor Yellow => new() { R = 1f, G = 1f, B = 0f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Yellow =>
+		new()
+		{
+			R = 1f,
+			G = 1f,
+			B = 0f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(0, 1, 0).
 	/// </summary>
-	[ScriptProperty] public static BVColor Green => new() { R = 0f, G = 1f, B = 0f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Green =>
+		new()
+		{
+			R = 0f,
+			G = 1f,
+			B = 0f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(0, 1, 1).
 	/// </summary>
-	[ScriptProperty] public static BVColor Cyan => new() { R = 0f, G = 1f, B = 1f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Cyan =>
+		new()
+		{
+			R = 0f,
+			G = 1f,
+			B = 1f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(0, 0, 1).
 	/// </summary>
-	[ScriptProperty] public static BVColor Blue => new() { R = 0f, G = 0f, B = 1f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Blue =>
+		new()
+		{
+			R = 0f,
+			G = 0f,
+			B = 1f,
+			A = 1f,
+		};
+
 	/// <summary>
 	/// Shorthand for Color.New(1, 0, 1).
 	/// </summary>
-	[ScriptProperty] public static BVColor Magenta => new() { R = 1f, G = 0f, B = 1f, A = 1f };
+	[ScriptProperty]
+	public static BVColor Magenta =>
+		new()
+		{
+			R = 1f,
+			G = 0f,
+			B = 1f,
+			A = 1f,
+		};
 
 	public static BVColor FromGDClass(Color clr)
 	{
-		return new BVColor()
-		{
-			color = clr
-		};
+		return new BVColor() { color = clr };
 	}
 
 	public object ToGDClass()
@@ -78,7 +187,7 @@ public class BVColor : IScriptGDObject
 			R = 0,
 			G = 0,
 			B = 0,
-			A = 1
+			A = 1,
 		};
 	}
 
@@ -90,7 +199,7 @@ public class BVColor : IScriptGDObject
 			R = d,
 			G = d,
 			B = d,
-			A = 1
+			A = 1,
 		};
 	}
 
@@ -102,7 +211,7 @@ public class BVColor : IScriptGDObject
 			R = r,
 			G = g,
 			B = b,
-			A = 1
+			A = 1,
 		};
 	}
 
@@ -114,7 +223,7 @@ public class BVColor : IScriptGDObject
 			R = r,
 			G = g,
 			B = b,
-			A = a
+			A = a,
 		};
 	}
 
@@ -147,7 +256,8 @@ public class BVColor : IScriptGDObject
 	[ScriptMetamethod(ScriptObjectMetamethod.ToString)]
 	public static string ToString(BVColor? v)
 	{
-		if (v == null) return "<Color>";
+		if (v == null)
+			return "<Color>";
 		return $"<Color:({v.color.R}, {v.color.G}, {v.color.B}, {v.color.A})>";
 	}
 

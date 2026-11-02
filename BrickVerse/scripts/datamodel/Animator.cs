@@ -2,16 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Formats;
 using BrickVerse.Networking;
+using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System.Collections.Generic;
-using BrickVerse.Scripting;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Datamodel;
 
@@ -19,7 +19,8 @@ namespace BrickVerse.Datamodel;
 public partial class Animator : Instance
 {
 	public AnimationTree AnimationTree = null!;
-	internal AnimationPlayer AnimPlay => AnimationTree.GetNode<AnimationPlayer>(AnimationTree.AnimPlayer);
+	internal AnimationPlayer AnimPlay =>
+		AnimationTree.GetNode<AnimationPlayer>(AnimationTree.AnimPlayer);
 
 	private AnimationNodeBlendTree _blendTreeRoot = null!;
 	private AnimationNodeBlendTree _blendTree = null!;
@@ -29,7 +30,9 @@ public partial class Animator : Instance
 	private const string DynBlendPath = "parameters/DynBlend/blend_amount";
 	private float _targetDynBlendValue = 0f;
 	private bool _isPlaying = false;
-	[ScriptProperty] public bool IsPlaying => _isPlaying;
+
+	[ScriptProperty]
+	public bool IsPlaying => _isPlaying;
 	public HashSet<string> AnimationList = [];
 	public Dictionary<string, MeshAnimationAsset> AnimationAssetList = [];
 
@@ -47,9 +50,14 @@ public partial class Animator : Instance
 	private readonly Dictionary<AnimationTrack, string> _loadedTracks = [];
 	private AnimationTrack? _currentTrack;
 
-	[ScriptProperty] public AnimationTrack? CurrentTrack => _currentTrack;
-	[ScriptProperty] public BVSignal<AnimationTrack> AnimationPlayed { get; private set; } = new();
-	[ScriptProperty] public BVSignal<AnimationTrack> AnimationStopped { get; private set; } = new();
+	[ScriptProperty]
+	public AnimationTrack? CurrentTrack => _currentTrack;
+
+	[ScriptProperty]
+	public BVSignal<AnimationTrack> AnimationPlayed { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<AnimationTrack> AnimationStopped { get; private set; } = new();
 
 	public float BlendSpeed = 10f;
 
@@ -118,7 +126,11 @@ public partial class Animator : Instance
 		{
 			idPair.Add(new() { Key = animKey, ID = asset.NetworkedObjectID });
 		}
-		RpcId(peerID, nameof(NetRecvAnimationAssets), SerializeUtils.Serialize<AnimationKeyVal[]>([.. idPair]));
+		RpcId(
+			peerID,
+			nameof(NetRecvAnimationAssets),
+			SerializeUtils.Serialize<AnimationKeyVal[]>([.. idPair])
+		);
 	}
 
 	public override void PreDelete()
@@ -189,7 +201,8 @@ public partial class Animator : Instance
 			_dynTrack = (AnimationNodeStateMachine)_blendTree.GetNode("DynState");
 		}
 
-		_dynPlayback = (AnimationNodeStateMachinePlayback)AnimationTree.Get("parameters/DynBlendTree/DynState/playback");
+		_dynPlayback = (AnimationNodeStateMachinePlayback)
+			AnimationTree.Get("parameters/DynBlendTree/DynState/playback");
 		if (_hasDynBlend)
 		{
 			_lastNodeName = "DynBlend";
@@ -223,11 +236,16 @@ public partial class Animator : Instance
 		UpdateCurrentTrackState();
 		if (_dynBlend == null || AnimationTree == null)
 			return;
-		if (!Node.IsInstanceValid(AnimationTree)) return;
+		if (!Node.IsInstanceValid(AnimationTree))
+			return;
 
 		// Smooth step toward target
 		float currentValue = (float)AnimationTree.Get(DynBlendPath);
-		float newValue = Mathf.Lerp(currentValue, _targetDynBlendValue, MathUtils.ExpDecay((float)delta, BlendSpeed));
+		float newValue = Mathf.Lerp(
+			currentValue,
+			_targetDynBlendValue,
+			MathUtils.ExpDecay((float)delta, BlendSpeed)
+		);
 		AnimationTree.Set(DynBlendPath, newValue);
 
 		// Check if pending oneshot became active
@@ -262,20 +280,29 @@ public partial class Animator : Instance
 
 	private void UpdateCurrentTrackState()
 	{
-		if (_currentTrack == null || !_currentTrack.IsPlaying || AnimPlay == null) return;
+		if (_currentTrack == null || !_currentTrack.IsPlaying || AnimPlay == null)
+			return;
 		float position = (float)AnimPlay.CurrentAnimationPosition;
 		_currentTrack.UpdatePlayback(position, true);
 		bool stateEnded = _dynPlayback != null && _dynPlayback.GetCurrentNode().ToString() == "End";
-		if (_currentTrack.LoopMode == "None" && (stateEnded || position >= _currentTrack.Length - 0.002f))
+		if (
+			_currentTrack.LoopMode == "None"
+			&& (stateEnded || position >= _currentTrack.Length - 0.002f)
+		)
 			CompleteCurrentTrack(true);
 	}
 
 	[ScriptMethod]
 	public AnimationTrack LoadAnimation(AnimationTrack track)
 	{
-		if (track == null) throw new System.ArgumentNullException(nameof(track));
-		if (track.IsDeleted) throw new System.InvalidOperationException("Cannot load a deleted AnimationTrack.");
-		if (track.Root != Root) throw new System.InvalidOperationException("AnimationTrack must belong to the same World as the Animator.");
+		if (track == null)
+			throw new System.ArgumentNullException(nameof(track));
+		if (track.IsDeleted)
+			throw new System.InvalidOperationException("Cannot load a deleted AnimationTrack.");
+		if (track.Root != Root)
+			throw new System.InvalidOperationException(
+				"AnimationTrack must belong to the same World as the Animator."
+			);
 		if (_dynTrack == null || AnimationTree == null)
 			throw new System.InvalidOperationException("Animator is not initialized yet.");
 		RegisterAnimationTrack(track);
@@ -283,24 +310,30 @@ public partial class Animator : Instance
 	}
 
 	[ScriptMethod]
-	public bool IsAnimationLoaded(AnimationTrack track) => track != null && _loadedTracks.ContainsKey(track);
+	public bool IsAnimationLoaded(AnimationTrack track) =>
+		track != null && _loadedTracks.ContainsKey(track);
 
 	[ScriptMethod]
 	public void UnloadAnimation(AnimationTrack track)
 	{
-		if (track == null || !_loadedTracks.Remove(track, out string? animationKey)) return;
+		if (track == null || !_loadedTracks.Remove(track, out string? animationKey))
+			return;
 		if (_currentTrack == track)
 		{
 			InternalStopAnimation();
 			CompleteCurrentTrack(false);
-			if (HasAuthority) Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
+			if (HasAuthority)
+				Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
 		}
 		string nodeKey = animationKey.Replace('/', '_');
-		if (_dynTrack.HasNode(nodeKey)) _dynTrack.RemoveNode(nodeKey);
+		if (_dynTrack.HasNode(nodeKey))
+			_dynTrack.RemoveNode(nodeKey);
 		AnimationList.Remove(animationKey);
 		string libraryKey = TrackLibraryKey(track);
-		if (AnimPlay.HasAnimationLibrary(libraryKey)) AnimPlay.RemoveAnimationLibrary(libraryKey);
-		if (AnimationTree.HasAnimationLibrary(libraryKey)) AnimationTree.RemoveAnimationLibrary(libraryKey);
+		if (AnimPlay.HasAnimationLibrary(libraryKey))
+			AnimPlay.RemoveAnimationLibrary(libraryKey);
+		if (AnimationTree.HasAnimationLibrary(libraryKey))
+			AnimationTree.RemoveAnimationLibrary(libraryKey);
 		track.Bind(null, "");
 	}
 
@@ -311,16 +344,23 @@ public partial class Animator : Instance
 
 	private string RegisterAnimationTrack(AnimationTrack track)
 	{
-		if (_loadedTracks.TryGetValue(track, out string? existing)) return existing;
-		BVAnimationClip clip = track.GetClip() ?? throw new System.InvalidOperationException("AnimationTrack has no valid animation data.");
+		if (_loadedTracks.TryGetValue(track, out string? existing))
+			return existing;
+		BVAnimationClip clip =
+			track.GetClip()
+			?? throw new System.InvalidOperationException(
+				"AnimationTrack has no valid animation data."
+			);
 		string libraryKey = TrackLibraryKey(track);
 		string animationKey = "track/" + track.NetworkedObjectID;
 		AnimationLibrary library = BVAnimationFormat.ToLibrary(clip);
 		Godot.Animation animation = library.GetAnimation(clip.Name);
 		PreprocessAnimation(animation);
-		if (AnimPlay.HasAnimationLibrary(libraryKey)) AnimPlay.RemoveAnimationLibrary(libraryKey);
+		if (AnimPlay.HasAnimationLibrary(libraryKey))
+			AnimPlay.RemoveAnimationLibrary(libraryKey);
 		AnimPlay.AddAnimationLibrary(libraryKey, library);
-		if (AnimationTree.HasAnimationLibrary(libraryKey)) AnimationTree.RemoveAnimationLibrary(libraryKey);
+		if (AnimationTree.HasAnimationLibrary(libraryKey))
+			AnimationTree.RemoveAnimationLibrary(libraryKey);
 		AnimationTree.AddAnimationLibrary(libraryKey, library);
 		ImportAnimationRaw(animationKey, libraryKey + "/" + clip.Name, animation.LoopMode);
 		_loadedTracks[track] = animationKey;
@@ -332,23 +372,27 @@ public partial class Animator : Instance
 	public void PlayAnimationTrack(AnimationTrack track)
 	{
 		string key = RegisterAnimationTrack(track);
-		if (_currentTrack != null && _currentTrack != track) CompleteCurrentTrack(false);
+		if (_currentTrack != null && _currentTrack != track)
+			CompleteCurrentTrack(false);
 		_currentTrack = track;
 		track.NotifyPlayed();
 		AnimationPlayed.Invoke(track);
 		AnimPlay.SpeedScale = track.Speed;
 		InternalPlayAnimation(key);
-		if (HasAuthority) Rpc(nameof(NetPlayAnimationTrack), track.NetworkedObjectID, track.Speed);
+		if (HasAuthority)
+			Rpc(nameof(NetPlayAnimationTrack), track.NetworkedObjectID, track.Speed);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private async void NetPlayAnimationTrack(string trackId, float speed)
 	{
 		AnimationTrack? track = (AnimationTrack?)await Root.WaitForNetObjectAsync(trackId);
-		if (track == null) return;
+		if (track == null)
+			return;
 		string key = RegisterAnimationTrack(track);
 		track.AdjustSpeed(speed);
-		if (_currentTrack != null && _currentTrack != track) CompleteCurrentTrack(false);
+		if (_currentTrack != null && _currentTrack != track)
+			CompleteCurrentTrack(false);
 		_currentTrack = track;
 		track.NotifyPlayed();
 		AnimationPlayed.Invoke(track);
@@ -359,33 +403,39 @@ public partial class Animator : Instance
 	[ScriptMethod]
 	public void StopAnimationTrack(AnimationTrack track)
 	{
-		if (track == null || _currentTrack != track) return;
+		if (track == null || _currentTrack != track)
+			return;
 		InternalStopAnimation();
 		CompleteCurrentTrack(false);
-		if (HasAuthority) Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
+		if (HasAuthority)
+			Rpc(nameof(NetStopAnimationTrack), track.NetworkedObjectID);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetStopAnimationTrack(string trackId)
 	{
-		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		if (_currentTrack?.NetworkedObjectID != trackId)
+			return;
 		InternalStopAnimation();
 		CompleteCurrentTrack(false);
 	}
 
 	internal void SeekAnimationTrack(AnimationTrack track, float seconds)
 	{
-		if (_currentTrack != track) return;
+		if (_currentTrack != track)
+			return;
 		float position = Mathf.Clamp(seconds, 0, track.Length);
 		AnimPlay.Seek(position, true);
 		track.UpdatePlayback(position, true);
-		if (HasAuthority) Rpc(nameof(NetSeekAnimationTrack), track.NetworkedObjectID, position);
+		if (HasAuthority)
+			Rpc(nameof(NetSeekAnimationTrack), track.NetworkedObjectID, position);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetSeekAnimationTrack(string trackId, float seconds)
 	{
-		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		if (_currentTrack?.NetworkedObjectID != trackId)
+			return;
 		float position = Mathf.Clamp(seconds, 0, _currentTrack.Length);
 		AnimPlay.Seek(position, true);
 		_currentTrack.UpdatePlayback(position, true);
@@ -393,22 +443,26 @@ public partial class Animator : Instance
 
 	internal void SetAnimationTrackSpeed(AnimationTrack track, float speed)
 	{
-		if (_currentTrack != track) return;
+		if (_currentTrack != track)
+			return;
 		AnimPlay.SpeedScale = speed;
-		if (HasAuthority) Rpc(nameof(NetSetAnimationTrackSpeed), track.NetworkedObjectID, speed);
+		if (HasAuthority)
+			Rpc(nameof(NetSetAnimationTrackSpeed), track.NetworkedObjectID, speed);
 	}
 
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetSetAnimationTrackSpeed(string trackId, float speed)
 	{
-		if (_currentTrack?.NetworkedObjectID != trackId) return;
+		if (_currentTrack?.NetworkedObjectID != trackId)
+			return;
 		_currentTrack.AdjustSpeed(speed);
 		AnimPlay.SpeedScale = _currentTrack.Speed;
 	}
 
 	private void CompleteCurrentTrack(bool ended)
 	{
-		if (_currentTrack == null) return;
+		if (_currentTrack == null)
+			return;
 		AnimationTrack track = _currentTrack;
 		_currentTrack = null;
 		_isPlaying = false;
@@ -435,7 +489,8 @@ public partial class Animator : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private async void NetImportAnimAsset(string key, string animID)
 	{
-		MeshAnimationAsset? animAsset = (MeshAnimationAsset?)await Root.WaitForNetObjectAsync(animID);
+		MeshAnimationAsset? animAsset = (MeshAnimationAsset?)
+			await Root.WaitForNetObjectAsync(animID);
 
 		if (animAsset != null)
 		{
@@ -460,7 +515,8 @@ public partial class Animator : Instance
 		{
 			if (res is AnimationLibrary animLib)
 			{
-				if (prevLib == animLib) return;
+				if (prevLib == animLib)
+					return;
 
 				prevLib = animLib;
 				AnimPlay.AddAnimationLibrary(internalKey, animLib);
@@ -479,7 +535,10 @@ public partial class Animator : Instance
 					{
 						ImportOneShotAnimationRaw(k, ik);
 					}
-					else if (asset.AnimationType == MeshAnimationAsset.MeshAnimationTypeEnum.OneShotImpluse)
+					else if (
+						asset.AnimationType
+						== MeshAnimationAsset.MeshAnimationTypeEnum.OneShotImpluse
+					)
 					{
 						ImportOneShotAnimationRaw(k, ik, true);
 					}
@@ -488,7 +547,9 @@ public partial class Animator : Instance
 						anim.LoopMode = Animation.LoopModeEnum.Linear;
 						ImportAnimationRaw(k, ik, Animation.LoopModeEnum.Linear);
 					}
-					else if (asset.AnimationType == MeshAnimationAsset.MeshAnimationTypeEnum.PingPong)
+					else if (
+						asset.AnimationType == MeshAnimationAsset.MeshAnimationTypeEnum.PingPong
+					)
 					{
 						anim.LoopMode = Animation.LoopModeEnum.Pingpong;
 						ImportAnimationRaw(k, ik, Animation.LoopModeEnum.Pingpong);
@@ -510,7 +571,11 @@ public partial class Animator : Instance
 		asset.LoadResource();
 	}
 
-	internal void ImportAnimationRaw(string animationKey, string animationName, Godot.Animation.LoopModeEnum loopMode = Godot.Animation.LoopModeEnum.Linear)
+	internal void ImportAnimationRaw(
+		string animationKey,
+		string animationName,
+		Godot.Animation.LoopModeEnum loopMode = Godot.Animation.LoopModeEnum.Linear
+	)
 	{
 		string filteredAnimKey = animationKey.Replace('/', '_');
 		if (_dynTrack.HasNode(filteredAnimKey))
@@ -525,23 +590,32 @@ public partial class Animator : Instance
 		AnimationNodeAnimation animationNode = new()
 		{
 			Animation = animationName,
-			LoopMode = loopMode
+			LoopMode = loopMode,
 		};
 		_dynTrack.AddNode(filteredAnimKey, animationNode, new Vector2(0, 200));
 
 		// Start -> AnimKey -> End
-		_dynTrack.AddTransition("Start", filteredAnimKey, new()
-		{
-			AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Auto
-		});
-		_dynTrack.AddTransition(filteredAnimKey, "End", new()
-		{
-			AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Auto,
-			SwitchMode = AnimationNodeStateMachineTransition.SwitchModeEnum.AtEnd,
-		});
+		_dynTrack.AddTransition(
+			"Start",
+			filteredAnimKey,
+			new() { AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Auto }
+		);
+		_dynTrack.AddTransition(
+			filteredAnimKey,
+			"End",
+			new()
+			{
+				AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Auto,
+				SwitchMode = AnimationNodeStateMachineTransition.SwitchModeEnum.AtEnd,
+			}
+		);
 	}
 
-	internal void ImportOneShotAnimationRaw(string animationKey, string animationName, bool impluse = false)
+	internal void ImportOneShotAnimationRaw(
+		string animationKey,
+		string animationName,
+		bool impluse = false
+	)
 	{
 		string oneshotKey = animationKey.Replace('/', '_') + "_oneshot";
 		string animKey = animationKey.Replace('/', '_') + "_anim";
@@ -616,9 +690,11 @@ public partial class Animator : Instance
 			string trackPath = anim.TrackGetPath(i);
 			Animation.TrackType trackType = anim.TrackGetType(i);
 
-			if (trackType != Animation.TrackType.Position3D &&
-				trackType != Animation.TrackType.Rotation3D &&
-				trackType != Animation.TrackType.Scale3D)
+			if (
+				trackType != Animation.TrackType.Position3D
+				&& trackType != Animation.TrackType.Rotation3D
+				&& trackType != Animation.TrackType.Scale3D
+			)
 			{
 				// Remove non-transform tracks
 				anim.RemoveTrack(i);
@@ -679,15 +755,17 @@ public partial class Animator : Instance
 		_dynPlayback.Stop();
 
 		// Call on next frame, wait for stop to run properly
-		Callable.From(() =>
-		{
-			if (_dynTrack.HasNode(filteredAnimKey))
+		Callable
+			.From(() =>
 			{
-				_dynPlayback.Start(filteredAnimKey);
-			}
-			_targetDynBlendValue = 1;
-			_isPlaying = true;
-		}).CallDeferred();
+				if (_dynTrack.HasNode(filteredAnimKey))
+				{
+					_dynPlayback.Start(filteredAnimKey);
+				}
+				_targetDynBlendValue = 1;
+				_isPlaying = true;
+			})
+			.CallDeferred();
 	}
 
 	[ScriptMethod]
@@ -699,7 +777,10 @@ public partial class Animator : Instance
 	[NetRpc(AuthorityMode.Authority, CallLocal = true, TransferMode = TransferMode.Reliable)]
 	private async void NetPlayOneShotAnimation(string animationKey)
 	{
-		if (!AnimationList.Contains(animationKey)) { return; }
+		if (!AnimationList.Contains(animationKey))
+		{
+			return;
+		}
 		string filteredAnimKey = animationKey.Replace('/', '_');
 
 		string oneshotPath = "parameters/" + filteredAnimKey + "_oneshot";
@@ -722,7 +803,8 @@ public partial class Animator : Instance
 	public void StopAnimation()
 	{
 		// If dynblend value is already none, return
-		if (_targetDynBlendValue == 0 && _currentTrack == null) return;
+		if (_targetDynBlendValue == 0 && _currentTrack == null)
+			return;
 		InternalStopAnimation();
 		CompleteCurrentTrack(false);
 
@@ -749,7 +831,6 @@ public partial class Animator : Instance
 		InternalStopAnimation();
 	}
 
-
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetAbortOneShot()
 	{
@@ -768,7 +849,10 @@ public partial class Animator : Instance
 	{
 		if (_currentOneShot != null)
 		{
-			AnimationTree.Set(_currentOneShot + "/request", (int)AnimationNodeOneShot.OneShotRequest.Abort);
+			AnimationTree.Set(
+				_currentOneShot + "/request",
+				(int)AnimationNodeOneShot.OneShotRequest.Abort
+			);
 			_currentOneShot = null;
 		}
 	}

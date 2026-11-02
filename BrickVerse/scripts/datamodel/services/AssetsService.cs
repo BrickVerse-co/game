@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
-using System.Collections.Generic;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -60,25 +60,18 @@ public sealed partial class AssetsService : Instance
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IORead)]
 	public FileLinkAsset GetFileLinkByPath(string path)
 	{
-		if (FileLinks.TryGetValue(Root.IO.GetIDFromPath(path), out FileLinkAsset? link)) return link;
-		FileLinkAsset fl = new()
-		{
-			Root = Root,
-			LinkedID = Root.IO.GetIDFromPath(path),
-		};
+		if (FileLinks.TryGetValue(Root.IO.GetIDFromPath(path), out FileLinkAsset? link))
+			return link;
+		FileLinkAsset fl = new() { Root = Root, LinkedID = Root.IO.GetIDFromPath(path) };
 		return fl;
 	}
-
 
 	[ScriptMethod(Permissions = Scripting.ScriptPermissionFlags.IORead)]
 	public FileLinkAsset GetFileLinkByID(string id)
 	{
-		if (FileLinks.TryGetValue(id, out FileLinkAsset? link)) return link;
-		FileLinkAsset fl = new()
-		{
-			Root = Root,
-			LinkedID = id,
-		};
+		if (FileLinks.TryGetValue(id, out FileLinkAsset? link))
+			return link;
+		FileLinkAsset fl = new() { Root = Root, LinkedID = id };
 		return fl;
 	}
 

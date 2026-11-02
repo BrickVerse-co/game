@@ -24,25 +24,86 @@ public sealed partial class Highlight : Instance
 	private DepthModeEnum _depthMode = DepthModeEnum.AlwaysOnTop;
 
 	[Editable, ScriptProperty]
-	public Instance? Adornee { get => _adornee; set { _adornee = value; OnPropertyChanged(); } }
+	public Instance? Adornee
+	{
+		get => _adornee;
+		set
+		{
+			_adornee = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(true)]
-	public bool Enabled { get => _enabled; set { _enabled = value; OnPropertyChanged(); } }
+	public bool Enabled
+	{
+		get => _enabled;
+		set
+		{
+			_enabled = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
-	public Color FillColor { get => _fillColor; set { _fillColor = value; RefreshMaterials(); OnPropertyChanged(); } }
+	public Color FillColor
+	{
+		get => _fillColor;
+		set
+		{
+			_fillColor = value;
+			RefreshMaterials();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(0.5f)]
-	public float FillTransparency { get => _fillTransparency; set { _fillTransparency = Mathf.Clamp(value, 0, 1); RefreshMaterials(); OnPropertyChanged(); } }
+	public float FillTransparency
+	{
+		get => _fillTransparency;
+		set
+		{
+			_fillTransparency = Mathf.Clamp(value, 0, 1);
+			RefreshMaterials();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
-	public Color OutlineColor { get => _outlineColor; set { _outlineColor = value; RefreshMaterials(); OnPropertyChanged(); } }
+	public Color OutlineColor
+	{
+		get => _outlineColor;
+		set
+		{
+			_outlineColor = value;
+			RefreshMaterials();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(0.0f)]
-	public float OutlineTransparency { get => _outlineTransparency; set { _outlineTransparency = Mathf.Clamp(value, 0, 1); RefreshMaterials(); OnPropertyChanged(); } }
+	public float OutlineTransparency
+	{
+		get => _outlineTransparency;
+		set
+		{
+			_outlineTransparency = Mathf.Clamp(value, 0, 1);
+			RefreshMaterials();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(DepthModeEnum.AlwaysOnTop)]
-	public DepthModeEnum DepthMode { get => _depthMode; set { _depthMode = value; RefreshMaterials(); OnPropertyChanged(); } }
+	public DepthModeEnum DepthMode
+	{
+		get => _depthMode;
+		set
+		{
+			_depthMode = value;
+			RefreshMaterials();
+			OnPropertyChanged();
+		}
+	}
 
 	public override void Init()
 	{
@@ -71,7 +132,8 @@ public sealed partial class Highlight : Instance
 
 	private void CreateMeshes()
 	{
-		if (_fillMesh != null) return;
+		if (_fillMesh != null)
+			return;
 
 		_fillMaterial.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
 		_fillMaterial.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
@@ -84,12 +146,12 @@ public sealed partial class Highlight : Instance
 		_fillMesh = new MeshInstance3D
 		{
 			Mesh = new BoxMesh { Size = Vector3.One, Material = _fillMaterial },
-			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 		};
 		_outlineMesh = new MeshInstance3D
 		{
 			Mesh = new BoxMesh { Size = Vector3.One, Material = _outlineMaterial },
-			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 		};
 		Root.GDNode.AddChild(_fillMesh, @internal: Node.InternalMode.Back);
 		Root.GDNode.AddChild(_outlineMesh, @internal: Node.InternalMode.Back);
@@ -108,7 +170,8 @@ public sealed partial class Highlight : Instance
 
 	private void UpdateHighlight()
 	{
-		if (_fillMesh == null || _outlineMesh == null) return;
+		if (_fillMesh == null || _outlineMesh == null)
+			return;
 		Dynamic? target = (_adornee ?? Parent) as Dynamic;
 		if (!_enabled || target == null)
 		{
@@ -121,11 +184,18 @@ public sealed partial class Highlight : Instance
 		bool visible = bounds.Size != Vector3.Zero;
 		_fillMesh.Visible = visible && _fillTransparency < 1;
 		_outlineMesh.Visible = visible && _outlineTransparency < 1;
-		if (!visible) return;
+		if (!visible)
+			return;
 
-		_fillMesh.GlobalTransform = new Transform3D(Basis.FromScale(bounds.Size), bounds.GetCenter());
+		_fillMesh.GlobalTransform = new Transform3D(
+			Basis.FromScale(bounds.Size),
+			bounds.GetCenter()
+		);
 		Vector3 outlineSize = bounds.Size + Vector3.One * 0.04f;
-		_outlineMesh.GlobalTransform = new Transform3D(Basis.FromScale(outlineSize), bounds.GetCenter());
+		_outlineMesh.GlobalTransform = new Transform3D(
+			Basis.FromScale(outlineSize),
+			bounds.GetCenter()
+		);
 	}
 
 	[ScriptEnum("HighlightDepthMode")]

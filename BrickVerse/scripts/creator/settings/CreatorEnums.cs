@@ -13,14 +13,14 @@ public enum PreferredEditorEnum
 	SystemDefault,
 	VSCode,
 	Zed,
-	VisualStudio
+	VisualStudio,
 }
 
 [ScriptEnum("IndentationMode", IsCreatorOnly = true)]
 public enum IndentationModeEnum
 {
 	Tabs,
-	Spaces
+	Spaces,
 }
 
 [ScriptEnum("CodeEditorColorTheme", IsCreatorOnly = true)]
@@ -30,40 +30,40 @@ public enum CodeEditorColorThemeEnum
 	VisualStudioDark,
 	Dracula,
 	Light,
-	HighContrast
+	HighContrast,
 }
 
 [ScriptEnum("CreatorThemeMode", IsCreatorOnly = true)]
 public enum CreatorThemeModeEnum
 {
 	Dark,
-	Light
+	Light,
 }
 
 [ScriptEnum("TransformOrientation", IsCreatorOnly = true)]
 public enum TransformOrientationEnum
 {
 	Global,
-	Local
+	Local,
 }
 
 [ScriptEnum("SelectionPivotMode", IsCreatorOnly = true)]
 public enum SelectionPivotModeEnum
 {
 	Center,
-	PrimarySelection
+	PrimarySelection,
 }
 
 [ScriptEnum("MoveGizmoStyle", IsCreatorOnly = true)]
 public enum MoveGizmoStyleEnum
 {
 	Classic,
-	Universal
+	Universal,
 }
 
 [ScriptEnum("PlayTestPresentation", IsCreatorOnly = true)]
 public enum PlayTestPresentationEnum
 {
 	Attached,
-	Windowed
+	Windowed,
 }

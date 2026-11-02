@@ -2,15 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -54,7 +54,6 @@ public sealed partial class Players : Instance
 	[ScriptProperty]
 	public int PlayersCount => GetChildren().Count(c => c is Player plr && plr.IsReady);
 
-
 	[ScriptProperty]
 	public int MaxPlayers { get; private set; } = 0;
 
@@ -73,13 +72,14 @@ public sealed partial class Players : Instance
 	public readonly Dictionary<string, Player> _idToPlayer = [];
 
 	/// <summary>
-	/// Get Player from Peer ID. This should only be called on server, as peer is not guaranteed to be available on clients. 
+	/// Get Player from Peer ID. This should only be called on server, as peer is not guaranteed to be available on clients.
 	/// </summary>
 	/// <param name="peerID"></param>
 	/// <returns></returns>
 	internal Player? GetPlayerFromPeerID(int peerID)
 	{
-		if (PeerIDToPlayer.TryGetValue(peerID, out Player? player)) return player;
+		if (PeerIDToPlayer.TryGetValue(peerID, out Player? player))
+			return player;
 		return null;
 	}
 
@@ -123,7 +123,8 @@ public sealed partial class Players : Instance
 	[ScriptMethod]
 	public Player? GetPlayerByID(string userID)
 	{
-		if (_idToPlayer.TryGetValue(userID, out Player? player)) return player;
+		if (_idToPlayer.TryGetValue(userID, out Player? player))
+			return player;
 
 		// fallback: Find from each players
 		foreach (Player plr in GetPlayers())
@@ -218,7 +219,10 @@ public sealed partial class Players : Instance
 		LocalPlayer = FindChild<Player>(plrName)!;
 		if (LocalPlayer == null)
 		{
-			Root.Network.DisconnectSelf("INTERNAL BUG: Player not found, please rejoin", NetworkService.DisconnectionCodeEnum.PlayerNotFound);
+			Root.Network.DisconnectSelf(
+				"INTERNAL BUG: Player not found, please rejoin",
+				NetworkService.DisconnectionCodeEnum.PlayerNotFound
+			);
 			return;
 		}
 		LocalPlayer.OnNetReady();

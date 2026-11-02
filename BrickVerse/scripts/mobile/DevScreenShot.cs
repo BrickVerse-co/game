@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.IO;
+using Godot;
 
 public partial class DevScreenShot : Node
 {
@@ -27,20 +27,15 @@ public partial class DevScreenShot : Node
 		Image image = GetViewport().GetTexture().GetImage();
 
 		string directory = "user://screenshots";
-		DirAccess.MakeDirRecursiveAbsolute(
-			ProjectSettings.GlobalizePath(directory)
-		);
+		DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(directory));
 
-		string path =
-			$"{directory}/screenshot_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
+		string path = $"{directory}/screenshot_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
 
 		Error error = image.SavePng(path);
 
 		if (error == Error.Ok)
 		{
-			GD.Print(
-				$"Screenshot saved: {ProjectSettings.GlobalizePath(path)}"
-			);
+			GD.Print($"Screenshot saved: {ProjectSettings.GlobalizePath(path)}");
 		}
 		else
 		{

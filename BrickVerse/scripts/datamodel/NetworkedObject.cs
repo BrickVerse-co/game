@@ -249,17 +249,27 @@ public partial class NetworkedObject : IScriptObject
 
 	[ScriptProperty]
 	public BVSignal<string> PropertyChanged { get; private set; } = new();
+
 	[ScriptProperty]
 	public BVSignal<string> Changed => PropertyChanged;
-	private readonly Dictionary<string, BVSignal> _propertyChangedSignals = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, BVSignal> _propertyChangedSignals = new(
+		StringComparer.Ordinal
+	);
 
 	[ScriptMethod]
 	public BVSignal GetPropertyChangedSignal(string propertyName)
 	{
 		if (string.IsNullOrWhiteSpace(propertyName))
 			throw new ArgumentException("Property name cannot be empty.", nameof(propertyName));
-		if (!GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public).Any(property => property.Name == propertyName))
-			throw new ArgumentException($"{ClassName} has no property named '{propertyName}'.", nameof(propertyName));
+		if (
+			!GetType()
+				.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+				.Any(property => property.Name == propertyName)
+		)
+			throw new ArgumentException(
+				$"{ClassName} has no property named '{propertyName}'.",
+				nameof(propertyName)
+			);
 		if (!_propertyChangedSignals.TryGetValue(propertyName, out BVSignal? signal))
 			_propertyChangedSignals[propertyName] = signal = new();
 		return signal;
@@ -1207,7 +1217,8 @@ public partial class NetworkedObject : IScriptObject
 	)
 	{
 		PropertyChanged.InvokeOne(propertyName);
-		if (_propertyChangedSignals.TryGetValue(propertyName, out BVSignal? signal)) signal.Invoke();
+		if (_propertyChangedSignals.TryGetValue(propertyName, out BVSignal? signal))
+			signal.Invoke();
 		if (syncToNet)
 			SyncPropToClients(propertyName);
 	}
@@ -1432,8 +1443,10 @@ public partial class NetworkedObject : IScriptObject
 
 		if (netobj == null)
 		{
-			string message = $"The server replicated unsupported class '{className}' at '{data.NodePath}'.";
-			if (data.IsSyncOnce) throw new NetworkException(message);
+			string message =
+				$"The server replicated unsupported class '{className}' at '{data.NodePath}'.";
+			if (data.IsSyncOnce)
+				throw new NetworkException(message);
 			BV.PrintErr(message);
 			return;
 		}

@@ -18,5 +18,5 @@ public class CreatorEnumOptionsAttribute : Attribute
 public enum EnumSortOption
 {
 	None,
-	Alphabetical
+	Alphabetical,
 }

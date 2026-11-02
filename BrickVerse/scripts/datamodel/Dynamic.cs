@@ -14,7 +14,6 @@ using BrickVerse.Creator.Spatial;
 using BrickVerse.Datamodel.Interfaces;
 #endif
 
-
 namespace BrickVerse.Datamodel;
 
 [Instantiable]
@@ -64,7 +63,8 @@ public partial class Dynamic : Instance
 		get => _streamingMode;
 		set
 		{
-			if (_streamingMode == value) return;
+			if (_streamingMode == value)
+				return;
 			_streamingMode = value;
 			OnPropertyChanged();
 		}
@@ -78,7 +78,8 @@ public partial class Dynamic : Instance
 		set
 		{
 			float sanitized = Mathf.Max(0, value);
-			if (Mathf.IsEqualApprox(_streamingDistance, sanitized)) return;
+			if (Mathf.IsEqualApprox(_streamingDistance, sanitized))
+				return;
 			_streamingDistance = sanitized;
 			OnPropertyChanged();
 		}
@@ -90,7 +91,8 @@ public partial class Dynamic : Instance
 
 	internal void SetStreamedInState(bool value)
 	{
-		if (_isStreamedIn == value) return;
+		if (_isStreamedIn == value)
+			return;
 		_isStreamedIn = value;
 		OnPropertyChanged(nameof(IsStreamedIn), false);
 	}
@@ -111,7 +113,8 @@ public partial class Dynamic : Instance
 		get => _pivotOffset;
 		set
 		{
-			if (_pivotOffset.IsEqualApprox(value)) return;
+			if (_pivotOffset.IsEqualApprox(value))
+				return;
 			_pivotOffset = value;
 			OnPropertyChanged();
 		}
@@ -125,7 +128,8 @@ public partial class Dynamic : Instance
 		set
 		{
 			Vector3 sanitized = value.SanitizeNaN();
-			if (_pivotRotation.IsEqualApprox(sanitized)) return;
+			if (_pivotRotation.IsEqualApprox(sanitized))
+				return;
 			_pivotRotation = sanitized;
 			OnPropertyChanged();
 		}
@@ -163,11 +167,13 @@ public partial class Dynamic : Instance
 		get => new(GetGlobalTransform().Basis.Orthonormalized(), GetGlobalPosition());
 		set
 		{
-			if (!value.IsFinite()) throw new ArgumentException("CFrame must contain finite values.", nameof(value));
+			if (!value.IsFinite())
+				throw new ArgumentException("CFrame must contain finite values.", nameof(value));
 			Transform3D next = new(value.Basis.Orthonormalized().Scaled(NodeSize), value.Origin);
 			GrantServerMovementGrace(next.Origin, GetGlobalPosition());
 			SetGlobalTransform(next);
-			if (AutoUpdateNetTransform) UpdateNetTransformReliable();
+			if (AutoUpdateNetTransform)
+				UpdateNetTransformReliable();
 			OnPropertyChanged();
 			OnPropertyChanged(nameof(Position), false);
 			OnPropertyChanged(nameof(Rotation), false);
@@ -236,11 +242,13 @@ public partial class Dynamic : Instance
 
 	private void GrantServerMovementGrace(Vector3 next, Vector3 current)
 	{
-		if (this is Player player
+		if (
+			this is Player player
 			&& Root?.Network?.IsServer == true
 			&& next.IsFinite()
 			&& current.IsFinite()
-			&& next.DistanceTo(current) > 20f)
+			&& next.DistanceTo(current) > 20f
+		)
 		{
 			player.antiCheatMovementGraceUntilMsec = Time.GetTicksMsec() + 3000;
 		}
@@ -281,7 +289,8 @@ public partial class Dynamic : Instance
 		set
 		{
 			Quaternion q = value;
-			if (!q.IsFinite()) return;
+			if (!q.IsFinite())
+				return;
 			GDNode3D.GlobalBasis = new(q);
 			if (AutoUpdateNetTransform)
 			{
@@ -298,7 +307,8 @@ public partial class Dynamic : Instance
 		set
 		{
 			Quaternion q = value;
-			if (!q.IsFinite()) return;
+			if (!q.IsFinite())
+				return;
 			GDNode3D.Basis = new(q);
 			if (AutoUpdateNetTransform)
 			{
@@ -442,7 +452,6 @@ public partial class Dynamic : Instance
 			_overrideNetworkTransform = value;
 		}
 	}
-
 
 	/// <summary>
 	/// Virtual function to notify when node size changed
@@ -900,10 +909,12 @@ public partial class Dynamic : Instance
 		if (previous != null && _hasNotifiedOnce)
 		{
 			moved = _lastNotifiedTransform.Origin.DistanceTo(current.Origin) > 0.001f;
-			rotated = _lastNotifiedTransform.Basis.GetRotationQuaternion().AngleTo(current.Basis.GetRotationQuaternion()) > 0.001f;
+			rotated =
+				_lastNotifiedTransform
+					.Basis.GetRotationQuaternion()
+					.AngleTo(current.Basis.GetRotationQuaternion()) > 0.001f;
 			resized = (_lastNotifiedTransform.Basis.Scale - current.Basis.Scale).Length() > 0.001f;
 		}
-
 
 		// Notify transform change without sync to clients
 		if (moved)

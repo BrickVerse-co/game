@@ -2,19 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared;
 using System.Collections.Generic;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public sealed partial class FileBrowser : TabContainer
 {
-	private const string FileBrowserTabPath = "res://scenes/creator/docks/filebrowser/file_tab.tscn";
+	private const string FileBrowserTabPath =
+		"res://scenes/creator/docks/filebrowser/file_tab.tscn";
 
 	private static readonly Dictionary<CreatorSession, FileBrowserTab> SessionToBrowserTab = [];
 
 	public static FileBrowser Singleton { get; private set; } = null!;
+
 	public FileBrowser()
 	{
 		Singleton = this;
@@ -30,7 +32,9 @@ public sealed partial class FileBrowser : TabContainer
 
 	public FileBrowserTab Insert(CreatorSession session)
 	{
-		FileBrowserTab browserTab = Globals.CreateInstanceFromScene<FileBrowserTab>(FileBrowserTabPath);
+		FileBrowserTab browserTab = Globals.CreateInstanceFromScene<FileBrowserTab>(
+			FileBrowserTabPath
+		);
 		browserTab.Session = session;
 		AddChild(browserTab);
 		SessionToBrowserTab[session] = browserTab;

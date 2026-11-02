@@ -1,8 +1,8 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
 using Godot;
-using System;
 
 namespace BrickVerse.Datamodel;
 
@@ -30,43 +30,131 @@ public sealed partial class SceneCapture : Dynamic
 		set
 		{
 			Vector2I next = new(Math.Clamp(value.X, 64, 2048), Math.Clamp(value.Y, 64, 2048));
-			if (_resolution == next) return;
+			if (_resolution == next)
+				return;
 			_resolution = next;
-			if (_viewport != null) _viewport.Size = next;
+			if (_viewport != null)
+				_viewport.Size = next;
 			OnPropertyChanged();
 			TextureChanged.Invoke();
 		}
 	}
 
 	[Editable, ScriptProperty, DefaultValue(70f)]
-	public float FieldOfView { get => _fieldOfView; set { _fieldOfView = Mathf.Clamp(value, 1, 179); ApplyCamera(); OnPropertyChanged(); } }
+	public float FieldOfView
+	{
+		get => _fieldOfView;
+		set
+		{
+			_fieldOfView = Mathf.Clamp(value, 1, 179);
+			ApplyCamera();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(0.05f)]
-	public float NearClip { get => _nearClip; set { _nearClip = Mathf.Clamp(value, 0.001f, _farClip - 0.001f); ApplyCamera(); OnPropertyChanged(); } }
+	public float NearClip
+	{
+		get => _nearClip;
+		set
+		{
+			_nearClip = Mathf.Clamp(value, 0.001f, _farClip - 0.001f);
+			ApplyCamera();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(1000f)]
-	public float FarClip { get => _farClip; set { _farClip = Mathf.Max(value, _nearClip + 0.001f); ApplyCamera(); OnPropertyChanged(); } }
+	public float FarClip
+	{
+		get => _farClip;
+		set
+		{
+			_farClip = Mathf.Max(value, _nearClip + 0.001f);
+			ApplyCamera();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(false)]
-	public bool Orthographic { get => _orthographic; set { _orthographic = value; ApplyCamera(); OnPropertyChanged(); } }
+	public bool Orthographic
+	{
+		get => _orthographic;
+		set
+		{
+			_orthographic = value;
+			ApplyCamera();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(10f)]
-	public float OrthographicSize { get => _orthographicSize; set { _orthographicSize = Mathf.Max(0.01f, value); ApplyCamera(); OnPropertyChanged(); } }
+	public float OrthographicSize
+	{
+		get => _orthographicSize;
+		set
+		{
+			_orthographicSize = Mathf.Max(0.01f, value);
+			ApplyCamera();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(true)]
-	public bool Enabled { get => _enabled; set { _enabled = value; ApplyUpdateMode(); OnPropertyChanged(); } }
+	public bool Enabled
+	{
+		get => _enabled;
+		set
+		{
+			_enabled = value;
+			ApplyUpdateMode();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(CaptureUpdateMode.Continuous)]
-	public CaptureUpdateMode UpdateMode { get => _updateMode; set { _updateMode = value; ApplyUpdateMode(); OnPropertyChanged(); } }
+	public CaptureUpdateMode UpdateMode
+	{
+		get => _updateMode;
+		set
+		{
+			_updateMode = value;
+			ApplyUpdateMode();
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty]
-	public uint CullMask { get => _cullMask; set { _cullMask = value; if (_camera != null) _camera.CullMask = value; OnPropertyChanged(); } }
+	public uint CullMask
+	{
+		get => _cullMask;
+		set
+		{
+			_cullMask = value;
+			if (_camera != null)
+				_camera.CullMask = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty, DefaultValue(false)]
-	public bool TransparentBackground { get => _transparentBackground; set { _transparentBackground = value; if (_viewport != null) _viewport.TransparentBg = value; OnPropertyChanged(); } }
+	public bool TransparentBackground
+	{
+		get => _transparentBackground;
+		set
+		{
+			_transparentBackground = value;
+			if (_viewport != null)
+				_viewport.TransparentBg = value;
+			OnPropertyChanged();
+		}
+	}
 
-	[ScriptProperty] public BVSignal TextureChanged { get; private set; } = new();
-	[ScriptProperty] public BVSignal Captured { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal TextureChanged { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Captured { get; private set; } = new();
 
 	public override void Init()
 	{
@@ -91,7 +179,8 @@ public sealed partial class SceneCapture : Dynamic
 	public override void Process(double delta)
 	{
 		base.Process(delta);
-		if (_camera != null) _camera.GlobalTransform = GDNode3D.GlobalTransform;
+		if (_camera != null)
+			_camera.GlobalTransform = GDNode3D.GlobalTransform;
 	}
 
 	[ScriptMethod]
@@ -100,15 +189,19 @@ public sealed partial class SceneCapture : Dynamic
 	[ScriptMethod]
 	public void Capture()
 	{
-		if (!_enabled) return;
+		if (!_enabled)
+			return;
 		_viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
 		Callable.From(() => Captured.Invoke()).CallDeferred();
 	}
 
 	private void ApplyCamera()
 	{
-		if (_camera == null) return;
-		_camera.Projection = _orthographic ? Camera3D.ProjectionType.Orthogonal : Camera3D.ProjectionType.Perspective;
+		if (_camera == null)
+			return;
+		_camera.Projection = _orthographic
+			? Camera3D.ProjectionType.Orthogonal
+			: Camera3D.ProjectionType.Perspective;
 		_camera.Fov = _fieldOfView;
 		_camera.Size = _orthographicSize;
 		_camera.Near = _nearClip;
@@ -118,12 +211,18 @@ public sealed partial class SceneCapture : Dynamic
 
 	private void ApplyUpdateMode()
 	{
-		if (_viewport == null) return;
-		_viewport.RenderTargetUpdateMode = !_enabled
-			? SubViewport.UpdateMode.Disabled
-			: _updateMode == CaptureUpdateMode.Continuous ? SubViewport.UpdateMode.Always : SubViewport.UpdateMode.Disabled;
+		if (_viewport == null)
+			return;
+		_viewport.RenderTargetUpdateMode =
+			!_enabled ? SubViewport.UpdateMode.Disabled
+			: _updateMode == CaptureUpdateMode.Continuous ? SubViewport.UpdateMode.Always
+			: SubViewport.UpdateMode.Disabled;
 	}
 
 	[ScriptEnum]
-	public enum CaptureUpdateMode { Continuous, OnDemand }
+	public enum CaptureUpdateMode
+	{
+		Continuous,
+		OnDemand,
+	}
 }

@@ -278,9 +278,9 @@ public sealed partial class VoxelVolume : Entity
 			throw new ArgumentOutOfRangeException(nameof(size));
 		BeginEdit();
 		for (int z = Math.Max(0, position.Z); z < Math.Min(_dimensions.Z, position.Z + size.Z); z++)
-			for (int y = Math.Max(0, position.Y); y < Math.Min(_dimensions.Y, position.Y + size.Y); y++)
-				for (int x = Math.Max(0, position.X); x < Math.Min(_dimensions.X, position.X + size.X); x++)
-					_voxelData[CellIndex(x, y, z)] = (byte)paletteIndex;
+		for (int y = Math.Max(0, position.Y); y < Math.Min(_dimensions.Y, position.Y + size.Y); y++)
+		for (int x = Math.Max(0, position.X); x < Math.Min(_dimensions.X, position.X + size.X); x++)
+			_voxelData[CellIndex(x, y, z)] = (byte)paletteIndex;
 		MarkDirty();
 		EndEdit();
 	}
@@ -294,10 +294,10 @@ public sealed partial class VoxelVolume : Entity
 		float squared = radius * radius;
 		BeginEdit();
 		for (int z = 0; z < _dimensions.Z; z++)
-			for (int y = 0; y < _dimensions.Y; y++)
-				for (int x = 0; x < _dimensions.X; x++)
-					if (new Vector3(x + 0.5f, y + 0.5f, z + 0.5f).DistanceSquaredTo(center) <= squared)
-						_voxelData[CellIndex(x, y, z)] = (byte)paletteIndex;
+		for (int y = 0; y < _dimensions.Y; y++)
+		for (int x = 0; x < _dimensions.X; x++)
+			if (new Vector3(x + 0.5f, y + 0.5f, z + 0.5f).DistanceSquaredTo(center) <= squared)
+				_voxelData[CellIndex(x, y, z)] = (byte)paletteIndex;
 		MarkDirty();
 		EndEdit();
 	}
@@ -363,54 +363,54 @@ public sealed partial class VoxelVolume : Entity
 		Vector2[] uv = [Vector2.Zero, Vector2.Right, Vector2.One, Vector2.Down];
 
 		for (int z = 0; z < _dimensions.Z; z++)
-			for (int y = 0; y < _dimensions.Y; y++)
-				for (int x = 0; x < _dimensions.X; x++)
-				{
-					byte palette = _voxelData[CellIndex(x, y, z)];
-					if (palette == 0)
-						continue;
-					Color color = GetPaletteColor(palette);
-					Vector3 basePosition = (new Vector3(x, y, z) + centeredOffset) * _cellSize;
-					for (int face = 0; face < 6; face++)
-					{
-						Vector3I neighbor = new(x, y, z);
-						neighbor += Directions[face];
-						if (
-							Inside(neighbor.X, neighbor.Y, neighbor.Z)
-							&& _voxelData[CellIndex(neighbor.X, neighbor.Y, neighbor.Z)] != 0
-						)
-							continue;
-						Vector3[] corners = new Vector3[4];
-						for (int corner = 0; corner < 4; corner++)
-							corners[corner] =
-								basePosition + CubeCorners[FaceCorners[face, corner]] * _cellSize;
-						AddTriangle(
-							surface,
-							collisionFaces,
-							corners[0],
-							corners[1],
-							corners[2],
-							Normals[face],
-							color,
-							uv[0],
-							uv[1],
-							uv[2]
-						);
-						AddTriangle(
-							surface,
-							collisionFaces,
-							corners[0],
-							corners[2],
-							corners[3],
-							Normals[face],
-							color,
-							uv[0],
-							uv[2],
-							uv[3]
-						);
-						visibleFaces++;
-					}
-				}
+		for (int y = 0; y < _dimensions.Y; y++)
+		for (int x = 0; x < _dimensions.X; x++)
+		{
+			byte palette = _voxelData[CellIndex(x, y, z)];
+			if (palette == 0)
+				continue;
+			Color color = GetPaletteColor(palette);
+			Vector3 basePosition = (new Vector3(x, y, z) + centeredOffset) * _cellSize;
+			for (int face = 0; face < 6; face++)
+			{
+				Vector3I neighbor = new(x, y, z);
+				neighbor += Directions[face];
+				if (
+					Inside(neighbor.X, neighbor.Y, neighbor.Z)
+					&& _voxelData[CellIndex(neighbor.X, neighbor.Y, neighbor.Z)] != 0
+				)
+					continue;
+				Vector3[] corners = new Vector3[4];
+				for (int corner = 0; corner < 4; corner++)
+					corners[corner] =
+						basePosition + CubeCorners[FaceCorners[face, corner]] * _cellSize;
+				AddTriangle(
+					surface,
+					collisionFaces,
+					corners[0],
+					corners[1],
+					corners[2],
+					Normals[face],
+					color,
+					uv[0],
+					uv[1],
+					uv[2]
+				);
+				AddTriangle(
+					surface,
+					collisionFaces,
+					corners[0],
+					corners[2],
+					corners[3],
+					Normals[face],
+					color,
+					uv[0],
+					uv[2],
+					uv[3]
+				);
+				visibleFaces++;
+			}
+		}
 
 		ArrayMesh nextMesh = surface.Commit();
 		if (nextMesh.GetSurfaceCount() > 0)
@@ -435,9 +435,9 @@ public sealed partial class VoxelVolume : Entity
 		_dimensions = next;
 		_voxelData = new byte[CellCount(next)];
 		for (int z = 0; z < Math.Min(old.Z, next.Z); z++)
-			for (int y = 0; y < Math.Min(old.Y, next.Y); y++)
-				for (int x = 0; x < Math.Min(old.X, next.X); x++)
-					_voxelData[CellIndex(x, y, z)] = previous[x + old.X * (y + old.Y * z)];
+		for (int y = 0; y < Math.Min(old.Y, next.Y); y++)
+		for (int x = 0; x < Math.Min(old.X, next.X); x++)
+			_voxelData[CellIndex(x, y, z)] = previous[x + old.X * (y + old.Y * z)];
 	}
 
 	private void MarkDirty()

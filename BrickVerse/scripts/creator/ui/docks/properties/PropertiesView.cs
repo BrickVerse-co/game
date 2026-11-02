@@ -27,7 +27,11 @@ public partial class PropertiesView : Control
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
-		if (IsVisibleInTree() && @event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.F })
+		if (
+			IsVisibleInTree()
+			&& @event
+				is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.F }
+		)
 		{
 			_search.GrabFocus();
 			_search.SelectAll();
@@ -40,7 +44,8 @@ public partial class PropertiesView : Control
 	{
 		// Property controls are rebuilt after selection changes. Reapply the active
 		// filter when that happens without coupling the builder to this view.
-		if (_lastChildCount != PropertiesContainer.GetChildCount()) ApplyPropertyFilter();
+		if (_lastChildCount != PropertiesContainer.GetChildCount())
+			ApplyPropertyFilter();
 	}
 
 	private void ApplyPropertyFilter()
@@ -52,29 +57,43 @@ public partial class PropertiesView : Control
 		int visibleFields = 0;
 		for (int i = 0; i < children.Count; i++)
 		{
-			if (children[i] is not PanelContainer header || i + 1 >= children.Count || children[i + 1] is not VBoxContainer fields) continue;
+			if (
+				children[i] is not PanelContainer header
+				|| i + 1 >= children.Count
+				|| children[i + 1] is not VBoxContainer fields
+			)
+				continue;
 			bool sectionMatches = query.Length == 0 || ContainsLabel(header, query);
 			int sectionVisible = 0;
 			foreach (Node field in fields.GetChildren())
 			{
 				bool fieldMatches = sectionMatches || ContainsLabel(field, query);
-				if (field is Control control) control.Visible = fieldMatches;
-				if (fieldMatches) sectionVisible++;
+				if (field is Control control)
+					control.Visible = fieldMatches;
+				if (fieldMatches)
+					sectionVisible++;
 			}
 			header.Visible = sectionVisible > 0;
 			fields.Visible = sectionVisible > 0;
 			visibleFields += sectionVisible;
 		}
 		_filterStatus.Visible = query.Length > 0;
-		_filterStatus.Text = visibleFields == 0
-			? $"No properties match “{query}”"
-			: $"{visibleFields} matching propert{(visibleFields == 1 ? "y" : "ies")}";
+		_filterStatus.Text =
+			visibleFields == 0
+				? $"No properties match “{query}”"
+				: $"{visibleFields} matching propert{(visibleFields == 1 ? "y" : "ies")}";
 	}
 
 	private static bool ContainsLabel(Node node, string query)
 	{
-		if (node is Label label && label.Text.Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
-		foreach (Node child in node.GetChildren()) if (ContainsLabel(child, query)) return true;
+		if (
+			node is Label label
+			&& label.Text.Contains(query, System.StringComparison.OrdinalIgnoreCase)
+		)
+			return true;
+		foreach (Node child in node.GetChildren())
+			if (ContainsLabel(child, query))
+				return true;
 		return false;
 	}
 }

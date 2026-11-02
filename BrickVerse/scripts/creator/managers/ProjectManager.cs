@@ -2,15 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Formats;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
-using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +10,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 using static BrickVerse.Creator.Managers.ProjectManager;
 using Script = BrickVerse.Datamodel.Script;
 
@@ -36,29 +36,44 @@ public static class ProjectManager
 		if (File.Exists(recentsPath))
 		{
 			string raw = File.ReadAllText(recentsPath);
-			RecentData[] data = JsonSerializer.Deserialize(raw, RecentsFileGenerationContext.Default.RecentDataArray) ?? [];
+			RecentData[] data =
+				JsonSerializer.Deserialize(
+					raw,
+					RecentsFileGenerationContext.Default.RecentDataArray
+				) ?? [];
 			bool migrated = false;
 			for (int index = 0; index < data.Length; index++)
 			{
 				RecentData normalized = NormalizeRecent(data[index]);
-				migrated |= normalized.FolderPath != data[index].FolderPath
+				migrated |=
+					normalized.FolderPath != data[index].FolderPath
 					|| normalized.LastWorldPath != data[index].LastWorldPath;
 				data[index] = normalized;
 			}
 			if (migrated)
-				File.WriteAllText(recentsPath, JsonSerializer.Serialize(data, RecentsFileGenerationContext.Default.RecentDataArray));
+				File.WriteAllText(
+					recentsPath,
+					JsonSerializer.Serialize(
+						data,
+						RecentsFileGenerationContext.Default.RecentDataArray
+					)
+				);
 
 			List<RecentData> finalData = [];
 			List<Task<RecentData?>> tasks = [];
 
 			foreach (RecentData r in data)
 			{
-				if (!Directory.Exists(r.FolderPath)) continue;
+				if (!Directory.Exists(r.FolderPath))
+					continue;
 
 				if (loadData)
 				{
-					string projectMetaFile = Path.GetFullPath(Path.Join(r.FolderPath, Globals.ProjectMetaFileName));
-					if (!File.Exists(projectMetaFile)) continue;
+					string projectMetaFile = Path.GetFullPath(
+						Path.Join(r.FolderPath, Globals.ProjectMetaFileName)
+					);
+					if (!File.Exists(projectMetaFile))
+						continue;
 
 					tasks.Add(LoadRecentProject(r));
 				}
@@ -84,11 +99,16 @@ public static class ProjectManager
 
 	private static async Task<RecentData?> LoadRecentProject(RecentData recent)
 	{
-		string projectMetaFile = Path.GetFullPath(Path.Join(recent.FolderPath, Globals.ProjectMetaFileName));
+		string projectMetaFile = Path.GetFullPath(
+			Path.Join(recent.FolderPath, Globals.ProjectMetaFileName)
+		);
 		try
 		{
 			string projectTxt = await File.ReadAllTextAsync(projectMetaFile);
-			CreatorProjectMetadata metadata = JsonSerializer.Deserialize(projectTxt, ProjectJSONGenerationContext.Default.CreatorProjectMetadata);
+			CreatorProjectMetadata metadata = JsonSerializer.Deserialize(
+				projectTxt,
+				ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+			);
 			metadata = await RefreshRemoteMetadata(metadata, projectMetaFile);
 			return new RecentData
 			{
@@ -109,46 +129,75 @@ public static class ProjectManager
 		}
 	}
 
-	public static async Task<CreatorProjectMetadata> RefreshRemoteMetadata(CreatorProjectMetadata metadata, string? metadataPath = null)
+	public static async Task<CreatorProjectMetadata> RefreshRemoteMetadata(
+		CreatorProjectMetadata metadata,
+		string? metadataPath = null
+	)
 	{
-		if (metadata.UniverseId <= 0 || !CreatorAPI.IsUserAuthenticated) return metadata;
+		if (metadata.UniverseId <= 0 || !CreatorAPI.IsUserAuthenticated)
+			return metadata;
 
 		try
 		{
-			using JsonDocument response = await CreatorAPI.GetAuthenticatedJson($"/v3/universe/{metadata.UniverseId}");
+			using JsonDocument response = await CreatorAPI.GetAuthenticatedJson(
+				$"/v3/universe/{metadata.UniverseId}"
+			);
 			if (response.RootElement.TryGetProperty("universe", out JsonElement universe))
 			{
-				if (universe.TryGetProperty("name", out JsonElement universeName)
+				if (
+					universe.TryGetProperty("name", out JsonElement universeName)
 					&& universeName.ValueKind == JsonValueKind.String
-					&& !string.IsNullOrWhiteSpace(universeName.GetString()))
+					&& !string.IsNullOrWhiteSpace(universeName.GetString())
+				)
 					metadata.ProjectName = universeName.GetString()!;
 
-				if (universe.TryGetProperty("worlds", out JsonElement worlds) && worlds.ValueKind == JsonValueKind.Array)
+				if (
+					universe.TryGetProperty("worlds", out JsonElement worlds)
+					&& worlds.ValueKind == JsonValueKind.Array
+				)
 				{
 					JsonElement? primary = null;
 					foreach (JsonElement world in worlds.EnumerateArray())
 					{
-						if (world.TryGetProperty("isRootWorld", out JsonElement root) && root.ValueKind == JsonValueKind.True)
+						if (
+							world.TryGetProperty("isRootWorld", out JsonElement root)
+							&& root.ValueKind == JsonValueKind.True
+						)
 						{
 							primary = world;
 							break;
 						}
 					}
-					if (primary.HasValue && primary.Value.TryGetProperty("id", out JsonElement id)
-						&& long.TryParse(id.ToString(), out long worldId))
+					if (
+						primary.HasValue
+						&& primary.Value.TryGetProperty("id", out JsonElement id)
+						&& long.TryParse(id.ToString(), out long worldId)
+					)
 						metadata.WorldId = worldId;
 				}
 			}
 
-			using JsonDocument thumbnails = await BVAPI.GetJson($"/v3/universe/{metadata.UniverseId}/thumbnails");
-			if (thumbnails.RootElement.TryGetProperty("thumbnails", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
+			using JsonDocument thumbnails = await BVAPI.GetJson(
+				$"/v3/universe/{metadata.UniverseId}/thumbnails"
+			);
+			if (
+				thumbnails.RootElement.TryGetProperty("thumbnails", out JsonElement items)
+				&& items.ValueKind == JsonValueKind.Array
+			)
 			{
 				JsonElement? selected = null;
 				foreach (JsonElement item in items.EnumerateArray())
 				{
-					if (!item.TryGetProperty("type", out JsonElement type) || type.GetString() != "IMAGE") continue;
+					if (
+						!item.TryGetProperty("type", out JsonElement type)
+						|| type.GetString() != "IMAGE"
+					)
+						continue;
 					selected ??= item;
-					if (item.TryGetProperty("primary", out JsonElement primary) && primary.ValueKind == JsonValueKind.True)
+					if (
+						item.TryGetProperty("primary", out JsonElement primary)
+						&& primary.ValueKind == JsonValueKind.True
+					)
 					{
 						selected = item;
 						break;
@@ -156,9 +205,15 @@ public static class ProjectManager
 				}
 				if (selected.HasValue)
 				{
-					if (selected.Value.TryGetProperty("thumbnailId", out JsonElement thumbnailId)
-						&& long.TryParse(thumbnailId.ToString(), out long iconId)) metadata.IconID = iconId;
-					if (selected.Value.TryGetProperty("url", out JsonElement url) && url.ValueKind == JsonValueKind.String)
+					if (
+						selected.Value.TryGetProperty("thumbnailId", out JsonElement thumbnailId)
+						&& long.TryParse(thumbnailId.ToString(), out long iconId)
+					)
+						metadata.IconID = iconId;
+					if (
+						selected.Value.TryGetProperty("url", out JsonElement url)
+						&& url.ValueKind == JsonValueKind.String
+					)
 						metadata.ThumbnailUrl = url.GetString() ?? "";
 				}
 				else
@@ -169,7 +224,13 @@ public static class ProjectManager
 			}
 
 			if (!string.IsNullOrWhiteSpace(metadataPath))
-				await File.WriteAllTextAsync(metadataPath, JsonSerializer.Serialize(metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+				await File.WriteAllTextAsync(
+					metadataPath,
+					JsonSerializer.Serialize(
+						metadata,
+						ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+					)
+				);
 		}
 		catch (Exception ex)
 		{
@@ -187,26 +248,36 @@ public static class ProjectManager
 
 		existing.RemoveAll(x => x.FolderPath == folderPath);
 
-		existing.Add(new()
-		{
-			FolderPath = folderPath,
-			LastOpened = DateTime.Now,
-			LastWorldPath = string.IsNullOrWhiteSpace(worldPath)
-				? ""
-				: Path.IsPathRooted(worldPath)
-					? Path.GetRelativePath(folderPath, worldPath).SanitizePath()
+		existing.Add(
+			new()
+			{
+				FolderPath = folderPath,
+				LastOpened = DateTime.Now,
+				LastWorldPath =
+					string.IsNullOrWhiteSpace(worldPath) ? ""
+					: Path.IsPathRooted(worldPath)
+						? Path.GetRelativePath(folderPath, worldPath).SanitizePath()
 					: worldPath.SanitizePath().TrimStart('/'),
-		});
+			}
+		);
 
-		File.WriteAllText(recentsPath, JsonSerializer.Serialize([.. existing], RecentsFileGenerationContext.Default.RecentDataArray));
+		File.WriteAllText(
+			recentsPath,
+			JsonSerializer.Serialize(
+				[.. existing],
+				RecentsFileGenerationContext.Default.RecentDataArray
+			)
+		);
 	}
 
 	private static RecentData NormalizeRecent(RecentData recent)
 	{
 		string canonical = CanonicalProjectFolder(recent.FolderPath);
 		string lastWorld = (recent.LastWorldPath ?? "").SanitizePath().TrimStart('/');
-		if (lastWorld.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
-			|| lastWorld.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase))
+		if (
+			lastWorld.Equals(".bvproject", StringComparison.OrdinalIgnoreCase)
+			|| lastWorld.StartsWith(".bvproject/", StringComparison.OrdinalIgnoreCase)
+		)
 			lastWorld = "";
 		recent.FolderPath = canonical;
 		recent.LastWorldPath = lastWorld;
@@ -215,15 +286,18 @@ public static class ProjectManager
 
 	private static string CanonicalProjectFolder(string path)
 	{
-		if (string.IsNullOrWhiteSpace(path)) return path;
+		if (string.IsNullOrWhiteSpace(path))
+			return path;
 		string full = Path.GetFullPath(path);
-		if (File.Exists(full)) full = Path.GetDirectoryName(full)!;
+		if (File.Exists(full))
+			full = Path.GetDirectoryName(full)!;
 		string marker = Path.DirectorySeparatorChar + ".bvproject" + Path.DirectorySeparatorChar;
 		int internalIndex = full.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
 		if (internalIndex >= 0)
 		{
 			string owner = full[..internalIndex];
-			if (File.Exists(Path.Combine(owner, Globals.ProjectMetaFileName))) return owner.SanitizePath();
+			if (File.Exists(Path.Combine(owner, Globals.ProjectMetaFileName)))
+				return owner.SanitizePath();
 		}
 		for (DirectoryInfo? directory = new(full); directory != null; directory = directory.Parent)
 			if (File.Exists(Path.Combine(directory.FullName, Globals.ProjectMetaFileName)))
@@ -237,13 +311,25 @@ public static class ProjectManager
 		List<RecentData> existing = [.. await GetRecents(false)];
 
 		existing.RemoveAll(x => x.FolderPath == folderPath);
-		File.WriteAllText(recentsPath, JsonSerializer.Serialize([.. existing], RecentsFileGenerationContext.Default.RecentDataArray));
+		File.WriteAllText(
+			recentsPath,
+			JsonSerializer.Serialize(
+				[.. existing],
+				RecentsFileGenerationContext.Default.RecentDataArray
+			)
+		);
 	}
 
-	public static async Task NewProject(string destFolder, CreatorProjectMetadata metadata, bool createFromTemplate = false)
+	public static async Task NewProject(
+		string destFolder,
+		CreatorProjectMetadata metadata,
+		bool createFromTemplate = false
+	)
 	{
 		string projectMainPlacePath = Path.GetFullPath(Path.Join(destFolder, metadata.MainWorld));
-		string projectMetaPath = Path.GetFullPath(Path.Join(destFolder, Globals.ProjectMetaFileName));
+		string projectMetaPath = Path.GetFullPath(
+			Path.Join(destFolder, Globals.ProjectMetaFileName)
+		);
 		string projectGitIgnore = Path.GetFullPath(Path.Join(destFolder, ".gitignore"));
 		string scriptsPath = Path.GetFullPath(Path.Join(destFolder, "scripts"));
 		string serverPath = Path.GetFullPath(Path.Join(scriptsPath, "server"));
@@ -254,7 +340,13 @@ public static class ProjectManager
 		CreatorService.Interface.LoadOverlay?.SetStatus("Creating...");
 		CreatorService.Interface.LoadOverlay?.Show();
 
-		File.WriteAllText(projectMetaPath, JsonSerializer.Serialize(metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+		File.WriteAllText(
+			projectMetaPath,
+			JsonSerializer.Serialize(
+				metadata,
+				ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+			)
+		);
 		File.WriteAllText(projectGitIgnore, GitIgnoreContent);
 		if (!createFromTemplate)
 		{
@@ -283,22 +375,35 @@ public static class ProjectManager
 		CreatorService.Interface.LoadOverlay?.Hide();
 	}
 
-	public static async Task NewProjectFromTemplate(string destFolder, string templateFolderPath, CreatorProjectMetadata metadata)
+	public static async Task NewProjectFromTemplate(
+		string destFolder,
+		string templateFolderPath,
+		CreatorProjectMetadata metadata
+	)
 	{
 		if (!Directory.Exists(destFolder))
 		{
 			Directory.CreateDirectory(destFolder);
 		}
-		using DirAccess dir = DirAccess.Open(templateFolderPath) ?? throw new DirectoryNotFoundException($"Template folder not found: {templateFolderPath}");
+		using DirAccess dir =
+			DirAccess.Open(templateFolderPath)
+			?? throw new DirectoryNotFoundException(
+				$"Template folder not found: {templateFolderPath}"
+			);
 
 		CopyResourceDirRecursive(templateFolderPath, destFolder);
-		await NewProject(destFolder, new() { MainWorld = "main.bvxw", ProjectName = metadata.ProjectName }, true);
+		await NewProject(
+			destFolder,
+			new() { MainWorld = "main.bvxw", ProjectName = metadata.ProjectName },
+			true
+		);
 	}
 
 	private static void CopyResourceDirRecursive(string sourceDir, string destDir)
 	{
 		using DirAccess dir = DirAccess.Open(sourceDir);
-		if (dir == null) return;
+		if (dir == null)
+			return;
 
 		dir.ListDirBegin();
 		string fileName = dir.GetNext();
@@ -342,15 +447,20 @@ public static class ProjectManager
 		dir.ListDirEnd();
 	}
 
-
-	public static async Task ImportLegacyWorld(string placePath, string destFolder, CreatorProjectMetadata metadata)
+	public static async Task ImportLegacyWorld(
+		string placePath,
+		string destFolder,
+		CreatorProjectMetadata metadata
+	)
 	{
 		Stopwatch sw = new();
 		sw.Start();
 		destFolder = Path.GetFullPath(destFolder);
 
 		string projectMainWorldPath = Path.GetFullPath(Path.Join(destFolder, metadata.MainWorld));
-		string projectMetaPath = Path.GetFullPath(Path.Join(destFolder, Globals.ProjectMetaFileName));
+		string projectMetaPath = Path.GetFullPath(
+			Path.Join(destFolder, Globals.ProjectMetaFileName)
+		);
 		string scriptsPath = Path.GetFullPath(Path.Join(destFolder, "scripts"));
 		string serverPath = Path.GetFullPath(Path.Join(scriptsPath, "server"));
 		string clientPath = Path.GetFullPath(Path.Join(scriptsPath, "client"));
@@ -360,7 +470,13 @@ public static class ProjectManager
 		CreatorService.Interface.LoadOverlay?.SetStatus("Loading legacy world...");
 		CreatorService.Interface.LoadOverlay?.Show();
 
-		File.WriteAllText(projectMetaPath, JsonSerializer.Serialize(metadata, ProjectJSONGenerationContext.Default.CreatorProjectMetadata));
+		File.WriteAllText(
+			projectMetaPath,
+			JsonSerializer.Serialize(
+				metadata,
+				ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+			)
+		);
 
 		if (!Directory.Exists(scriptsPath))
 		{
@@ -385,7 +501,7 @@ public static class ProjectManager
 		{
 			RenderTargetClearMode = SubViewport.ClearMode.Never,
 			RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
-			World3D = world3D
+			World3D = world3D,
 		};
 
 		World root = Globals.LoadInstance<World>();
@@ -447,7 +563,11 @@ public static class ProjectManager
 				targetFolder = modulePath;
 				scriptType = ScriptTypeKind.Module;
 			}
-			string targetName = ScriptLanguageRegistry.CreateFileName(baseName, scriptType, s.ChosenLanguage);
+			string targetName = ScriptLanguageRegistry.CreateFileName(
+				baseName,
+				scriptType,
+				s.ChosenLanguage
+			);
 
 			// Check if this source already exists
 			if (sourceToPath.TryGetValue(s.Source, out string? existingPath))
@@ -468,7 +588,10 @@ public static class ProjectManager
 				}
 				nameCounters[fullKey] = ++value;
 				targetName = ScriptLanguageRegistry.CreateFileName(
-					$"{baseName}{nameCounters[fullKey]}", scriptType, s.ChosenLanguage);
+					$"{baseName}{nameCounters[fullKey]}",
+					scriptType,
+					s.ChosenLanguage
+				);
 			}
 			string targetFile = Path.GetFullPath(Path.Join(targetFolder, targetName));
 
@@ -529,7 +652,6 @@ public static class ProjectManager
 		await p.WaitForExitAsync();
 	}
 
-
 	public static string[] GetProjectTemplatePaths()
 	{
 		List<string> p = [];
@@ -542,14 +664,29 @@ public static class ProjectManager
 
 	public struct RecentData
 	{
-		[JsonInclude] public string FolderPath;
-		[JsonInclude] public DateTime LastOpened;
-		[JsonInclude] public string LastWorldPath;
-		[JsonIgnore] public string PlaceName;
-		[JsonIgnore] public long? IconID;
-		[JsonIgnore] public long UniverseId;
-		[JsonIgnore] public string ThumbnailUrl;
-		[JsonIgnore] public long? WorldId;
+		[JsonInclude]
+		public string FolderPath;
+
+		[JsonInclude]
+		public DateTime LastOpened;
+
+		[JsonInclude]
+		public string LastWorldPath;
+
+		[JsonIgnore]
+		public string PlaceName;
+
+		[JsonIgnore]
+		public long? IconID;
+
+		[JsonIgnore]
+		public long UniverseId;
+
+		[JsonIgnore]
+		public string ThumbnailUrl;
+
+		[JsonIgnore]
+		public long? WorldId;
 	}
 
 	public struct TemplateProjectJSON

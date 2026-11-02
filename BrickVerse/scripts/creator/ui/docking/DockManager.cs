@@ -182,8 +182,10 @@ public static class DockManager
 
 	private static void RedockFloatingPanel(string panelId)
 	{
-		if (!_floatingWindows.Remove(panelId, out Window? window)
-			|| !_panelsById.TryGetValue(panelId, out DockPanel? panel))
+		if (
+			!_floatingWindows.Remove(panelId, out Window? window)
+			|| !_panelsById.TryGetValue(panelId, out DockPanel? panel)
+		)
 			return;
 
 		string? preferredHostId = _floatingSourceHostIds.Remove(panelId, out string? sourceHostId)

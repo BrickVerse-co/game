@@ -2,7 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,29 +9,47 @@ using System.Linq;
 using BrickVerse.Creator.Utils;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Popups;
 
 /// <summary>Scene-backed upload form shared by texture, sound, and video assets.</summary>
 public sealed partial class MediaUploadPopup : PopupWindowBase
 {
-	public enum MediaKind { Texture, Sound, Video }
-	private enum OwnerType { User, Guild }
+	public enum MediaKind
+	{
+		Texture,
+		Sound,
+		Video,
+	}
+
+	private enum OwnerType
+	{
+		User,
+		Guild,
+	}
+
 	private sealed record GuildOption(string Id, string Name);
 
-	private static readonly Dictionary<string, string> TextureMimes = new(StringComparer.OrdinalIgnoreCase)
+	private static readonly Dictionary<string, string> TextureMimes = new(
+		StringComparer.OrdinalIgnoreCase
+	)
 	{
 		[".png"] = "image/png",
 		[".jpg"] = "image/jpeg",
 		[".jpeg"] = "image/jpeg",
 	};
-	private static readonly Dictionary<string, string> SoundMimes = new(StringComparer.OrdinalIgnoreCase)
+	private static readonly Dictionary<string, string> SoundMimes = new(
+		StringComparer.OrdinalIgnoreCase
+	)
 	{
 		[".ogg"] = "audio/ogg",
 		[".wav"] = "audio/wav",
 		[".mp3"] = "audio/mpeg",
 	};
-	private static readonly Dictionary<string, string> VideoMimes = new(StringComparer.OrdinalIgnoreCase)
+	private static readonly Dictionary<string, string> VideoMimes = new(
+		StringComparer.OrdinalIgnoreCase
+	)
 	{
 		[".mp4"] = "video/mp4",
 		[".webm"] = "video/webm",
@@ -41,26 +58,65 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		[".ogg"] = "video/ogg",
 	};
 
-	[Export] private Label _titleLabel = null!;
-	[Export] private Label _subtitleLabel = null!;
-	[Export] private Button _closeButton = null!;
-	[Export] private FileDialog _fileDialog = null!;
-	[Export] private TextureRect _preview = null!;
-	[Export] private TextureRect _kindIcon = null!;
-	[Export] private Label _previewMessage = null!;
-	[Export] private Label _fileName = null!;
-	[Export] private Label _fileDetails = null!;
-	[Export] private Label _error = null!;
-	[Export] private Label _busy = null!;
-	[Export] private LineEdit _name = null!;
-	[Export] private TextEdit _description = null!;
-	[Export] private Button _personal = null!;
-	[Export] private Button _guild = null!;
-	[Export] private OptionButton _guildDropdown = null!;
-	[Export] private Button _choose = null!;
-	[Export] private Button _replace = null!;
-	[Export] private Button _upload = null!;
-	[Export] private Button _cancel = null!;
+	[Export]
+	private Label _titleLabel = null!;
+
+	[Export]
+	private Label _subtitleLabel = null!;
+
+	[Export]
+	private Button _closeButton = null!;
+
+	[Export]
+	private FileDialog _fileDialog = null!;
+
+	[Export]
+	private TextureRect _preview = null!;
+
+	[Export]
+	private TextureRect _kindIcon = null!;
+
+	[Export]
+	private Label _previewMessage = null!;
+
+	[Export]
+	private Label _fileName = null!;
+
+	[Export]
+	private Label _fileDetails = null!;
+
+	[Export]
+	private Label _error = null!;
+
+	[Export]
+	private Label _busy = null!;
+
+	[Export]
+	private LineEdit _name = null!;
+
+	[Export]
+	private TextEdit _description = null!;
+
+	[Export]
+	private Button _personal = null!;
+
+	[Export]
+	private Button _guild = null!;
+
+	[Export]
+	private OptionButton _guildDropdown = null!;
+
+	[Export]
+	private Button _choose = null!;
+
+	[Export]
+	private Button _replace = null!;
+
+	[Export]
+	private Button _upload = null!;
+
+	[Export]
+	private Button _cancel = null!;
 
 	private readonly List<GuildOption> _guilds = [];
 	private MediaKind _kind;
@@ -95,19 +151,22 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		try
 		{
 			CreatorGuildItem[] guilds = await CreatorAPI.GetUserGuilds(limitToEditable: true);
-			if (!IsInstanceValid(this)) return;
+			if (!IsInstanceValid(this))
+				return;
 			foreach (CreatorGuildItem guild in guilds)
 			{
 				_guilds.Add(new GuildOption(guild.Id, guild.Name));
 				_guildDropdown.AddItem(guild.Name);
 			}
-			if (_guilds.Count > 0) _guildDropdown.Select(0);
+			if (_guilds.Count > 0)
+				_guildDropdown.Select(0);
 		}
 		catch (Exception ex)
 		{
 			BV.PrintErr($"Failed to load upload guilds: {ex.Message}");
 		}
-		if (!IsInstanceValid(this)) return;
+		if (!IsInstanceValid(this))
+			return;
 		RefreshOwner();
 		OpenFilePicker();
 	}
@@ -116,22 +175,42 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 	{
 		bool texture = _kind == MediaKind.Texture;
 		bool video = _kind == MediaKind.Video;
-		string noun = texture ? "texture" : video ? "video" : "sound";
+		string noun =
+			texture ? "texture"
+			: video ? "video"
+			: "sound";
 		Title = $"Upload {noun}";
 		_titleLabel.Text = $"Upload {noun}";
-		_subtitleLabel.Text = texture
-			? "Import, preview, and publish a PNG or JPEG image."
-			: video ? "Import and publish an MP4, WebM, MOV, or Ogg video. Videos require verified identity."
-			: "Import, inspect, and publish an OGG, WAV, or MP3 audio file.";
-		_kindIcon.Texture = Globals.LoadUIIcon(texture ? "mountain" : video ? "video" : "archive");
-		_name.PlaceholderText = texture ? "Texture name" : video ? "Video name" : "Sound name";
-		_upload.Text = $"Upload {noun}";
-		_fileDialog.OkButtonText = texture ? "Open image" : video ? "Open video" : "Open audio";
-		_fileDialog.Filters = texture
-			? ["*.png ; PNG image", "*.jpg,*.jpeg ; JPEG image"]
+		_subtitleLabel.Text =
+			texture ? "Import, preview, and publish a PNG or JPEG image."
 			: video
-				? ["*.mp4 ; MPEG-4 video", "*.webm ; WebM video", "*.mov ; QuickTime video", "*.ogv,*.ogg ; Ogg video"]
-				: ["*.ogg ; Ogg audio", "*.wav ; Wave audio", "*.mp3 ; MP3 audio"];
+				? "Import and publish an MP4, WebM, MOV, or Ogg video. Videos require verified identity."
+			: "Import, inspect, and publish an OGG, WAV, or MP3 audio file.";
+		_kindIcon.Texture = Globals.LoadUIIcon(
+			texture ? "mountain"
+			: video ? "video"
+			: "archive"
+		);
+		_name.PlaceholderText =
+			texture ? "Texture name"
+			: video ? "Video name"
+			: "Sound name";
+		_upload.Text = $"Upload {noun}";
+		_fileDialog.OkButtonText =
+			texture ? "Open image"
+			: video ? "Open video"
+			: "Open audio";
+		_fileDialog.Filters =
+			texture ? ["*.png ; PNG image", "*.jpg,*.jpeg ; JPEG image"]
+			: video
+				?
+				[
+					"*.mp4 ; MPEG-4 video",
+					"*.webm ; WebM video",
+					"*.mov ; QuickTime video",
+					"*.ogv,*.ogg ; Ogg video",
+				]
+			: ["*.ogg ; Ogg audio", "*.wav ; Wave audio", "*.mp3 ; MP3 audio"];
 	}
 
 	private void ResetForm()
@@ -142,14 +221,20 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		_name.Text = "";
 		_description.Text = "";
 		_preview.Texture = null;
-		_previewMessage.Text = _kind == MediaKind.Texture
-			? "Choose an image to preview it here."
+		_previewMessage.Text =
+			_kind == MediaKind.Texture ? "Choose an image to preview it here."
 			: _kind == MediaKind.Video ? "Choose a video to inspect it here."
 			: "Choose an audio file to inspect it here.";
 		_previewMessage.Visible = true;
 		_kindIcon.Visible = true;
-		_fileName.Text = _kind == MediaKind.Texture ? "No image selected" : _kind == MediaKind.Video ? "No video selected" : "No audio selected";
-		_fileDetails.Text = _kind == MediaKind.Texture ? "PNG or JPEG" : _kind == MediaKind.Video ? "MP4, WebM, MOV, or Ogg" : "OGG, WAV, or MP3";
+		_fileName.Text =
+			_kind == MediaKind.Texture ? "No image selected"
+			: _kind == MediaKind.Video ? "No video selected"
+			: "No audio selected";
+		_fileDetails.Text =
+			_kind == MediaKind.Texture ? "PNG or JPEG"
+			: _kind == MediaKind.Video ? "MP4, WebM, MOV, or Ogg"
+			: "OGG, WAV, or MP3";
 		_choose.Visible = true;
 		_replace.Visible = false;
 		_personal.ButtonPressed = true;
@@ -159,12 +244,14 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 
 	private void OpenFilePicker()
 	{
-		if (!_isBusy) _fileDialog.PopupCenteredRatio(0.72f);
+		if (!_isBusy)
+			_fileDialog.PopupCenteredRatio(0.72f);
 	}
 
 	private void Close()
 	{
-		if (!_isBusy) QueueFree();
+		if (!_isBusy)
+			QueueFree();
 	}
 
 	private void LoadFile(string path)
@@ -172,26 +259,35 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		HideError();
 		try
 		{
-			Dictionary<string, string> allowed = _kind == MediaKind.Texture ? TextureMimes : _kind == MediaKind.Video ? VideoMimes : SoundMimes;
+			Dictionary<string, string> allowed =
+				_kind == MediaKind.Texture ? TextureMimes
+				: _kind == MediaKind.Video ? VideoMimes
+				: SoundMimes;
 			string extension = Path.GetExtension(path);
 			if (!allowed.TryGetValue(extension, out string? mime))
-				throw new InvalidDataException($"Unsupported file type. Choose {string.Join(", ", allowed.Keys.Select(x => x.TrimStart('.').ToUpperInvariant()))}.");
+				throw new InvalidDataException(
+					$"Unsupported file type. Choose {string.Join(", ", allowed.Keys.Select(x => x.TrimStart('.').ToUpperInvariant()))}."
+				);
 
 			byte[] bytes = File.ReadAllBytes(path);
-			if (bytes.Length == 0) throw new InvalidDataException("The selected file is empty.");
-			if (!MatchesSignature(bytes, extension)) throw new InvalidDataException("The file contents do not match its extension.");
+			if (bytes.Length == 0)
+				throw new InvalidDataException("The selected file is empty.");
+			if (!MatchesSignature(bytes, extension))
+				throw new InvalidDataException("The file contents do not match its extension.");
 
 			_data = bytes;
 			_sourcePath = path;
 			_mime = mime;
 			_fileName.Text = Path.GetFileName(path);
 			_fileDetails.Text = $"{mime}  •  {FormatBytes(bytes.LongLength)}";
-			if (string.IsNullOrWhiteSpace(_name.Text)) _name.Text = Path.GetFileNameWithoutExtension(path);
+			if (string.IsNullOrWhiteSpace(_name.Text))
+				_name.Text = Path.GetFileNameWithoutExtension(path);
 
 			if (_kind == MediaKind.Texture)
 			{
 				Image image = Image.LoadFromFile(path);
-				if (image.IsEmpty()) throw new InvalidDataException("Godot could not decode the selected image.");
+				if (image.IsEmpty())
+					throw new InvalidDataException("Godot could not decode the selected image.");
 				_preview.Texture = ImageTexture.CreateFromImage(image);
 				_previewMessage.Visible = false;
 				_kindIcon.Visible = false;
@@ -200,7 +296,8 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 			else
 			{
 				_preview.Texture = null;
-				_previewMessage.Text = $"{extension.TrimStart('.').ToUpperInvariant()} {(_kind == MediaKind.Video ? "video" : "audio")} ready to upload";
+				_previewMessage.Text =
+					$"{extension.TrimStart('.').ToUpperInvariant()} {(_kind == MediaKind.Video ? "video" : "audio")} ready to upload";
 				_previewMessage.Visible = true;
 				_kindIcon.Visible = true;
 			}
@@ -218,13 +315,30 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 
 	private async void Submit()
 	{
-		if (_isBusy || _data == null) return;
+		if (_isBusy || _data == null)
+			return;
 		string assetName = _name.Text.Trim();
 		string description = _description.Text.Trim();
-		if (assetName.Length == 0) { ShowError("Name is required."); _name.GrabFocus(); return; }
-		if (assetName.Length > 64) { ShowError("Name must be 64 characters or less."); return; }
-		if (description.Length > 1000) { ShowError("Description must be 1,000 characters or less."); return; }
-		if (_guild.ButtonPressed && (_guildDropdown.Selected < 0 || _guildDropdown.Selected >= _guilds.Count))
+		if (assetName.Length == 0)
+		{
+			ShowError("Name is required.");
+			_name.GrabFocus();
+			return;
+		}
+		if (assetName.Length > 64)
+		{
+			ShowError("Name must be 64 characters or less.");
+			return;
+		}
+		if (description.Length > 1000)
+		{
+			ShowError("Description must be 1,000 characters or less.");
+			return;
+		}
+		if (
+			_guild.ButtonPressed
+			&& (_guildDropdown.Selected < 0 || _guildDropdown.Selected >= _guilds.Count)
+		)
 		{
 			ShowError("Select a valid guild.");
 			return;
@@ -236,16 +350,27 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 			bool toGuild = _guild.ButtonPressed;
 			string ownerId = toGuild ? _guilds[_guildDropdown.Selected].Id : CreatorAPI.UserID;
 			CreatorPublishResponse response = await CreatorAPI.UploadAsset(
-				_data, 0, _kind == MediaKind.Texture ? "TEXTURE" : _kind == MediaKind.Video ? "VIDEO" : "SOUND",
-				Path.GetFileName(_sourcePath), assetName, description, ownerId,
-				toGuild ? OwnerType.Guild.ToString() : OwnerType.User.ToString(), _mime);
+				_data,
+				0,
+				_kind == MediaKind.Texture ? "TEXTURE"
+					: _kind == MediaKind.Video ? "VIDEO"
+					: "SOUND",
+				Path.GetFileName(_sourcePath),
+				assetName,
+				description,
+				ownerId,
+				toGuild ? OwnerType.Guild.ToString() : OwnerType.User.ToString(),
+				_mime
+			);
 			BV.Print($"{_kind} uploaded successfully. Asset ID: {response.Link}");
-			if (IsInstanceValid(this)) QueueFree();
+			if (IsInstanceValid(this))
+				QueueFree();
 		}
 		catch (Exception ex)
 		{
 			BV.PrintErr($"Failed to upload {_kind}: {ex}");
-			if (!IsInstanceValid(this)) return;
+			if (!IsInstanceValid(this))
+				return;
 			ShowError($"Upload failed: {ex.Message}");
 			SetBusy(false, "");
 		}
@@ -256,7 +381,8 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		bool guild = _guild.ButtonPressed;
 		_guildDropdown.Visible = guild;
 		_guildDropdown.Disabled = _isBusy || _guilds.Count == 0;
-		if (guild && _guilds.Count == 0) ShowError("You do not have upload permission in any guilds.");
+		if (guild && _guilds.Count == 0)
+			ShowError("You do not have upload permission in any guilds.");
 	}
 
 	private void SetBusy(bool busy, string message)
@@ -276,28 +402,59 @@ public sealed partial class MediaUploadPopup : PopupWindowBase
 		RefreshOwner();
 	}
 
-	private void ShowError(string message) { _error.Text = message; _error.Visible = true; }
-	private void HideError() { _error.Text = ""; _error.Visible = false; }
+	private void ShowError(string message)
+	{
+		_error.Text = message;
+		_error.Visible = true;
+	}
+
+	private void HideError()
+	{
+		_error.Text = "";
+		_error.Visible = false;
+	}
 
 	private static string FormatBytes(long bytes)
 	{
 		string[] units = ["B", "KB", "MB", "GB"];
 		double size = bytes;
 		int unit = 0;
-		while (size >= 1024 && unit < units.Length - 1) { size /= 1024; unit++; }
+		while (size >= 1024 && unit < units.Length - 1)
+		{
+			size /= 1024;
+			unit++;
+		}
 		return $"{size:0.##} {units[unit]}";
 	}
 
-	private static bool MatchesSignature(byte[] data, string extension) => extension.ToLowerInvariant() switch
-	{
-		".png" => data.Length >= 8 && data.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }),
-		".jpg" or ".jpeg" => data.Length >= 3 && data[0] == 0xff && data[1] == 0xd8 && data[2] == 0xff,
-		".wav" => data.Length >= 12 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "RIFF" && System.Text.Encoding.ASCII.GetString(data, 8, 4) == "WAVE",
-		".ogg" => data.Length >= 4 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
-		".mp3" => data.Length >= 3 && (System.Text.Encoding.ASCII.GetString(data, 0, 3) == "ID3" || (data[0] == 0xff && (data[1] & 0xe0) == 0xe0)),
-		".mp4" or ".mov" => data.Length >= 12 && System.Text.Encoding.ASCII.GetString(data, 4, 4) == "ftyp",
-		".webm" => data.Length >= 4 && data[0] == 0x1a && data[1] == 0x45 && data[2] == 0xdf && data[3] == 0xa3,
-		".ogv" => data.Length >= 4 && System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
-		_ => false,
-	};
+	private static bool MatchesSignature(byte[] data, string extension) =>
+		extension.ToLowerInvariant() switch
+		{
+			".png" => data.Length >= 8
+				&& data.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }),
+			".jpg" or ".jpeg" => data.Length >= 3
+				&& data[0] == 0xff
+				&& data[1] == 0xd8
+				&& data[2] == 0xff,
+			".wav" => data.Length >= 12
+				&& System.Text.Encoding.ASCII.GetString(data, 0, 4) == "RIFF"
+				&& System.Text.Encoding.ASCII.GetString(data, 8, 4) == "WAVE",
+			".ogg" => data.Length >= 4
+				&& System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
+			".mp3" => data.Length >= 3
+				&& (
+					System.Text.Encoding.ASCII.GetString(data, 0, 3) == "ID3"
+					|| (data[0] == 0xff && (data[1] & 0xe0) == 0xe0)
+				),
+			".mp4" or ".mov" => data.Length >= 12
+				&& System.Text.Encoding.ASCII.GetString(data, 4, 4) == "ftyp",
+			".webm" => data.Length >= 4
+				&& data[0] == 0x1a
+				&& data[1] == 0x45
+				&& data[2] == 0xdf
+				&& data[3] == 0xa3,
+			".ogv" => data.Length >= 4
+				&& System.Text.Encoding.ASCII.GetString(data, 0, 4) == "OggS",
+			_ => false,
+		};
 }

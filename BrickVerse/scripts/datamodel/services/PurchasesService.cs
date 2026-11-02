@@ -2,7 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Client.UI.Purchases;
@@ -12,12 +17,7 @@ using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -47,7 +47,8 @@ public sealed partial class PurchasesService : Instance
 
 	private async void OnGameReady()
 	{
-		if (Root == null || Root.CoreUI == null) return;
+		if (Root == null || Root.CoreUI == null)
+			return;
 		CoreUIRoot root = await Root.CoreUI.WaitRoot();
 		_purchasePrompt = root.PurchasePrompt;
 		_purchasePrompt?.Requested += OnPurchasePromptRequested;
@@ -81,7 +82,10 @@ public sealed partial class PurchasesService : Instance
 				);
 				success = response.IsSuccessStatusCode;
 				if (!success)
-					BV.PrintErr("Entitlement purchase failed: ", await response.Content.ReadAsStringAsync());
+					BV.PrintErr(
+						"Entitlement purchase failed: ",
+						await response.Content.ReadAsStringAsync()
+					);
 			}
 			catch (Exception exception)
 			{
@@ -106,7 +110,8 @@ public sealed partial class PurchasesService : Instance
 	public async Task<bool> PromptAsync(Player player, long entitlementID)
 	{
 		ServerGuard();
-		if (_pendingPlayers.Contains(player)) return false;
+		if (_pendingPlayers.Contains(player))
+			return false;
 
 		string refID = Guid.NewGuid().ToString();
 		TaskCompletionSource<bool> tcs = new();
@@ -116,7 +121,7 @@ public sealed partial class PurchasesService : Instance
 			Player = player,
 			EntitlementID = entitlementID,
 			TaskSource = tcs,
-			Timestamp = DateTime.Now
+			Timestamp = DateTime.Now,
 		};
 
 		_pendingPlayers.Add(player);
@@ -130,17 +135,18 @@ public sealed partial class PurchasesService : Instance
 	public void LegacyPrompt(Player player, long entitlementID, BVCallback callback)
 	{
 		ServerGuard();
-		PromptAsync(player, entitlementID).ContinueWith(task =>
-		{
-			if (task.IsCompletedSuccessfully)
+		PromptAsync(player, entitlementID)
+			.ContinueWith(task =>
 			{
-				callback.Invoke(task.Result, "Purchase processed");
-			}
-			else if (task.IsFaulted && task.Exception != null)
-			{
-				callback.Invoke(false, "Purchase processing failed");
-			}
-		});
+				if (task.IsCompletedSuccessfully)
+				{
+					callback.Invoke(task.Result, "Purchase processed");
+				}
+				else if (task.IsFaulted && task.Exception != null)
+				{
+					callback.Invoke(false, "Purchase processing failed");
+				}
+			});
 	}
 
 	[ScriptMethod]
@@ -149,12 +155,15 @@ public sealed partial class PurchasesService : Instance
 		ServerGuard();
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
 		using HttpResponseMessage res = await _client.GetAsync(
-			Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/ownership?entitlementId={entitlementID}&userId={player.UserID}")
+			Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/server/entitlements/ownership?entitlementId={entitlementID}&userId={player.UserID}"
+			)
 		);
 		res.EnsureSuccessStatusCode();
 
 		using JsonDocument doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
-		return doc.RootElement.TryGetProperty("userOwns", out JsonElement owns) && owns.GetBoolean();
+		return doc.RootElement.TryGetProperty("userOwns", out JsonElement owns)
+			&& owns.GetBoolean();
 	}
 
 	[ScriptMethod]
@@ -162,7 +171,8 @@ public sealed partial class PurchasesService : Instance
 	{
 		ServerGuard();
 		using JsonDocument status = await GetOwnershipStatus(player, entitlementID);
-		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial) && trial.GetBoolean();
+		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial)
+			&& trial.GetBoolean();
 	}
 
 	[ScriptMethod]
@@ -170,7 +180,11 @@ public sealed partial class PurchasesService : Instance
 	{
 		ServerGuard();
 		using JsonDocument status = await GetOwnershipStatus(player, entitlementID);
-		return status.RootElement.TryGetProperty("trialEndsAt", out JsonElement ends) && ends.ValueKind == JsonValueKind.String ? ends.GetString() ?? "" : "";
+		return
+			status.RootElement.TryGetProperty("trialEndsAt", out JsonElement ends)
+			&& ends.ValueKind == JsonValueKind.String
+			? ends.GetString() ?? ""
+			: "";
 	}
 
 	[ScriptMethod]
@@ -178,16 +192,25 @@ public sealed partial class PurchasesService : Instance
 	{
 		ServerGuard();
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
-		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/trial-status?userId={player.UserID}"));
+		using HttpResponseMessage response = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/server/entitlements/trial-status?userId={player.UserID}"
+			)
+		);
 		response.EnsureSuccessStatusCode();
 		using JsonDocument status = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial) && trial.GetBoolean();
+		return status.RootElement.TryGetProperty("isTrial", out JsonElement trial)
+			&& trial.GetBoolean();
 	}
 
 	private async Task<JsonDocument> GetOwnershipStatus(Player player, long entitlementID)
 	{
 		_client.DefaultRequestHeaders["Authorization"] = ServerAPI.GetAuthorizationHeaderValue();
-		using HttpResponseMessage response = await _client.GetAsync(Globals.ApiEndpoint.PathJoin($"/v3/world/server/entitlements/ownership?entitlementId={entitlementID}&userId={player.UserID}"));
+		using HttpResponseMessage response = await _client.GetAsync(
+			Globals.ApiEndpoint.PathJoin(
+				$"/v3/world/server/entitlements/ownership?entitlementId={entitlementID}&userId={player.UserID}"
+			)
+		);
 		response.EnsureSuccessStatusCode();
 		return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 	}
@@ -208,7 +231,8 @@ public sealed partial class PurchasesService : Instance
 		try
 		{
 			APIStoreItem storeItem = await GetEntitlementStoreItem(entitlementID);
-			if (!storeItem.Price.HasValue) throw new Exception("This item does not have a price");
+			if (!storeItem.Price.HasValue)
+				throw new Exception("This item does not have a price");
 			_purchasePrompt?.Prompt(storeItem);
 		}
 		catch (Exception ex)
@@ -222,13 +246,13 @@ public sealed partial class PurchasesService : Instance
 	{
 		_client.DefaultRequestHeaders["Authorization"] = $"Bearer {ClientAuthAPI.JoinToken}";
 		using HttpResponseMessage response = await _client.GetAsync(
-			Globals.ApiEndpoint.PathJoin(
-				$"/v3/world/client/entitlements/{entitlementID}/details"
-			)
+			Globals.ApiEndpoint.PathJoin($"/v3/world/client/entitlements/{entitlementID}/details")
 		);
 		response.EnsureSuccessStatusCode();
 
-		using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+		using JsonDocument document = JsonDocument.Parse(
+			await response.Content.ReadAsStringAsync()
+		);
 		JsonElement data = document.RootElement.GetProperty("data");
 		string id = data.GetProperty("id").GetString() ?? entitlementID.ToString();
 		string name = data.GetProperty("name").GetString() ?? "World item";
@@ -294,7 +318,8 @@ public sealed partial class PurchasesService : Instance
 
 	private void CleanupExpiredPurchases()
 	{
-		if (_pendingPurchases.Count == 0) return;
+		if (_pendingPurchases.Count == 0)
+			return;
 
 		List<string> keysToRemove = [];
 		DateTime expireTime = DateTime.Now.AddMinutes(-5);
@@ -327,6 +352,7 @@ public sealed partial class PurchasesService : Instance
 
 	private void ServerGuard()
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Purchases can only be accessed by server");
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException("Purchases can only be accessed by server");
 	}
 }

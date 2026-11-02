@@ -24,5 +24,5 @@ public enum LuaType
 	Proto = 12,
 	UpVal = 13,
 	DeadKey = 14,
-	Count = Proto // = 12
+	Count = Proto, // = 12
 }

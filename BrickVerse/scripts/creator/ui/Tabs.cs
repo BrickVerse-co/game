@@ -2,20 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.Settings;
-using BrickVerse.Creator.UI.TextEditor;
-using BrickVerse.Creator.UI.Popups;
-using BrickVerse.Creator.UI.Splashes;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Shared;
-using BrickVerse.Formats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.UI.TextEditor;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Formats;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -30,7 +30,8 @@ public sealed partial class Tabs : Control
 		get => _currentControl;
 		private set
 		{
-			if (_currentControl == value) return;
+			if (_currentControl == value)
+				return;
 			_currentControl?.Visible = false;
 
 			_currentControl = value;
@@ -61,7 +62,11 @@ public sealed partial class Tabs : Control
 				// focus. Returning from a document tab must restore that focus.
 				Callable.From(gameContainer.GrabFocus).CallDeferred();
 			}
-			if (value is TextEditorContainer tec && World.Current != null && World.Current.LinkedSession != tec.TargetSession)
+			if (
+				value is TextEditorContainer tec
+				&& World.Current != null
+				&& World.Current.LinkedSession != tec.TargetSession
+			)
 			{
 				World.Current = tec.TargetSession.OpenedWorlds[0];
 			}
@@ -91,8 +96,10 @@ public sealed partial class Tabs : Control
 	private int _tabContextIndex = -1;
 	private bool _closePlacePending;
 
-	private Button _leftButton = null!, _rightButton = null!;
-	private bool _scrollLeft, _scrollRight;
+	private Button _leftButton = null!,
+		_rightButton = null!;
+	private bool _scrollLeft,
+		_scrollRight;
 	private int _maxScroll;
 
 	private const int _scrollSidePadding = 2;
@@ -105,12 +112,16 @@ public sealed partial class Tabs : Control
 
 	public static Tabs Singleton { get; private set; } = null!;
 	public WorldContainer? CurrentWorldContainer => CurrentControl as WorldContainer;
+
 	public void FocusWorld(World world)
 	{
-		WorldContainer? container = _orderedControls.OfType<WorldContainer>()
+		WorldContainer? container = _orderedControls
+			.OfType<WorldContainer>()
 			.FirstOrDefault(item => item.World == world);
-		if (container != null) CurrentControl = container;
+		if (container != null)
+			CurrentControl = container;
 	}
+
 	public Tabs()
 	{
 		Singleton = this;
@@ -130,8 +141,10 @@ public sealed partial class Tabs : Control
 
 		_tabBar.TabChanged += idx =>
 		{
-			if (_surpressTabChanged) return;
-			if ((int)idx < 0 || (int)idx >= _orderedControls.Count) return;
+			if (_surpressTabChanged)
+				return;
+			if ((int)idx < 0 || (int)idx >= _orderedControls.Count)
+				return;
 			CurrentControl = _orderedControls[(int)idx];
 		};
 
@@ -168,7 +181,9 @@ public sealed partial class Tabs : Control
 		{
 			case TextEditorContainer editor:
 				string scriptName = CreatorService.GetScriptNameFromPath(editor.TargetFilePath);
-				string scriptType = CreatorService.GetScriptTypeFromPath(editor.TargetFilePath) switch
+				string scriptType = CreatorService.GetScriptTypeFromPath(
+					editor.TargetFilePath
+				) switch
 				{
 					ScriptTypeEnum.Server => "Server Script",
 					ScriptTypeEnum.Client => "Client Script",
@@ -226,7 +241,10 @@ public sealed partial class Tabs : Control
 				return;
 			}
 
-			TextEditorContainer tec = new(txt.TargetPath, fullPath, txt.CodeCompletion, txt.Session) { OriginTabName = txt.Title ?? "" };
+			TextEditorContainer tec = new(txt.TargetPath, fullPath, txt.CodeCompletion, txt.Session)
+			{
+				OriginTabName = txt.Title ?? "",
+			};
 			container = tec;
 			ScriptTypeEnum st = CreatorService.GetScriptTypeFromPath(txt.TargetPath);
 			icon = st switch
@@ -240,9 +258,14 @@ public sealed partial class Tabs : Control
 		}
 		else if (other is ParticleEditorTab particle)
 		{
-			ParticleEditorWindow? existing = _orderedControls.OfType<ParticleEditorWindow>()
+			ParticleEditorWindow? existing = _orderedControls
+				.OfType<ParticleEditorWindow>()
 				.FirstOrDefault(editor => editor.Target == particle.Target);
-			if (existing != null) { CurrentControl = existing; return; }
+			if (existing != null)
+			{
+				CurrentControl = existing;
+				return;
+			}
 			container = new ParticleEditorWindow(particle.Target);
 			icon = "play-filled";
 		}
@@ -256,7 +279,6 @@ public sealed partial class Tabs : Control
 
 		UpdateTabBar();
 		_tabBar.Position = new Vector2(_maxScroll, _tabBar.Position.Y);
-
 	}
 
 	private async Task Remove(Control control, bool isBulkOp = false)
@@ -266,7 +288,9 @@ public sealed partial class Tabs : Control
 			if (!(control is TextEditorContainer txt && txt.EditorRoot.Saved))
 			{
 				bool isPlace = control is WorldContainer;
-				bool isPrefab = control is WorldContainer prefabContainer && prefabContainer.World.IsPrefabEditor;
+				bool isPrefab =
+					control is WorldContainer prefabContainer
+					&& prefabContainer.World.IsPrefabEditor;
 				string message = isPlace
 					? isPrefab
 						? "Close this prefab? Make sure you have saved any changes you want to keep."
@@ -275,7 +299,13 @@ public sealed partial class Tabs : Control
 				string dismissKey = isPlace
 					? CreatorSettingKeys.Popups.ClosePlaceWarning
 					: CreatorSettingKeys.Popups.CloseTabWarning;
-				if (!await CreatorService.Interface.PromptConfirmation(message, dismissKey: dismissKey)) return;
+				if (
+					!await CreatorService.Interface.PromptConfirmation(
+						message,
+						dismissKey: dismissKey
+					)
+				)
+					return;
 			}
 
 			if (control is WorldContainer g)
@@ -332,7 +362,9 @@ public sealed partial class Tabs : Control
 			if (CurrentControl == null)
 			{
 				var lowestClosed = sessionTabs[^1];
-				CurrentControl = _orderedControls[Mathf.Clamp(lowestClosed, 0, _tabBar.TabCount - 1)];
+				CurrentControl = _orderedControls[
+					Mathf.Clamp(lowestClosed, 0, _tabBar.TabCount - 1)
+				];
 			}
 		}
 	}
@@ -361,8 +393,10 @@ public sealed partial class Tabs : Control
 
 	public override void _Process(double delta)
 	{
-		if (_scrollLeft) ScrollTabBar((float)(900 * delta));
-		if (_scrollRight) ScrollTabBar((float)(-900 * delta));
+		if (_scrollLeft)
+			ScrollTabBar((float)(900 * delta));
+		if (_scrollRight)
+			ScrollTabBar((float)(-900 * delta));
 	}
 
 	private void OnTabBarGUIInput(InputEvent @event)
@@ -418,7 +452,8 @@ public sealed partial class Tabs : Control
 		}
 		else if (key.Keycode == Key.W && key.CtrlPressed && !key.AltPressed)
 		{
-			if (CurrentControl != null) _ = Remove(CurrentControl);
+			if (CurrentControl != null)
+				_ = Remove(CurrentControl);
 			GetViewport().SetInputAsHandled();
 		}
 		base._UnhandledKeyInput(@event);
@@ -426,11 +461,7 @@ public sealed partial class Tabs : Control
 
 	private void ShowTabContextMenu(int tabIndex)
 	{
-		TabContextMenu menu = new()
-		{
-			OwnerTabs = this,
-			TabIndex = tabIndex,
-		};
+		TabContextMenu menu = new() { OwnerTabs = this, TabIndex = tabIndex };
 
 		AddChild(menu);
 		menu.PopupAtCursor();
@@ -537,7 +568,8 @@ public sealed partial class Tabs : Control
 	private int GetMaxScroll()
 	{
 		_tabBar.Size = new Vector2(0, _tabBar.Size.Y);
-		return (int)-Mathf.Max(_tabBar.Size.X - _tabsClip.Size.X + _scrollSidePadding, -_scrollSidePadding);
+		return (int)
+			-Mathf.Max(_tabBar.Size.X - _tabsClip.Size.X + _scrollSidePadding, -_scrollSidePadding);
 	}
 
 	private void UpdateTabBar()
@@ -561,21 +593,21 @@ public sealed partial class Tabs : Control
 			_rightButton.Visible = false;
 			_scrollRight = false;
 		}
-		else if (!_rightButton.Visible) _rightButton.Visible = true;
+		else if (!_rightButton.Visible)
+			_rightButton.Visible = true;
 
 		if (_tabBar.Position.X == _scrollSidePadding)
 		{
 			_leftButton.Visible = false;
 			_scrollLeft = false;
 		}
-		else if (!_leftButton.Visible) _leftButton.Visible = true;
+		else if (!_leftButton.Visible)
+			_leftButton.Visible = true;
 	}
 
 	public List<WorldContainer> GetAllOpenWorlds()
 	{
-		return _orderedControls
-			.OfType<WorldContainer>()
-			.ToList();
+		return _orderedControls.OfType<WorldContainer>().ToList();
 	}
 
 	public void SaveAll()
@@ -593,32 +625,46 @@ public sealed partial class Tabs : Control
 		}
 		foreach (WorldContainer container in _orderedControls.OfType<WorldContainer>())
 		{
-			CreatorService.CompileScriptsForBuild(container.World.IsPrefabEditor && container.World.PrefabRoot != null
-				? container.World.PrefabRoot
-				: container.World);
+			CreatorService.CompileScriptsForBuild(
+				container.World.IsPrefabEditor && container.World.PrefabRoot != null
+					? container.World.PrefabRoot
+					: container.World
+			);
 			if (container.World.IsPrefabEditor && container.World.PrefabRoot != null)
 			{
 				container.World.LinkedSession.SaveModel(
-					container.World.PrefabRoot, container.World.PrefabFilePath!);
+					container.World.PrefabRoot,
+					container.World.PrefabFilePath!
+				);
 				savedDocuments++;
 			}
 			else if (!string.IsNullOrWhiteSpace(container.World.WorldFilePath))
 			{
-				PolyFormat.SaveWorldToFile(container.World,
-					container.World.LinkedSession.GlobalizePath(container.World.WorldFilePath));
+				PolyFormat.SaveWorldToFile(
+					container.World,
+					container.World.LinkedSession.GlobalizePath(container.World.WorldFilePath)
+				);
 				savedDocuments++;
 			}
 			sessions.Add(container.World.LinkedSession);
 		}
-		foreach (CreatorSession session in sessions) session.Save();
-		CreatorService.Interface.StatusBar?.SetStatus($"Saved {savedDocuments} open document{(savedDocuments == 1 ? "" : "s")}");
+		foreach (CreatorSession session in sessions)
+			session.Save();
+		CreatorService.Interface.StatusBar?.SetStatus(
+			$"Saved {savedDocuments} open document{(savedDocuments == 1 ? "" : "s")}"
+		);
 	}
 
 	public int SaveEditorsForSession(CreatorSession session)
 	{
 		int saved = 0;
-		foreach (TextEditorContainer editor in _orderedControls.OfType<TextEditorContainer>()
-			.Where(editor => ReferenceEquals(editor.TargetSession, session) && !editor.EditorRoot.Saved))
+		foreach (
+			TextEditorContainer editor in _orderedControls
+				.OfType<TextEditorContainer>()
+				.Where(editor =>
+					ReferenceEquals(editor.TargetSession, session) && !editor.EditorRoot.Saved
+				)
+		)
 		{
 			editor.EditorRoot.SaveDocument();
 			saved++;
@@ -628,20 +674,24 @@ public sealed partial class Tabs : Control
 
 	public async void CloseCurrentPlace()
 	{
-		if (_closePlacePending) return;
+		if (_closePlacePending)
+			return;
 		World? currentWorld = World.Current;
-		if (currentWorld == null) return;
+		if (currentWorld == null)
+			return;
 
 		WorldContainer? currentPlace = _orderedControls
 			.OfType<WorldContainer>()
 			.FirstOrDefault(container => container.World == currentWorld);
-		if (currentPlace == null) return;
+		if (currentPlace == null)
+			return;
 
 		_closePlacePending = true;
 		try
 		{
 			await Remove(currentPlace);
-			if (_orderedControls.OfType<WorldContainer>().Any()) return;
+			if (_orderedControls.OfType<WorldContainer>().Any())
+				return;
 
 			World.Current = null;
 			StartupSplash.Singleton.Open();
@@ -674,7 +724,10 @@ internal sealed partial class TabContextMenu : ContextMenu
 		AddIconItem("trash", "Close All", Tabs.TabActionCloseAll);
 
 		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseOthers), OwnerTabs.OpenTabCount <= 1);
-		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseRight), TabIndex >= OwnerTabs.OpenTabCount - 1);
+		SetItemDisabled(
+			GetItemIndex(Tabs.TabActionCloseRight),
+			TabIndex >= OwnerTabs.OpenTabCount - 1
+		);
 		SetItemDisabled(GetItemIndex(Tabs.TabActionCloseAll), OwnerTabs.OpenTabCount == 0);
 
 		IdPressed += OnActionPressed;

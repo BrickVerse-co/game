@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Scripting;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BrickVerse.Scripting;
 
 namespace BrickVerse.Tests;
 
@@ -133,7 +133,6 @@ public class BVSignalTest
 		Assert.Equal("hello", received);
 	}
 
-
 	[Fact]
 	public void Disconnect_RemovesCallback_StopsInvocation()
 	{
@@ -190,7 +189,8 @@ public class BVSignalTest
 	public void Disconnect_ActionOverload_RemovesCorrectCallback()
 	{
 		BVSignal signal = new();
-		int countA = 0, countB = 0;
+		int countA = 0,
+			countB = 0;
 
 		void a() => countA++;
 		void b() => countB++;

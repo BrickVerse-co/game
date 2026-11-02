@@ -10,7 +10,7 @@ public enum SettingValueKind
 	Int,
 	Float,
 	String,
-	Enum
+	Enum,
 }
 
 public enum SettingControlKind
@@ -18,5 +18,5 @@ public enum SettingControlKind
 	Toggle,
 	Slider,
 	Dropdown,
-	ButtonGroup
+	ButtonGroup,
 }

@@ -8,7 +8,8 @@ namespace BrickVerse.Client.UI;
 
 public partial class UIMenuViewBase : Control
 {
-	[Export] public Control? FirstFocus { get; private set; }
+	[Export]
+	public Control? FirstFocus { get; private set; }
 
 	public UIGameMenu Menu { get; set; } = null!;
 

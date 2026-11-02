@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Client;
-using BrickVerse.Shared;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BrickVerse.Client;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Mobile.UI;
 
@@ -16,7 +16,6 @@ public partial class ViewTestPage : MobileViewBase
 	private LineEdit AddresssField = null!;
 	private DevLaunchOptions _launchOptions = new();
 	private const string DevLaunchPath = "user://devlaunch";
-
 
 	public override void _Ready()
 	{
@@ -30,7 +29,10 @@ public partial class ViewTestPage : MobileViewBase
 
 		if (FileAccess.FileExists(DevLaunchPath))
 		{
-			_launchOptions = JsonSerializer.Deserialize(FileAccess.GetFileAsString(DevLaunchPath), DevLaunchOptionsGenerationContext.Default.DevLaunchOptions)!;
+			_launchOptions = JsonSerializer.Deserialize(
+				FileAccess.GetFileAsString(DevLaunchPath),
+				DevLaunchOptionsGenerationContext.Default.DevLaunchOptions
+			)!;
 		}
 
 		AddresssField.Text = _launchOptions.ConnectAddress;
@@ -41,7 +43,12 @@ public partial class ViewTestPage : MobileViewBase
 	{
 		_launchOptions.ConnectAddress = AddresssField.Text;
 		using FileAccess devlaunch = FileAccess.Open(DevLaunchPath, FileAccess.ModeFlags.Write);
-		devlaunch.StoreString(JsonSerializer.Serialize(_launchOptions, DevLaunchOptionsGenerationContext.Default.DevLaunchOptions));
+		devlaunch.StoreString(
+			JsonSerializer.Serialize(
+				_launchOptions,
+				DevLaunchOptionsGenerationContext.Default.DevLaunchOptions
+			)
+		);
 		devlaunch.Close();
 
 		Node app = Globals.Singleton.SwitchEntry(Globals.AppEntryEnum.Client);
@@ -50,7 +57,7 @@ public partial class ViewTestPage : MobileViewBase
 			ClientEntry.ClientEntryData entryData = new()
 			{
 				ReturnToAppShell = true,
-				ConnectAddress = _launchOptions.ConnectAddress
+				ConnectAddress = _launchOptions.ConnectAddress,
 			};
 			ce.Entry(entryData);
 		}

@@ -15,10 +15,18 @@ public sealed partial class DamageVolume : TriggerVolume
 	public float DamagePerSecond
 	{
 		get => _damagePerSecond;
-		set { float next = Mathf.Max(0, value); if (Mathf.IsEqualApprox(_damagePerSecond, next)) return; _damagePerSecond = next; OnPropertyChanged(); }
+		set
+		{
+			float next = Mathf.Max(0, value);
+			if (Mathf.IsEqualApprox(_damagePerSecond, next))
+				return;
+			_damagePerSecond = next;
+			OnPropertyChanged();
+		}
 	}
 
-	[ScriptProperty] public BVSignal<NPC, float> Damaged { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<NPC, float> Damaged { get; private set; } = new();
 
 	public override void Init()
 	{
@@ -30,11 +38,13 @@ public sealed partial class DamageVolume : TriggerVolume
 	public override void PhysicsProcess(double delta)
 	{
 		base.PhysicsProcess(delta);
-		if (!Enabled || !Root.Network.IsServer || _damagePerSecond <= 0) return;
+		if (!Enabled || !Root.Network.IsServer || _damagePerSecond <= 0)
+			return;
 		float damage = _damagePerSecond * (float)delta;
 		foreach (Physical physical in GetOccupants())
 		{
-			if (physical is not NPC npc || npc.IsDead) continue;
+			if (physical is not NPC npc || npc.IsDead)
+				continue;
 			npc.TakeDamage(damage);
 			Damaged.Invoke(npc, damage);
 		}

@@ -2,18 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Services;
+using Godot;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Scripting;
-
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 public class BVSignal : IScriptObject
@@ -40,12 +39,19 @@ public class BVSignal : IScriptObject
 			if (cb is null || cb.Disposed)
 			{
 				_ptCallbacks.RemoveAt(i);
-				if (cb is not null) _ptSet.Remove(cb);
+				if (cb is not null)
+					_ptSet.Remove(cb);
 				continue;
 			}
 
-			try { cb.InvokeDirect(args); }
-			catch (Exception ex) { GD.PushError($"BVCallback Length: {args.Length} : " + ex.ToString()); }
+			try
+			{
+				cb.InvokeDirect(args);
+			}
+			catch (Exception ex)
+			{
+				GD.PushError($"BVCallback Length: {args.Length} : " + ex.ToString());
+			}
 		}
 	}
 
@@ -57,12 +63,19 @@ public class BVSignal : IScriptObject
 			if (cb is null || cb.Disposed)
 			{
 				_ptCallbacks.RemoveAt(i);
-				if (cb is not null) _ptSet.Remove(cb);
+				if (cb is not null)
+					_ptSet.Remove(cb);
 				continue;
 			}
 
-			try { cb.InvokeOne(arg); }
-			catch (Exception ex) { GD.PushError("BVCallback single-argument invocation: " + ex); }
+			try
+			{
+				cb.InvokeOne(arg);
+			}
+			catch (Exception ex)
+			{
+				GD.PushError("BVCallback single-argument invocation: " + ex);
+			}
 		}
 	}
 
@@ -96,7 +109,8 @@ public class BVSignal : IScriptObject
 	{
 		BVSignalConnection sc = new() { Callback = action, Signal = this };
 
-		if (!_ptSet.Add(action)) return sc;
+		if (!_ptSet.Add(action))
+			return sc;
 		_ptCallbacks.Add(action);
 		if (action.FromScript != null)
 		{
@@ -125,8 +139,16 @@ public class BVSignal : IScriptObject
 
 	public void Connect(Delegate del)
 	{
-		if (del is Action a) { Connect(a); return; }
-		if (del is Action<object?[]> aArgs) { Connect(aArgs); return; }
+		if (del is Action a)
+		{
+			Connect(a);
+			return;
+		}
+		if (del is Action<object?[]> aArgs)
+		{
+			Connect(aArgs);
+			return;
+		}
 
 		if (_ptCallbacks.Any(c => c.OriginalDelegate == del))
 		{
@@ -135,16 +157,21 @@ public class BVSignal : IScriptObject
 		}
 
 		int paramCount = del.Method.GetParameters().Length;
-		bool takesArray = paramCount == 1 && del.Method.GetParameters()[0].ParameterType == typeof(object[]);
+		bool takesArray =
+			paramCount == 1 && del.Method.GetParameters()[0].ParameterType == typeof(object[]);
 
-		BVCallback cb = new(args => del.DynamicInvoke(takesArray ? [args] : args)) { OriginalDelegate = del };
+		BVCallback cb = new(args => del.DynamicInvoke(takesArray ? [args] : args))
+		{
+			OriginalDelegate = del,
+		};
 		Connect(cb);
 	}
 
 	[ScriptMethod]
 	public void Disconnect(BVCallback action)
 	{
-		if (!_ptSet.Remove(action)) return;
+		if (!_ptSet.Remove(action))
+			return;
 		_ptCallbacks.Remove(action);
 		ScriptService.FreeBVCallback(action);
 
@@ -159,24 +186,35 @@ public class BVSignal : IScriptObject
 	public void Disconnect(Action action)
 	{
 		var cb = _ptCallbacks.FirstOrDefault(c => c.OriginalDelegate?.Equals(action) == true);
-		if (cb == null) return;
+		if (cb == null)
+			return;
 		Disconnect(cb);
 	}
 
 	public void Disconnect(Action<object?[]> action)
 	{
 		var cb = _ptCallbacks.FirstOrDefault(c => c.OriginalDelegate?.Equals(action) == true);
-		if (cb == null) return;
+		if (cb == null)
+			return;
 		Disconnect(cb);
 	}
 
 	public void Disconnect(Delegate del)
 	{
-		if (del is Action a) { Disconnect(a); return; }
-		if (del is Action<object?[]> aArgs) { Disconnect(aArgs); return; }
+		if (del is Action a)
+		{
+			Disconnect(a);
+			return;
+		}
+		if (del is Action<object?[]> aArgs)
+		{
+			Disconnect(aArgs);
+			return;
+		}
 
 		var cb = _ptCallbacks.FirstOrDefault(c => c.OriginalDelegate == del);
-		if (cb == null) return;
+		if (cb == null)
+			return;
 		Disconnect(cb);
 	}
 
@@ -207,7 +245,9 @@ public class BVSignal : IScriptObject
 			action.InvokeDirect(args);
 			handler = null;
 		})
-		{ FromScript = action.FromScript };
+		{
+			FromScript = action.FromScript,
+		};
 
 		Connect(handler);
 	}
@@ -220,7 +260,9 @@ public class BVSignal : IScriptObject
 			Disconnect(cb!);
 			action.Invoke(args?.Length > 0 ? args[0]! : null!);
 		})
-		{ OriginalDelegate = action };
+		{
+			OriginalDelegate = action,
+		};
 		Connect(cb);
 	}
 
@@ -232,14 +274,24 @@ public class BVSignal : IScriptObject
 			Disconnect(cb!);
 			action.Invoke(args ?? []);
 		})
-		{ OriginalDelegate = action };
+		{
+			OriginalDelegate = action,
+		};
 		Connect(cb);
 	}
 
 	public void Once(Delegate del)
 	{
-		if (del is Action<object> a) { Once(a); return; }
-		if (del is Action<object?[]> a2) { Once(a2); return; }
+		if (del is Action<object> a)
+		{
+			Once(a);
+			return;
+		}
+		if (del is Action<object?[]> a2)
+		{
+			Once(a2);
+			return;
+		}
 
 		BVCallback? cb = null;
 		cb = new BVCallback(args =>
@@ -247,7 +299,9 @@ public class BVSignal : IScriptObject
 			Disconnect(cb!);
 			del.DynamicInvoke(args ?? []);
 		})
-		{ OriginalDelegate = del };
+		{
+			OriginalDelegate = del,
+		};
 		Connect(cb);
 	}
 
@@ -291,7 +345,8 @@ public class BVSignal : IScriptObject
 			if (cb is null || cb.Disposed || cb.FromScript == s)
 			{
 				_ptCallbacks.RemoveAt(i);
-				if (cb is not null) _ptSet.Remove(cb);
+				if (cb is not null)
+					_ptSet.Remove(cb);
 				continue;
 			}
 		}
@@ -327,6 +382,9 @@ public struct BVSignalConnection() : IScriptObject
 }
 
 public class BVSignal<T1> : BVSignal { }
+
 public class BVSignal<T1, T2> : BVSignal { }
+
 public class BVSignal<T1, T2, T3> : BVSignal { }
+
 public class BVSignal<T1, T2, T3, T4> : BVSignal { }

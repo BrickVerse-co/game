@@ -14,17 +14,16 @@ using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Scripting;
-using BrickVerse.Scripting.Datatypes;
-using BrickVerse.Scripting.Luau;
-using BrickVerse.Scripting.JavaScript;
-using BrickVerse.Scripting.CSharp;
 using BrickVerse.Scripting.Cpp;
+using BrickVerse.Scripting.CSharp;
+using BrickVerse.Scripting.Datatypes;
+using BrickVerse.Scripting.JavaScript;
+using BrickVerse.Scripting.Luau;
 using BrickVerse.Shared;
 using Godot;
 #if CREATOR
 using BrickVerse.Datamodel.Creator;
 #endif
-
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -87,7 +86,10 @@ public sealed partial class ScriptService : Instance
 		{
 			// Only allow node creation here, scripting will be disabled in non node env (eg. unit tests)
 			RegisterLanguageProvider(ScriptLanguagesEnum.Luau, new LuauProvider());
-			RegisterLanguageProvider(ScriptLanguagesEnum.Visual, new BrickVerse.Scripting.Visual.VisualScriptProvider());
+			RegisterLanguageProvider(
+				ScriptLanguagesEnum.Visual,
+				new BrickVerse.Scripting.Visual.VisualScriptProvider()
+			);
 			if (!OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS())
 			{
 				RegisterLanguageProvider(ScriptLanguagesEnum.CSharp, new CSharpProvider());
@@ -150,11 +152,13 @@ public sealed partial class ScriptService : Instance
 
 	private static void EnsurePlatformSupport(ScriptLanguagesEnum language)
 	{
-		if (ScriptLanguageRegistry.IsSupportedOnCurrentPlatform(language)) return;
+		if (ScriptLanguageRegistry.IsSupportedOnCurrentPlatform(language))
+			return;
 		ScriptLanguageDefinition definition = ScriptLanguageRegistry.Get(language);
 		throw new PlatformNotSupportedException(
 			$"{definition.DisplayName} scripts are not supported on this platform. "
-			+ ScriptLanguageRegistry.GetPlatformDescription(definition) + "."
+				+ ScriptLanguageRegistry.GetPlatformDescription(definition)
+				+ "."
 		);
 	}
 

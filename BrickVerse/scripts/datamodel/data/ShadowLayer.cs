@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Enums;
 using BrickVerse.Scripting;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -58,12 +58,13 @@ public partial struct ShadowLayer : IScriptObject, IData
 		return new ShadowLayer();
 	}
 
-	object IData.Clone() => new ShadowLayer
-	{
-		Color = Color,
-		Offset = Offset,
-		Radius = Radius,
-		Spread = Spread,
-		BlendMode = BlendMode,
-	};
+	object IData.Clone() =>
+		new ShadowLayer
+		{
+			Color = Color,
+			Offset = Offset,
+			Radius = Radius,
+			Spread = Spread,
+			BlendMode = BlendMode,
+		};
 }

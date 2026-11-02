@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client;
 
@@ -21,13 +21,17 @@ public partial class DatamodelBridge : Node3D
 	private World Root = null!;
 	public long SeparatedPartCount = 0;
 
-	private readonly Dictionary<Part, PartHandle> _handles = new(ReferenceEqualityComparer.Instance);
+	private readonly Dictionary<Part, PartHandle> _handles = new(
+		ReferenceEqualityComparer.Instance
+	);
 	private readonly Dictionary<ChunkKey, ChunkBatch> _batches = [];
 	private readonly Dictionary<(Part.PartMaterialEnum, Part.ShapeEnum), int> _groupCounts = [];
 	private readonly HashSet<Part> _dirty = new(ReferenceEqualityComparer.Instance);
 	private readonly List<Part> _dirtyParts = [];
 	private readonly HashSet<Part> _recheck = new(ReferenceEqualityComparer.Instance);
-	private readonly Dictionary<Part, System.Action<object>> _handlers = new(ReferenceEqualityComparer.Instance);
+	private readonly Dictionary<Part, System.Action<object>> _handlers = new(
+		ReferenceEqualityComparer.Instance
+	);
 	private Rid _scenario;
 
 	private readonly Dictionary<(Part.PartMaterialEnum, bool), Material> _materials = [];
@@ -108,7 +112,9 @@ public partial class DatamodelBridge : Node3D
 			return mat;
 		}
 
-		mat = Globals.LoadMaterial(partMaterial, isTransparent ? 0f : 1f) ?? throw new System.Exception("Unknown material: " + partMaterial.ToString());
+		mat =
+			Globals.LoadMaterial(partMaterial, isTransparent ? 0f : 1f)
+			?? throw new System.Exception("Unknown material: " + partMaterial.ToString());
 		if (mat is StandardMaterial3D sm)
 		{
 			sm.VertexColorUseAsAlbedo = true;
@@ -117,7 +123,9 @@ public partial class DatamodelBridge : Node3D
 
 			if (isTransparent)
 			{
-				sm.Transparency = isTransparent ? BaseMaterial3D.TransparencyEnum.Alpha : BaseMaterial3D.TransparencyEnum.Disabled;
+				sm.Transparency = isTransparent
+					? BaseMaterial3D.TransparencyEnum.Alpha
+					: BaseMaterial3D.TransparencyEnum.Disabled;
 			}
 
 			sm.RoughnessTexture = null;
@@ -137,8 +145,10 @@ public partial class DatamodelBridge : Node3D
 
 	public override void _Process(double delta)
 	{
-		if (!_renderingEnabled || !isGameReady) return;
-		if (_dirty.Count == 0) return;
+		if (!_renderingEnabled || !isGameReady)
+			return;
+		if (_dirty.Count == 0)
+			return;
 
 		_dirtyParts.Clear();
 		_dirtyParts.AddRange(_dirty);
@@ -148,7 +158,8 @@ public partial class DatamodelBridge : Node3D
 		{
 			if (!_recheck.Remove(part))
 			{
-				if (part.IsDeleted || !IsInstanceValid(part.GDNode3D)) continue;
+				if (part.IsDeleted || !IsInstanceValid(part.GDNode3D))
+					continue;
 
 				if (_handles.TryGetValue(part, out PartHandle? moved))
 				{
@@ -184,8 +195,14 @@ public partial class DatamodelBridge : Node3D
 				}
 				else
 				{
-					handle!.Batch.MultiMesh.SetInstanceTransform(handle.Index, part.GetGlobalTransform());
-					handle.Batch.MultiMesh.SetInstanceColor(handle.Index, part.Color.SrgbToLinear());
+					handle!.Batch.MultiMesh.SetInstanceTransform(
+						handle.Index,
+						part.GetGlobalTransform()
+					);
+					handle.Batch.MultiMesh.SetInstanceColor(
+						handle.Index,
+						part.Color.SrgbToLinear()
+					);
 				}
 			}
 			else
@@ -211,16 +228,26 @@ public partial class DatamodelBridge : Node3D
 	private ChunkKey GetKeyForPart(Part part, Vector3 position)
 	{
 		bool isDynamic = !part.Anchored;
-		bool split = !isDynamic && _groupCounts.GetValueOrDefault((part.Material, part.Shape)) >= SplitGroupSize;
+		bool split =
+			!isDynamic
+			&& _groupCounts.GetValueOrDefault((part.Material, part.Shape)) >= SplitGroupSize;
 		float size = split ? ChunkBaseSize : CoarseChunkSize;
 
 		Vector3 pos = position + new Vector3(size * 0.5f, size * 0.5f, size * 0.5f);
 		Vector3I coord = new(
 			Mathf.FloorToInt(pos.X / size),
 			Mathf.FloorToInt(pos.Y / size),
-			Mathf.FloorToInt(pos.Z / size));
+			Mathf.FloorToInt(pos.Z / size)
+		);
 
-		return new ChunkKey(coord, part.Material, part.Shape, part.Color.A < 1f, part.CastShadows, isDynamic);
+		return new ChunkKey(
+			coord,
+			part.Material,
+			part.Shape,
+			part.Color.A < 1f,
+			part.CastShadows,
+			isDynamic
+		);
 	}
 
 	private void OnInstanceAdded(Instance instance)
@@ -256,14 +283,19 @@ public partial class DatamodelBridge : Node3D
 				TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
 				UseColors = true,
 				InstanceCount = 64,
-				VisibleInstanceCount = 0
+				VisibleInstanceCount = 0,
 			};
 
 			Rid rid = RenderingServer.InstanceCreate();
 			RenderingServer.InstanceSetScenario(rid, _scenario);
 			RenderingServer.InstanceSetBase(rid, mm.GetRid());
 			RenderingServer.InstanceSetTransform(rid, Transform3D.Identity);
-			RenderingServer.InstanceGeometrySetCastShadowsSetting(rid, key.CastShadows ? RenderingServer.ShadowCastingSetting.On : RenderingServer.ShadowCastingSetting.Off);
+			RenderingServer.InstanceGeometrySetCastShadowsSetting(
+				rid,
+				key.CastShadows
+					? RenderingServer.ShadowCastingSetting.On
+					: RenderingServer.ShadowCastingSetting.Off
+			);
 
 			Material mat = GetMaterial(key.Material, key.IsTransparent);
 			RenderingServer.InstanceGeometrySetMaterialOverride(rid, mat.GetRid());
@@ -274,7 +306,7 @@ public partial class DatamodelBridge : Node3D
 				MultiMesh = mm,
 				Rid = rid,
 				Parts = new List<Part>(64),
-				Count = 0
+				Count = 0,
 			};
 
 			_batches.Add(key, batch);
@@ -292,14 +324,25 @@ public partial class DatamodelBridge : Node3D
 		batch.MultiMesh.SetInstanceTransform(index, part.GetGlobalTransform());
 		batch.MultiMesh.SetInstanceColor(index, part.Color.SrgbToLinear());
 
-		_handles[part] = new PartHandle { Key = key, Batch = batch, Index = index };
+		_handles[part] = new PartHandle
+		{
+			Key = key,
+			Batch = batch,
+			Index = index,
+		};
 
 		UpdateGroupCount(key.Material, key.Shape, key.IsDynamic, 1);
 	}
 
-	private void UpdateGroupCount(Part.PartMaterialEnum material, Part.ShapeEnum shape, bool isDynamic, int delta)
+	private void UpdateGroupCount(
+		Part.PartMaterialEnum material,
+		Part.ShapeEnum shape,
+		bool isDynamic,
+		int delta
+	)
 	{
-		if (isDynamic) return;
+		if (isDynamic)
+			return;
 
 		(Part.PartMaterialEnum, Part.ShapeEnum) group = (material, shape);
 		int count = _groupCounts.GetValueOrDefault(group) + delta;
@@ -316,7 +359,8 @@ public partial class DatamodelBridge : Node3D
 
 	private void RemoveFromBatch(Part part)
 	{
-		if (!_handles.TryGetValue(part, out PartHandle? handle)) return;
+		if (!_handles.TryGetValue(part, out PartHandle? handle))
+			return;
 		if (!_batches.TryGetValue(handle.Key, out var batch) || batch.Count <= 0)
 		{
 			_handles.Remove(part);
@@ -338,7 +382,10 @@ public partial class DatamodelBridge : Node3D
 
 			// prevents a bunch of error spam. idk why these nodes often arent in the tree but this kept spamming errors
 			bool inTree = IsInstanceValid(lastPart.GDNode3D) && lastPart.GDNode3D.IsInsideTree();
-			batch.MultiMesh.SetInstanceTransform(index, inTree ? lastPart.GetGlobalTransform() : Transform3D.Identity.Scaled(Vector3.Zero));
+			batch.MultiMesh.SetInstanceTransform(
+				index,
+				inTree ? lastPart.GetGlobalTransform() : Transform3D.Identity.Scaled(Vector3.Zero)
+			);
 			batch.MultiMesh.SetInstanceColor(index, lastPart.Color.SrgbToLinear());
 		}
 
@@ -359,7 +406,8 @@ public partial class DatamodelBridge : Node3D
 
 	private static void ResizeBatch(ChunkBatch batch, int target)
 	{
-		if (target <= batch.MultiMesh.InstanceCount) return;
+		if (target <= batch.MultiMesh.InstanceCount)
+			return;
 
 		int oldUsedCount = batch.Count;
 		int newCap = batch.MultiMesh.InstanceCount;
@@ -382,8 +430,10 @@ public partial class DatamodelBridge : Node3D
 
 	public void AddPart(Part part)
 	{
-		if (!_renderingEnabled) return;
-		if (_handles.ContainsKey(part)) return;
+		if (!_renderingEnabled)
+			return;
+		if (_handles.ContainsKey(part))
+			return;
 		if (!IsPartEligible(part))
 		{
 			ConnectHandler(part);
@@ -400,17 +450,29 @@ public partial class DatamodelBridge : Node3D
 
 	private void ConnectHandler(Part part)
 	{
-		if (_handlers.ContainsKey(part)) return;
+		if (_handlers.ContainsKey(part))
+			return;
 
 		void propertyChangedHandler(object name)
 		{
-			if (!isGameReady) return;
+			if (!isGameReady)
+				return;
 
 			_dirty.Add(part);
 
-			if (name is not (nameof(Dynamic.Position) or nameof(Dynamic.Rotation) or nameof(Dynamic.Size)
-				or nameof(Dynamic.LocalPosition) or nameof(Dynamic.LocalRotation) or nameof(Dynamic.LocalSize)
-				or nameof(Dynamic.Quaternion) or nameof(Dynamic.LocalQuaternion)))
+			if (
+				name
+				is not (
+					nameof(Dynamic.Position)
+					or nameof(Dynamic.Rotation)
+					or nameof(Dynamic.Size)
+					or nameof(Dynamic.LocalPosition)
+					or nameof(Dynamic.LocalRotation)
+					or nameof(Dynamic.LocalSize)
+					or nameof(Dynamic.Quaternion)
+					or nameof(Dynamic.LocalQuaternion)
+				)
+			)
 			{
 				_recheck.Add(part);
 			}
@@ -422,14 +484,16 @@ public partial class DatamodelBridge : Node3D
 
 	private void DisconnectHandler(Part part)
 	{
-		if (!_handlers.Remove(part, out System.Action<object>? handler)) return;
+		if (!_handlers.Remove(part, out System.Action<object>? handler))
+			return;
 
 		part.PropertyChanged.Disconnect(handler);
 	}
 
 	public void MarkMoved(Part part)
 	{
-		if (!isGameReady) return;
+		if (!isGameReady)
+			return;
 		MarkMovedTree(part);
 	}
 
@@ -448,7 +512,8 @@ public partial class DatamodelBridge : Node3D
 
 	public void MarkDirty(Part part)
 	{
-		if (!isGameReady) return;
+		if (!isGameReady)
+			return;
 
 		_dirty.Add(part);
 		_recheck.Add(part);
@@ -456,7 +521,8 @@ public partial class DatamodelBridge : Node3D
 
 	public void RemovePart(Part part)
 	{
-		if (!_renderingEnabled) return;
+		if (!_renderingEnabled)
+			return;
 
 		DisconnectHandler(part);
 
@@ -470,11 +536,16 @@ public partial class DatamodelBridge : Node3D
 
 	public static bool IsPartEligible(Part part)
 	{
-		if (part.IsHidden || part.IsInTemporary) return false;
-		if (part.OverrideNoMultiMesh) return false;
-		if (!IsInstanceValid(part.GDNode3D) || !part.GDNode3D.IsInsideTree()) return false;
-		if (part.IsDeleted) return false;
-		if (part.IsDescendantOfClass<Camera>()) return false;
+		if (part.IsHidden || part.IsInTemporary)
+			return false;
+		if (part.OverrideNoMultiMesh)
+			return false;
+		if (!IsInstanceValid(part.GDNode3D) || !part.GDNode3D.IsInsideTree())
+			return false;
+		if (part.IsDeleted)
+			return false;
+		if (part.IsDescendantOfClass<Camera>())
+			return false;
 		return true;
 	}
 
@@ -491,7 +562,8 @@ public partial class DatamodelBridge : Node3D
 		Part.ShapeEnum Shape,
 		bool IsTransparent,
 		bool CastShadows,
-		bool IsDynamic);
+		bool IsDynamic
+	);
 
 	private class ChunkBatch
 	{

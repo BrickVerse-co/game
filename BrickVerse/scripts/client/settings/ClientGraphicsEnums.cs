@@ -8,5 +8,5 @@ public enum OverlayMode
 {
 	None,
 	Minimal,
-	Full
+	Full,
 }

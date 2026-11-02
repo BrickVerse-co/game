@@ -2,14 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Creator;
+using Godot;
 
 namespace BrickVerse.Creator.UI.TextEditor;
 
 public sealed partial class TextEditorContainer : Control
 {
-	private static readonly PackedScene _textEditorPacked = GD.Load<PackedScene>("res://scenes/creator/tabs/text_editor/text_editor.tscn");
+	private static readonly PackedScene _textEditorPacked = GD.Load<PackedScene>(
+		"res://scenes/creator/tabs/text_editor/text_editor.tscn"
+	);
 
 	public TextEditorRoot EditorRoot = null!;
 	public string TargetFilePath = "";
@@ -18,7 +20,12 @@ public sealed partial class TextEditorContainer : Control
 	public FileTypeEnum CodeCompletion = FileTypeEnum.Plaintext;
 	public CreatorSession TargetSession;
 
-	public TextEditorContainer(string path, string fpath, FileTypeEnum codeCompletion, CreatorSession session)
+	public TextEditorContainer(
+		string path,
+		string fpath,
+		FileTypeEnum codeCompletion,
+		CreatorSession session
+	)
 	{
 		TargetFilePath = path;
 		TargetFilePathAbsolute = fpath;

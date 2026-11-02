@@ -8,13 +8,18 @@ namespace BrickVerse.Mobile.UI;
 
 public partial class MobileViewBase : Control
 {
-	protected void ApplyResponsiveMaxWidth(Control content, float maxWidth = 1120f, float horizontalMargin = 16f)
+	protected void ApplyResponsiveMaxWidth(
+		Control content,
+		float maxWidth = 1120f,
+		float horizontalMargin = 16f
+	)
 	{
 		float top = content.OffsetTop;
 		float bottom = content.OffsetBottom;
 		void UpdateWidth()
 		{
-			if (!IsInstanceValid(content)) return;
+			if (!IsInstanceValid(content))
+				return;
 			float available = Mathf.Max(0f, Size.X - horizontalMargin * 2f);
 			float width = Mathf.Min(maxWidth, available);
 			content.AnchorLeft = 0.5f;
@@ -29,15 +34,9 @@ public partial class MobileViewBase : Control
 		Callable.From(UpdateWidth).CallDeferred();
 	}
 
-	public virtual void ShowView(object? args)
-	{
+	public virtual void ShowView(object? args) { }
 
-	}
-
-	public virtual void HideView()
-	{
-
-	}
+	public virtual void HideView() { }
 
 	public virtual void RefreshView() { }
 

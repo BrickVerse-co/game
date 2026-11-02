@@ -53,7 +53,8 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 
 	public override void _ExitTree()
 	{
-		if (_openInstance == this) _openInstance = null;
+		if (_openInstance == this)
+			_openInstance = null;
 		base._ExitTree();
 	}
 
@@ -65,7 +66,11 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 		AddChild(background);
 
 		MarginContainer margin = new();
-		margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect, Control.LayoutPresetMode.Minsize, 22);
+		margin.SetAnchorsAndOffsetsPreset(
+			Control.LayoutPreset.FullRect,
+			Control.LayoutPresetMode.Minsize,
+			22
+		);
 		AddChild(margin);
 		VBoxContainer root = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
 		root.AddThemeConstantOverride("separation", 14);
@@ -76,7 +81,11 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 		Label title = new() { Text = "Scene Statistics" };
 		title.AddThemeFontSizeOverride("font_size", 24);
 		titleBlock.AddChild(title);
-		Label subtitle = new() { Text = "Inspect scene complexity and find the instance types that dominate this world.", Modulate = new Color("8993a4") };
+		Label subtitle = new()
+		{
+			Text = "Inspect scene complexity and find the instance types that dominate this world.",
+			Modulate = new Color("8993a4"),
+		};
 		subtitle.AddThemeFontSizeOverride("font_size", 12);
 		titleBlock.AddChild(subtitle);
 		header.AddChild(titleBlock);
@@ -93,7 +102,12 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 		root.AddChild(_summary);
 
 		HBoxContainer sectionHeader = new();
-		Label breakdown = new() { Text = "INSTANCE BREAKDOWN", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Modulate = new Color("aeb7c6") };
+		Label breakdown = new()
+		{
+			Text = "INSTANCE BREAKDOWN",
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			Modulate = new Color("aeb7c6"),
+		};
 		breakdown.AddThemeFontSizeOverride("font_size", 11);
 		sectionHeader.AddChild(breakdown);
 		_filter.PlaceholderText = "Filter classes…";
@@ -133,24 +147,34 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 		int scripts = instances.Count(instance => instance is BrickVerse.Datamodel.Script);
 		int selected = world.CreatorContext.Selections.SelectedInstances.Count;
 		_classes.Clear();
-		_classes.AddRange(instances.GroupBy(instance => instance.ClassName)
-			.Select(group => (group.Key, group.Count()))
-			.OrderByDescending(item => item.Item2)
-			.ThenBy(item => item.Key));
+		_classes.AddRange(
+			instances
+				.GroupBy(instance => instance.ClassName)
+				.Select(group => (group.Key, group.Count()))
+				.OrderByDescending(item => item.Item2)
+				.ThenBy(item => item.Key)
+		);
 
 		Clear(_summary);
 		HBoxContainer cards = new();
 		cards.AddThemeConstantOverride("separation", 8);
-		cards.AddChild(MetricCard("INSTANCES", instances.Length.ToString("N0"), "Total descendants"));
-		cards.AddChild(MetricCard("VISIBLE", visible.ToString("N0"), $"{instances.Length - visible:N0} hidden"));
+		cards.AddChild(
+			MetricCard("INSTANCES", instances.Length.ToString("N0"), "Total descendants")
+		);
+		cards.AddChild(
+			MetricCard("VISIBLE", visible.ToString("N0"), $"{instances.Length - visible:N0} hidden")
+		);
 		cards.AddChild(MetricCard("3D OBJECTS", dynamicCount.ToString("N0"), "Transformable"));
 		cards.AddChild(MetricCard("SCRIPTS", scripts.ToString("N0"), $"{selected:N0} selected"));
 		_summary.AddChild(cards);
 
 		StringBuilder report = new();
 		report.AppendLine($"Scene Statistics — {world.Name}");
-		report.AppendLine($"Instances: {instances.Length:N0} | Visible: {visible:N0} | 3D Objects: {dynamicCount:N0} | Scripts: {scripts:N0}");
-		foreach ((string name, int count) in _classes) report.AppendLine($"{name}: {count:N0}");
+		report.AppendLine(
+			$"Instances: {instances.Length:N0} | Visible: {visible:N0} | 3D Objects: {dynamicCount:N0} | Scripts: {scripts:N0}"
+		);
+		foreach ((string name, int count) in _classes)
+			report.AppendLine($"{name}: {count:N0}");
 		_report = report.ToString().TrimEnd();
 		RenderClasses();
 		_status.Text = $"Updated {System.DateTime.Now:t}  •  {_classes.Count:N0} instance classes";
@@ -161,7 +185,10 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 		Clear(_classRows);
 		string query = _filter.Text.Trim();
 		IEnumerable<(string Name, int Count)> rows = _classes;
-		if (query.Length > 0) rows = rows.Where(item => item.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+		if (query.Length > 0)
+			rows = rows.Where(item =>
+				item.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+			);
 		int max = Math.Max(1, _classes.FirstOrDefault().Count);
 		int shown = 0;
 		foreach ((string name, int count) in rows)
@@ -173,16 +200,37 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 			HBoxContainer row = new();
 			Label className = new() { Text = name, CustomMinimumSize = new Vector2(190, 0) };
 			row.AddChild(className);
-			ProgressBar bar = new() { MinValue = 0, MaxValue = max, Value = count, ShowPercentage = false, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 7) };
+			ProgressBar bar = new()
+			{
+				MinValue = 0,
+				MaxValue = max,
+				Value = count,
+				ShowPercentage = false,
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				CustomMinimumSize = new Vector2(0, 7),
+			};
 			row.AddChild(bar);
-			Label value = new() { Text = count.ToString("N0"), CustomMinimumSize = new Vector2(60, 0), HorizontalAlignment = HorizontalAlignment.Right, Modulate = new Color("b9c4d5") };
+			Label value = new()
+			{
+				Text = count.ToString("N0"),
+				CustomMinimumSize = new Vector2(60, 0),
+				HorizontalAlignment = HorizontalAlignment.Right,
+				Modulate = new Color("b9c4d5"),
+			};
 			row.AddChild(value);
 			cardMargin.AddChild(row);
 			card.AddChild(cardMargin);
 			_classRows.AddChild(card);
 			shown++;
 		}
-		if (shown == 0) _classRows.AddChild(new Label { Text = "No instance classes match this filter.", Modulate = new Color("7d8798") });
+		if (shown == 0)
+			_classRows.AddChild(
+				new Label
+				{
+					Text = "No instance classes match this filter.",
+					Modulate = new Color("7d8798"),
+				}
+			);
 	}
 
 	private void CopyReport()
@@ -215,23 +263,25 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 	private static Button ActionButton(string text, bool primary)
 	{
 		Button button = new() { Text = text, CustomMinimumSize = new Vector2(104, 36) };
-		if (primary) button.AddThemeColorOverride("font_color", Colors.White);
+		if (primary)
+			button.AddThemeColorOverride("font_color", Colors.White);
 		return button;
 	}
 
-	private static StyleBoxFlat Surface(Color color, int radius) => new()
-	{
-		BgColor = color,
-		BorderColor = new Color("292d37"),
-		BorderWidthLeft = 1,
-		BorderWidthTop = 1,
-		BorderWidthRight = 1,
-		BorderWidthBottom = 1,
-		CornerRadiusTopLeft = radius,
-		CornerRadiusTopRight = radius,
-		CornerRadiusBottomLeft = radius,
-		CornerRadiusBottomRight = radius,
-	};
+	private static StyleBoxFlat Surface(Color color, int radius) =>
+		new()
+		{
+			BgColor = color,
+			BorderColor = new Color("292d37"),
+			BorderWidthLeft = 1,
+			BorderWidthTop = 1,
+			BorderWidthRight = 1,
+			BorderWidthBottom = 1,
+			CornerRadiusTopLeft = radius,
+			CornerRadiusTopRight = radius,
+			CornerRadiusBottomLeft = radius,
+			CornerRadiusBottomRight = radius,
+		};
 
 	private static void SetMargins(MarginContainer margin, int horizontal, int vertical)
 	{
@@ -243,6 +293,7 @@ public sealed partial class SceneStatisticsPopup : PopupWindowBase
 
 	private static void Clear(Node node)
 	{
-		foreach (Node child in node.GetChildren()) child.QueueFree();
+		foreach (Node child in node.GetChildren())
+			child.QueueFree();
 	}
 }

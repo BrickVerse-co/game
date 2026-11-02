@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Godot;
 using BrickVerse.Shared;
 using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Creator.Settings;
 
@@ -38,7 +38,9 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		["Keybinds.ToolScale"] = CreatorSettingKeys.Keybinds.ToolScale,
 		["Keybinds.RotateSelection"] = CreatorSettingKeys.Keybinds.RotateSelection,
 		["Keybinds.TiltSelection"] = CreatorSettingKeys.Keybinds.TiltSelection,
-		["Keybinds.ToggleTransformOrientation"] = CreatorSettingKeys.Keybinds.ToggleTransformOrientation,
+		["Keybinds.ToggleTransformOrientation"] = CreatorSettingKeys
+			.Keybinds
+			.ToggleTransformOrientation,
 		["Keybinds.TogglePivotMode"] = CreatorSettingKeys.Keybinds.TogglePivotMode,
 		["Interface.UseFullscreen"] = SharedSettingKeys.Display.Fullscreen,
 		["Backup.MaxBackupCount"] = CreatorSettingKeys.Backup.MaxBackupCount,
@@ -67,7 +69,8 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 	};
 
 	protected override string SettingsPath => SettingsPathConst;
-	protected override IReadOnlyDictionary<string, SettingDef> Registry => CreatorSettingsRegistry.Definitions;
+	protected override IReadOnlyDictionary<string, SettingDef> Registry =>
+		CreatorSettingsRegistry.Definitions;
 
 	public CreatorSettingsService()
 	{
@@ -84,7 +87,9 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		if (!FileAccess.FileExists(SettingsPathConst))
 			GraphicsPresetManager.SelectPreset(this, GraphicsPreset.Medium);
 
-		RenderingMethodOption renderingMethod = Get<RenderingMethodOption>(SharedSettingKeys.Graphics.RenderingMethod);
+		RenderingMethodOption renderingMethod = Get<RenderingMethodOption>(
+			SharedSettingKeys.Graphics.RenderingMethod
+		);
 		RenderingDeviceSwitcher.Switch(renderingMethod);
 	}
 
@@ -100,22 +105,30 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 		try
 		{
 			string oldJson = FileAccess.GetFileAsString(oldFilePath);
-			var oldData = JsonSerializer.Deserialize(oldJson, MigrationJSONGenerationContext.Default.DictionaryStringString);
+			var oldData = JsonSerializer.Deserialize(
+				oldJson,
+				MigrationJSONGenerationContext.Default.DictionaryStringString
+			);
 
 			if (oldData == null || oldData.Count == 0)
 				return;
 
 			var newData = new Dictionary<string, object?>();
 
-			if (oldData.TryGetValue("Graphics.PostProcessing", out string? postProcessingStr)
-				&& bool.TryParse(postProcessingStr, out bool postProcessing))
+			if (
+				oldData.TryGetValue("Graphics.PostProcessing", out string? postProcessingStr)
+				&& bool.TryParse(postProcessingStr, out bool postProcessing)
+			)
 			{
 				newData[SharedSettingKeys.PostProcessing.Glow] = postProcessing;
 				newData[SharedSettingKeys.PostProcessing.Ssao] = postProcessing;
 			}
 
-			if (oldData.TryGetValue("Graphics.PhotoMode", out string? photoModeStr)
-				&& bool.TryParse(photoModeStr, out bool photoMode) && photoMode)
+			if (
+				oldData.TryGetValue("Graphics.PhotoMode", out string? photoModeStr)
+				&& bool.TryParse(photoModeStr, out bool photoMode)
+				&& photoMode
+			)
 			{
 				newData[SharedSettingKeys.PostProcessing.Ssr] = true;
 				newData[SharedSettingKeys.PostProcessing.Sdfgi] = true;
@@ -136,7 +149,10 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 			if (newData.Count == 0)
 				return;
 
-			string newJson = JsonSerializer.Serialize(newData, MigrationJSONGenerationContext.Default.DictionaryStringString);
+			string newJson = JsonSerializer.Serialize(
+				newData,
+				MigrationJSONGenerationContext.Default.DictionaryStringString
+			);
 			using var newFile = FileAccess.Open(SettingsPathConst, FileAccess.ModeFlags.Write);
 			newFile.StoreString(newJson);
 			newFile.Close();
@@ -160,9 +176,17 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 
 		try
 		{
-			if (_values.TryGetValue(SharedSettingKeys.Graphics.RenderingMethod, out object? rawValue))
+			if (
+				_values.TryGetValue(
+					SharedSettingKeys.Graphics.RenderingMethod,
+					out object? rawValue
+				)
+			)
 			{
-				RenderingMethodOption renderingMethod = (RenderingMethodOption)CreatorSettingsRegistry.Definitions[SharedSettingKeys.Graphics.RenderingMethod].ConvertToType(rawValue);
+				RenderingMethodOption renderingMethod = (RenderingMethodOption)
+					CreatorSettingsRegistry
+						.Definitions[SharedSettingKeys.Graphics.RenderingMethod]
+						.ConvertToType(rawValue);
 				BV.Print("Current rendering method: " + renderingMethod);
 				if (renderingMethod == RenderingMethodOption.Standard)
 				{
@@ -175,7 +199,10 @@ public sealed partial class CreatorSettingsService : SettingsServiceBase
 				}
 			}
 
-			using var file = FileAccess.Open(RenderingMethodMigrationPath, FileAccess.ModeFlags.Write);
+			using var file = FileAccess.Open(
+				RenderingMethodMigrationPath,
+				FileAccess.ModeFlags.Write
+			);
 			file.StoreString(Globals.AppVersion);
 		}
 		catch (Exception e)

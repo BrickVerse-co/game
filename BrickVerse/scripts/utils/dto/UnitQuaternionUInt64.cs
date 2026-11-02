@@ -2,25 +2,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
 [MemoryPackable]
 public partial class UnitQuaternionUInt64Dto
 {
-	[JsonInclude] public ulong Rotation { get; set; }
+	[JsonInclude]
+	public ulong Rotation { get; set; }
 
 	// 16 bits per component packed into the 64-bit field.
 	const int _quantMax = 65535; // (1 << 16) - 1
 
 	[MemoryPackConstructor, JsonConstructor]
 	public UnitQuaternionUInt64Dto() { }
-	public UnitQuaternionUInt64Dto(Quaternion v) { Rotation = ToCompressed(v); }
+
+	public UnitQuaternionUInt64Dto(Quaternion v)
+	{
+		Rotation = ToCompressed(v);
+	}
+
 	public Quaternion ToQuaternion() => FromCompressed(Rotation);
 
 	public static string ToString(Quaternion src)
@@ -40,7 +46,8 @@ public partial class UnitQuaternionUInt64Dto
 		for (int i = 0; i < 4; i++)
 		{
 			// Map each component from [-1, 1] to [0, 65535].
-			ulong quantized = (ulong)Math.Clamp((int)((src[i] * 0.5f + 0.5f) * _quantMax + 0.5f), 0, _quantMax);
+			ulong quantized = (ulong)
+				Math.Clamp((int)((src[i] * 0.5f + 0.5f) * _quantMax + 0.5f), 0, _quantMax);
 			result = (result << 16) | quantized;
 		}
 		return result;
@@ -62,7 +69,11 @@ public partial class UnitQuaternionUInt64Dto
 
 public class UnitQuaternionUInt64JsonConverter : JsonConverter<Quaternion>
 {
-	public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override Quaternion Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 		{
@@ -81,7 +92,11 @@ public class UnitQuaternionUInt64JsonConverter : JsonConverter<Quaternion>
 		return UnitQuaternionUInt64Dto.FromCompressed(compressed);
 	}
 
-	public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
+	public override void Write(
+		Utf8JsonWriter writer,
+		Quaternion value,
+		JsonSerializerOptions options
+	)
 	{
 		ulong compressed = UnitQuaternionUInt64Dto.ToCompressed(value);
 		writer.WriteStartArray();

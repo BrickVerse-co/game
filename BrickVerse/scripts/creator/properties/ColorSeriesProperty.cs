@@ -2,23 +2,30 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Creator.Properties.Components;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
+using Godot;
 using static BrickVerse.Datamodel.Data.ColorSeries;
 
 namespace BrickVerse.Creator.Properties;
 
 public sealed partial class ColorSeriesProperty : Control, IProperty<ColorSeries>
 {
-	private const string ColorSeriesPointPath = "res://scenes/creator/properties/components/color_series/point.tscn";
+	private const string ColorSeriesPointPath =
+		"res://scenes/creator/properties/components/color_series/point.tscn";
 	private ColorSeries _value = new();
-	[Export] private TextureRect _previewRect = null!;
-	[Export] private Button _addButton = null!;
-	[Export] private Control _points = null!;
+
+	[Export]
+	private TextureRect _previewRect = null!;
+
+	[Export]
+	private Button _addButton = null!;
+
+	[Export]
+	private Control _points = null!;
 
 	public ColorSeries Value
 	{
@@ -80,7 +87,9 @@ public sealed partial class ColorSeriesProperty : Control, IProperty<ColorSeries
 		foreach (var p in Value.Points ?? [])
 		{
 			int myI = i;
-			ColorSeriesPoint ps = Globals.CreateInstanceFromScene<ColorSeriesPoint>(ColorSeriesPointPath);
+			ColorSeriesPoint ps = Globals.CreateInstanceFromScene<ColorSeriesPoint>(
+				ColorSeriesPointPath
+			);
 			ps.ColorValue = p.Color;
 			ps.OffsetValue = p.Offset;
 			ps.OffsetChanged += (val) =>

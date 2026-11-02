@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Providers.Datastore;
 using BrickVerse.Scripting;
-using System.Threading.Tasks;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -17,9 +17,11 @@ public partial class Datastore : IScriptObject
 
 	public IDatastoreProvider Provider { get; set; } = null!;
 
-	[ScriptLegacyProperty("Loading")] public bool LegacyLoading { get; private set; } = true;
+	[ScriptLegacyProperty("Loading")]
+	public bool LegacyLoading { get; private set; } = true;
 
-	[ScriptLegacyProperty("Loaded")] public BVSignal LegacyLoaded { get; private set; } = new();
+	[ScriptLegacyProperty("Loaded")]
+	public BVSignal LegacyLoaded { get; private set; } = new();
 
 	[ScriptProperty]
 	public string Key => _dsKey;
@@ -54,50 +56,53 @@ public partial class Datastore : IScriptObject
 	[ScriptLegacyMethod(nameof(Get))]
 	public void Get(string key, BVCallback? callback)
 	{
-		_ = GetAsync(key).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = GetAsync(key)
+			.ContinueWith(tsk =>
 			{
-				object? val = tsk.Result;
-				callback?.Invoke(val, true, null);
-			}
-			else
-			{
-				callback?.Invoke(null, false, tsk.Exception?.Message);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					object? val = tsk.Result;
+					callback?.Invoke(val, true, null);
+				}
+				else
+				{
+					callback?.Invoke(null, false, tsk.Exception?.Message);
+				}
+			});
 	}
 
 	[ScriptLegacyMethod(nameof(Set))]
 	public void Set(string key, object value, BVCallback? callback)
 	{
-		_ = SetAsync(key, value).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = SetAsync(key, value)
+			.ContinueWith(tsk =>
 			{
-				callback?.Invoke(true);
-			}
-			else
-			{
-				callback?.Invoke(false, tsk.Exception?.Message);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					callback?.Invoke(true);
+				}
+				else
+				{
+					callback?.Invoke(false, tsk.Exception?.Message);
+				}
+			});
 	}
 
 	[ScriptLegacyMethod(nameof(Remove))]
 	public void Remove(string key, BVCallback? callback)
 	{
-		_ = RemoveAsync(key).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = RemoveAsync(key)
+			.ContinueWith(tsk =>
 			{
-				callback?.Invoke(true);
-			}
-			else
-			{
-				callback?.Invoke(false, tsk.Exception?.Message);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					callback?.Invoke(true);
+				}
+				else
+				{
+					callback?.Invoke(false, tsk.Exception?.Message);
+				}
+			});
 	}
 
 	[ScriptMethod]

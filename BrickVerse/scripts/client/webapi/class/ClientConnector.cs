@@ -2,9 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Client.WebAPI.Interfaces;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
 using System;
 using System.Net.Http;
 using System.Text;
@@ -12,6 +9,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -35,31 +35,46 @@ internal sealed class ClientConnector : IClientConnector
 
 	public async Task<APIServerStatus> CheckServerStatus()
 	{
-		using HttpRequestMessage request = CreateRequest(HttpMethod.Get, ApiPath("/v3/world/client/server/status"));
+		using HttpRequestMessage request = CreateRequest(
+			HttpMethod.Get,
+			ApiPath("/v3/world/client/server/status")
+		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse(response, "server status", BrickVerseJsonContext.Default.APIServerStatus);
+		return await ReadJsonResponse(
+			response,
+			"server status",
+			BrickVerseJsonContext.Default.APIServerStatus
+		);
 	}
 
 	public async Task<APIClientAuthResponseMessage> Connect()
 	{
-		ClientConnectRequest body = new(
-			Integrity: OfficialClientIntegrity.CreateProof()
-		);
+		ClientConnectRequest body = new(Integrity: OfficialClientIntegrity.CreateProof());
 
 		for (int attempt = 1; attempt <= 6; attempt++)
 		{
-			using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/client/server/authorize-connection"), body, BrickVerseJsonContext.Default.ClientConnectRequest);
+			using HttpRequestMessage request = CreateJsonRequest(
+				HttpMethod.Post,
+				ApiPath("/v3/world/client/server/authorize-connection"),
+				body,
+				BrickVerseJsonContext.Default.ClientConnectRequest
+			);
 			using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
 			if (response.IsSuccessStatusCode)
 			{
-				return await ReadJsonResponse(response, "client connect", BrickVerseJsonContext.Default.APIClientAuthResponseMessage);
+				return await ReadJsonResponse(
+					response,
+					"client connect",
+					BrickVerseJsonContext.Default.APIClientAuthResponseMessage
+				);
 			}
 
 			string responseBody = await response.Content.ReadAsStringAsync();
 			if (!ShouldRetryClientConnect(response, responseBody) || attempt == 6)
 			{
-				string reason = ReadErrorMessage(responseBody)
+				string reason =
+					ReadErrorMessage(responseBody)
 					?? response.ReasonPhrase
 					?? "The server rejected this client.";
 				throw new HttpRequestException(
@@ -108,7 +123,12 @@ internal sealed class ClientConnector : IClientConnector
 		return request;
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
+	private HttpRequestMessage CreateJsonRequest<T>(
+		HttpMethod method,
+		string url,
+		T value,
+		JsonTypeInfo<T> typeInfo
+	)
 	{
 		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = CreateRequest(method, url);
@@ -127,7 +147,10 @@ internal sealed class ClientConnector : IClientConnector
 			? _token["Bearer ".Length..].Trim()
 			: _token;
 
-		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+		request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+			"Bearer",
+			token
+		);
 	}
 
 	private static void ApplyIntegrityHeaders(HttpRequestMessage request)
@@ -135,22 +158,34 @@ internal sealed class ClientConnector : IClientConnector
 		ClientIntegrityProof proof = OfficialClientIntegrity.CreateProof();
 		request.Headers.TryAddWithoutValidation("X-BrickVerse-Version", proof.Version);
 		request.Headers.TryAddWithoutValidation("X-BrickVerse-Platform", proof.Platform);
-		request.Headers.TryAddWithoutValidation("X-BrickVerse-Executable-Sha256", proof.ExecutableSha256);
+		request.Headers.TryAddWithoutValidation(
+			"X-BrickVerse-Executable-Sha256",
+			proof.ExecutableSha256
+		);
 		request.Headers.TryAddWithoutValidation("X-BrickVerse-Managed-Sha256", proof.ManagedSha256);
 		request.Headers.TryAddWithoutValidation("X-BrickVerse-Build-Channel", proof.BuildChannel);
 	}
 
-	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action, JsonTypeInfo<T> typeInfo)
+	private static async Task<T> ReadJsonResponse<T>(
+		HttpResponseMessage response,
+		string action,
+		JsonTypeInfo<T> typeInfo
+	)
 	{
 		string body = await response.Content.ReadAsStringAsync();
 
 		if (!response.IsSuccessStatusCode)
 		{
-			throw new HttpRequestException($"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
+			throw new HttpRequestException(
+				$"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}"
+			);
 		}
 
 		T? result = JsonSerializer.Deserialize(body, typeInfo);
-		return result ?? throw new InvalidOperationException($"BrickVerse {action} returned an empty response.");
+		return result
+			?? throw new InvalidOperationException(
+				$"BrickVerse {action} returned an empty response."
+			);
 	}
 
 	private static string ApiPath(string path)

@@ -2,16 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputActionItemUI : Button
 {
-	[Export] private Label _nameLabel = null!;
-	[Export] private TextureRect _iconRect = null!;
+	[Export]
+	private Label _nameLabel = null!;
+
+	[Export]
+	private TextureRect _iconRect = null!;
 	public InputAction TargetAction = null!;
 
 	public override void _Ready()

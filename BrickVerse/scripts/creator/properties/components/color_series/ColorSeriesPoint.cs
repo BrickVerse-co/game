@@ -2,18 +2,25 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 using ColorPicker = BrickVerse.Creator.UI.ColorPicker;
 
 namespace BrickVerse.Creator.Properties.Components;
 
 public partial class ColorSeriesPoint : Control
 {
-	[Export] private SpinBox _percentageBox = null!;
-	[Export] private Button _colorButton = null!;
-	[Export] private Control _colorPreview = null!;
-	[Export] private Button _deleteButton = null!;
+	[Export]
+	private SpinBox _percentageBox = null!;
+
+	[Export]
+	private Button _colorButton = null!;
+
+	[Export]
+	private Control _colorPreview = null!;
+
+	[Export]
+	private Button _deleteButton = null!;
 
 	public event Action<float>? OffsetChanged;
 	public event Action<Color>? ColorChanged;
@@ -32,14 +39,19 @@ public partial class ColorSeriesPoint : Control
 
 		_colorButton.Pressed += () =>
 		{
-			ColorPicker.Singleton.SwitchTo(_colorButton, ColorValue, previewColor =>
-			{
-				_colorPreview.SelfModulate = previewColor;
-				ColorChanged?.Invoke(previewColor);
-			}, () =>
-			{
-				ColorChangeFinished?.Invoke();
-			});
+			ColorPicker.Singleton.SwitchTo(
+				_colorButton,
+				ColorValue,
+				previewColor =>
+				{
+					_colorPreview.SelfModulate = previewColor;
+					ColorChanged?.Invoke(previewColor);
+				},
+				() =>
+				{
+					ColorChangeFinished?.Invoke();
+				}
+			);
 		};
 
 		_deleteButton.Pressed += () => DeleteRequested?.Invoke();

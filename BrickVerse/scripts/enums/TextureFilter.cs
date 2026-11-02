@@ -8,5 +8,5 @@ public enum TextureFilterEnum
 	Nearest,
 	NearestNoMipmaps,
 	Linear,
-	LinearNoMipmaps
+	LinearNoMipmaps,
 }

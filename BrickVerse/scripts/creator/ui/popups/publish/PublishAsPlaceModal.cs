@@ -662,7 +662,11 @@ public partial class PublishAsPlaceModal : PopupWindowBase
 			string? commitMessage = await CreatorService.Interface.PromptCommitMessage(
 				_useNewWorld ? $"Create {_world.WorldName}" : $"Publish {_world.WorldName}"
 			);
-			if (commitMessage == null) { SetBusy(false); return; }
+			if (commitMessage == null)
+			{
+				SetBusy(false);
+				return;
+			}
 			var loadOverlay = CreatorService.Interface.LoadOverlay;
 			string projectPath = _world.LinkedSession.ProjectFolderPath;
 			CreatorService.SaveCurrentFile();

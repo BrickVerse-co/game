@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Attributes;
+using BrickVerse.Scripting;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -103,11 +103,14 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		EditableMesh mesh = new() { AutoCommit = false };
 		Dictionary<Vector3, int> vertexIds = [];
 		Dictionary<int, Vector3> normalSums = [];
-		Dictionary<int, int> normalIds = [], uvIds = [], colorIds = [];
+		Dictionary<int, int> normalIds = [],
+			uvIds = [],
+			colorIds = [];
 		for (int i = 0; i < triangles.Length; i++)
 		{
 			Vector3 position = triangles[i];
-			if (vertexIds.ContainsKey(position)) continue;
+			if (vertexIds.ContainsKey(position))
+				continue;
 			int id = mesh._nextVertexId++;
 			vertexIds[position] = id;
 			mesh._vertices[id] = new VertexData { Position = position };
@@ -117,19 +120,36 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		}
 		for (int i = 0; i + 2 < triangles.Length; i += 3)
 		{
-			int a = vertexIds[triangles[i]], b = vertexIds[triangles[i + 1]], c = vertexIds[triangles[i + 2]];
-			if (a == b || b == c || c == a) continue;
-			Vector3 normal = (triangles[i + 1] - triangles[i]).Cross(triangles[i + 2] - triangles[i]).Normalized();
-			normalSums[a] += normal; normalSums[b] += normal; normalSums[c] += normal;
-			FaceData face = new(); face.Vertices[0] = a; face.Vertices[1] = b; face.Vertices[2] = c;
+			int a = vertexIds[triangles[i]],
+				b = vertexIds[triangles[i + 1]],
+				c = vertexIds[triangles[i + 2]];
+			if (a == b || b == c || c == a)
+				continue;
+			Vector3 normal = (triangles[i + 1] - triangles[i])
+				.Cross(triangles[i + 2] - triangles[i])
+				.Normalized();
+			normalSums[a] += normal;
+			normalSums[b] += normal;
+			normalSums[c] += normal;
+			FaceData face = new();
+			face.Vertices[0] = a;
+			face.Vertices[1] = b;
+			face.Vertices[2] = c;
 			mesh._faces[mesh._nextFaceId++] = face;
 		}
-		foreach ((int vertexId, Vector3 sum) in normalSums) normalIds[vertexId] = mesh.AddNormalInternal(sum.Normalized(), automatic: true);
-		foreach (FaceData face in mesh._faces.Values) for (int corner = 0; corner < 3; corner++)
+		foreach ((int vertexId, Vector3 sum) in normalSums)
+			normalIds[vertexId] = mesh.AddNormalInternal(sum.Normalized(), automatic: true);
+		foreach (FaceData face in mesh._faces.Values)
+			for (int corner = 0; corner < 3; corner++)
 			{
-				int vertexId = face.Vertices[corner]; face.Normals[corner] = normalIds[vertexId]; face.UVs[corner] = uvIds[vertexId]; face.Colors[corner] = colorIds[vertexId];
+				int vertexId = face.Vertices[corner];
+				face.Normals[corner] = normalIds[vertexId];
+				face.UVs[corner] = uvIds[vertexId];
+				face.Colors[corner] = colorIds[vertexId];
 			}
-		mesh.MarkDirty(); mesh.Commit(); return mesh;
+		mesh.MarkDirty();
+		mesh.Commit();
+		return mesh;
 	}
 
 	/// <summary>
@@ -180,9 +200,12 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		for (int corner = 0; corner < 3; corner++)
 		{
 			int vertexId = face.Vertices[corner];
-			face.Normals[corner] = FindReusableCornerNormal(vertexId) ?? AddNormalInternal(faceNormal, automatic: true);
+			face.Normals[corner] =
+				FindReusableCornerNormal(vertexId)
+				?? AddNormalInternal(faceNormal, automatic: true);
 			face.UVs[corner] = FindReusableCornerUv(vertexId) ?? AddUvInternal(Vector2.Zero);
-			face.Colors[corner] = FindReusableCornerColor(vertexId) ?? AddColorInternal(Colors.White);
+			face.Colors[corner] =
+				FindReusableCornerColor(vertexId) ?? AddColorInternal(Colors.White);
 		}
 
 		_faces[faceId] = face;
@@ -222,7 +245,12 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	}
 
 	[ScriptMethod]
-	public int AddBone(string name, int parentId = 0, Transform3D transform = default, bool isVirtual = false)
+	public int AddBone(
+		string name,
+		int parentId = 0,
+		Transform3D transform = default,
+		bool isVirtual = false
+	)
 	{
 		RequireTopologyEditable();
 
@@ -406,7 +434,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		}
 		if (vertexIds.Distinct().Count() != 3)
 		{
-			throw new ArgumentException("A triangle must contain three different vertex IDs.", nameof(vertexIds));
+			throw new ArgumentException(
+				"A triangle must contain three different vertex IDs.",
+				nameof(vertexIds)
+			);
 		}
 
 		Array.Copy(vertexIds, face.Vertices, 3);
@@ -499,10 +530,13 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	public int[] GetVertexFaces(int vertexId)
 	{
 		RequireVertex(vertexId);
-		return [.. _faces
-			.Where(pair => Array.IndexOf(pair.Value.Vertices, vertexId) >= 0)
-			.Select(pair => pair.Key)
-			.Order()];
+		return
+		[
+			.. _faces
+				.Where(pair => Array.IndexOf(pair.Value.Vertices, vertexId) >= 0)
+				.Select(pair => pair.Key)
+				.Order(),
+		];
 	}
 
 	[ScriptMethod]
@@ -532,10 +566,15 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	{
 		FaceData target = RequireFace(faceId);
 		HashSet<int> vertices = [.. target.Vertices];
-		return [.. _faces
-			.Where(pair => pair.Key != faceId && pair.Value.Vertices.Count(vertices.Contains) >= 2)
-			.Select(pair => pair.Key)
-			.Order()];
+		return
+		[
+			.. _faces
+				.Where(pair =>
+					pair.Key != faceId && pair.Value.Vertices.Count(vertices.Contains) >= 2
+				)
+				.Select(pair => pair.Key)
+				.Order(),
+		];
 	}
 
 	[ScriptMethod]
@@ -570,10 +609,13 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			throw new ArgumentOutOfRangeException(nameof(radius));
 		}
 		float radiusSquared = radius * radius;
-		return [.. _vertices
-			.Where(pair => pair.Value.Position.DistanceSquaredTo(center) <= radiusSquared)
-			.Select(pair => pair.Key)
-			.Order()];
+		return
+		[
+			.. _vertices
+				.Where(pair => pair.Value.Position.DistanceSquaredTo(center) <= radiusSquared)
+				.Select(pair => pair.Key)
+				.Order(),
+		];
 	}
 
 	[ScriptMethod]
@@ -618,7 +660,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		VertexData vertex = RequireVertex(vertexId);
 		if (boneIds.Length > 4)
 		{
-			throw new ArgumentException("Godot supports at most four bone influences per rendered vertex.", nameof(boneIds));
+			throw new ArgumentException(
+				"Godot supports at most four bone influences per rendered vertex.",
+				nameof(boneIds)
+			);
 		}
 		foreach (int boneId in boneIds)
 		{
@@ -648,7 +693,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		VertexData vertex = RequireVertex(vertexId);
 		if (weights.Length != vertex.BoneIds.Count)
 		{
-			throw new ArgumentException("Bone weight count must match the vertex bone ID count.", nameof(weights));
+			throw new ArgumentException(
+				"Bone weight count must match the vertex bone ID count.",
+				nameof(weights)
+			);
 		}
 		if (weights.Any(weight => weight < 0f))
 		{
@@ -752,14 +800,21 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		if (vertexIds == null)
 		{
 			foreach (NormalData normal in _normals.Values)
-				if (!normal.Automatic) normal.Value = SafeNormal(normalTransform * normal.Value);
+				if (!normal.Automatic)
+					normal.Value = SafeNormal(normalTransform * normal.Value);
 		}
 		else
 		{
 			foreach (FaceData face in _faces.Values)
 				for (int corner = 0; corner < 3; corner++)
-					if (selected.Contains(face.Vertices[corner]) && !RequireNormal(face.Normals[corner]).Automatic)
-						face.Normals[corner] = AddNormalRaw(normalTransform * RequireNormal(face.Normals[corner]).Value, automatic: false);
+					if (
+						selected.Contains(face.Vertices[corner])
+						&& !RequireNormal(face.Normals[corner]).Automatic
+					)
+						face.Normals[corner] = AddNormalRaw(
+							normalTransform * RequireNormal(face.Normals[corner]).Value,
+							automatic: false
+						);
 		}
 		RecalculateAutomaticNormals();
 		MarkDirty();
@@ -777,7 +832,8 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			(face.Vertices[1], face.Vertices[2]) = (face.Vertices[2], face.Vertices[1]);
 			(face.UVs[1], face.UVs[2]) = (face.UVs[2], face.UVs[1]);
 			(face.Colors[1], face.Colors[2]) = (face.Colors[2], face.Colors[1]);
-			for (int corner = 0; corner < 3; corner++) face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
+			for (int corner = 0; corner < 3; corner++)
+				face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
 		}
 		RecalculateAutomaticNormals();
 		MarkDirty();
@@ -785,10 +841,16 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 
 	/// <summary>Projects per-corner UV coordinates onto a fixed local-space plane.</summary>
 	[ScriptMethod]
-	public void ProjectUVs(MeshProjectionPlane plane = MeshProjectionPlane.XZ, float scale = 1f, Vector2 offset = default, int[]? faceIds = null)
+	public void ProjectUVs(
+		MeshProjectionPlane plane = MeshProjectionPlane.XZ,
+		float scale = 1f,
+		Vector2 offset = default,
+		int[]? faceIds = null
+	)
 	{
 		ThrowIfDestroyed();
-		if (!float.IsFinite(scale) || Mathf.IsZeroApprox(scale)) throw new ArgumentOutOfRangeException(nameof(scale));
+		if (!float.IsFinite(scale) || Mathf.IsZeroApprox(scale))
+			throw new ArgumentOutOfRangeException(nameof(scale));
 		foreach (int faceId in faceIds ?? [.. _faces.Keys])
 		{
 			FaceData face = RequireFace(faceId);
@@ -812,9 +874,14 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	public int[] Subdivide(int[]? faceIds = null, int iterations = 1)
 	{
 		RequireTopologyEditable();
-		if (iterations is < 1 or > 6) throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be between 1 and 6.");
+		if (iterations is < 1 or > 6)
+			throw new ArgumentOutOfRangeException(
+				nameof(iterations),
+				"Iterations must be between 1 and 6."
+			);
 		int[] current = faceIds ?? [.. _faces.Keys];
-		foreach (int id in current) RequireFace(id);
+		foreach (int id in current)
+			RequireFace(id);
 
 		for (int iteration = 0; iteration < iterations; iteration++)
 		{
@@ -823,20 +890,65 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			foreach (int faceId in current)
 			{
 				FaceData source = RequireFace(faceId);
-				int a = source.Vertices[0], b = source.Vertices[1], c = source.Vertices[2];
+				int a = source.Vertices[0],
+					b = source.Vertices[1],
+					c = source.Vertices[2];
 				int ab = GetOrCreateMidpoint(a, b, midpointVertices);
 				int bc = GetOrCreateMidpoint(b, c, midpointVertices);
 				int ca = GetOrCreateMidpoint(c, a, midpointVertices);
 
-				int[] uvMid = [InterpolateUv(source.UVs[0], source.UVs[1]), InterpolateUv(source.UVs[1], source.UVs[2]), InterpolateUv(source.UVs[2], source.UVs[0])];
-				int[] colorMid = [InterpolateColor(source.Colors[0], source.Colors[1]), InterpolateColor(source.Colors[1], source.Colors[2]), InterpolateColor(source.Colors[2], source.Colors[0])];
-				int[] normalMid = [InterpolateNormal(source.Normals[0], source.Normals[1]), InterpolateNormal(source.Normals[1], source.Normals[2]), InterpolateNormal(source.Normals[2], source.Normals[0])];
+				int[] uvMid =
+				[
+					InterpolateUv(source.UVs[0], source.UVs[1]),
+					InterpolateUv(source.UVs[1], source.UVs[2]),
+					InterpolateUv(source.UVs[2], source.UVs[0]),
+				];
+				int[] colorMid =
+				[
+					InterpolateColor(source.Colors[0], source.Colors[1]),
+					InterpolateColor(source.Colors[1], source.Colors[2]),
+					InterpolateColor(source.Colors[2], source.Colors[0]),
+				];
+				int[] normalMid =
+				[
+					InterpolateNormal(source.Normals[0], source.Normals[1]),
+					InterpolateNormal(source.Normals[1], source.Normals[2]),
+					InterpolateNormal(source.Normals[2], source.Normals[0]),
+				];
 				_faces.Remove(faceId);
 
-				next.Add(AddFaceRaw([a, ab, ca], [source.Normals[0], normalMid[0], normalMid[2]], [source.UVs[0], uvMid[0], uvMid[2]], [source.Colors[0], colorMid[0], colorMid[2]]));
-				next.Add(AddFaceRaw([ab, b, bc], [normalMid[0], source.Normals[1], normalMid[1]], [uvMid[0], source.UVs[1], uvMid[1]], [colorMid[0], source.Colors[1], colorMid[1]]));
-				next.Add(AddFaceRaw([ca, bc, c], [normalMid[2], normalMid[1], source.Normals[2]], [uvMid[2], uvMid[1], source.UVs[2]], [colorMid[2], colorMid[1], source.Colors[2]]));
-				next.Add(AddFaceRaw([ab, bc, ca], [normalMid[0], normalMid[1], normalMid[2]], [uvMid[0], uvMid[1], uvMid[2]], [colorMid[0], colorMid[1], colorMid[2]]));
+				next.Add(
+					AddFaceRaw(
+						[a, ab, ca],
+						[source.Normals[0], normalMid[0], normalMid[2]],
+						[source.UVs[0], uvMid[0], uvMid[2]],
+						[source.Colors[0], colorMid[0], colorMid[2]]
+					)
+				);
+				next.Add(
+					AddFaceRaw(
+						[ab, b, bc],
+						[normalMid[0], source.Normals[1], normalMid[1]],
+						[uvMid[0], source.UVs[1], uvMid[1]],
+						[colorMid[0], source.Colors[1], colorMid[1]]
+					)
+				);
+				next.Add(
+					AddFaceRaw(
+						[ca, bc, c],
+						[normalMid[2], normalMid[1], source.Normals[2]],
+						[uvMid[2], uvMid[1], source.UVs[2]],
+						[colorMid[2], colorMid[1], source.Colors[2]]
+					)
+				);
+				next.Add(
+					AddFaceRaw(
+						[ab, bc, ca],
+						[normalMid[0], normalMid[1], normalMid[2]],
+						[uvMid[0], uvMid[1], uvMid[2]],
+						[colorMid[0], colorMid[1], colorMid[2]]
+					)
+				);
 			}
 			current = [.. next];
 		}
@@ -851,9 +963,11 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	public int[] ExtrudeFaces(int[] faceIds, Vector3 offset)
 	{
 		RequireTopologyEditable();
-		if (faceIds == null || faceIds.Length == 0) throw new ArgumentException("At least one face is required.", nameof(faceIds));
+		if (faceIds == null || faceIds.Length == 0)
+			throw new ArgumentException("At least one face is required.", nameof(faceIds));
 		HashSet<int> selection = [.. faceIds];
-		foreach (int id in selection) RequireFace(id);
+		foreach (int id in selection)
+			RequireFace(id);
 
 		Dictionary<int, int> raisedVertices = [];
 		Dictionary<(int, int), (int Count, int From, int To)> edges = [];
@@ -862,24 +976,33 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			FaceData face = _faces[faceId];
 			for (int corner = 0; corner < 3; corner++)
 			{
-				int from = face.Vertices[corner], to = face.Vertices[(corner + 1) % 3];
+				int from = face.Vertices[corner],
+					to = face.Vertices[(corner + 1) % 3];
 				(int, int) key = from < to ? (from, to) : (to, from);
-				edges[key] = edges.TryGetValue(key, out var edge) ? (edge.Count + 1, edge.From, edge.To) : (1, from, to);
-				if (!raisedVertices.ContainsKey(from)) raisedVertices[from] = DuplicateVertex(from, offset);
+				edges[key] = edges.TryGetValue(key, out var edge)
+					? (edge.Count + 1, edge.From, edge.To)
+					: (1, from, to);
+				if (!raisedVertices.ContainsKey(from))
+					raisedVertices[from] = DuplicateVertex(from, offset);
 			}
 		}
 
 		foreach (int faceId in selection)
 		{
 			FaceData face = _faces[faceId];
-			for (int corner = 0; corner < 3; corner++) face.Vertices[corner] = raisedVertices[face.Vertices[corner]];
-			for (int corner = 0; corner < 3; corner++) face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
+			for (int corner = 0; corner < 3; corner++)
+				face.Vertices[corner] = raisedVertices[face.Vertices[corner]];
+			for (int corner = 0; corner < 3; corner++)
+				face.Normals[corner] = AddNormalRaw(Vector3.Up, automatic: true);
 		}
 
 		List<int> created = [];
 		foreach ((_, var edge) in edges.Where(pair => pair.Value.Count == 1))
 		{
-			int a = edge.From, b = edge.To, ar = raisedVertices[a], br = raisedVertices[b];
+			int a = edge.From,
+				b = edge.To,
+				ar = raisedVertices[a],
+				br = raisedVertices[b];
 			created.Add(AddTriangle(a, b, br));
 			created.Add(AddTriangle(a, br, ar));
 		}
@@ -889,7 +1012,12 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	}
 
 	[ScriptEnum]
-	public enum MeshProjectionPlane { XY, XZ, YZ }
+	public enum MeshProjectionPlane
+	{
+		XY,
+		XZ,
+		YZ,
+	}
 
 	/// <summary>
 	/// Merges vertices within tolerance and returns old/new ID pairs:
@@ -924,7 +1052,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 				{
 					continue;
 				}
-				if (_vertices[sourceId].Position.DistanceSquaredTo(_vertices[candidateId].Position) <= toleranceSquared)
+				if (
+					_vertices[sourceId].Position.DistanceSquaredTo(_vertices[candidateId].Position)
+					<= toleranceSquared
+				)
 				{
 					remap[candidateId] = sourceId;
 				}
@@ -947,10 +1078,12 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			}
 		}
 
-		foreach (int degenerateFaceId in _faces
-			.Where(pair => pair.Value.Vertices.Distinct().Count() != 3)
-			.Select(pair => pair.Key)
-			.ToArray())
+		foreach (
+			int degenerateFaceId in _faces
+				.Where(pair => pair.Value.Vertices.Distinct().Count() != 3)
+				.Select(pair => pair.Key)
+				.ToArray()
+		)
 		{
 			_faces.Remove(degenerateFaceId);
 		}
@@ -1021,12 +1154,15 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 			return;
 		}
 
-		foreach (int faceId in _faces
-			.Where(pair =>
-				pair.Value.Vertices.Distinct().Count() != 3 ||
-				pair.Value.Vertices.Any(vertexId => !_vertices.ContainsKey(vertexId)))
-			.Select(pair => pair.Key)
-			.ToArray())
+		foreach (
+			int faceId in _faces
+				.Where(pair =>
+					pair.Value.Vertices.Distinct().Count() != 3
+					|| pair.Value.Vertices.Any(vertexId => !_vertices.ContainsKey(vertexId))
+				)
+				.Select(pair => pair.Key)
+				.ToArray()
+		)
 		{
 			_faces.Remove(faceId);
 		}
@@ -1066,12 +1202,16 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 
 					for (int influence = 0; influence < 4; influence++)
 					{
-						bones.Add(influence < vertex.BoneIds.Count
-							? GetGodotBoneIndex(vertex.BoneIds[influence])
-							: 0);
-						weights.Add(influence < vertex.BoneWeights.Count
-							? vertex.BoneWeights[influence]
-							: 0f);
+						bones.Add(
+							influence < vertex.BoneIds.Count
+								? GetGodotBoneIndex(vertex.BoneIds[influence])
+								: 0
+						);
+						weights.Add(
+							influence < vertex.BoneWeights.Count
+								? vertex.BoneWeights[influence]
+								: 0f
+						);
 					}
 				}
 			}
@@ -1115,8 +1255,11 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		ThrowIfDestroyed();
 		ArgumentNullException.ThrowIfNull(meshInstance);
 
-		if (!_boundInstances.Any(reference =>
-			reference.TryGetTarget(out MeshInstance3D? existing) && existing == meshInstance))
+		if (
+			!_boundInstances.Any(reference =>
+				reference.TryGetTarget(out MeshInstance3D? existing) && existing == meshInstance
+			)
+		)
 		{
 			_boundInstances.Add(new WeakReference<MeshInstance3D>(meshInstance));
 		}
@@ -1127,7 +1270,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	{
 		for (int i = _boundInstances.Count - 1; i >= 0; i--)
 		{
-			if (!_boundInstances[i].TryGetTarget(out MeshInstance3D? existing) || existing == meshInstance)
+			if (
+				!_boundInstances[i].TryGetTarget(out MeshInstance3D? existing)
+				|| existing == meshInstance
+			)
 			{
 				_boundInstances.RemoveAt(i);
 			}
@@ -1138,12 +1284,18 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	public string IdDebugString(int id)
 	{
 		List<string> kinds = [];
-		if (_vertices.ContainsKey(id)) kinds.Add("Vertex");
-		if (_faces.ContainsKey(id)) kinds.Add("Face");
-		if (_normals.ContainsKey(id)) kinds.Add("Normal");
-		if (_uvs.ContainsKey(id)) kinds.Add("UV");
-		if (_colors.ContainsKey(id)) kinds.Add("Color");
-		if (_bones.ContainsKey(id)) kinds.Add("Bone");
+		if (_vertices.ContainsKey(id))
+			kinds.Add("Vertex");
+		if (_faces.ContainsKey(id))
+			kinds.Add("Face");
+		if (_normals.ContainsKey(id))
+			kinds.Add("Normal");
+		if (_uvs.ContainsKey(id))
+			kinds.Add("UV");
+		if (_colors.ContainsKey(id))
+			kinds.Add("Color");
+		if (_bones.ContainsKey(id))
+			kinds.Add("Bone");
 		return kinds.Count == 0 ? $"Unknown({id})" : $"{string.Join("/", kinds)}({id})";
 	}
 
@@ -1157,8 +1309,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 
 		foreach (WeakReference<MeshInstance3D> reference in _boundInstances)
 		{
-			if (reference.TryGetTarget(out MeshInstance3D? instance) &&
-				GodotObject.IsInstanceValid(instance))
+			if (
+				reference.TryGetTarget(out MeshInstance3D? instance)
+				&& GodotObject.IsInstanceValid(instance)
+			)
 			{
 				instance.Mesh = null;
 			}
@@ -1220,19 +1374,34 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	}
 
 	private int InterpolateUv(int a, int b) => AddUvRaw((_uvs[a] + _uvs[b]) * 0.5f);
-	private int InterpolateColor(int a, int b) => AddColorRaw(RequireColor(a).Value.Lerp(RequireColor(b).Value, 0.5f));
-	private int InterpolateNormal(int a, int b) => AddNormalRaw(RequireNormal(a).Value + RequireNormal(b).Value, RequireNormal(a).Automatic && RequireNormal(b).Automatic);
+
+	private int InterpolateColor(int a, int b) =>
+		AddColorRaw(RequireColor(a).Value.Lerp(RequireColor(b).Value, 0.5f));
+
+	private int InterpolateNormal(int a, int b) =>
+		AddNormalRaw(
+			RequireNormal(a).Value + RequireNormal(b).Value,
+			RequireNormal(a).Automatic && RequireNormal(b).Automatic
+		);
 
 	private int GetOrCreateMidpoint(int a, int b, Dictionary<(int, int), int> cache)
 	{
 		(int, int) key = a < b ? (a, b) : (b, a);
-		if (cache.TryGetValue(key, out int existing)) return existing;
-		VertexData first = RequireVertex(a), second = RequireVertex(b);
+		if (cache.TryGetValue(key, out int existing))
+			return existing;
+		VertexData first = RequireVertex(a),
+			second = RequireVertex(b);
 		VertexData midpoint = new() { Position = (first.Position + second.Position) * 0.5f };
 		Dictionary<int, float> influences = [];
-		for (int i = 0; i < first.BoneIds.Count; i++) influences[first.BoneIds[i]] = influences.GetValueOrDefault(first.BoneIds[i]) + first.BoneWeights[i] * 0.5f;
-		for (int i = 0; i < second.BoneIds.Count; i++) influences[second.BoneIds[i]] = influences.GetValueOrDefault(second.BoneIds[i]) + second.BoneWeights[i] * 0.5f;
-		foreach ((int boneId, float weight) in influences.OrderByDescending(pair => pair.Value).Take(4))
+		for (int i = 0; i < first.BoneIds.Count; i++)
+			influences[first.BoneIds[i]] =
+				influences.GetValueOrDefault(first.BoneIds[i]) + first.BoneWeights[i] * 0.5f;
+		for (int i = 0; i < second.BoneIds.Count; i++)
+			influences[second.BoneIds[i]] =
+				influences.GetValueOrDefault(second.BoneIds[i]) + second.BoneWeights[i] * 0.5f;
+		foreach (
+			(int boneId, float weight) in influences.OrderByDescending(pair => pair.Value).Take(4)
+		)
 		{
 			midpoint.BoneIds.Add(boneId);
 			midpoint.BoneWeights.Add(weight);
@@ -1258,11 +1427,7 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	private int AddNormalInternal(Vector3 normal, bool automatic)
 	{
 		int id = _nextNormalId++;
-		_normals[id] = new NormalData
-		{
-			Value = SafeNormal(normal),
-			Automatic = automatic,
-		};
+		_normals[id] = new NormalData { Value = SafeNormal(normal), Automatic = automatic };
 		MarkDirty();
 		return id;
 	}
@@ -1377,8 +1542,10 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	{
 		for (int i = _boundInstances.Count - 1; i >= 0; i--)
 		{
-			if (!_boundInstances[i].TryGetTarget(out MeshInstance3D? instance) ||
-				!GodotObject.IsInstanceValid(instance))
+			if (
+				!_boundInstances[i].TryGetTarget(out MeshInstance3D? instance)
+				|| !GodotObject.IsInstanceValid(instance)
+			)
 			{
 				_boundInstances.RemoveAt(i);
 				continue;
@@ -1523,7 +1690,8 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		if (FixedSize)
 		{
 			throw new InvalidOperationException(
-				"This EditableMesh is fixed-size. Vertex, face and bone topology cannot be changed.");
+				"This EditableMesh is fixed-size. Vertex, face and bone topology cannot be changed."
+			);
 		}
 	}
 

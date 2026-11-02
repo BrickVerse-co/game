@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel.Resources;
 
@@ -37,7 +37,9 @@ public partial class GradientImageAsset : ImageAsset
 			}
 			else
 			{
-				BV.PrintWarn($"Gradient Image exceeded {GradientSizeLimit} points limit, the gradient won't be rendered.");
+				BV.PrintWarn(
+					$"Gradient Image exceeded {GradientSizeLimit} points limit, the gradient won't be rendered."
+				);
 			}
 
 			LoadResource();
@@ -138,6 +140,6 @@ public partial class GradientImageAsset : ImageAsset
 	{
 		Linear,
 		Radial,
-		Square
+		Square,
 	}
 }

@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Shared.Settings;
-using Godot;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.Settings;
 
@@ -13,14 +13,62 @@ public static class ClientSettingsRegistry
 {
 	public static readonly IReadOnlyList<SettingSectionDef> Sections =
 	[
-		new() {Key = "general", Label = "General", IconPath = "res://assets/textures/ui-icons/settings.svg", SortOrder = 0},
-		new() {Key = "audio", Label = "Audio", IconPath = "res://assets/textures/ui-icons/headphones.svg", SortOrder = 1},
-		new() {Key = "display", Label = "Display", IconPath = "res://assets/textures/ui-icons/camera.svg", SortOrder = 2},
-		new() {Key = "graphics", Label = "Graphics", IconPath = "res://assets/textures/ui-icons/mountain.svg", SortOrder = 2},
-		new() {Key = "post_processing", Label = "Post Processing", IconPath = "res://assets/textures/ui-icons/rocket.svg", SortOrder = 3},
-		new() {Key = "overlay", Label = "Overlay", IconPath = "res://assets/textures/ui-icons/copy.svg", SortOrder = 4},
-		new() {Key = "chat", Label = "Chat", IconPath = "res://assets/textures/ui-icons/messages.svg", SortOrder = 5},
-		new() {Key = "advanced", Label = "Advanced", IconPath = "res://assets/textures/ui-icons/code.svg", SortOrder = 6}
+		new()
+		{
+			Key = "general",
+			Label = "General",
+			IconPath = "res://assets/textures/ui-icons/settings.svg",
+			SortOrder = 0,
+		},
+		new()
+		{
+			Key = "audio",
+			Label = "Audio",
+			IconPath = "res://assets/textures/ui-icons/headphones.svg",
+			SortOrder = 1,
+		},
+		new()
+		{
+			Key = "display",
+			Label = "Display",
+			IconPath = "res://assets/textures/ui-icons/camera.svg",
+			SortOrder = 2,
+		},
+		new()
+		{
+			Key = "graphics",
+			Label = "Graphics",
+			IconPath = "res://assets/textures/ui-icons/mountain.svg",
+			SortOrder = 2,
+		},
+		new()
+		{
+			Key = "post_processing",
+			Label = "Post Processing",
+			IconPath = "res://assets/textures/ui-icons/rocket.svg",
+			SortOrder = 3,
+		},
+		new()
+		{
+			Key = "overlay",
+			Label = "Overlay",
+			IconPath = "res://assets/textures/ui-icons/copy.svg",
+			SortOrder = 4,
+		},
+		new()
+		{
+			Key = "chat",
+			Label = "Chat",
+			IconPath = "res://assets/textures/ui-icons/messages.svg",
+			SortOrder = 5,
+		},
+		new()
+		{
+			Key = "advanced",
+			Label = "Advanced",
+			IconPath = "res://assets/textures/ui-icons/code.svg",
+			SortOrder = 6,
+		},
 	];
 
 	public static readonly IReadOnlyDictionary<string, SettingDef> Definitions = Build();
@@ -31,7 +79,8 @@ public static class ClientSettingsRegistry
 
 		SharedSettingsRegistry.AddSharedTo(defs);
 
-		defs.Add(ClientSettingKeys.Audio.OutputDevice,
+		defs.Add(
+			ClientSettingKeys.Audio.OutputDevice,
 			new SettingDef<string>
 			{
 				Key = ClientSettingKeys.Audio.OutputDevice,
@@ -41,10 +90,12 @@ public static class ClientSettingsRegistry
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = "Default",
-				Options = BuildDeviceOptions(AudioServer.GetOutputDeviceList())
-			});
+				Options = BuildDeviceOptions(AudioServer.GetOutputDeviceList()),
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Audio.MicrophoneInputDevice,
+		defs.Add(
+			ClientSettingKeys.Audio.MicrophoneInputDevice,
 			new SettingDef<string>
 			{
 				Key = ClientSettingKeys.Audio.MicrophoneInputDevice,
@@ -54,10 +105,12 @@ public static class ClientSettingsRegistry
 				ValueKind = SettingValueKind.String,
 				ControlKind = SettingControlKind.Dropdown,
 				DefaultValue = "Default",
-				Options = BuildDeviceOptions(AudioServer.GetInputDeviceList())
-			});
+				Options = BuildDeviceOptions(AudioServer.GetInputDeviceList()),
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Audio.MicrophoneVolume,
+		defs.Add(
+			ClientSettingKeys.Audio.MicrophoneVolume,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.Audio.MicrophoneVolume,
@@ -69,10 +122,12 @@ public static class ClientSettingsRegistry
 				DefaultValue = 100f,
 				MinValue = 0f,
 				MaxValue = 200f,
-				Step = 5f
-			});
+				Step = 5f,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Audio.VoiceChatVolume,
+		defs.Add(
+			ClientSettingKeys.Audio.VoiceChatVolume,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.Audio.VoiceChatVolume,
@@ -84,10 +139,12 @@ public static class ClientSettingsRegistry
 				DefaultValue = 100f,
 				MinValue = 0f,
 				MaxValue = 200f,
-				Step = 5f
-			});
+				Step = 5f,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Chat.ChatColors,
+		defs.Add(
+			ClientSettingKeys.Chat.ChatColors,
 			new SettingDef<bool>
 			{
 				Key = ClientSettingKeys.Chat.ChatColors,
@@ -96,10 +153,12 @@ public static class ClientSettingsRegistry
 				Description = "Show colored usernames in chat.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Chat.ChatFont,
+		defs.Add(
+			ClientSettingKeys.Chat.ChatFont,
 			new SettingDef<string>
 			{
 				Key = ClientSettingKeys.Chat.ChatFont,
@@ -112,18 +171,52 @@ public static class ClientSettingsRegistry
 				Options =
 				[
 					new() { Value = "", Label = "Default" },
-					new() { Value = "res://assets/fonts/built-in/SourceSans3-VariableFont_wght.ttf", Label = "Source Sans" },
-					new() { Value = "res://assets/fonts/built-in/RobotoMono-VariableFont_wght.ttf", Label = "Roboto Mono" },
-					new() { Value = "res://assets/fonts/built-in/Rubik-VariableFont_wght.ttf", Label = "Rubik" },
-					new() { Value = "res://assets/fonts/built-in/Poppins/Poppins-Regular.ttf", Label = "Poppins" },
-					new() { Value = "res://assets/fonts/built-in/ComicNeue/ComicNeue-Regular.ttf", Label = "Comic Neue" },
-					new() { Value = "res://assets/fonts/built-in/PressStart2P-Regular.ttf", Label = "Press Start 2P" },
-					new() { Value = "res://assets/fonts/built-in/Comic Sans MS.ttf", Label = "Comic Sans MS" },
-					new() { Value = "res://assets/fonts/built-in/Fredoka-VariableFont_wdth,wght.ttf", Label = "Fredoka" },
-				]
-			});
+					new()
+					{
+						Value = "res://assets/fonts/built-in/SourceSans3-VariableFont_wght.ttf",
+						Label = "Source Sans",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/RobotoMono-VariableFont_wght.ttf",
+						Label = "Roboto Mono",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/Rubik-VariableFont_wght.ttf",
+						Label = "Rubik",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/Poppins/Poppins-Regular.ttf",
+						Label = "Poppins",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/ComicNeue/ComicNeue-Regular.ttf",
+						Label = "Comic Neue",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/PressStart2P-Regular.ttf",
+						Label = "Press Start 2P",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/Comic Sans MS.ttf",
+						Label = "Comic Sans MS",
+					},
+					new()
+					{
+						Value = "res://assets/fonts/built-in/Fredoka-VariableFont_wdth,wght.ttf",
+						Label = "Fredoka",
+					},
+				],
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Chat.ChatFontSize,
+		defs.Add(
+			ClientSettingKeys.Chat.ChatFontSize,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.Chat.ChatFontSize,
@@ -135,10 +228,12 @@ public static class ClientSettingsRegistry
 				DefaultValue = 0f,
 				MinValue = 0f,
 				MaxValue = 28f,
-				Step = 1f
-			});
+				Step = 1f,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.General.CtrlLock,
+		defs.Add(
+			ClientSettingKeys.General.CtrlLock,
 			new SettingDef<bool>
 			{
 				Key = ClientSettingKeys.General.CtrlLock,
@@ -147,10 +242,12 @@ public static class ClientSettingsRegistry
 				Description = "Allow Ctrl Lock while in third person.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.General.MasterVolume,
+		defs.Add(
+			ClientSettingKeys.General.MasterVolume,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.General.MasterVolume,
@@ -162,10 +259,12 @@ public static class ClientSettingsRegistry
 				DefaultValue = 80f,
 				MinValue = 0f,
 				MaxValue = 100f,
-				Step = 1f
-			});
+				Step = 1f,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.General.CameraSensitivity,
+		defs.Add(
+			ClientSettingKeys.General.CameraSensitivity,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.General.CameraSensitivity,
@@ -177,22 +276,27 @@ public static class ClientSettingsRegistry
 				DefaultValue = 0.6f,
 				MinValue = 0.1f,
 				MaxValue = 1.2f,
-				Step = 0.1f
-			});
+				Step = 0.1f,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.General.ShowOwnNametag,
+		defs.Add(
+			ClientSettingKeys.General.ShowOwnNametag,
 			new SettingDef<bool>
 			{
 				Key = ClientSettingKeys.General.ShowOwnNametag,
 				SectionKey = "general",
 				Label = "Show Own Nametag",
-				Description = "Show your username, badges, device, and health above your own character when the experience allows it.",
+				Description =
+					"Show your username, badges, device, and health above your own character when the experience allows it.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Display.UiScale,
+		defs.Add(
+			ClientSettingKeys.Display.UiScale,
 			new SettingDef<float>
 			{
 				Key = ClientSettingKeys.Display.UiScale,
@@ -211,10 +315,12 @@ public static class ClientSettingsRegistry
 					new() { Value = 1.5f, Label = "1.5x" },
 					new() { Value = 1.75f, Label = "1.75x" },
 					new() { Value = 2f, Label = "2x" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Overlay.PerformanceOverlayMode,
+		defs.Add(
+			ClientSettingKeys.Overlay.PerformanceOverlayMode,
 			new SettingDef<OverlayMode>
 			{
 				Key = ClientSettingKeys.Overlay.PerformanceOverlayMode,
@@ -229,10 +335,12 @@ public static class ClientSettingsRegistry
 					new() { Value = OverlayMode.None, Label = "None" },
 					new() { Value = OverlayMode.Minimal, Label = "Minimal" },
 					new() { Value = OverlayMode.Full, Label = "Full" },
-				]
-			});
+				],
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Overlay.ConnectionIndicators,
+		defs.Add(
+			ClientSettingKeys.Overlay.ConnectionIndicators,
 			new SettingDef<bool>
 			{
 				Key = ClientSettingKeys.Overlay.ConnectionIndicators,
@@ -241,10 +349,12 @@ public static class ClientSettingsRegistry
 				Description = "Show connection status warnings.",
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
-				DefaultValue = true
-			});
+				DefaultValue = true,
+			}
+		);
 
-		defs.Add(ClientSettingKeys.Advanced.ShowAdvancedSettings,
+		defs.Add(
+			ClientSettingKeys.Advanced.ShowAdvancedSettings,
 			new SettingDef<bool>
 			{
 				Key = ClientSettingKeys.Advanced.ShowAdvancedSettings,
@@ -254,7 +364,8 @@ public static class ClientSettingsRegistry
 				ValueKind = SettingValueKind.Bool,
 				ControlKind = SettingControlKind.Toggle,
 				DefaultValue = true,
-			});
+			}
+		);
 
 		SettingDef.ValidateAll(defs.Values);
 		return defs;
@@ -262,10 +373,10 @@ public static class ClientSettingsRegistry
 
 	private static IReadOnlyList<SettingOption<string>> BuildDeviceOptions(string[] devices)
 	{
-		return devices.Prepend("Default").Distinct().Select(device => new SettingOption<string>
-		{
-			Value = device,
-			Label = device
-		}).ToArray();
+		return devices
+			.Prepend("Default")
+			.Distinct()
+			.Select(device => new SettingOption<string> { Value = device, Label = device })
+			.ToArray();
 	}
 }

@@ -7,7 +7,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BrickVerse.Scripting;
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicEvents)]
+[DynamicallyAccessedMembers(
+	DynamicallyAccessedMemberTypes.PublicProperties
+		| DynamicallyAccessedMemberTypes.PublicMethods
+		| DynamicallyAccessedMemberTypes.PublicEvents
+)]
 public interface IScriptGDObject : IScriptObject
 {
 	static object FromGDClass(object gdClass) => throw new NotImplementedException();

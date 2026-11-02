@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Shared.Settings;
 
@@ -77,9 +77,7 @@ public abstract partial class SettingsServiceBase : Node, ISettingsContext
 		QueueSave();
 	}
 
-	protected virtual void OnAfterSet(string key, object normalizedValue)
-	{
-	}
+	protected virtual void OnAfterSet(string key, object normalizedValue) { }
 
 	protected void Load()
 	{
@@ -101,11 +99,13 @@ public abstract partial class SettingsServiceBase : Node, ISettingsContext
 			return;
 
 		_saveQueued = true;
-		Callable.From(() =>
-		{
-			_saveQueued = false;
-			Save();
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				_saveQueued = false;
+				Save();
+			})
+			.CallDeferred();
 	}
 
 	public void Save()

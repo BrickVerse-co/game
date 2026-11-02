@@ -6,8 +6,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace BrickVerse.Scripting;
 
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
-public interface IScriptObject
-{
-
-}
+[DynamicallyAccessedMembers(
+	DynamicallyAccessedMemberTypes.PublicProperties
+		| DynamicallyAccessedMemberTypes.PublicMethods
+		| DynamicallyAccessedMemberTypes.PublicEvents
+		| DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
+)]
+public interface IScriptObject { }

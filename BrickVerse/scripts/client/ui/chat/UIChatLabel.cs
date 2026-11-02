@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -90,7 +90,8 @@ public partial class UIChatLabel : RichTextLabel
 			string nameText = ChatColorsEnabled
 				? $"[color={NameColor.ToHtml(false)}]{AuthorName}[/color]"
 				: AuthorName;
-			text = $"{badgeBBCode}{(badgeBBCode.Length > 0 ? " " : "")}{nameText}{(AuthorPlayer != null && AuthorPlayer.HasVerifiedBadge ? GetVerifiedBadgeBBCode(FontSize) : "")}: {Content}";
+			text =
+				$"{badgeBBCode}{(badgeBBCode.Length > 0 ? " " : "")}{nameText}{(AuthorPlayer != null && AuthorPlayer.HasVerifiedBadge ? GetVerifiedBadgeBBCode(FontSize) : "")}: {Content}";
 		}
 
 		if (!string.IsNullOrEmpty(FontPath))

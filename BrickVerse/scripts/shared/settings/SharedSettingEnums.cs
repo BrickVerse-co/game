@@ -13,7 +13,7 @@ public enum FpsPreset
 	Extended = 90,
 	Smooth = 120,
 	Slick = 144,
-	Fluid = 240
+	Fluid = 240,
 }
 
 public enum GraphicsPreset
@@ -23,7 +23,7 @@ public enum GraphicsPreset
 	High,
 	Ultra,
 	Photo,
-	Custom
+	Custom,
 }
 
 public enum RenderingMethodOption
@@ -31,7 +31,7 @@ public enum RenderingMethodOption
 	Auto = -1,
 	Standard = 0,
 	Performance = 1,
-	Compatibility = 2
+	Compatibility = 2,
 }
 
 public enum ShadowQuality
@@ -40,7 +40,7 @@ public enum ShadowQuality
 	Low,
 	Medium,
 	High,
-	Ultra
+	Ultra,
 }
 
 public enum MsaaOption
@@ -48,5 +48,5 @@ public enum MsaaOption
 	Disabled = 0,
 	X2 = 2,
 	X4 = 4,
-	X8 = 8
+	X8 = 8,
 }

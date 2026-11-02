@@ -17,12 +17,12 @@ public enum FontWeightEnum
 	SemiBold,
 	Bold,
 	ExtraBold,
-	Black
+	Black,
 }
 
 [ScriptEnum]
 public enum FontStyleEnum
 {
 	Normal,
-	Italic
+	Italic,
 }

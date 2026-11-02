@@ -4,12 +4,12 @@
 
 using System;
 using System.Threading.Tasks;
-using Godot;
-using BrickVerse.Shared;
+using BrickVerse.Creator.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Scripting;
-using BrickVerse.Creator.Settings;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Docks.BottomBar.Console;
 
@@ -59,7 +59,10 @@ public partial class ConsoleExecutor : HBoxContainer
 		if (string.IsNullOrWhiteSpace(scriptSource))
 		{
 			BV.PrintErr("Cannot execute Luau because the input is empty.");
-			CreatorService.Interface.PopupAlert("Cannot execute Luau because the input is empty.", "Execution Error");
+			CreatorService.Interface.PopupAlert(
+				"Cannot execute Luau because the input is empty.",
+				"Execution Error"
+			);
 			return;
 		}
 
@@ -68,12 +71,19 @@ public partial class ConsoleExecutor : HBoxContainer
 		if (world == null)
 		{
 			BV.PrintErr("Cannot execute Luau because no world is currently loaded.");
-			CreatorService.Interface.PopupAlert("Cannot execute Luau because no world is currently loaded.", "Execution Error");
+			CreatorService.Interface.PopupAlert(
+				"Cannot execute Luau because no world is currently loaded.",
+				"Execution Error"
+			);
 			return;
 		}
 
 		bool confirmed = true;
-		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Popups.ExecutorConfirmation))
+		if (
+			CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.Popups.ExecutorConfirmation
+			)
+		)
 		{
 			confirmed = await CreatorService.Interface.PromptConfirmation(
 				"Are you sure you want to execute this Luau code? This action may have unintended consequences.",
@@ -97,8 +107,7 @@ public partial class ConsoleExecutor : HBoxContainer
 			script.Name = "ConsoleExecutor";
 			script.Source = scriptSource;
 			script.PermissionFlags =
-				ScriptPermissionFlags.CreatorAccess |
-				ScriptPermissionFlags.ContextAccess;
+				ScriptPermissionFlags.CreatorAccess | ScriptPermissionFlags.ContextAccess;
 			script.Compatibility = false;
 
 			script.Run();
@@ -107,19 +116,20 @@ public partial class ConsoleExecutor : HBoxContainer
 			_codeField.Clear();
 
 			// Keep the script alive briefly so yielded/deferred Luau work can run.
-			await ToSignal(
-				GetTree().CreateTimer(3.0),
-				SceneTreeTimer.SignalName.Timeout
-			);
+			await ToSignal(GetTree().CreateTimer(3.0), SceneTreeTimer.SignalName.Timeout);
 		}
 		catch (Exception exception)
 		{
 			BV.PrintErr($"Failed to execute Luau: {exception}");
-			CreatorService.Interface.PopupAlert($"Failed to execute Luau: {exception}", "Execution Error");
+			CreatorService.Interface.PopupAlert(
+				$"Failed to execute Luau: {exception}",
+				"Execution Error"
+			);
 		}
 		finally
 		{
-			if (script != null) script.Destroy();
+			if (script != null)
+				script.Destroy();
 
 			if (IsInstanceValid(this))
 			{
@@ -131,10 +141,15 @@ public partial class ConsoleExecutor : HBoxContainer
 
 			if (
 				succeeded
-				&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.Popups.ExecutorSuccess)
+				&& CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.Popups.ExecutorSuccess
+				)
 			)
 			{
-				CreatorService.Interface.PopupAlert("Luau code executed successfully.", "Execution Complete");
+				CreatorService.Interface.PopupAlert(
+					"Luau code executed successfully.",
+					"Execution Complete"
+				);
 			}
 		}
 	}

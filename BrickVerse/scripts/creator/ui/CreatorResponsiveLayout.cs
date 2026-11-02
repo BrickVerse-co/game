@@ -47,11 +47,10 @@ public partial class CreatorResponsiveLayout : Node
 	private void UpdateLayout()
 	{
 		float availableWidth = _ribbon.Size.X;
-		float ribbonHeight = availableWidth < 560.0f
-			? ThreeRowRibbonHeight
-			: availableWidth < 860.0f
-				? TwoRowRibbonHeight
-				: WideRibbonHeight;
+		float ribbonHeight =
+			availableWidth < 560.0f ? ThreeRowRibbonHeight
+			: availableWidth < 860.0f ? TwoRowRibbonHeight
+			: WideRibbonHeight;
 
 		_ribbon.OffsetTop = MenuHeight;
 		_ribbon.OffsetBottom = MenuHeight + ribbonHeight;

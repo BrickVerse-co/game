@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Shared;
 
@@ -18,8 +18,10 @@ public static class RenderingDeviceSwitcher
 			RenderingMethodOption.Standard => RenderingDeviceEnum.Forward,
 			RenderingMethodOption.Performance => RenderingDeviceEnum.Mobile,
 			RenderingMethodOption.Compatibility => RenderingDeviceEnum.GLCompatibility,
-			RenderingMethodOption.Auto => throw new ArgumentException("Auto does not map to rendering device"),
-			_ => RenderingDeviceEnum.Forward
+			RenderingMethodOption.Auto => throw new ArgumentException(
+				"Auto does not map to rendering device"
+			),
+			_ => RenderingDeviceEnum.Forward,
 		};
 	}
 
@@ -36,7 +38,8 @@ public static class RenderingDeviceSwitcher
 	public static void Switch(RenderingDeviceEnum to)
 	{
 		// Mobile are locked to one renderer only, don't change
-		if (Globals.IsMobileBuild) return;
+		if (Globals.IsMobileBuild)
+			return;
 
 		string renderingName = GetRenderingName(to);
 		string currentMethod = RenderingServer.GetCurrentRenderingMethod();
@@ -105,7 +108,7 @@ public static class RenderingDeviceSwitcher
 			RenderingDeviceEnum.Forward => "forward_plus",
 			RenderingDeviceEnum.Mobile => "mobile",
 			RenderingDeviceEnum.GLCompatibility => "gl_compatibility",
-			_ => throw new IndexOutOfRangeException()
+			_ => throw new IndexOutOfRangeException(),
 		};
 	}
 
@@ -115,6 +118,6 @@ public static class RenderingDeviceSwitcher
 	{
 		Forward,
 		Mobile,
-		GLCompatibility
+		GLCompatibility,
 	}
 }

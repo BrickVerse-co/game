@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Networking;
 using System;
+using BrickVerse.Networking;
 
 namespace BrickVerse.Attributes;
 
@@ -17,10 +17,12 @@ public sealed class SyncVarAttribute : Attribute
 	/// Allow write from authority without checking NetPropAuthority
 	/// </summary>
 	public bool AllowAuthorWrite = false;
+
 	/// <summary>
 	/// Allow write from server only
 	/// </summary>
 	public bool ServerOnly = false;
+
 	/// <summary>
 	/// Set to sync to server unreliably, this will also skip the duplicate value check. This only affect client to server, not server to client
 	/// </summary>
@@ -44,18 +46,22 @@ public sealed class NetRpcAttribute(AuthorityMode AuthorMode) : Attribute
 	/// Authority mode
 	/// </summary>
 	public AuthorityMode AuthorMode = AuthorMode;
+
 	/// <summary>
 	/// Should this RPC call locally too
 	/// </summary>
 	public bool CallLocal = false;
+
 	/// <summary>
 	/// Transfer mode for this NetRpc
 	/// </summary>
 	public TransferMode TransferMode = TransferMode.Reliable;
+
 	/// <summary>
 	/// Determine which channel to use for transferring message via this Rpc
 	/// </summary>
 	public int TransferChannel = 0;
+
 	/// <summary>
 	/// Only allow this RPC to be called from server, used with any broadcast to everyone
 	/// </summary>

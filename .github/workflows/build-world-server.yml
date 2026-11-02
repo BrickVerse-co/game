@@ -31,6 +31,7 @@ jobs:
   build-and-push:
     name: Export and publish Linux world server
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: release
     permissions:
       contents: read
@@ -92,16 +93,16 @@ jobs:
             cp -a "$TEMPLATE_EXTRACT/templates/." "$TEMPLATE_DIR/"
           fi
 
-      - name: Build and import project
+      - name: Build project
+        timeout-minutes: 6
         shell: bash
         run: |
           set -euo pipefail
           dotnet restore "${{ env.PROJECT_FILE }}"
           dotnet build "${{ env.PROJECT_FILE }}" --configuration Release --no-restore
-          cd "${{ env.PROJECT_DIR }}"
-          godot --headless --editor --import
 
       - name: Export Linux world server
+        timeout-minutes: 8
         shell: bash
         run: |
           set -euo pipefail

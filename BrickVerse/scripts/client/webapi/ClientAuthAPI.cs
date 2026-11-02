@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Threading.Tasks;
 using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Datamodel.Services;
 using BrickVerse.Schemas.API;
 using BrickVerse.Shared;
-using BrickVerse.Datamodel.Services;
-using System.Threading.Tasks;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -59,8 +59,11 @@ public static class ClientAuthAPI
 
 	public static string GetAuthorizationHeaderValue()
 	{
-		if (string.IsNullOrWhiteSpace(JoinToken)) return string.Empty;
-		return JoinToken.StartsWith("Bearer ", System.StringComparison.OrdinalIgnoreCase) ? JoinToken : "Bearer " + JoinToken;
+		if (string.IsNullOrWhiteSpace(JoinToken))
+			return string.Empty;
+		return JoinToken.StartsWith("Bearer ", System.StringComparison.OrdinalIgnoreCase)
+			? JoinToken
+			: "Bearer " + JoinToken;
 	}
 
 	public static void SetCreatorToken(string creatorToken)
@@ -81,7 +84,8 @@ public static class ClientAuthAPI
 
 	public static async Task<APIClientAuthResponseMessage> SendClientConnect()
 	{
-		IClientConnector connector = ClientConnector
+		IClientConnector connector =
+			ClientConnector
 			?? throw new MissingComponentException("Client Connector component missing");
 		APIClientAuthResponseMessage response = await connector.Connect();
 		IntegrityAuthToken = response.IntegrityAuthToken;

@@ -19,25 +19,50 @@ public sealed partial class Countdown : Instance
 	public double Duration
 	{
 		get => _duration;
-		set { double next = double.IsFinite(value) ? Mathf.Max(0.001, value) : 1; if (Mathf.IsEqualApprox(_duration, next)) return; _duration = next; OnPropertyChanged(); }
+		set
+		{
+			double next = double.IsFinite(value) ? Mathf.Max(0.001, value) : 1;
+			if (Mathf.IsEqualApprox(_duration, next))
+				return;
+			_duration = next;
+			OnPropertyChanged();
+		}
 	}
 
-	[Editable, ScriptProperty, DefaultValue(true)] public bool OneShot { get; set; } = true;
-	[Editable, ScriptProperty, DefaultValue(false)] public bool AutoStart { get; set; }
-	[Editable, ScriptProperty, DefaultValue(false)] public bool IgnoreTimeScale { get; set; }
-	[ScriptProperty, SaveIgnore, CloneIgnore] public double TimeLeft => _timeLeft;
-	[ScriptProperty, SaveIgnore, CloneIgnore] public bool IsRunning => _running;
-	[ScriptProperty, SaveIgnore, CloneIgnore] public bool IsPaused => _paused;
-	[ScriptProperty] public BVSignal Timeout { get; private set; } = new();
-	[ScriptProperty] public BVSignal Started { get; private set; } = new();
-	[ScriptProperty] public BVSignal Stopped { get; private set; } = new();
+	[Editable, ScriptProperty, DefaultValue(true)]
+	public bool OneShot { get; set; } = true;
+
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool AutoStart { get; set; }
+
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool IgnoreTimeScale { get; set; }
+
+	[ScriptProperty, SaveIgnore, CloneIgnore]
+	public double TimeLeft => _timeLeft;
+
+	[ScriptProperty, SaveIgnore, CloneIgnore]
+	public bool IsRunning => _running;
+
+	[ScriptProperty, SaveIgnore, CloneIgnore]
+	public bool IsPaused => _paused;
+
+	[ScriptProperty]
+	public BVSignal Timeout { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Started { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal Stopped { get; private set; } = new();
 
 	public override void Init()
 	{
 		base.Init();
 		SetProcess(true);
 		_lastTickUsec = Time.GetTicksUsec();
-		if (AutoStart) Start();
+		if (AutoStart)
+			Start();
 	}
 
 	public override void Process(double delta)
@@ -46,20 +71,25 @@ public sealed partial class Countdown : Instance
 		ulong tick = Time.GetTicksUsec();
 		double unscaledDelta = (tick - _lastTickUsec) / 1_000_000d;
 		_lastTickUsec = tick;
-		if (!_running || _paused) return;
+		if (!_running || _paused)
+			return;
 		double elapsed = IgnoreTimeScale ? unscaledDelta : delta;
 		_timeLeft -= elapsed;
-		if (_timeLeft > 0) return;
+		if (_timeLeft > 0)
+			return;
 
 		Timeout.Invoke();
-		if (OneShot) Stop();
-		else _timeLeft += _duration;
+		if (OneShot)
+			Stop();
+		else
+			_timeLeft += _duration;
 	}
 
 	[ScriptMethod]
 	public void Start(double duration = -1)
 	{
-		if (duration >= 0) Duration = duration;
+		if (duration >= 0)
+			Duration = duration;
 		_timeLeft = _duration;
 		_lastTickUsec = Time.GetTicksUsec();
 		_running = true;
@@ -70,13 +100,25 @@ public sealed partial class Countdown : Instance
 	[ScriptMethod]
 	public void Stop()
 	{
-		if (!_running && _timeLeft == 0) return;
+		if (!_running && _timeLeft == 0)
+			return;
 		_running = false;
 		_paused = false;
 		_timeLeft = 0;
 		Stopped.Invoke();
 	}
 
-	[ScriptMethod] public void Pause() { if (_running) _paused = true; }
-	[ScriptMethod] public void Resume() { if (_running) _paused = false; }
+	[ScriptMethod]
+	public void Pause()
+	{
+		if (_running)
+			_paused = true;
+	}
+
+	[ScriptMethod]
+	public void Resume()
+	{
+		if (_running)
+			_paused = false;
+	}
 }

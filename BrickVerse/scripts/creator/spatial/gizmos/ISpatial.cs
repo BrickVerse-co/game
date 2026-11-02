@@ -4,6 +4,4 @@
 
 namespace BrickVerse.Creator.Spatial;
 
-public interface ISpatial
-{
-}
+public interface ISpatial { }

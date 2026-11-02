@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Networking;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -42,7 +42,11 @@ public partial class NetworkEvent : Instance
 	public int RateLimitMaxRequests
 	{
 		get => _rateLimitMaxRequests;
-		set { _rateLimitMaxRequests = Math.Clamp(value, 1, 10000); OnPropertyChanged(); }
+		set
+		{
+			_rateLimitMaxRequests = Math.Clamp(value, 1, 10000);
+			OnPropertyChanged();
+		}
 	}
 
 	/// <summary>Length of the sliding rate-limit window, in seconds.</summary>
@@ -50,7 +54,11 @@ public partial class NetworkEvent : Instance
 	public float RateLimitWindowSeconds
 	{
 		get => _rateLimitWindowSeconds;
-		set { _rateLimitWindowSeconds = Math.Clamp(value, 0.1f, 60f); OnPropertyChanged(); }
+		set
+		{
+			_rateLimitWindowSeconds = Math.Clamp(value, 0.1f, 60f);
+			OnPropertyChanged();
+		}
 	}
 
 	/// <summary>Whether request capacity is tracked separately per player or shared by the server.</summary>
@@ -58,7 +66,11 @@ public partial class NetworkEvent : Instance
 	public RateLimitScopeEnum RateLimitScope
 	{
 		get => _rateLimitScope;
-		set { _rateLimitScope = value; OnPropertyChanged(); }
+		set
+		{
+			_rateLimitScope = value;
+			OnPropertyChanged();
+		}
 	}
 
 	/// <summary>Writes a warning when a request is rejected. Disabled to avoid log spam by default.</summary>
@@ -66,22 +78,30 @@ public partial class NetworkEvent : Instance
 	public bool LogRateLimitRejections
 	{
 		get => _logRateLimitRejections;
-		set { _logRateLimitRejections = value; OnPropertyChanged(); }
+		set
+		{
+			_logRateLimitRejections = value;
+			OnPropertyChanged();
+		}
 	}
 
 	/// <summary>
 	/// Fires when the server receives a message from the client.
 	/// </summary>
-	[ScriptProperty] public BVSignal<Player, NetMessage> InvokedServer { get; private set; } = new();
-	/// <summary>
-	/// Fires when the client receives a message from the server.
-	/// </summary>
-	[ScriptProperty] public BVSignal<NetMessage> InvokedClient { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Player, NetMessage> InvokedServer { get; private set; } = new();
 
 	/// <summary>
 	/// Fires when the client receives a message from the server.
 	/// </summary>
-	[ScriptLegacyProperty("InvokedClient")] public BVSignal LegacyInvokedClient { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<NetMessage> InvokedClient { get; private set; } = new();
+
+	/// <summary>
+	/// Fires when the client receives a message from the server.
+	/// </summary>
+	[ScriptLegacyProperty("InvokedClient")]
+	public BVSignal LegacyInvokedClient { get; private set; } = new();
 
 	/// <summary>
 	/// Determine whether this network event should send messages reliably. It's recommended to enable this option when sending a large number of messages.
@@ -104,7 +124,10 @@ public partial class NetworkEvent : Instance
 	[ScriptMethod]
 	public void InvokeServer(object? payload = null, object? _ = null)
 	{
-		if (Root.Network.IsServer) throw new System.InvalidOperationException("InvokeServer can only be called from client");
+		if (Root.Network.IsServer)
+			throw new System.InvalidOperationException(
+				"InvokeServer can only be called from client"
+			);
 		NetMessage msg = NetMessage.FromObject(payload);
 
 		if (Reliable)
@@ -126,7 +149,10 @@ public partial class NetworkEvent : Instance
 	[ScriptMethod]
 	public void InvokeClient(object? payload = null, Player? player = null)
 	{
-		if (!Root.Network.IsServer) throw new System.InvalidOperationException("InvokeClient can only be called from server");
+		if (!Root.Network.IsServer)
+			throw new System.InvalidOperationException(
+				"InvokeClient can only be called from server"
+			);
 		ArgumentNullException.ThrowIfNull(player);
 		NetMessage msg = NetMessage.FromObject(payload);
 
@@ -148,7 +174,10 @@ public partial class NetworkEvent : Instance
 	[ScriptMethod]
 	public void InvokeClients(object? payload = null)
 	{
-		if (!Root.Network.IsServer) throw new System.InvalidOperationException("InvokeClients can only be called from server");
+		if (!Root.Network.IsServer)
+			throw new System.InvalidOperationException(
+				"InvokeClients can only be called from server"
+			);
 		NetMessage msg = NetMessage.FromObject(payload);
 
 		if (Reliable)
@@ -189,7 +218,8 @@ public partial class NetworkEvent : Instance
 	{
 		try
 		{
-			if (Root.Network.IsServer && !AcceptClientRequest(sentBy)) return;
+			if (Root.Network.IsServer && !AcceptClientRequest(sentBy))
+				return;
 			NetMessage msg = await NetMessage.Deserialize(rawdata);
 
 			if (Root.Network.IsServer)
@@ -214,7 +244,8 @@ public partial class NetworkEvent : Instance
 
 	private bool AcceptClientRequest(int peerId)
 	{
-		if (!RateLimitEnabled) return true;
+		if (!RateLimitEnabled)
+			return true;
 		ulong now = Time.GetTicksMsec();
 		Queue<ulong> requests;
 		if (RateLimitScope == RateLimitScopeEnum.PerServer)
@@ -222,11 +253,14 @@ public partial class NetworkEvent : Instance
 		else if (!_requestTimesByPeer.TryGetValue(peerId, out requests!))
 			_requestTimesByPeer[peerId] = requests = new Queue<ulong>();
 		ulong windowMilliseconds = (ulong)Math.Max(100, RateLimitWindowSeconds * 1000f);
-		while (requests.Count > 0 && now - requests.Peek() >= windowMilliseconds) requests.Dequeue();
+		while (requests.Count > 0 && now - requests.Peek() >= windowMilliseconds)
+			requests.Dequeue();
 		if (requests.Count >= RateLimitMaxRequests)
 		{
 			if (LogRateLimitRejections)
-				BV.PrintWarn($"NetworkEvent {LuaPath} rejected a {RateLimitScope} rate-limited request from peer {peerId}.");
+				BV.PrintWarn(
+					$"NetworkEvent {LuaPath} rejected a {RateLimitScope} rate-limited request from peer {peerId}."
+				);
 			return false;
 		}
 		requests.Enqueue(now);

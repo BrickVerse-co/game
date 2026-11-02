@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Formats;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Formats;
+using Godot;
 using static BrickVerse.Datamodel.Creator.CreatorAddons;
 
 namespace BrickVerse.Creator.UI.Popups;
@@ -17,10 +17,18 @@ public sealed partial class AddonPermRequestPopup : PopupWindowBase
 		[AddonPermissionEnum.IORead] = "Read access to the project folder",
 		[AddonPermissionEnum.IOWrite] = "Write access to the project folder",
 	};
-	[Export] private Label _titleLabel = null!;
-	[Export] private Label _permissionLabel = null!;
-	[Export] private Button _allowButton = null!;
-	[Export] private Button _declineButton = null!;
+
+	[Export]
+	private Label _titleLabel = null!;
+
+	[Export]
+	private Label _permissionLabel = null!;
+
+	[Export]
+	private Button _allowButton = null!;
+
+	[Export]
+	private Button _declineButton = null!;
 
 	public AddonPermissionEnum[] RequestedPerms = [];
 	public PackedFormat.AddonData AddonData;

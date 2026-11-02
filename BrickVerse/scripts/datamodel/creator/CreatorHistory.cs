@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Scripting;
-using BrickVerse.Creator.Utils;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Scripting;
+using Godot;
 
 namespace BrickVerse.Datamodel.Creator;
 
@@ -70,8 +70,7 @@ public sealed partial class CreatorHistory : Instance
 	{
 		if (_currentAction == null)
 		{
-			throw new InvalidOperationException(
-				"No action in progress. Call NewAction() first.");
+			throw new InvalidOperationException("No action in progress. Call NewAction() first.");
 		}
 
 		ArgumentNullException.ThrowIfNull(callback);
@@ -88,8 +87,7 @@ public sealed partial class CreatorHistory : Instance
 	{
 		if (_currentAction == null)
 		{
-			throw new InvalidOperationException(
-				"No action in progress. Call NewAction() first.");
+			throw new InvalidOperationException("No action in progress. Call NewAction() first.");
 		}
 
 		ArgumentNullException.ThrowIfNull(callback);
@@ -102,20 +100,17 @@ public sealed partial class CreatorHistory : Instance
 	{
 		if (_currentAction == null)
 		{
-			throw new InvalidOperationException(
-				"No action to commit. Call NewAction() first.");
+			throw new InvalidOperationException("No action to commit. Call NewAction() first.");
 		}
 
 		if (_currentAction.DoCallbacks.Count == 0)
 		{
-			throw new InvalidOperationException(
-				"Action must have at least one 'do' callback.");
+			throw new InvalidOperationException("Action must have at least one 'do' callback.");
 		}
 
 		if (_currentAction.UndoCallbacks.Count == 0)
 		{
-			throw new InvalidOperationException(
-				"Action must have at least one 'undo' callback.");
+			throw new InvalidOperationException("Action must have at least one 'undo' callback.");
 		}
 
 		foreach (BVCallback callback in _currentAction.DoCallbacks)
@@ -135,12 +130,14 @@ public sealed partial class CreatorHistory : Instance
 	{
 		ArgumentNullException.ThrowIfNull(redo);
 		ArgumentNullException.ThrowIfNull(undo);
-		_undoStack.Push(new HistoryAction
-		{
-			Title = title,
-			DoCallbacks = [redo],
-			UndoCallbacks = [undo],
-		});
+		_undoStack.Push(
+			new HistoryAction
+			{
+				Title = title,
+				DoCallbacks = [redo],
+				UndoCallbacks = [undo],
+			}
+		);
 		_redoStack.Clear();
 		CreatorService.Interface.StatusBar?.SetStatus(title);
 	}
@@ -156,18 +153,31 @@ public sealed partial class CreatorHistory : Instance
 
 		NewAction("Group instances");
 
-		AddDoCallback(new((_) =>
-		{
-			groupedModel = Root.CreatorContext.Selections.GroupInstances(originalInstances, asWhat);
-		}));
+		AddDoCallback(
+			new(
+				(_) =>
+				{
+					groupedModel = Root.CreatorContext.Selections.GroupInstances(
+						originalInstances,
+						asWhat
+					);
+				}
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			if (groupedModel != null)
-			{
-				originalInstances = Root.CreatorContext.Selections.UngroupModel(groupedModel);
-			}
-		}));
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					if (groupedModel != null)
+					{
+						originalInstances = Root.CreatorContext.Selections.UngroupModel(
+							groupedModel
+						);
+					}
+				}
+			)
+		);
 
 		CommitAction();
 	}
@@ -181,46 +191,72 @@ public sealed partial class CreatorHistory : Instance
 		Instance[] originalModels = instances;
 		Instance[]? ungroupedChildren = null;
 
-		GroupAsEnum ungroupType = instances.Length > 0 ? GetGroupAsEnum(instances[0]) : GroupAsEnum.Model;
+		GroupAsEnum ungroupType =
+			instances.Length > 0 ? GetGroupAsEnum(instances[0]) : GroupAsEnum.Model;
 
 		NewAction("Ungroup instances");
 
-		AddDoCallback(new((_) =>
-		{
-			ungroupedChildren = Root.CreatorContext.Selections.UngroupModels(originalModels);
-		}));
+		AddDoCallback(
+			new(
+				(_) =>
+				{
+					ungroupedChildren = Root.CreatorContext.Selections.UngroupModels(
+						originalModels
+					);
+				}
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			if (ungroupedChildren != null)
-			{
-				originalModels = [Root.CreatorContext.Selections.GroupInstances(ungroupedChildren, ungroupType)];
-			}
-		}));
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					if (ungroupedChildren != null)
+					{
+						originalModels =
+						[
+							Root.CreatorContext.Selections.GroupInstances(
+								ungroupedChildren,
+								ungroupType
+							),
+						];
+					}
+				}
+			)
+		);
 
 		CommitAction();
 	}
 
-	private static GroupAsEnum GetGroupAsEnum(Instance instance) => instance switch
-	{
-		RigidBody => GroupAsEnum.RigidBody,
-		Folder => GroupAsEnum.Folder,
-		_ => GroupAsEnum.Model,
-	};
+	private static GroupAsEnum GetGroupAsEnum(Instance instance) =>
+		instance switch
+		{
+			RigidBody => GroupAsEnum.RigidBody,
+			Folder => GroupAsEnum.Folder,
+			_ => GroupAsEnum.Model,
+		};
 
 	public void ToggleLockedDynamics(Dynamic[] dyns)
 	{
 		NewAction("Toggle lock dynamics");
 
-		AddDoCallback(new((_) =>
-		{
-			CreatorSelections.ToggleLockDynamics(dyns);
-		}));
+		AddDoCallback(
+			new(
+				(_) =>
+				{
+					CreatorSelections.ToggleLockDynamics(dyns);
+				}
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			CreatorSelections.ToggleLockDynamics(dyns);
-		}));
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					CreatorSelections.ToggleLockDynamics(dyns);
+				}
+			)
+		);
 
 		CommitAction();
 	}
@@ -230,21 +266,29 @@ public sealed partial class CreatorHistory : Instance
 		Instance[]? child = null;
 
 		NewAction("Duplicate instances");
-		AddDoCallback(new((_) =>
-		{
-			child = Root.CreatorContext.Selections.DuplicateInstances(instances);
-		}));
-
-		AddUndoCallback(new((_) =>
-		{
-			if (child != null)
-			{
-				foreach (Instance instance in child)
+		AddDoCallback(
+			new(
+				(_) =>
 				{
-					instance.Delete();
+					child = Root.CreatorContext.Selections.DuplicateInstances(instances);
 				}
-			}
-		}));
+			)
+		);
+
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					if (child != null)
+					{
+						foreach (Instance instance in child)
+						{
+							instance.Delete();
+						}
+					}
+				}
+			)
+		);
 		CommitAction();
 		CreatorSoundEffects.PlayDuplicate();
 		if (child != null)
@@ -264,43 +308,54 @@ public sealed partial class CreatorHistory : Instance
 
 		foreach (Instance instance in child)
 		{
-			deletes.Add(new()
-			{
-				OriginName = instance.Name,
-				Object = instance,
-				Parent = instance.Parent!,
-				Index = instance.Index
-			});
+			deletes.Add(
+				new()
+				{
+					OriginName = instance.Name,
+					Object = instance,
+					Parent = instance.Parent!,
+					Index = instance.Index,
+				}
+			);
 		}
 
 		NewAction("Delete instances");
-		AddDoCallback(new((_) =>
-		{
-			recovered = false;
-			if (child != null)
-			{
-				foreach (DeleteData d in deletes)
+		AddDoCallback(
+			new(
+				(_) =>
 				{
-					d.Object.Parent = d.Object.Root.TemporaryContainer;
-					d.Object.Name = d.OriginName + "_DELETED";
-					selections.Deselect(d.Object);
+					recovered = false;
+					if (child != null)
+					{
+						foreach (DeleteData d in deletes)
+						{
+							d.Object.Parent = d.Object.Root.TemporaryContainer;
+							d.Object.Name = d.OriginName + "_DELETED";
+							selections.Deselect(d.Object);
+						}
+					}
 				}
-			}
-		}));
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			if (!undoAble) return;
-			recovered = true;
-			selections.DeselectAll();
-			foreach (DeleteData d in deletes)
-			{
-				d.Object.Parent = d.Parent;
-				d.Object.Name = d.OriginName;
-				d.Parent.MoveChild(d.Object, d.Index);
-				selections.Select(d.Object);
-			}
-		}));
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					if (!undoAble)
+						return;
+					recovered = true;
+					selections.DeselectAll();
+					foreach (DeleteData d in deletes)
+					{
+						d.Object.Parent = d.Parent;
+						d.Object.Name = d.OriginName;
+						d.Parent.MoveChild(d.Object, d.Index);
+						selections.Select(d.Object);
+					}
+				}
+			)
+		);
 
 		CommitAction();
 		CreatorSoundEffects.PlayDelete();
@@ -309,7 +364,8 @@ public sealed partial class CreatorHistory : Instance
 
 		t.Timeout += () =>
 		{
-			if (recovered) return;
+			if (recovered)
+				return;
 			undoAble = false;
 			foreach (DeleteData d in deletes)
 			{
@@ -332,30 +388,39 @@ public sealed partial class CreatorHistory : Instance
 
 		NewAction("Create instances");
 
-		AddDoCallback(new((_) =>
-		{
-			recovered = true;
-			foreach (Instance instance in instances)
-			{
-				instance.Parent = parent;
-				instance.Name = instance.Name.TrimSuffix("_DELETED");
-				selections.Select(instance);
-			}
-		}));
+		AddDoCallback(
+			new(
+				(_) =>
+				{
+					recovered = true;
+					foreach (Instance instance in instances)
+					{
+						instance.Parent = parent;
+						instance.Name = instance.Name.TrimSuffix("_DELETED");
+						selections.Select(instance);
+					}
+				}
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			if (!undoAble) return;
-			recovered = false;
-			selections.DeselectAll();
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					if (!undoAble)
+						return;
+					recovered = false;
+					selections.DeselectAll();
 
-			foreach (Instance instance in instances)
-			{
-				instance.Parent = instance.Root.TemporaryContainer;
-				instance.Name += "_DELETED";
-				selections.Deselect(instance);
-			}
-		}));
+					foreach (Instance instance in instances)
+					{
+						instance.Parent = instance.Root.TemporaryContainer;
+						instance.Name += "_DELETED";
+						selections.Deselect(instance);
+					}
+				}
+			)
+		);
 
 		CommitAction();
 
@@ -364,7 +429,8 @@ public sealed partial class CreatorHistory : Instance
 
 		t.Timeout += () =>
 		{
-			if (recovered) return;
+			if (recovered)
+				return;
 
 			undoAble = false;
 			foreach (Instance instance in instances)
@@ -382,15 +448,23 @@ public sealed partial class CreatorHistory : Instance
 
 		NewAction("Rename instance");
 
-		AddDoCallback(new((_) =>
-		{
-			instance.Name = newName;
-		}));
+		AddDoCallback(
+			new(
+				(_) =>
+				{
+					instance.Name = newName;
+				}
+			)
+		);
 
-		AddUndoCallback(new((_) =>
-		{
-			instance.Name = oldName;
-		}));
+		AddUndoCallback(
+			new(
+				(_) =>
+				{
+					instance.Name = oldName;
+				}
+			)
+		);
 
 		CommitAction();
 	}
@@ -414,6 +488,6 @@ public sealed partial class CreatorHistory : Instance
 	{
 		Model,
 		Folder,
-		RigidBody
+		RigidBody,
 	}
 }

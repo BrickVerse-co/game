@@ -3,7 +3,16 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - "BrickVerse/**"
+      - "BrickVerse.SourceGen/**"
+      - "global.json"
+      - ".github/workflows/export-checks.yml"
   workflow_dispatch:
+
+concurrency:
+  group: export-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: 4.7.0
@@ -14,6 +23,7 @@ jobs:
   release-export-check:
     name: Release Export check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5

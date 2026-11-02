@@ -1,7 +1,7 @@
-using Godot;
+using System;
 using BrickVerse.Creator.Properties;
 using BrickVerse.Shared.Settings;
-using System;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
@@ -21,21 +21,25 @@ public sealed partial class SettingsSliderUI : HBoxContainer, IProperty
 		_value = GetNode<SpinBox>("Value");
 		_slider.ValueChanged += OnSliderChanged;
 		_value.ValueChanged += OnSpinChanged;
-		if (_definition != null) ApplyDefinition(_definition);
+		if (_definition != null)
+			ApplyDefinition(_definition);
 	}
 
 	public void Configure(SettingDef definition)
 	{
 		_definition = definition;
 		PropertyType = definition.ValueType;
-		if (IsNodeReady()) ApplyDefinition(definition);
+		if (IsNodeReady())
+			ApplyDefinition(definition);
 	}
 
 	private void ApplyDefinition(SettingDef definition)
 	{
 		double min = Convert.ToDouble(definition.UntypedMinValue ?? 0);
 		double max = Convert.ToDouble(definition.UntypedMaxValue ?? 100);
-		double step = Convert.ToDouble(definition.UntypedStep ?? (PropertyType == typeof(int) ? 1 : 0.01));
+		double step = Convert.ToDouble(
+			definition.UntypedStep ?? (PropertyType == typeof(int) ? 1 : 0.01)
+		);
 		_slider.MinValue = _value.MinValue = min;
 		_slider.MaxValue = _value.MaxValue = max;
 		_slider.Step = _value.Step = step;
@@ -48,20 +52,23 @@ public sealed partial class SettingsSliderUI : HBoxContainer, IProperty
 
 	public void SetValue(object? value)
 	{
-		if (value == null || !IsNodeReady()) return;
+		if (value == null || !IsNodeReady())
+			return;
 		SetControls(Convert.ToDouble(value));
 	}
 
 	private void OnSliderChanged(double value)
 	{
-		if (_syncing) return;
+		if (_syncing)
+			return;
 		SetControls(value);
 		ValueChanged?.Invoke(ConvertValue(value));
 	}
 
 	private void OnSpinChanged(double value)
 	{
-		if (_syncing) return;
+		if (_syncing)
+			return;
 		SetControls(value);
 		ValueChanged?.Invoke(ConvertValue(value));
 	}
@@ -74,7 +81,6 @@ public sealed partial class SettingsSliderUI : HBoxContainer, IProperty
 		_syncing = false;
 	}
 
-	private object ConvertValue(double value) => PropertyType == typeof(int)
-		? Mathf.RoundToInt(value)
-		: (float)value;
+	private object ConvertValue(double value) =>
+		PropertyType == typeof(int) ? Mathf.RoundToInt(value) : (float)value;
 }

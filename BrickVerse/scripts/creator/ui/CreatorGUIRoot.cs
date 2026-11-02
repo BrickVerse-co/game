@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.Utils;
-using BrickVerse.Creator.UI.Docking;
 using System.Collections.Generic;
+using BrickVerse.Creator.UI.Docking;
+using BrickVerse.Creator.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -13,6 +13,7 @@ public sealed partial class CreatorGUIRoot : Control
 {
 	public static CreatorGUIRoot Singleton { get; private set; } = null!;
 	private readonly HashSet<ulong> _soundHookedNodes = [];
+
 	public CreatorGUIRoot()
 	{
 		Singleton = this;
@@ -31,7 +32,8 @@ public sealed partial class CreatorGUIRoot : Control
 
 	private void HookSoundFeedback(Node node, bool playModalOpen)
 	{
-		if (!_soundHookedNodes.Add(node.GetInstanceId())) return;
+		if (!_soundHookedNodes.Add(node.GetInstanceId()))
+			return;
 		if (node is BaseButton button)
 		{
 			button.MouseEntered += CreatorSoundEffects.PlayUiHover;
@@ -40,23 +42,33 @@ public sealed partial class CreatorGUIRoot : Control
 		else if (node is Window window && node is not Popup)
 		{
 			bool wasVisible = window.Visible;
-			if (playModalOpen && wasVisible) CreatorSoundEffects.PlayModalOpen();
+			if (playModalOpen && wasVisible)
+				CreatorSoundEffects.PlayModalOpen();
 			window.VisibilityChanged += () =>
 			{
 				bool isVisible = window.Visible;
-				if (isVisible == wasVisible) return;
-				if (isVisible) CreatorSoundEffects.PlayModalOpen();
-				else CreatorSoundEffects.PlayModalClose();
+				if (isVisible == wasVisible)
+					return;
+				if (isVisible)
+					CreatorSoundEffects.PlayModalOpen();
+				else
+					CreatorSoundEffects.PlayModalClose();
 				wasVisible = isVisible;
 			};
-			node.TreeExiting += () => { if (wasVisible) CreatorSoundEffects.PlayModalClose(); };
+			node.TreeExiting += () =>
+			{
+				if (wasVisible)
+					CreatorSoundEffects.PlayModalClose();
+			};
 		}
-		foreach (Node child in node.GetChildren()) HookSoundFeedback(child, playModalOpen: false);
+		foreach (Node child in node.GetChildren())
+			HookSoundFeedback(child, playModalOpen: false);
 	}
 
 	public override void _ExitTree()
 	{
-		if (GetTree() != null) GetTree().NodeAdded -= OnNodeAdded;
+		if (GetTree() != null)
+			GetTree().NodeAdded -= OnNodeAdded;
 		base._ExitTree();
 	}
 }

@@ -3,8 +3,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using BrickVerse.Attributes;
@@ -39,19 +39,41 @@ public abstract class BrickVerseScript
 	protected GameApi Game { get; private set; } = null!;
 	protected int Script => Bv.Script;
 	protected int World => Bv.World;
+
 	protected int Global(string name) => Bv.Global(name);
+
 	protected T? Get<T>(int handle, string property) => (T?)Bv.Get(handle, property);
-	protected void Set(int handle, string property, object? value) => Bv.Set(handle, property, value);
-	protected T? Call<T>(int handle, string method, params object?[] args) => (T?)Bv.Call(handle, method, args);
-	protected void Call(int handle, string method, params object?[] args) => Bv.Call(handle, method, args);
+
+	protected void Set(int handle, string property, object? value) =>
+		Bv.Set(handle, property, value);
+
+	protected T? Call<T>(int handle, string method, params object?[] args) =>
+		(T?)Bv.Call(handle, method, args);
+
+	protected void Call(int handle, string method, params object?[] args) =>
+		Bv.Call(handle, method, args);
+
 	protected void Print(string message) => Bv.Print(message);
+
 	protected void Warn(string message) => Bv.Warn(message);
+
 	protected void Error(string message) => Bv.Error(message);
-	protected int Connect(int signalHandle, Action<object?[]> callback) => Bv.Connect(signalHandle, callback);
-	internal void Attach(IScriptApi api) { Bv = api; Game = new(api); }
+
+	protected int Connect(int signalHandle, Action<object?[]> callback) =>
+		Bv.Connect(signalHandle, callback);
+
+	internal void Attach(IScriptApi api)
+	{
+		Bv = api;
+		Game = new(api);
+	}
+
 	public virtual void Start() { }
+
 	public virtual void Update(double delta) { }
+
 	public virtual void FixedUpdate(double delta) { }
+
 	public virtual object? Invoke(string name, object?[] args) => null;
 }
 
@@ -61,7 +83,9 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	private static readonly Dictionary<Type, MethodInfo> ProxyFactories = [];
 	private static readonly object ProxyFactoriesLock = new();
 	private readonly Dictionary<int, IScriptObject> _objects = [];
-	private readonly Dictionary<IScriptObject, int> _handles = new(ReferenceEqualityComparer.Instance);
+	private readonly Dictionary<IScriptObject, int> _handles = new(
+		ReferenceEqualityComparer.Instance
+	);
 	private int _nextHandle = 1;
 
 	public int Script => Add(script);
@@ -69,10 +93,16 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 
 	public int Global(string name)
 	{
-		if (ScriptService.GetStaticObjects(script.Root, script).TryGetValue(name, out IScriptObject? value)
-			&& value != null) return Add(value);
+		if (
+			ScriptService
+				.GetStaticObjects(script.Root, script)
+				.TryGetValue(name, out IScriptObject? value)
+			&& value != null
+		)
+			return Add(value);
 		return ScriptService.GlobalDataMap.TryGetValue(name, out Type? dataType)
-			? Add(new StaticScriptLibrary(dataType)) : 0;
+			? Add(new StaticScriptLibrary(dataType))
+			: 0;
 	}
 
 	public object? Get(int handle, string property)
@@ -80,21 +110,32 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 		IScriptObject target = Resolve(handle);
 		if (target is StaticScriptLibrary library)
 		{
-			PropertyInfo staticInfo = ScriptService.GetScriptPropertyOfName(library.Type, property, script.Compatibility)
+			PropertyInfo staticInfo =
+				ScriptService.GetScriptPropertyOfName(library.Type, property, script.Compatibility)
 				?? throw new MissingMemberException(library.Type.Name, property);
-			Demand(staticInfo.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
-			if (staticInfo.GetMethod?.IsStatic != true) throw new MissingMemberException(library.Type.Name, property);
+			Demand(
+				staticInfo.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions
+					?? ScriptPermissionFlags.None
+			);
+			if (staticInfo.GetMethod?.IsStatic != true)
+				throw new MissingMemberException(library.Type.Name, property);
 			return ToGuest(staticInfo.GetValue(null));
 		}
 		if (target is Instance instance)
 		{
-			if (property.Equals("Name", StringComparison.Ordinal)) return instance.Name;
+			if (property.Equals("Name", StringComparison.Ordinal))
+				return instance.Name;
 			Instance? child = instance.FindFirstChild(property);
-			if (child != null) return ToGuest(child);
+			if (child != null)
+				return ToGuest(child);
 		}
-		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
+		PropertyInfo info =
+			ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
-		Demand(info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
+		Demand(
+			info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions
+				?? ScriptPermissionFlags.None
+		);
 		return ToGuest(info.GetValue(target));
 	}
 
@@ -102,22 +143,38 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	{
 		IScriptObject target = Resolve(handle);
 		if (target is StaticScriptLibrary)
-			throw new InvalidOperationException("Script datatype library properties are read-only.");
+			throw new InvalidOperationException(
+				"Script datatype library properties are read-only."
+			);
 		if (target is Instance instance && property.Equals("Name", StringComparison.Ordinal))
 		{
 			if (value is not string name || string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("Instance.Name must be a non-empty string.", nameof(value));
+				throw new ArgumentException(
+					"Instance.Name must be a non-empty string.",
+					nameof(value)
+				);
 			instance.Name = name;
 			return;
 		}
-		PropertyInfo info = ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
+		PropertyInfo info =
+			ScriptService.GetScriptPropertyOfName(target.GetType(), property, script.Compatibility)
 			?? throw new MissingMemberException(target.GetType().Name, property);
-		Demand(info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
-		if (info.SetMethod?.IsPublic != true) throw new InvalidOperationException($"{property} is read-only");
+		Demand(
+			info.GetCustomAttribute<ScriptPropertyAttribute>()?.Permissions
+				?? ScriptPermissionFlags.None
+		);
+		if (info.SetMethod?.IsPublic != true)
+			throw new InvalidOperationException($"{property} is read-only");
 		object? convertedValue = FromGuest(value);
-		if (convertedValue is IScriptGDObject gdValue && !info.PropertyType.IsInstanceOfType(convertedValue))
+		if (
+			convertedValue is IScriptGDObject gdValue
+			&& !info.PropertyType.IsInstanceOfType(convertedValue)
+		)
 			convertedValue = gdValue.ToGDClass();
-		info.SetValue(target, ScriptService.ConvertToPropertyType(convertedValue, info.PropertyType));
+		info.SetValue(
+			target,
+			ScriptService.ConvertToPropertyType(convertedValue, info.PropertyType)
+		);
 	}
 
 	public object? Call(int handle, string method, params object?[] args)
@@ -126,11 +183,16 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 		object?[] guestArguments = args.Select(FromGuest).ToArray();
 		Type targetType = target is StaticScriptLibrary library ? library.Type : target.GetType();
 		bool staticOnly = target is StaticScriptLibrary;
-		MethodInfo info = ResolveCallableMethod(targetType, method, guestArguments, staticOnly)
+		MethodInfo info =
+			ResolveCallableMethod(targetType, method, guestArguments, staticOnly)
 			?? throw new MissingMethodException(targetType.Name, method);
-		Demand(info.GetCustomAttribute<ScriptMethodAttribute>()?.Permissions ?? ScriptPermissionFlags.None);
+		Demand(
+			info.GetCustomAttribute<ScriptMethodAttribute>()?.Permissions
+				?? ScriptPermissionFlags.None
+		);
 		ParameterInfo[] parameters = info.GetParameters();
-		bool convertParamsToGd = info.GetCustomAttribute<ScriptMethodAttribute>()?.ConvertParamsToGD ?? true;
+		bool convertParamsToGd =
+			info.GetCustomAttribute<ScriptMethodAttribute>()?.ConvertParamsToGD ?? true;
 		object?[] converted = new object?[parameters.Length];
 		int guestIndex = 0;
 		for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
@@ -144,16 +206,23 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 			if (guestIndex < guestArguments.Length)
 			{
 				object? argument = guestArguments[guestIndex++];
-				if (convertParamsToGd && argument is IScriptGDObject gdArgument) argument = gdArgument.ToGDClass();
-				converted[parameterIndex] = ScriptService.ConvertToPropertyType(argument, parameter.ParameterType);
+				if (convertParamsToGd && argument is IScriptGDObject gdArgument)
+					argument = gdArgument.ToGDClass();
+				converted[parameterIndex] = ScriptService.ConvertToPropertyType(
+					argument,
+					parameter.ParameterType
+				);
 			}
-			else converted[parameterIndex] = parameter.DefaultValue;
+			else
+				converted[parameterIndex] = parameter.DefaultValue;
 		}
 		object? result = info.Invoke(staticOnly ? null : target, converted);
 		if (result is System.Threading.Tasks.Task task)
 		{
 			task.GetAwaiter().GetResult();
-			result = task.GetType().IsGenericType ? task.GetType().GetProperty("Result")?.GetValue(task) : null;
+			result = task.GetType().IsGenericType
+				? task.GetType().GetProperty("Result")?.GetValue(task)
+				: null;
 		}
 		return ToGuest(result);
 	}
@@ -162,37 +231,63 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 	{
 		IScriptObject target = Resolve(handle);
 		Type type = target is StaticScriptLibrary library ? library.Type : target.GetType();
-		BindingFlags flags = BindingFlags.Public | BindingFlags.FlattenHierarchy
+		BindingFlags flags =
+			BindingFlags.Public
+			| BindingFlags.FlattenHierarchy
 			| (target is StaticScriptLibrary ? BindingFlags.Static : BindingFlags.Instance);
 		return type.GetMethods(flags).Any(candidate => IsExposedMethod(candidate, method));
 	}
 
-	private MethodInfo? ResolveCallableMethod(Type type, string name, object?[] arguments, bool staticOnly) =>
-		type.GetMethods(BindingFlags.Public | BindingFlags.FlattenHierarchy | (staticOnly ? BindingFlags.Static : BindingFlags.Instance))
+	private MethodInfo? ResolveCallableMethod(
+		Type type,
+		string name,
+		object?[] arguments,
+		bool staticOnly
+	) =>
+		type.GetMethods(
+				BindingFlags.Public
+					| BindingFlags.FlattenHierarchy
+					| (staticOnly ? BindingFlags.Static : BindingFlags.Instance)
+			)
 			.Where(candidate => IsExposedMethod(candidate, name))
 			.FirstOrDefault(candidate => ParametersAccept(candidate, arguments));
 
 	private bool IsExposedMethod(MethodInfo method, string requestedName)
 	{
 		ScriptMethodAttribute? attribute = method.GetCustomAttribute<ScriptMethodAttribute>();
-		if (attribute != null && (method.Name == requestedName || attribute.MethodName == requestedName)) return true;
-		if (!script.Compatibility) return false;
-		ScriptLegacyMethodAttribute? legacy = method.GetCustomAttribute<ScriptLegacyMethodAttribute>();
+		if (
+			attribute != null
+			&& (method.Name == requestedName || attribute.MethodName == requestedName)
+		)
+			return true;
+		if (!script.Compatibility)
+			return false;
+		ScriptLegacyMethodAttribute? legacy =
+			method.GetCustomAttribute<ScriptLegacyMethodAttribute>();
 		return string.Equals(legacy?.MethodName, requestedName, StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static bool ParametersAccept(MethodInfo method, object?[] arguments)
 	{
 		ParameterInfo[] parameters = method.GetParameters();
-		ParameterInfo[] visible = parameters.Where(parameter => parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null).ToArray();
+		ParameterInfo[] visible = parameters
+			.Where(parameter => parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null)
+			.ToArray();
 		int required = visible.Count(parameter => !parameter.IsOptional);
-		if (arguments.Length < required || arguments.Length > visible.Length) return false;
-		bool convertParamsToGd = method.GetCustomAttribute<ScriptMethodAttribute>()?.ConvertParamsToGD ?? true;
+		if (arguments.Length < required || arguments.Length > visible.Length)
+			return false;
+		bool convertParamsToGd =
+			method.GetCustomAttribute<ScriptMethodAttribute>()?.ConvertParamsToGD ?? true;
 		for (int index = 0; index < arguments.Length; index++)
 		{
 			object? argument = arguments[index];
-			if (convertParamsToGd && argument is IScriptGDObject gdArgument) argument = gdArgument.ToGDClass();
-			if (argument != null && !ScriptService.IsObjectConvertible(argument, visible[index].ParameterType)) return false;
+			if (convertParamsToGd && argument is IScriptGDObject gdArgument)
+				argument = gdArgument.ToGDClass();
+			if (
+				argument != null
+				&& !ScriptService.IsObjectConvertible(argument, visible[index].ParameterType)
+			)
+				return false;
 		}
 		return true;
 	}
@@ -209,53 +304,73 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 		return Add(signal.Connect(bvCallback));
 	}
 
-	public void Print(string message) => script.Root.ScriptService.Logger.LogInfo(script, message ?? string.Empty);
-	public void Warn(string message) => script.Root.ScriptService.Logger.LogWarning(script, message ?? string.Empty);
-	public void Error(string message) => script.Root.ScriptService.Logger.LogError(script, message ?? string.Empty);
+	public void Print(string message) =>
+		script.Root.ScriptService.Logger.LogInfo(script, message ?? string.Empty);
+
+	public void Warn(string message) =>
+		script.Root.ScriptService.Logger.LogWarning(script, message ?? string.Empty);
+
+	public void Error(string message) =>
+		script.Root.ScriptService.Logger.LogError(script, message ?? string.Empty);
 
 	private int Add(IScriptObject value)
 	{
-		if (_handles.TryGetValue(value, out int handle)) return handle;
+		if (_handles.TryGetValue(value, out int handle))
+			return handle;
 		handle = _nextHandle++;
 		_handles[value] = handle;
 		_objects[handle] = value;
 		return handle;
 	}
 
-	private IScriptObject Resolve(int handle) => _objects.TryGetValue(handle, out IScriptObject? value)
-		? value : throw new InvalidOperationException("Invalid or expired script object handle");
+	private IScriptObject Resolve(int handle) =>
+		_objects.TryGetValue(handle, out IScriptObject? value)
+			? value
+			: throw new InvalidOperationException("Invalid or expired script object handle");
 
 	private object? ToGuest(object? value)
 	{
-		if (value != null && ScriptService.ProxyMap.TryGetValue(value.GetType(), out Type? proxyType))
+		if (
+			value != null
+			&& ScriptService.ProxyMap.TryGetValue(value.GetType(), out Type? proxyType)
+		)
 		{
 			MethodInfo factory;
 			lock (ProxyFactoriesLock)
 			{
 				if (!ProxyFactories.TryGetValue(value.GetType(), out factory!))
 				{
-					factory = proxyType.GetMethods(BindingFlags.Public | BindingFlags.Static)
-						.First(method => method.Name == "FromGDClass" && method.GetParameters() is [{ } parameter]
-							&& parameter.ParameterType == value.GetType());
+					factory = proxyType
+						.GetMethods(BindingFlags.Public | BindingFlags.Static)
+						.First(method =>
+							method.Name == "FromGDClass"
+							&& method.GetParameters() is [{ } parameter]
+							&& parameter.ParameterType == value.GetType()
+						);
 					ProxyFactories[value.GetType()] = factory;
 				}
 			}
 			return ToGuest(factory.Invoke(null, [value]));
 		}
-		if (value is IScriptObject scriptObject) return new object?[] { GuestHandleTag, Add(scriptObject) };
-		if (value is Enum enumValue) return Convert.ToInt32(enumValue);
-		if (value is Array array) return array.Cast<object?>().Select(ToGuest).ToArray();
+		if (value is IScriptObject scriptObject)
+			return new object?[] { GuestHandleTag, Add(scriptObject) };
+		if (value is Enum enumValue)
+			return Convert.ToInt32(enumValue);
+		if (value is Array array)
+			return array.Cast<object?>().Select(ToGuest).ToArray();
 		if (value is IDictionary dictionary)
 		{
 			Dictionary<string, object?> result = [];
 			foreach (DictionaryEntry entry in dictionary)
-				if (entry.Key is string key) result[key] = ToGuest(entry.Value);
+				if (entry.Key is string key)
+					result[key] = ToGuest(entry.Value);
 			return result;
 		}
 		if (value is IEnumerable enumerable && value is not string)
 		{
 			List<object?> result = [];
-			foreach (object? item in enumerable) result.Add(ToGuest(item));
+			foreach (object? item in enumerable)
+				result.Add(ToGuest(item));
 			return result.ToArray();
 		}
 		return value;
@@ -263,10 +378,14 @@ public sealed class ScriptCapabilityBridge(Script script) : IScriptApi
 
 	private object? FromGuest(object? value)
 	{
-		if (value is ScriptObject wrapper) return Resolve(wrapper.Handle);
-		if (TryReadGuestHandle(value, out int taggedHandle)) return Resolve(taggedHandle);
-		if (value is int handle && _objects.TryGetValue(handle, out IScriptObject? obj)) return obj;
-		if (value is object?[] array) return array.Select(FromGuest).ToArray();
+		if (value is ScriptObject wrapper)
+			return Resolve(wrapper.Handle);
+		if (TryReadGuestHandle(value, out int taggedHandle))
+			return Resolve(taggedHandle);
+		if (value is int handle && _objects.TryGetValue(handle, out IScriptObject? obj))
+			return obj;
+		if (value is object?[] array)
+			return array.Select(FromGuest).ToArray();
 		return value;
 	}
 

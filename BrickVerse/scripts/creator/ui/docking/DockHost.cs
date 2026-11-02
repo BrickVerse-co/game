@@ -4,8 +4,8 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 using BrickVerse.Creator.UI.Layout;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Docking;
 
@@ -154,18 +154,20 @@ public sealed partial class DockHost : VBoxContainer
 		_minimized = !_minimized;
 		_body.Visible = !_minimized;
 		_minimizeButton.Text = _minimized ? "+" : "−";
-		_minimizeButton.TooltipText = _minimized
-			? "Restore dock content"
-			: "Collapse dock content";
+		_minimizeButton.TooltipText = _minimized ? "Restore dock content" : "Collapse dock content";
 		DockRegion? region = FindDockRegion();
 		if (region is { IsSplit: true } && split != null)
 		{
 			CustomMinimumSize = new Vector2(CustomMinimumSize.X, 0);
-			Callable.From(() => ResizeInSplit(
-				_minimized
-					? GetNode<Control>("Bar").GetCombinedMinimumSize().Y
-					: Mathf.Max(_expandedSplitHeight, 80)
-			)).CallDeferred();
+			Callable
+				.From(() =>
+					ResizeInSplit(
+						_minimized
+							? GetNode<Control>("Bar").GetCombinedMinimumSize().Y
+							: Mathf.Max(_expandedSplitHeight, 80)
+					)
+				)
+				.CallDeferred();
 		}
 		else
 			FindCollapsiblePanel()?.SetCompact(_minimized);
@@ -187,9 +189,8 @@ public sealed partial class DockHost : VBoxContainer
 		if (boundaryIndex < 0 || boundaryIndex >= offsets.Length)
 			return;
 
-		offsets[boundaryIndex] += childIndex == 0
-			? Mathf.RoundToInt(delta)
-			: -Mathf.RoundToInt(delta);
+		offsets[boundaryIndex] +=
+			childIndex == 0 ? Mathf.RoundToInt(delta) : -Mathf.RoundToInt(delta);
 		split.SplitOffsets = offsets;
 		split.QueueSort();
 	}

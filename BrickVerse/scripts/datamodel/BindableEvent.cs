@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Scripting;
-using System;
 
 namespace BrickVerse.Datamodel;
 
@@ -12,7 +12,8 @@ namespace BrickVerse.Datamodel;
 [System.Obsolete("BindableEvent is deprecated; use LocalNetworkEvent instead.", false)]
 public sealed partial class BindableEvent : Instance
 {
-	[ScriptProperty] public BVSignal Invoked { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal Invoked { get; private set; } = new();
 
 	[ScriptMethod]
 	public void Invoke(params object?[] par)

@@ -2,23 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
-using BrickVerse.Attributes;
-using BrickVerse.Client;
-using BrickVerse.Client.XR;
-using BrickVerse.Client.Networking;
-using BrickVerse.Client.WebAPI;
-using BrickVerse.Client.WebAPI.Interfaces;
-using BrickVerse.Datamodel.Data;
-using BrickVerse.Networking;
-using BrickVerse.Networking.Interfaces;
-using BrickVerse.Networking.RateLimiters;
-using BrickVerse.Networking.Synchronizers;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
-using BrickVerse.Utils.DTOs;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -29,14 +12,33 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-
+using BrickVerse.Attributes;
+using BrickVerse.Client;
+using BrickVerse.Client.Networking;
+using BrickVerse.Client.WebAPI;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Client.XR;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Networking;
+using BrickVerse.Networking.Interfaces;
+using BrickVerse.Networking.RateLimiters;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using BrickVerse.Utils.DTOs;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Datamodel.Services;
 
 [ExplorerExclude, SaveIgnore, Internal]
 public sealed partial class NetworkService : Instance
 {
-	private static readonly ConcurrentDictionary<(Type Type, int MethodId), RpcDispatchInfo> _rpcDispatchCache = new();
+	private static readonly ConcurrentDictionary<
+		(Type Type, int MethodId),
+		RpcDispatchInfo
+	> _rpcDispatchCache = new();
 
 	private const double PingIntervalSec = 2;
 	private const int AuthWaitTimeoutSec = 30; // Includes backend integrity verification and player lookup.
@@ -50,19 +52,30 @@ public sealed partial class NetworkService : Instance
 	// TODO: Narrow this down
 	private const int MaxBroadcastPacketPerSec = 100;
 
-	public const string TerminationMessage = "Your BrickVerse account has been terminated, please visit the website for more info.";
+	public const string TerminationMessage =
+		"Your BrickVerse account has been terminated, please visit the website for more info.";
 	public const string AuthFailureMessage = "Authentication failure, Please try again.";
-	public const string IntegrityFailureMessage = "BrickVerse could not verify this client build. Your installation may be outdated, incomplete, or incompatible with this server. Update or reinstall BrickVerse, then try joining again. Beta clients are supported on production worlds.";
+	public const string IntegrityFailureMessage =
+		"BrickVerse could not verify this client build. Your installation may be outdated, incomplete, or incompatible with this server. Update or reinstall BrickVerse, then try joining again. Beta clients are supported on production worlds.";
 	public const string NetworkModeMismatchMessage = "Network mode mismatch.";
-	public const string MultipleDeviceMessage = "Another device is already playing using this account, please leave the game first then try again.";
+	public const string MultipleDeviceMessage =
+		"Another device is already playing using this account, please leave the game first then try again.";
 	public const string ConnectTimeoutMessage = "Connection timeout";
 
-	private static readonly Dictionary<NetworkInstance.NetInstanceErrorEnum, string> _netInstanceErrorMessages = new()
+	private static readonly Dictionary<
+		NetworkInstance.NetInstanceErrorEnum,
+		string
+	> _netInstanceErrorMessages = new()
 	{
-		{ NetworkInstance.NetInstanceErrorEnum.DataChannelConnectFailure, "Couldn't connect to the data channel, please try rejoining" }
+		{
+			NetworkInstance.NetInstanceErrorEnum.DataChannelConnectFailure,
+			"Couldn't connect to the data channel, please try rejoining"
+		},
 	};
 
-	private const ENetConnection.CompressionMode CompressionMode = ENetConnection.CompressionMode.Fastlz;
+	private const ENetConnection.CompressionMode CompressionMode = ENetConnection
+		.CompressionMode
+		.Fastlz;
 
 	public event Action? ServerStarted;
 	public event Action? ClientWorldReady;
@@ -82,7 +95,6 @@ public sealed partial class NetworkService : Instance
 	public bool IsShuttingDown = false;
 	public bool ClientConnected = false;
 
-
 	// Rate limiters
 	private readonly Dictionary<int, RateLimiters> _peerRateLimiters = [];
 	internal event Action<int, string, int>? SuspiciousPeerActivity;
@@ -98,6 +110,7 @@ public sealed partial class NetworkService : Instance
 	public bool IsPlaceReplicationDone = false;
 	public bool IsTransformReplicateDone = false;
 	public bool IsClientScriptReplicateDone = false;
+
 	// Is production
 	public bool IsProd = false;
 	public NetworkModeEnum NetworkMode { get; set; } = NetworkModeEnum.Client;
@@ -212,54 +225,103 @@ public sealed partial class NetworkService : Instance
 	{
 		Type targetType = target.GetType();
 
-		return _rpcDispatchCache.GetOrAdd((targetType, methodId), (key) =>
-		{
-			MethodInfo method = target.GetRpcMethod(methodId);
-			NetRpcAttribute attribute = method.GetCustomAttribute<NetRpcAttribute>() ?? throw new NetworkException($"Tried to call Rpc function which is not marked as Rpc ({method.Name})");
-			Type[] parameterTypes = [.. method.GetParameters().Select(p => p.ParameterType)];
-
-			Action<NetworkedObject, object?[]?> invoker = CreateInvoker(method);
-
-			return new RpcDispatchInfo()
+		return _rpcDispatchCache.GetOrAdd(
+			(targetType, methodId),
+			(key) =>
 			{
-				Method = method,
-				Attribute = attribute,
-				ParameterTypes = parameterTypes,
-				Invoke = invoker
-			};
-		});
+				MethodInfo method = target.GetRpcMethod(methodId);
+				NetRpcAttribute attribute =
+					method.GetCustomAttribute<NetRpcAttribute>()
+					?? throw new NetworkException(
+						$"Tried to call Rpc function which is not marked as Rpc ({method.Name})"
+					);
+				Type[] parameterTypes = [.. method.GetParameters().Select(p => p.ParameterType)];
+
+				Action<NetworkedObject, object?[]?> invoker = CreateInvoker(method);
+
+				return new RpcDispatchInfo()
+				{
+					Method = method,
+					Attribute = attribute,
+					ParameterTypes = parameterTypes,
+					Invoke = invoker,
+				};
+			}
+		);
 	}
 
 	private static Action<NetworkedObject, object?[]?> CreateInvoker(MethodInfo method)
 	{
-		ParameterExpression targetParam = System.Linq.Expressions.Expression.Parameter(typeof(NetworkedObject), "target");
-		ParameterExpression argsParam = System.Linq.Expressions.Expression.Parameter(typeof(object[]), "args");
+		ParameterExpression targetParam = System.Linq.Expressions.Expression.Parameter(
+			typeof(NetworkedObject),
+			"target"
+		);
+		ParameterExpression argsParam = System.Linq.Expressions.Expression.Parameter(
+			typeof(object[]),
+			"args"
+		);
 
-		Type declaringType = method.DeclaringType ?? throw new InvalidOperationException("Method has no declaring type");
-		UnaryExpression castTarget = System.Linq.Expressions.Expression.Convert(targetParam, declaringType);
+		Type declaringType =
+			method.DeclaringType
+			?? throw new InvalidOperationException("Method has no declaring type");
+		UnaryExpression castTarget = System.Linq.Expressions.Expression.Convert(
+			targetParam,
+			declaringType
+		);
 
 		ParameterInfo[] parameters = method.GetParameters();
-		System.Linq.Expressions.Expression[] callArgs = new System.Linq.Expressions.Expression[parameters.Length];
+		System.Linq.Expressions.Expression[] callArgs = new System.Linq.Expressions.Expression[
+			parameters.Length
+		];
 
 		for (int i = 0; i < parameters.Length; i++)
 		{
-			var indexExpr = System.Linq.Expressions.Expression.ArrayIndex(argsParam, System.Linq.Expressions.Expression.Constant(i));
-			callArgs[i] = System.Linq.Expressions.Expression.Convert(indexExpr, parameters[i].ParameterType);
+			var indexExpr = System.Linq.Expressions.Expression.ArrayIndex(
+				argsParam,
+				System.Linq.Expressions.Expression.Constant(i)
+			);
+			callArgs[i] = System.Linq.Expressions.Expression.Convert(
+				indexExpr,
+				parameters[i].ParameterType
+			);
 		}
 
-		MethodCallExpression call = System.Linq.Expressions.Expression.Call(castTarget, method, callArgs);
-		System.Linq.Expressions.Expression body = method.ReturnType == typeof(void) ? call : System.Linq.Expressions.Expression.Block(call, System.Linq.Expressions.Expression.Empty());
+		MethodCallExpression call = System.Linq.Expressions.Expression.Call(
+			castTarget,
+			method,
+			callArgs
+		);
+		System.Linq.Expressions.Expression body =
+			method.ReturnType == typeof(void)
+				? call
+				: System.Linq.Expressions.Expression.Block(
+					call,
+					System.Linq.Expressions.Expression.Empty()
+				);
 
-		return System.Linq.Expressions.Expression.Lambda<Action<NetworkedObject, object?[]?>>(body, targetParam, argsParam).Compile();
+		return System
+			.Linq.Expressions.Expression.Lambda<Action<NetworkedObject, object?[]?>>(
+				body,
+				targetParam,
+				argsParam
+			)
+			.Compile();
 	}
 
-	private static void ValidateAuthority(NetRpcAttribute rpcAttr, MethodInfo md, NetworkedObject netObj, int originFromPeer, TransferMode tfm, InternalNetMsg netMsg)
+	private static void ValidateAuthority(
+		NetRpcAttribute rpcAttr,
+		MethodInfo md,
+		NetworkedObject netObj,
+		int originFromPeer,
+		TransferMode tfm,
+		InternalNetMsg netMsg
+	)
 	{
 		if (rpcAttr.TransferMode == TransferMode.Reliable && tfm != TransferMode.Reliable)
 		{
 			throw new NetworkException(
-				$"Flag mismatch. Method={md.Name}, Expected={rpcAttr.TransferMode}, Actual={tfm}, " +
-				$"OriginPeer={originFromPeer}, Target={netMsg.Target}"
+				$"Flag mismatch. Method={md.Name}, Expected={rpcAttr.TransferMode}, Actual={tfm}, "
+					+ $"OriginPeer={originFromPeer}, Target={netMsg.Target}"
 			);
 		}
 
@@ -268,8 +330,8 @@ public sealed partial class NetworkService : Instance
 			if (originFromPeer != 1)
 			{
 				throw new NetworkException(
-					$"Invalid authority. Method={md.Name}, Required=Server, OriginPeer={originFromPeer}, " +
-					$"Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}, TransferMode={tfm}"
+					$"Invalid authority. Method={md.Name}, Required=Server, OriginPeer={originFromPeer}, "
+						+ $"Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}, TransferMode={tfm}"
 				);
 			}
 
@@ -281,8 +343,8 @@ public sealed partial class NetworkService : Instance
 			if (originFromPeer != 1 && originFromPeer != netObj.NetworkAuthority)
 			{
 				throw new NetworkException(
-					$"Invalid authority. Method={md.Name}, RequiredAuthority={netObj.NetworkAuthority}, " +
-					$"OriginPeer={originFromPeer}, Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}"
+					$"Invalid authority. Method={md.Name}, RequiredAuthority={netObj.NetworkAuthority}, "
+						+ $"OriginPeer={originFromPeer}, Target={netMsg.Target}, BroadcastAll={netMsg.BroadcastAll}"
 				);
 			}
 
@@ -294,8 +356,8 @@ public sealed partial class NetworkService : Instance
 			if (originFromPeer != 1 && netMsg.BroadcastAll && rpcAttr.AllowToServerOnly)
 			{
 				throw new NetworkException(
-					$"Broadcast to server only rule violation. Method={md.Name}, OriginPeer={originFromPeer}, " +
-					$"Target={netMsg.Target}, TransferMode={tfm}"
+					$"Broadcast to server only rule violation. Method={md.Name}, OriginPeer={originFromPeer}, "
+						+ $"Target={netMsg.Target}, TransferMode={tfm}"
 				);
 			}
 		}
@@ -303,7 +365,8 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnMessageRecv(int fromPeer, byte[] data, TransferMode tfm)
 	{
-		if (NetInstance == null) return;
+		if (NetInstance == null)
+			return;
 
 #if DEBUG
 		string netDebugTrace = "";
@@ -317,9 +380,8 @@ public sealed partial class NetworkService : Instance
 			netDebugTrace = netMsg.StackTrace;
 #endif
 
-			int originFromPeer = (fromPeer == 1 && netMsg.OriginSender != 0)
-				? netMsg.OriginSender
-				: fromPeer;
+			int originFromPeer =
+				(fromPeer == 1 && netMsg.OriginSender != 0) ? netMsg.OriginSender : fromPeer;
 
 			if (IsServer && originFromPeer != LocalPeerID)
 			{
@@ -341,15 +403,22 @@ public sealed partial class NetworkService : Instance
 			if (netObj == null)
 			{
 				BV.PrintErr(
-					$"Dropped packet: target not found. " +
-					$"Target={netMsg.Target}, MethodId={netMsg.TargetMethod}, " +
-					$"FromPeer={fromPeer}, OriginPeer={originFromPeer}, TransferMode={tfm}"
+					$"Dropped packet: target not found. "
+						+ $"Target={netMsg.Target}, MethodId={netMsg.TargetMethod}, "
+						+ $"FromPeer={fromPeer}, OriginPeer={originFromPeer}, TransferMode={tfm}"
 				);
 				return;
 			}
 
 			RpcDispatchInfo dispatch = GetDispatchInfo(netObj, netMsg.TargetMethod);
-			ValidateAuthority(dispatch.Attribute, dispatch.Method, netObj, originFromPeer, tfm, netMsg);
+			ValidateAuthority(
+				dispatch.Attribute,
+				dispatch.Method,
+				netObj,
+				originFromPeer,
+				tfm,
+				netMsg
+			);
 
 			Type[] paramTypes = dispatch.ParameterTypes;
 			int expectedArgCount = paramTypes.Length;
@@ -357,11 +426,12 @@ public sealed partial class NetworkService : Instance
 
 			if (actualArgCount != expectedArgCount)
 			{
-				if (IsServer && originFromPeer != 1) SuspiciousPeerActivity?.Invoke(originFromPeer, "malformed-rpc-arguments", 2);
+				if (IsServer && originFromPeer != 1)
+					SuspiciousPeerActivity?.Invoke(originFromPeer, "malformed-rpc-arguments", 2);
 				BV.PrintErr(
-					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
-					$"TargetType={netObj.GetType().FullName}, FromPeer={fromPeer}, OriginPeer={originFromPeer}, " +
-					$"Expected={expectedArgCount}, Actual={actualArgCount}"
+					$"RPC arg count mismatch. Method={dispatch.Method.Name}, Target={netMsg.Target}, "
+						+ $"TargetType={netObj.GetType().FullName}, FromPeer={fromPeer}, OriginPeer={originFromPeer}, "
+						+ $"Expected={expectedArgCount}, Actual={actualArgCount}"
 				);
 
 				for (int i = 0; i < actualArgCount; i++)
@@ -380,16 +450,24 @@ public sealed partial class NetworkService : Instance
 				{
 					lock (_rateLimiterLock)
 					{
-						if (!_peerRateLimiters.TryGetValue(originFromPeer, out RateLimiters? rateLimiter))
+						if (
+							!_peerRateLimiters.TryGetValue(
+								originFromPeer,
+								out RateLimiters? rateLimiter
+							)
+						)
 						{
 							SuspiciousPeerActivity?.Invoke(originFromPeer, "unknown-peer-rpc", 3);
-							BV.PrintErr($"Dropped broadcast RPC from unknown peer {originFromPeer}");
+							BV.PrintErr(
+								$"Dropped broadcast RPC from unknown peer {originFromPeer}"
+							);
 							return;
 						}
 
-						canSend = tfm == TransferMode.Reliable
-							? rateLimiter.Reliable.TryAccept()
-							: rateLimiter.Unreliable.TryAccept();
+						canSend =
+							tfm == TransferMode.Reliable
+								? rateLimiter.Reliable.TryAccept()
+								: rateLimiter.Unreliable.TryAccept();
 					}
 				}
 				else
@@ -436,16 +514,24 @@ public sealed partial class NetworkService : Instance
 				{
 					try
 					{
-						args[i] = NetworkPropSync.DeserializePropValue(netMsg.ByteArrays[i], paramTypes[i]);
+						args[i] = NetworkPropSync.DeserializePropValue(
+							netMsg.ByteArrays[i],
+							paramTypes[i]
+						);
 					}
 					catch (Exception ex)
 					{
-						if (IsServer && originFromPeer != 1) SuspiciousPeerActivity?.Invoke(originFromPeer, "malformed-rpc-payload", 2);
+						if (IsServer && originFromPeer != 1)
+							SuspiciousPeerActivity?.Invoke(
+								originFromPeer,
+								"malformed-rpc-payload",
+								2
+							);
 						BV.PrintErr(
-							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, " +
-							$"TargetType={netObj.GetType().FullName}, ArgIndex={i}, " +
-							$"TargetArgType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, " +
-							$"FromPeer={fromPeer}, OriginPeer={originFromPeer}"
+							$"RPC arg deserialize failed. Method={dispatch.Method.Name}, Target={netMsg.Target}, "
+								+ $"TargetType={netObj.GetType().FullName}, ArgIndex={i}, "
+								+ $"TargetArgType={paramTypes[i].FullName}, Bytes={netMsg.ByteArrays[i]?.Length ?? 0}, "
+								+ $"FromPeer={fromPeer}, OriginPeer={originFromPeer}"
 						);
 						BV.PrintErr(ex.ToString());
 						return;
@@ -504,19 +590,11 @@ public sealed partial class NetworkService : Instance
 		LocalPeerID = 1;
 		ActivePeerIDs.Add(1);
 		IsServer = true;
-		_idleCheckTimer = new Godot.Timer
-		{
-			WaitTime = IdleCheckIntervalSec,
-			OneShot = false
-		};
+		_idleCheckTimer = new Godot.Timer { WaitTime = IdleCheckIntervalSec, OneShot = false };
 		_idleCheckTimer.Timeout += CheckForIdlePeers;
 		Globals.Singleton.AddChild(_idleCheckTimer);
 		_idleCheckTimer.Start();
-		_networkPingTimer = new Godot.Timer
-		{
-			WaitTime = PingIntervalSec,
-			OneShot = false
-		};
+		_networkPingTimer = new Godot.Timer { WaitTime = PingIntervalSec, OneShot = false };
 		_networkPingTimer.Timeout += SendNetworkPing;
 		Globals.Singleton.AddChild(_networkPingTimer);
 		_networkPingTimer.Start();
@@ -626,10 +704,7 @@ public sealed partial class NetworkService : Instance
 	{
 		if (IsProd)
 		{
-			Dictionary<string, string> data = new()
-			{
-				{ "userID", player.UserID.ToString() }
-			};
+			Dictionary<string, string> data = new() { { "userID", player.UserID.ToString() } };
 			_ = ServerAPI.LogServerEvent(ServerEventType.ClientConnected, data);
 		}
 		OnPlayerChanged();
@@ -639,10 +714,7 @@ public sealed partial class NetworkService : Instance
 	{
 		if (IsProd)
 		{
-			Dictionary<string, string> data = new()
-			{
-				{ "userID", player.UserID.ToString() }
-			};
+			Dictionary<string, string> data = new() { { "userID", player.UserID.ToString() } };
 			_ = ServerAPI.LogServerEvent(ServerEventType.ClientDisconnected, data);
 		}
 		OnPlayerChanged();
@@ -675,12 +747,15 @@ public sealed partial class NetworkService : Instance
 
 	private async void OnPeerDisconnected(int peerID)
 	{
-		string stage = _peerJoinStages.TryGetValue(peerID, out string? joinStage) ? joinStage : "unknown";
+		string stage = _peerJoinStages.TryGetValue(peerID, out string? joinStage)
+			? joinStage
+			: "unknown";
 		Player? disconnectedPlayer = _players.GetPlayerFromPeerID(peerID);
 		BV.PrintErr(
-			$"[JoinFailure] Peer {peerID} disconnected during {stage}. " +
-			$"PlayerReady={disconnectedPlayer?.IsReady ?? false}, " +
-			$"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}.");
+			$"[JoinFailure] Peer {peerID} disconnected during {stage}. "
+				+ $"PlayerReady={disconnectedPlayer?.IsReady ?? false}, "
+				+ $"RemainingPeers={NetInstance?.PeerIds.Count ?? 0}."
+		);
 		ReplicateSync.CancelPlaceReplicationSend(peerID);
 		TransformSync.CancelTransformSnapshotSend(peerID);
 		_peerJoinStages.TryRemove(peerID, out _);
@@ -713,19 +788,23 @@ public sealed partial class NetworkService : Instance
 			}
 			catch (Exception exception)
 			{
-				BV.PrintErr($"Failed to release join authorization for peer {peerID}: {exception.Message}");
+				BV.PrintErr(
+					$"Failed to release join authorization for peer {peerID}: {exception.Message}"
+				);
 			}
 		}
 	}
 
 	private void CheckForIdlePeers()
 	{
-		if (!IsServer || NetInstance == null) return;
+		if (!IsServer || NetInstance == null)
+			return;
 
 		ulong now = Time.GetTicksMsec();
 		foreach ((int peerID, ulong lastActivity) in _peerLastActivity)
 		{
-			if (now - lastActivity < IdleTimeoutMs) continue;
+			if (now - lastActivity < IdleTimeoutMs)
+				continue;
 
 			// Remove first so the timer cannot schedule duplicate disconnects while
 			// DisconnectPeer gives the client time to receive the reason.
@@ -751,10 +830,12 @@ public sealed partial class NetworkService : Instance
 
 	internal void NotifyLocalActivity()
 	{
-		if (IsServer || !ClientConnected || IsDisconnected) return;
+		if (IsServer || !ClientConnected || IsDisconnected)
+			return;
 
 		ulong now = Time.GetTicksMsec();
-		if (now - _lastActivityReportTime < ActivityReportIntervalMs) return;
+		if (now - _lastActivityReportTime < ActivityReportIntervalMs)
+			return;
 
 		_lastActivityReportTime = now;
 		RpcId(1, nameof(NetReportActivity));
@@ -769,13 +850,17 @@ public sealed partial class NetworkService : Instance
 		}
 	}
 
-	internal async void DisconnectPeer(int peerID, string reason = "", DisconnectionCodeEnum code = DisconnectionCodeEnum.Kicked)
+	internal async void DisconnectPeer(
+		int peerID,
+		string reason = "",
+		DisconnectionCodeEnum code = DisconnectionCodeEnum.Kicked
+	)
 	{
 		if (!IsServer || LocalPeerID != 1)
 		{
 			BV.PrintErr(
-				$"DisconnectPeer blocked on non-server. LocalPeerID={LocalPeerID}, IsServer={IsServer}, " +
-				$"TargetPeer={peerID}, Reason={reason}, Code={code}"
+				$"DisconnectPeer blocked on non-server. LocalPeerID={LocalPeerID}, IsServer={IsServer}, "
+					+ $"TargetPeer={peerID}, Reason={reason}, Code={code}"
 			);
 			return;
 		}
@@ -792,16 +877,22 @@ public sealed partial class NetworkService : Instance
 		DisconnectSelf(reason, (DisconnectionCodeEnum)code);
 	}
 
-	internal void DisconnectSelf(string reason = "", DisconnectionCodeEnum code = DisconnectionCodeEnum.Unknown)
+	internal void DisconnectSelf(
+		string reason = "",
+		DisconnectionCodeEnum code = DisconnectionCodeEnum.Unknown
+	)
 	{
-		if (IsDisconnected) return;
+		if (IsDisconnected)
+			return;
 		BV.Print("Shutting down network instance.");
 		IsDisconnected = true;
 		NetInstance?.Shutdown();
-		Callable.From(() =>
-		{
-			ClientDisconnected?.Invoke(reason, code);
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				ClientDisconnected?.Invoke(reason, code);
+			})
+			.CallDeferred();
 	}
 
 	private void OnTimeoutTimer()
@@ -833,15 +924,32 @@ public sealed partial class NetworkService : Instance
 			pk = IntegrityCheckLayer.Generate(platformName);
 		}
 
-		BV.Print($"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}");
-		RpcId(1, nameof(NetAuthResponse), Entry.TestUserID, ClientAuthAPI.JoinToken,
-			ClientAuthAPI.IntegrityAuthToken, (int)NetworkMode, (int)platform, platformName, pk);
+		BV.Print(
+			$"NetRequestAuth received. AssignedPeer={peerID}, TestUserID={Entry.TestUserID}, NetworkMode={NetworkMode}, Platform={platformName}"
+		);
+		RpcId(
+			1,
+			nameof(NetAuthResponse),
+			Entry.TestUserID,
+			ClientAuthAPI.JoinToken,
+			ClientAuthAPI.IntegrityAuthToken,
+			(int)NetworkMode,
+			(int)platform,
+			platformName,
+			pk
+		);
 	}
 
-
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
-	private async void NetAuthResponse(string testUserID, string userToken, string integrityAuthToken,
-		int networkMode, int platform, string platformStr, byte[] pk)
+	private async void NetAuthResponse(
+		string testUserID,
+		string userToken,
+		string integrityAuthToken,
+		int networkMode,
+		int platform,
+		string platformStr,
+		byte[] pk
+	)
 	{
 		if (NetInstance == null)
 			return;
@@ -849,8 +957,8 @@ public sealed partial class NetworkService : Instance
 		int peerID = RemoteSenderId;
 
 		BV.Print(
-			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, " +
-			$"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
+			$"NetAuthResponse received. Peer={peerID}, TestUserID={testUserID}, "
+				+ $"NetworkMode={(NetworkModeEnum)networkMode}, Platform={(ClientPlatformEnum)platform}"
 		);
 		_peerJoinStages[peerID] = "authentication validation";
 
@@ -865,8 +973,15 @@ public sealed partial class NetworkService : Instance
 			DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
 			return;
 		}
-		if (!Enum.IsDefined(typeof(ClientPlatformEnum), platform) || !IsPlatformClaimConsistent((ClientPlatformEnum)platform, platformStr))
+		if (
+			!Enum.IsDefined(typeof(ClientPlatformEnum), platform)
+			|| !IsPlatformClaimConsistent((ClientPlatformEnum)platform, platformStr)
+		)
 		{
+			BV.PrintErr(
+				$"Auth integrity rejected peer {peerID}: contradictory platform claim "
+					+ $"category={platform} ({(ClientPlatformEnum)platform}), os='{platformStr}'."
+			);
 			SuspiciousPeerActivity?.Invoke(peerID, "invalid-platform-claim", 3);
 			DisconnectPeer(peerID, IntegrityFailureMessage, DisconnectionCodeEnum.IntegrityFail);
 			return;
@@ -881,16 +996,28 @@ public sealed partial class NetworkService : Instance
 					throw new Exception("Integrity validation failed.");
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
-				DisconnectPeer(peerID, IntegrityFailureMessage, DisconnectionCodeEnum.IntegrityFail);
+				BV.PrintErr(
+					$"Auth integrity proof rejected for peer {peerID}, os='{platformStr}', "
+						+ $"proofBytes={pk?.Length ?? 0}: {ex.Message}"
+				);
+				DisconnectPeer(
+					peerID,
+					IntegrityFailureMessage,
+					DisconnectionCodeEnum.IntegrityFail
+				);
 				return;
 			}
 		}
 
 		if (networkMode != (int)NetworkMode)
 		{
-			DisconnectPeer(peerID, NetworkModeMismatchMessage, DisconnectionCodeEnum.NetworkModeMismatch);
+			DisconnectPeer(
+				peerID,
+				NetworkModeMismatchMessage,
+				DisconnectionCodeEnum.NetworkModeMismatch
+			);
 			return;
 		}
 
@@ -913,20 +1040,22 @@ public sealed partial class NetworkService : Instance
 					ChatRestrictionReason = null,
 					IsStarCreator = false,
 					HasVerifiedBadge = false,
-					IsStaff = false
+					IsStaff = false,
 				};
 
 				userData = new()
 				{
 					Username = "Player" + testUserID,
 					Id = testUserID,
-					IsStaff = false
+					IsStaff = false,
 				};
 			}
 			else
 			{
 				if (string.IsNullOrWhiteSpace(integrityAuthToken))
-					throw new UnauthorizedAccessException("Missing backend integrity authorization token.");
+					throw new UnauthorizedAccessException(
+						"Missing backend integrity authorization token."
+					);
 				validateRes = await AuthenticatePlayer(userToken, integrityAuthToken);
 				_peerJoinTokens[peerID] = userToken;
 				userData = await BVAPI.GetUserFromID(validateRes.UserID);
@@ -948,10 +1077,17 @@ public sealed partial class NetworkService : Instance
 
 		string username = userData.Username;
 
-		if (_players.GetPlayerByID(userData.Id) != null || _players.GetPlayer(username) != null
-			|| _players.GetPlayerFromPeerID(peerID) != null)
+		if (
+			_players.GetPlayerByID(userData.Id) != null
+			|| _players.GetPlayer(username) != null
+			|| _players.GetPlayerFromPeerID(peerID) != null
+		)
 		{
-			DisconnectPeer(peerID, MultipleDeviceMessage, DisconnectionCodeEnum.MultipleDeviceNotAllowed);
+			DisconnectPeer(
+				peerID,
+				MultipleDeviceMessage,
+				DisconnectionCodeEnum.MultipleDeviceNotAllowed
+			);
 			return;
 		}
 
@@ -1036,7 +1172,9 @@ public sealed partial class NetworkService : Instance
 				}
 			}
 
-			BV.Print($"Auth: player created. Peer={peerID}, UserID={plr.UserID}, Username={plr.Name}");
+			BV.Print(
+				$"Auth: player created. Peer={peerID}, UserID={plr.UserID}, Username={plr.Name}"
+			);
 		}
 		catch (Exception ex)
 		{
@@ -1050,20 +1188,30 @@ public sealed partial class NetworkService : Instance
 		{
 			BV.Print("Auth: starting SyncPlaceToPlayer...");
 			_peerJoinStages[peerID] = "world replication";
-			ReplicateSync.SyncPlaceToPlayer(plr, () =>
-			{
-				if (plr.IsDeleted || IsShuttingDown) return;
-				try
+			ReplicateSync.SyncPlaceToPlayer(
+				plr,
+				() =>
 				{
-					BV.Print($"Auth: world snapshot acknowledged by peer {peerID}; invoking PeerPreInit.");
-					PeerPreInit?.Invoke(peerID);
+					if (plr.IsDeleted || IsShuttingDown)
+						return;
+					try
+					{
+						BV.Print(
+							$"Auth: world snapshot acknowledged by peer {peerID}; invoking PeerPreInit."
+						);
+						PeerPreInit?.Invoke(peerID);
+					}
+					catch (Exception ex)
+					{
+						BV.PrintErr($"Auth: PeerPreInit failed for peer {peerID}: {ex}");
+						DisconnectPeer(
+							peerID,
+							AuthFailureMessage,
+							DisconnectionCodeEnum.AuthFailure
+						);
+					}
 				}
-				catch (Exception ex)
-				{
-					BV.PrintErr($"Auth: PeerPreInit failed for peer {peerID}: {ex}");
-					DisconnectPeer(peerID, AuthFailureMessage, DisconnectionCodeEnum.AuthFailure);
-				}
-			});
+			);
 			BV.Print("Auth: SyncPlaceToPlayer returned.");
 		}
 		catch (Exception ex)
@@ -1107,40 +1255,50 @@ public sealed partial class NetworkService : Instance
 		string phase = GetClientJoinPhase();
 		ClientConnected = false;
 		// wait one frame in case of disconnected due to other reasons
-		Callable.From(() =>
-		{
-			if (!IsDisconnected)
+		Callable
+			.From(() =>
 			{
-				string reportID = Guid.NewGuid().ToString("N")[..8];
-				bool worldTransferFailed = phase == "world replication";
-				bool transformTransferFailed = phase == "transform synchronization";
-				string reason = worldTransferFailed
-					? $"World data stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
-					: transformTransferFailed
-						? $"World positions stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+				if (!IsDisconnected)
+				{
+					string reportID = Guid.NewGuid().ToString("N")[..8];
+					bool worldTransferFailed = phase == "world replication";
+					bool transformTransferFailed = phase == "transform synchronization";
+					string reason =
+						worldTransferFailed
+							? $"World data stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
+						: transformTransferFailed
+							? $"World positions stopped arriving from the server. Please retry. If this keeps happening, share report ID {reportID} with support."
 						: $"Connection to the server was lost during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.";
-				BV.PrintErr($"[JoinFailure:{reportID}] Server transport disconnected during {phase}. " +
-					$"PlaceChunks={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected}, " +
-					$"TransformChunks={TransformSync.SnapshotChunksReceived}/{TransformSync.SnapshotChunksExpected}, " +
-					$"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, " +
-					$"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}.");
-				DisconnectionCodeEnum code = worldTransferFailed
-					? DisconnectionCodeEnum.WorldDataTransferInterrupted
-					: transformTransferFailed
-						? DisconnectionCodeEnum.TransformSynchronizationInterrupted
+					BV.PrintErr(
+						$"[JoinFailure:{reportID}] Server transport disconnected during {phase}. "
+							+ $"PlaceChunks={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected}, "
+							+ $"TransformChunks={TransformSync.SnapshotChunksReceived}/{TransformSync.SnapshotChunksExpected}, "
+							+ $"PlaceReplicated={IsPlaceReplicationDone}, TransformReplicated={IsTransformReplicateDone}, "
+							+ $"ScriptsReplicated={IsClientScriptReplicateDone}, LocalPlayerReady={_localPlayerReady}."
+					);
+					DisconnectionCodeEnum code =
+						worldTransferFailed ? DisconnectionCodeEnum.WorldDataTransferInterrupted
+						: transformTransferFailed
+							? DisconnectionCodeEnum.TransformSynchronizationInterrupted
 						: DisconnectionCodeEnum.ConnectionLost;
-				DisconnectSelf(reason, code);
-			}
-		}).CallDeferred();
+					DisconnectSelf(reason, code);
+				}
+			})
+			.CallDeferred();
 	}
 
 	private string GetClientJoinPhase()
 	{
-		if (!ClientConnected) return "server connection";
-		if (!IsPlaceReplicationDone) return "world replication";
-		if (!IsTransformReplicateDone) return "transform synchronization";
-		if (!IsClientScriptReplicateDone) return "script synchronization";
-		if (!_localPlayerReady) return "player setup";
+		if (!ClientConnected)
+			return "server connection";
+		if (!IsPlaceReplicationDone)
+			return "world replication";
+		if (!IsTransformReplicateDone)
+			return "transform synchronization";
+		if (!IsClientScriptReplicateDone)
+			return "script synchronization";
+		if (!_localPlayerReady)
+			return "player setup";
 		return "game session";
 	}
 
@@ -1168,7 +1326,10 @@ public sealed partial class NetworkService : Instance
 		BV.Print("BrickVerse Network session started");
 	}
 
-	public static async Task<APIValidateResponse> AuthenticatePlayer(string token, string integrityAuthToken)
+	public static async Task<APIValidateResponse> AuthenticatePlayer(
+		string token,
+		string integrityAuthToken
+	)
 	{
 		return await ServerAPI.ValidatePlayer(token, integrityAuthToken);
 	}
@@ -1209,7 +1370,10 @@ public sealed partial class NetworkService : Instance
 		}
 		else
 		{
-			DisconnectSelf("INTERNAL BUG: Players not found, at transform sync flow", DisconnectionCodeEnum.PlayersNotFound);
+			DisconnectSelf(
+				"INTERNAL BUG: Players not found, at transform sync flow",
+				DisconnectionCodeEnum.PlayersNotFound
+			);
 		}
 	}
 
@@ -1229,7 +1393,11 @@ public sealed partial class NetworkService : Instance
 		BV.Print("[Client] Script Replicated");
 		ClientWorldReady?.Invoke();
 
-		BV.Print("[Client] Replication done in: ", (Time.GetTicksMsec() - placeReplicationStartTime) / 1000, "s");
+		BV.Print(
+			"[Client] Replication done in: ",
+			(Time.GetTicksMsec() - placeReplicationStartTime) / 1000,
+			"s"
+		);
 
 		// Request for Localplayer
 		if (_players != null)
@@ -1238,21 +1406,26 @@ public sealed partial class NetworkService : Instance
 		}
 		else
 		{
-			DisconnectSelf("INTERNAL BUG: Players not found, at script sync flow", DisconnectionCodeEnum.PlayersNotFound);
+			DisconnectSelf(
+				"INTERNAL BUG: Players not found, at script sync flow",
+				DisconnectionCodeEnum.PlayersNotFound
+			);
 		}
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllTransform()
 	{
-		if (IsServer) _peerJoinStages[RemoteSenderId] = "transform synchronization";
+		if (IsServer)
+			_peerJoinStages[RemoteSenderId] = "transform synchronization";
 		TransformSync.SyncAllTransformToPeer(RemoteSenderId);
 	}
 
 	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable)]
 	private void NetReqAllScripts()
 	{
-		if (IsServer) _peerJoinStages[RemoteSenderId] = "script synchronization";
+		if (IsServer)
+			_peerJoinStages[RemoteSenderId] = "script synchronization";
 		ScriptSync.SyncScriptsToPeer(RemoteSenderId);
 	}
 
@@ -1288,7 +1461,9 @@ public sealed partial class NetworkService : Instance
 
 				_players.ReqLocalPlayer();
 				if (attempt > 1)
-					BV.Print($"[Client] Retrying local player handshake ({attempt}/{maximumAttempts})");
+					BV.Print(
+						$"[Client] Retrying local player handshake ({attempt}/{maximumAttempts})"
+					);
 				await Globals.Singleton.WaitAsync(1f);
 			}
 
@@ -1305,11 +1480,17 @@ public sealed partial class NetworkService : Instance
 	}
 
 	// Emit when player reports itself as ready
-	[NetRpc(AuthorityMode.Any, TransferMode = TransferMode.Reliable, CallLocal = true, AllowToServerOnly = false)]
+	[NetRpc(
+		AuthorityMode.Any,
+		TransferMode = TransferMode.Reliable,
+		CallLocal = true,
+		AllowToServerOnly = false
+	)]
 	private void NetPlayerReportReady()
 	{
 		int peerID = RemoteSenderId;
-		if (IsServer) _peerJoinStages[peerID] = "player setup";
+		if (IsServer)
+			_peerJoinStages[peerID] = "player setup";
 		Player? plr = Root.Players.GetPlayerFromPeerID(peerID);
 
 		if (plr != null && !plr.IsReady)
@@ -1348,24 +1529,48 @@ public sealed partial class NetworkService : Instance
 	// Check authority (if is server/authority, return true)
 	public static bool CheckAuthority(int peerID, int authorityID)
 	{
-		if (Globals.CurrentAppEntry != Globals.AppEntryEnum.Client) { return true; }
+		if (Globals.CurrentAppEntry != Globals.AppEntryEnum.Client)
+		{
+			return true;
+		}
 		return peerID == 1 || peerID == authorityID;
 	}
 
 	[MemoryPackable]
 	public partial struct NetReplicateData()
 	{
-		[JsonInclude] public string Name = null!;
-		[JsonInclude] public string ClassName = null!;
-		[JsonInclude] public string NodePath = null!;
-		[JsonInclude] public string ParentNodePath = null!;
-		[JsonInclude] public string ParentNodeID = null!;
-		[JsonInclude] public int Authority;
-		[JsonInclude] public string NetworkID = "";
-		[JsonInclude] public NetPropReplicateData[] Props = [];
-		[JsonInclude] public bool IsSyncOnce = false;
-		[JsonInclude] public int Index = 0;
-		[JsonInclude] public int Sequence = 0;
+		[JsonInclude]
+		public string Name = null!;
+
+		[JsonInclude]
+		public string ClassName = null!;
+
+		[JsonInclude]
+		public string NodePath = null!;
+
+		[JsonInclude]
+		public string ParentNodePath = null!;
+
+		[JsonInclude]
+		public string ParentNodeID = null!;
+
+		[JsonInclude]
+		public int Authority;
+
+		[JsonInclude]
+		public string NetworkID = "";
+
+		[JsonInclude]
+		public NetPropReplicateData[] Props = [];
+
+		[JsonInclude]
+		public bool IsSyncOnce = false;
+
+		[JsonInclude]
+		public int Index = 0;
+
+		[JsonInclude]
+		public int Sequence = 0;
 
 		public override readonly bool Equals(object? obj)
 		{
@@ -1391,15 +1596,22 @@ public sealed partial class NetworkService : Instance
 	[MemoryPackable]
 	public partial struct NetPropReplicateData()
 	{
-		[JsonInclude] public string Name = null!;
-		[JsonInclude] public byte[] ValueRaw = null!;
-		[JsonInclude] public long Sequence = 0;
+		[JsonInclude]
+		public string Name = null!;
+
+		[JsonInclude]
+		public byte[] ValueRaw = null!;
+
+		[JsonInclude]
+		public long Sequence = 0;
 	}
 
 	[MemoryPackable]
 	public partial class NetPropNetworkedObjectRef
 	{
-		[JsonInclude] public string NetID = null!;
+		[JsonInclude]
+		public string NetID = null!;
+
 		[MemoryPackIgnore]
 		[JsonIgnore]
 		public PropertyInfo? TargetProp;
@@ -1410,6 +1622,7 @@ public sealed partial class NetworkService : Instance
 	{
 		[JsonInclude]
 		public string NetID = null!;
+
 		[JsonInclude]
 		public byte[] Value = null!;
 	}
@@ -1419,6 +1632,7 @@ public sealed partial class NetworkService : Instance
 	{
 		[JsonInclude]
 		public string NetID = null!;
+
 		[JsonInclude]
 		public byte[] Bytecode = null!;
 	}
@@ -1445,14 +1659,14 @@ public sealed partial class NetworkService : Instance
 		NetInstanceFailure,
 		ConnectionLost,
 		WorldDataTransferInterrupted,
-		TransformSynchronizationInterrupted
+		TransformSynchronizationInterrupted,
 	}
 
 	public enum NetworkModeEnum
 	{
 		Client,
 		Creator,
-		Renderer
+		Renderer,
 	}
 
 	[ScriptEnum]
@@ -1462,30 +1676,41 @@ public sealed partial class NetworkService : Instance
 		Mobile,
 		VR,
 		Tablet,
-		Console
+		Console,
 	}
 
 	private static ClientPlatformEnum ResolveClientPlatform()
 	{
-		if (XRRuntime.WasRequested()) return ClientPlatformEnum.VR;
-		if (OS.HasFeature("xr") || OS.HasFeature("vr")) return ClientPlatformEnum.VR;
-		if (OS.HasFeature("console")) return ClientPlatformEnum.Console;
-		if (Globals.IsMobileBuild || OS.HasFeature("mobile-ui"))
+		if (XRRuntime.WasRequested())
+			return ClientPlatformEnum.VR;
+		if (OS.HasFeature("xr") || OS.HasFeature("vr"))
+			return ClientPlatformEnum.VR;
+		if (OS.HasFeature("console"))
+			return ClientPlatformEnum.Console;
+		// "mobile-ui" is also enabled by desktop client presets so keyboard/mouse
+		// users can opt into the touch-oriented layout. It is a presentation feature,
+		// not a trustworthy operating-system claim.
+		if (Globals.IsMobileBuild)
 		{
 			Vector2I viewport = DisplayServer.WindowGetSize();
-			return Mathf.Min(viewport.X, viewport.Y) >= 720 ? ClientPlatformEnum.Tablet : ClientPlatformEnum.Mobile;
+			return Mathf.Min(viewport.X, viewport.Y) >= 720
+				? ClientPlatformEnum.Tablet
+				: ClientPlatformEnum.Mobile;
 		}
 		return ClientPlatformEnum.Desktop;
 	}
 
-	private static bool IsPlatformClaimConsistent(ClientPlatformEnum platform, string platformName)
+	internal static bool IsPlatformClaimConsistent(ClientPlatformEnum platform, string platformName)
 	{
 		string normalized = (platformName ?? string.Empty).Trim().ToLowerInvariant();
-		if (normalized is not ("windows" or "macos" or "linux" or "android" or "ios")) return false;
+		if (normalized is not ("windows" or "macos" or "linux" or "android" or "ios"))
+			return false;
 		return platform switch
 		{
 			ClientPlatformEnum.Desktop => normalized is "windows" or "macos" or "linux",
-			ClientPlatformEnum.Mobile or ClientPlatformEnum.Tablet => normalized is "android" or "ios",
+			ClientPlatformEnum.Mobile or ClientPlatformEnum.Tablet => normalized
+				is "android"
+					or "ios",
 			ClientPlatformEnum.VR => true,
 			ClientPlatformEnum.Console => true,
 			_ => false,
@@ -1494,8 +1719,14 @@ public sealed partial class NetworkService : Instance
 
 	private class RateLimiters
 	{
-		public SlidingWindowRateLimiter Reliable = new(MaxBroadcastPacketPerSec, TimeSpan.FromSeconds(1));
-		public SlidingWindowRateLimiter Unreliable = new(MaxBroadcastPacketPerSec, TimeSpan.FromSeconds(1));
+		public SlidingWindowRateLimiter Reliable = new(
+			MaxBroadcastPacketPerSec,
+			TimeSpan.FromSeconds(1)
+		);
+		public SlidingWindowRateLimiter Unreliable = new(
+			MaxBroadcastPacketPerSec,
+			TimeSpan.FromSeconds(1)
+		);
 	}
 
 	private class RpcDispatchInfo

@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
@@ -34,7 +34,8 @@ public sealed partial class SingleProperty : SpinBox, IProperty<float>
 	public void SetValue(object? value)
 #pragma warning restore CA1061 // Do not hide base class methods
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (float)value;
 	}
 

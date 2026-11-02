@@ -1,9 +1,14 @@
 name: Dotnet Format checks
 on: pull_request
 
+concurrency:
+  group: dotnet-format-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dotnet-format:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2

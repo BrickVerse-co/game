@@ -2,38 +2,43 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Creator.LSP;
-using BrickVerse.Creator.LSP.Schemas;
-using BrickVerse.Creator.Settings;
-using BrickVerse.Creator.Utils;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
-using BrickVerse.Shared.Settings;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using BrickVerse.Attributes;
+using BrickVerse.Creator.LSP;
+using BrickVerse.Creator.LSP.Schemas;
+using BrickVerse.Creator.Settings;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Creator.UI.TextEditor;
 
 public partial class TextEditorRoot : Node
 {
 	public static event Action<string>? ExternalFileChanged;
-	public static void NotifyExternalFileChanged(string absolutePath) => ExternalFileChanged?.Invoke(absolutePath);
-	private const string CodeCompletionIconPath = "res://assets/textures/creator/tabs/text_editor/code_completion/";
+
+	public static void NotifyExternalFileChanged(string absolutePath) =>
+		ExternalFileChanged?.Invoke(absolutePath);
+
+	private const string CodeCompletionIconPath =
+		"res://assets/textures/creator/tabs/text_editor/code_completion/";
 	private const int DiagDelay = 75;
 
-	[Export] public TextEditorField CodeEditor = null!;
+	[Export]
+	public TextEditorField CodeEditor = null!;
 	public TextEditorContainer Container = null!;
 	public bool Saved = false;
 
@@ -41,40 +46,69 @@ public partial class TextEditorRoot : Node
 
 	public void ReloadFromDiskIfCurrent(string absolutePath)
 	{
-		if (!Path.GetFullPath(Container.TargetFilePathAbsolute).Equals(
-			Path.GetFullPath(absolutePath), StringComparison.OrdinalIgnoreCase)) return;
-		if (!File.Exists(absolutePath)) return;
+		if (
+			!Path.GetFullPath(Container.TargetFilePathAbsolute)
+				.Equals(Path.GetFullPath(absolutePath), StringComparison.OrdinalIgnoreCase)
+		)
+			return;
+		if (!File.Exists(absolutePath))
+			return;
 		string source = File.ReadAllText(absolutePath);
-		if (CodeEditor.Text == source) return;
+		if (CodeEditor.Text == source)
+			return;
 		CodeEditor.Text = source;
 		CodeEditor.ClearUndoHistory();
 		_oldText = source;
 		Saved = true;
 		SavedChanged?.Invoke(true);
-		if (_completion != null) _ = _completion.UpdateScriptChangeAsync(absolutePath, source);
+		if (_completion != null)
+			_ = _completion.UpdateScriptChangeAsync(absolutePath, source);
 	}
 
 	public void OpenInExternalEditor()
 	{
 		string path = Path.GetFullPath(Container.TargetFilePathAbsolute);
-		PreferredEditorEnum editor = CreatorSettingsService.Instance.Get<PreferredEditorEnum>(CreatorSettingKeys.CodeEditor.PreferredEditor);
+		PreferredEditorEnum editor = CreatorSettingsService.Instance.Get<PreferredEditorEnum>(
+			CreatorSettingKeys.CodeEditor.PreferredEditor
+		);
 		try
 		{
 			if (editor == PreferredEditorEnum.VSCode)
-				Process.Start(new ProcessStartInfo("code", $"--goto \"{path}:{CodeEditor.GetCaretLine() + 1}:{CodeEditor.GetCaretColumn() + 1}\"") { UseShellExecute = true });
+				Process.Start(
+					new ProcessStartInfo(
+						"code",
+						$"--goto \"{path}:{CodeEditor.GetCaretLine() + 1}:{CodeEditor.GetCaretColumn() + 1}\""
+					)
+					{
+						UseShellExecute = true,
+					}
+				);
 			else if (editor == PreferredEditorEnum.VisualStudio)
 			{
-				string solution = Path.Combine(Container.TargetSession.ProjectFolderPath, "BrickVerseScripts.sln");
-				Process.Start(new ProcessStartInfo("devenv.exe", $"\"{solution}\" /Edit \"{path}\"") { UseShellExecute = true });
+				string solution = Path.Combine(
+					Container.TargetSession.ProjectFolderPath,
+					"BrickVerseScripts.sln"
+				);
+				Process.Start(
+					new ProcessStartInfo("devenv.exe", $"\"{solution}\" /Edit \"{path}\"")
+					{
+						UseShellExecute = true,
+					}
+				);
 			}
 			else if (editor == PreferredEditorEnum.Zed)
-				Process.Start(new ProcessStartInfo("zed", $"\"{path}\"") { UseShellExecute = true });
+				Process.Start(
+					new ProcessStartInfo("zed", $"\"{path}\"") { UseShellExecute = true }
+				);
 			else
 				OS.ShellOpen(path);
 		}
 		catch (Exception ex)
 		{
-			CreatorService.Interface.PopupAlert($"Could not open the external editor: {ex.Message}", "External editor");
+			CreatorService.Interface.PopupAlert(
+				$"Could not open the external editor: {ex.Message}",
+				"External editor"
+			);
 		}
 	}
 
@@ -87,15 +121,24 @@ public partial class TextEditorRoot : Node
 		CodeEditor.GrabFocus();
 	}
 
-	[Export] private TextEditorFind _finder = null!;
-	[Export] private Label _diagLabel = null!;
-	[Export] private Label _statusBar = null!;
+	[Export]
+	private TextEditorFind _finder = null!;
 
-	public static Color ColorDanger { get; private set; } = Color.FromString("D77C79", Colors.White);
-	public static Color ColorOrange { get; private set; } = Color.FromString("E6A472", Colors.White);
+	[Export]
+	private Label _diagLabel = null!;
+
+	[Export]
+	private Label _statusBar = null!;
+
+	public static Color ColorDanger { get; private set; } =
+		Color.FromString("D77C79", Colors.White);
+	public static Color ColorOrange { get; private set; } =
+		Color.FromString("E6A472", Colors.White);
 	public static Color ColorWarn { get; private set; } = Color.FromString("F4CF86", Colors.White);
-	public static Color ColorSuccess { get; private set; } = Color.FromString("C2C77B", Colors.White);
-	public static Color ColorPurple { get; private set; } = Color.FromString("C0A7C7", Colors.White);
+	public static Color ColorSuccess { get; private set; } =
+		Color.FromString("C2C77B", Colors.White);
+	public static Color ColorPurple { get; private set; } =
+		Color.FromString("C0A7C7", Colors.White);
 	public static Color ColorGrey { get; private set; } = Color.FromString("A7A8A7", Colors.White);
 	public static Color ColorWhite { get; private set; } = Colors.White;
 
@@ -116,9 +159,18 @@ public partial class TextEditorRoot : Node
 	private readonly Dictionary<int, List<EditorDiagnosticDecoration>> _diagnosticsByLine = [];
 
 	private readonly record struct EditorPalette(
-		string Background, string Foreground, string Keyword, string Builtin,
-		string String, string Comment, string Number, string Function,
-		string Member, string Symbol, string Selection, string CurrentLine
+		string Background,
+		string Foreground,
+		string Keyword,
+		string Builtin,
+		string String,
+		string Comment,
+		string Number,
+		string Function,
+		string Member,
+		string Symbol,
+		string Selection,
+		string CurrentLine
 	);
 
 	public override void _EnterTree()
@@ -156,21 +208,25 @@ public partial class TextEditorRoot : Node
 		_hoverTimer.OneShot = true;
 		_hoverTimer.WaitTime = 0.45;
 		_hoverTimer.Timeout += RequestHoverDocumentation;
-		AddChild(_hoverPopup = new PopupPanel
-		{
-			Unresizable = true,
-			// Documentation is informational. A regular popup takes keyboard focus,
-			// which prevents the CodeEdit from receiving arrows, Enter, and other
-			// editing keys while the popup is visible.
-			Unfocusable = true,
-		});
-		_hoverPopup.AddChild(_hoverText = new RichTextLabel
-		{
-			BbcodeEnabled = true,
-			FitContent = true,
-			CustomMinimumSize = new Vector2(420, 72),
-			MouseFilter = Control.MouseFilterEnum.Ignore,
-		});
+		AddChild(
+			_hoverPopup = new PopupPanel
+			{
+				Unresizable = true,
+				// Documentation is informational. A regular popup takes keyboard focus,
+				// which prevents the CodeEdit from receiving arrows, Enter, and other
+				// editing keys while the popup is visible.
+				Unfocusable = true,
+			}
+		);
+		_hoverPopup.AddChild(
+			_hoverText = new RichTextLabel
+			{
+				BbcodeEnabled = true,
+				FitContent = true,
+				CustomMinimumSize = new Vector2(420, 72),
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+			}
+		);
 
 		if (Container.CodeCompletion == FileTypeEnum.Lua)
 		{
@@ -241,7 +297,10 @@ public partial class TextEditorRoot : Node
 
 	private void OnCreatorSettingChanged(SettingChangedEvent e)
 	{
-		if (e.Key == CreatorSettingKeys.CodeEditor.IndentationMode || e.Key == CreatorSettingKeys.CodeEditor.IndentationSize)
+		if (
+			e.Key == CreatorSettingKeys.CodeEditor.IndentationMode
+			|| e.Key == CreatorSettingKeys.CodeEditor.IndentationSize
+		)
 		{
 			ApplyIndentSettings();
 		}
@@ -264,23 +323,38 @@ public partial class TextEditorRoot : Node
 		if (e.Key == CreatorSettingKeys.CodeEditor.ColorTheme)
 			InitSyntaxHighlighter(Container.CodeCompletion);
 
-		if (e.Key == CreatorSettingKeys.CodeEditor.InlineSuggestions
-			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions))
+		if (
+			e.Key == CreatorSettingKeys.CodeEditor.InlineSuggestions
+			&& !CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.CodeEditor.InlineSuggestions
+			)
+		)
 			CodeEditor.SetInlineSuggestion(string.Empty);
 
-		if (e.Key == CreatorSettingKeys.CodeEditor.HoverDocumentation
-			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.HoverDocumentation))
+		if (
+			e.Key == CreatorSettingKeys.CodeEditor.HoverDocumentation
+			&& !CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.CodeEditor.HoverDocumentation
+			)
+		)
 			HideHoverDocumentation();
 
-		if (e.Key == CreatorSettingKeys.CodeEditor.AutoSave
-			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave))
+		if (
+			e.Key == CreatorSettingKeys.CodeEditor.AutoSave
+			&& !CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave)
+		)
 			_autoSaveTimer.Stop();
 	}
 
 	private void ApplyIndentSettings()
 	{
-		IndentationModeEnum indentationMode = CreatorSettingsService.Instance.Get<IndentationModeEnum>(CreatorSettingKeys.CodeEditor.IndentationMode);
-		int indentationSize = CreatorSettingsService.Instance.Get<int>(CreatorSettingKeys.CodeEditor.IndentationSize);
+		IndentationModeEnum indentationMode =
+			CreatorSettingsService.Instance.Get<IndentationModeEnum>(
+				CreatorSettingKeys.CodeEditor.IndentationMode
+			);
+		int indentationSize = CreatorSettingsService.Instance.Get<int>(
+			CreatorSettingKeys.CodeEditor.IndentationSize
+		);
 		CodeEditor.IndentUseSpaces = indentationMode == IndentationModeEnum.Spaces;
 		CodeEditor.IndentSize = indentationSize;
 	}
@@ -289,15 +363,41 @@ public partial class TextEditorRoot : Node
 	{
 		var settings = CreatorSettingsService.Instance;
 
-		CodeEditor.GuttersDrawLineNumbers = settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowLineNumbers);
-		TrySetEditorProperty("highlight_current_line", settings.Get<bool>(CreatorSettingKeys.CodeEditor.HighlightCurrentLine));
-		TrySetEditorProperty("draw_tabs", settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace));
-		TrySetEditorProperty("draw_spaces", settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace));
-		TrySetEditorProperty("draw_minimap", settings.Get<bool>(CreatorSettingKeys.CodeEditor.MinimapEnabled));
-		TrySetEditorProperty("caret_blink", settings.Get<bool>(CreatorSettingKeys.CodeEditor.CursorBlink));
-		TrySetEditorProperty("caret_blink_interval", settings.Get<float>(CreatorSettingKeys.CodeEditor.CursorBlinkSpeed));
-		CodeEditor.AddThemeConstantOverride("caret_width", settings.Get<int>(CreatorSettingKeys.CodeEditor.CursorWidth));
-		CodeEditor.AddThemeFontSizeOverride("font_size", settings.Get<int>(CreatorSettingKeys.CodeEditor.FontSize));
+		CodeEditor.GuttersDrawLineNumbers = settings.Get<bool>(
+			CreatorSettingKeys.CodeEditor.ShowLineNumbers
+		);
+		TrySetEditorProperty(
+			"highlight_current_line",
+			settings.Get<bool>(CreatorSettingKeys.CodeEditor.HighlightCurrentLine)
+		);
+		TrySetEditorProperty(
+			"draw_tabs",
+			settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace)
+		);
+		TrySetEditorProperty(
+			"draw_spaces",
+			settings.Get<bool>(CreatorSettingKeys.CodeEditor.ShowWhitespace)
+		);
+		TrySetEditorProperty(
+			"draw_minimap",
+			settings.Get<bool>(CreatorSettingKeys.CodeEditor.MinimapEnabled)
+		);
+		TrySetEditorProperty(
+			"caret_blink",
+			settings.Get<bool>(CreatorSettingKeys.CodeEditor.CursorBlink)
+		);
+		TrySetEditorProperty(
+			"caret_blink_interval",
+			settings.Get<float>(CreatorSettingKeys.CodeEditor.CursorBlinkSpeed)
+		);
+		CodeEditor.AddThemeConstantOverride(
+			"caret_width",
+			settings.Get<int>(CreatorSettingKeys.CodeEditor.CursorWidth)
+		);
+		CodeEditor.AddThemeFontSizeOverride(
+			"font_size",
+			settings.Get<int>(CreatorSettingKeys.CodeEditor.FontSize)
+		);
 
 		bool wrap = settings.Get<bool>(CreatorSettingKeys.CodeEditor.WordWrap);
 		// TextEdit line wrapping mode: 0 = None, 1 = Boundary.
@@ -306,7 +406,10 @@ public partial class TextEditorRoot : Node
 
 	private void TrySetEditorProperty(string propertyName, Variant value)
 	{
-		_editorPropertySet ??= [.. CodeEditor.GetPropertyList().Select(p => p["name"].ToString() ?? string.Empty)];
+		_editorPropertySet ??=
+		[
+			.. CodeEditor.GetPropertyList().Select(p => p["name"].ToString() ?? string.Empty),
+		];
 		if (_editorPropertySet.Contains(propertyName))
 		{
 			CodeEditor.Set(propertyName, value);
@@ -316,7 +419,8 @@ public partial class TextEditorRoot : Node
 	private async void OnPublishDiagnostics(string path, List<LspDiagnostic> diagnostics)
 	{
 		// If not the right path, return
-		if (path != Container.TargetFilePathAbsolute) return;
+		if (path != Container.TargetFilePathAbsolute)
+			return;
 
 		// Cancel the previous pending update
 		_diagCts?.Cancel();
@@ -341,9 +445,17 @@ public partial class TextEditorRoot : Node
 		int information = 0;
 		int hints = 0;
 
-		foreach (LspDiagnostic diag in diagnostics.OrderBy(static item => item.Range.Start.Line).ThenBy(static item => item.Range.Start.Character))
+		foreach (
+			LspDiagnostic diag in diagnostics
+				.OrderBy(static item => item.Range.Start.Line)
+				.ThenBy(static item => item.Range.Start.Character)
+		)
 		{
-			int line = Mathf.Clamp(diag.Range.Start.Line, 0, Math.Max(0, CodeEditor.GetLineCount() - 1));
+			int line = Mathf.Clamp(
+				diag.Range.Start.Line,
+				0,
+				Math.Max(0, CodeEditor.GetLineCount() - 1)
+			);
 			int startColumn = Math.Max(0, diag.Range.Start.Character);
 			int endColumn = Math.Max(startColumn + 1, diag.Range.End.Character);
 			EditorDiagnosticSeverity severity = diag.Severity switch
@@ -356,19 +468,34 @@ public partial class TextEditorRoot : Node
 
 			switch (severity)
 			{
-				case EditorDiagnosticSeverity.Error: errors++; break;
-				case EditorDiagnosticSeverity.Warning: warnings++; break;
-				case EditorDiagnosticSeverity.Information: information++; break;
-				default: hints++; break;
+				case EditorDiagnosticSeverity.Error:
+					errors++;
+					break;
+				case EditorDiagnosticSeverity.Warning:
+					warnings++;
+					break;
+				case EditorDiagnosticSeverity.Information:
+					information++;
+					break;
+				default:
+					hints++;
+					break;
 			}
 
-			if (!_diagnosticsByLine.TryGetValue(line, out List<EditorDiagnosticDecoration>? lineDiagnostics))
+			if (
+				!_diagnosticsByLine.TryGetValue(
+					line,
+					out List<EditorDiagnosticDecoration>? lineDiagnostics
+				)
+			)
 			{
 				lineDiagnostics = [];
 				_diagnosticsByLine[line] = lineDiagnostics;
 			}
 
-			lineDiagnostics.Add(new EditorDiagnosticDecoration(line, startColumn, endColumn, diag.Message, severity));
+			lineDiagnostics.Add(
+				new EditorDiagnosticDecoration(line, startColumn, endColumn, diag.Message, severity)
+			);
 
 			Color background = severity switch
 			{
@@ -382,12 +509,17 @@ public partial class TextEditorRoot : Node
 			Texture2D? gutterIcon = severity switch
 			{
 				EditorDiagnosticSeverity.Error => TryLoadDiagnosticIcon("error.svg"),
-				EditorDiagnosticSeverity.Warning => TryLoadDiagnosticIcon("warning.svg") ?? TryLoadDiagnosticIcon("error.svg"),
+				EditorDiagnosticSeverity.Warning => TryLoadDiagnosticIcon("warning.svg")
+					?? TryLoadDiagnosticIcon("error.svg"),
 				EditorDiagnosticSeverity.Information => TryLoadDiagnosticIcon("info.svg"),
 				_ => null,
 			};
 			CodeEditor.SetLineGutterIcon(line, 0, gutterIcon);
-			CodeEditor.SetLineGutterMetadata(line, 0, string.Join("\n", lineDiagnostics.Select(static item => item.Message)));
+			CodeEditor.SetLineGutterMetadata(
+				line,
+				0,
+				string.Join("\n", lineDiagnostics.Select(static item => item.Message))
+			);
 		}
 
 		CodeEditor.SetDiagnostics(_diagnosticsByLine);
@@ -396,13 +528,23 @@ public partial class TextEditorRoot : Node
 		if (total > 0)
 		{
 			List<string> summary = [];
-			if (errors > 0) summary.Add($"{errors} error{(errors == 1 ? string.Empty : "s")}");
-			if (warnings > 0) summary.Add($"{warnings} warning{(warnings == 1 ? string.Empty : "s")}");
-			if (information > 0) summary.Add($"{information} info");
-			if (hints > 0) summary.Add($"{hints} hint{(hints == 1 ? string.Empty : "s")}");
+			if (errors > 0)
+				summary.Add($"{errors} error{(errors == 1 ? string.Empty : "s")}");
+			if (warnings > 0)
+				summary.Add($"{warnings} warning{(warnings == 1 ? string.Empty : "s")}");
+			if (information > 0)
+				summary.Add($"{information} info");
+			if (hints > 0)
+				summary.Add($"{hints} hint{(hints == 1 ? string.Empty : "s")}");
 			_diagLabel.Text = string.Join("  •  ", summary);
-			_diagLabel.TooltipText = string.Join("\n", diagnostics.Take(20).Select(diag =>
-				$"{diag.Range.Start.Line + 1}:{diag.Range.Start.Character + 1}  {diag.Message}"));
+			_diagLabel.TooltipText = string.Join(
+				"\n",
+				diagnostics
+					.Take(20)
+					.Select(diag =>
+						$"{diag.Range.Start.Line + 1}:{diag.Range.Start.Character + 1}  {diag.Message}"
+					)
+			);
 			_diagLabel.Visible = true;
 		}
 	}
@@ -433,18 +575,12 @@ public partial class TextEditorRoot : Node
 
 		CodeEditor.SetCaretLine(lineIndex);
 		CodeEditor.SetCaretColumn(
-			Math.Min(
-				diagnostics[0].StartColumn,
-				CodeEditor.GetLine(lineIndex).Length
-			)
+			Math.Min(diagnostics[0].StartColumn, CodeEditor.GetLine(lineIndex).Length)
 		);
 
 		CodeEditor.CenterViewportToCaret();
 
-		_diagLabel.Text = string.Join(
-			"\n",
-			diagnostics.Select(static item => item.Message)
-		);
+		_diagLabel.Text = string.Join("\n", diagnostics.Select(static item => item.Message));
 
 		_diagLabel.TooltipText = _diagLabel.Text;
 		_diagLabel.Visible = true;
@@ -479,56 +615,140 @@ public partial class TextEditorRoot : Node
 		CodeEditor.AddThemeConstantOverride("completion_max_width", 50);
 	}
 
-
 	private async void OnCodeEditGUIInput(InputEvent @event)
 	{
 		if (@event is InputEventMouseMotion motion)
 		{
 			_hoverPosition = motion.Position;
 			HideHoverDocumentation();
-			if (_completion != null && CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.HoverDocumentation))
+			if (
+				_completion != null
+				&& CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.CodeEditor.HoverDocumentation
+				)
+			)
 				_hoverTimer.Start();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Tab, CtrlPressed: false, AltPressed: false }
-			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions)
+		else if (
+			@event
+				is InputEventKey
+				{
+					Pressed: true,
+					Echo: false,
+					Keycode: Key.Tab,
+					CtrlPressed: false,
+					AltPressed: false
+				}
+			&& CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.CodeEditor.InlineSuggestions
+			)
 			&& !CodeEditor.HasActiveCodeCompletion()
-			&& CodeEditor.AcceptInlineSuggestion())
+			&& CodeEditor.AcceptInlineSuggestion()
+		)
 		{
 			CodeEditor.AcceptEvent();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, ShiftPressed: true, Keycode: Key.F }
-			or InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.F })
+		else if (
+			@event
+			is InputEventKey
+				{
+					Pressed: true,
+					Echo: false,
+					AltPressed: true,
+					ShiftPressed: true,
+					Keycode: Key.F
+				}
+				or InputEventKey
+				{
+					Pressed: true,
+					Echo: false,
+					CtrlPressed: true,
+					ShiftPressed: true,
+					Keycode: Key.F
+				}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			FormatDocument();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.Space })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				CtrlPressed: true,
+				Keycode: Key.Space
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			OnCompletionRequest();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.D })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				CtrlPressed: true,
+				ShiftPressed: false,
+				Keycode: Key.D
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			DuplicateCurrentLines();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: true, Keycode: Key.K })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				CtrlPressed: true,
+				ShiftPressed: true,
+				Keycode: Key.K
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			DeleteCurrentLines();
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, ShiftPressed: false, Keycode: Key.L })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				CtrlPressed: true,
+				ShiftPressed: false,
+				Keycode: Key.L
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			int line = CodeEditor.GetCaretLine();
 			CodeEditor.Select(line, 0, line, CodeEditor.GetLine(line).Length);
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, Keycode: Key.Up })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				AltPressed: true,
+				Keycode: Key.Up
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			MoveCurrentLine(-1);
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, AltPressed: true, Keycode: Key.Down })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				AltPressed: true,
+				Keycode: Key.Down
+			}
+		)
 		{
 			CodeEditor.AcceptEvent();
 			MoveCurrentLine(1);
@@ -536,15 +756,26 @@ public partial class TextEditorRoot : Node
 		else if (@event.IsActionPressed("save"))
 		{
 			CodeEditor.AcceptEvent();
-			if (Container.CodeCompletion == FileTypeEnum.Lua
-				&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.FormatOnSave))
+			if (
+				Container.CodeCompletion == FileTypeEnum.Lua
+				&& CreatorSettingsService.Instance.Get<bool>(
+					CreatorSettingKeys.CodeEditor.FormatOnSave
+				)
+			)
 				await FormatRangeAsync(0, CodeEditor.GetLineCount() - 1, "document");
 			Save();
 			Saved = true;
 			SavedChanged?.Invoke(true);
-			CreatorService.Interface.StatusBar?.SetStatus("Text file saved to " + Container.TargetFilePath + " at " + DateTime.Now.ToString("HH:mm:ss"));
+			CreatorService.Interface.StatusBar?.SetStatus(
+				"Text file saved to "
+					+ Container.TargetFilePath
+					+ " at "
+					+ DateTime.Now.ToString("HH:mm:ss")
+			);
 		}
-		else if (@event.IsActionPressed("textedit_find") || @event.IsActionPressed("textedit_replace"))
+		else if (
+			@event.IsActionPressed("textedit_find") || @event.IsActionPressed("textedit_replace")
+		)
 		{
 			CodeEditor.AcceptEvent();
 			_finder.Open(CodeEditor.GetSelectedText());
@@ -561,7 +792,8 @@ public partial class TextEditorRoot : Node
 		}
 		else
 		{
-			if (@event is InputEventKey { Pressed: true }) HideHoverDocumentation();
+			if (@event is InputEventKey { Pressed: true })
+				HideHoverDocumentation();
 			UpdateStatusBar();
 		}
 	}
@@ -573,31 +805,42 @@ public partial class TextEditorRoot : Node
 
 	public void DuplicateCurrentLines()
 	{
-		int first = CodeEditor.HasSelection() ? CodeEditor.GetSelectionFromLine() : CodeEditor.GetCaretLine();
+		int first = CodeEditor.HasSelection()
+			? CodeEditor.GetSelectionFromLine()
+			: CodeEditor.GetCaretLine();
 		int last = CodeEditor.HasSelection() ? CodeEditor.GetSelectionToLine() : first;
-		string[] copies = Enumerable.Range(first, last - first + 1).Select(CodeEditor.GetLine).ToArray();
+		string[] copies = Enumerable
+			.Range(first, last - first + 1)
+			.Select(CodeEditor.GetLine)
+			.ToArray();
 		CodeEditor.BeginComplexOperation();
-		for (int index = 0; index < copies.Length; index++) CodeEditor.InsertLineAt(last + 1 + index, copies[index]);
+		for (int index = 0; index < copies.Length; index++)
+			CodeEditor.InsertLineAt(last + 1 + index, copies[index]);
 		CodeEditor.EndComplexOperation();
 		CodeEditor.SetCaretLine(last + copies.Length);
 	}
 
 	public void DeleteCurrentLines()
 	{
-		int first = CodeEditor.HasSelection() ? CodeEditor.GetSelectionFromLine() : CodeEditor.GetCaretLine();
+		int first = CodeEditor.HasSelection()
+			? CodeEditor.GetSelectionFromLine()
+			: CodeEditor.GetCaretLine();
 		int last = CodeEditor.HasSelection() ? CodeEditor.GetSelectionToLine() : first;
 		CodeEditor.BeginComplexOperation();
-		for (int line = last; line >= first; line--) CodeEditor.RemoveLineAt(line);
+		for (int line = last; line >= first; line--)
+			CodeEditor.RemoveLineAt(line);
 		CodeEditor.EndComplexOperation();
 		CodeEditor.SetCaretLine(Math.Min(first, CodeEditor.GetLineCount() - 1));
 	}
 
 	public void MoveCurrentLine(int direction)
 	{
-		if (CodeEditor.HasSelection()) return;
+		if (CodeEditor.HasSelection())
+			return;
 		int line = CodeEditor.GetCaretLine();
 		int target = line + direction;
-		if (target < 0 || target >= CodeEditor.GetLineCount()) return;
+		if (target < 0 || target >= CodeEditor.GetLineCount())
+			return;
 		CodeEditor.BeginComplexOperation();
 		CodeEditor.SwapLines(line, target);
 		CodeEditor.EndComplexOperation();
@@ -606,10 +849,15 @@ public partial class TextEditorRoot : Node
 
 	private async void RequestHoverDocumentation()
 	{
-		if (_completion == null || !CodeEditor.GetGlobalRect().HasPoint(CodeEditor.GetGlobalMousePosition())) return;
+		if (
+			_completion == null
+			|| !CodeEditor.GetGlobalRect().HasPoint(CodeEditor.GetGlobalMousePosition())
+		)
+			return;
 
 		Vector2I position = CodeEditor.GetLineColumnAtPos((Vector2I)_hoverPosition);
-		if (position.X < 0 || position.Y < 0) return;
+		if (position.X < 0 || position.Y < 0)
+			return;
 
 		_hoverCts?.Cancel();
 		_hoverCts?.Dispose();
@@ -618,11 +866,17 @@ public partial class TextEditorRoot : Node
 		{
 			// TextEdit returns column in X and line in Y.
 			string? documentation = await _completion.GetHoverAsync(
-				Container.TargetFilePathAbsolute, position.Y, position.X, _hoverCts.Token);
-			if (string.IsNullOrWhiteSpace(documentation) || _hoverCts.IsCancellationRequested) return;
+				Container.TargetFilePathAbsolute,
+				position.Y,
+				position.X,
+				_hoverCts.Token
+			);
+			if (string.IsNullOrWhiteSpace(documentation) || _hoverCts.IsCancellationRequested)
+				return;
 
 			_hoverText.Text = MarkdownToBbcode(documentation);
-			Vector2 screenPosition = CodeEditor.GetScreenPosition() + _hoverPosition + new Vector2(14, 20);
+			Vector2 screenPosition =
+				CodeEditor.GetScreenPosition() + _hoverPosition + new Vector2(14, 20);
 			_hoverPopup.Popup(new Rect2I((Vector2I)screenPosition, new Vector2I(480, 120)));
 		}
 		catch (OperationCanceledException) { }
@@ -631,7 +885,12 @@ public partial class TextEditorRoot : Node
 	private static string MarkdownToBbcode(string markdown)
 	{
 		string text = markdown.Replace("\r\n", "\n").Replace("[", "[lb]");
-		text = Regex.Replace(text, "```(?:[A-Za-z0-9_+-]+)?\\s*\\n?(.*?)```", "[code]$1[/code]", RegexOptions.Singleline);
+		text = Regex.Replace(
+			text,
+			"```(?:[A-Za-z0-9_+-]+)?\\s*\\n?(.*?)```",
+			"[code]$1[/code]",
+			RegexOptions.Singleline
+		);
 		text = Regex.Replace(text, "`([^`\\n]+)`", "[code]$1[/code]");
 		text = Regex.Replace(text, "\\*\\*([^*]+)\\*\\*", "[b]$1[/b]");
 		text = Regex.Replace(text, "(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)", "[i]$1[/i]");
@@ -642,7 +901,8 @@ public partial class TextEditorRoot : Node
 	{
 		_hoverTimer?.Stop();
 		_hoverCts?.Cancel();
-		if (_hoverPopup?.Visible == true) _hoverPopup.Hide();
+		if (_hoverPopup?.Visible == true)
+			_hoverPopup.Hide();
 	}
 
 	public async void FormatDocument() =>
@@ -650,20 +910,28 @@ public partial class TextEditorRoot : Node
 
 	public async void FormatSelection()
 	{
-		if (!CodeEditor.HasSelection()) return;
-		await FormatRangeAsync(CodeEditor.GetSelectionFromLine(), CodeEditor.GetSelectionToLine(), "selection");
+		if (!CodeEditor.HasSelection())
+			return;
+		await FormatRangeAsync(
+			CodeEditor.GetSelectionFromLine(),
+			CodeEditor.GetSelectionToLine(),
+			"selection"
+		);
 	}
 
 	private async Task FormatRangeAsync(int fromLine, int toLine, string target)
 	{
 		fromLine = Math.Max(0, fromLine);
 		toLine = Math.Min(CodeEditor.GetLineCount() - 1, toLine);
-		if (fromLine > toLine) return;
+		if (fromLine > toLine)
+			return;
 
 		if (Container.CodeCompletion == FileTypeEnum.Lua)
 		{
-			string source = string.Join("\n", Enumerable.Range(fromLine, toLine - fromLine + 1)
-				.Select(CodeEditor.GetLine));
+			string source = string.Join(
+				"\n",
+				Enumerable.Range(fromLine, toLine - fromLine + 1).Select(CodeEditor.GetLine)
+			);
 			string? formatted = await FormatLuauWithStyluaAsync(source);
 			if (formatted != null)
 			{
@@ -671,7 +939,9 @@ public partial class TextEditorRoot : Node
 				CodeEditor.Select(fromLine, 0, toLine, CodeEditor.GetLine(toLine).Length);
 				CodeEditor.InsertTextAtCaret(formatted.TrimEnd('\r', '\n'));
 				CodeEditor.EndComplexOperation();
-				CreatorService.Interface.StatusBar?.SetStatus("Formatted " + target + " with StyLua");
+				CreatorService.Interface.StatusBar?.SetStatus(
+					"Formatted " + target + " with StyLua"
+				);
 				return;
 			}
 		}
@@ -686,7 +956,8 @@ public partial class TextEditorRoot : Node
 		try
 		{
 			string? executable = await StyLuaInstaller.EnsureInstalledAsync();
-			if (executable == null) return null;
+			if (executable == null)
+				return null;
 			ProcessStartInfo startInfo = new()
 			{
 				FileName = executable,
@@ -698,7 +969,8 @@ public partial class TextEditorRoot : Node
 				CreateNoWindow = true,
 			};
 			Process? process = Process.Start(startInfo);
-			if (process == null) return null;
+			if (process == null)
+				return null;
 			using (process)
 			{
 				Task<string> output = process.StandardOutput.ReadToEndAsync();
@@ -708,7 +980,8 @@ public partial class TextEditorRoot : Node
 				await process.WaitForExitAsync();
 				string result = await output;
 				string error = await errors;
-				if (process.ExitCode == 0) return result;
+				if (process.ExitCode == 0)
+					return result;
 				BV.PrintWarn("StyLua could not format the selection: ", error.Trim());
 			}
 		}
@@ -751,28 +1024,42 @@ public partial class TextEditorRoot : Node
 		int count = 0;
 		foreach (char character in line)
 		{
-			if (character == '\t') count++;
-			else if (character != ' ') break;
+			if (character == '\t')
+				count++;
+			else if (character != ' ')
+				break;
 		}
 		return count;
 	}
 
 	private static bool ClosesLuauBlock(string line) =>
-		line == "end" || line.StartsWith("end ") || line == "until"
-		|| line.StartsWith("until ") || line == "else" || line.StartsWith("elseif ");
+		line == "end"
+		|| line.StartsWith("end ")
+		|| line == "until"
+		|| line.StartsWith("until ")
+		|| line == "else"
+		|| line.StartsWith("elseif ");
 
 	private static bool OpensLuauBlock(string line)
 	{
 		string code = line.Split("--", 2)[0].TrimEnd();
-		return code == "do" || code == "repeat" || code == "else"
-			|| code.EndsWith(" then") || code.EndsWith(" do")
-			|| code.StartsWith("function ") || code.Contains(" function(")
+		return code == "do"
+			|| code == "repeat"
+			|| code == "else"
+			|| code.EndsWith(" then")
+			|| code.EndsWith(" do")
+			|| code.StartsWith("function ")
+			|| code.Contains(" function(")
 			|| code.Contains(" function (");
 	}
 
 	private void InitSyntaxHighlighter(FileTypeEnum fileType)
 	{
-		_palette = GetEditorPalette(CreatorSettingsService.Instance.Get<CodeEditorColorThemeEnum>(CreatorSettingKeys.CodeEditor.ColorTheme));
+		_palette = GetEditorPalette(
+			CreatorSettingsService.Instance.Get<CodeEditorColorThemeEnum>(
+				CreatorSettingKeys.CodeEditor.ColorTheme
+			)
+		);
 		CodeEditor.ClearStringDelimiters();
 		_highlighter = new();
 		CodeEditor.SyntaxHighlighter = _highlighter;
@@ -781,9 +1068,15 @@ public partial class TextEditorRoot : Node
 		_highlighter.NumberColor = Color.FromHtml(_palette.Number);
 		_highlighter.SymbolColor = Color.FromHtml(_palette.Symbol);
 		CodeEditor.AddThemeColorOverride("font_color", Color.FromHtml(_palette.Foreground));
-		CodeEditor.AddThemeColorOverride("font_selected_color", Color.FromHtml(_palette.Foreground));
+		CodeEditor.AddThemeColorOverride(
+			"font_selected_color",
+			Color.FromHtml(_palette.Foreground)
+		);
 		CodeEditor.AddThemeColorOverride("selection_color", Color.FromHtml(_palette.Selection));
-		CodeEditor.AddThemeColorOverride("current_line_color", Color.FromHtml(_palette.CurrentLine));
+		CodeEditor.AddThemeColorOverride(
+			"current_line_color",
+			Color.FromHtml(_palette.CurrentLine)
+		);
 		StyleBoxFlat editorBackground = new() { BgColor = Color.FromHtml(_palette.Background) };
 		CodeEditor.AddThemeStyleboxOverride("normal", editorBackground);
 
@@ -794,22 +1087,61 @@ public partial class TextEditorRoot : Node
 				_highlighter.AddKeywordColor(item, Color.FromHtml(_palette.Keyword));
 			}
 
-			foreach (string builtin in new[]
-			{
-				"assert", "error", "getmetatable", "ipairs", "next", "pairs", "pcall", "print",
-				"rawequal", "rawget", "rawlen", "rawset", "require", "select", "setmetatable",
-				"tonumber", "tostring", "type", "typeof", "unpack", "warn", "xpcall",
-				"world", "script", "game", "self"
-			})
+			foreach (
+				string builtin in new[]
+				{
+					"assert",
+					"error",
+					"getmetatable",
+					"ipairs",
+					"next",
+					"pairs",
+					"pcall",
+					"print",
+					"rawequal",
+					"rawget",
+					"rawlen",
+					"rawset",
+					"require",
+					"select",
+					"setmetatable",
+					"tonumber",
+					"tostring",
+					"type",
+					"typeof",
+					"unpack",
+					"warn",
+					"xpcall",
+					"world",
+					"script",
+					"game",
+					"self",
+				}
+			)
 			{
 				_highlighter.AddKeywordColor(builtin, Color.FromHtml(_palette.Builtin));
 			}
 
-			foreach (string typeName in new[]
-			{
-				"any", "boolean", "buffer", "CFrame", "Color3", "Instance", "never", "nil",
-				"number", "string", "table", "thread", "unknown", "Vector2", "Vector3"
-			})
+			foreach (
+				string typeName in new[]
+				{
+					"any",
+					"boolean",
+					"buffer",
+					"CFrame",
+					"Color3",
+					"Instance",
+					"never",
+					"nil",
+					"number",
+					"string",
+					"table",
+					"thread",
+					"unknown",
+					"Vector2",
+					"Vector3",
+				}
+			)
 			{
 				_highlighter.AddKeywordColor(typeName, Color.FromHtml(_palette.Builtin));
 			}
@@ -840,11 +1172,15 @@ public partial class TextEditorRoot : Node
 			case ".bvxm":
 				AddKeywords(["true", "false", "null"], _palette.Keyword);
 				AddStrings();
-				if (extension == ".jsonc") AddCStyleComments();
+				if (extension == ".jsonc")
+					AddCStyleComments();
 				break;
 			case ".yaml":
 			case ".yml":
-				AddKeywords(["true", "false", "null", "yes", "no", "on", "off", "~"], _palette.Keyword);
+				AddKeywords(
+					["true", "false", "null", "yes", "no", "on", "off", "~"],
+					_palette.Keyword
+				);
 				AddStrings();
 				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
 				break;
@@ -861,18 +1197,93 @@ public partial class TextEditorRoot : Node
 			case ".cpp":
 			case ".cc":
 			case ".cxx":
-				AddKeywords([
-					"abstract", "as", "async", "await", "base", "bool", "break", "byte", "case",
-					"catch", "char", "class", "const", "continue", "decimal", "default", "delegate",
-					"do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally",
-					"fixed", "float", "for", "foreach", "if", "implicit", "in", "int", "interface",
-					"internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator",
-					"out", "override", "params", "private", "protected", "public", "readonly", "record",
-					"ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static",
-					"string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint",
-					"ulong", "unchecked", "unsafe", "ushort", "using", "var", "virtual", "void",
-					"volatile", "when", "where", "while", "yield"
-				], _palette.Keyword);
+				AddKeywords(
+					[
+						"abstract",
+						"as",
+						"async",
+						"await",
+						"base",
+						"bool",
+						"break",
+						"byte",
+						"case",
+						"catch",
+						"char",
+						"class",
+						"const",
+						"continue",
+						"decimal",
+						"default",
+						"delegate",
+						"do",
+						"double",
+						"else",
+						"enum",
+						"event",
+						"explicit",
+						"extern",
+						"false",
+						"finally",
+						"fixed",
+						"float",
+						"for",
+						"foreach",
+						"if",
+						"implicit",
+						"in",
+						"int",
+						"interface",
+						"internal",
+						"is",
+						"lock",
+						"long",
+						"namespace",
+						"new",
+						"null",
+						"object",
+						"operator",
+						"out",
+						"override",
+						"params",
+						"private",
+						"protected",
+						"public",
+						"readonly",
+						"record",
+						"ref",
+						"return",
+						"sbyte",
+						"sealed",
+						"short",
+						"sizeof",
+						"stackalloc",
+						"static",
+						"string",
+						"struct",
+						"switch",
+						"this",
+						"throw",
+						"true",
+						"try",
+						"typeof",
+						"uint",
+						"ulong",
+						"unchecked",
+						"unsafe",
+						"ushort",
+						"using",
+						"var",
+						"virtual",
+						"void",
+						"volatile",
+						"when",
+						"where",
+						"while",
+						"yield",
+					],
+					_palette.Keyword
+				);
 				AddStrings(includeBackticks: false);
 				AddCStyleComments();
 				break;
@@ -881,24 +1292,105 @@ public partial class TextEditorRoot : Node
 			case ".jsx":
 			case ".ts":
 			case ".tsx":
-				AddKeywords([
-					"async", "await", "break", "case", "catch", "class", "const", "continue", "debugger",
-					"default", "delete", "do", "else", "enum", "export", "extends", "false", "finally",
-					"for", "from", "function", "if", "implements", "import", "in", "instanceof",
-					"interface", "let", "new", "null", "of", "private", "protected", "public", "return",
-					"static", "super", "switch", "this", "throw", "true", "try", "type", "typeof",
-					"undefined", "var", "void", "while", "with", "yield"
-				], _palette.Keyword);
+				AddKeywords(
+					[
+						"async",
+						"await",
+						"break",
+						"case",
+						"catch",
+						"class",
+						"const",
+						"continue",
+						"debugger",
+						"default",
+						"delete",
+						"do",
+						"else",
+						"enum",
+						"export",
+						"extends",
+						"false",
+						"finally",
+						"for",
+						"from",
+						"function",
+						"if",
+						"implements",
+						"import",
+						"in",
+						"instanceof",
+						"interface",
+						"let",
+						"new",
+						"null",
+						"of",
+						"private",
+						"protected",
+						"public",
+						"return",
+						"static",
+						"super",
+						"switch",
+						"this",
+						"throw",
+						"true",
+						"try",
+						"type",
+						"typeof",
+						"undefined",
+						"var",
+						"void",
+						"while",
+						"with",
+						"yield",
+					],
+					_palette.Keyword
+				);
 				AddStrings();
 				AddCStyleComments();
 				break;
 			case ".py":
-				AddKeywords([
-					"and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
-					"elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import",
-					"in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return",
-					"True", "try", "while", "with", "yield"
-				], _palette.Keyword);
+				AddKeywords(
+					[
+						"and",
+						"as",
+						"assert",
+						"async",
+						"await",
+						"break",
+						"class",
+						"continue",
+						"def",
+						"del",
+						"elif",
+						"else",
+						"except",
+						"False",
+						"finally",
+						"for",
+						"from",
+						"global",
+						"if",
+						"import",
+						"in",
+						"is",
+						"lambda",
+						"None",
+						"nonlocal",
+						"not",
+						"or",
+						"pass",
+						"raise",
+						"return",
+						"True",
+						"try",
+						"while",
+						"with",
+						"yield",
+					],
+					_palette.Keyword
+				);
 				AddStrings(includeBackticks: false);
 				_highlighter.AddColorRegion("\"\"\"", "\"\"\"", Color.FromHtml(_palette.String));
 				_highlighter.AddColorRegion("'''", "'''", Color.FromHtml(_palette.String));
@@ -925,7 +1417,30 @@ public partial class TextEditorRoot : Node
 			case ".sh":
 			case ".bash":
 			case ".ps1":
-				AddKeywords(["break", "case", "continue", "do", "done", "else", "elseif", "esac", "fi", "for", "foreach", "function", "if", "in", "return", "switch", "then", "until", "while"], _palette.Keyword);
+				AddKeywords(
+					[
+						"break",
+						"case",
+						"continue",
+						"do",
+						"done",
+						"else",
+						"elseif",
+						"esac",
+						"fi",
+						"for",
+						"foreach",
+						"function",
+						"if",
+						"in",
+						"return",
+						"switch",
+						"then",
+						"until",
+						"while",
+					],
+					_palette.Keyword
+				);
 				AddStrings();
 				_highlighter.AddColorRegion("#", "", Color.FromHtml(_palette.Comment));
 				break;
@@ -966,14 +1481,80 @@ public partial class TextEditorRoot : Node
 		_highlighter.AddColorRegion("/*", "*/", commentColor);
 	}
 
-	private static EditorPalette GetEditorPalette(CodeEditorColorThemeEnum theme) => theme switch
-	{
-		CodeEditorColorThemeEnum.VisualStudioDark => new("#1E1E1E", "#D4D4D4", "#C586C0", "#4EC9B0", "#CE9178", "#6A9955", "#B5CEA8", "#DCDCAA", "#9CDCFE", "#D4D4D4", "#264F78", "#252526"),
-		CodeEditorColorThemeEnum.Dracula => new("#282A36", "#F8F8F2", "#FF79C6", "#8BE9FD", "#F1FA8C", "#6272A4", "#BD93F9", "#50FA7B", "#8BE9FD", "#F8F8F2", "#44475A", "#30323F"),
-		CodeEditorColorThemeEnum.Light => new("#FAFAFA", "#24292F", "#CF222E", "#0550AE", "#0A3069", "#6E7781", "#0550AE", "#8250DF", "#953800", "#24292F", "#B6D7FF", "#EEF3F8"),
-		CodeEditorColorThemeEnum.HighContrast => new("#000000", "#FFFFFF", "#FFFF00", "#00FFFF", "#FFB000", "#7CFC00", "#00FF00", "#00FFFF", "#FFFFFF", "#FFFFFF", "#005A9C", "#191919"),
-		_ => new("#0D1117", "#E6EDF3", "#FF7B72", "#79C0FF", "#A5D6FF", "#8B949E", "#D2A8FF", "#D2A8FF", "#79C0FF", "#C9D1D9", "#1F6FEB66", "#161B22")
-	};
+	private static EditorPalette GetEditorPalette(CodeEditorColorThemeEnum theme) =>
+		theme switch
+		{
+			CodeEditorColorThemeEnum.VisualStudioDark => new(
+				"#1E1E1E",
+				"#D4D4D4",
+				"#C586C0",
+				"#4EC9B0",
+				"#CE9178",
+				"#6A9955",
+				"#B5CEA8",
+				"#DCDCAA",
+				"#9CDCFE",
+				"#D4D4D4",
+				"#264F78",
+				"#252526"
+			),
+			CodeEditorColorThemeEnum.Dracula => new(
+				"#282A36",
+				"#F8F8F2",
+				"#FF79C6",
+				"#8BE9FD",
+				"#F1FA8C",
+				"#6272A4",
+				"#BD93F9",
+				"#50FA7B",
+				"#8BE9FD",
+				"#F8F8F2",
+				"#44475A",
+				"#30323F"
+			),
+			CodeEditorColorThemeEnum.Light => new(
+				"#FAFAFA",
+				"#24292F",
+				"#CF222E",
+				"#0550AE",
+				"#0A3069",
+				"#6E7781",
+				"#0550AE",
+				"#8250DF",
+				"#953800",
+				"#24292F",
+				"#B6D7FF",
+				"#EEF3F8"
+			),
+			CodeEditorColorThemeEnum.HighContrast => new(
+				"#000000",
+				"#FFFFFF",
+				"#FFFF00",
+				"#00FFFF",
+				"#FFB000",
+				"#7CFC00",
+				"#00FF00",
+				"#00FFFF",
+				"#FFFFFF",
+				"#FFFFFF",
+				"#005A9C",
+				"#191919"
+			),
+			_ => new(
+				"#0D1117",
+				"#E6EDF3",
+				"#FF7B72",
+				"#79C0FF",
+				"#A5D6FF",
+				"#8B949E",
+				"#D2A8FF",
+				"#D2A8FF",
+				"#79C0FF",
+				"#C9D1D9",
+				"#1F6FEB66",
+				"#161B22"
+			),
+		};
 
 	public void Save()
 	{
@@ -982,20 +1563,30 @@ public partial class TextEditorRoot : Node
 
 	public async void SaveDocument()
 	{
-		if (Container.CodeCompletion == FileTypeEnum.Lua
-			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.FormatOnSave))
+		if (
+			Container.CodeCompletion == FileTypeEnum.Lua
+			&& CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.FormatOnSave)
+		)
 			await FormatRangeAsync(0, CodeEditor.GetLineCount() - 1, "document");
 		Save();
 		Saved = true;
 		SavedChanged?.Invoke(true);
-		CreatorService.Interface.StatusBar?.SetStatus("Text file saved to " + Container.TargetFilePath + " at " + DateTime.Now.ToString("HH:mm:ss"));
+		CreatorService.Interface.StatusBar?.SetStatus(
+			"Text file saved to "
+				+ Container.TargetFilePath
+				+ " at "
+				+ DateTime.Now.ToString("HH:mm:ss")
+		);
 	}
 
 	public void OpenFind() => _finder.Open(CodeEditor.GetSelectedText());
 
 	private void AutoSaveNow()
 	{
-		if (!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave) || Saved)
+		if (
+			!CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.AutoSave)
+			|| Saved
+		)
 			return;
 		Save();
 		Saved = true;
@@ -1026,7 +1617,8 @@ public partial class TextEditorRoot : Node
 		else if (IsManagedScriptLanguage(Container.CodeCompletion) && _oldText != curText)
 		{
 			_oldText = curText;
-			if (IsCompletionTrigger()) OnCompletionRequest();
+			if (IsCompletionTrigger())
+				OnCompletionRequest();
 		}
 	}
 
@@ -1036,7 +1628,8 @@ public partial class TextEditorRoot : Node
 		int col = CodeEditor.GetCaretColumn();
 		string lineText = CodeEditor.GetLine(line);
 
-		if (string.IsNullOrWhiteSpace(lineText)) return false;
+		if (string.IsNullOrWhiteSpace(lineText))
+			return false;
 
 		if (col > 0)
 		{
@@ -1064,9 +1657,10 @@ public partial class TextEditorRoot : Node
 			CursorColumn = CodeEditor.GetCaretColumn(),
 		};
 
-		List<CodeEditCompletionItem> items = _completion != null
-			? await _completion.GetCompletionsAsync(context)
-			: GetBasicLanguageCompletions(context);
+		List<CodeEditCompletionItem> items =
+			_completion != null
+				? await _completion.GetCompletionsAsync(context)
+				: GetBasicLanguageCompletions(context);
 
 		string wcaret = GetWordBeforeCaret();
 
@@ -1078,14 +1672,21 @@ public partial class TextEditorRoot : Node
 			}
 		}
 
-		if (CreatorSettingsService.Instance.Get<bool>(CreatorSettingKeys.CodeEditor.InlineSuggestions))
+		if (
+			CreatorSettingsService.Instance.Get<bool>(
+				CreatorSettingKeys.CodeEditor.InlineSuggestions
+			)
+		)
 		{
 			CodeEditCompletionItem inlineItem = items.FirstOrDefault(item =>
 				item.InsertText.Length > wcaret.Length
-				&& item.InsertText.StartsWith(wcaret, StringComparison.OrdinalIgnoreCase));
-			CodeEditor.SetInlineSuggestion(string.IsNullOrEmpty(inlineItem.InsertText)
-				? string.Empty
-				: inlineItem.InsertText[wcaret.Length..]);
+				&& item.InsertText.StartsWith(wcaret, StringComparison.OrdinalIgnoreCase)
+			);
+			CodeEditor.SetInlineSuggestion(
+				string.IsNullOrEmpty(inlineItem.InsertText)
+					? string.Empty
+					: inlineItem.InsertText[wcaret.Length..]
+			);
 		}
 
 		foreach (CodeEditCompletionItem item in items)
@@ -1094,7 +1695,7 @@ public partial class TextEditorRoot : Node
 			{
 				CodeEdit.CodeCompletionKind.Member => "Property",
 				CodeEdit.CodeCompletionKind.Function => "Method",
-				_ => "None"
+				_ => "None",
 			};
 			Texture2D? icon = null;
 			if (iconTxt != null)
@@ -1104,15 +1705,27 @@ public partial class TextEditorRoot : Node
 			string display = string.IsNullOrWhiteSpace(item.Detail)
 				? item.DisplayText
 				: $"{item.DisplayText}    {item.Detail.Replace('\n', ' ')}";
-			CodeEditor.AddCodeCompletionOption(item.Kind, display, item.InsertText, icon: icon, location: -1);
+			CodeEditor.AddCodeCompletionOption(
+				item.Kind,
+				display,
+				item.InsertText,
+				icon: icon,
+				location: -1
+			);
 		}
 		CodeEditor.UpdateCodeCompletionOptions(false);
 	}
 
-	private static bool IsManagedScriptLanguage(FileTypeEnum fileType) => fileType is
-		FileTypeEnum.CSharp or FileTypeEnum.JavaScript or FileTypeEnum.TypeScript or FileTypeEnum.Cpp;
+	private static bool IsManagedScriptLanguage(FileTypeEnum fileType) =>
+		fileType
+			is FileTypeEnum.CSharp
+				or FileTypeEnum.JavaScript
+				or FileTypeEnum.TypeScript
+				or FileTypeEnum.Cpp;
 
-	private List<CodeEditCompletionItem> GetBasicLanguageCompletions(CodeEditCompletionContext context)
+	private List<CodeEditCompletionItem> GetBasicLanguageCompletions(
+		CodeEditCompletionContext context
+	)
 	{
 		string line = CodeEditor.GetLine(context.CursorLine);
 		string before = line[..Math.Min(context.CursorColumn, line.Length)];
@@ -1125,49 +1738,94 @@ public partial class TextEditorRoot : Node
 			.Select(group => group.First())
 			.OrderBy(value => value.Name, StringComparer.OrdinalIgnoreCase)
 			.Select(value => new CodeEditCompletionItem
-		{
-			DisplayText = value.Name,
-			InsertText = value.Name,
-			Kind = value.Kind,
-			Detail = value.Detail,
-			Documentation = value.Detail,
-		}).ToList();
+			{
+				DisplayText = value.Name,
+				InsertText = value.Name,
+				Kind = value.Kind,
+				Detail = value.Detail,
+				Documentation = value.Detail,
+			})
+			.ToList();
 	}
 
-	private static IEnumerable<(string Name, CodeEdit.CodeCompletionKind Kind, string Detail)> GetReflectedScriptMembers()
+	private static IEnumerable<(
+		string Name,
+		CodeEdit.CodeCompletionKind Kind,
+		string Detail
+	)> GetReflectedScriptMembers()
 	{
-		IEnumerable<Type> types = typeof(IScriptObject).Assembly.GetTypes()
+		IEnumerable<Type> types = typeof(IScriptObject)
+			.Assembly.GetTypes()
 			.Where(type => type.IsPublic && typeof(IScriptObject).IsAssignableFrom(type));
 		foreach (Type type in types)
 		{
-			foreach (PropertyInfo property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+			foreach (
+				PropertyInfo property in type.GetProperties(
+					BindingFlags.Instance | BindingFlags.Public
+				)
+			)
 				if (property.GetCustomAttribute<ScriptPropertyAttribute>() != null)
-					yield return (property.Name, CodeEdit.CodeCompletionKind.Member, property.PropertyType.Name);
-			foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+					yield return (
+						property.Name,
+						CodeEdit.CodeCompletionKind.Member,
+						property.PropertyType.Name
+					);
+			foreach (
+				MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+			)
 			{
-				ScriptMethodAttribute? attribute = method.GetCustomAttribute<ScriptMethodAttribute>();
-				if (attribute == null) continue;
+				ScriptMethodAttribute? attribute =
+					method.GetCustomAttribute<ScriptMethodAttribute>();
+				if (attribute == null)
+					continue;
 				string name = attribute.MethodName ?? method.Name;
-				string arguments = string.Join(", ", method.GetParameters()
-					.Where(parameter => parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null)
-					.Select(parameter => $"{parameter.Name}: {parameter.ParameterType.Name}"));
-				yield return (name, CodeEdit.CodeCompletionKind.Function, $"{method.ReturnType.Name} {name}({arguments})");
+				string arguments = string.Join(
+					", ",
+					method
+						.GetParameters()
+						.Where(parameter =>
+							parameter.GetCustomAttribute<ScriptingCallerAttribute>() == null
+						)
+						.Select(parameter => $"{parameter.Name}: {parameter.ParameterType.Name}")
+				);
+				yield return (
+					name,
+					CodeEdit.CodeCompletionKind.Function,
+					$"{method.ReturnType.Name} {name}({arguments})"
+				);
 			}
 		}
 	}
 
-	private static IEnumerable<(string Name, CodeEdit.CodeCompletionKind Kind, string Detail)> GetReflectedScriptGlobals()
+	private static IEnumerable<(
+		string Name,
+		CodeEdit.CodeCompletionKind Kind,
+		string Detail
+	)> GetReflectedScriptGlobals()
 	{
-		foreach (Type type in typeof(IScriptObject).Assembly.GetTypes()
-			.Where(type => type.IsPublic && !type.IsGenericType && typeof(IScriptObject).IsAssignableFrom(type)))
+		foreach (
+			Type type in typeof(IScriptObject)
+				.Assembly.GetTypes()
+				.Where(type =>
+					type.IsPublic
+					&& !type.IsGenericType
+					&& typeof(IScriptObject).IsAssignableFrom(type)
+				)
+		)
 			yield return (type.Name, CodeEdit.CodeCompletionKind.Class, type.FullName ?? type.Name);
 		foreach ((string name, Type type) in ScriptService.GlobalDataMap)
 			yield return (name, CodeEdit.CodeCompletionKind.Class, type.Name);
 		foreach ((string name, Type type) in ScriptService.EnumMap)
 			yield return (name, CodeEdit.CodeCompletionKind.Enum, type.Name);
 		if (World.Current != null)
-			foreach ((string name, IScriptObject? value) in ScriptService.GetStaticObjects(World.Current))
-				yield return (name, CodeEdit.CodeCompletionKind.Variable, value?.GetType().Name ?? "DataModel service");
+			foreach (
+				(string name, IScriptObject? value) in ScriptService.GetStaticObjects(World.Current)
+			)
+				yield return (
+					name,
+					CodeEdit.CodeCompletionKind.Variable,
+					value?.GetType().Name ?? "DataModel service"
+				);
 	}
 
 	private void UpdateStatusBar()
@@ -1180,8 +1838,10 @@ public partial class TextEditorRoot : Node
 		)
 			? scriptLanguage.DisplayName
 			: Path.GetExtension(Container.TargetFilePathAbsolute).TrimStart('.').ToUpperInvariant();
-		if (string.IsNullOrWhiteSpace(language)) language = "Plain Text";
-		_statusBar.Text = $"{language}  •  Ln {lineIndex}, Col {column}  •  {Container.OriginTabName}";
+		if (string.IsNullOrWhiteSpace(language))
+			language = "Plain Text";
+		_statusBar.Text =
+			$"{language}  •  Ln {lineIndex}, Col {column}  •  {Container.OriginTabName}";
 	}
 
 	public string GetWordBeforeCaret()
@@ -1190,7 +1850,8 @@ public partial class TextEditorRoot : Node
 		int column = CodeEditor.GetCaretColumn();
 		string lineText = CodeEditor.GetLine(lineIndex);
 
-		if (column == 0) return string.Empty;
+		if (column == 0)
+			return string.Empty;
 
 		int startPos = column;
 
@@ -1215,7 +1876,11 @@ public partial class TextEditorRoot : Node
 	{
 		for (int caretIdx = 0; caretIdx < CodeEditor.GetCaretCount(); caretIdx++)
 		{
-			for (int lineIdx = CodeEditor.GetSelectionFromLine(caretIdx); lineIdx <= CodeEditor.GetSelectionToLine(caretIdx); lineIdx++)
+			for (
+				int lineIdx = CodeEditor.GetSelectionFromLine(caretIdx);
+				lineIdx <= CodeEditor.GetSelectionToLine(caretIdx);
+				lineIdx++
+			)
 			{
 				yield return lineIdx;
 			}

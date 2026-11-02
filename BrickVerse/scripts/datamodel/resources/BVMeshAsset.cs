@@ -26,7 +26,8 @@ public partial class BVMeshAsset : MeshAsset
 
 	public override void LoadResource()
 	{
-		if (string.IsNullOrWhiteSpace(AssetID)) return;
+		if (string.IsNullOrWhiteSpace(AssetID))
+			return;
 
 		AssetLoader.Singleton.GetResource(
 			new() { Type = ResourceType.Mesh, ID = AssetID },

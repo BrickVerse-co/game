@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using BrickVerse.Attributes;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -40,7 +40,7 @@ public sealed partial class Terrain : Instance
 		GrowBall = 9,
 		ErodeBall = 10,
 		SetVoxelSdf = 11,
-		SetVoxelMaterial = 12
+		SetVoxelMaterial = 12,
 	}
 
 	private sealed class TerrainOperation
@@ -96,17 +96,67 @@ public sealed partial class Terrain : Instance
 	private Color _concreteColor = new(0.74f, 0.74f, 0.72f, 1.0f);
 	private Color _brickColor = new(0.70f, 0.32f, 0.27f, 1.0f);
 
-	private static readonly (string Name, Part.PartMaterialEnum Surface, Color Color, TerrainMaterialKind Kind)[] DefaultMaterials =
+	private static readonly (
+		string Name,
+		Part.PartMaterialEnum Surface,
+		Color Color,
+		TerrainMaterialKind Kind
+	)[] DefaultMaterials =
 	[
-		("Base", Part.PartMaterialEnum.SmoothPlastic, new Color(0.92f, 0.92f, 0.92f, 1.0f), TerrainMaterialKind.Solid),
-		("Grass", Part.PartMaterialEnum.Grass, new Color(0.55f, 0.78f, 0.42f, 1.0f), TerrainMaterialKind.Solid),
-		("Stone", Part.PartMaterialEnum.Stone, new Color(0.70f, 0.72f, 0.74f, 1.0f), TerrainMaterialKind.Solid),
-		("Sand", Part.PartMaterialEnum.Sand, new Color(0.90f, 0.82f, 0.60f, 1.0f), TerrainMaterialKind.Solid),
-		("Dirt", Part.PartMaterialEnum.Dirt, new Color(0.52f, 0.40f, 0.30f, 1.0f), TerrainMaterialKind.Solid),
-		("Snow", Part.PartMaterialEnum.Snow, new Color(0.96f, 0.98f, 1.00f, 1.0f), TerrainMaterialKind.Solid),
-		("Concrete", Part.PartMaterialEnum.Concrete, new Color(0.74f, 0.74f, 0.72f, 1.0f), TerrainMaterialKind.Solid),
-		("Brick", Part.PartMaterialEnum.Brick, new Color(0.70f, 0.32f, 0.27f, 1.0f), TerrainMaterialKind.Solid),
-		("Water", Part.PartMaterialEnum.SmoothPlastic, new Color(0.10f, 0.65f, 0.88f, 0.72f), TerrainMaterialKind.Water),
+		(
+			"Base",
+			Part.PartMaterialEnum.SmoothPlastic,
+			new Color(0.92f, 0.92f, 0.92f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Grass",
+			Part.PartMaterialEnum.Grass,
+			new Color(0.55f, 0.78f, 0.42f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Stone",
+			Part.PartMaterialEnum.Stone,
+			new Color(0.70f, 0.72f, 0.74f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Sand",
+			Part.PartMaterialEnum.Sand,
+			new Color(0.90f, 0.82f, 0.60f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Dirt",
+			Part.PartMaterialEnum.Dirt,
+			new Color(0.52f, 0.40f, 0.30f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Snow",
+			Part.PartMaterialEnum.Snow,
+			new Color(0.96f, 0.98f, 1.00f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Concrete",
+			Part.PartMaterialEnum.Concrete,
+			new Color(0.74f, 0.74f, 0.72f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Brick",
+			Part.PartMaterialEnum.Brick,
+			new Color(0.70f, 0.32f, 0.27f, 1.0f),
+			TerrainMaterialKind.Solid
+		),
+		(
+			"Water",
+			Part.PartMaterialEnum.SmoothPlastic,
+			new Color(0.10f, 0.65f, 0.88f, 0.72f),
+			TerrainMaterialKind.Water
+		),
 	];
 
 	/// <summary>
@@ -198,8 +248,7 @@ public sealed partial class Terrain : Instance
 		}
 	}
 
-	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
-		DefaultValue(1u)]
+	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar, DefaultValue(1u)]
 	public uint CollisionLayer
 	{
 		get => _collisionLayer;
@@ -214,8 +263,12 @@ public sealed partial class Terrain : Instance
 		}
 	}
 
-	[Editable(CustomPropertyControl = "Bitmap32"), ScriptProperty, SyncVar,
-		DefaultValue(uint.MaxValue)]
+	[
+		Editable(CustomPropertyControl = "Bitmap32"),
+		ScriptProperty,
+		SyncVar,
+		DefaultValue(uint.MaxValue)
+	]
 	public uint CollisionMask
 	{
 		get => _collisionMask;
@@ -252,9 +305,7 @@ public sealed partial class Terrain : Instance
 		get => _collisionMargin;
 		set
 		{
-			float validated = float.IsFinite(value)
-				? Math.Clamp(value, 0.0f, 1.0f)
-				: 0.04f;
+			float validated = float.IsFinite(value) ? Math.Clamp(value, 0.0f, 1.0f) : 0.04f;
 			if (Mathf.IsEqualApprox(_collisionMargin, validated))
 				return;
 			_collisionMargin = validated;
@@ -274,7 +325,8 @@ public sealed partial class Terrain : Instance
 			{
 				throw new ArgumentOutOfRangeException(
 					nameof(value),
-					"SDF strength must be finite and greater than zero.");
+					"SDF strength must be finite and greater than zero."
+				);
 			}
 
 			if (Mathf.IsEqualApprox(_defaultSdfStrength, value))
@@ -297,7 +349,8 @@ public sealed partial class Terrain : Instance
 			{
 				throw new ArgumentOutOfRangeException(
 					nameof(value),
-					"SDF scale must be finite and greater than zero.");
+					"SDF scale must be finite and greater than zero."
+				);
 			}
 
 			if (Mathf.IsEqualApprox(_defaultSdfScale, value))
@@ -487,9 +540,8 @@ public sealed partial class Terrain : Instance
 
 	internal bool IsMaterialSlotAvailable(int slot, TerrainMaterial except)
 	{
-		return !GetChildrenOfClass<TerrainMaterial>().Any(
-			material => material != except && material.Slot == slot
-		);
+		return !GetChildrenOfClass<TerrainMaterial>()
+			.Any(material => material != except && material.Slot == slot);
 	}
 
 	internal void NotifyMaterialChanged()
@@ -611,13 +663,15 @@ public sealed partial class Terrain : Instance
 		ValidateRadius(radius);
 		ValidateMaterial(material);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.FillBall,
-			Position = center,
-			Radius = radius,
-			Material = material
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.FillBall,
+				Position = center,
+				Radius = radius,
+				Material = material,
+			}
+		);
 	}
 
 	[ScriptMethod]
@@ -625,12 +679,14 @@ public sealed partial class Terrain : Instance
 	{
 		ValidateRadius(radius);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.DigBall,
-			Position = center,
-			Radius = radius
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.DigBall,
+				Position = center,
+				Radius = radius,
+			}
+		);
 	}
 
 	[ScriptMethod]
@@ -639,13 +695,15 @@ public sealed partial class Terrain : Instance
 		ValidateSize(size);
 		ValidateMaterial(material);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.FillBlock,
-			Position = center,
-			Size = size.Abs(),
-			Material = material
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.FillBlock,
+				Position = center,
+				Size = size.Abs(),
+				Material = material,
+			}
+		);
 	}
 
 	public void FillBlock(Transform3D transform, Vector3 size, int material = 0)
@@ -658,12 +716,14 @@ public sealed partial class Terrain : Instance
 	{
 		ValidateSize(size);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.DigBlock,
-			Position = center,
-			Size = size.Abs()
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.DigBlock,
+				Position = center,
+				Size = size.Abs(),
+			}
+		);
 	}
 
 	public void DigBlock(Transform3D transform, Vector3 size)
@@ -672,24 +732,12 @@ public sealed partial class Terrain : Instance
 	}
 
 	[ScriptMethod]
-	public void FillCylinder(
-		Vector3 center,
-		float height,
-		float radius,
-		int material = 0)
+	public void FillCylinder(Vector3 center, float height, float radius, int material = 0)
 	{
-		FillCylinder(
-			new Transform3D(Basis.Identity, center),
-			height,
-			radius,
-			material);
+		FillCylinder(new Transform3D(Basis.Identity, center), height, radius, material);
 	}
 
-	public void FillCylinder(
-		Transform3D transform,
-		float height,
-		float radius,
-		int material = 0)
+	public void FillCylinder(Transform3D transform, float height, float radius, int material = 0)
 	{
 		ValidateCylinder(height, radius);
 		ValidateMaterial(material);
@@ -697,42 +745,40 @@ public sealed partial class Terrain : Instance
 		Vector3 axis = transform.Basis.Y.Normalized();
 		Vector3 halfAxis = axis * (height * 0.5f);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.FillCylinder,
-			Position = transform.Origin - halfAxis,
-			SecondaryPosition = transform.Origin + halfAxis,
-			Radius = radius,
-			Material = material
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.FillCylinder,
+				Position = transform.Origin - halfAxis,
+				SecondaryPosition = transform.Origin + halfAxis,
+				Radius = radius,
+				Material = material,
+			}
+		);
 	}
 
 	[ScriptMethod]
 	public void DigCylinder(Vector3 center, float height, float radius)
 	{
-		DigCylinder(
-			new Transform3D(Basis.Identity, center),
-			height,
-			radius);
+		DigCylinder(new Transform3D(Basis.Identity, center), height, radius);
 	}
 
-	public void DigCylinder(
-		Transform3D transform,
-		float height,
-		float radius)
+	public void DigCylinder(Transform3D transform, float height, float radius)
 	{
 		ValidateCylinder(height, radius);
 
 		Vector3 axis = transform.Basis.Y.Normalized();
 		Vector3 halfAxis = axis * (height * 0.5f);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.DigCylinder,
-			Position = transform.Origin - halfAxis,
-			SecondaryPosition = transform.Origin + halfAxis,
-			Radius = radius
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.DigCylinder,
+				Position = transform.Origin - halfAxis,
+				SecondaryPosition = transform.Origin + halfAxis,
+				Radius = radius,
+			}
+		);
 	}
 
 	/// <summary>
@@ -741,30 +787,25 @@ public sealed partial class Terrain : Instance
 	/// terrain material and mesher.
 	/// </summary>
 	[ScriptMethod]
-	public void PaintBall(
-		Vector3 center,
-		float radius,
-		int material,
-		float opacity = 1.0f)
+	public void PaintBall(Vector3 center, float radius, int material, float opacity = 1.0f)
 	{
 		ValidateRadius(radius);
 		ValidateMaterial(material);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.PaintBall,
-			Position = center,
-			Radius = radius,
-			Material = material,
-			Strength = Mathf.Clamp(opacity, 0.0f, 1.0f)
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.PaintBall,
+				Position = center,
+				Radius = radius,
+				Material = material,
+				Strength = Mathf.Clamp(opacity, 0.0f, 1.0f),
+			}
+		);
 	}
 
 	[ScriptMethod]
-	public void SmoothBall(
-		Vector3 center,
-		float radius,
-		int blurRadius = 2)
+	public void SmoothBall(Vector3 center, float radius, int blurRadius = 2)
 	{
 		ValidateRadius(radius);
 
@@ -772,52 +813,53 @@ public sealed partial class Terrain : Instance
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(blurRadius),
-				"Blur radius must be at least one.");
+				"Blur radius must be at least one."
+			);
 		}
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.SmoothBall,
-			Position = center,
-			Radius = radius,
-			IntegerValue = blurRadius
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.SmoothBall,
+				Position = center,
+				Radius = radius,
+				IntegerValue = blurRadius,
+			}
+		);
 	}
 
 	[ScriptMethod]
-	public void GrowBall(
-		Vector3 center,
-		float radius,
-		float strength = 1.0f)
+	public void GrowBall(Vector3 center, float radius, float strength = 1.0f)
 	{
 		ValidateRadius(radius);
 		ValidateStrength(strength);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.GrowBall,
-			Position = center,
-			Radius = radius,
-			Strength = strength
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.GrowBall,
+				Position = center,
+				Radius = radius,
+				Strength = strength,
+			}
+		);
 	}
 
 	[ScriptMethod]
-	public void ErodeBall(
-		Vector3 center,
-		float radius,
-		float strength = 1.0f)
+	public void ErodeBall(Vector3 center, float radius, float strength = 1.0f)
 	{
 		ValidateRadius(radius);
 		ValidateStrength(strength);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.ErodeBall,
-			Position = center,
-			Radius = radius,
-			Strength = strength
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.ErodeBall,
+				Position = center,
+				Radius = radius,
+				Strength = strength,
+			}
+		);
 	}
 
 	#endregion
@@ -829,17 +871,17 @@ public sealed partial class Terrain : Instance
 	{
 		if (!float.IsFinite(sdf))
 		{
-			throw new ArgumentOutOfRangeException(
-				nameof(sdf),
-				"SDF value must be finite.");
+			throw new ArgumentOutOfRangeException(nameof(sdf), "SDF value must be finite.");
 		}
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.SetVoxelSdf,
-			Position = position,
-			Strength = sdf
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.SetVoxelSdf,
+				Position = position,
+				Strength = sdf,
+			}
+		);
 	}
 
 	[ScriptMethod]
@@ -848,9 +890,7 @@ public sealed partial class Terrain : Instance
 		EnsureTool();
 		SetToolChannel("CHANNEL_SDF", 1);
 
-		return _voxelTool!
-			.Call("get_voxel_f", ToVector3I(position))
-			.AsSingle();
+		return _voxelTool!.Call("get_voxel_f", ToVector3I(position)).AsSingle();
 	}
 
 	[ScriptMethod]
@@ -858,12 +898,14 @@ public sealed partial class Terrain : Instance
 	{
 		ValidateMaterial(material);
 
-		ExecuteAndRecord(new TerrainOperation
-		{
-			Type = TerrainOperationType.SetVoxelMaterial,
-			Position = position,
-			Material = material
-		});
+		ExecuteAndRecord(
+			new TerrainOperation
+			{
+				Type = TerrainOperationType.SetVoxelMaterial,
+				Position = position,
+				Material = material,
+			}
+		);
 	}
 
 	[ScriptMethod]
@@ -874,14 +916,10 @@ public sealed partial class Terrain : Instance
 		Vector3I voxelPosition = ToVector3I(position);
 
 		SetToolChannel("CHANNEL_INDICES", 3);
-		int packedIndices = _voxelTool!
-			.Call("get_voxel", voxelPosition)
-			.AsInt32();
+		int packedIndices = _voxelTool!.Call("get_voxel", voxelPosition).AsInt32();
 
 		SetToolChannel("CHANNEL_WEIGHTS", 4);
-		int packedWeights = _voxelTool!
-			.Call("get_voxel", voxelPosition)
-			.AsInt32();
+		int packedWeights = _voxelTool!.Call("get_voxel", voxelPosition).AsInt32();
 
 		int bestMaterial = packedIndices & 0x0f;
 		int bestWeight = packedWeights & 0x0f;
@@ -898,20 +936,14 @@ public sealed partial class Terrain : Instance
 			}
 		}
 
-		return Math.Clamp(
-			bestMaterial,
-			0,
-			TerrainMaterial.MaximumSlots - 1);
+		return Math.Clamp(bestMaterial, 0, TerrainMaterial.MaximumSlots - 1);
 	}
 
 	[ScriptMethod]
 	public void SetVoxelMetadata(Vector3 position, Variant metadata)
 	{
 		EnsureTool();
-		_voxelTool!.Call(
-			"set_voxel_metadata",
-			ToVector3I(position),
-			metadata);
+		_voxelTool!.Call("set_voxel_metadata", ToVector3I(position), metadata);
 	}
 
 	[ScriptMethod]
@@ -919,9 +951,7 @@ public sealed partial class Terrain : Instance
 	{
 		EnsureTool();
 
-		return _voxelTool!.Call(
-			"get_voxel_metadata",
-			ToVector3I(position));
+		return _voxelTool!.Call("get_voxel_metadata", ToVector3I(position));
 	}
 
 	#endregion
@@ -941,24 +971,23 @@ public sealed partial class Terrain : Instance
 		Vector3 min = new(
 			Mathf.Min(minimum.X, maximum.X),
 			Mathf.Min(minimum.Y, maximum.Y),
-			Mathf.Min(minimum.Z, maximum.Z));
+			Mathf.Min(minimum.Z, maximum.Z)
+		);
 
 		Vector3 max = new(
 			Mathf.Max(minimum.X, maximum.X),
 			Mathf.Max(minimum.Y, maximum.Y),
-			Mathf.Max(minimum.Z, maximum.Z));
+			Mathf.Max(minimum.Z, maximum.Z)
+		);
 
 		Aabb area = new(min, (max - min).Max(Vector3.One));
 
-		return _voxelTool
-			.Call("is_area_editable", area)
-			.AsBool();
+		return _voxelTool.Call("is_area_editable", area).AsBool();
 	}
 
 	internal void SetEditorViewerPosition(Vector3 worldPosition)
 	{
-		if (_viewerNode != null &&
-			GodotObject.IsInstanceValid(_viewerNode))
+		if (_viewerNode != null && GodotObject.IsInstanceValid(_viewerNode))
 		{
 			_viewerNode.GlobalPosition = worldPosition;
 		}
@@ -969,7 +998,8 @@ public sealed partial class Terrain : Instance
 		Vector3 direction,
 		float maximumDistance,
 		out Vector3 position,
-		out Vector3 normal)
+		out Vector3 normal
+	)
 	{
 		position = default;
 		normal = Vector3.Up;
@@ -992,7 +1022,8 @@ public sealed partial class Terrain : Instance
 			"raycast",
 			origin,
 			direction.Normalized(),
-			maximumDistance);
+			maximumDistance
+		);
 
 		GodotObject? result = raycastVariant.AsGodotObject();
 
@@ -1003,9 +1034,7 @@ public sealed partial class Terrain : Instance
 
 		float distance = result.Get("distance").AsSingle();
 
-		if (!float.IsFinite(distance) ||
-			distance < 0.0f ||
-			distance > maximumDistance)
+		if (!float.IsFinite(distance) || distance < 0.0f || distance > maximumDistance)
 		{
 			return false;
 		}
@@ -1066,10 +1095,13 @@ public sealed partial class Terrain : Instance
 
 		using (MemoryStream compressedStream = new())
 		{
-			using (GZipStream gzip = new(
-				compressedStream,
-				CompressionLevel.SmallestSize,
-				leaveOpen: true))
+			using (
+				GZipStream gzip = new(
+					compressedStream,
+					CompressionLevel.SmallestSize,
+					leaveOpen: true
+				)
+			)
 			{
 				gzip.Write(raw, 0, raw.Length);
 			}
@@ -1129,13 +1161,10 @@ public sealed partial class Terrain : Instance
 			}
 
 			List<TerrainOperation> loadedOperations = [];
-			byte[] compressed = Convert.FromBase64String(
-				_serialisedTerrain.Trim());
+			byte[] compressed = Convert.FromBase64String(_serialisedTerrain.Trim());
 
 			using MemoryStream compressedStream = new(compressed);
-			using GZipStream gzip = new(
-				compressedStream,
-				CompressionMode.Decompress);
+			using GZipStream gzip = new(compressedStream, CompressionMode.Decompress);
 			using BinaryReader reader = new(gzip);
 
 			int magic = reader.ReadInt32();
@@ -1143,7 +1172,8 @@ public sealed partial class Terrain : Instance
 			if (magic != SerialisationMagic)
 			{
 				throw new InvalidDataException(
-					"The supplied data is not valid BrickVerse terrain data.");
+					"The supplied data is not valid BrickVerse terrain data."
+				);
 			}
 
 			ushort version = reader.ReadUInt16();
@@ -1151,17 +1181,16 @@ public sealed partial class Terrain : Instance
 			if (version > SerialisationVersion)
 			{
 				throw new InvalidDataException(
-					$"Terrain version {version} is newer than supported " +
-					$"version {SerialisationVersion}.");
+					$"Terrain version {version} is newer than supported "
+						+ $"version {SerialisationVersion}."
+				);
 			}
 
 			int operationCount = reader.ReadInt32();
 
-			if (operationCount < 0 ||
-				operationCount > MaxSerialisedOperations)
+			if (operationCount < 0 || operationCount > MaxSerialisedOperations)
 			{
-				throw new InvalidDataException(
-					"Terrain operation count is invalid.");
+				throw new InvalidDataException("Terrain operation count is invalid.");
 			}
 
 			for (int index = 0; index < operationCount; index++)
@@ -1169,7 +1198,8 @@ public sealed partial class Terrain : Instance
 				TerrainOperation operation = ReadOperation(reader);
 				if (!Enum.IsDefined(operation.Type))
 					throw new InvalidDataException(
-						$"Terrain operation {index} has an unknown type.");
+						$"Terrain operation {index} has an unknown type."
+					);
 				loadedOperations.Add(operation);
 			}
 
@@ -1202,11 +1232,11 @@ public sealed partial class Terrain : Instance
 				catch (Exception recoveryException)
 				{
 					GD.PushError(
-						$"Failed to restore terrain after a load error: {recoveryException}");
+						$"Failed to restore terrain after a load error: {recoveryException}"
+					);
 				}
 			}
-			GD.PushError(
-				$"Failed to load serialised terrain: {exception}");
+			GD.PushError($"Failed to load serialised terrain: {exception}");
 		}
 		finally
 		{
@@ -1244,9 +1274,7 @@ public sealed partial class Terrain : Instance
 		}
 	}
 
-	private static void WriteOperation(
-		BinaryWriter writer,
-		TerrainOperation operation)
+	private static void WriteOperation(BinaryWriter writer, TerrainOperation operation)
 	{
 		writer.Write((byte)operation.Type);
 		WriteVector3(writer, operation.Position);
@@ -1269,13 +1297,11 @@ public sealed partial class Terrain : Instance
 			Radius = reader.ReadSingle(),
 			Strength = reader.ReadSingle(),
 			Material = reader.ReadInt32(),
-			IntegerValue = reader.ReadInt32()
+			IntegerValue = reader.ReadInt32(),
 		};
 	}
 
-	private static void WriteVector3(
-		BinaryWriter writer,
-		Vector3 value)
+	private static void WriteVector3(BinaryWriter writer, Vector3 value)
 	{
 		writer.Write(value.X);
 		writer.Write(value.Y);
@@ -1284,10 +1310,7 @@ public sealed partial class Terrain : Instance
 
 	private static Vector3 ReadVector3(BinaryReader reader)
 	{
-		return new Vector3(
-			reader.ReadSingle(),
-			reader.ReadSingle(),
-			reader.ReadSingle());
+		return new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 	}
 
 	#endregion
@@ -1306,14 +1329,12 @@ public sealed partial class Terrain : Instance
 			_voxelTerrain = null;
 
 			throw new InvalidOperationException(
-				"VoxelLodTerrain was created but was not a Node3D.");
+				"VoxelLodTerrain was created but was not a Node3D."
+			);
 		}
 
 		_voxelTerrainNode.Name = "VoxelTerrain";
-		GDNode.AddChild(
-			_voxelTerrainNode,
-			false,
-			Node.InternalMode.Front);
+		GDNode.AddChild(_voxelTerrainNode, false, Node.InternalMode.Front);
 
 		ConfigureVoxelFormat();
 		ConfigureStream();
@@ -1336,8 +1357,7 @@ public sealed partial class Terrain : Instance
 		_voxelTerrain = null;
 		_viewerNode = null;
 
-		if (_voxelTerrainNode != null &&
-			GodotObject.IsInstanceValid(_voxelTerrainNode))
+		if (_voxelTerrainNode != null && GodotObject.IsInstanceValid(_voxelTerrainNode))
 		{
 			_voxelTerrainNode.QueueFree();
 		}
@@ -1360,10 +1380,7 @@ public sealed partial class Terrain : Instance
 		TrySet(_voxelFormat, "indices_depth", 1);
 		TrySet(_voxelFormat, "weights_depth", 1);
 
-		TrySet(
-			_voxelTerrain!,
-			"voxel_format",
-			Variant.From(_voxelFormat));
+		TrySet(_voxelTerrain!, "voxel_format", Variant.From(_voxelFormat));
 	}
 
 	private void ConfigureStream()
@@ -1390,8 +1407,9 @@ public sealed partial class Terrain : Instance
 		if (!TrySet(_mesher, "texturing_mode", mixel4Mode))
 		{
 			throw new InvalidOperationException(
-				"VoxelMesherTransvoxel does not expose texturing_mode. " +
-				"The installed Voxel Tools build is incompatible.");
+				"VoxelMesherTransvoxel does not expose texturing_mode. "
+					+ "The installed Voxel Tools build is incompatible."
+			);
 		}
 
 		_voxelTerrain!.Set("mesher", Variant.From(_mesher));
@@ -1407,18 +1425,14 @@ public sealed partial class Terrain : Instance
 			"TEXTURES_BLEND_4_OVER_16",
 			"TEXTURES_MIXEL4",
 			"TEXTURING_MIXEL4",
-			"TEXTURES_BLEND_4_OVER_16_INDEXED"
+			"TEXTURES_BLEND_4_OVER_16_INDEXED",
 		];
 
 		foreach (string constantName in candidateConstants)
 		{
-			if (ClassDB.ClassHasIntegerConstant(
-				className,
-				constantName))
+			if (ClassDB.ClassHasIntegerConstant(className, constantName))
 			{
-				return (int)ClassDB.ClassGetIntegerConstant(
-					className,
-					constantName);
+				return (int)ClassDB.ClassGetIntegerConstant(className, constantName);
 			}
 		}
 
@@ -1429,15 +1443,9 @@ public sealed partial class Terrain : Instance
 	{
 		EnsureTerrain();
 
-		Shader shader = new()
-		{
-			Code = GetTerrainShaderCode()
-		};
+		Shader shader = new() { Code = GetTerrainShaderCode() };
 
-		_terrainMaterial = new ShaderMaterial
-		{
-			Shader = shader
-		};
+		_terrainMaterial = new ShaderMaterial { Shader = shader };
 
 		_voxelTerrain!.Set("material", _terrainMaterial);
 	}
@@ -1463,10 +1471,7 @@ public sealed partial class Terrain : Instance
 		}
 		foreach (TerrainMaterial material in GetMaterials())
 		{
-			_terrainMaterial.SetShaderParameter(
-				$"u_color_{material.Slot}",
-				material.Color
-			);
+			_terrainMaterial.SetShaderParameter($"u_color_{material.Slot}", material.Color);
 			roughness[material.Slot] = material.Roughness;
 			metallic[material.Slot] = material.Metallic;
 			normalStrength[material.Slot] = material.NormalStrength;
@@ -1482,36 +1487,40 @@ public sealed partial class Terrain : Instance
 		_terrainMaterial.SetShaderParameter(
 			"u_albedo_textures",
 			BuildTextureArray(
-				material => material.SurfaceType == TerrainSurfaceType.Custom
-					? material.GetTexture(material.AlbedoTexture)
-					: material.GetSurfaceTexture("albedo", "use_albedo_texture"),
+				material =>
+					material.SurfaceType == TerrainSurfaceType.Custom
+						? material.GetTexture(material.AlbedoTexture)
+						: material.GetSurfaceTexture("albedo", "use_albedo_texture"),
 				Colors.White
 			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_normal_textures",
 			BuildTextureArray(
-				material => material.SurfaceType == TerrainSurfaceType.Custom
-					? material.GetTexture(material.NormalTexture)
-					: material.GetSurfaceTexture("normal_tex", "use_normal_texture"),
+				material =>
+					material.SurfaceType == TerrainSurfaceType.Custom
+						? material.GetTexture(material.NormalTexture)
+						: material.GetSurfaceTexture("normal_tex", "use_normal_texture"),
 				new Color(0.5f, 0.5f, 1)
 			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_roughness_textures",
 			BuildTextureArray(
-				material => material.SurfaceType == TerrainSurfaceType.Custom
-					? material.GetTexture(material.RoughnessTexture)
-					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				material =>
+					material.SurfaceType == TerrainSurfaceType.Custom
+						? material.GetTexture(material.RoughnessTexture)
+						: material.GetSurfaceTexture("orm", "use_orm_texture"),
 				Colors.White
 			)
 		);
 		_terrainMaterial.SetShaderParameter(
 			"u_metallic_textures",
 			BuildTextureArray(
-				material => material.SurfaceType == TerrainSurfaceType.Custom
-					? material.GetTexture(material.MetallicTexture)
-					: material.GetSurfaceTexture("orm", "use_orm_texture"),
+				material =>
+					material.SurfaceType == TerrainSurfaceType.Custom
+						? material.GetTexture(material.MetallicTexture)
+						: material.GetSurfaceTexture("orm", "use_orm_texture"),
 				Colors.White
 			)
 		);
@@ -1519,7 +1528,8 @@ public sealed partial class Terrain : Instance
 
 	private Texture2DArray BuildTextureArray(
 		Func<TerrainMaterial, Texture2D?> selector,
-		Color fallback)
+		Color fallback
+	)
 	{
 		const int textureSize = 256;
 		Godot.Collections.Array<Image> images = [];
@@ -1528,12 +1538,9 @@ public sealed partial class Terrain : Instance
 			Texture2D? texture = GetMaterial(slot) is TerrainMaterial material
 				? selector(material)
 				: null;
-			Image image = texture?.GetImage() ?? Image.CreateEmpty(
-				textureSize,
-				textureSize,
-				false,
-				Image.Format.Rgba8
-			);
+			Image image =
+				texture?.GetImage()
+				?? Image.CreateEmpty(textureSize, textureSize, false, Image.Format.Rgba8);
 			if (texture == null)
 				image.Fill(fallback);
 			else
@@ -1757,10 +1764,7 @@ void fragment() {
 		// below the editable workspace. A height of zero creates the large
 		// square platform that previously returned after Clear().
 		TrySet(_generator, "height", -100000.0f);
-		TrySet(
-			_generator,
-			"channel",
-			GetVoxelConstant("CHANNEL_SDF", 1));
+		TrySet(_generator, "channel", GetVoxelConstant("CHANNEL_SDF", 1));
 
 		_voxelTerrain!.Set("generator", Variant.From(_generator));
 	}
@@ -1769,17 +1773,10 @@ void fragment() {
 	{
 		EnsureTerrain();
 
-		TrySet(
-			_voxelTerrain!,
-			"generate_collisions",
-			GenerateCollisions);
+		TrySet(_voxelTerrain!, "generate_collisions", GenerateCollisions);
 		TrySet(_voxelTerrain!, "collision_layer", (long)CollisionLayer);
 		TrySet(_voxelTerrain!, "collision_mask", (long)CollisionMask);
-		TrySet(
-			_voxelTerrain!,
-			"collision_update_delay",
-			CollisionUpdateDelay
-		);
+		TrySet(_voxelTerrain!, "collision_update_delay", CollisionUpdateDelay);
 		TrySet(_voxelTerrain!, "collision_margin", CollisionMargin);
 		// Generate colliders at every active terrain LOD. This prevents
 		// characters and rigid bodies from falling through during LOD changes.
@@ -1787,15 +1784,9 @@ void fragment() {
 		// Install completed collision meshes during the physics tick.
 		TrySet(_voxelTerrain!, "process_callback", 1);
 
-		TrySet(
-			_voxelTerrain!,
-			"automatic_loading_enabled",
-			true);
+		TrySet(_voxelTerrain!, "automatic_loading_enabled", true);
 
-		TrySet(
-			_voxelTerrain!,
-			"full_load_mode_enabled",
-			true);
+		TrySet(_voxelTerrain!, "full_load_mode_enabled", true);
 
 		TrySet(_voxelTerrain!, "lod_count", 5);
 		TrySet(_voxelTerrain!, "lod_distance", 64.0f);
@@ -1844,17 +1835,11 @@ void fragment() {
 		}
 
 		_viewerNode.Name = "TerrainViewer";
-		_voxelTerrainNode!.AddChild(
-			_viewerNode,
-			false,
-			Node.InternalMode.Front);
+		_voxelTerrainNode!.AddChild(_viewerNode, false, Node.InternalMode.Front);
 
 		TrySet(_viewerNode, "view_distance", ViewDistance);
 		TrySet(_viewerNode, "requires_visuals", true);
-		TrySet(
-			_viewerNode,
-			"requires_collisions",
-			GenerateCollisions);
+		TrySet(_viewerNode, "requires_collisions", GenerateCollisions);
 	}
 
 	private void RefreshVoxelTool()
@@ -1866,8 +1851,7 @@ void fragment() {
 
 		if (_voxelTool == null)
 		{
-			throw new InvalidOperationException(
-				"VoxelLodTerrain.get_voxel_tool() returned null.");
+			throw new InvalidOperationException("VoxelLodTerrain.get_voxel_tool() returned null.");
 		}
 
 		ConfigureSdfTool(ToolMode.Add);
@@ -1882,7 +1866,7 @@ void fragment() {
 		Add = 0,
 		Remove = 1,
 		Set = 2,
-		TexturePaint = 3
+		TexturePaint = 3,
 	}
 
 	private void ExecuteAndRecord(TerrainOperation operation)
@@ -1891,8 +1875,7 @@ void fragment() {
 		{
 			TryReplayPendingOperations();
 			if (_pendingReplayOperations != null)
-				throw new InvalidOperationException(
-					"Terrain is still restoring saved voxel data.");
+				throw new InvalidOperationException("Terrain is still restoring saved voxel data.");
 		}
 
 		ExecuteOperation(operation);
@@ -1912,14 +1895,16 @@ void fragment() {
 	private void TryReplayPendingOperations()
 	{
 		TerrainOperation[]? pending = _pendingReplayOperations;
-		if (pending == null) return;
+		if (pending == null)
+			return;
 
 		const int maximumOperationsPerFrame = 256;
 		int appliedThisFrame = 0;
 		try
 		{
-			while (_pendingReplayIndex < pending.Length
-				&& appliedThisFrame < maximumOperationsPerFrame)
+			while (
+				_pendingReplayIndex < pending.Length && appliedThisFrame < maximumOperationsPerFrame
+			)
 			{
 				TerrainOperation operation = pending[_pendingReplayIndex];
 				(Vector3 minimum, Vector3 maximum) = GetOperationBounds(operation);
@@ -1937,10 +1922,7 @@ void fragment() {
 				_pendingReplayOperations = null;
 				_pendingReplayIndex = 0;
 				if (pending.Length > 0)
-					BV.Print(
-						"Terrain restored ",
-						pending.Length,
-						" serialized operation(s).");
+					BV.Print("Terrain restored ", pending.Length, " serialized operation(s).");
 			}
 		}
 		catch (Exception exception)
@@ -1951,8 +1933,7 @@ void fragment() {
 		}
 	}
 
-	private static (Vector3 Minimum, Vector3 Maximum) GetOperationBounds(
-		TerrainOperation operation)
+	private static (Vector3 Minimum, Vector3 Maximum) GetOperationBounds(TerrainOperation operation)
 	{
 		Vector3 padding;
 		switch (operation.Type)
@@ -1967,7 +1948,8 @@ void fragment() {
 				padding = Vector3.One * (operation.Radius + 2.0f);
 				return (
 					operation.Position.Min(operation.SecondaryPosition) - padding,
-					operation.Position.Max(operation.SecondaryPosition) + padding);
+					operation.Position.Max(operation.SecondaryPosition) + padding
+				);
 
 			case TerrainOperationType.SetVoxelSdf:
 			case TerrainOperationType.SetVoxelMaterial:
@@ -1988,19 +1970,13 @@ void fragment() {
 		{
 			case TerrainOperationType.FillBall:
 				ConfigureSdfTool(ToolMode.Add);
-				_voxelTool!.Call(
-					"do_sphere",
-					operation.Position,
-					operation.Radius);
+				_voxelTool!.Call("do_sphere", operation.Position, operation.Radius);
 				PaintShape(operation);
 				break;
 
 			case TerrainOperationType.DigBall:
 				ConfigureSdfTool(ToolMode.Remove);
-				_voxelTool!.Call(
-					"do_sphere",
-					operation.Position,
-					operation.Radius);
+				_voxelTool!.Call("do_sphere", operation.Position, operation.Radius);
 				break;
 
 			case TerrainOperationType.FillBlock:
@@ -2016,29 +1992,18 @@ void fragment() {
 
 			case TerrainOperationType.FillCylinder:
 				ConfigureSdfTool(ToolMode.Add);
-				ExecutePath(
-					operation.Position,
-					operation.SecondaryPosition,
-					operation.Radius);
+				ExecutePath(operation.Position, operation.SecondaryPosition, operation.Radius);
 				PaintShape(operation);
 				break;
 
 			case TerrainOperationType.DigCylinder:
 				ConfigureSdfTool(ToolMode.Remove);
-				ExecutePath(
-					operation.Position,
-					operation.SecondaryPosition,
-					operation.Radius);
+				ExecutePath(operation.Position, operation.SecondaryPosition, operation.Radius);
 				break;
 
 			case TerrainOperationType.PaintBall:
-				ConfigureTexturePaintTool(
-					operation.Material,
-					operation.Strength);
-				_voxelTool!.Call(
-					"do_sphere",
-					operation.Position,
-					operation.Radius);
+				ConfigureTexturePaintTool(operation.Material, operation.Strength);
+				_voxelTool!.Call("do_sphere", operation.Position, operation.Radius);
 				break;
 
 			case TerrainOperationType.SmoothBall:
@@ -2047,7 +2012,8 @@ void fragment() {
 					"smooth_sphere",
 					operation.Position,
 					operation.Radius,
-					operation.IntegerValue);
+					operation.IntegerValue
+				);
 				break;
 
 			case TerrainOperationType.GrowBall:
@@ -2056,7 +2022,8 @@ void fragment() {
 					"grow_sphere",
 					operation.Position,
 					operation.Radius,
-					operation.Strength);
+					operation.Strength
+				);
 				break;
 
 			case TerrainOperationType.ErodeBall:
@@ -2065,28 +2032,24 @@ void fragment() {
 					"grow_sphere",
 					operation.Position,
 					operation.Radius,
-					operation.Strength);
+					operation.Strength
+				);
 				break;
 
 			case TerrainOperationType.SetVoxelSdf:
 				SetToolChannel("CHANNEL_SDF", 1);
-				_voxelTool!.Call(
-					"set_voxel_f",
-					ToVector3I(operation.Position),
-					operation.Strength);
+				_voxelTool!.Call("set_voxel_f", ToVector3I(operation.Position), operation.Strength);
 				break;
 
 			case TerrainOperationType.SetVoxelMaterial:
 				ConfigureTexturePaintTool(operation.Material, 1.0f);
-				_voxelTool!.Call(
-					"do_sphere",
-					(Vector3)ToVector3I(operation.Position),
-					0.75f);
+				_voxelTool!.Call("do_sphere", (Vector3)ToVector3I(operation.Position), 0.75f);
 				break;
 
 			default:
 				throw new InvalidDataException(
-					$"Unknown terrain operation type: {operation.Type}.");
+					$"Unknown terrain operation type: {operation.Type}."
+				);
 		}
 	}
 
@@ -2106,24 +2069,19 @@ void fragment() {
 		switch (operation.Type)
 		{
 			case TerrainOperationType.FillBall:
-				_voxelTool!.Call(
-					"do_sphere",
-					operation.Position,
-					operation.Radius + surfaceShell);
+				_voxelTool!.Call("do_sphere", operation.Position, operation.Radius + surfaceShell);
 				break;
 
 			case TerrainOperationType.FillBlock:
-				ExecuteBox(
-					operation.Position,
-					operation.Size + Vector3.One * surfaceShell * 2.0f
-				);
+				ExecuteBox(operation.Position, operation.Size + Vector3.One * surfaceShell * 2.0f);
 				break;
 
 			case TerrainOperationType.FillCylinder:
 				ExecutePath(
 					operation.Position,
 					operation.SecondaryPosition,
-					operation.Radius + surfaceShell);
+					operation.Radius + surfaceShell
+				);
 				break;
 		}
 	}
@@ -2135,34 +2093,25 @@ void fragment() {
 		Vector3I begin = new(
 			Mathf.FloorToInt(center.X - halfSize.X),
 			Mathf.FloorToInt(center.Y - halfSize.Y),
-			Mathf.FloorToInt(center.Z - halfSize.Z));
+			Mathf.FloorToInt(center.Z - halfSize.Z)
+		);
 
 		Vector3I end = new(
 			Mathf.CeilToInt(center.X + halfSize.X),
 			Mathf.CeilToInt(center.Y + halfSize.Y),
-			Mathf.CeilToInt(center.Z + halfSize.Z));
+			Mathf.CeilToInt(center.Z + halfSize.Z)
+		);
 
 		_voxelTool!.Call("do_box", begin, end);
 	}
 
-	private void ExecutePath(
-		Vector3 start,
-		Vector3 end,
-		float radius)
+	private void ExecutePath(Vector3 start, Vector3 end, float radius)
 	{
 		// Godot C# marshals managed Vector3[] and float[] to the packed array
 		// argument types expected by the GDExtension method.
-		Vector3[] points =
-		[
-			start,
-			end
-		];
+		Vector3[] points = [start, end];
 
-		float[] radii =
-		[
-			radius,
-			radius
-		];
+		float[] radii = [radius, radius];
 
 		_voxelTool!.Call("do_path", points, radii);
 	}
@@ -2173,60 +2122,36 @@ void fragment() {
 		SetToolChannel("CHANNEL_SDF", 1);
 
 		_voxelTool!.Set("mode", (int)mode);
-		TrySet(
-			_voxelTool,
-			"sdf_strength",
-			DefaultSdfStrength);
-		TrySet(
-			_voxelTool,
-			"sdf_scale",
-			DefaultSdfScale);
+		TrySet(_voxelTool, "sdf_strength", DefaultSdfStrength);
+		TrySet(_voxelTool, "sdf_scale", DefaultSdfScale);
 	}
 
-	private void ConfigureTexturePaintTool(
-		int material,
-		float opacity)
+	private void ConfigureTexturePaintTool(int material, float opacity)
 	{
 		EnsureTool();
 		ValidateMaterial(material);
 
 		SetToolChannel("CHANNEL_SDF", 1);
 
-		_voxelTool!.Set(
-			"mode",
-			(int)ToolMode.TexturePaint);
+		_voxelTool!.Set("mode", (int)ToolMode.TexturePaint);
 
 		_voxelTool.Set("texture_index", material);
 
-		float clampedOpacity =
-			Mathf.Clamp(opacity, 0.0f, 1.0f);
+		float clampedOpacity = Mathf.Clamp(opacity, 0.0f, 1.0f);
 
-		if (!TrySet(
-			_voxelTool,
-			"texture_opacity",
-			clampedOpacity))
+		if (!TrySet(_voxelTool, "texture_opacity", clampedOpacity))
 		{
-			TrySet(
-				_voxelTool,
-				"set_texture_opacity",
-				clampedOpacity);
+			TrySet(_voxelTool, "set_texture_opacity", clampedOpacity);
 		}
 
-		TrySet(
-			_voxelTool,
-			"texture_falloff",
-			0.1f);
+		TrySet(_voxelTool, "texture_falloff", 0.1f);
 	}
 
-	private void SetToolChannel(
-		string constantName,
-		int fallback)
+	private void SetToolChannel(string constantName, int fallback)
 	{
 		EnsureTool();
 
-		_voxelTool!.Set(
-			"channel",
-			GetVoxelConstant(constantName, fallback));
+		_voxelTool!.Set("channel", GetVoxelConstant(constantName, fallback));
 	}
 
 	#endregion
@@ -2238,45 +2163,38 @@ void fragment() {
 		if (!ClassDB.ClassExists(className))
 		{
 			throw new InvalidOperationException(
-				$"Voxel Tools class '{className}' is unavailable. " +
-				"Make sure the GDExtension is installed and loaded.");
+				$"Voxel Tools class '{className}' is unavailable. "
+					+ "Make sure the GDExtension is installed and loaded."
+			);
 		}
 
 		Variant result = ClassDB.Instantiate(className);
 		GodotObject? instance = result.AsGodotObject();
 
-		return instance ?? throw new InvalidOperationException(
-			$"Failed to instantiate Voxel Tools class '{className}'.");
+		return instance
+			?? throw new InvalidOperationException(
+				$"Failed to instantiate Voxel Tools class '{className}'."
+			);
 	}
 
-	private static int GetVoxelConstant(
-		string constantName,
-		int fallback)
+	private static int GetVoxelConstant(string constantName, int fallback)
 	{
 		if (!ClassDB.ClassExists("VoxelBuffer"))
 		{
 			return fallback;
 		}
 
-		if (!ClassDB.ClassHasIntegerConstant(
-			"VoxelBuffer",
-			constantName))
+		if (!ClassDB.ClassHasIntegerConstant("VoxelBuffer", constantName))
 		{
 			return fallback;
 		}
 
-		return (int)ClassDB.ClassGetIntegerConstant(
-			"VoxelBuffer",
-			constantName);
+		return (int)ClassDB.ClassGetIntegerConstant("VoxelBuffer", constantName);
 	}
 
-	private static bool TrySet(
-		GodotObject target,
-		StringName property,
-		Variant value)
+	private static bool TrySet(GodotObject target, StringName property, Variant value)
 	{
-		Godot.Collections.Array<Godot.Collections.Dictionary> properties =
-			target.GetPropertyList();
+		Godot.Collections.Array<Godot.Collections.Dictionary> properties = target.GetPropertyList();
 
 		foreach (Godot.Collections.Dictionary propertyInfo in properties)
 		{
@@ -2302,17 +2220,19 @@ void fragment() {
 		return new Vector3I(
 			Mathf.RoundToInt(value.X),
 			Mathf.RoundToInt(value.Y),
-			Mathf.RoundToInt(value.Z));
+			Mathf.RoundToInt(value.Z)
+		);
 	}
 
 	private void EnsureTerrain()
 	{
-		if (_voxelTerrain == null ||
-			_voxelTerrainNode == null ||
-			!GodotObject.IsInstanceValid(_voxelTerrainNode))
+		if (
+			_voxelTerrain == null
+			|| _voxelTerrainNode == null
+			|| !GodotObject.IsInstanceValid(_voxelTerrainNode)
+		)
 		{
-			throw new InvalidOperationException(
-				"Voxel terrain has not been initialized.");
+			throw new InvalidOperationException("Voxel terrain has not been initialized.");
 		}
 	}
 
@@ -2332,26 +2252,23 @@ void fragment() {
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(radius),
-				"Radius must be finite and greater than zero.");
+				"Radius must be finite and greater than zero."
+			);
 		}
 	}
 
 	private static void ValidateSize(Vector3 size)
 	{
-		if (!size.IsFinite() ||
-			size.X <= 0.0f ||
-			size.Y <= 0.0f ||
-			size.Z <= 0.0f)
+		if (!size.IsFinite() || size.X <= 0.0f || size.Y <= 0.0f || size.Z <= 0.0f)
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(size),
-				"Every size component must be finite and greater than zero.");
+				"Every size component must be finite and greater than zero."
+			);
 		}
 	}
 
-	private static void ValidateCylinder(
-		float height,
-		float radius)
+	private static void ValidateCylinder(float height, float radius)
 	{
 		ValidateRadius(radius);
 
@@ -2359,7 +2276,8 @@ void fragment() {
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(height),
-				"Height must be finite and greater than zero.");
+				"Height must be finite and greater than zero."
+			);
 		}
 	}
 
@@ -2369,11 +2287,13 @@ void fragment() {
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(material),
-				$"Material slot must be between 0 and {TerrainMaterial.MaximumSlots - 1}.");
+				$"Material slot must be between 0 and {TerrainMaterial.MaximumSlots - 1}."
+			);
 		}
 		if (!_isLoading && GetMaterial(material) == null)
 			throw new InvalidOperationException(
-				$"Terrain material slot {material} does not exist under Terrain.");
+				$"Terrain material slot {material} does not exist under Terrain."
+			);
 	}
 
 	private static void ValidateStrength(float strength)
@@ -2382,7 +2302,8 @@ void fragment() {
 		{
 			throw new ArgumentOutOfRangeException(
 				nameof(strength),
-				"Strength must be finite and non-negative.");
+				"Strength must be finite and non-negative."
+			);
 		}
 	}
 

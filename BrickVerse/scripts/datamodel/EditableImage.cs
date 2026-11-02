@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
 using System;
+using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -143,7 +143,12 @@ public partial class EditableImage : UIImage
 	}
 
 	[ScriptMethod]
-	public void DrawRectangle(Vector2 position, Vector2 size, Color color, float transparency = 0.0f)
+	public void DrawRectangle(
+		Vector2 position,
+		Vector2 size,
+		Color color,
+		float transparency = 0.0f
+	)
 	{
 		EnsureCanvas();
 
@@ -191,7 +196,13 @@ public partial class EditableImage : UIImage
 	}
 
 	[ScriptMethod]
-	public void DrawLine(Vector2 p1, Vector2 p2, Color color, float transparency = 0.0f, float thickness = 1.0f)
+	public void DrawLine(
+		Vector2 p1,
+		Vector2 p2,
+		Color color,
+		float transparency = 0.0f,
+		float thickness = 1.0f
+	)
 	{
 		EnsureCanvas();
 		if (thickness <= 0.0f)
@@ -199,7 +210,10 @@ public partial class EditableImage : UIImage
 
 		Color source = WithTransparency(color, transparency);
 		Vector2 delta = p2 - p1;
-		int steps = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(Mathf.Abs(delta.X), Mathf.Abs(delta.Y))));
+		int steps = Mathf.Max(
+			1,
+			Mathf.CeilToInt(Mathf.Max(Mathf.Abs(delta.X), Mathf.Abs(delta.Y)))
+		);
 		float radius = Mathf.Max(0.5f, thickness * 0.5f);
 
 		for (int i = 0; i <= steps; i++)
@@ -253,9 +267,10 @@ public partial class EditableImage : UIImage
 	private void RecreateCanvas(bool preservePixels)
 	{
 		Godot.Image? previous = preservePixels ? _editableImage : null;
-		Vector2I previousSize = previous == null
-			? Vector2I.Zero
-			: new Vector2I(previous.GetWidth(), previous.GetHeight());
+		Vector2I previousSize =
+			previous == null
+				? Vector2I.Zero
+				: new Vector2I(previous.GetWidth(), previous.GetHeight());
 
 		_editableImage = Godot.Image.CreateEmpty(_size.X, _size.Y, false, Godot.Image.Format.Rgba8);
 		_editableImage.Fill(new Color(0, 0, 0, 0));
@@ -356,9 +371,15 @@ public partial class EditableImage : UIImage
 	private static Vector2I SanitizeSize(Vector2I size)
 	{
 		if (size.X <= 0 || size.Y <= 0)
-			throw new ArgumentOutOfRangeException(nameof(size), "EditableImage dimensions must be greater than zero.");
+			throw new ArgumentOutOfRangeException(
+				nameof(size),
+				"EditableImage dimensions must be greater than zero."
+			);
 		if (size.X > MaxDimension || size.Y > MaxDimension || (long)size.X * size.Y > MaxPixels)
-			throw new ArgumentOutOfRangeException(nameof(size), $"EditableImage cannot exceed {MaxDimension}x{MaxDimension} pixels.");
+			throw new ArgumentOutOfRangeException(
+				nameof(size),
+				$"EditableImage cannot exceed {MaxDimension}x{MaxDimension} pixels."
+			);
 		return size;
 	}
 
@@ -366,7 +387,15 @@ public partial class EditableImage : UIImage
 	{
 		if (size.X < 0 || size.Y < 0)
 			throw new ArgumentOutOfRangeException(nameof(size), "Region size cannot be negative.");
-		if (position.X < 0 || position.Y < 0 || position.X + size.X > _size.X || position.Y + size.Y > _size.Y)
-			throw new ArgumentOutOfRangeException(nameof(position), "Pixel region must be fully inside the EditableImage bounds.");
+		if (
+			position.X < 0
+			|| position.Y < 0
+			|| position.X + size.X > _size.X
+			|| position.Y + size.Y > _size.Y
+		)
+			throw new ArgumentOutOfRangeException(
+				nameof(position),
+				"Pixel region must be fully inside the EditableImage bounds."
+			);
 	}
 }

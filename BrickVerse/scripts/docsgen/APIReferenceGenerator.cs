@@ -2,12 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +10,12 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 using static BrickVerse.DocsGen.APIReferenceGenerator;
 
 namespace BrickVerse.DocsGen;
@@ -29,20 +29,32 @@ public class APIReferenceGenerator
 		Type[] types = assembly.GetTypes();
 #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
 
-		APIReferenceRoot apiRef = new() { Version = Globals.AppVersion, Classes = [], InstanceClasses = [] };
+		APIReferenceRoot apiRef = new()
+		{
+			Version = Globals.AppVersion,
+			Classes = [],
+			InstanceClasses = [],
+		};
 		List<ScriptEnum> enums = [];
 		List<Type> missingEnums = [];
 		Dictionary<Type, ScriptClass> classMap = [];
 
 		foreach (Type type in types)
 		{
-			if (!type.IsAssignableTo(typeof(IScriptObject))) continue;
-			if (type.IsEnum || type.IsInterface) continue;
-			if (type.IsDefined(typeof(InternalAttribute))) continue;
-			if (type.FullName == null) continue;
-			if (type.FullName.Contains("BrickVerse.Scripting.Extensions")) continue;
-			if (type.FullName.Contains("BrickVerse.Scripting.Libraries")) continue;
-			if (type.IsGenericType) continue;
+			if (!type.IsAssignableTo(typeof(IScriptObject)))
+				continue;
+			if (type.IsEnum || type.IsInterface)
+				continue;
+			if (type.IsDefined(typeof(InternalAttribute)))
+				continue;
+			if (type.FullName == null)
+				continue;
+			if (type.FullName.Contains("BrickVerse.Scripting.Extensions"))
+				continue;
+			if (type.FullName.Contains("BrickVerse.Scripting.Libraries"))
+				continue;
+			if (type.IsGenericType)
+				continue;
 
 			if (type.IsAssignableTo(typeof(Instance)))
 			{
@@ -50,8 +62,18 @@ public class APIReferenceGenerator
 			}
 
 #pragma warning disable IL2075 // Datamodel types has the reflections needed
-			PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-			MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
+			PropertyInfo[] properties = type.GetProperties(
+				BindingFlags.Public
+					| BindingFlags.Instance
+					| BindingFlags.Static
+					| BindingFlags.DeclaredOnly
+			);
+			MethodInfo[] methods = type.GetMethods(
+				BindingFlags.Public
+					| BindingFlags.Instance
+					| BindingFlags.Static
+					| BindingFlags.DeclaredOnly
+			);
 #pragma warning restore IL2075
 
 			List<ScriptProperty> propertiesDef = [];
@@ -60,19 +82,25 @@ public class APIReferenceGenerator
 
 			foreach (PropertyInfo property in properties)
 			{
-				ScriptPropertyAttribute? propAttribute = property.GetCustomAttribute<ScriptPropertyAttribute>();
-				EditableAttribute? editableAttribute = property.GetCustomAttribute<EditableAttribute>();
+				ScriptPropertyAttribute? propAttribute =
+					property.GetCustomAttribute<ScriptPropertyAttribute>();
+				EditableAttribute? editableAttribute =
+					property.GetCustomAttribute<EditableAttribute>();
 
-				if (propAttribute == null && editableAttribute == null) continue;
+				if (propAttribute == null && editableAttribute == null)
+					continue;
 
-				if (property.PropertyType == typeof(BVSignal) ||
-					(property.PropertyType.IsGenericType &&
-					 property.PropertyType.GetGenericTypeDefinition().Name.StartsWith(nameof(BVSignal))))
+				if (
+					property.PropertyType == typeof(BVSignal)
+					|| (
+						property.PropertyType.IsGenericType
+						&& property
+							.PropertyType.GetGenericTypeDefinition()
+							.Name.StartsWith(nameof(BVSignal))
+					)
+				)
 				{
-					ScriptEvent eventDef = new()
-					{
-						Name = property.Name,
-					};
+					ScriptEvent eventDef = new() { Name = property.Name };
 
 					Type propertyType = property.PropertyType;
 					if (propertyType.IsGenericType)
@@ -88,7 +116,7 @@ public class APIReferenceGenerator
 								Name = tn.ToCamelCase(),
 								Type = tn,
 								IsOptional = false,
-								DefaultValue = null
+								DefaultValue = null,
 							};
 							paramsDef.Add(param);
 						}
@@ -104,9 +132,12 @@ public class APIReferenceGenerator
 					{
 						Name = property.Name,
 						Type = ProcessTypeName(property.PropertyType),
-						IsAccessibleByScripts = !(editableAttribute != null && propAttribute == null),
-						IsObsolete = property.GetCustomAttribute<Attributes.ObsoleteAttribute>() != null,
-						IsStatic = property.GetAccessors(true)[0].IsStatic
+						IsAccessibleByScripts = !(
+							editableAttribute != null && propAttribute == null
+						),
+						IsObsolete =
+							property.GetCustomAttribute<Attributes.ObsoleteAttribute>() != null,
+						IsStatic = property.GetAccessors(true)[0].IsStatic,
 					};
 
 					if (propAttribute != null)
@@ -129,11 +160,15 @@ public class APIReferenceGenerator
 
 			foreach (MethodInfo method in methods)
 			{
-				ScriptMethodAttribute? methodAttribute = method.GetCustomAttribute<ScriptMethodAttribute>();
-				ScriptMetamethodAttribute? metaMethodAttribute = method.GetCustomAttribute<ScriptMetamethodAttribute>();
+				ScriptMethodAttribute? methodAttribute =
+					method.GetCustomAttribute<ScriptMethodAttribute>();
+				ScriptMetamethodAttribute? metaMethodAttribute =
+					method.GetCustomAttribute<ScriptMetamethodAttribute>();
 
-				if (methodAttribute == null && metaMethodAttribute == null) continue;
-				if (method.IsDefined(typeof(HandlesLuaStateAttribute))) continue;
+				if (methodAttribute == null && metaMethodAttribute == null)
+					continue;
+				if (method.IsDefined(typeof(HandlesLuaStateAttribute)))
+					continue;
 
 				bool asyncFunc = false;
 				Type returnType = method.ReturnType;
@@ -142,7 +177,10 @@ public class APIReferenceGenerator
 				{
 					asyncFunc = true;
 				}
-				else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+				else if (
+					returnType.IsGenericType
+					&& returnType.GetGenericTypeDefinition() == typeof(Task<>)
+				)
 				{
 					asyncFunc = true;
 					returnType = returnType.GetGenericArguments()[0];
@@ -152,24 +190,30 @@ public class APIReferenceGenerator
 
 				foreach (ParameterInfo item in method.GetParameters())
 				{
-					if (item.ParameterType == typeof(Node)) continue;
-					if (item.IsDefined(typeof(ScriptingCallerAttribute))) continue;
+					if (item.ParameterType == typeof(Node))
+						continue;
+					if (item.IsDefined(typeof(ScriptingCallerAttribute)))
+						continue;
 					ScriptParameter param = new()
 					{
 						Name = item.Name ?? "",
 						Type = ProcessTypeName(item.ParameterType),
 						IsOptional = item.HasDefaultValue,
-						DefaultValue = item.DefaultValue?.ToString() ?? null
+						DefaultValue = item.DefaultValue?.ToString() ?? null,
 					};
 
 					paramsDef.Add(param);
 				}
 
-				if (returnType == typeof(Node)) continue;
+				if (returnType == typeof(Node))
+					continue;
 
 				ScriptMethod methodDef = new()
 				{
-					Name = metaMethodAttribute != null ? GetMetamethodIndexer(metaMethodAttribute.Metamethod) : methodAttribute?.MethodName ?? method.Name,
+					Name =
+						metaMethodAttribute != null
+							? GetMetamethodIndexer(metaMethodAttribute.Metamethod)
+							: methodAttribute?.MethodName ?? method.Name,
 					ReturnType = ProcessTypeName(returnType),
 					IsAsync = asyncFunc,
 					Parameters = paramsDef,
@@ -184,30 +228,28 @@ public class APIReferenceGenerator
 			// __index & __newindex for Instance
 			if (type == typeof(Instance))
 			{
-				methodsDef.Add(new()
-				{
-					Name = "__index",
-					ReturnType = "any",
-					IsAsync = false,
-					Parameters =
-					[
-						new() { Name = "indexer", Type = "any" }
-					],
-					IsObsolete = false,
-					IsStatic = false,
-				});
-				methodsDef.Add(new()
-				{
-					Name = "__newindex",
-					ReturnType = "nil",
-					IsAsync = false,
-					Parameters =
-					[
-						new() { Name = "indexer", Type = "any" }
-					],
-					IsObsolete = false,
-					IsStatic = false,
-				});
+				methodsDef.Add(
+					new()
+					{
+						Name = "__index",
+						ReturnType = "any",
+						IsAsync = false,
+						Parameters = [new() { Name = "indexer", Type = "any" }],
+						IsObsolete = false,
+						IsStatic = false,
+					}
+				);
+				methodsDef.Add(
+					new()
+					{
+						Name = "__newindex",
+						ReturnType = "nil",
+						IsAsync = false,
+						Parameters = [new() { Name = "indexer", Type = "any" }],
+						IsObsolete = false,
+						IsStatic = false,
+					}
+				);
 			}
 
 			StaticAttribute? staticA = type.GetCustomAttribute<StaticAttribute>();
@@ -215,7 +257,14 @@ public class APIReferenceGenerator
 			ScriptClass typeDef = new()
 			{
 				Name = ProcessClassName(type),
-				BaseType = ((type.BaseType != null && type.BaseType.IsAssignableTo(typeof(Node))) || type.BaseType == typeof(object) || type.BaseType == typeof(ValueType)) ? null : type.BaseType?.Name ?? null,
+				BaseType =
+					(
+						(type.BaseType != null && type.BaseType.IsAssignableTo(typeof(Node)))
+						|| type.BaseType == typeof(object)
+						|| type.BaseType == typeof(ValueType)
+					)
+						? null
+						: type.BaseType?.Name ?? null,
 				IsStatic = staticA != null,
 				StaticAlias = staticA?.Alias,
 				IsAbstract = type.IsDefined(typeof(AbstractAttribute), false),
@@ -234,7 +283,14 @@ public class APIReferenceGenerator
 
 		foreach ((string key, Type enumType) in ScriptService.EnumMap)
 		{
-			enums.Add(new() { Name = key, InternalName = enumType.Name, Options = Enum.GetNames(enumType) });
+			enums.Add(
+				new()
+				{
+					Name = key,
+					InternalName = enumType.Name,
+					Options = Enum.GetNames(enumType),
+				}
+			);
 		}
 		apiRef.Enums = enums;
 
@@ -273,11 +329,13 @@ public class APIReferenceGenerator
 			ScriptObjectMetamethod.Unm => "__unm",
 			ScriptObjectMetamethod.Index => "__index",
 			ScriptObjectMetamethod.NewIndex => "__newindex",
-			_ => ""
+			_ => "",
 		};
 	}
 
-	private static List<ScriptClass> OrderClassesByInheritance(Dictionary<Type, ScriptClass> classMap)
+	private static List<ScriptClass> OrderClassesByInheritance(
+		Dictionary<Type, ScriptClass> classMap
+	)
 	{
 		List<ScriptClass> result = [];
 		HashSet<Type> processed = [];
@@ -289,10 +347,12 @@ public class APIReferenceGenerator
 			Type? baseType = type.BaseType;
 
 			// Find the actual base type
-			while (baseType != null &&
-				   baseType != typeof(object) &&
-				   baseType != typeof(ValueType) &&
-				   !baseType.IsAssignableTo(typeof(Node)))
+			while (
+				baseType != null
+				&& baseType != typeof(object)
+				&& baseType != typeof(ValueType)
+				&& !baseType.IsAssignableTo(typeof(Node))
+			)
 			{
 				if (classMap.ContainsKey(baseType))
 				{
@@ -312,15 +372,19 @@ public class APIReferenceGenerator
 		// Recursive function to add type and its children in order
 		void AddTypeAndChildren(Type type)
 		{
-			if (processed.Contains(type)) return;
-			if (!classMap.TryGetValue(type, out ScriptClass v)) return;
+			if (processed.Contains(type))
+				return;
+			if (!classMap.TryGetValue(type, out ScriptClass v))
+				return;
 
 			// Ensure parent is added
 			Type? baseType = type.BaseType;
-			while (baseType != null &&
-				   baseType != typeof(object) &&
-				   baseType != typeof(ValueType) &&
-				   !baseType.IsAssignableTo(typeof(Node)))
+			while (
+				baseType != null
+				&& baseType != typeof(object)
+				&& baseType != typeof(ValueType)
+				&& !baseType.IsAssignableTo(typeof(Node))
+			)
 			{
 				if (classMap.ContainsKey(baseType) && !processed.Contains(baseType))
 				{
@@ -350,10 +414,12 @@ public class APIReferenceGenerator
 			Type? baseType = type.BaseType;
 			bool hasParentInSet = false;
 
-			while (baseType != null &&
-				   baseType != typeof(object) &&
-				   baseType != typeof(ValueType) &&
-				   !baseType.IsAssignableTo(typeof(Node)))
+			while (
+				baseType != null
+				&& baseType != typeof(object)
+				&& baseType != typeof(ValueType)
+				&& !baseType.IsAssignableTo(typeof(Node))
+			)
 			{
 				if (classMap.ContainsKey(baseType))
 				{
@@ -380,7 +446,10 @@ public class APIReferenceGenerator
 
 	public static void GenerateRefFile()
 	{
-		string docData = JsonSerializer.Serialize(GenerateReferences(), APIRefGenerationContext.Default.APIReferenceRoot);
+		string docData = JsonSerializer.Serialize(
+			GenerateReferences(),
+			APIRefGenerationContext.Default.APIReferenceRoot
+		);
 		using FileAccess file = FileAccess.Open("res://apiref.json", FileAccess.ModeFlags.Write);
 		file.StoreString(docData);
 		file.Close();
@@ -397,21 +466,24 @@ public class APIReferenceGenerator
 
 	private static string? ProcessTypeName(Type? type)
 	{
-		if (type == null) return "nil";
+		if (type == null)
+			return "nil";
 		if (Nullable.GetUnderlyingType(type) is Type underlying)
 			type = underlying;
 
-		if (type == typeof(byte) ||
-			type == typeof(sbyte) ||
-			type == typeof(short) ||
-			type == typeof(ushort) ||
-			type == typeof(int) ||
-			type == typeof(uint) ||
-			type == typeof(long) ||
-			type == typeof(ulong) ||
-			type == typeof(float) ||
-			type == typeof(double) ||
-			type == typeof(decimal))
+		if (
+			type == typeof(byte)
+			|| type == typeof(sbyte)
+			|| type == typeof(short)
+			|| type == typeof(ushort)
+			|| type == typeof(int)
+			|| type == typeof(uint)
+			|| type == typeof(long)
+			|| type == typeof(ulong)
+			|| type == typeof(float)
+			|| type == typeof(double)
+			|| type == typeof(decimal)
+		)
 		{
 			return "number";
 		}

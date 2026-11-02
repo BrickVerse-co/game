@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Datamodel.Services;
 using System;
+using BrickVerse.Datamodel.Services;
 
 namespace BrickVerse.Tests;
 
@@ -18,17 +18,31 @@ public class DatamodelServiceTest
 		HttpService.CheckURLPass("http://localhost:8000", true);
 
 		// Prevent access to non HTTP(S)
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("file://hello.txt", true));
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("ftp://127.0.0.1:6942", true));
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("file://hello.txt", true)
+		);
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("ftp://127.0.0.1:6942", true)
+		);
 
 		// -- Local test false -- //
 
 		// Prevent access to non HTTP(S)
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("file://hello.txt", false));
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("ftp://127.0.0.1:6942", false));
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("http://localhost:8000", false));
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("https://localhost:8000", false));
-		Assert.Throws<InvalidOperationException>(() => HttpService.CheckURLPass("https://127.0.0.1:8000", false));
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("file://hello.txt", false)
+		);
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("ftp://127.0.0.1:6942", false)
+		);
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("http://localhost:8000", false)
+		);
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("https://localhost:8000", false)
+		);
+		Assert.Throws<InvalidOperationException>(() =>
+			HttpService.CheckURLPass("https://127.0.0.1:8000", false)
+		);
 
 		// Normal access should pass in production
 		HttpService.CheckURLPass("https://example.com", false);

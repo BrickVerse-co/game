@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Utils;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client.UI.Playerlist;
 
@@ -13,8 +13,11 @@ public partial class UILeaderboardTeamItem : Control
 {
 	private readonly Dictionary<Stat, Label> _statToLabel = [];
 
-	[Export] private Label _teamNameLabel = null!;
-	[Export] private Control _statsBox = null!;
+	[Export]
+	private Label _teamNameLabel = null!;
+
+	[Export]
+	private Control _statsBox = null!;
 
 	public Team TargetTeam = null!;
 	public UILeaderboard Leaderboard = null!;
@@ -87,7 +90,7 @@ public partial class UILeaderboardTeamItem : Control
 		{
 			CustomMinimumSize = new(70, 0),
 			HorizontalAlignment = HorizontalAlignment.Center,
-			TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
+			TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
 		};
 		_statsBox.AddChild(l);
 		_statToLabel[stat] = l;

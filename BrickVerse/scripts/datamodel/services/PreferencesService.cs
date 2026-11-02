@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using BrickVerse.Attributes;
-using BrickVerse.Scripting;
-using BrickVerse.Shared.Settings;
 using BrickVerse.Client.Settings;
 using BrickVerse.Enums;
+using BrickVerse.Scripting;
+using BrickVerse.Shared.Settings;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -16,13 +16,26 @@ namespace BrickVerse.Datamodel.Services;
 [SaveIgnore]
 public sealed partial class PreferencesService : Instance
 {
-	[ScriptProperty] public BVSignal<string, object> SettingChanged { get; private set; } = new();
-	[ScriptProperty] public float CameraSensitivity => ClientSettingsService.Instance.Get<float>(ClientSettingKeys.General.CameraSensitivity);
-	[ScriptProperty] public float UiScale => ClientSettingsService.Instance.Get<float>(ClientSettingKeys.Display.UiScale);
+	[ScriptProperty]
+	public BVSignal<string, object> SettingChanged { get; private set; } = new();
 
-	[ScriptLegacyProperty("UsePhotoMode")] public static bool LegacyUsePhotoMode => ClientSettingsService.Instance.Get<GraphicsPreset>(SharedSettingKeys.Graphics.Preset) == GraphicsPreset.Photo;
+	[ScriptProperty]
+	public float CameraSensitivity =>
+		ClientSettingsService.Instance.Get<float>(ClientSettingKeys.General.CameraSensitivity);
+
+	[ScriptProperty]
+	public float UiScale =>
+		ClientSettingsService.Instance.Get<float>(ClientSettingKeys.Display.UiScale);
+
+	[ScriptLegacyProperty("UsePhotoMode")]
+	public static bool LegacyUsePhotoMode =>
+		ClientSettingsService.Instance.Get<GraphicsPreset>(SharedSettingKeys.Graphics.Preset)
+		== GraphicsPreset.Photo;
+
 	// We might want to check if all the post processing is enabled rather than just one.
-	[ScriptLegacyProperty("UsePostProcessing")] public static bool UsePostProcessing => ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.PostProcessing.Glow) == true;
+	[ScriptLegacyProperty("UsePostProcessing")]
+	public static bool UsePostProcessing =>
+		ClientSettingsService.Instance.Get<bool>(SharedSettingKeys.PostProcessing.Glow) == true;
 
 	private static readonly Dictionary<string, Type> SettingEnumTypes = new()
 	{
@@ -59,7 +72,8 @@ public sealed partial class PreferencesService : Instance
 	private void OnSettingChanged(SettingChangedEvent setting)
 	{
 		object? value = setting.NewValue;
-		if (value == null) return;
+		if (value == null)
+			return;
 
 		if (SettingEnumTypes.TryGetValue(setting.Key, out var enumType))
 		{

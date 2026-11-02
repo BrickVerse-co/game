@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Enums;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -16,7 +16,9 @@ public partial class UIShadow : Instance
 	private ShadowPanel[] _panels = [];
 	private UIField? _parentView;
 
-	private static readonly ShaderMaterial _multiplyMaterial = GD.Load<ShaderMaterial>("res://resources/materials/shadow_mul.tres");
+	private static readonly ShaderMaterial _multiplyMaterial = GD.Load<ShaderMaterial>(
+		"res://resources/materials/shadow_mul.tres"
+	);
 
 	private sealed class ShadowPanel
 	{
@@ -104,7 +106,8 @@ public partial class UIShadow : Instance
 
 	private void RebuildPanels()
 	{
-		if (_parentView == null) return;
+		if (_parentView == null)
+			return;
 
 		foreach (ShadowPanel sp in _panels)
 			sp.Panel.QueueFree();
@@ -130,7 +133,7 @@ public partial class UIShadow : Instance
 				default:
 					panel.Material = new CanvasItemMaterial
 					{
-						BlendMode = (CanvasItemMaterial.BlendModeEnum)blendMode
+						BlendMode = (CanvasItemMaterial.BlendModeEnum)blendMode,
 					};
 					break;
 			}

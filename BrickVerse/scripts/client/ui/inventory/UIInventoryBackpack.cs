@@ -2,14 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
 public partial class UIInventoryBackpack : Control
 {
-	[Export] public UIInventory UIInventory { get; private set; } = null!;
+	[Export]
+	public UIInventory UIInventory { get; private set; } = null!;
 
 	public override void _Ready()
 	{

@@ -2,19 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
+using BrickVerse.Client.XR;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Enums;
 using BrickVerse.Networking;
+using BrickVerse.Schemas.Debugger;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using BrickVerse.Client.XR;
-using System;
-using System.Collections.Generic;
+using Godot;
 using static BrickVerse.Datamodel.Environment;
-using BrickVerse.Schemas.Debugger;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -37,33 +37,76 @@ public sealed partial class InputService : Instance
 #endif
 			return _mapData;
 		}
-		set
-		{
-			_mapData = value;
-		}
+		set { _mapData = value; }
 	}
 
-	[ScriptProperty] public bool IsWindowFocused { get; private set; } = true;
-	[ScriptProperty] public bool IsTouchscreen { get; private set; } = false;
-	[ScriptProperty] public bool IsGameFocused { get; internal set; } = false;
-	[ScriptProperty] public bool IsInputFocused => !IsGameFocused;
-	[ScriptProperty] public bool IsGamepadConnected { get; private set; } = false;
-	[ScriptProperty] public bool IsMenuOpened { get; internal set; } = false;
-	[ScriptProperty] public string LastInputDevice { get; private set; } = "KeyboardMouse";
+	[ScriptProperty]
+	public bool IsWindowFocused { get; private set; } = true;
+
+	[ScriptProperty]
+	public bool IsTouchscreen { get; private set; } = false;
+
+	[ScriptProperty]
+	public bool IsGameFocused { get; internal set; } = false;
+
+	[ScriptProperty]
+	public bool IsInputFocused => !IsGameFocused;
+
+	[ScriptProperty]
+	public bool IsGamepadConnected { get; private set; } = false;
+
+	[ScriptProperty]
+	public bool IsMenuOpened { get; internal set; } = false;
+
+	[ScriptProperty]
+	public string LastInputDevice { get; private set; } = "KeyboardMouse";
 	private bool _creatorEmulation;
 	private string _creatorDeviceType = "PC";
-	[ScriptProperty] public bool IsVR => VRService.CreatorEmulationEnabled || XR?.IsActive == true;
-	[ScriptProperty] public string DeviceType => _creatorEmulation ? _creatorDeviceType : IsVR ? "VR" : Globals.IsMobileBuild ? (Math.Min(ScreenWidth, ScreenHeight) >= 720 ? "Tablet" : "Phone") : OS.HasFeature("console") ? "Console" : "PC";
-	[ScriptProperty] public Vector3 XRHeadPosition => XR?.HeadPose.Origin ?? Vector3.Zero;
-	[ScriptProperty] public Vector3 XRLeftHandPosition => XR?.LeftHandPose.Origin ?? Vector3.Zero;
-	[ScriptProperty] public Vector3 XRRightHandPosition => XR?.RightHandPose.Origin ?? Vector3.Zero;
-	[ScriptProperty] public Vector3 XRHeadRotation => XR?.HeadPose.Basis.GetEuler() ?? Vector3.Zero;
-	[ScriptProperty] public Vector3 XRLeftHandRotation => XR?.LeftHandPose.Basis.GetEuler() ?? Vector3.Zero;
-	[ScriptProperty] public Vector3 XRRightHandRotation => XR?.RightHandPose.Basis.GetEuler() ?? Vector3.Zero;
-	[ScriptProperty] public float XRLeftTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftTrigger : XR?.LeftTrigger ?? 0f;
-	[ScriptProperty] public float XRRightTrigger => VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
-	[ScriptProperty] public float XRLeftGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
-	[ScriptProperty] public float XRRightGrip => VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
+
+	[ScriptProperty]
+	public bool IsVR => VRService.CreatorEmulationEnabled || XR?.IsActive == true;
+
+	[ScriptProperty]
+	public string DeviceType =>
+		_creatorEmulation ? _creatorDeviceType
+		: IsVR ? "VR"
+		: Globals.IsMobileBuild ? (Math.Min(ScreenWidth, ScreenHeight) >= 720 ? "Tablet" : "Phone")
+		: OS.HasFeature("console") ? "Console"
+		: "PC";
+
+	[ScriptProperty]
+	public Vector3 XRHeadPosition => XR?.HeadPose.Origin ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public Vector3 XRLeftHandPosition => XR?.LeftHandPose.Origin ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public Vector3 XRRightHandPosition => XR?.RightHandPose.Origin ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public Vector3 XRHeadRotation => XR?.HeadPose.Basis.GetEuler() ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public Vector3 XRLeftHandRotation => XR?.LeftHandPose.Basis.GetEuler() ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public Vector3 XRRightHandRotation => XR?.RightHandPose.Basis.GetEuler() ?? Vector3.Zero;
+
+	[ScriptProperty]
+	public float XRLeftTrigger =>
+		VRService.CreatorEmulationEnabled ? VRService.CreatorLeftTrigger : XR?.LeftTrigger ?? 0f;
+
+	[ScriptProperty]
+	public float XRRightTrigger =>
+		VRService.CreatorEmulationEnabled ? VRService.CreatorRightTrigger : XR?.RightTrigger ?? 0f;
+
+	[ScriptProperty]
+	public float XRLeftGrip =>
+		VRService.CreatorEmulationEnabled ? VRService.CreatorLeftGrip : XR?.LeftGrip ?? 0f;
+
+	[ScriptProperty]
+	public float XRRightGrip =>
+		VRService.CreatorEmulationEnabled ? VRService.CreatorRightGrip : XR?.RightGrip ?? 0f;
 
 	internal XRRuntime? XR { get; private set; }
 
@@ -71,9 +114,18 @@ public sealed partial class InputService : Instance
 	{
 		_creatorEmulation = state.Enabled;
 		_creatorDeviceType = string.IsNullOrWhiteSpace(state.DeviceType) ? "PC" : state.DeviceType;
-		IsTouchscreen = state.Enabled ? state.Touchscreen : Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen");
-		IsGamepadConnected = state.Enabled ? state.Gamepad || state.VR : Input.GetConnectedJoypads().Count > 0;
-		if (state.Enabled) LastInputDevice = state.VR ? "VR" : state.Gamepad ? "Gamepad" : state.Touchscreen ? "Touch" : "KeyboardMouse";
+		IsTouchscreen = state.Enabled
+			? state.Touchscreen
+			: Globals.IsMobileBuild || OS.HasFeature("mobile-ui") || OS.HasFeature("touchscreen");
+		IsGamepadConnected = state.Enabled
+			? state.Gamepad || state.VR
+			: Input.GetConnectedJoypads().Count > 0;
+		if (state.Enabled)
+			LastInputDevice =
+				state.VR ? "VR"
+				: state.Gamepad ? "Gamepad"
+				: state.Touchscreen ? "Touch"
+				: "KeyboardMouse";
 		VRService.ApplyCreatorEmulation(state);
 
 		ParseJoyAxis(JoyAxis.LeftX, state.Enabled ? state.LeftX : 0f);
@@ -86,19 +138,25 @@ public sealed partial class InputService : Instance
 		ParseJoyButton(JoyButton.RightShoulder, state.Enabled && state.RightTrigger);
 	}
 
-	private static void ParseJoyAxis(JoyAxis axis, float value) => Input.ParseInputEvent(new InputEventJoypadMotion
-	{
-		Device = 0,
-		Axis = axis,
-		AxisValue = Mathf.Clamp(value, -1f, 1f),
-	});
+	private static void ParseJoyAxis(JoyAxis axis, float value) =>
+		Input.ParseInputEvent(
+			new InputEventJoypadMotion
+			{
+				Device = 0,
+				Axis = axis,
+				AxisValue = Mathf.Clamp(value, -1f, 1f),
+			}
+		);
 
-	private static void ParseJoyButton(JoyButton button, bool pressed) => Input.ParseInputEvent(new InputEventJoypadButton
-	{
-		Device = 0,
-		ButtonIndex = button,
-		Pressed = pressed,
-	});
+	private static void ParseJoyButton(JoyButton button, bool pressed) =>
+		Input.ParseInputEvent(
+			new InputEventJoypadButton
+			{
+				Device = 0,
+				ButtonIndex = button,
+				Pressed = pressed,
+			}
+		);
 
 	[ScriptProperty]
 	public bool CursorLocked
@@ -110,6 +168,7 @@ public sealed partial class InputService : Instance
 			RecomputeMouseMode();
 		}
 	}
+
 	[ScriptProperty]
 	public bool CursorVisible
 	{
@@ -120,154 +179,182 @@ public sealed partial class InputService : Instance
 			RecomputeMouseMode();
 		}
 	}
-	[ScriptProperty] public Vector2 MouseDelta { get; private set; } = Vector2.Zero;
-	[ScriptProperty] public Vector2 MousePosition => OverrideMousePos ? OverrideMousePosTo : GDNode.GetViewport().GetMousePosition();
-	[ScriptLegacyProperty("MousePosition")] public Vector3 LegacyMousePosition => new(MousePosition.X, ScreenHeight - MousePosition.Y, 0);
-	[ScriptProperty] public int ScreenWidth => (int)GDNode.GetViewport().GetVisibleRect().Size.X;
-	[ScriptProperty] public int ScreenHeight => (int)GDNode.GetViewport().GetVisibleRect().Size.Y;
+
+	[ScriptProperty]
+	public Vector2 MouseDelta { get; private set; } = Vector2.Zero;
+
+	[ScriptProperty]
+	public Vector2 MousePosition =>
+		OverrideMousePos ? OverrideMousePosTo : GDNode.GetViewport().GetMousePosition();
+
+	[ScriptLegacyProperty("MousePosition")]
+	public Vector3 LegacyMousePosition => new(MousePosition.X, ScreenHeight - MousePosition.Y, 0);
+
+	[ScriptProperty]
+	public int ScreenWidth => (int)GDNode.GetViewport().GetVisibleRect().Size.X;
+
+	[ScriptProperty]
+	public int ScreenHeight => (int)GDNode.GetViewport().GetVisibleRect().Size.Y;
 
 	internal bool OverrideMousePos { get; set; }
 	internal Vector2 OverrideMousePosTo { get; set; }
 
-	[ScriptProperty] public BVSignal<Vector2> MouseMoved { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Vector2> MouseMoved { get; private set; } = new();
 
-	[ScriptProperty] public BVSignal GameFocused { get; private set; } = new();
-	[ScriptProperty] public BVSignal GameUnfocused { get; private set; } = new();
-	[ScriptProperty] public BVSignal GamepadConnected { get; private set; } = new();
-	[ScriptProperty] public BVSignal GamepadDisconnected { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal GameFocused { get; private set; } = new();
 
-	[ScriptProperty] public BVSignal<KeyCodeEnum, bool> KeyDown { get; private set; } = new();
-	[ScriptProperty] public BVSignal<KeyCodeEnum, bool> KeyUp { get; private set; } = new();
-	[ScriptProperty] public BVSignal<KeyCodeEnum, float> AxisValueChanged { get; private set; } = new();
-	[ScriptLegacyProperty("KeyDown")] public BVSignal LegacyKeyDown { get; private set; } = new();
-	[ScriptLegacyProperty("KeyUp")] public BVSignal LegacyKeyUp { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal GameUnfocused { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal GamepadConnected { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal GamepadDisconnected { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<KeyCodeEnum, bool> KeyDown { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<KeyCodeEnum, bool> KeyUp { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<KeyCodeEnum, float> AxisValueChanged { get; private set; } = new();
+
+	[ScriptLegacyProperty("KeyDown")]
+	public BVSignal LegacyKeyDown { get; private set; } = new();
+
+	[ScriptLegacyProperty("KeyUp")]
+	public BVSignal LegacyKeyUp { get; private set; } = new();
 
 	internal event Action<InputEvent>? GodotInputEvent;
 
 	public readonly Dictionary<Key, string> CompatKeyCodeMapping = new()
 	{
-		{Key.None, "None"},
-		{Key.Backspace, "Backspace"},
-		{Key.Tab, "Tab"},
-		{Key.Clear, "Clear"},
-		{Key.Enter, "Return"},
-		{Key.Pause, "Pause"},
-		{Key.Escape, "Escape"},
-		{Key.Space, "Space"},
-		{Key.Exclam, "Exclaim"},
-		{Key.Dollar, "Dollar"},
-		{Key.Ampersand, "Ampersand"},
-		{Key.Asterisk, "Asterisk"},
-		{Key.Plus, "Plus"},
-		{Key.Comma, "Comma"},
-		{Key.Minus, "Minus"},
-		{Key.Period, "Period"},
-		{Key.Slash, "Slash"},
-		{Key.Key0, "0"},
-		{Key.Key1, "1"},
-		{Key.Key2, "2"},
-		{Key.Key3, "3"},
-		{Key.Key4, "4"},
-		{Key.Key5, "5"},
-		{Key.Key6, "6"},
-		{Key.Key7, "7"},
-		{Key.Key8, "8"},
-		{Key.Key9, "9"},
-		{Key.Colon, "Colon"},
-		{Key.Semicolon, "Semicolon"},
-		{Key.Less, "Less"},
-		{Key.Equal, "Equals"},
-		{Key.Greater, "Greater"},
-		{Key.Question, "Question"},
-		{Key.At, "At"},
-		{Key.Bracketleft, "LeftBracket"},
-		{Key.Backslash, "Backslash"},
-		{Key.Bracketright, "RightBracket"},
-		{Key.Underscore, "Underscore"},
-		{Key.Quoteleft, "BackQuote"},
-		{Key.A, "A"},
-		{Key.B, "B"},
-		{Key.C, "C"},
-		{Key.D, "D"},
-		{Key.E, "E"},
-		{Key.F, "F"},
-		{Key.G, "G"},
-		{Key.H, "H"},
-		{Key.I, "I"},
-		{Key.J, "J"},
-		{Key.K, "K"},
-		{Key.L, "L"},
-		{Key.M, "M"},
-		{Key.N, "N"},
-		{Key.O, "O"},
-		{Key.P, "P"},
-		{Key.Q, "Q"},
-		{Key.R, "R"},
-		{Key.S, "S"},
-		{Key.T, "T"},
-		{Key.U, "U"},
-		{Key.V, "V"},
-		{Key.W, "W"},
-		{Key.X, "X"},
-		{Key.Y, "Y"},
-		{Key.Z, "Z"},
-		{Key.Delete, "Delete"},
-		{Key.Kp0, "Keypad0"},
-		{Key.Kp1, "Keypad1"},
-		{Key.Kp2, "Keypad2"},
-		{Key.Kp3, "Keypad3"},
-		{Key.Kp4, "Keypad4"},
-		{Key.Kp5, "Keypad5"},
-		{Key.Kp6, "Keypad6"},
-		{Key.Kp7, "Keypad7"},
-		{Key.Kp8, "Keypad8"},
-		{Key.Kp9, "Keypad9"},
-		{Key.KpPeriod, "KeypadPeriod"},
-		{Key.KpDivide, "KeypadDivide"},
-		{Key.KpMultiply, "KeypadMultiply"},
-		{Key.KpSubtract, "KeypadMinus"},
-		{Key.KpAdd, "KeypadPlus"},
-		{Key.KpEnter, "KeypadEnter"},
-		{Key.Up, "UpArrow"},
-		{Key.Down, "DownArrow"},
-		{Key.Right, "RightArrow"},
-		{Key.Left, "LeftArrow"},
-		{Key.Insert, "Insert"},
-		{Key.Home, "Home"},
-		{Key.End, "End"},
-		{Key.Pageup, "PageUp"},
-		{Key.Pagedown, "PageDown"},
-		{Key.F1, "F1"},
-		{Key.F2, "F2"},
-		{Key.F3, "F3"},
-		{Key.F4, "F4"},
-		{Key.F5, "F5"},
-		{Key.F6, "F6"},
-		{Key.F7, "F7"},
-		{Key.F8, "F8"},
-		{Key.F9, "F9"},
-		{Key.F10, "F10"},
-		{Key.F11, "F11"},
-		{Key.F12, "F12"},
-		{Key.F13, "F13"},
-		{Key.F14, "F14"},
-		{Key.F15, "F15"},
-		{Key.Numlock, "Numlock"},
-		{Key.Capslock, "CapsLock"},
-		{Key.Scrolllock, "ScrollLock"},
-		{Key.Shift, "LeftShift"},
-		{Key.Ctrl, "LeftControl"},
-		{Key.Alt, "LeftAlt"},
-		{Key.Help, "Help"},
-		{Key.Print, "Print"},
-		{Key.Menu, "Menu"},
+		{ Key.None, "None" },
+		{ Key.Backspace, "Backspace" },
+		{ Key.Tab, "Tab" },
+		{ Key.Clear, "Clear" },
+		{ Key.Enter, "Return" },
+		{ Key.Pause, "Pause" },
+		{ Key.Escape, "Escape" },
+		{ Key.Space, "Space" },
+		{ Key.Exclam, "Exclaim" },
+		{ Key.Dollar, "Dollar" },
+		{ Key.Ampersand, "Ampersand" },
+		{ Key.Asterisk, "Asterisk" },
+		{ Key.Plus, "Plus" },
+		{ Key.Comma, "Comma" },
+		{ Key.Minus, "Minus" },
+		{ Key.Period, "Period" },
+		{ Key.Slash, "Slash" },
+		{ Key.Key0, "0" },
+		{ Key.Key1, "1" },
+		{ Key.Key2, "2" },
+		{ Key.Key3, "3" },
+		{ Key.Key4, "4" },
+		{ Key.Key5, "5" },
+		{ Key.Key6, "6" },
+		{ Key.Key7, "7" },
+		{ Key.Key8, "8" },
+		{ Key.Key9, "9" },
+		{ Key.Colon, "Colon" },
+		{ Key.Semicolon, "Semicolon" },
+		{ Key.Less, "Less" },
+		{ Key.Equal, "Equals" },
+		{ Key.Greater, "Greater" },
+		{ Key.Question, "Question" },
+		{ Key.At, "At" },
+		{ Key.Bracketleft, "LeftBracket" },
+		{ Key.Backslash, "Backslash" },
+		{ Key.Bracketright, "RightBracket" },
+		{ Key.Underscore, "Underscore" },
+		{ Key.Quoteleft, "BackQuote" },
+		{ Key.A, "A" },
+		{ Key.B, "B" },
+		{ Key.C, "C" },
+		{ Key.D, "D" },
+		{ Key.E, "E" },
+		{ Key.F, "F" },
+		{ Key.G, "G" },
+		{ Key.H, "H" },
+		{ Key.I, "I" },
+		{ Key.J, "J" },
+		{ Key.K, "K" },
+		{ Key.L, "L" },
+		{ Key.M, "M" },
+		{ Key.N, "N" },
+		{ Key.O, "O" },
+		{ Key.P, "P" },
+		{ Key.Q, "Q" },
+		{ Key.R, "R" },
+		{ Key.S, "S" },
+		{ Key.T, "T" },
+		{ Key.U, "U" },
+		{ Key.V, "V" },
+		{ Key.W, "W" },
+		{ Key.X, "X" },
+		{ Key.Y, "Y" },
+		{ Key.Z, "Z" },
+		{ Key.Delete, "Delete" },
+		{ Key.Kp0, "Keypad0" },
+		{ Key.Kp1, "Keypad1" },
+		{ Key.Kp2, "Keypad2" },
+		{ Key.Kp3, "Keypad3" },
+		{ Key.Kp4, "Keypad4" },
+		{ Key.Kp5, "Keypad5" },
+		{ Key.Kp6, "Keypad6" },
+		{ Key.Kp7, "Keypad7" },
+		{ Key.Kp8, "Keypad8" },
+		{ Key.Kp9, "Keypad9" },
+		{ Key.KpPeriod, "KeypadPeriod" },
+		{ Key.KpDivide, "KeypadDivide" },
+		{ Key.KpMultiply, "KeypadMultiply" },
+		{ Key.KpSubtract, "KeypadMinus" },
+		{ Key.KpAdd, "KeypadPlus" },
+		{ Key.KpEnter, "KeypadEnter" },
+		{ Key.Up, "UpArrow" },
+		{ Key.Down, "DownArrow" },
+		{ Key.Right, "RightArrow" },
+		{ Key.Left, "LeftArrow" },
+		{ Key.Insert, "Insert" },
+		{ Key.Home, "Home" },
+		{ Key.End, "End" },
+		{ Key.Pageup, "PageUp" },
+		{ Key.Pagedown, "PageDown" },
+		{ Key.F1, "F1" },
+		{ Key.F2, "F2" },
+		{ Key.F3, "F3" },
+		{ Key.F4, "F4" },
+		{ Key.F5, "F5" },
+		{ Key.F6, "F6" },
+		{ Key.F7, "F7" },
+		{ Key.F8, "F8" },
+		{ Key.F9, "F9" },
+		{ Key.F10, "F10" },
+		{ Key.F11, "F11" },
+		{ Key.F12, "F12" },
+		{ Key.F13, "F13" },
+		{ Key.F14, "F14" },
+		{ Key.F15, "F15" },
+		{ Key.Numlock, "Numlock" },
+		{ Key.Capslock, "CapsLock" },
+		{ Key.Scrolllock, "ScrollLock" },
+		{ Key.Shift, "LeftShift" },
+		{ Key.Ctrl, "LeftControl" },
+		{ Key.Alt, "LeftAlt" },
+		{ Key.Help, "Help" },
+		{ Key.Print, "Print" },
+		{ Key.Menu, "Menu" },
 	};
 
 	public readonly Dictionary<MouseButton, string> CompatMouseButtonMapping = new()
 	{
-		{MouseButton.Left, "Mouse0" },
-		{MouseButton.Right, "Mouse1" },
-		{MouseButton.Middle, "Mouse2" },
+		{ MouseButton.Left, "Mouse0" },
+		{ MouseButton.Right, "Mouse1" },
+		{ MouseButton.Middle, "Mouse2" },
 	};
 
 	private readonly Dictionary<string, bool> _legacyKeydowns = [];
@@ -322,7 +409,13 @@ public sealed partial class InputService : Instance
 		Globals.GodotNotification += OnNotification;
 
 		SetProcess(true);
-		if (Root != null && Root.Network != null && Root.SessionType == World.SessionTypeEnum.Client && !Root.Network.IsServer && XRRuntime.WasRequested())
+		if (
+			Root != null
+			&& Root.Network != null
+			&& Root.SessionType == World.SessionTypeEnum.Client
+			&& !Root.Network.IsServer
+			&& XRRuntime.WasRequested()
+		)
 		{
 			Callable.From(InitializeXR).CallDeferred();
 		}
@@ -332,7 +425,8 @@ public sealed partial class InputService : Instance
 
 	private void InitializeXR()
 	{
-		if (XR != null || Root == null || Root.Environment == null) return;
+		if (XR != null || Root == null || Root.Environment == null)
+			return;
 		XR = new XRRuntime { Name = "XRRuntime" };
 		Root.Environment.GDNode.AddChild(XR);
 		XR.Initialize(Root);
@@ -365,10 +459,22 @@ public sealed partial class InputService : Instance
 
 	private static void SetupCursors()
 	{
-		Input.SetCustomMouseCursor(GD.Load<Image>("res://assets/textures/client/cursor/arrow.png"), Input.CursorShape.Arrow);
-		Input.SetCustomMouseCursor(GD.Load<Image>("res://assets/textures/client/cursor/click.png"), Input.CursorShape.PointingHand);
-		Input.SetCustomMouseCursor(GD.Load<Image>("res://assets/textures/client/cursor/grab.png"), Input.CursorShape.Drag);
-		Input.SetCustomMouseCursor(GD.Load<Image>("res://assets/textures/client/cursor/grabbing.png"), Input.CursorShape.CanDrop);
+		Input.SetCustomMouseCursor(
+			GD.Load<Image>("res://assets/textures/client/cursor/arrow.png"),
+			Input.CursorShape.Arrow
+		);
+		Input.SetCustomMouseCursor(
+			GD.Load<Image>("res://assets/textures/client/cursor/click.png"),
+			Input.CursorShape.PointingHand
+		);
+		Input.SetCustomMouseCursor(
+			GD.Load<Image>("res://assets/textures/client/cursor/grab.png"),
+			Input.CursorShape.Drag
+		);
+		Input.SetCustomMouseCursor(
+			GD.Load<Image>("res://assets/textures/client/cursor/grabbing.png"),
+			Input.CursorShape.CanDrop
+		);
 	}
 
 	private void OnPeerPreInit(int peerID)
@@ -423,7 +529,8 @@ public sealed partial class InputService : Instance
 
 	public override void Process(double delta)
 	{
-		if (IsVR) LastInputDevice = "VR";
+		if (IsVR)
+			LastInputDevice = "VR";
 		bool newFocused = RecomputeGameFocused();
 		if (newFocused != IsGameFocused)
 		{
@@ -463,22 +570,30 @@ public sealed partial class InputService : Instance
 		Camera? cam = Root.Environment.CurrentCamera;
 		bool camCapturing = cam?.IsTurning ?? false;
 
-		Input.MouseMode = (_cursorLocked || camCapturing)
-			? Input.MouseModeEnum.Captured
-			: (_cursorVisible ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Hidden);
+		Input.MouseMode =
+			(_cursorLocked || camCapturing)
+				? Input.MouseModeEnum.Captured
+				: (_cursorVisible ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Hidden);
 	}
 
 	private bool RecomputeGameFocused()
 	{
-		if (!IsWindowFocused) return false;
-		if (IsMenuOpened) return false;
+		if (!IsWindowFocused)
+			return false;
+		if (IsMenuOpened)
+			return false;
 #if CREATOR
-		if (Root.CreatorContext != null) return Root.CreatorContext.IsViewportFocused;
+		if (Root.CreatorContext != null)
+			return Root.CreatorContext.IsViewportFocused;
 #endif
-		if (Root.CoreUI != null && Root.CoreUI.CoreUI != null && Root.CoreUI.CoreUI.CoreUIActive) return false;
-		if (Root.Entry != null && !Root.Entry.IsFocused) return false;
-		if (Root.SessionType == World.SessionTypeEnum.Creator) return false;
-		if (Root.Network.IsServer) return false;
+		if (Root.CoreUI != null && Root.CoreUI.CoreUI != null && Root.CoreUI.CoreUI.CoreUIActive)
+			return false;
+		if (Root.Entry != null && !Root.Entry.IsFocused)
+			return false;
+		if (Root.SessionType == World.SessionTypeEnum.Creator)
+			return false;
+		if (Root.Network.IsServer)
+			return false;
 		Control? focusOwner = GDNode.GetViewport().GuiGetFocusOwner();
 		if (focusOwner != null)
 		{
@@ -514,16 +629,22 @@ public sealed partial class InputService : Instance
 
 	public void OnInput(Godot.InputEvent @event)
 	{
-		if (@event.IsEcho()) return;
+		if (@event.IsEcho())
+			return;
 		if (@event is InputEventJoypadButton joyButton)
 		{
 			LastInputDevice = "Gamepad";
-			if (joyButton.ButtonIndex == JoyButton.X) BridgeGamepadAction("interact", joyButton.Pressed);
-			else if (joyButton.ButtonIndex == JoyButton.Y) BridgeGamepadAction("drop_tool", joyButton.Pressed);
+			if (joyButton.ButtonIndex == JoyButton.X)
+				BridgeGamepadAction("interact", joyButton.Pressed);
+			else if (joyButton.ButtonIndex == JoyButton.Y)
+				BridgeGamepadAction("drop_tool", joyButton.Pressed);
 		}
-		else if (@event is InputEventJoypadMotion) LastInputDevice = "Gamepad";
-		else if (@event is InputEventScreenTouch or InputEventScreenDrag) LastInputDevice = "Touch";
-		else if (@event is InputEventKey or InputEventMouse) LastInputDevice = "KeyboardMouse";
+		else if (@event is InputEventJoypadMotion)
+			LastInputDevice = "Gamepad";
+		else if (@event is InputEventScreenTouch or InputEventScreenDrag)
+			LastInputDevice = "Touch";
+		else if (@event is InputEventKey or InputEventMouse)
+			LastInputDevice = "KeyboardMouse";
 		if (IsWindowFocused && IsUserActivity(@event))
 		{
 			Root.Network?.NotifyLocalActivity();
@@ -540,7 +661,8 @@ public sealed partial class InputService : Instance
 		}
 
 		KeyCodeEnum? btnEnumPre = InputEventToKeyCode(@event);
-		if (!btnEnumPre.HasValue) return;
+		if (!btnEnumPre.HasValue)
+			return;
 		KeyCodeEnum btnEnum = btnEnumPre.Value;
 
 		if (@event is InputEventKey key)
@@ -634,7 +756,14 @@ public sealed partial class InputService : Instance
 
 	private static void BridgeGamepadAction(string action, bool pressed)
 	{
-		Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = pressed, Strength = pressed ? 1f : 0f });
+		Input.ParseInputEvent(
+			new InputEventAction
+			{
+				Action = action,
+				Pressed = pressed,
+				Strength = pressed ? 1f : 0f,
+			}
+		);
 	}
 
 	private static bool IsUserActivity(Godot.InputEvent @event)
@@ -648,7 +777,7 @@ public sealed partial class InputService : Instance
 			InputEventJoypadButton => true,
 			InputEventScreenTouch => true,
 			InputEventScreenDrag => true,
-			_ => false
+			_ => false,
 		};
 	}
 
@@ -698,8 +827,10 @@ public sealed partial class InputService : Instance
 	}
 
 	[ScriptMethod]
-
-	public Vector3 GetMouseWorldPosition(Instance[]? ignoreList = null, uint passthroughMask = 1 << 0)
+	public Vector3 GetMouseWorldPosition(
+		Instance[]? ignoreList = null,
+		uint passthroughMask = 1 << 0
+	)
 	{
 		Viewport viewport = GDNode.GetViewport();
 		Camera3D camera = viewport.GetCamera3D();
@@ -710,7 +841,12 @@ public sealed partial class InputService : Instance
 		Vector3 rayOrigin = camera.ProjectRayOrigin(mousePos);
 		Vector3 rayDir = camera.ProjectRayNormal(mousePos);
 
-		RayResult? hit = Root.Environment.Raycast(rayOrigin, rayDir, ignoreList: ignoreList, passthroughMask: passthroughMask);
+		RayResult? hit = Root.Environment.Raycast(
+			rayOrigin,
+			rayDir,
+			ignoreList: ignoreList,
+			passthroughMask: passthroughMask
+		);
 		return hit != null ? hit.Value.Position : rayOrigin + rayDir * 1000f;
 	}
 
@@ -725,7 +861,9 @@ public sealed partial class InputService : Instance
 		}
 		else
 		{
-			throw new Exception("Input Action is not defined/is the wrong type (" + actionName + ")");
+			throw new Exception(
+				"Input Action is not defined/is the wrong type (" + actionName + ")"
+			);
 		}
 	}
 
@@ -740,7 +878,9 @@ public sealed partial class InputService : Instance
 		}
 		else
 		{
-			throw new Exception("Input Action is not defined/is the wrong type (" + actionName + ")");
+			throw new Exception(
+				"Input Action is not defined/is the wrong type (" + actionName + ")"
+			);
 		}
 	}
 
@@ -755,7 +895,9 @@ public sealed partial class InputService : Instance
 		}
 		else
 		{
-			throw new Exception("Input Action is not defined/is the wrong type (" + actionName + ")");
+			throw new Exception(
+				"Input Action is not defined/is the wrong type (" + actionName + ")"
+			);
 		}
 	}
 
@@ -784,8 +926,10 @@ public sealed partial class InputService : Instance
 
 	private void ProcessInputs()
 	{
-		if (Root != null && Root.Network.IsServer) return;
-		if (!IsGameFocused) return;
+		if (Root != null && Root.Network.IsServer)
+			return;
+		if (!IsGameFocused)
+			return;
 		foreach (InputAction a in MapData.Actions)
 		{
 			if (a is InputActionButton btn)
@@ -911,13 +1055,15 @@ public sealed partial class InputService : Instance
 				return true;
 			}
 		}
-		if (_keyStates.TryGetValue(keyCode, out bool state)) return state;
+		if (_keyStates.TryGetValue(keyCode, out bool state))
+			return state;
 		return false;
 	}
 
 	public float GetKeyWeight(KeyCodeEnum keyCode)
 	{
-		if (_keyWeight.TryGetValue(keyCode, out float state)) return state;
+		if (_keyWeight.TryGetValue(keyCode, out float state))
+			return state;
 		return IsKeyPressed(keyCode) ? 1 : 0;
 	}
 
@@ -1017,9 +1163,12 @@ public sealed partial class InputService : Instance
 		return new(size.X, size.Y, pos.Z);
 	}
 
-
 	[ScriptLegacyMethod("ScreenPointToRay")]
-	public RayResult? LegacyScreenPointToRay(Vector2 pos, Instance[]? ignoreList = null, float maxDistance = 10000f)
+	public RayResult? LegacyScreenPointToRay(
+		Vector2 pos,
+		Instance[]? ignoreList = null,
+		float maxDistance = 10000f
+	)
 	{
 		if (Root.Environment.CurrentCamera == null)
 		{
@@ -1029,25 +1178,40 @@ public sealed partial class InputService : Instance
 	}
 
 	[ScriptLegacyMethod("ScreenPointToRay")]
-	public RayResult? LegacyScreenPointToRay(Vector3 pos, Instance[]? ignoreList = null, float maxDistance = 10000f)
+	public RayResult? LegacyScreenPointToRay(
+		Vector3 pos,
+		Instance[]? ignoreList = null,
+		float maxDistance = 10000f
+	)
 	{
 		if (Root.Environment.CurrentCamera == null)
 		{
 			throw new Exception("Camera is missing");
 		}
-		return Root.Environment.CurrentCamera!.ScreenPointToRay(new(pos.X, pos.Y), ignoreList, maxDistance);
+		return Root.Environment.CurrentCamera!.ScreenPointToRay(
+			new(pos.X, pos.Y),
+			ignoreList,
+			maxDistance
+		);
 	}
 
 	[ScriptLegacyMethod("ViewportPointToRay")]
-	public RayResult? LegacyViewportPointToRay(Vector3 pos, Instance[]? ignoreList = null, float maxDistance = 10000f)
+	public RayResult? LegacyViewportPointToRay(
+		Vector3 pos,
+		Instance[]? ignoreList = null,
+		float maxDistance = 10000f
+	)
 	{
 		if (Root.Environment.CurrentCamera == null)
 		{
 			throw new Exception("Camera is missing");
 		}
-		return Root.Environment.CurrentCamera!.ViewportPointToRay(new(pos.X, pos.Y), ignoreList, maxDistance);
+		return Root.Environment.CurrentCamera!.ViewportPointToRay(
+			new(pos.X, pos.Y),
+			ignoreList,
+			maxDistance
+		);
 	}
-
 
 	[ScriptLegacyMethod("GetButton")]
 	public bool LegacyGetButton(string buttonName)
@@ -1095,40 +1259,44 @@ public sealed partial class InputService : Instance
 		switch (axisName)
 		{
 			case "Horizontal":
-				{
-					bool right = Input.IsActionPressed("rightward");
-					bool left = Input.IsActionPressed("leftward");
-					if (right) value += 1f;
-					if (left) value -= 1f;
-					break;
-				}
+			{
+				bool right = Input.IsActionPressed("rightward");
+				bool left = Input.IsActionPressed("leftward");
+				if (right)
+					value += 1f;
+				if (left)
+					value -= 1f;
+				break;
+			}
 
 			case "Vertical":
-				{
-					bool forward = Input.IsActionPressed("forward");
-					bool backward = Input.IsActionPressed("backward");
-					if (forward) value += 1f;
-					if (backward) value -= 1f;
-					break;
-				}
+			{
+				bool forward = Input.IsActionPressed("forward");
+				bool backward = Input.IsActionPressed("backward");
+				if (forward)
+					value += 1f;
+				if (backward)
+					value -= 1f;
+				break;
+			}
 
 			case "Mouse X":
-				{
-					value = Input.GetLastMouseVelocity().X / size.X;
-					break;
-				}
+			{
+				value = Input.GetLastMouseVelocity().X / size.X;
+				break;
+			}
 
 			case "Mouse Y":
-				{
-					value = -Input.GetLastMouseVelocity().Y / size.Y;
-					break;
-				}
+			{
+				value = -Input.GetLastMouseVelocity().Y / size.Y;
+				break;
+			}
 
 			case "Mouse ScrollWheel":
-				{
-					value = _mouseScrollDelta;
-					break;
-				}
+			{
+				value = _mouseScrollDelta;
+				break;
+			}
 
 			default:
 				GD.PushWarning($"GetAxis: Unknown axis '{axisName}'");
@@ -1137,6 +1305,7 @@ public sealed partial class InputService : Instance
 
 		return value;
 	}
+
 	[ScriptLegacyMethod("GetKey")]
 	public bool LegacyGetKey(LegacyKeyCode key)
 	{

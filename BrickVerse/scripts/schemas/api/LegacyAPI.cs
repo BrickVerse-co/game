@@ -83,8 +83,10 @@ public struct APIAvatarResponse
 {
 	[JsonPropertyName("colors")]
 	public APIAvatarBodyColors Colors { get; set; }
+
 	[JsonPropertyName("assets")]
 	public APIAvatarAsset[] Assets { get; set; }
+
 	[JsonPropertyName("isDefault")]
 	public bool IsDefault { get; set; }
 }
@@ -93,20 +95,28 @@ public struct APIAvatarAsset
 {
 	[JsonPropertyName("id")]
 	public string ID { get; set; }
+
 	[JsonPropertyName("textureId")]
 	public string TextureID { get; set; }
+
 	[JsonPropertyName("meshId")]
 	public string MeshID { get; set; }
+
 	[JsonPropertyName("meshPos")]
 	public APIPosition3? MeshPosition { get; set; }
+
 	[JsonPropertyName("type")]
 	public string Type { get; set; }
+
 	[JsonPropertyName("accessoryType")]
 	public string AccessoryType { get; set; }
+
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
+
 	[JsonPropertyName("thumbnail")]
 	public string Thumbnail { get; set; }
+
 	[JsonPropertyName("path")]
 	public string Path { get; set; }
 }
@@ -115,17 +125,23 @@ public struct APIAvatarBodyColors
 {
 	[JsonPropertyName("head")]
 	public string Head { get; set; }
+
 	[JsonPropertyName("torso")]
 	public string Torso { get; set; }
+
 	[JsonPropertyName("leftArm")]
 	public string LeftArm { get; set; }
+
 	[JsonPropertyName("rightArm")]
 	public string RightArm { get; set; }
+
 	[JsonPropertyName("leftLeg")]
 	public string LeftLeg { get; set; }
+
 	[JsonPropertyName("rightLeg")]
 	public string RightLeg { get; set; }
 }
+
 public struct APILibraryResponse
 {
 	[JsonPropertyName("meta")]
@@ -580,6 +596,7 @@ public struct APIV3UniverseInfo
 {
 	[JsonPropertyName("antiCheatEnabled")]
 	public bool? AntiCheatEnabled { get; set; }
+
 	[JsonPropertyName("id")]
 	public string Id { get; set; }
 
@@ -669,8 +686,10 @@ public struct APIFontMeta
 {
 	[JsonPropertyName("fonts")]
 	public APIFontData[] Fonts { get; set; }
+
 	[JsonPropertyName("pages")]
 	public int Pages { get; set; }
+
 	[JsonPropertyName("total")]
 	public int Total { get; set; }
 }
@@ -679,8 +698,10 @@ public struct APIFontData
 {
 	[JsonPropertyName("name")]
 	public string Name { get; set; }
+
 	[JsonPropertyName("preview")]
 	public string Preview { get; set; }
+
 	[JsonPropertyName("font")]
 	public string Font { get; set; }
 }
@@ -689,6 +710,7 @@ public struct APIMobileTokenRequest
 {
 	[JsonPropertyName("code")]
 	public string Code { get; set; }
+
 	[JsonPropertyName("state")]
 	public string State { get; set; }
 }
@@ -697,8 +719,10 @@ public struct APIMobileTokenResponse
 {
 	[JsonPropertyName("success")]
 	public bool Success { get; set; }
+
 	[JsonPropertyName("userID")]
 	public ulong UserID { get; set; }
+
 	[JsonPropertyName("token")]
 	public string Token { get; set; }
 }
@@ -734,6 +758,7 @@ public struct APIPlaceInfo
 {
 	[JsonPropertyName("antiCheatEnabled")]
 	public bool AntiCheatEnabled { get; set; }
+
 	[JsonPropertyName("id")]
 	public long Id { get; set; }
 
@@ -806,6 +831,7 @@ public struct APIPlaceInfo
 	[JsonPropertyName("updatedAt")]
 	public DateTime? UpdatedAt { get; set; }
 }
+
 public struct APIGuildCreator
 {
 	[JsonPropertyName("id")]
@@ -817,6 +843,7 @@ public struct APIGuildCreator
 	[JsonPropertyName("thumbnail")]
 	public string Thumbnail { get; set; }
 }
+
 public struct APIGuildInfo
 {
 	[JsonPropertyName("id")]
@@ -1264,8 +1291,8 @@ public enum LibraryQueryTypeEnum
 	Audio,
 	Image,
 	Mesh,
-	Addon
-	, Font
+	Addon,
+	Font,
 }
 
 [JsonSerializable(typeof(APIChatFilterRequest))]
@@ -1319,18 +1346,14 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(APIPlaceMedia))]
 [JsonSerializable(typeof(APIGuildCreator))]
 [JsonSerializable(typeof(APIGuildInfo))]
-
 [JsonSerializable(typeof(APIJoinPlaceResponse))]
 [JsonSerializable(typeof(APIJoinPlaceRequest))]
-
 [JsonSerializable(typeof(APIFeedPostRoot))]
 [JsonSerializable(typeof(APIFeedPostData))]
 [JsonSerializable(typeof(APIFeedPostComment))]
 [JsonSerializable(typeof(APIFeedPostAuthor))]
-
 [JsonSerializable(typeof(APIFeedPostData[]))]
 [JsonSerializable(typeof(APIFeedPostComment[]))]
-
 [JsonSerializable(typeof(APIAvatarAsset[]))]
 [JsonSerializable(typeof(APILibraryItem[]))]
 [JsonSerializable(typeof(APIFontData[]))]
@@ -1338,7 +1361,6 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(APIPlaceMedia[]))]
 [JsonSerializable(typeof(APIV3AssetDiscoverItem[]))]
 [JsonSerializable(typeof(APIV3CharacterAccessory[]))]
-
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(bool))]
@@ -1346,5 +1368,4 @@ public enum LibraryQueryTypeEnum
 [JsonSerializable(typeof(uint))]
 [JsonSerializable(typeof(ulong))]
 [JsonSerializable(typeof(double))]
-
 internal partial class APIGenerationContext : JsonSerializerContext { }

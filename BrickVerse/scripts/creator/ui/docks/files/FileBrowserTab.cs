@@ -2,33 +2,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public partial class FileBrowserTab : Control
 {
 	private const string FileBrowserIconsPath = "res://assets/textures/creator/filebrowser/icons/";
-	[Export] public FileBrowserTree BrowserTree = null!;
-	[Export] public LineEdit SearchEdit = null!;
+
+	[Export]
+	public FileBrowserTree BrowserTree = null!;
+
+	[Export]
+	public LineEdit SearchEdit = null!;
 	public HashSet<string> AutoSelects => BrowserTree.AutoSelects;
 	public CreatorSession Session = null!;
 	private readonly HashSet<string> _uncollapsedItems = [];
 
-	private readonly string[] HiddenPaths = [
-		".bvproject/",
-		"lua_clue/",
-		Globals.ProjectIndexName
-	];
+	private readonly string[] HiddenPaths = [".bvproject/", "lua_clue/", Globals.ProjectIndexName];
 
-	private readonly string[] HiddenExtensions = [
-		"meta",
-	];
+	private readonly string[] HiddenExtensions = ["meta"];
 
 	public override void _Ready()
 	{
@@ -67,16 +65,18 @@ public partial class FileBrowserTab : Control
 	public void ScanRootFolder()
 	{
 		// Call in next frame for all file updates
-		Callable.From(() =>
-		{
-			BrowserTree.Clear();
-			BrowserTree.FileToItem.Clear();
-			BrowserTree.ItemToFile.Clear();
-			BrowserTree.SearchItems.Clear();
-			RecurseFolders(Session.ProjectFolderPath, CreateItem(Session.ProjectFolderPath)!);
-			AutoSelects.Clear();
-			BrowserTree.Search(SearchEdit.Text);
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				BrowserTree.Clear();
+				BrowserTree.FileToItem.Clear();
+				BrowserTree.ItemToFile.Clear();
+				BrowserTree.SearchItems.Clear();
+				RecurseFolders(Session.ProjectFolderPath, CreateItem(Session.ProjectFolderPath)!);
+				AutoSelects.Clear();
+				BrowserTree.Search(SearchEdit.Text);
+			})
+			.CallDeferred();
 	}
 
 	private void RecurseFolders(string path, TreeItem parent)
@@ -102,16 +102,19 @@ public partial class FileBrowserTab : Control
 		path = path.SanitizePath();
 		string ext = path.GetExtension();
 
-		if (HiddenExtensions.Contains(ext)) return null;
+		if (HiddenExtensions.Contains(ext))
+			return null;
 
 		bool searchInclude = !isRoot;
 
 		string relativePath = Path.GetRelativePath(Session.ProjectFolderPath, path).SanitizePath();
 
-		if (HiddenPaths.Contains(relativePath)) return null;
+		if (HiddenPaths.Contains(relativePath))
+			return null;
 
 		// ignore hiddens
-		if (relativePath.StartsWith('.')) return null;
+		if (relativePath.StartsWith('.'))
+			return null;
 
 		TreeItem item = BrowserTree.CreateItem(parent);
 		item.SetMeta("path", relativePath);
@@ -199,6 +202,6 @@ public partial class FileBrowserTab : Control
 	private enum ItemType
 	{
 		Folder,
-		File
+		File,
 	}
 }

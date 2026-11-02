@@ -1,21 +1,27 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
-using Godot;
+using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Scripting;
-using System.Collections.Generic;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Creator.Managers;
 
 public static class SelectionTransformTools
 {
-	public enum Axis { X, Y, Z }
+	public enum Axis
+	{
+		X,
+		Y,
+		Z,
+	}
 
 	public static bool AlignToActive(Axis axis)
 	{
 		Dynamic[] targets = GetTopLevelSelection();
-		if (targets.Length < 2) return ReportRequirement("Select at least two 3D objects to align");
+		if (targets.Length < 2)
+			return ReportRequirement("Select at least two 3D objects to align");
 		Vector3 anchor = targets[^1].Position;
 		Dictionary<Dynamic, Transform3D> before = Capture(targets);
 		foreach (Dynamic target in targets[..^1])
@@ -31,7 +37,8 @@ public static class SelectionTransformTools
 	public static bool Distribute(Axis axis)
 	{
 		Dynamic[] targets = GetTopLevelSelection();
-		if (targets.Length < 3) return ReportRequirement("Select at least three 3D objects to distribute");
+		if (targets.Length < 3)
+			return ReportRequirement("Select at least three 3D objects to distribute");
 		Dynamic[] ordered = targets.OrderBy(target => GetAxis(target.Position, axis)).ToArray();
 		float first = GetAxis(ordered[0].Position, axis);
 		float last = GetAxis(ordered[^1].Position, axis);
@@ -49,32 +56,45 @@ public static class SelectionTransformTools
 
 	private static Dynamic[] GetTopLevelSelection()
 	{
-		if (World.Current == null) return [];
+		if (World.Current == null)
+			return [];
 		HashSet<Instance> selected = [.. World.Current.CreatorContext.Selections.SelectedInstances];
-		return selected.OfType<Dynamic>().Where(item =>
-		{
-			Instance? parent = item.Parent;
-			while (parent != null)
+		return selected
+			.OfType<Dynamic>()
+			.Where(item =>
 			{
-				if (selected.Contains(parent)) return false;
-				parent = parent.Parent;
-			}
-			return true;
-		}).ToArray();
+				Instance? parent = item.Parent;
+				while (parent != null)
+				{
+					if (selected.Contains(parent))
+						return false;
+					parent = parent.Parent;
+				}
+				return true;
+			})
+			.ToArray();
 	}
 
 	private static Dictionary<Dynamic, Transform3D> Capture(IEnumerable<Dynamic> targets) =>
 		targets.ToDictionary(target => target, target => target.GetGlobalTransform());
 
-	private static void Record(string title, Dictionary<Dynamic, Transform3D> before, Dictionary<Dynamic, Transform3D> after)
+	private static void Record(
+		string title,
+		Dictionary<Dynamic, Transform3D> before,
+		Dictionary<Dynamic, Transform3D> after
+	)
 	{
 		void Apply(Dictionary<Dynamic, Transform3D> state)
 		{
 			foreach ((Dynamic target, Transform3D transform) in state)
-				if (GodotObject.IsInstanceValid(target.GDNode)) target.SetGlobalTransform(transform);
+				if (GodotObject.IsInstanceValid(target.GDNode))
+					target.SetGlobalTransform(transform);
 		}
-		World.Current!.CreatorContext.History.RecordAppliedAction(title,
-			new BVCallback(_ => Apply(after)), new BVCallback(_ => Apply(before)));
+		World.Current!.CreatorContext.History.RecordAppliedAction(
+			title,
+			new BVCallback(_ => Apply(after)),
+			new BVCallback(_ => Apply(before))
+		);
 		World.Current.CreatorContext.Selections.RefreshProperties();
 	}
 
@@ -84,11 +104,21 @@ public static class SelectionTransformTools
 		return false;
 	}
 
-	private static float GetAxis(Vector3 value, Axis axis) => axis switch { Axis.X => value.X, Axis.Y => value.Y, _ => value.Z };
+	private static float GetAxis(Vector3 value, Axis axis) =>
+		axis switch
+		{
+			Axis.X => value.X,
+			Axis.Y => value.Y,
+			_ => value.Z,
+		};
+
 	private static void SetAxis(ref Vector3 value, Axis axis, float component)
 	{
-		if (axis == Axis.X) value.X = component;
-		else if (axis == Axis.Y) value.Y = component;
-		else value.Z = component;
+		if (axis == Axis.X)
+			value.X = component;
+		else if (axis == Axis.Y)
+			value.Y = component;
+		else
+			value.Z = component;
 	}
 }

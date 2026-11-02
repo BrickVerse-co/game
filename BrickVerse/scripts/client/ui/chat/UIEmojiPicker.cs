@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel.Services;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel.Services;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -18,10 +18,17 @@ public partial class UIEmojiPicker : Control
 	private const int GridMargin = 16;
 	private const string EmojiPickerItemPath = "res://scenes/client/ui/chat/emoji_picker_item.tscn";
 
-	[Export] private GridContainer _grid = null!;
-	[Export] private HBoxContainer _row = null!;
-	[Export] private ScrollContainer _gridScroll = null!;
-	[Export] private ScrollContainer _rowScroll = null!;
+	[Export]
+	private GridContainer _grid = null!;
+
+	[Export]
+	private HBoxContainer _row = null!;
+
+	[Export]
+	private ScrollContainer _gridScroll = null!;
+
+	[Export]
+	private ScrollContainer _rowScroll = null!;
 
 	private PackedScene _itemPacked = null!;
 
@@ -71,7 +78,8 @@ public partial class UIEmojiPicker : Control
 
 	public string GetSelectedEmojiName()
 	{
-		if (_visibleRowCache.Count == 0) return "";
+		if (_visibleRowCache.Count == 0)
+			return "";
 		if (_selectedIndex < 0 || _selectedIndex >= _visibleRowCache.Count)
 			return _visibleRowCache[0].EmojiName;
 		return _visibleRowCache[_selectedIndex].EmojiName;
@@ -79,14 +87,16 @@ public partial class UIEmojiPicker : Control
 
 	public void SelectNext()
 	{
-		if (_visibleRowCache.Count == 0) return;
+		if (_visibleRowCache.Count == 0)
+			return;
 		_selectedIndex = (_selectedIndex + 1) % _visibleRowCache.Count;
 		UpdateRowSelection();
 	}
 
 	public void SelectPrev()
 	{
-		if (_visibleRowCache.Count == 0) return;
+		if (_visibleRowCache.Count == 0)
+			return;
 		_selectedIndex = (_selectedIndex - 1 + _visibleRowCache.Count) % _visibleRowCache.Count;
 		UpdateRowSelection();
 	}
@@ -100,7 +110,10 @@ public partial class UIEmojiPicker : Control
 	private void RecalculateGridColumns(float width)
 	{
 		float available = width - GridMargin;
-		int columns = Mathf.Max(1, Mathf.FloorToInt((available + GridSeparation) / (ItemWidth + GridSeparation)));
+		int columns = Mathf.Max(
+			1,
+			Mathf.FloorToInt((available + GridSeparation) / (ItemWidth + GridSeparation))
+		);
 		_grid.Columns = columns;
 	}
 
@@ -111,7 +124,9 @@ public partial class UIEmojiPicker : Control
 		if (_gridScroll.Visible)
 		{
 			foreach (var item in _gridItems)
-				item.Visible = string.IsNullOrEmpty(partialName) || item.EmojiName.Contains(partialName, StringComparison.OrdinalIgnoreCase);
+				item.Visible =
+					string.IsNullOrEmpty(partialName)
+					|| item.EmojiName.Contains(partialName, StringComparison.OrdinalIgnoreCase);
 
 			SortWithRecentFirst(_gridItems, _grid);
 		}
@@ -120,7 +135,9 @@ public partial class UIEmojiPicker : Control
 		{
 			foreach (var item in _rowItems)
 			{
-				bool matches = !string.IsNullOrEmpty(partialName) && item.EmojiName.StartsWith(partialName, StringComparison.OrdinalIgnoreCase);
+				bool matches =
+					!string.IsNullOrEmpty(partialName)
+					&& item.EmojiName.StartsWith(partialName, StringComparison.OrdinalIgnoreCase);
 				item.Visible = string.IsNullOrEmpty(partialName) || matches;
 			}
 
@@ -204,7 +221,8 @@ public partial class UIEmojiPicker : Control
 
 	public static void InsertEmojiAtCursor(LineEdit field, string emojiName)
 	{
-		if (string.IsNullOrEmpty(emojiName)) return;
+		if (string.IsNullOrEmpty(emojiName))
+			return;
 
 		int cursorPos = field.CaretColumn;
 		string text = field.Text;

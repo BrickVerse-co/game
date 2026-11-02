@@ -2,7 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Client.UI.Notification;
@@ -10,9 +12,7 @@ using BrickVerse.Client.WebAPI;
 using BrickVerse.Providers.CapturePublish;
 using BrickVerse.Shared;
 using BrickVerse.Utils;
-using System;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -28,10 +28,17 @@ public sealed partial class CaptureService : Instance
 	public ImageTexture? CurrentPhoto = null;
 	public string? CurrentPhotoPath = null;
 
-	[ScriptProperty] public bool OnCooldown => _debounce;
-	[Editable, ScriptProperty] public bool CanCapture { get; set; } = true;
-	[ScriptProperty] public UIField? DefaultCaptureOverlay { get; set; } = null;
-	[ScriptProperty] public Dynamic? SpectatorAttach { get; set; } = null;
+	[ScriptProperty]
+	public bool OnCooldown => _debounce;
+
+	[Editable, ScriptProperty]
+	public bool CanCapture { get; set; } = true;
+
+	[ScriptProperty]
+	public UIField? DefaultCaptureOverlay { get; set; } = null;
+
+	[ScriptProperty]
+	public Dynamic? SpectatorAttach { get; set; } = null;
 	internal static ICapturePublisher? CapturePublisher { get; set; }
 
 	private AudioStreamPlayer _shutterSound = null!;
@@ -61,7 +68,8 @@ public sealed partial class CaptureService : Instance
 
 	public async void TakePhoto()
 	{
-		if (Root.Environment.CurrentCamera == null) return;
+		if (Root.Environment.CurrentCamera == null)
+			return;
 		_debounce = false;
 		await TakePhotoAtDynamic(Root.Environment.CurrentCamera);
 		// Override debounce
@@ -84,7 +92,8 @@ public sealed partial class CaptureService : Instance
 	public void OpenSpectatorView()
 	{
 		// Disallow spectator if not attached
-		if (SpectatorAttach == null) return;
+		if (SpectatorAttach == null)
+			return;
 
 		if (_cameraAttach == null)
 		{
@@ -123,11 +132,14 @@ public sealed partial class CaptureService : Instance
 
 	public void SaveCurrentPhoto()
 	{
-		if (CurrentPhoto == null) return;
+		if (CurrentPhoto == null)
+			return;
 		DateTime time = DateTime.Now;
 		string formattedTime = time.ToString("yyyyMMdd-hhmmss");
 		string filename = "BrickVerseScreenshot-" + formattedTime + ".png";
-		string baseFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyPictures).PathJoin("BrickVerse");
+		string baseFolder = System
+			.Environment.GetFolderPath(System.Environment.SpecialFolder.MyPictures)
+			.PathJoin("BrickVerse");
 		if (!DirAccess.DirExistsAbsolute(baseFolder))
 		{
 			DirAccess.MakeDirRecursiveAbsolute(baseFolder);
@@ -141,10 +153,12 @@ public sealed partial class CaptureService : Instance
 	{
 		try
 		{
-			if (CurrentPhoto == null) return;
+			if (CurrentPhoto == null)
+				return;
 			if (!CanShareToFeed(out string unavailableReason))
 				throw new InvalidOperationException(unavailableReason);
-			if (CapturePublisher == null) throw new MissingComponentException("Missing capture publisher component");
+			if (CapturePublisher == null)
+				throw new MissingComponentException("Missing capture publisher component");
 
 			byte[] screenshotBytes = CurrentPhoto.GetImage().SavePngToBuffer();
 
@@ -152,16 +166,23 @@ public sealed partial class CaptureService : Instance
 				? Root.UniverseName
 				: (!string.IsNullOrWhiteSpace(Root.WorldName) ? Root.WorldName : "BrickVerse");
 			string gameTag = Regex.Replace(gameName.Trim(), @"[^\p{L}\p{N}_]+", "_").Trim('_');
-			string automaticCaption = $"Captured in #{(string.IsNullOrWhiteSpace(gameTag) ? "BrickVerse" : gameTag)} 🎮";
+			string automaticCaption =
+				$"Captured in #{(string.IsNullOrWhiteSpace(gameTag) ? "BrickVerse" : gameTag)} 🎮";
 			string feedCaption = string.IsNullOrWhiteSpace(caption)
 				? automaticCaption
 				: $"{caption.Trim()}\n\n{automaticCaption}";
 			await CapturePublisher.Publish(screenshotBytes, feedCaption, true);
-			Root.CoreUI.CoreUI.NotificationCenter.FireMessage("Your capture was posted to Feed.", "Moment shared");
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(
+				"Your capture was posted to Feed.",
+				"Moment shared"
+			);
 		}
 		catch (Exception exception)
 		{
-			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(exception.Message, "Could not share moment");
+			Root.CoreUI.CoreUI.NotificationCenter.FireMessage(
+				exception.Message,
+				"Could not share moment"
+			);
 			GD.PushError(exception);
 		}
 	}
@@ -170,9 +191,10 @@ public sealed partial class CaptureService : Instance
 	{
 		if (!ClientAuthAPI.HasJoinToken)
 		{
-			unavailableReason = Root.Network?.IsProd == true
-				? "This game session has no world join token. Rejoin the world before sharing to Feed."
-				: "Sharing to Feed is unavailable in Creator play-tests because play-test clients do not receive a world join token. Join the published world to share captures.";
+			unavailableReason =
+				Root.Network?.IsProd == true
+					? "This game session has no world join token. Rejoin the world before sharing to Feed."
+					: "Sharing to Feed is unavailable in Creator play-tests because play-test clients do not receive a world join token. Join the published world to share captures.";
 			return false;
 		}
 		if (CapturePublisher == null)
@@ -191,7 +213,8 @@ public sealed partial class CaptureService : Instance
 
 	public void OpenCurrentPhotoFile()
 	{
-		if (CurrentPhotoPath == null) return;
+		if (CurrentPhotoPath == null)
+			return;
 		OS.ShellOpen(CurrentPhotoPath);
 	}
 
@@ -202,9 +225,15 @@ public sealed partial class CaptureService : Instance
 	}
 
 	[ScriptMethod]
-	public async Task TakePhotoAt(Vector3 pos, Vector3 rot, Vector2? photoSize = null, UIField? overlay = null)
+	public async Task TakePhotoAt(
+		Vector3 pos,
+		Vector3 rot,
+		Vector2? photoSize = null,
+		UIField? overlay = null
+	)
 	{
-		if (_debounce) throw new Exception("TakePhoto is on cooldown");
+		if (_debounce)
+			throw new Exception("TakePhoto is on cooldown");
 		if (!CanCapture)
 		{
 			Root.CoreUI.CoreUI.NotificationCenter.FireMessage("Capture is disabled at this time");
@@ -270,14 +299,16 @@ public sealed partial class CaptureService : Instance
 		subview.RenderTargetClearMode = SubViewport.ClearMode.Once;
 		subview.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
 
-		await Globals.Singleton.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+		await Globals.Singleton.ToSignal(
+			RenderingServer.Singleton,
+			RenderingServer.SignalName.FramePostDraw
+		);
 
 		guiOverlay?.Delete();
 
 		Image img = subview.GetTexture().GetImage();
 		img.FixAlphaEdges();
 		img.GenerateMipmaps();
-
 
 		CurrentPhoto?.Dispose();
 		CurrentPhoto = ImageTexture.CreateFromImage(img);
@@ -291,15 +322,11 @@ public sealed partial class CaptureService : Instance
 	{
 		Root.CoreUI.CoreUI.NotificationCenter.FireNotification(
 			UINotification.NotificationType.Screenshot,
-			new UIScreenshotNotification.ScreenshotNotifyPayload()
-			{
-				Icon = CurrentPhoto
-			}
+			new UIScreenshotNotification.ScreenshotNotifyPayload() { Icon = CurrentPhoto }
 		);
 		await Globals.Singleton.WaitAsync(CaptureCooldownSec);
 		_debounce = false;
 	}
-
 
 	private void PrePhotoTake()
 	{

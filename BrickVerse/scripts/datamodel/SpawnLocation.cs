@@ -13,10 +13,26 @@ public sealed partial class SpawnLocation : Part
 	private bool _legacyTeamColorConfigured;
 
 	[Editable, ScriptProperty, DefaultValue(true)]
-	public bool Neutral { get => _neutral; set { _neutral = value; OnPropertyChanged(); } }
+	public bool Neutral
+	{
+		get => _neutral;
+		set
+		{
+			_neutral = value;
+			OnPropertyChanged();
+		}
+	}
 
 	[Editable, ScriptProperty]
-	public Team? Team { get => _team; set { _team = value; OnPropertyChanged(); } }
+	public Team? Team
+	{
+		get => _team;
+		set
+		{
+			_team = value;
+			OnPropertyChanged();
+		}
+	}
 
 	// Retained for loading and scripting older worlds. New spawns should reference Team directly.
 	[Editable(IsHidden = true), ScriptProperty, Attributes.Obsolete("Use Team instead")]
@@ -41,8 +57,10 @@ public sealed partial class SpawnLocation : Part
 
 	internal bool CanSpawn(Player player)
 	{
-		if (Neutral) return true;
-		if (Team != null) return player.Team == Team;
+		if (Neutral)
+			return true;
+		if (Team != null)
+			return player.Team == Team;
 		return _legacyTeamColorConfigured && player.Team?.Color == TeamColor;
 	}
 }

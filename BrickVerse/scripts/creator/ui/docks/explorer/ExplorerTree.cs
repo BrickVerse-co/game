@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.UI;
@@ -26,7 +26,8 @@ public partial class ExplorerTree : Tree
 		ItemActivated += OnItemActivated;
 		ButtonClicked += (item, _, id, _) =>
 		{
-			if (id != 1 || !ItemToInstance.TryGetValue(item, out Instance? instance)) return;
+			if (id != 1 || !ItemToInstance.TryGetValue(item, out Instance? instance))
+				return;
 			if (instance.LinkedModel?.LinkedPath is string prefabPath)
 				Root.LinkedSession.OpenPrefab(prefabPath);
 		};
@@ -70,7 +71,11 @@ public partial class ExplorerTree : Tree
 					await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 					await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-					List<Instance> instances = World.Current!.CreatorContext.Selections.SelectedInstances;
+					List<Instance> instances = World
+						.Current!
+						.CreatorContext
+						.Selections
+						.SelectedInstances;
 
 					if (instances.Count == 1)
 					{
@@ -89,7 +94,17 @@ public partial class ExplorerTree : Tree
 			AcceptEvent();
 			EditSelected(true);
 		}
-		else if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.F, CtrlPressed: false, AltPressed: false, MetaPressed: false })
+		else if (
+			@event is InputEventKey
+			{
+				Pressed: true,
+				Echo: false,
+				Keycode: Key.F,
+				CtrlPressed: false,
+				AltPressed: false,
+				MetaPressed: false
+			}
+		)
 		{
 			// The Explorer owns keyboard focus here, so the viewport's F shortcut
 			// cannot see this event. Frame the shared Creator selection directly.
@@ -124,9 +139,12 @@ public partial class ExplorerTree : Tree
 	{
 		return new InstanceDragData()
 		{
-			Instances = [.. ItemToInstance
-			.Where(kvp => IsInstanceValid(kvp.Key) && kvp.Key.IsSelected(0))
-			.Select(kvp => kvp.Value)]
+			Instances =
+			[
+				.. ItemToInstance
+					.Where(kvp => IsInstanceValid(kvp.Key) && kvp.Key.IsSelected(0))
+					.Select(kvp => kvp.Value),
+			],
 		}.Serialize();
 	}
 
@@ -152,7 +170,8 @@ public partial class ExplorerTree : Tree
 
 		IDragDataUnion? dragData = DragData.Deserialize(data);
 
-		if (dragData == null) return;
+		if (dragData == null)
+			return;
 
 		List<TreeItem> draggedItems = [];
 
@@ -160,61 +179,65 @@ public partial class ExplorerTree : Tree
 		{
 			case ToolboxAssetDragData toolboxAsset:
 				await ToolboxCard.InsertAssetAsync(
-					new BrickVerse.Schemas.API.APILibraryItem { ID = toolboxAsset.AssetID, Name = toolboxAsset.AssetName },
+					new BrickVerse.Schemas.API.APILibraryItem
+					{
+						ID = toolboxAsset.AssetID,
+						Name = toolboxAsset.AssetName,
+					},
 					(BrickVerse.Schemas.API.LibraryQueryTypeEnum)toolboxAsset.AssetType,
 					target
 				);
 				Root.PlayerGUI.GrabFocus();
 				return;
 			case InstanceDragData instanceDrag:
+			{
+				foreach (Instance item in instanceDrag.Instances)
 				{
-					foreach (Instance item in instanceDrag.Instances)
-					{
-						draggedItems.Add(InstanceToItem[item]);
-					}
-
-					break;
+					draggedItems.Add(InstanceToItem[item]);
 				}
+
+				break;
+			}
 			case FileDragData fileDrag:
+			{
+				if (fileDrag.Files.Length == 1)
 				{
-					if (fileDrag.Files.Length == 1)
+					string file = fileDrag.Files[0];
+					string fileExt = file.GetExtension();
+
+					if (Globals.ScriptFileExtensions.Contains(fileExt))
 					{
-						string file = fileDrag.Files[0];
-						string fileExt = file.GetExtension();
+						bool createAsChild = true;
+						string n = CreatorService.GetScriptNameFromPath(file);
+						ScriptTypeEnum st = CreatorService.GetScriptTypeFromPath(file);
 
-						if (Globals.ScriptFileExtensions.Contains(fileExt))
+						if (createAsChild)
 						{
-							bool createAsChild = true;
-							string n = CreatorService.GetScriptNameFromPath(file);
-							ScriptTypeEnum st = CreatorService.GetScriptTypeFromPath(file);
-
-							if (createAsChild)
+							Script s = st switch
 							{
-								Script s = st switch
-								{
-									ScriptTypeEnum.Server => Root.New<ServerScript>(),
-									ScriptTypeEnum.Client => Root.New<ClientScript>(),
-									_ => Root.New<ModuleScript>()
-								};
+								ScriptTypeEnum.Server => Root.New<ServerScript>(),
+								ScriptTypeEnum.Client => Root.New<ClientScript>(),
+								_ => Root.New<ModuleScript>(),
+							};
 
-								s.LinkedScript = Root.Assets.GetFileLinkByPath(file);
-								s.Name = n.ToPascalCase();
+							s.LinkedScript = Root.Assets.GetFileLinkByPath(file);
+							s.Name = n.ToPascalCase();
 
-								s.Parent = target;
-								Root.CreatorContext.Selections.DeselectAll();
-								Root.CreatorContext.Selections.Select(s);
-							}
+							s.Parent = target;
+							Root.CreatorContext.Selections.DeselectAll();
+							Root.CreatorContext.Selections.Select(s);
 						}
-						else if (fileExt == Globals.ModelFileExtension)
-						{
-							_ = Root.LinkedSession.InsertModel(file, target);
-						}
-
-						Root.PlayerGUI.GrabFocus();
+					}
+					else if (fileExt == Globals.ModelFileExtension)
+					{
+						_ = Root.LinkedSession.InsertModel(file, target);
 					}
 
-					break;
+					Root.PlayerGUI.GrabFocus();
 				}
+
+				break;
+			}
 			default:
 				return;
 		}
@@ -251,17 +274,21 @@ public partial class ExplorerTree : Tree
 				break;
 		}
 
-		List<Instance> sortedDraggedInstances = [.. draggedItems
-		.Select(item => ItemToInstance[item])
-		.Where(inst => inst != null)
-		.OrderBy(inst => inst.Index)];
+		List<Instance> sortedDraggedInstances =
+		[
+			.. draggedItems
+				.Select(item => ItemToInstance[item])
+				.Where(inst => inst != null)
+				.OrderBy(inst => inst.Index),
+		];
 
 		List<(Instance instance, Instance? oldParent, int oldIndex)> originalState = [];
 		List<(Instance instance, Instance? newParent, int newIndex)> finalState = [];
 
 		foreach (Instance draggedInstance in sortedDraggedInstances)
 		{
-			if (parentTo == null) continue;
+			if (parentTo == null)
+				continue;
 			if (draggedInstance.IsAncestorOf(parentTo) || draggedInstance == parentTo)
 				continue;
 
@@ -290,42 +317,51 @@ public partial class ExplorerTree : Tree
 		}
 
 		// Add history action
-		if (originalState.Count <= 0) return;
+		if (originalState.Count <= 0)
+			return;
 		{
 			history.NewAction($"Move {originalState.Count} instance(s)");
 
-			history.AddDoCallback(new((_) =>
-			{
-				Root.CreatorContext.Selections.DeselectAll();
-				foreach (var (instance, newParent, newIndex) in finalState)
-				{
-					if (newParent == null) continue;
-					if (instance.Parent != newParent)
+			history.AddDoCallback(
+				new(
+					(_) =>
 					{
-						instance.Parent = newParent;
+						Root.CreatorContext.Selections.DeselectAll();
+						foreach (var (instance, newParent, newIndex) in finalState)
+						{
+							if (newParent == null)
+								continue;
+							if (instance.Parent != newParent)
+							{
+								instance.Parent = newParent;
+							}
+							newParent.MoveChild(instance, newIndex);
+							Root.CreatorContext.Selections.Select(instance);
+						}
 					}
-					newParent.MoveChild(instance, newIndex);
-					Root.CreatorContext.Selections.Select(instance);
-				}
-			}));
+				)
+			);
 
-			history.AddUndoCallback(new((_) =>
-			{
-				Root.CreatorContext.Selections.DeselectAll();
+			history.AddUndoCallback(
+				new(
+					(_) =>
+					{
+						Root.CreatorContext.Selections.DeselectAll();
 
-				for (int i = originalState.Count - 1; i >= 0; i--)
-				{
-					var (instance, oldParent, oldIndex) = originalState[i];
-					if (oldParent == null) continue;
-					instance.Parent = oldParent;
-					oldParent.MoveChild(instance, oldIndex);
-					Root.CreatorContext.Selections.Select(instance);
-				}
-			}));
+						for (int i = originalState.Count - 1; i >= 0; i--)
+						{
+							var (instance, oldParent, oldIndex) = originalState[i];
+							if (oldParent == null)
+								continue;
+							instance.Parent = oldParent;
+							oldParent.MoveChild(instance, oldIndex);
+							Root.CreatorContext.Selections.Select(instance);
+						}
+					}
+				)
+			);
 
 			history.CommitAction();
 		}
-
 	}
-
 }

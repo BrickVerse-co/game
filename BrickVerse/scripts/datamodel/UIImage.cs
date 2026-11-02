@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
-using System;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -29,16 +29,16 @@ public partial class UIImage : UIField
 	private ShaderMaterial? _shaderMaterial;
 
 	private const string UV_SHADER = """
-    shader_type canvas_item;
-    uniform vec2 texture_scale = vec2(1.0, 1.0);
-    uniform vec2 texture_offset = vec2(0.0, 0.0);
-    uniform vec4 modulate_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+		shader_type canvas_item;
+		uniform vec2 texture_scale = vec2(1.0, 1.0);
+		uniform vec2 texture_offset = vec2(0.0, 0.0);
+		uniform vec4 modulate_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 
-    void fragment() {
-        vec2 uv = (UV * texture_scale) + texture_offset;
-        COLOR = texture(TEXTURE, uv) * modulate_color;
-    }
-    """;
+		void fragment() {
+		    vec2 uv = (UV * texture_scale) + texture_offset;
+		    COLOR = texture(TEXTURE, uv) * modulate_color;
+		}
+		""";
 
 	[Editable, ScriptProperty, Export]
 	public ImageAsset? Image
@@ -144,7 +144,7 @@ public partial class UIImage : UIField
 				ImageStretchModeEnum.Stretch => TextureRect.StretchModeEnum.Scale,
 				ImageStretchModeEnum.Centered => TextureRect.StretchModeEnum.KeepAspectCentered,
 				ImageStretchModeEnum.Covered => TextureRect.StretchModeEnum.KeepAspectCovered,
-				_ => TextureRect.StretchModeEnum.Scale
+				_ => TextureRect.StretchModeEnum.Scale,
 			};
 			OnPropertyChanged();
 		}
@@ -230,7 +230,8 @@ public partial class UIImage : UIField
 
 	private void ApplyTexture()
 	{
-		if (_loadedTexture == null) return;
+		if (_loadedTexture == null)
+			return;
 
 		if (_textureScale == Vector2.One && _textureOffset == Vector2.Zero)
 		{

@@ -2,14 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
 public partial class UIChatButton : Button
 {
-	[Export] public UIChat ChatUI { get; set; } = null!;
+	[Export]
+	public UIChat ChatUI { get; set; } = null!;
 	public CoreUIRoot CoreUI = null!;
 
 	private Label _newBadge = null!;

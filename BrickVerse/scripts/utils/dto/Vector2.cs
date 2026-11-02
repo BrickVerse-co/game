@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using MemoryPack;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
+using MemoryPack;
 
 namespace BrickVerse.Utils.DTOs;
 
@@ -18,7 +18,13 @@ public partial class Vector2Dto
 
 	[MemoryPackConstructor, JsonConstructor]
 	public Vector2Dto() { }
-	public Vector2Dto(Vector2 v) { X = v.X; Y = v.Y; }
+
+	public Vector2Dto(Vector2 v)
+	{
+		X = v.X;
+		Y = v.Y;
+	}
+
 	public Vector2 ToVector2() => new(X, Y);
 
 	public static string ToString(Vector2 src)
@@ -35,7 +41,11 @@ public partial class Vector2Dto
 
 public class Vector2JsonConverter : JsonConverter<Vector2>
 {
-	public override Vector2 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override Vector2 Read(
+		ref Utf8JsonReader reader,
+		Type typeToConvert,
+		JsonSerializerOptions options
+	)
 	{
 		if (reader.TokenType != JsonTokenType.StartArray)
 		{

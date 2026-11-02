@@ -128,5 +128,4 @@ public struct OpenIdUserInfoGuildCreator
 [JsonSerializable(typeof(OpenIdUserInfoGuild))]
 [JsonSerializable(typeof(OpenIdUserInfoGuildCreator))]
 [JsonSerializable(typeof(OpenIdUserInfoGuildMembership[]))]
-
 internal partial class APIGenerationContextV3 : JsonSerializerContext { }

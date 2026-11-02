@@ -1,14 +1,14 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
-using BrickVerse.Scripting;
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 using DatamodelScript = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Creator.Managers;
@@ -18,8 +18,12 @@ public static class CreatorIconRegistry
 {
 	private const string RegistryFileName = "icon-registry.json";
 	private const string IconFolderName = "icons";
-	private static readonly Dictionary<string, IconRegistryData> Registries = new(StringComparer.OrdinalIgnoreCase);
-	private static readonly Dictionary<string, Texture2D> TextureCache = new(StringComparer.OrdinalIgnoreCase);
+	private static readonly Dictionary<string, IconRegistryData> Registries = new(
+		StringComparer.OrdinalIgnoreCase
+	);
+	private static readonly Dictionary<string, Texture2D> TextureCache = new(
+		StringComparer.OrdinalIgnoreCase
+	);
 
 	public static event Action<CreatorSession>? Changed;
 
@@ -27,7 +31,8 @@ public static class CreatorIconRegistry
 	{
 		string iconClass = GetIconClassName(instance);
 		CreatorSession? session = GetSession(instance);
-		if (session == null) return LoadBuiltInIcon(instance, iconClass);
+		if (session == null)
+			return LoadBuiltInIcon(instance, iconClass);
 		IconRegistryData data = GetData(session);
 		if (data.Instances.TryGetValue(instance.ObjectID, out string? individual))
 			return LoadOverride(session, individual) ?? LoadBuiltInIcon(instance, iconClass);
@@ -36,8 +41,9 @@ public static class CreatorIconRegistry
 		return LoadBuiltInIcon(instance, iconClass);
 	}
 
-	public static string GetIconClassName(Instance instance) => instance is DatamodelScript script
-		? $"{instance.ClassName}{ResolveLanguage(script) switch
+	public static string GetIconClassName(Instance instance) =>
+		instance is DatamodelScript script
+			? $"{instance.ClassName}{ResolveLanguage(script) switch
 		{
 			ScriptLanguagesEnum.Cpp => "CPP",
 			ScriptLanguagesEnum.CSharp => "CSharp",
@@ -46,12 +52,17 @@ public static class CreatorIconRegistry
 			ScriptLanguagesEnum.Visual => "Visual",
 			_ => "Luau",
 		}}"
-		: instance.ClassName;
+			: instance.ClassName;
 
 	private static ScriptLanguagesEnum ResolveLanguage(DatamodelScript script)
 	{
-		if (script.LinkedScript?.LinkedPath is string linkedPath
-			&& ScriptLanguageRegistry.TryFromPath(linkedPath, out ScriptLanguageDefinition definition))
+		if (
+			script.LinkedScript?.LinkedPath is string linkedPath
+			&& ScriptLanguageRegistry.TryFromPath(
+				linkedPath,
+				out ScriptLanguageDefinition definition
+			)
+		)
 			return definition.Language;
 		return script.ChosenLanguage;
 	}
@@ -59,7 +70,8 @@ public static class CreatorIconRegistry
 	private static Texture2D LoadBuiltInIcon(Instance instance, string iconClass)
 	{
 		string dynamicPath = $"res://assets/textures/datamodel/{iconClass}.svg";
-		if (ResourceLoader.Exists(dynamicPath)) return Globals.LoadIcon(iconClass);
+		if (ResourceLoader.Exists(dynamicPath))
+			return Globals.LoadIcon(iconClass);
 		if (instance is DatamodelScript script)
 		{
 			string languageIcon = ResolveLanguage(script) switch
@@ -71,8 +83,11 @@ public static class CreatorIconRegistry
 				ScriptLanguagesEnum.Visual => "script",
 				_ => "luau",
 			};
-			Texture2D? icon = GD.Load<Texture2D>($"res://assets/textures/creator/filebrowser/icons/{languageIcon}.svg");
-			if (icon != null) return icon;
+			Texture2D? icon = GD.Load<Texture2D>(
+				$"res://assets/textures/creator/filebrowser/icons/{languageIcon}.svg"
+			);
+			if (icon != null)
+				return icon;
 		}
 		return Globals.LoadIcon(instance.ClassName);
 	}
@@ -83,43 +98,59 @@ public static class CreatorIconRegistry
 	public static Texture2D ResolveClass(CreatorSession session, string className)
 	{
 		string? path = GetClassOverride(session, className);
-		return path == null ? Globals.LoadIcon(className) : LoadOverride(session, path) ?? Globals.LoadIcon(className);
+		return path == null
+			? Globals.LoadIcon(className)
+			: LoadOverride(session, path) ?? Globals.LoadIcon(className);
 	}
 
 	public static string? GetInstanceOverride(Instance instance)
 	{
 		CreatorSession? session = GetSession(instance);
-		return session != null && GetData(session).Instances.TryGetValue(instance.ObjectID, out string? path) ? path : null;
+		return
+			session != null
+			&& GetData(session).Instances.TryGetValue(instance.ObjectID, out string? path)
+			? path
+			: null;
 	}
 
 	public static void PromptSetInstance(Instance instance)
 	{
 		CreatorSession? session = GetSession(instance);
-		PromptForImage(session, path =>
-		{
-			GetData(session!).Instances[instance.ObjectID] = ImportImage(session!, path);
-			Save(session!);
-		});
+		PromptForImage(
+			session,
+			path =>
+			{
+				GetData(session!).Instances[instance.ObjectID] = ImportImage(session!, path);
+				Save(session!);
+			}
+		);
 	}
 
-	public static void PromptSetClass(CreatorSession? session, string className) => PromptForImage(session, path =>
-	{
-		GetData(session!).Classes[className] = ImportImage(session!, path);
-		Save(session!);
-	});
+	public static void PromptSetClass(CreatorSession? session, string className) =>
+		PromptForImage(
+			session,
+			path =>
+			{
+				GetData(session!).Classes[className] = ImportImage(session!, path);
+				Save(session!);
+			}
+		);
 
 	public static void ClearInstance(Instance instance)
 	{
 		CreatorSession? session = GetSession(instance);
-		if (session != null && GetData(session).Instances.Remove(instance.ObjectID)) Save(session);
+		if (session != null && GetData(session).Instances.Remove(instance.ObjectID))
+			Save(session);
 	}
 
 	public static void ClearClass(CreatorSession session, string className)
 	{
-		if (GetData(session).Classes.Remove(className)) Save(session);
+		if (GetData(session).Classes.Remove(className))
+			Save(session);
 	}
 
-	public static string RegistryPath(CreatorSession session) => Path.Combine(session.BVProjectFolderPath, RegistryFileName);
+	public static string RegistryPath(CreatorSession session) =>
+		Path.Combine(session.BVProjectFolderPath, RegistryFileName);
 
 	private static CreatorSession? GetSession(Instance instance)
 	{
@@ -139,24 +170,36 @@ public static class CreatorIconRegistry
 
 	private static void PromptForImage(CreatorSession? session, Action<string> selected)
 	{
-		if (session == null) return;
-		CreatorService.Interface.PromptFileSelect(new()
-		{
-			Title = "Choose an Explorer icon",
-			CurrentDirectory = session.ProjectFolderPath,
-			DialogMode = DisplayServer.FileDialogMode.OpenFile,
-			Filters = ["*.png,*.jpg,*.jpeg,*.webp,*.svg ; Image files"]
-		}, paths =>
-		{
-			if (paths.Length == 0) return;
-			try { selected(paths[0]); }
-			catch (Exception exception) { CreatorService.Interface.PopupAlert(exception.Message, "Could not set icon"); }
-		});
+		if (session == null)
+			return;
+		CreatorService.Interface.PromptFileSelect(
+			new()
+			{
+				Title = "Choose an Explorer icon",
+				CurrentDirectory = session.ProjectFolderPath,
+				DialogMode = DisplayServer.FileDialogMode.OpenFile,
+				Filters = ["*.png,*.jpg,*.jpeg,*.webp,*.svg ; Image files"],
+			},
+			paths =>
+			{
+				if (paths.Length == 0)
+					return;
+				try
+				{
+					selected(paths[0]);
+				}
+				catch (Exception exception)
+				{
+					CreatorService.Interface.PopupAlert(exception.Message, "Could not set icon");
+				}
+			}
+		);
 	}
 
 	private static string ImportImage(CreatorSession session, string source)
 	{
-		if (!File.Exists(source)) throw new FileNotFoundException("The selected icon could not be found.", source);
+		if (!File.Exists(source))
+			throw new FileNotFoundException("The selected icon could not be found.", source);
 		string extension = Path.GetExtension(source).ToLowerInvariant();
 		if (extension is not ".png" and not ".jpg" and not ".jpeg" and not ".webp" and not ".svg")
 			throw new InvalidOperationException("Choose a PNG, JPG, WebP, or SVG image.");
@@ -170,10 +213,19 @@ public static class CreatorIconRegistry
 	private static Texture2D? LoadOverride(CreatorSession session, string relativePath)
 	{
 		string absolute = Path.GetFullPath(Path.Combine(session.BVProjectFolderPath, relativePath));
-		if (!absolute.StartsWith(session.BVProjectFolderPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(absolute)) return null;
-		if (TextureCache.TryGetValue(absolute, out Texture2D? cached) && GodotObject.IsInstanceValid(cached)) return cached;
+		if (
+			!absolute.StartsWith(session.BVProjectFolderPath, StringComparison.OrdinalIgnoreCase)
+			|| !File.Exists(absolute)
+		)
+			return null;
+		if (
+			TextureCache.TryGetValue(absolute, out Texture2D? cached)
+			&& GodotObject.IsInstanceValid(cached)
+		)
+			return cached;
 		Image image = Image.LoadFromFile(absolute);
-		if (image.IsEmpty()) return null;
+		if (image.IsEmpty())
+			return null;
 		Texture2D texture = ImageTexture.CreateFromImage(image);
 		TextureCache[absolute] = texture;
 		return texture;
@@ -182,13 +234,19 @@ public static class CreatorIconRegistry
 	private static IconRegistryData GetData(CreatorSession session)
 	{
 		string path = RegistryPath(session);
-		if (Registries.TryGetValue(path, out IconRegistryData? cached)) return cached;
+		if (Registries.TryGetValue(path, out IconRegistryData? cached))
+			return cached;
 		IconRegistryData data = new();
 		try
 		{
-			if (File.Exists(path)) data = JsonSerializer.Deserialize<IconRegistryData>(File.ReadAllText(path)) ?? new();
+			if (File.Exists(path))
+				data =
+					JsonSerializer.Deserialize<IconRegistryData>(File.ReadAllText(path)) ?? new();
 		}
-		catch (Exception exception) { GD.PushWarning($"Could not load Creator icon registry '{path}': {exception.Message}"); }
+		catch (Exception exception)
+		{
+			GD.PushWarning($"Could not load Creator icon registry '{path}': {exception.Message}");
+		}
 		Registries[path] = data;
 		return data;
 	}
@@ -196,7 +254,13 @@ public static class CreatorIconRegistry
 	private static void Save(CreatorSession session)
 	{
 		Directory.CreateDirectory(session.BVProjectFolderPath);
-		File.WriteAllText(RegistryPath(session), JsonSerializer.Serialize(GetData(session), new JsonSerializerOptions { WriteIndented = true }));
+		File.WriteAllText(
+			RegistryPath(session),
+			JsonSerializer.Serialize(
+				GetData(session),
+				new JsonSerializerOptions { WriteIndented = true }
+			)
+		);
 		Changed?.Invoke(session);
 	}
 

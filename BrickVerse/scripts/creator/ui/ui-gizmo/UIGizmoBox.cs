@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Gizmos;
 
@@ -18,21 +18,56 @@ public partial class UIGizmoBox : Control
 	private const float SnapThreshold = 4f;
 	private const float MaxMeasureDistance = 300f;
 
-	[Export] private Label _sizeIndLabel = null!;
-	[Export] private Control _pivotIndicator = null!;
-	[Export] private Control _cornerTL = null!;
-	[Export] private Control _cornerTR = null!;
-	[Export] private Control _cornerBL = null!;
-	[Export] private Control _cornerBR = null!;
-	[Export] private Control _edgeTop = null!;
-	[Export] private Control _edgeBottom = null!;
-	[Export] private Control _edgeLeft = null!;
-	[Export] private Control _edgeRight = null!;
+	[Export]
+	private Label _sizeIndLabel = null!;
+
+	[Export]
+	private Control _pivotIndicator = null!;
+
+	[Export]
+	private Control _cornerTL = null!;
+
+	[Export]
+	private Control _cornerTR = null!;
+
+	[Export]
+	private Control _cornerBL = null!;
+
+	[Export]
+	private Control _cornerBR = null!;
+
+	[Export]
+	private Control _edgeTop = null!;
+
+	[Export]
+	private Control _edgeBottom = null!;
+
+	[Export]
+	private Control _edgeLeft = null!;
+
+	[Export]
+	private Control _edgeRight = null!;
 	public UIField Target = null!;
 	public UIGizmos Gizmos = null!;
 
-	private enum Handle { TL, TR, BL, BR, Top, Bottom, Left, Right }
-	private enum DragState { None, Dragging, Resizing }
+	private enum Handle
+	{
+		TL,
+		TR,
+		BL,
+		BR,
+		Top,
+		Bottom,
+		Left,
+		Right,
+	}
+
+	private enum DragState
+	{
+		None,
+		Dragging,
+		Resizing,
+	}
 
 	private DragState _dragState;
 	private Handle _resizeCorner;
@@ -55,7 +90,8 @@ public partial class UIGizmoBox : Control
 	{
 		base._EnterTree();
 
-		if (Target == null) return;
+		if (Target == null)
+			return;
 
 		RegisterHandle(_cornerTL, Handle.TL);
 		RegisterHandle(_cornerTR, Handle.TR);
@@ -113,7 +149,11 @@ public partial class UIGizmoBox : Control
 
 		if (_dragState == DragState.Dragging)
 		{
-			if (Target?.NodeControl == null) { EndDrag(); return; }
+			if (Target?.NodeControl == null)
+			{
+				EndDrag();
+				return;
+			}
 
 			Vector2 targetAbs = globalMouse - _dragGrabOffset;
 			Vector2 snappedAbs = SnapPosition(targetAbs);
@@ -132,7 +172,8 @@ public partial class UIGizmoBox : Control
 
 	private void EndDrag()
 	{
-		if (_dragState == DragState.None) return;
+		if (_dragState == DragState.None)
+			return;
 		bool wasResizing = _dragState == DragState.Resizing;
 		_dragState = DragState.None;
 		Gizmos?.HideGuidelines();
@@ -172,7 +213,8 @@ public partial class UIGizmoBox : Control
 
 		_activeGuides.Clear();
 
-		if (GetViewport() is not Viewport vp) return proposedAbsPos;
+		if (GetViewport() is not Viewport vp)
+			return proposedAbsPos;
 		Vector2 vpSize = vp.GetVisibleRect().Size;
 		Vector2 vpRangeX = new(0, vpSize.X);
 		Vector2 vpRangeY = new(0, vpSize.Y);
@@ -183,8 +225,10 @@ public partial class UIGizmoBox : Control
 			proposedAbsPos,
 			proposedAbsPos + gt.X * size.X,
 			proposedAbsPos + gt.Y * size.Y,
-			proposedAbsPos + gt.X * size.X + gt.Y * size.Y);
-		Vector2 proposedPivot = proposedAbsPos
+			proposedAbsPos + gt.X * size.X + gt.Y * size.Y
+		);
+		Vector2 proposedPivot =
+			proposedAbsPos
 			+ gt.X * (Target.PivotPoint.X * size.X)
 			+ gt.Y * (Target.PivotPoint.Y * size.Y);
 
@@ -201,13 +245,31 @@ public partial class UIGizmoBox : Control
 		{
 			float txDist = SnapThreshold + 1;
 			float tyDist = SnapThreshold + 1;
-			float tdx = 0, tdy = 0;
-			SnapGuide? tgx = null, tgy = null;
+			float tdx = 0,
+				tdy = 0;
+			SnapGuide? tgx = null,
+				tgy = null;
 
-			SnapEdgeSet(dragged, target, false, vpRangeY, target.Color,
-				ref txDist, ref tdx, ref tgx);
-			SnapEdgeSet(dragged, target, true, vpRangeX, target.Color,
-				ref tyDist, ref tdy, ref tgy);
+			SnapEdgeSet(
+				dragged,
+				target,
+				false,
+				vpRangeY,
+				target.Color,
+				ref txDist,
+				ref tdx,
+				ref tgx
+			);
+			SnapEdgeSet(
+				dragged,
+				target,
+				true,
+				vpRangeX,
+				target.Color,
+				ref tyDist,
+				ref tdy,
+				ref tgy
+			);
 
 			if (txDist > SnapThreshold && tyDist > SnapThreshold)
 				continue;
@@ -231,8 +293,10 @@ public partial class UIGizmoBox : Control
 		if (Mathf.Abs(snapDeltaY) <= SnapThreshold)
 			snappedAbs.Y += snapDeltaY;
 
-		if (guideX.HasValue) _activeGuides.Add(guideX.Value);
-		if (guideY.HasValue) _activeGuides.Add(guideY.Value);
+		if (guideX.HasValue)
+			_activeGuides.Add(guideX.Value);
+		if (guideY.HasValue)
+			_activeGuides.Add(guideY.Value);
 
 		if (!Input.IsKeyPressed(Key.Alt))
 			Gizmos?.ShowGuidelines([.. _activeGuides]);
@@ -243,9 +307,15 @@ public partial class UIGizmoBox : Control
 	}
 
 	private static void SnapEdgeSet(
-		AlignmentRect dragged, AlignmentRect target, bool isY,
-		Vector2 guideRange, Color color,
-		ref float bestDist, ref float bestDelta, ref SnapGuide? bestGuide)
+		AlignmentRect dragged,
+		AlignmentRect target,
+		bool isY,
+		Vector2 guideRange,
+		Color color,
+		ref float bestDist,
+		ref float bestDelta,
+		ref SnapGuide? bestGuide
+	)
 	{
 		float[] dPts = isY ? dragged.SnapY : dragged.SnapX;
 		float[] tPts = isY ? target.SnapY : target.SnapX;
@@ -255,21 +325,24 @@ public partial class UIGizmoBox : Control
 			foreach (float t in tPts)
 			{
 				float dist = Mathf.Abs(d - t);
-				if (dist >= bestDist) continue;
+				if (dist >= bestDist)
+					continue;
 
 				bestDist = dist;
 				bestDelta = t - d;
 				bestGuide = new SnapGuide(
 					isY ? new(guideRange.X, t) : new(t, guideRange.X),
 					isY ? new(guideRange.Y, t) : new(t, guideRange.Y),
-					color);
+					color
+				);
 			}
 		}
 	}
 
 	private static Vector2 GetPivotGlobal(UIField field)
 	{
-		if (field?.NodeControl == null) return Vector2.Zero;
+		if (field?.NodeControl == null)
+			return Vector2.Zero;
 		Transform2D gt = field.NodeControl.GetGlobalTransform();
 		Vector2 size = field.NodeControl.Size;
 		return gt.Origin
@@ -283,20 +356,40 @@ public partial class UIGizmoBox : Control
 
 		if (Target.Parent is UIField parentField)
 		{
-			targets.Add(new AlignmentRect(GetBounds(parentField), GetPivotGlobal(parentField), new Color(0.4f, 0.7f, 1f)));
+			targets.Add(
+				new AlignmentRect(
+					GetBounds(parentField),
+					GetPivotGlobal(parentField),
+					new Color(0.4f, 0.7f, 1f)
+				)
+			);
 		}
 		else if (Target.Parent is GUI gui && gui.GDNode is Control guiControl)
 		{
-			targets.Add(new AlignmentRect(guiControl.GlobalPosition, gui.AbsoluteSize, new Color(0.4f, 0.7f, 1f)));
+			targets.Add(
+				new AlignmentRect(
+					guiControl.GlobalPosition,
+					gui.AbsoluteSize,
+					new Color(0.4f, 0.7f, 1f)
+				)
+			);
 		}
 
 		if (Target.Parent is Instance parentInst)
 		{
 			foreach (Instance child in parentInst.GetChildren())
 			{
-				if (child == Target || child is not UIField sibling) continue;
-				if (sibling.IsHidden) continue;
-				targets.Add(new AlignmentRect(GetBounds(sibling), GetPivotGlobal(sibling), new Color(1f, 0.5f, 0.85f)));
+				if (child == Target || child is not UIField sibling)
+					continue;
+				if (sibling.IsHidden)
+					continue;
+				targets.Add(
+					new AlignmentRect(
+						GetBounds(sibling),
+						GetPivotGlobal(sibling),
+						new Color(1f, 0.5f, 0.85f)
+					)
+				);
 			}
 		}
 
@@ -305,7 +398,8 @@ public partial class UIGizmoBox : Control
 
 	private void RegisterHandle(Control? handle, Handle handleType)
 	{
-		if (handle == null) return;
+		if (handle == null)
+			return;
 		handle.GuiInput += e => OnHandleGuiInput(e, handleType);
 		handle.MouseEntered += () => handle.Modulate = Colors.White;
 		handle.MouseExited += () => handle.Modulate = new Color(1, 1, 1, 0.5f);
@@ -313,7 +407,11 @@ public partial class UIGizmoBox : Control
 
 	private void OnHandleGuiInput(InputEvent @event, Handle handle)
 	{
-		if (@event is not InputEventMouseButton btn || btn.ButtonIndex != MouseButton.Left || !btn.Pressed)
+		if (
+			@event is not InputEventMouseButton btn
+			|| btn.ButtonIndex != MouseButton.Left
+			|| !btn.Pressed
+		)
 			return;
 		StartResize(handle);
 		AcceptEvent();
@@ -321,7 +419,11 @@ public partial class UIGizmoBox : Control
 
 	private void OnGuiInput(InputEvent @event)
 	{
-		if (@event is not InputEventMouseButton btn || btn.ButtonIndex != MouseButton.Left || !btn.Pressed)
+		if (
+			@event is not InputEventMouseButton btn
+			|| btn.ButtonIndex != MouseButton.Left
+			|| !btn.Pressed
+		)
 			return;
 
 		Vector2 localPos = GetLocalMousePosition();
@@ -337,7 +439,8 @@ public partial class UIGizmoBox : Control
 	private bool TrySelectDeepestChild()
 	{
 		UIField? deepest = FindDeepestUIFieldUnderMouse(Target);
-		if (deepest == null || deepest == Target) return false;
+		if (deepest == null || deepest == Target)
+			return false;
 
 		Target.Root?.CreatorContext?.Selections.SelectOnly(deepest);
 		return true;
@@ -345,13 +448,15 @@ public partial class UIGizmoBox : Control
 
 	private static UIField? FindDeepestUIFieldUnderMouse(Instance parent)
 	{
-		if (parent.GDNode is not Control parentControl) return null;
+		if (parent.GDNode is not Control parentControl)
+			return null;
 		Vector2 mousePos = parentControl.GetGlobalMousePosition();
 		UIField? result = null;
 
 		foreach (Instance child in parent.GetChildren())
 		{
-			if (child is not UIField { IsHidden: false } uiChild || uiChild.NodeControl == null) continue;
+			if (child is not UIField { IsHidden: false } uiChild || uiChild.NodeControl == null)
+				continue;
 
 			if (uiChild.NodeControl.GetGlobalRect().HasPoint(mousePos))
 			{
@@ -398,7 +503,8 @@ public partial class UIGizmoBox : Control
 		_nudgeHistory?.CommitAction();
 		_nudgeHistory = null;
 		CreatorHistory? history = BeginHistoryAction();
-		if (history == null) return;
+		if (history == null)
+			return;
 
 		_dragState = DragState.Dragging;
 		_dragGrabOffset = GetGlobalMousePosition() - Target.AbsolutePosition;
@@ -413,7 +519,8 @@ public partial class UIGizmoBox : Control
 		_nudgeHistory?.CommitAction();
 		_nudgeHistory = null;
 		CreatorHistory? history = BeginHistoryAction();
-		if (history == null) return;
+		if (history == null)
+			return;
 
 		_dragState = DragState.Resizing;
 		_resizeCorner = handle;
@@ -425,16 +532,24 @@ public partial class UIGizmoBox : Control
 		history.NewAction("Resize UI Element");
 		Vector2 savedPos = Target.PositionOffset;
 		Vector2 savedSize = Target.SizeOffset;
-		history.AddUndoCallback(new((_) =>
-		{
-			Target.PositionOffset = savedPos;
-			Target.SizeOffset = savedSize;
-		}));
+		history.AddUndoCallback(
+			new(
+				(_) =>
+				{
+					Target.PositionOffset = savedPos;
+					Target.SizeOffset = savedSize;
+				}
+			)
+		);
 	}
 
 	private void ApplyResize()
 	{
-		if (Target?.NodeControl == null) { EndDrag(); return; }
+		if (Target?.NodeControl == null)
+		{
+			EndDrag();
+			return;
+		}
 		Vector2 totalDelta = _totalResizeDelta;
 
 		bool centerScale = Input.IsKeyPressed(Key.Ctrl) && Input.IsKeyPressed(Key.Shift);
@@ -447,7 +562,11 @@ public partial class UIGizmoBox : Control
 		else if (uniform)
 		{
 			Vector2 startSize = _resizeStartSizeOffset;
-			if (startSize.X == 0 || startSize.Y == 0) { EndDrag(); return; }
+			if (startSize.X == 0 || startSize.Y == 0)
+			{
+				EndDrag();
+				return;
+			}
 			float scaleX = (startSize.X + totalDelta.X) / startSize.X;
 			float scaleY = (startSize.Y + totalDelta.Y) / startSize.Y;
 			float scale = Mathf.Abs(scaleX - 1f) > Mathf.Abs(scaleY - 1f) ? scaleX : scaleY;
@@ -463,25 +582,26 @@ public partial class UIGizmoBox : Control
 		float dy = (onBottom ? totalDelta.Y : 0) - (onTop ? totalDelta.Y : 0);
 		Vector2 sizeChange = new(dx, dy);
 
-		Vector2 posChange = new(
-			onLeft ? totalDelta.X : 0,
-			onTop ? totalDelta.Y : 0);
+		Vector2 posChange = new(onLeft ? totalDelta.X : 0, onTop ? totalDelta.Y : 0);
 
 		Vector2 newSizeOffset = (_resizeStartSizeOffset + sizeChange).Max(Vector2.One).Round();
 		Vector2 actualSizeChange = newSizeOffset - _resizeStartSizeOffset;
-
 
 		float nodeRot = Target.NodeControl.Rotation;
 
 		Vector2 newPosOffset;
 		if (centerScale)
 		{
-			Vector2 pivotDelta = ((Target.PivotPoint - DefaultPivot) * actualSizeChange).Rotated(nodeRot);
+			Vector2 pivotDelta = ((Target.PivotPoint - DefaultPivot) * actualSizeChange).Rotated(
+				nodeRot
+			);
 			newPosOffset = _resizeStartPosOffset + pivotDelta;
 		}
 		else
 		{
-			Vector2 totalPosDelta = (posChange + Target.PivotPoint * actualSizeChange).Rotated(nodeRot);
+			Vector2 totalPosDelta = (posChange + Target.PivotPoint * actualSizeChange).Rotated(
+				nodeRot
+			);
 			newPosOffset = _resizeStartPosOffset + totalPosDelta;
 		}
 
@@ -491,8 +611,10 @@ public partial class UIGizmoBox : Control
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (_dragState != DragState.None) return;
-		if (@event is not InputEventKey keyEvent || !keyEvent.Pressed) return;
+		if (_dragState != DragState.None)
+			return;
+		if (@event is not InputEventKey keyEvent || !keyEvent.Pressed)
+			return;
 
 		Vector2 nudge = keyEvent.Keycode switch
 		{
@@ -500,13 +622,15 @@ public partial class UIGizmoBox : Control
 			Key.Right => new(1, 0),
 			Key.Up => new(0, -1),
 			Key.Down => new(0, 1),
-			_ => Vector2.Zero
+			_ => Vector2.Zero,
 		};
 
-		if (nudge == Vector2.Zero) return;
+		if (nudge == Vector2.Zero)
+			return;
 
 		CreatorHistory? history = GetHistory();
-		if (history == null || Target == null) return;
+		if (history == null || Target == null)
+			return;
 		bool sameDirection = nudge == _lastNudge;
 		_lastNudge = nudge;
 
@@ -529,7 +653,8 @@ public partial class UIGizmoBox : Control
 
 	private static UIBounds GetBounds(UIField field)
 	{
-		if (field?.NodeControl == null) return default;
+		if (field?.NodeControl == null)
+			return default;
 		Transform2D gt = field.NodeControl.GetGlobalTransform();
 		Vector2 size = field.NodeControl.Size;
 		Vector2 tl = gt.Origin;
@@ -541,7 +666,8 @@ public partial class UIGizmoBox : Control
 
 	private void HandleAltMeasures()
 	{
-		if (Target?.NodeControl == null) return;
+		if (Target?.NodeControl == null)
+			return;
 
 		if (!Input.IsKeyPressed(Key.Alt))
 		{
@@ -568,7 +694,8 @@ public partial class UIGizmoBox : Control
 
 	private void ShowMeasureOverlay(UIBounds myBounds)
 	{
-		if (GetViewport() is not Viewport vp) return;
+		if (GetViewport() is not Viewport vp)
+			return;
 
 		var measures = new List<MeasureGuide>();
 		var measureColor = new Color(0.95f, 0.25f, 0.25f);
@@ -583,7 +710,8 @@ public partial class UIGizmoBox : Control
 		{
 			foreach (Instance child in parentInst.GetChildren())
 			{
-				if (child == Target || child is not UIField ui || ui.IsHidden) continue;
+				if (child == Target || child is not UIField ui || ui.IsHidden)
+					continue;
 				candidates.Add((GetBounds(ui), false));
 			}
 		}
@@ -604,7 +732,13 @@ public partial class UIGizmoBox : Control
 			Gizmos?.HideMeasurements();
 	}
 
-	private enum Direction { Left, Right, Top, Bottom }
+	private enum Direction
+	{
+		Left,
+		Right,
+		Top,
+		Bottom,
+	}
 
 	private static float GetGap(UIBounds my, UIBounds other, Direction dir)
 	{
@@ -614,14 +748,17 @@ public partial class UIGizmoBox : Control
 			Direction.Right => other.Rect.Position.X - my.Rect.End.X,
 			Direction.Top => my.Rect.Position.Y - other.Rect.End.Y,
 			Direction.Bottom => other.Rect.Position.Y - my.Rect.End.Y,
-			_ => float.MaxValue
+			_ => float.MaxValue,
 		};
 	}
 
 	private static void AddNearestElementMeasure(
-		List<MeasureGuide> measures, Color color,
-		UIBounds myBounds, List<(UIBounds bounds, bool isParent)> candidates,
-		Direction dir)
+		List<MeasureGuide> measures,
+		Color color,
+		UIBounds myBounds,
+		List<(UIBounds bounds, bool isParent)> candidates,
+		Direction dir
+	)
 	{
 		float bestDist = MaxMeasureDistance;
 		UIBounds? bestBounds = null;
@@ -643,98 +780,113 @@ public partial class UIGizmoBox : Control
 	}
 
 	private static void CreateEdgeMeasure(
-		List<MeasureGuide> measures, Color color,
-		UIBounds my, UIBounds other, Direction dir, float distance)
+		List<MeasureGuide> measures,
+		Color color,
+		UIBounds my,
+		UIBounds other,
+		Direction dir,
+		float distance
+	)
 	{
-		Vector2 from = Vector2.Zero, to = Vector2.Zero;
+		Vector2 from = Vector2.Zero,
+			to = Vector2.Zero;
 
 		switch (dir)
 		{
 			case Direction.Left:
-				{
-					float top = Mathf.Max(my.Rect.Position.Y, other.Rect.Position.Y);
-					float bottom = Mathf.Min(my.Rect.End.Y, other.Rect.End.Y);
-					float centerY = top < bottom
+			{
+				float top = Mathf.Max(my.Rect.Position.Y, other.Rect.Position.Y);
+				float bottom = Mathf.Min(my.Rect.End.Y, other.Rect.End.Y);
+				float centerY =
+					top < bottom
 						? (top + bottom) * 0.5f
 						: (my.Rect.Position.Y + my.Rect.End.Y) * 0.5f;
-					from = new Vector2(my.Rect.Position.X, centerY);
-					to = new Vector2(other.Rect.End.X, centerY);
-					break;
-				}
+				from = new Vector2(my.Rect.Position.X, centerY);
+				to = new Vector2(other.Rect.End.X, centerY);
+				break;
+			}
 			case Direction.Right:
-				{
-					float top = Mathf.Max(my.Rect.Position.Y, other.Rect.Position.Y);
-					float bottom = Mathf.Min(my.Rect.End.Y, other.Rect.End.Y);
-					float centerY = top < bottom
+			{
+				float top = Mathf.Max(my.Rect.Position.Y, other.Rect.Position.Y);
+				float bottom = Mathf.Min(my.Rect.End.Y, other.Rect.End.Y);
+				float centerY =
+					top < bottom
 						? (top + bottom) * 0.5f
 						: (my.Rect.Position.Y + my.Rect.End.Y) * 0.5f;
-					from = new Vector2(my.Rect.End.X, centerY);
-					to = new Vector2(other.Rect.Position.X, centerY);
-					break;
-				}
+				from = new Vector2(my.Rect.End.X, centerY);
+				to = new Vector2(other.Rect.Position.X, centerY);
+				break;
+			}
 			case Direction.Top:
-				{
-					float left = Mathf.Max(my.Rect.Position.X, other.Rect.Position.X);
-					float right = Mathf.Min(my.Rect.End.X, other.Rect.End.X);
-					float centerX = left < right
+			{
+				float left = Mathf.Max(my.Rect.Position.X, other.Rect.Position.X);
+				float right = Mathf.Min(my.Rect.End.X, other.Rect.End.X);
+				float centerX =
+					left < right
 						? (left + right) * 0.5f
 						: (my.Rect.Position.X + my.Rect.End.X) * 0.5f;
-					from = new Vector2(centerX, my.Rect.Position.Y);
-					to = new Vector2(centerX, other.Rect.End.Y);
-					break;
-				}
+				from = new Vector2(centerX, my.Rect.Position.Y);
+				to = new Vector2(centerX, other.Rect.End.Y);
+				break;
+			}
 			case Direction.Bottom:
-				{
-					float left = Mathf.Max(my.Rect.Position.X, other.Rect.Position.X);
-					float right = Mathf.Min(my.Rect.End.X, other.Rect.End.X);
-					float centerX = left < right
+			{
+				float left = Mathf.Max(my.Rect.Position.X, other.Rect.Position.X);
+				float right = Mathf.Min(my.Rect.End.X, other.Rect.End.X);
+				float centerX =
+					left < right
 						? (left + right) * 0.5f
 						: (my.Rect.Position.X + my.Rect.End.X) * 0.5f;
-					from = new Vector2(centerX, my.Rect.End.Y);
-					to = new Vector2(centerX, other.Rect.Position.Y);
-					break;
-				}
+				from = new Vector2(centerX, my.Rect.End.Y);
+				to = new Vector2(centerX, other.Rect.Position.Y);
+				break;
+			}
 		}
 
 		measures.Add(new MeasureGuide(from, to, color, $"{distance:F0} px", (from + to) * 0.5f));
 	}
 
 	private static void CreateViewportEdgeMeasure(
-		List<MeasureGuide> measures, Color color,
-		UIBounds bounds, Direction dir, Vector2 vpSize)
+		List<MeasureGuide> measures,
+		Color color,
+		UIBounds bounds,
+		Direction dir,
+		Vector2 vpSize
+	)
 	{
-		Vector2 from = Vector2.Zero, to = Vector2.Zero;
+		Vector2 from = Vector2.Zero,
+			to = Vector2.Zero;
 
 		switch (dir)
 		{
 			case Direction.Left:
-				{
-					float centerY = bounds.Rect.Position.Y + bounds.Rect.Size.Y * 0.5f;
-					from = new Vector2(bounds.Rect.Position.X, centerY);
-					to = new Vector2(0, centerY);
-					break;
-				}
+			{
+				float centerY = bounds.Rect.Position.Y + bounds.Rect.Size.Y * 0.5f;
+				from = new Vector2(bounds.Rect.Position.X, centerY);
+				to = new Vector2(0, centerY);
+				break;
+			}
 			case Direction.Right:
-				{
-					float centerY = bounds.Rect.Position.Y + bounds.Rect.Size.Y * 0.5f;
-					from = new Vector2(bounds.Rect.End.X, centerY);
-					to = new Vector2(vpSize.X, centerY);
-					break;
-				}
+			{
+				float centerY = bounds.Rect.Position.Y + bounds.Rect.Size.Y * 0.5f;
+				from = new Vector2(bounds.Rect.End.X, centerY);
+				to = new Vector2(vpSize.X, centerY);
+				break;
+			}
 			case Direction.Top:
-				{
-					float centerX = bounds.Rect.Position.X + bounds.Rect.Size.X * 0.5f;
-					from = new Vector2(centerX, bounds.Rect.Position.Y);
-					to = new Vector2(centerX, 0);
-					break;
-				}
+			{
+				float centerX = bounds.Rect.Position.X + bounds.Rect.Size.X * 0.5f;
+				from = new Vector2(centerX, bounds.Rect.Position.Y);
+				to = new Vector2(centerX, 0);
+				break;
+			}
 			case Direction.Bottom:
-				{
-					float centerX = bounds.Rect.Position.X + bounds.Rect.Size.X * 0.5f;
-					from = new Vector2(centerX, bounds.Rect.End.Y);
-					to = new Vector2(centerX, vpSize.Y);
-					break;
-				}
+			{
+				float centerX = bounds.Rect.Position.X + bounds.Rect.Size.X * 0.5f;
+				from = new Vector2(centerX, bounds.Rect.End.Y);
+				to = new Vector2(centerX, vpSize.Y);
+				break;
+			}
 		}
 
 		float distance = dir switch
@@ -743,7 +895,7 @@ public partial class UIGizmoBox : Control
 			Direction.Right => vpSize.X - bounds.Rect.End.X,
 			Direction.Top => bounds.Rect.Position.Y,
 			Direction.Bottom => vpSize.Y - bounds.Rect.End.Y,
-			_ => 0
+			_ => 0,
 		};
 
 		measures.Add(new MeasureGuide(from, to, color, $"{distance:F0} px", (from + to) * 0.5f));
@@ -752,17 +904,22 @@ public partial class UIGizmoBox : Control
 	private void CommitHistory(bool includeSize)
 	{
 		CreatorHistory? history = GetHistory();
-		if (history == null) return;
+		if (history == null)
+			return;
 
 		Vector2 savedPos = Target.PositionOffset;
 		if (includeSize)
 		{
 			Vector2 savedSize = Target.SizeOffset;
-			history.AddDoCallback(new((_) =>
-			{
-				Target.PositionOffset = savedPos;
-				Target.SizeOffset = savedSize;
-			}));
+			history.AddDoCallback(
+				new(
+					(_) =>
+					{
+						Target.PositionOffset = savedPos;
+						Target.SizeOffset = savedSize;
+					}
+				)
+			);
 		}
 		else
 		{
@@ -779,7 +936,8 @@ public partial class UIGizmoBox : Control
 
 	private void SetHoveringUIGizmo(bool active)
 	{
-		if (_hoveringGizmo == active) return;
+		if (_hoveringGizmo == active)
+			return;
 		_hoveringGizmo = active;
 		if (Target?.Root?.CreatorContext?.Gizmos is BrickVerse.Creator.Gizmos g)
 			g.HoveringUIGizmo = active;
@@ -787,7 +945,8 @@ public partial class UIGizmoBox : Control
 
 	private void OnTransformChanged()
 	{
-		if (Target?.NodeControl == null) return;
+		if (Target?.NodeControl == null)
+			return;
 
 		Size = Target.NodeControl.Size;
 		PivotOffset = Target.NodeControl.PivotOffset;
@@ -796,7 +955,8 @@ public partial class UIGizmoBox : Control
 		Scale = gt.Scale;
 		GlobalPosition = gt.Origin;
 
-		bool responsive = !Target.SizeRelative.IsZeroApprox() || !Target.PositionRelative.IsZeroApprox();
+		bool responsive =
+			!Target.SizeRelative.IsZeroApprox() || !Target.PositionRelative.IsZeroApprox();
 		_sizeIndLabel.Text = responsive
 			? $"{Target.AbsoluteSize.X:0}×{Target.AbsoluteSize.Y:0}  •  {Target.SizeRelative.X * 100:0.#}% × {Target.SizeRelative.Y * 100:0.#}%"
 			: $"{Target.AbsoluteSize.X:0}×{Target.AbsoluteSize.Y:0} px";
@@ -804,7 +964,8 @@ public partial class UIGizmoBox : Control
 
 		float cr = -Rotation;
 
-		if (_sizeIndParent == null) return;
+		if (_sizeIndParent == null)
+			return;
 		_sizeIndParent.PivotOffset = _sizeIndParent.Size * 0.5f;
 		_sizeIndParent.Rotation = cr;
 
@@ -817,7 +978,8 @@ public partial class UIGizmoBox : Control
 
 	public override void _Draw()
 	{
-		if (Target?.NodeControl?.GetParent() is not Control parent) return;
+		if (Target?.NodeControl?.GetParent() is not Control parent)
+			return;
 		Vector2 anchorInParent = parent.Size * Target.PositionRelative + Target.PositionOffset;
 		Vector2 anchorGlobal = parent.GetGlobalTransformWithCanvas() * anchorInParent;
 		Vector2 anchorLocal = GetGlobalTransformWithCanvas().AffineInverse() * anchorGlobal;
@@ -833,18 +995,23 @@ public partial class UIGizmoBox : Control
 	private readonly struct UIBounds
 	{
 		public readonly Rect2 Rect;
-		public readonly Vector2 TL, TR, BL, BR;
+		public readonly Vector2 TL,
+			TR,
+			BL,
+			BR;
 
 		public UIBounds(Vector2 tl, Vector2 tr, Vector2 bl, Vector2 br)
 		{
-			TL = tl; TR = tr; BL = bl; BR = br;
+			TL = tl;
+			TR = tr;
+			BL = bl;
+			BR = br;
 			float minX = Mathf.Min(Mathf.Min(tl.X, tr.X), Mathf.Min(bl.X, br.X));
 			float maxX = Mathf.Max(Mathf.Max(tl.X, tr.X), Mathf.Max(bl.X, br.X));
 			float minY = Mathf.Min(Mathf.Min(tl.Y, tr.Y), Mathf.Min(bl.Y, br.Y));
 			float maxY = Mathf.Max(Mathf.Max(tl.Y, tr.Y), Mathf.Max(bl.Y, br.Y));
 			Rect = new Rect2(minX, minY, maxX - minX, maxY - minY);
 		}
-
 	}
 
 	private readonly struct AlignmentRect

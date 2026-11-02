@@ -3,7 +3,17 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - "BrickVerse/**"
+      - "BrickVerse.SourceGen/**"
+      - "BrickVerse.Tests/**"
+      - "global.json"
+      - ".github/workflows/dotnet-test.yml"
   workflow_dispatch:
+
+concurrency:
+  group: dotnet-test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -13,6 +23,7 @@ jobs:
   dotnet-tests:
     name: Run Dotnet Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5

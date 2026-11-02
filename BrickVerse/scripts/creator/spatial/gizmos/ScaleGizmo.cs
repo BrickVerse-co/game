@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Creator.Spatial;
 
@@ -74,7 +74,7 @@ public partial class ScaleGizmo : Node, IGizmo
 				NoDepthTest = true,
 				CullMode = BaseMaterial3D.CullModeEnum.Disabled,
 				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-				AlbedoColor = axisColor
+				AlbedoColor = axisColor,
 			};
 
 			StandardMaterial3D materialHover = (StandardMaterial3D)material.Duplicate();
@@ -88,14 +88,15 @@ public partial class ScaleGizmo : Node, IGizmo
 			SurfaceTool surftool = new();
 			surftool.Begin(Godot.Mesh.PrimitiveType.Triangles);
 
-			Vector3[] arrow = [
-					_nivec * 0f + _ivec * 0f,
-						_nivec * 0.01f + _ivec * 0f,
-						_nivec * 0.01f + _ivec * 1f * GizmoScaleOffset,
-						_nivec * 0.07f + _ivec * 1f * GizmoScaleOffset,
-						_nivec * 0.07f + _ivec * 1.11f * GizmoScaleOffset,
-						_nivec * 0f + _ivec * 1.11f * GizmoScaleOffset,
-					];
+			Vector3[] arrow =
+			[
+				_nivec * 0f + _ivec * 0f,
+				_nivec * 0.01f + _ivec * 0f,
+				_nivec * 0.01f + _ivec * 1f * GizmoScaleOffset,
+				_nivec * 0.07f + _ivec * 1f * GizmoScaleOffset,
+				_nivec * 0.07f + _ivec * 1.11f * GizmoScaleOffset,
+				_nivec * 0f + _ivec * 1.11f * GizmoScaleOffset,
+			];
 
 			int arrowPoints = 6;
 			int arrowSides = 4;
@@ -109,12 +110,13 @@ public partial class ScaleGizmo : Node, IGizmo
 
 				for (int j = 0; j < arrowPoints - 1; j++)
 				{
-					Vector3[] points = [
-							ma.Xform(arrow[j]),
-								mb.Xform(arrow[j]),
-								mb.Xform(arrow[j + 1]),
-								ma.Xform(arrow[j + 1]),
-							];
+					Vector3[] points =
+					[
+						ma.Xform(arrow[j]),
+						mb.Xform(arrow[j]),
+						mb.Xform(arrow[j + 1]),
+						ma.Xform(arrow[j + 1]),
+					];
 
 					surftool.AddVertex(points[0]);
 					surftool.AddVertex(points[1]);
@@ -142,7 +144,7 @@ public partial class ScaleGizmo : Node, IGizmo
 				Visible = false,
 				Layers = 1,
 				IgnoreOcclusionCulling = true,
-				ExtraCullMargin = 100000f
+				ExtraCullMargin = 100000f,
 			};
 			RootGizmos!.Root.GDNode.AddChild(
 				_scaleGizmoInstance[i],
@@ -179,8 +181,10 @@ public partial class ScaleGizmo : Node, IGizmo
 
 	public override void _Input(InputEvent @event)
 	{
-		if (Targets.Count == 0 || RootGizmos == null) return;
-		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging) return;
+		if (Targets.Count == 0 || RootGizmos == null)
+			return;
+		if (!RootGizmos.Root.CreatorContext.IsViewportFocused && !_isMouseDragging)
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
 		Vector3 rayOrigin = GDCamera.ProjectRayOrigin(mousePos);
@@ -189,14 +193,17 @@ public partial class ScaleGizmo : Node, IGizmo
 
 		if (@event is InputEventMouseButton btn)
 		{
-			if (btn.ButtonIndex != MouseButton.Left) return;
+			if (btn.ButtonIndex != MouseButton.Left)
+				return;
 			if (btn.Pressed)
 			{
-				if (!Visible) return;
+				if (!Visible)
+					return;
 				// Re-pick on mouse-down; cached hover state can outlive a tool or
 				// selection change when the pointer has not moved.
 				UpdateAxis(rayOrigin, rayNormal);
-				if (_currentAxis == ScaleGizmoAxis.None) return;
+				if (_currentAxis == ScaleGizmoAxis.None)
+					return;
 				_startRayOrigin = rayOrigin;
 				_startRayNormal = rayNormal;
 				_lastDragMousePos = mousePos;
@@ -214,7 +221,8 @@ public partial class ScaleGizmo : Node, IGizmo
 		}
 		else if (@event is InputEventMouseMotion)
 		{
-			if (!Visible) return;
+			if (!Visible)
+				return;
 			if (_isMouseDragging)
 			{
 				UpdateDrag();
@@ -229,13 +237,18 @@ public partial class ScaleGizmo : Node, IGizmo
 
 	private void UpdateDrag()
 	{
-		if (!Visible) return;
-		if (!_isMouseDragging) return;
-		if (_currentAxis == ScaleGizmoAxis.None) return;
-		if (!Input.IsMouseButtonPressed(MouseButton.Left)) return;
+		if (!Visible)
+			return;
+		if (!_isMouseDragging)
+			return;
+		if (_currentAxis == ScaleGizmoAxis.None)
+			return;
+		if (!Input.IsMouseButtonPressed(MouseButton.Left))
+			return;
 
 		Vector2 mousePos = GDCamera.GetViewport().GetMousePosition();
-		if (mousePos == _lastDragMousePos) return;
+		if (mousePos == _lastDragMousePos)
+			return;
 
 		_lastDragMousePos = mousePos;
 
@@ -248,19 +261,28 @@ public partial class ScaleGizmo : Node, IGizmo
 
 	private void RedrawGizmo()
 	{
-		if (Targets.Count == 0) return;
-		if (!Visible) return;
+		if (Targets.Count == 0)
+			return;
+		if (!Visible)
+			return;
 
 		Transform3D pform = Gizmos.GetCenterPivot([.. Targets]);
-		float gizmoScale = Mathf.Max(0.4f, pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f);
+		float gizmoScale = Mathf.Max(
+			0.4f,
+			pform.Origin.DistanceTo(GDCamera.GlobalPosition) * 0.12f
+		);
 		Vector3 pScale = new(gizmoScale, gizmoScale, gizmoScale);
 
 		for (int i = 0; i < 3; i++)
 		{
 			Transform3D axisTransform = new();
 
-			if (pform.Basis.GetColumn(i).Normalized()
-				.Dot(pform.Basis.GetColumn((i + 1) % 3).Normalized()) < 1f)
+			if (
+				pform
+					.Basis.GetColumn(i)
+					.Normalized()
+					.Dot(pform.Basis.GetColumn((i + 1) % 3).Normalized()) < 1f
+			)
 			{
 				axisTransform = axisTransform.LookingAt(
 					pform.Basis.GetColumn(i).Normalized(),
@@ -293,10 +315,17 @@ public partial class ScaleGizmo : Node, IGizmo
 
 		for (int i = 0; i < 3; i++)
 		{
-			Vector3 grabberPos = pivot.Origin + pivot.Basis.GetColumn(i).Normalized() * _gizmoScale * GizmoScaleOffset;
+			Vector3 grabberPos =
+				pivot.Origin
+				+ pivot.Basis.GetColumn(i).Normalized() * _gizmoScale * GizmoScaleOffset;
 			float grabberRadius = _gizmoScale * Gizmos.GizmoArrowSize;
 
-			Vector3[] result = Geometry3D.SegmentIntersectsSphere(rayOrigin, rayOrigin + rayNormal * Gizmos.MaxZ, grabberPos, grabberRadius);
+			Vector3[] result = Geometry3D.SegmentIntersectsSphere(
+				rayOrigin,
+				rayOrigin + rayNormal * Gizmos.MaxZ,
+				grabberPos,
+				grabberRadius
+			);
 
 			if (result.Length > 0)
 			{
@@ -339,7 +368,10 @@ public partial class ScaleGizmo : Node, IGizmo
 		Transform3D pivot = Gizmos.GetCenterPivot([.. Targets]);
 
 		Vector3 motionMask = pivot.Basis.GetColumn((int)_currentAxis).Normalized();
-		Plane plane = new(motionMask.Cross(motionMask.Cross(cameraNormal)).Normalized(), pivot.Origin);
+		Plane plane = new(
+			motionMask.Cross(motionMask.Cross(cameraNormal)).Normalized(),
+			pivot.Origin
+		);
 
 		Vector3? intersection = plane.IntersectsRay(rayOrigin, rayNormal);
 		Vector3? click = plane.IntersectsRay(_startRayOrigin!.Value, _startRayNormal!.Value);
@@ -347,8 +379,10 @@ public partial class ScaleGizmo : Node, IGizmo
 		if (intersection == null || click == null)
 			return;
 
-		Vector3 motion = motionMask.Dot(intersection.Value - click.Value) * motionMask
-						 / click.Value!.DistanceTo(pivot.Origin);
+		Vector3 motion =
+			motionMask.Dot(intersection.Value - click.Value)
+			* motionMask
+			/ click.Value!.DistanceTo(pivot.Origin);
 
 		Vector3 scaleFactor = motion;
 

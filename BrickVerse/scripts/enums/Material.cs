@@ -12,5 +12,5 @@ public enum BlendModeEnum
 	Mix,
 	Add,
 	Subtract,
-	Multiply
+	Multiply,
 }

@@ -10,7 +10,8 @@ public static class CreatorSettingKeys
 	{
 		public const string OpenWebAfterPublish = "creator.open_web_after_publish";
 		public const string DetailedRichPresence = "creator.detailed_rich_presence";
-		public const string PromptForWorldProjectLocation = "creator.prompt_for_world_project_location";
+		public const string PromptForWorldProjectLocation =
+			"creator.prompt_for_world_project_location";
 		public const string ShowInteractiveTutorial = "creator.show_interactive_tutorial";
 		public const string ShowWhatsNew = "creator.show_whats_new";
 		public const string ShowUpdateNotifications = "creator.show_update_notifications";

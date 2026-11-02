@@ -2,17 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Networking;
 using BrickVerse.Schemas.API;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -30,7 +30,8 @@ public sealed partial class AchievementsService : Instance
 	private int _requestsThisMinute = 0;
 	private int _currentMinute = 0;
 
-	[ScriptProperty] public BVSignal<string> GotAchievement { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<string> GotAchievement { get; private set; } = new();
 
 	[Editable, ScriptProperty]
 	public bool UseAchievementSound
@@ -62,7 +63,10 @@ public sealed partial class AchievementsService : Instance
 			_requestsThisMinute = 0;
 		}
 
-		if (_requestsThisMinute >= MaxRequestsPerMinute + (RequestsPerPlayerModifier * Root.Players.PlayersCount))
+		if (
+			_requestsThisMinute
+			>= MaxRequestsPerMinute + (RequestsPerPlayerModifier * Root.Players.PlayersCount)
+		)
 		{
 			return false;
 		}
@@ -76,17 +80,18 @@ public sealed partial class AchievementsService : Instance
 	[ScriptLegacyMethod("Award")]
 	public void Award(string userID, int achievementID, BVCallback? callback)
 	{
-		_ = AwardAsync(userID, achievementID).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = AwardAsync(userID, achievementID)
+			.ContinueWith(tsk =>
 			{
-				callback?.Invoke(true);
-			}
-			else
-			{
-				callback?.Invoke(false, tsk.Exception?.Message);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					callback?.Invoke(true);
+				}
+				else
+				{
+					callback?.Invoke(false, tsk.Exception?.Message);
+				}
+			});
 	}
 
 	[ScriptMethod]
@@ -101,7 +106,6 @@ public sealed partial class AchievementsService : Instance
 		ServerGuard();
 
 		Player? targetPlr = Root.Players.GetPlayerByID(userID);
-
 
 		if (!UseRequest())
 		{
@@ -125,7 +129,8 @@ public sealed partial class AchievementsService : Instance
 	[NetRpc(AuthorityMode.Authority, TransferMode = TransferMode.Reliable)]
 	private void NetRecvAchievement(string id)
 	{
-		if (_gotAchievements.Contains(id)) return;
+		if (_gotAchievements.Contains(id))
+			return;
 		_gotAchievements.Add(id);
 		GotAchievement.Invoke(id);
 	}
@@ -133,18 +138,19 @@ public sealed partial class AchievementsService : Instance
 	[ScriptLegacyMethod("HasAchievement")]
 	public void HasAchievement(string userID, int achievementID, BVCallback callback)
 	{
-		_ = HasAchievementAsync(userID, achievementID).ContinueWith(tsk =>
-		{
-			if (tsk.IsCompletedSuccessfully)
+		_ = HasAchievementAsync(userID, achievementID)
+			.ContinueWith(tsk =>
 			{
-				bool hasA = tsk.Result;
-				callback.Invoke(hasA, true);
-			}
-			else
-			{
-				callback.Invoke(false, false, tsk.Exception?.Message);
-			}
-		});
+				if (tsk.IsCompletedSuccessfully)
+				{
+					bool hasA = tsk.Result;
+					callback.Invoke(hasA, true);
+				}
+				else
+				{
+					callback.Invoke(false, false, tsk.Exception?.Message);
+				}
+			});
 	}
 
 	[ScriptMethod]
@@ -174,8 +180,11 @@ public sealed partial class AchievementsService : Instance
 	internal async Task RequestGiveAchievement(string userID, string achievementID)
 	{
 		SetHttpClientAuthToken();
-		string query = "?userId=" + Uri.EscapeDataString(userID)
-			+ "&achievementId=" + Uri.EscapeDataString(achievementID);
+		string query =
+			"?userId="
+			+ Uri.EscapeDataString(userID)
+			+ "&achievementId="
+			+ Uri.EscapeDataString(achievementID);
 		using HttpResponseMessage response = await _client.PostAsync(
 			Globals.ApiEndpoint.PathJoin("/v3/world/server/achievements/grant" + query),
 			new ByteArrayContent([])
@@ -187,7 +196,12 @@ public sealed partial class AchievementsService : Instance
 	{
 		SetHttpClientAuthToken();
 		APIHasAchievementResponse res = await _client.GetFromJsonAsync(
-			Globals.ApiEndpoint.PathJoin("/v3/world/server/achievements/ownership?userId=" + Uri.EscapeDataString(userID) + "&achievementId=" + Uri.EscapeDataString(achievementID)),
+			Globals.ApiEndpoint.PathJoin(
+				"/v3/world/server/achievements/ownership?userId="
+					+ Uri.EscapeDataString(userID)
+					+ "&achievementId="
+					+ Uri.EscapeDataString(achievementID)
+			),
 			ServerAPIGenerationContext.Default.APIHasAchievementResponse
 		);
 		return res.UserOwns;
@@ -200,6 +214,7 @@ public sealed partial class AchievementsService : Instance
 
 	private void ServerGuard()
 	{
-		if (!Root.Network.IsServer) throw new InvalidOperationException("Achievements can only be accessed by server");
+		if (!Root.Network.IsServer)
+			throw new InvalidOperationException("Achievements can only be accessed by server");
 	}
 }

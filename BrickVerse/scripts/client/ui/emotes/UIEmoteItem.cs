@@ -10,10 +10,17 @@ public partial class UIEmoteItem : Control
 {
 	private bool _isActive = false;
 
-	[Export] private Control _activeIndicator = null!;
-	[Export] private TextureRect _iconRect = null!;
-	[Export] private Label _emoteLabel = null!;
-	[Export] private AnimationPlayer _animPlay = null!;
+	[Export]
+	private Control _activeIndicator = null!;
+
+	[Export]
+	private TextureRect _iconRect = null!;
+
+	[Export]
+	private Label _emoteLabel = null!;
+
+	[Export]
+	private AnimationPlayer _animPlay = null!;
 
 	public string EmoteName = "";
 

@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Gizmos;
 
@@ -19,7 +19,8 @@ public partial class UIGizmos : CanvasLayer
 
 	private GuidelineDrawer EnsureGuidelineDrawer()
 	{
-		if (_guidelineDrawer != null) return _guidelineDrawer;
+		if (_guidelineDrawer != null)
+			return _guidelineDrawer;
 		_guidelineDrawer = new GuidelineDrawer();
 		AddChild(_guidelineDrawer);
 		_guidelineDrawer.SyncSize();
@@ -28,7 +29,8 @@ public partial class UIGizmos : CanvasLayer
 
 	public UIGizmoBox? AddBox(UIField ui)
 	{
-		if (_fieldToBox.TryGetValue(ui, out UIGizmoBox? existing)) return existing;
+		if (_fieldToBox.TryGetValue(ui, out UIGizmoBox? existing))
+			return existing;
 
 		UIGizmoBox? box;
 		try
@@ -161,7 +163,8 @@ internal partial class GuidelineDrawer : Control
 
 	public void ClearGuides()
 	{
-		if (_guides.Count == 0) return;
+		if (_guides.Count == 0)
+			return;
 		_guides = Array.Empty<SnapGuide>();
 		QueueRedraw();
 	}
@@ -174,7 +177,8 @@ internal partial class GuidelineDrawer : Control
 
 	public void ClearMeasures()
 	{
-		if (_measures.Count == 0) return;
+		if (_measures.Count == 0)
+			return;
 		_measures = Array.Empty<MeasureGuide>();
 		QueueRedraw();
 	}
@@ -184,10 +188,12 @@ internal partial class GuidelineDrawer : Control
 		foreach (SnapGuide guide in _guides)
 			DrawLine(guide.From, guide.To, guide.Color, 2);
 
-		if (_measures.Count == 0) return;
+		if (_measures.Count == 0)
+			return;
 
 		_font ??= GetThemeDefaultFont() ?? ThemeDB.FallbackFont;
-		if (_font == null) return;
+		if (_font == null)
+			return;
 
 		int fontSize = 12;
 		float fontAscent = _font.GetAscent(fontSize);
@@ -203,8 +209,15 @@ internal partial class GuidelineDrawer : Control
 			Vector2 pillPos = m.TextPos - pillSize * 0.5f;
 
 			DrawStyleBox(_labelBg, new Rect2(pillPos, pillSize));
-			DrawString(_font, new Vector2(pillPos.X + padX, pillPos.Y + padY + fontAscent), m.Text,
-				HorizontalAlignment.Left, -1, fontSize, Colors.White);
+			DrawString(
+				_font,
+				new Vector2(pillPos.X + padX, pillPos.Y + padY + fontAscent),
+				m.Text,
+				HorizontalAlignment.Left,
+				-1,
+				fontSize,
+				Colors.White
+			);
 		}
 	}
 }

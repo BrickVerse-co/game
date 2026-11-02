@@ -9,13 +9,26 @@ namespace BrickVerse.Creator.UI;
 
 public partial class AuthSplash : Panel
 {
-	[Export] private Button _signInButton = null!;
-	[Export] private Button _createAccountButton = null!;
-	[Export] private Button _termsButton = null!;
-	[Export] private Button _privacyButton = null!;
-	[Export] private TextureRect _qrCode = null!;
-	[Export] private Button _deviceCode = null!;
-	[Export] private Label _status = null!;
+	[Export]
+	private Button _signInButton = null!;
+
+	[Export]
+	private Button _createAccountButton = null!;
+
+	[Export]
+	private Button _termsButton = null!;
+
+	[Export]
+	private Button _privacyButton = null!;
+
+	[Export]
+	private TextureRect _qrCode = null!;
+
+	[Export]
+	private Button _deviceCode = null!;
+
+	[Export]
+	private Label _status = null!;
 	private Panel _card = null!;
 	private BoxContainer _layout = null!;
 	private Control _left = null!;
@@ -26,7 +39,8 @@ public partial class AuthSplash : Panel
 	private bool _requestInFlight;
 	private bool _pollInFlight;
 	private const string TermsUrl = "https://resources.brickverse.gg/legal/terms/terms-of-service";
-	private const string PrivacyUrl = "https://resources.brickverse.gg/legal/privacy/privacy-policy";
+	private const string PrivacyUrl =
+		"https://resources.brickverse.gg/legal/privacy/privacy-policy";
 	private const float DesktopCardMaxWidth = 1500f;
 	private const float DesktopCardMaxHeight = 900f;
 	private const float DesktopDevicePanelWidth = 520f;
@@ -56,13 +70,20 @@ public partial class AuthSplash : Panel
 		CreatorAPI.UserAuthenticated += OnUserAuthenticated;
 		CreatorAPI.AuthenticationFailed += OnAuthenticationFailed;
 		CreatorAPI.AuthenticationCleared += OnAuthenticationCleared;
-		if (Visible) _ = StartQuickSignInAsync();
+		if (Visible)
+			_ = StartQuickSignInAsync();
 		CallDeferred(MethodName.UpdateResponsiveLayout);
 	}
 
 	public override void _Process(double delta)
 	{
-		if (!Visible || CreatorAPI.IsUserAuthenticated || string.IsNullOrWhiteSpace(_quickToken) || _pollInFlight) return;
+		if (
+			!Visible
+			|| CreatorAPI.IsUserAuthenticated
+			|| string.IsNullOrWhiteSpace(_quickToken)
+			|| _pollInFlight
+		)
+			return;
 		if (DateTimeOffset.UtcNow >= _expiresAt)
 		{
 			_status.Text = "Code expired. Restart Creator to generate a new code.";
@@ -70,7 +91,11 @@ public partial class AuthSplash : Panel
 			return;
 		}
 		_pollElapsed += delta;
-		if (_pollElapsed >= 2.5) { _pollElapsed = 0; _ = PollQuickSignInAsync(); }
+		if (_pollElapsed >= 2.5)
+		{
+			_pollElapsed = 0;
+			_ = PollQuickSignInAsync();
+		}
 	}
 
 	public override void _ExitTree()
@@ -88,7 +113,8 @@ public partial class AuthSplash : Panel
 
 	private async Task StartQuickSignInAsync()
 	{
-		if (_requestInFlight) return;
+		if (_requestInFlight)
+			return;
 		_requestInFlight = true;
 		_status.Text = "Generating a secure one-time code…";
 		try
@@ -99,7 +125,8 @@ public partial class AuthSplash : Panel
 			_deviceCode.Text = request.Token.ToUpperInvariant();
 			Image image = new();
 			Error result = image.LoadPngFromBuffer(request.QrPng);
-			if (result != Error.Ok) throw new InvalidOperationException($"Could not decode QR image ({result}).");
+			if (result != Error.Ok)
+				throw new InvalidOperationException($"Could not decode QR image ({result}).");
 			_qrCode.Texture = ImageTexture.CreateFromImage(image);
 			_status.Text = "Waiting for approval on your signed-in device";
 		}
@@ -108,29 +135,45 @@ public partial class AuthSplash : Panel
 			GD.PushError($"Could not start Creator QR login: {error}");
 			_status.Text = "QR sign-in unavailable. Use the sign-in button.";
 		}
-		finally { _requestInFlight = false; }
+		finally
+		{
+			_requestInFlight = false;
+		}
 	}
 
 	private async Task PollQuickSignInAsync()
 	{
 		_pollInFlight = true;
-		try { if (await CreatorAPI.TryCompleteQuickSignInAsync(_quickToken)) Hide(); }
+		try
+		{
+			if (await CreatorAPI.TryCompleteQuickSignInAsync(_quickToken))
+				Hide();
+		}
 		catch (Exception error)
 		{
 			GD.PushError($"Creator QR login failed: {error}");
 			_status.Text = "Could not finish sign-in. Restart to generate a new code.";
 			_quickToken = string.Empty;
 		}
-		finally { _pollInFlight = false; }
+		finally
+		{
+			_pollInFlight = false;
+		}
 	}
 
 	private void OpenBrowserLogin() => _ = CreatorAPI.PromptLogin();
-	private void OpenCreateAccount() => OpenExternalUrl(BrickVerse.Shared.Globals.MainEndpoint.PathJoin("/auth/register"));
+
+	private void OpenCreateAccount() =>
+		OpenExternalUrl(BrickVerse.Shared.Globals.MainEndpoint.PathJoin("/auth/register"));
+
 	private void OpenTerms() => OpenExternalUrl(TermsUrl);
+
 	private void OpenPrivacy() => OpenExternalUrl(PrivacyUrl);
+
 	private void CopyDeviceCode()
 	{
-		if (string.IsNullOrWhiteSpace(_quickToken)) return;
+		if (string.IsNullOrWhiteSpace(_quickToken))
+			return;
 		DisplayServer.ClipboardSet(_quickToken.ToUpperInvariant());
 		_status.Text = "One-time code copied to clipboard";
 	}
@@ -138,7 +181,8 @@ public partial class AuthSplash : Panel
 	private void OpenExternalUrl(string url)
 	{
 		Error error = OS.ShellOpen(url);
-		if (error == Error.Ok) return;
+		if (error == Error.Ok)
+			return;
 		GD.PushError($"Could not open URL '{url}': {error}");
 		_status.Text = "Could not open your browser. Please try again.";
 	}
@@ -156,8 +200,12 @@ public partial class AuthSplash : Panel
 		_layout.OffsetRight = stacked ? -20 : -46;
 		_layout.OffsetBottom = stacked ? -18 : -42;
 		_left.CustomMinimumSize = stacked ? new Vector2(0, 300) : new Vector2(330, 0);
-		_right.CustomMinimumSize = stacked ? new Vector2(0, 335) : new Vector2(DesktopDevicePanelWidth, 0);
-		_right.SizeFlagsHorizontal = stacked ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkCenter;
+		_right.CustomMinimumSize = stacked
+			? new Vector2(0, 335)
+			: new Vector2(DesktopDevicePanelWidth, 0);
+		_right.SizeFlagsHorizontal = stacked
+			? Control.SizeFlags.ExpandFill
+			: Control.SizeFlags.ShrinkCenter;
 
 		if (stacked)
 		{
@@ -186,8 +234,11 @@ public partial class AuthSplash : Panel
 			_card.OffsetBottom = cardHeight / 2f;
 		}
 	}
+
 	private void OnUserAuthenticated(OpenIdUserInfoResponse _) => CallDeferred(MethodName.Hide);
+
 	private void OnAuthenticationFailed(string reason) => _status.Text = reason;
+
 	private void OnAuthenticationCleared()
 	{
 		CallDeferred(MethodName.Show);

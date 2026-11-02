@@ -28,7 +28,6 @@ public sealed partial class ModuleScript : Script
 		}
 	}
 
-
 	private void RequestSource()
 	{
 		Root.Network.ScriptSync.RequestSource(this);

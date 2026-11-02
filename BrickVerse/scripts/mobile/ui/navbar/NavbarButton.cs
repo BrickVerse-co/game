@@ -20,15 +20,15 @@ public partial class NavbarButton : Button
 
 	private void OnViewPathSwitched(MobileViewEnum to)
 	{
-		Modulate = to == SwitchTo
-			? Color.FromHtml("0097FF")
-			: Color.FromHtml("697381");
+		Modulate = to == SwitchTo ? Color.FromHtml("0097FF") : Color.FromHtml("697381");
 	}
 
 	public override void _Pressed()
 	{
-		if (MobileUI.Singleton.CurrentView == SwitchTo) MobileUI.Singleton.RefreshCurrentView();
-		else MobileUI.Singleton.SwitchTo(SwitchTo);
+		if (MobileUI.Singleton.CurrentView == SwitchTo)
+			MobileUI.Singleton.RefreshCurrentView();
+		else
+			MobileUI.Singleton.SwitchTo(SwitchTo);
 		base._Pressed();
 	}
 }

@@ -1,5 +1,5 @@
-using Godot;
 using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Providers.PlayerMovement;
 

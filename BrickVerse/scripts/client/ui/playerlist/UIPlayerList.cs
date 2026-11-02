@@ -8,7 +8,8 @@ namespace BrickVerse.Client.UI.Playerlist;
 
 public partial class UIPlayerList : Node
 {
-	[Export] private AnimationPlayer _leaderboardAnim = null!;
+	[Export]
+	private AnimationPlayer _leaderboardAnim = null!;
 
 	private bool _shown = true;
 	public bool IsLeaderboardShown => _shown;
@@ -24,7 +25,8 @@ public partial class UIPlayerList : Node
 
 	public void Open()
 	{
-		if (_shown) return;
+		if (_shown)
+			return;
 		_shown = true;
 		_leaderboardAnim.Stop();
 		_leaderboardAnim.Play("open");
@@ -32,7 +34,8 @@ public partial class UIPlayerList : Node
 
 	public void Close()
 	{
-		if (!_shown) return;
+		if (!_shown)
+			return;
 		_shown = false;
 		_leaderboardAnim.Stop();
 		_leaderboardAnim.Play("close");

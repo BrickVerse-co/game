@@ -2,6 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
 #if CREATOR
 using Godot;
 using BrickVerse.Schemas.Progress;
@@ -14,18 +26,7 @@ using System.Threading;
 using Script = BrickVerse.Datamodel.Script;
 using static BrickVerse.Creator.Managers.AddonsManager;
 #endif
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Data;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+
 
 namespace BrickVerse.Formats;
 
@@ -44,11 +45,15 @@ public static partial class PackedFormat
 
 	internal static string? ReadMetaId(string metaPath)
 	{
-		if (!File.Exists(metaPath)) return null;
+		if (!File.Exists(metaPath))
+			return null;
 		try
 		{
 			string json = File.ReadAllText(metaPath);
-			var dict = JsonSerializer.Deserialize(json, ProjectJSONGenerationContext.Default.DictionaryStringString);
+			var dict = JsonSerializer.Deserialize(
+				json,
+				ProjectJSONGenerationContext.Default.DictionaryStringString
+			);
 			return dict != null && dict.TryGetValue("id", out string? id) ? id : null;
 		}
 		catch
@@ -60,10 +65,19 @@ public static partial class PackedFormat
 	internal static void WriteMetaId(string metaPath, string id)
 	{
 		Dictionary<string, string> dict = new() { ["id"] = id };
-		File.WriteAllText(metaPath, JsonSerializer.Serialize(dict, ProjectJSONGenerationContext.Default.DictionaryStringString));
+		File.WriteAllText(
+			metaPath,
+			JsonSerializer.Serialize(
+				dict,
+				ProjectJSONGenerationContext.Default.DictionaryStringString
+			)
+		);
 	}
 
-	public static async Task<byte[]> PackProject(string projectPath, IProgress<LoadOverlayProgress>? progress = null)
+	public static async Task<byte[]> PackProject(
+		string projectPath,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		SaveOpenProjectWorlds(projectPath);
 		using MemoryStream stream = new();
@@ -82,15 +96,19 @@ public static partial class PackedFormat
 		{
 			string sessionPath = Path.GetFullPath(session.ProjectFolderPath)
 				.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-			if (!string.Equals(
-				sessionPath,
-				normalizedProjectPath,
-				StringComparison.OrdinalIgnoreCase))
+			if (
+				!string.Equals(
+					sessionPath,
+					normalizedProjectPath,
+					StringComparison.OrdinalIgnoreCase
+				)
+			)
 				continue;
 
 			foreach (World world in session.OpenedWorlds.ToArray())
 			{
-				if (string.IsNullOrWhiteSpace(world.WorldFilePath)) continue;
+				if (string.IsNullOrWhiteSpace(world.WorldFilePath))
+					continue;
 				string destination = session.GlobalizePath(world.WorldFilePath);
 				PolyFormat.SaveWorldToFile(world, destination);
 			}
@@ -98,7 +116,10 @@ public static partial class PackedFormat
 		}
 	}
 
-	public static async Task<byte[]> PackModel(Instance model, IProgress<LoadOverlayProgress>? progress = null)
+	public static async Task<byte[]> PackModel(
+		Instance model,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		using MemoryStream stream = new();
 		using (ZipArchive archive = new(stream, ZipArchiveMode.Create, true))
@@ -108,16 +129,16 @@ public static partial class PackedFormat
 		return stream.ToArray();
 	}
 
-	public static async Task PackProjectToArchive(string projectPath, ZipArchive archive, IProgress<LoadOverlayProgress>? progress = null)
+	public static async Task PackProjectToArchive(
+		string projectPath,
+		ZipArchive archive,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		string metaJsonPath = projectPath.PathJoin(Globals.ProjectMetaFileName);
 		string inputJsonPath = projectPath.PathJoin(Globals.ProjectInputMapName);
 
-		progress?.Report(new()
-		{
-			Status = "Packing project...",
-			Current = 0
-		});
+		progress?.Report(new() { Status = "Packing project...", Current = 0 });
 
 		// Pack input
 		ZipArchiveEntry inputEntry = archive.CreateEntry("input.json");
@@ -141,17 +162,20 @@ public static partial class PackedFormat
 		{
 			// Skip files inside the .bvproject folder
 			string relativeP = Path.GetRelativePath(projectPath, file).SanitizePath();
-			if (relativeP.StartsWith(".bvproject/")) continue;
+			if (relativeP.StartsWith(".bvproject/"))
+				continue;
 
 			if (file.EndsWith(MetaExtension))
 			{
 				// Store all file with meta
 
 				string? id = ReadMetaId(file);
-				if (string.IsNullOrEmpty(id)) continue;
+				if (string.IsNullOrEmpty(id))
+					continue;
 
 				string targetRelative = relativeP[..^MetaExtension.Length];
-				if (!File.Exists(Path.Join(projectPath, targetRelative))) continue;
+				if (!File.Exists(Path.Join(projectPath, targetRelative)))
+					continue;
 
 				indexToFile[id] = targetRelative;
 			}
@@ -191,36 +215,44 @@ public static partial class PackedFormat
 
 		ParallelOptions parallelOptions = new()
 		{
-			MaxDegreeOfParallelism = Math.Min(MaxParallelism, System.Environment.ProcessorCount)
+			MaxDegreeOfParallelism = Math.Min(MaxParallelism, System.Environment.ProcessorCount),
 		};
 
-		await Parallel.ForEachAsync(filesToProcess, parallelOptions, async (fileInfo, ct) =>
-		{
-			var (id, linkedPath, originPath) = fileInfo;
-
-			byte[] fileData = await File.ReadAllBytesAsync(originPath, ct);
-			fileContents[linkedPath] = fileData;
-
-			int current = Interlocked.Increment(ref readCount);
-			progress?.Report(new LoadOverlayProgress
+		await Parallel.ForEachAsync(
+			filesToProcess,
+			parallelOptions,
+			async (fileInfo, ct) =>
 			{
-				Status = $"Reading {linkedPath}",
-				Current = current,
-				Total = totalFiles
-			});
-		});
+				var (id, linkedPath, originPath) = fileInfo;
+
+				byte[] fileData = await File.ReadAllBytesAsync(originPath, ct);
+				fileContents[linkedPath] = fileData;
+
+				int current = Interlocked.Increment(ref readCount);
+				progress?.Report(
+					new LoadOverlayProgress
+					{
+						Status = $"Reading {linkedPath}",
+						Current = current,
+						Total = totalFiles,
+					}
+				);
+			}
+		);
 
 		// Write to zip sequentially
 		int processedCount = 0;
 		foreach (var (id, linkedPath, originPath) in filesToProcess)
 		{
 			processedCount++;
-			progress?.Report(new LoadOverlayProgress
-			{
-				Status = $"Packing {linkedPath}",
-				Current = processedCount,
-				Total = totalFiles
-			});
+			progress?.Report(
+				new LoadOverlayProgress
+				{
+					Status = $"Packing {linkedPath}",
+					Current = processedCount,
+					Total = totalFiles,
+				}
+			);
 
 			if (fileContents.TryGetValue(linkedPath, out byte[]? fileData))
 			{
@@ -234,11 +266,18 @@ public static partial class PackedFormat
 		ZipArchiveEntry indexEntry = archive.CreateEntry("index.json");
 		using Stream indexStream = indexEntry.Open();
 		using StreamWriter indexWriter = new(indexStream);
-		string indexJson = JsonSerializer.Serialize(indexToFile, ProjectJSONGenerationContext.Default.DictionaryStringString);
+		string indexJson = JsonSerializer.Serialize(
+			indexToFile,
+			ProjectJSONGenerationContext.Default.DictionaryStringString
+		);
 		indexWriter.Write(indexJson);
 	}
 
-	private static async Task PackModelToArchive(Instance model, ZipArchive archive, IProgress<LoadOverlayProgress>? progress = null)
+	private static async Task PackModelToArchive(
+		Instance model,
+		ZipArchive archive,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		progress?.Report(new() { Status = "Packing Model" });
 
@@ -260,7 +299,8 @@ public static partial class PackedFormat
 					break;
 				}
 			}
-			if (!hadUsed) continue;
+			if (!hadUsed)
+				continue;
 
 			// Read through the FileLink rather than directly from the project folder.
 			// Imported prefabs use @temp paths, so direct project reads drop their
@@ -273,7 +313,8 @@ public static partial class PackedFormat
 			}
 
 			string extension = Path.GetExtension(f.LinkedPath ?? "script.luau");
-			if (string.IsNullOrWhiteSpace(extension)) extension = ".luau";
+			if (string.IsNullOrWhiteSpace(extension))
+				extension = ".luau";
 			string archivePath = $"embedded/{f.LinkedID.Replace(':', '_')}{extension}";
 			indexToFile[f.LinkedID] = archivePath;
 			filesToProcess.Add((archivePath, contents));
@@ -284,7 +325,14 @@ public static partial class PackedFormat
 		foreach (var (archivePath, contents) in filesToProcess)
 		{
 			writeIndex++;
-			progress?.Report(new() { Status = $"Embedding {archivePath} ({writeIndex}/{filesToProcess.Count})", Current = writeIndex, Total = filesToProcess.Count });
+			progress?.Report(
+				new()
+				{
+					Status = $"Embedding {archivePath} ({writeIndex}/{filesToProcess.Count})",
+					Current = writeIndex,
+					Total = filesToProcess.Count,
+				}
+			);
 			ZipArchiveEntry entry = archive.CreateEntry(archivePath);
 			using Stream entryStream = entry.Open();
 			await entryStream.WriteAsync(contents);
@@ -302,11 +350,18 @@ public static partial class PackedFormat
 		ZipArchiveEntry indexEntry = archive.CreateEntry("index.json");
 		using Stream indexStream = indexEntry.Open();
 		using StreamWriter indexWriter = new(indexStream);
-		string indexJson = JsonSerializer.Serialize(indexToFile, ProjectJSONGenerationContext.Default.DictionaryStringString);
+		string indexJson = JsonSerializer.Serialize(
+			indexToFile,
+			ProjectJSONGenerationContext.Default.DictionaryStringString
+		);
 		indexWriter.Write(indexJson);
 	}
 
-	public static async Task PackProjectToFile(string projectPath, string filePath, IProgress<LoadOverlayProgress>? progress = null)
+	public static async Task PackProjectToFile(
+		string projectPath,
+		string filePath,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		byte[] data = await PackProject(projectPath, progress);
 		File.WriteAllBytes(filePath, data);
@@ -318,7 +373,11 @@ public static partial class PackedFormat
 		File.WriteAllBytes(filePath, data);
 	}
 
-	public static async Task<byte[]> PackAddon(Script script, AddonMetadata metadata, IProgress<LoadOverlayProgress>? progress = null)
+	public static async Task<byte[]> PackAddon(
+		Script script,
+		AddonMetadata metadata,
+		IProgress<LoadOverlayProgress>? progress = null
+	)
 	{
 		using MemoryStream stream = new();
 		using (ZipArchive archive = new(stream, ZipArchiveMode.Create, true))
@@ -329,7 +388,10 @@ public static partial class PackedFormat
 			ZipArchiveEntry metaEntry = archive.CreateEntry("addonmeta.json");
 			using Stream metaStream = metaEntry.Open();
 			using StreamWriter metaWriter = new(metaStream);
-			string metaJson = JsonSerializer.Serialize(metadata, AddonJSONGenerationContext.Default.AddonMetadata);
+			string metaJson = JsonSerializer.Serialize(
+				metadata,
+				AddonJSONGenerationContext.Default.AddonMetadata
+			);
 			await metaWriter.WriteAsync(metaJson);
 		}
 		return stream.ToArray();
@@ -357,8 +419,12 @@ public static partial class PackedFormat
 
 	private static AddonData LoadAddonFromArchive(World root, ZipArchive archive)
 	{
-		ZipArchiveEntry metaEntry = archive.GetEntry("addonmeta.json") ?? throw new InvalidDataException("addonmeta.json file missing");
-		ModelData? modelData = ReadModelDataFromArchive(archive) ?? throw new InvalidDataException("Invalid addon format");
+		ZipArchiveEntry metaEntry =
+			archive.GetEntry("addonmeta.json")
+			?? throw new InvalidDataException("addonmeta.json file missing");
+		ModelData? modelData =
+			ReadModelDataFromArchive(archive)
+			?? throw new InvalidDataException("Invalid addon format");
 		Instance? i = LoadPackedModelData(root, modelData.Value, root.CreatorContext, "@temp");
 
 		// Detach model to allow reparenting
@@ -369,13 +435,12 @@ public static partial class PackedFormat
 			using Stream metaStream = metaEntry.Open();
 			using StreamReader metaReader = new(metaStream);
 			string metaRaw = metaReader.ReadToEnd();
-			AddonMetadata metadata = JsonSerializer.Deserialize(metaRaw, AddonJSONGenerationContext.Default.AddonMetadata);
+			AddonMetadata metadata = JsonSerializer.Deserialize(
+				metaRaw,
+				AddonJSONGenerationContext.Default.AddonMetadata
+			);
 
-			return new()
-			{
-				Metadata = metadata,
-				EntryScript = s
-			};
+			return new() { Metadata = metadata, EntryScript = s };
 		}
 		else
 		{
@@ -392,7 +457,10 @@ public static partial class PackedFormat
 
 	public static CreatorProjectMetadata ReadProjectMetadata(string content)
 	{
-		return JsonSerializer.Deserialize(content, ProjectJSONGenerationContext.Default.CreatorProjectMetadata);
+		return JsonSerializer.Deserialize(
+			content,
+			ProjectJSONGenerationContext.Default.CreatorProjectMetadata
+		);
 	}
 
 	public static WorldData LoadPackedWorld(World root, byte[] data, string? entryPath = null)
@@ -402,7 +470,11 @@ public static partial class PackedFormat
 		return LoadPackedWorldFromArchive(root, archive, entryPath);
 	}
 
-	public static async Task<WorldData> LoadPackedWorldAsync(World root, byte[] data, string? entryPath = null)
+	public static async Task<WorldData> LoadPackedWorldAsync(
+		World root,
+		byte[] data,
+		string? entryPath = null
+	)
 	{
 		Dictionary<string, byte[]> files = await Task.Run(() =>
 		{
@@ -411,7 +483,8 @@ public static partial class PackedFormat
 			Dictionary<string, byte[]> extracted = [];
 			foreach (ZipArchiveEntry entry in archive.Entries)
 			{
-				if (entry.FullName.EndsWith('/')) continue;
+				if (entry.FullName.EndsWith('/'))
+					continue;
 				using Stream entryStream = entry.Open();
 				using MemoryStream contents = new();
 				entryStream.CopyTo(contents);
@@ -438,11 +511,17 @@ public static partial class PackedFormat
 
 		if (!files.TryGetValue("meta.json", out byte[]? metadataBytes))
 			throw new InvalidDataException("Metadata not present");
-		CreatorProjectMetadata metadata = ReadProjectMetadata(System.Text.Encoding.UTF8.GetString(metadataBytes));
-		if (root.WorldID == 0 && metadata.WorldId > 0) root.WorldID = metadata.WorldId;
-		if (root.UniverseID == 0 && metadata.UniverseId > 0) root.UniverseID = metadata.UniverseId;
+		CreatorProjectMetadata metadata = ReadProjectMetadata(
+			System.Text.Encoding.UTF8.GetString(metadataBytes)
+		);
+		if (root.WorldID == 0 && metadata.WorldId > 0)
+			root.WorldID = metadata.WorldId;
+		if (root.UniverseID == 0 && metadata.UniverseId > 0)
+			root.UniverseID = metadata.UniverseId;
 		if (files.TryGetValue("input.json", out byte[]? inputBytes))
-			root.Input.MapData = InputMapData.LoadFromString(System.Text.Encoding.UTF8.GetString(inputBytes));
+			root.Input.MapData = InputMapData.LoadFromString(
+				System.Text.Encoding.UTF8.GetString(inputBytes)
+			);
 
 		entryPath = (entryPath ?? metadata.MainWorld).SanitizePath();
 		if (!files.TryGetValue(entryPath, out byte[]? entryBytes))
@@ -451,7 +530,11 @@ public static partial class PackedFormat
 		return new() { Metadata = metadata };
 	}
 
-	private static WorldData LoadPackedWorldFromArchive(World root, ZipArchive archive, string? entryPath = null)
+	private static WorldData LoadPackedWorldFromArchive(
+		World root,
+		ZipArchive archive,
+		string? entryPath = null
+	)
 	{
 		CreatorProjectMetadata metadata;
 
@@ -460,7 +543,8 @@ public static partial class PackedFormat
 
 		foreach (ZipArchiveEntry entry in archive.Entries)
 		{
-			if (entry.FullName.EndsWith('/')) continue; // Skip directories
+			if (entry.FullName.EndsWith('/'))
+				continue; // Skip directories
 			using Stream entryStream = entry.Open();
 			using MemoryStream ms = new();
 			entryStream.CopyTo(ms);
@@ -477,7 +561,10 @@ public static partial class PackedFormat
 		if (files.TryGetValue("index.json", out byte[]? indexBytes))
 		{
 			string indexDataRaw = System.Text.Encoding.UTF8.GetString(indexBytes);
-			Dictionary<string, string>? indexToFile = JsonSerializer.Deserialize(indexDataRaw, ProjectJSONGenerationContext.Default.DictionaryStringString);
+			Dictionary<string, string>? indexToFile = JsonSerializer.Deserialize(
+				indexDataRaw,
+				ProjectJSONGenerationContext.Default.DictionaryStringString
+			);
 
 			if (indexToFile != null)
 			{
@@ -526,10 +613,7 @@ public static partial class PackedFormat
 			throw new InvalidDataException($"Packed world entry '{entryPath}' is missing.");
 		}
 
-		return new()
-		{
-			Metadata = metadata
-		};
+		return new() { Metadata = metadata };
 	}
 
 	public static void LoadPackedWorldFile(World root, string filePath, string? entryPath = null)
@@ -549,11 +633,15 @@ public static partial class PackedFormat
 	private static ModelData? ReadModelDataFromArchive(ZipArchive archive)
 	{
 		ZipArchiveEntry? entryFile = archive.GetEntry("model.bvmodel");
-		if (entryFile == null) return null;
+		if (entryFile == null)
+			return null;
 
-		List<string> files = [.. archive.Entries
-			.Where(e => !e.FullName.EndsWith('/'))
-			.Select(e => e.FullName.SanitizePath())];
+		List<string> files =
+		[
+			.. archive
+				.Entries.Where(e => !e.FullName.EndsWith('/'))
+				.Select(e => e.FullName.SanitizePath()),
+		];
 
 		using Stream entryStream = entryFile.Open();
 		using MemoryStream ms = new();
@@ -562,14 +650,16 @@ public static partial class PackedFormat
 
 		PolyFormat.PolyRootData rootData = PolyFormat.ReadRootDataBytes(entryByte);
 
-		if (rootData.Objects.Length == 0) return null;
+		if (rootData.Objects.Length == 0)
+			return null;
 
 		string packedModelName = rootData.Objects[0].Name;
 
 		Dictionary<string, byte[]> fileContents = [];
 		foreach (ZipArchiveEntry entry in archive.Entries)
 		{
-			if (entry.FullName.EndsWith('/')) continue;
+			if (entry.FullName.EndsWith('/'))
+				continue;
 
 			using Stream stream = entry.Open();
 			using MemoryStream memStream = new();
@@ -582,20 +672,31 @@ public static partial class PackedFormat
 			ModelName = packedModelName,
 			Files = [.. files],
 			RootData = rootData,
-			FileContents = fileContents
+			FileContents = fileContents,
 		};
 	}
 
-	public static Instance? LoadPackedModel(World root, byte[] data, Instance? parent = null, string? baseAssetFolder = null)
+	public static Instance? LoadPackedModel(
+		World root,
+		byte[] data,
+		Instance? parent = null,
+		string? baseAssetFolder = null
+	)
 	{
 		ModelData? modelData = ReadModelData(data);
 
-		if (modelData == null) return null;
+		if (modelData == null)
+			return null;
 
 		return LoadPackedModelData(root, modelData.Value, parent, baseAssetFolder);
 	}
 
-	public static Instance? LoadPackedModelData(World root, ModelData modelData, Instance? parent = null, string? baseAssetFolder = null)
+	public static Instance? LoadPackedModelData(
+		World root,
+		ModelData modelData,
+		Instance? parent = null,
+		string? baseAssetFolder = null
+	)
 	{
 		baseAssetFolder ??= Globals.ToolboxFolderName;
 		Dictionary<string, string> finalIndexToFile = [];
@@ -606,17 +707,30 @@ public static partial class PackedFormat
 			if (indexEntry.Value != null)
 			{
 				string indexDataRaw = System.Text.Encoding.UTF8.GetString(indexEntry.Value);
-				Dictionary<string, string>? indexToFile = JsonSerializer.Deserialize(indexDataRaw, ProjectJSONGenerationContext.Default.DictionaryStringString);
+				Dictionary<string, string>? indexToFile = JsonSerializer.Deserialize(
+					indexDataRaw,
+					ProjectJSONGenerationContext.Default.DictionaryStringString
+				);
 
 				if (indexToFile != null)
 				{
 					foreach (KeyValuePair<string, string> item in indexToFile)
 					{
 						string originFilePath = item.Value;
-						string writeToPath = Path.Join(baseAssetFolder, modelData.ModelName, originFilePath).SanitizePath();
+						string writeToPath = Path.Join(
+								baseAssetFolder,
+								modelData.ModelName,
+								originFilePath
+							)
+							.SanitizePath();
 						string fileID = item.Key;
 
-						if (modelData.FileContents.TryGetValue(originFilePath, out byte[]? fileContent))
+						if (
+							modelData.FileContents.TryGetValue(
+								originFilePath,
+								out byte[]? fileContent
+							)
+						)
 						{
 							root.IO.WriteBytesToPath(writeToPath, fileContent);
 							// The source is now part of this world/project. PolyFormat uses
@@ -626,17 +740,29 @@ public static partial class PackedFormat
 						}
 						else
 						{
-							BV.PrintWarn($"Packed model {modelData.ModelName} is missing embedded file {originFilePath}.");
+							BV.PrintWarn(
+								$"Packed model {modelData.ModelName} is missing embedded file {originFilePath}."
+							);
 						}
 					}
 				}
 			}
 		}
 
-		return PolyFormat.LoadModelFromRootData(root, modelData.RootData, parent, subLoadContext: new() { IndexToFile = finalIndexToFile });
+		return PolyFormat.LoadModelFromRootData(
+			root,
+			modelData.RootData,
+			parent,
+			subLoadContext: new() { IndexToFile = finalIndexToFile }
+		);
 	}
 
-	public static Instance? LoadPackedModelFile(World root, string filePath, Instance? parent = null, string? baseAssetFolder = null)
+	public static Instance? LoadPackedModelFile(
+		World root,
+		string filePath,
+		Instance? parent = null,
+		string? baseAssetFolder = null
+	)
 	{
 		return LoadPackedModel(root, File.ReadAllBytes(filePath), parent, baseAssetFolder);
 	}
@@ -657,12 +783,23 @@ public static partial class PackedFormat
 
 public struct CreatorProjectMetadata()
 {
-	[JsonInclude] public long WorldId = 0;
-	[JsonInclude] public long UniverseId = 0;
-	[JsonInclude] public string ProjectName = "Project Name";
-	[JsonInclude] public string MainWorld = "main.bvxw";
-	[JsonInclude] public long? IconID;
-	[JsonInclude] public string ThumbnailUrl = "";
+	[JsonInclude]
+	public long WorldId = 0;
+
+	[JsonInclude]
+	public long UniverseId = 0;
+
+	[JsonInclude]
+	public string ProjectName = "Project Name";
+
+	[JsonInclude]
+	public string MainWorld = "main.bvxw";
+
+	[JsonInclude]
+	public long? IconID;
+
+	[JsonInclude]
+	public string ThumbnailUrl = "";
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
@@ -670,6 +807,4 @@ public struct CreatorProjectMetadata()
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(CreatorProjectMetadata))]
-internal partial class ProjectJSONGenerationContext : JsonSerializerContext
-{
-}
+internal partial class ProjectJSONGenerationContext : JsonSerializerContext { }

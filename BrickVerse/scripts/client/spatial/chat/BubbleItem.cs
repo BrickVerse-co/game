@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -17,7 +17,10 @@ public partial class BubbleItem : Control
 	private const int EmojiColumns = 4;
 	private const int EmojiSpacing = 10;
 
-	private static readonly Regex EmojiOnlyRegex = new(@"^\s*(\[img=\d+x\d+\][^\[]*\[/img\]\s*)+$", RegexOptions.Compiled);
+	private static readonly Regex EmojiOnlyRegex = new(
+		@"^\s*(\[img=\d+x\d+\][^\[]*\[/img\]\s*)+$",
+		RegexOptions.Compiled
+	);
 	private static readonly Regex ImgSizeRegex = new(@"\[img=\d+x\d+\]", RegexOptions.Compiled);
 
 	private AnimationPlayer _animPlay = null!;
@@ -42,7 +45,8 @@ public partial class BubbleItem : Control
 		await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
 
 		Tween tween = CreateTween();
-		tween.TweenProperty(this, "custom_minimum_size", new Vector2(0, targetHeight), 0.4f)
+		tween
+			.TweenProperty(this, "custom_minimum_size", new Vector2(0, targetHeight), 0.4f)
 			.SetEase(Tween.EaseType.Out)
 			.SetTrans(Tween.TransitionType.Back);
 		tween.Play();
@@ -73,7 +77,10 @@ public partial class BubbleItem : Control
 		}
 		else
 		{
-			textLabel.Text = ImgSizeRegex.Replace(Content, $"[img={InlineEmojiSize}x{InlineEmojiSize}]");
+			textLabel.Text = ImgSizeRegex.Replace(
+				Content,
+				$"[img={InlineEmojiSize}x{InlineEmojiSize}]"
+			);
 			testLabel.Text = Content;
 
 			await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);

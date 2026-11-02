@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Creator.UI.Misc;
 using BrickVerse.Datamodel.Creator;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
@@ -20,7 +20,12 @@ public partial class PropertyContextMenu : ContextMenu
 		AddIconItem("", "Copy Property Name", 3);
 
 		// Disable paste if no clipboard, or is not the same type
-		SetItemDisabled(GetItemIndex(2), CreatorService.Clipboard.PropertyClipboard == null || CreatorService.Clipboard.PropertyClipboard.GetType() != Target.Property.PropertyType);
+		SetItemDisabled(
+			GetItemIndex(2),
+			CreatorService.Clipboard.PropertyClipboard == null
+				|| CreatorService.Clipboard.PropertyClipboard.GetType()
+					!= Target.Property.PropertyType
+		);
 
 		IdPressed += OnIdPressed;
 	}

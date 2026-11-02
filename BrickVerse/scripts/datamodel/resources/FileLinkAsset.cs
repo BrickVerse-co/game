@@ -18,7 +18,8 @@ public partial class FileLinkAsset : BaseAsset
 	[Editable, ScriptProperty]
 	public string LinkedID
 	{
-		get => _fileID; set
+		get => _fileID;
+		set
 		{
 			_fileID = value;
 			if (_fileID != "")
@@ -37,7 +38,8 @@ public partial class FileLinkAsset : BaseAsset
 
 	public byte[]? ReadFile()
 	{
-		if (string.IsNullOrWhiteSpace(LinkedID)) return null;
+		if (string.IsNullOrWhiteSpace(LinkedID))
+			return null;
 		byte[]? data = Root.IO.ReadBytesFromID(LinkedID);
 		if (data != null)
 		{

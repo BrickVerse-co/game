@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Scripting;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -28,11 +28,7 @@ public readonly struct ColorSeries : IScriptObject, IData
 
 	public ColorSeries()
 	{
-		points =
-		[
-			new(0f, new Color(0, 0, 0, 1)),
-			new ColorPoint(1f, new Color(1, 1, 1, 1))
-		];
+		points = [new(0f, new Color(0, 0, 0, 1)), new ColorPoint(1f, new Color(1, 1, 1, 1))];
 	}
 
 	[ScriptMethod]
@@ -100,10 +96,7 @@ public readonly struct ColorSeries : IScriptObject, IData
 	[ScriptMethod]
 	public readonly void SetOffset(int point, float offset)
 	{
-		ColorPoint p = new()
-		{
-			Offset = offset
-		};
+		ColorPoint p = new() { Offset = offset };
 		if (point <= 0)
 		{
 			p.Color = new(0, 0, 0);

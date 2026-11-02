@@ -2,26 +2,26 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Attributes;
-
-#if CREATOR
-using BrickVerse.Creator.UI;
-#endif
-using BrickVerse.Datamodel.Resources;
-using BrickVerse.Datamodel.Data;
-using BrickVerse.Datamodel.Services;
-using BrickVerse.Formats;
-using BrickVerse.Scripting;
-using BrickVerse.Networking.Synchronizers;
-using BrickVerse.Shared;
-using BrickVerse.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+using BrickVerse.Attributes;
+using BrickVerse.Datamodel.Data;
+using BrickVerse.Datamodel.Resources;
+using BrickVerse.Datamodel.Services;
+using BrickVerse.Formats;
+using BrickVerse.Networking.Synchronizers;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using BrickVerse.Utils;
+using Godot;
+#if CREATOR
+using BrickVerse.Creator.UI;
+#endif
+
 
 namespace BrickVerse.Datamodel;
 
@@ -43,7 +43,8 @@ public partial class Instance : NetworkedObject
 	private byte[] _attributeData = [];
 	private readonly Dictionary<string, BVSignal> _attributeSignals = [];
 
-	[ScriptProperty] public BVSignal<string> AttributeChanged { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<string> AttributeChanged { get; private set; } = new();
 
 	[SyncVar]
 	public byte[] AttributeData
@@ -55,7 +56,8 @@ public partial class Instance : NetworkedObject
 			NetMessage previous = _attributes;
 			_attributes = DeserializeAttributes(_attributeData);
 			foreach (string name in AttributeNames(previous).Union(AttributeNames(_attributes)))
-				if (!Equals(ReadAttribute(previous, name), ReadAttribute(_attributes, name))) InvokeAttributeChanged(name);
+				if (!Equals(ReadAttribute(previous, name), ReadAttribute(_attributes, name)))
+					InvokeAttributeChanged(name);
 		}
 	}
 
@@ -66,18 +68,25 @@ public partial class Instance : NetworkedObject
 	public Dictionary<string, object?> GetAttributes()
 	{
 		Dictionary<string, object?> result = [];
-		foreach (string name in AttributeNames(_attributes)) result[name] = ReadAttribute(_attributes, name);
+		foreach (string name in AttributeNames(_attributes))
+			result[name] = ReadAttribute(_attributes, name);
 		return result;
 	}
 
 	[ScriptMethod]
 	public void SetAttribute(string name, object? value)
 	{
-		if (string.IsNullOrWhiteSpace(name) || name.Length > 100) throw new ArgumentException("Attribute names must contain 1-100 characters.", nameof(name));
+		if (string.IsNullOrWhiteSpace(name) || name.Length > 100)
+			throw new ArgumentException(
+				"Attribute names must contain 1-100 characters.",
+				nameof(name)
+			);
 		RemoveAttribute(_attributes, name);
-		if (value != null) NetMessage.AddValue(_attributes, name, value);
+		if (value != null)
+			NetMessage.AddValue(_attributes, name, value);
 		byte[] encoded = _attributes.Serialize();
-		if (encoded.Length > 65536) throw new InvalidOperationException("Instance attributes cannot exceed 64 KiB.");
+		if (encoded.Length > 65536)
+			throw new InvalidOperationException("Instance attributes cannot exceed 64 KiB.");
 		_attributeData = encoded;
 		OnPropertyChanged(nameof(AttributeData));
 		InvokeAttributeChanged(name);
@@ -86,46 +95,78 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public BVSignal GetAttributeChangedSignal(string name)
 	{
-		if (!_attributeSignals.TryGetValue(name, out BVSignal? signal)) _attributeSignals[name] = signal = new();
+		if (!_attributeSignals.TryGetValue(name, out BVSignal? signal))
+			_attributeSignals[name] = signal = new();
 		return signal;
 	}
 
 	private void InvokeAttributeChanged(string name)
 	{
 		AttributeChanged.Invoke(name);
-		if (_attributeSignals.TryGetValue(name, out BVSignal? signal)) signal.Invoke();
+		if (_attributeSignals.TryGetValue(name, out BVSignal? signal))
+			signal.Invoke();
 	}
 
-	private static IEnumerable<string> AttributeNames(NetMessage message) => message.Strings.Keys
-		.Concat(message.Ints.Keys).Concat(message.Numbers.Keys).Concat(message.Bools.Keys)
-		.Concat(message.Vec2s.Keys).Concat(message.Vec3s.Keys).Concat(message.Colors.Keys)
-		.Concat(message.Instances.Keys).Concat(message.Buffers.Keys).Distinct();
+	private static IEnumerable<string> AttributeNames(NetMessage message) =>
+		message
+			.Strings.Keys.Concat(message.Ints.Keys)
+			.Concat(message.Numbers.Keys)
+			.Concat(message.Bools.Keys)
+			.Concat(message.Vec2s.Keys)
+			.Concat(message.Vec3s.Keys)
+			.Concat(message.Colors.Keys)
+			.Concat(message.Instances.Keys)
+			.Concat(message.Buffers.Keys)
+			.Distinct();
+
 	private static object? ReadAttribute(NetMessage message, string name)
 	{
-		if (message.Strings.TryGetValue(name, out string? s)) return s;
-		if (message.Ints.TryGetValue(name, out int i)) return i;
-		if (message.Numbers.TryGetValue(name, out float n)) return n;
-		if (message.Bools.TryGetValue(name, out bool b)) return b;
-		if (message.Vec2s.TryGetValue(name, out Vector2 v2)) return v2;
-		if (message.Vec3s.TryGetValue(name, out Vector3 v3)) return v3;
-		if (message.Colors.TryGetValue(name, out Color c)) return c;
-		if (message.Instances.TryGetValue(name, out Instance? instance)) return instance;
-		if (message.Buffers.TryGetValue(name, out byte[]? bytes)) return bytes;
+		if (message.Strings.TryGetValue(name, out string? s))
+			return s;
+		if (message.Ints.TryGetValue(name, out int i))
+			return i;
+		if (message.Numbers.TryGetValue(name, out float n))
+			return n;
+		if (message.Bools.TryGetValue(name, out bool b))
+			return b;
+		if (message.Vec2s.TryGetValue(name, out Vector2 v2))
+			return v2;
+		if (message.Vec3s.TryGetValue(name, out Vector3 v3))
+			return v3;
+		if (message.Colors.TryGetValue(name, out Color c))
+			return c;
+		if (message.Instances.TryGetValue(name, out Instance? instance))
+			return instance;
+		if (message.Buffers.TryGetValue(name, out byte[]? bytes))
+			return bytes;
 		return null;
 	}
+
 	private static void RemoveAttribute(NetMessage message, string name)
 	{
-		message.Strings.Remove(name); message.Ints.Remove(name); message.Numbers.Remove(name); message.Bools.Remove(name);
-		message.Vec2s.Remove(name); message.Vec3s.Remove(name); message.Colors.Remove(name); message.Instances.Remove(name); message.Buffers.Remove(name);
+		message.Strings.Remove(name);
+		message.Ints.Remove(name);
+		message.Numbers.Remove(name);
+		message.Bools.Remove(name);
+		message.Vec2s.Remove(name);
+		message.Vec3s.Remove(name);
+		message.Colors.Remove(name);
+		message.Instances.Remove(name);
+		message.Buffers.Remove(name);
 	}
+
 	private NetMessage DeserializeAttributes(byte[] bytes)
 	{
-		if (bytes.Length == 0) return new();
-		NetMessage.NetMessagePayload? payload = SerializeUtils.Deserialize<NetMessage.NetMessagePayload>(bytes);
-		if (payload == null) return new();
+		if (bytes.Length == 0)
+			return new();
+		NetMessage.NetMessagePayload? payload =
+			SerializeUtils.Deserialize<NetMessage.NetMessagePayload>(bytes);
+		if (payload == null)
+			return new();
 		NetMessage message = NetMessage.FromPayload(payload);
 		foreach ((string key, string id) in payload.Instances)
-			if (Root?.GetNetObjectFromID(id) is Instance instance) message.Instances[key] = instance;
+			if (Root?.GetNetObjectFromID(id) is Instance instance)
+				message.Instances[key] = instance;
 		return message;
 	}
 
@@ -155,7 +196,9 @@ public partial class Instance : NetworkedObject
 			{
 				if (value != ModelRoot && !value.IsDescendantOf(ModelRoot))
 				{
-					throw new InvalidOperationException("Child cannot be reparented outside the root model");
+					throw new InvalidOperationException(
+						"Child cannot be reparented outside the root model"
+					);
 				}
 			}
 
@@ -190,7 +233,9 @@ public partial class Instance : NetworkedObject
 			{
 				oldParentIsTemp = oldParent == Root.TemporaryContainer;
 				chunkOverride = Root.Network.IsServer && oldParentIsTemp && !AutoReplicate;
-				isTemp = value == Root.TemporaryContainer || value.IsDescendantOf(Root.TemporaryContainer);
+				isTemp =
+					value == Root.TemporaryContainer
+					|| value.IsDescendantOf(Root.TemporaryContainer);
 
 				if (IsInTemporary && !isTemp)
 				{
@@ -212,10 +257,12 @@ public partial class Instance : NetworkedObject
 				{
 					// Call on next frame for descendants to finish initialize
 					// this is kinda hacky
-					Callable.From(() =>
-					{
-						Root.Network.ReplicateSync.BroadcastChunk([this, .. descendants]);
-					}).CallDeferred();
+					Callable
+						.From(() =>
+						{
+							Root.Network.ReplicateSync.BroadcastChunk([this, .. descendants]);
+						})
+						.CallDeferred();
 				}
 
 				// Rerun name enforcement in case of reparenting from temp
@@ -334,7 +381,6 @@ public partial class Instance : NetworkedObject
 		}
 	}
 
-
 	public Dictionary<string, Instance> ModelChilds = [];
 
 	[Editable(IsHidden = true), DefaultValue(false)]
@@ -367,16 +413,21 @@ public partial class Instance : NetworkedObject
 				.Distinct(StringComparer.Ordinal)
 				.OrderBy(tag => tag, StringComparer.Ordinal)
 				.ToArray();
-			if (_tags.SequenceEqual(normalized)) return;
+			if (_tags.SequenceEqual(normalized))
+				return;
 			string[] added = normalized.Except(_tags, StringComparer.Ordinal).ToArray();
 			string[] removed = _tags.Except(normalized, StringComparer.Ordinal).ToArray();
 			_tags = normalized;
 			OnPropertyChanged();
-			CollectionService? collections = Root?.FindChild<CollectionService>("CollectionService");
+			CollectionService? collections = Root?.FindChild<CollectionService>(
+				"CollectionService"
+			);
 			if (collections != null)
 			{
-				foreach (string tag in added) collections.NotifyTagAdded(this, tag);
-				foreach (string tag in removed) collections.NotifyTagRemoved(this, tag);
+				foreach (string tag in added)
+					collections.NotifyTagAdded(this, tag);
+				foreach (string tag in removed)
+					collections.NotifyTagRemoved(this, tag);
 			}
 		}
 	}
@@ -399,10 +450,17 @@ public partial class Instance : NetworkedObject
 
 	public bool IsInTemporary => IsDescendantOfClass<Temporary>();
 
-	[ScriptProperty] public BVSignal<Instance> ChildAdded { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Instance> ChildRemoved { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Instance> ChildDeleting { get; private set; } = new();
-	[ScriptProperty] public BVSignal<Instance> ChildDeleted { get; private set; } = new();
+	[ScriptProperty]
+	public BVSignal<Instance> ChildAdded { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Instance> ChildRemoved { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Instance> ChildDeleting { get; private set; } = new();
+
+	[ScriptProperty]
+	public BVSignal<Instance> ChildDeleted { get; private set; } = new();
 
 	internal void AddLegacyNameToParent()
 	{
@@ -455,7 +513,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public Instance? FindChild(string name)
 	{
-		if (NameToChild.TryGetValue(name, out Instance? instance)) return instance;
+		if (NameToChild.TryGetValue(name, out Instance? instance))
+			return instance;
 
 		foreach (Instance child in Children)
 		{
@@ -474,11 +533,13 @@ public partial class Instance : NetworkedObject
 	public Instance? FindFirstChild(string name, bool recursive = false)
 	{
 		Instance? child = FindChild(name);
-		if (child != null || !recursive) return child;
+		if (child != null || !recursive)
+			return child;
 
 		foreach (Instance descendant in GetDescendants())
 		{
-			if (descendant.Name == name) return descendant;
+			if (descendant.Name == name)
+				return descendant;
 		}
 
 		return null;
@@ -487,7 +548,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public Instance? FindFirstDescendant(string name) => FindFirstChild(name, true);
 
-	public T? FindChild<T>(string name) where T : Instance
+	public T? FindChild<T>(string name)
+		where T : Instance
 	{
 		foreach (Instance child in Children)
 		{
@@ -528,7 +590,9 @@ public partial class Instance : NetworkedObject
 				await Task.Delay(TimeSpan.FromSeconds(WaitChildWarningSec), warningCts.Token);
 				if (!tcs.Task.IsCompleted)
 				{
-					BV.PrintWarn($"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s.");
+					BV.PrintWarn(
+						$"Possible infinite yield: WaitChild has been waiting for '{name}' for more than {WaitChildWarningSec}s."
+					);
 				}
 			}
 			catch (OperationCanceledException) { }
@@ -566,11 +630,11 @@ public partial class Instance : NetworkedObject
 		return WaitChild(name, timeoutSec);
 	}
 
-	public async Task<T?> WaitChild<T>(string name, float? timeoutSec = null) where T : Instance
+	public async Task<T?> WaitChild<T>(string name, float? timeoutSec = null)
+		where T : Instance
 	{
 		return (T?)await WaitChild(name, timeoutSec);
 	}
-
 
 	[ScriptLegacyMethod("FindChild")]
 	public Instance? LegacyFindChild(string name)
@@ -618,7 +682,8 @@ public partial class Instance : NetworkedObject
 	{
 		foreach (Instance child in GetChildren())
 		{
-			if (child.IsA(className)) return child;
+			if (child.IsA(className))
+				return child;
 			if (recursive && child.FindFirstChildWhichIsA(className, true) is Instance descendant)
 				return descendant;
 		}
@@ -713,7 +778,8 @@ public partial class Instance : NetworkedObject
 		Instance? parent = Parent;
 		while (parent != null)
 		{
-			if (parent.Name == name) return parent;
+			if (parent.Name == name)
+				return parent;
 			parent = parent.Parent;
 		}
 		return null;
@@ -726,7 +792,8 @@ public partial class Instance : NetworkedObject
 		Instance? parent = Parent;
 		while (parent != null)
 		{
-			if (parent.ClassName == convertedName) return parent;
+			if (parent.ClassName == convertedName)
+				return parent;
 			parent = parent.Parent;
 		}
 		return null;
@@ -738,7 +805,8 @@ public partial class Instance : NetworkedObject
 		Instance? parent = Parent;
 		while (parent != null)
 		{
-			if (parent.IsA(className)) return parent;
+			if (parent.IsA(className))
+				return parent;
 			parent = parent.Parent;
 		}
 		return null;
@@ -751,7 +819,8 @@ public partial class Instance : NetworkedObject
 		Instance? current = this;
 		while (current != null)
 		{
-			if (current is Actor actor) return actor;
+			if (current is Actor actor)
+				return actor;
 			current = current.Parent;
 		}
 		return null;
@@ -774,7 +843,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public Instance? FindChildByIndex(int index)
 	{
-		if (index < 0 || index >= Children.Count) return null;
+		if (index < 0 || index >= Children.Count)
+			return null;
 		return Children[index];
 	}
 
@@ -793,14 +863,16 @@ public partial class Instance : NetworkedObject
 	[NetRpc(Networking.AuthorityMode.Authority, TransferMode = Networking.TransferMode.Reliable)]
 	private void NetMoveChild(string name, int index)
 	{
-		if (RemoteSenderId != 1) return;
+		if (RemoteSenderId != 1)
+			return;
 		InternalMoveChild(name, index);
 	}
 
 	internal void InternalMoveChild(string childName, int index)
 	{
 		Instance? child = FindChild(childName);
-		if (child == null) return;
+		if (child == null)
+			return;
 
 		int childIndex = Children.IndexOf(child);
 
@@ -891,7 +963,8 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public void ClearAllChildren()
 	{
-		foreach (Instance child in GetChildren()) child.Destroy();
+		foreach (Instance child in GetChildren())
+			child.Destroy();
 	}
 
 	[ScriptMethod]
@@ -916,7 +989,8 @@ public partial class Instance : NetworkedObject
 		return GetChildrenOfClass(XmlFormat.ConvertClassName(className));
 	}
 
-	public T[] GetChildrenOfClass<T>() where T : Instance
+	public T[] GetChildrenOfClass<T>()
+		where T : Instance
 	{
 		List<T> instances = [];
 		foreach (Instance item in GetChildren())
@@ -1025,7 +1099,11 @@ public partial class Instance : NetworkedObject
 	}
 
 	[ScriptMethod("New")]
-	public static Instance? ScriptNew([ScriptingCaller] Script caller, string className, Instance? parent = null)
+	public static Instance? ScriptNew(
+		[ScriptingCaller] Script caller,
+		string className,
+		Instance? parent = null
+	)
 	{
 		return NewStatic(className, parent, caller.Root);
 	}
@@ -1047,7 +1125,11 @@ public partial class Instance : NetworkedObject
 	}
 
 	[ScriptLegacyMethod("New")]
-	public static Instance? LegacyNew([ScriptingCaller] Script caller, string className, Instance? parent = null)
+	public static Instance? LegacyNew(
+		[ScriptingCaller] Script caller,
+		string className,
+		Instance? parent = null
+	)
 	{
 		Instance? i = NewStatic(XmlFormat.ConvertClassName(className), parent, caller.Root);
 		if (i != null)
@@ -1069,7 +1151,8 @@ public partial class Instance : NetworkedObject
 #if CREATOR
 	public void SaveModel()
 	{
-		if (LinkedModel == null) return;
+		if (LinkedModel == null)
+			return;
 		Root.LinkedSession.SaveModel(this, LinkedModel.LinkedPath!);
 	}
 
@@ -1101,7 +1184,8 @@ public partial class Instance : NetworkedObject
 	public void AddTag(string tag)
 	{
 		tag = CollectionService.NormalizeTag(tag);
-		if (HasTag(tag)) return;
+		if (HasTag(tag))
+			return;
 		List<string> tags = [.. Tags];
 		tags.Add(tag);
 		Tags = [.. tags];
@@ -1111,7 +1195,8 @@ public partial class Instance : NetworkedObject
 	public void RemoveTag(string tag)
 	{
 		tag = CollectionService.NormalizeTag(tag);
-		if (!HasTag(tag)) return;
+		if (!HasTag(tag))
+			return;
 		List<string> tags = [.. Tags];
 		tags.Remove(tag);
 		Tags = [.. tags];
@@ -1127,12 +1212,16 @@ public partial class Instance : NetworkedObject
 	{
 		// Put in callable so when reparented to another hidden it doesn't stack
 		bool myVal = _isHidden;
-		Callable.From(() =>
-		{
-			if (_isHidden != myVal) return;
-			if (IsDeleted) return;
-			HiddenChanged(_isHidden);
-		}).CallDeferred();
+		Callable
+			.From(() =>
+			{
+				if (_isHidden != myVal)
+					return;
+				if (IsDeleted)
+					return;
+				HiddenChanged(_isHidden);
+			})
+			.CallDeferred();
 	}
 
 	[ScriptMethod]

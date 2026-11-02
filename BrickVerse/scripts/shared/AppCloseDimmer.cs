@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Shared;
 
@@ -18,15 +18,12 @@ public partial class AppCloseDimmer : Node
 
 	public static async Task Show()
 	{
-		CanvasLayer layer = new()
-		{
-			Layer = 10000
-		};
+		CanvasLayer layer = new() { Layer = 10000 };
 		ColorRect c = new()
 		{
 			Color = new(0, 0, 0, 0.5f),
 			ZIndex = 1000,
-			TopLevel = true
+			TopLevel = true,
 		};
 		c.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		layer.AddChild(c);
@@ -35,7 +32,10 @@ public partial class AppCloseDimmer : Node
 		// Wait for post render if not in headless
 		if (RenderingServer.Singleton.GetRenderingDevice() != null)
 		{
-			await Singleton.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+			await Singleton.ToSignal(
+				RenderingServer.Singleton,
+				RenderingServer.SignalName.FramePostDraw
+			);
 		}
 	}
 }

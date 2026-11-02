@@ -2,16 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Datamodel.Data;
+using Godot;
 
 namespace BrickVerse.Creator.UI.Components;
 
 public partial class InputButtonItemUI : Control
 {
-	[Export] private Label _keyNameLabel = null!;
-	[Export] private TextureRect _iconRect = null!;
-	[Export] private Button _removeBtn = null!;
+	[Export]
+	private Label _keyNameLabel = null!;
+
+	[Export]
+	private TextureRect _iconRect = null!;
+
+	[Export]
+	private Button _removeBtn = null!;
 	public InputAction TargetAction = null!;
 	public InputButton TargetButton = null!;
 	public InputButtonGroupUI GroupParent = null!;

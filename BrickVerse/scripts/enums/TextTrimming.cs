@@ -13,5 +13,5 @@ public enum TextTrimmingEnum
 	Character,
 	Word,
 	CharacterEllipsis,
-	WordEllipsis
+	WordEllipsis,
 }

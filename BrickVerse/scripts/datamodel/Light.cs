@@ -3,11 +3,10 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System;
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.Settings;
 using BrickVerse.Shared.Settings;
-
+using Godot;
 #if CREATOR
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.Spatial;
@@ -118,7 +117,9 @@ public partial class Light : Dynamic
 			ClientSettingsService.Instance;
 		if (settings != null)
 		{
-			ShadowQuality shadowQuality = settings.Get<ShadowQuality>(SharedSettingKeys.Graphics.ShadowQuality);
+			ShadowQuality shadowQuality = settings.Get<ShadowQuality>(
+				SharedSettingKeys.Graphics.ShadowQuality
+			);
 			if (shadowQuality == ShadowQuality.Off)
 			{
 				shadows = false;

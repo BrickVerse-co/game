@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Formats;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using BrickVerse.Datamodel;
+using BrickVerse.Formats;
+using Godot;
 using Script = BrickVerse.Datamodel.Script;
 
 namespace BrickVerse.Shared;
@@ -19,7 +19,11 @@ public static class DatamodelLoader
 		await LoadWorldBytes(root, File.ReadAllBytes(filePath), entryPath);
 	}
 
-	public static async Task<Instance?> LoadModelFile(World root, string filePath, Instance? parent = null)
+	public static async Task<Instance?> LoadModelFile(
+		World root,
+		string filePath,
+		Instance? parent = null
+	)
 	{
 		return await LoadModelBytes(root, await File.ReadAllBytesAsync(filePath), parent);
 	}
@@ -63,13 +67,19 @@ public static class DatamodelLoader
 		{
 			PackedFormat.ModelData? modelData = PackedFormat.ReadModelData(data);
 
-			if (modelData == null) return "";
+			if (modelData == null)
+				return "";
 			return modelData.Value.ModelName;
 		}
 		return "";
 	}
 
-	public static async Task<Instance?> LoadModelBytes(World root, byte[] data, Instance? parent = null, string? modelNameOverride = null)
+	public static async Task<Instance?> LoadModelBytes(
+		World root,
+		byte[] data,
+		Instance? parent = null,
+		string? modelNameOverride = null
+	)
 	{
 		parent ??= root.TemporaryContainer;
 
@@ -138,7 +148,8 @@ public static class DatamodelLoader
 
 	public static PolyFileTypeEnum DetermineFileTypeFromBytes(byte[] data)
 	{
-		if (data.Length <= 0) return PolyFileTypeEnum.Empty;
+		if (data.Length <= 0)
+			return PolyFileTypeEnum.Empty;
 		if (data[0] == 0xEF || data[0] == 0x3C)
 		{
 			return PolyFileTypeEnum.PolyXML;
@@ -154,5 +165,5 @@ public enum PolyFileTypeEnum
 {
 	Packed,
 	PolyXML,
-	Empty
+	Empty,
 }

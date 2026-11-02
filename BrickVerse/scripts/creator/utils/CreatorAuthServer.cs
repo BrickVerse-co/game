@@ -198,10 +198,13 @@ public static class CreatorAuthServer
 			}
 
 			string browserCallbackUrl =
-				Globals.MainEndpoint.PathJoin("/auth/creator/callback") +
-				"?desktop_redirect_uri=" + Uri.EscapeDataString(RedirectUri) +
-				"&code=" + Uri.EscapeDataString(code!) +
-				"&state=" + Uri.EscapeDataString(state);
+				Globals.MainEndpoint.PathJoin("/auth/creator/callback")
+				+ "?desktop_redirect_uri="
+				+ Uri.EscapeDataString(RedirectUri)
+				+ "&code="
+				+ Uri.EscapeDataString(code!)
+				+ "&state="
+				+ Uri.EscapeDataString(state);
 
 			await WriteRedirectAsync(ctx, browserCallbackUrl);
 			return;

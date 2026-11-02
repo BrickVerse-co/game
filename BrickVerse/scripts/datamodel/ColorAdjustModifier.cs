@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -67,10 +67,7 @@ public partial class ColorAdjustModifier : LightingModifier
 	public override void Init()
 	{
 		base.Init();
-		_tintColorGradient = new()
-		{
-			Gradient = new()
-		};
+		_tintColorGradient = new() { Gradient = new() };
 		ApplyEffects();
 	}
 

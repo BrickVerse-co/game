@@ -2,11 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
-using Godot;
+using System.Collections.Generic;
 using BrickVerse.Datamodel;
 using BrickVerse.Shared;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Client.UI.Chat;
 
@@ -17,7 +16,8 @@ public partial class BubbleText : Node3D
 	private const int BubbleCountLimit = 5;
 	private readonly List<BubbleItem> _activeBubbles = [];
 
-	[Export] private Control _itemContainer = null!;
+	[Export]
+	private Control _itemContainer = null!;
 	public TextChatBox TargetBox = null!;
 
 	public override void _EnterTree()

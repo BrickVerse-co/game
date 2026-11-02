@@ -9,16 +9,84 @@ namespace BrickVerse.Datamodel;
 public sealed partial class NavigationObstacle : Dynamic
 {
 	private NavigationObstacle3D _obstacle = null!;
-	private float _radius = 1, _height = 2;
-	private bool _avoidanceEnabled = true, _affectNavigationMesh = true, _carveNavigationMesh;
+	private float _radius = 1,
+		_height = 2;
+	private bool _avoidanceEnabled = true,
+		_affectNavigationMesh = true,
+		_carveNavigationMesh;
 	private Vector3 _velocity;
 
-	[Editable, ScriptProperty, DefaultValue(1f)] public float Radius { get => _radius; set { _radius = Mathf.Max(0.01f, value); Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(2f)] public float Height { get => _height; set { _height = Mathf.Max(0.01f, value); Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(true)] public bool AvoidanceEnabled { get => _avoidanceEnabled; set { _avoidanceEnabled = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(true)] public bool AffectNavigationMesh { get => _affectNavigationMesh; set { _affectNavigationMesh = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty, DefaultValue(false)] public bool CarveNavigationMesh { get => _carveNavigationMesh; set { _carveNavigationMesh = value; Apply(); OnPropertyChanged(); } }
-	[Editable, ScriptProperty] public Vector3 Velocity { get => _velocity; set { _velocity = value; Apply(); OnPropertyChanged(); } }
+	[Editable, ScriptProperty, DefaultValue(1f)]
+	public float Radius
+	{
+		get => _radius;
+		set
+		{
+			_radius = Mathf.Max(0.01f, value);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(2f)]
+	public float Height
+	{
+		get => _height;
+		set
+		{
+			_height = Mathf.Max(0.01f, value);
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(true)]
+	public bool AvoidanceEnabled
+	{
+		get => _avoidanceEnabled;
+		set
+		{
+			_avoidanceEnabled = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(true)]
+	public bool AffectNavigationMesh
+	{
+		get => _affectNavigationMesh;
+		set
+		{
+			_affectNavigationMesh = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty, DefaultValue(false)]
+	public bool CarveNavigationMesh
+	{
+		get => _carveNavigationMesh;
+		set
+		{
+			_carveNavigationMesh = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
+
+	[Editable, ScriptProperty]
+	public Vector3 Velocity
+	{
+		get => _velocity;
+		set
+		{
+			_velocity = value;
+			Apply();
+			OnPropertyChanged();
+		}
+	}
 
 	public override Node CreateGDNode()
 	{
@@ -34,7 +102,8 @@ public sealed partial class NavigationObstacle : Dynamic
 
 	private void Apply()
 	{
-		if (_obstacle == null) return;
+		if (_obstacle == null)
+			return;
 		_obstacle.Radius = _radius;
 		_obstacle.Height = _height;
 		_obstacle.AvoidanceEnabled = _avoidanceEnabled;

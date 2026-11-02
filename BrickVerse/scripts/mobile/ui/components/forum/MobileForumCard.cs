@@ -32,12 +32,18 @@ public partial class MobileForumCard : Button
 		// The website stores Font Awesome class strings (for example
 		// "fa-solid fa-gamepad"), while older categories use short names.
 		string value = icon.Trim().ToLowerInvariant();
-		if (value.Contains("megaphone") || value.Contains("bullhorn")) return "res://assets/textures/ui-icons/flag.svg";
-		if (value.Contains("controller") || value.Contains("joystick") || value.Contains("gamepad")) return "res://assets/textures/ui-icons/gamepad.svg";
-		if (value.Contains("tools") || value.Contains("wrench")) return "res://assets/textures/ui-icons/tools.svg";
-		if (value.Contains("question") || value.Contains("help")) return "res://assets/textures/ui-icons/book.svg";
-		if (value.Contains("chat") || value.Contains("message") || value.Contains("comment")) return "res://assets/textures/ui-icons/comments.svg";
-		if (value.Contains("bug")) return "res://assets/textures/ui-icons/bug.svg";
+		if (value.Contains("megaphone") || value.Contains("bullhorn"))
+			return "res://assets/textures/ui-icons/flag.svg";
+		if (value.Contains("controller") || value.Contains("joystick") || value.Contains("gamepad"))
+			return "res://assets/textures/ui-icons/gamepad.svg";
+		if (value.Contains("tools") || value.Contains("wrench"))
+			return "res://assets/textures/ui-icons/tools.svg";
+		if (value.Contains("question") || value.Contains("help"))
+			return "res://assets/textures/ui-icons/book.svg";
+		if (value.Contains("chat") || value.Contains("message") || value.Contains("comment"))
+			return "res://assets/textures/ui-icons/comments.svg";
+		if (value.Contains("bug"))
+			return "res://assets/textures/ui-icons/bug.svg";
 		return "res://assets/textures/ui-icons/folder.svg";
 	}
 }

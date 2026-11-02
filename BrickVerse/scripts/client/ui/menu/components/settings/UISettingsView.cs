@@ -8,5 +8,6 @@ namespace BrickVerse.Client.UI;
 
 public partial class UISettingsView : Control
 {
-	[Export] public Control? FirstFocus { get; private set; }
+	[Export]
+	public Control? FirstFocus { get; private set; }
 }

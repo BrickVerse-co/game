@@ -1,6 +1,6 @@
-using Godot;
-using BrickVerse.Shared.Settings;
 using System.Linq;
+using BrickVerse.Shared.Settings;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -14,10 +14,7 @@ public sealed partial class SettingRow : PanelContainer
 		HBoxContainer root = new();
 		AddChild(root);
 
-		VBoxContainer textLayout = new()
-		{
-			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-		};
+		VBoxContainer textLayout = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
 		root.AddChild(textLayout);
 
 		Label title = new() { Text = Definition.Label };
@@ -29,7 +26,7 @@ public sealed partial class SettingRow : PanelContainer
 			Label desc = new()
 			{
 				Text = Definition.Description,
-				AutowrapMode = TextServer.AutowrapMode.WordSmart
+				AutowrapMode = TextServer.AutowrapMode.WordSmart,
 			};
 			desc.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.6f));
 			textLayout.AddChild(desc);
@@ -37,10 +34,7 @@ public sealed partial class SettingRow : PanelContainer
 
 		if (Definition.RequiresRestart)
 		{
-			Label restart = new()
-			{
-				Text = "Requires restart"
-			};
+			Label restart = new() { Text = "Requires restart" };
 			restart.AddThemeColorOverride("font_color", new Color(1f, 0.6f, 0.6f));
 			restart.AddThemeFontSizeOverride("font_size", 14);
 			textLayout.AddChild(restart);
@@ -52,11 +46,13 @@ public sealed partial class SettingRow : PanelContainer
 
 		if (Definition.Conditions != null)
 		{
-			Visible = Definition.Conditions.Any((cond) =>
-			{
-				object? value = Context.GetUntyped(cond.Target);
-				return cond.UntypedPredicate(value);
-			});
+			Visible = Definition.Conditions.Any(
+				(cond) =>
+				{
+					object? value = Context.GetUntyped(cond.Target);
+					return cond.UntypedPredicate(value);
+				}
+			);
 		}
 
 		Context.Changed += OnExternalChanged;

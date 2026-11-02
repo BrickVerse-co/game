@@ -12,7 +12,8 @@ public partial class UIViewLicensesRow : PanelContainer
 
 	private Window? _licenseWindow;
 
-	[Export] private Button _viewLicensesButton = null!;
+	[Export]
+	private Button _viewLicensesButton = null!;
 
 	public override void _Ready()
 	{
@@ -37,7 +38,11 @@ public partial class UIViewLicensesRow : PanelContainer
 			_licenseWindow = GD.Load<PackedScene>(WindowScenePath).Instantiate<Window>();
 			_licenseWindow.Visible = false;
 			_licenseWindow.ForceNative = true;
-			_licenseWindow.CloseRequested += () => { _licenseWindow.QueueFree(); _licenseWindow = null; };
+			_licenseWindow.CloseRequested += () =>
+			{
+				_licenseWindow.QueueFree();
+				_licenseWindow = null;
+			};
 			GetTree().Root.AddChild(_licenseWindow);
 		}
 		_licenseWindow.PopupCentered();

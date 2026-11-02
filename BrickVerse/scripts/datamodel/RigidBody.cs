@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Utils;
-using System;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -26,10 +26,7 @@ public partial class RigidBody : Physical
 	[Editable, ScriptProperty, SyncVar(Unreliable = true, AllowAuthorWrite = true)]
 	public override Vector3 Velocity
 	{
-		get
-		{
-			return GDRigidBody.LinearVelocity;
-		}
+		get { return GDRigidBody.LinearVelocity; }
 		set
 		{
 			GDRigidBody.LinearVelocity = value;
@@ -40,10 +37,7 @@ public partial class RigidBody : Physical
 	[Editable, ScriptProperty, SyncVar(Unreliable = true, AllowAuthorWrite = true)]
 	public override Vector3 AngularVelocity
 	{
-		get
-		{
-			return GDRigidBody.AngularVelocity.FlipEuler();
-		}
+		get { return GDRigidBody.AngularVelocity.FlipEuler(); }
 		set
 		{
 			GDRigidBody.AngularVelocity = value.FlipEuler();
@@ -187,7 +181,8 @@ public partial class RigidBody : Physical
 		GDRigidBody.PhysicsMaterialOverride = PhysicsMat;
 		GDRigidBody.GravityScale = 2;
 
-		if (ReferenceEquals(previous, GDRigidBody)) return;
+		if (ReferenceEquals(previous, GDRigidBody))
+			return;
 
 		if (previous != null)
 		{
@@ -206,8 +201,12 @@ public partial class RigidBody : Physical
 
 	private void OnSleepingStateChanged()
 	{
-		if (IsAsleep && Root != null && Root.Network != null
-			&& NetTransformAuthority == Root.Network.LocalPeerID)
+		if (
+			IsAsleep
+			&& Root != null
+			&& Root.Network != null
+			&& NetTransformAuthority == Root.Network.LocalPeerID
+		)
 		{
 			UpdateNetTransformReliable();
 
@@ -268,7 +267,11 @@ public partial class RigidBody : Physical
 		}
 	}
 
-	internal override void ApplyAddForceAtPosition(Vector3 force, Vector3 position, ForceModeEnum mode = ForceModeEnum.Force)
+	internal override void ApplyAddForceAtPosition(
+		Vector3 force,
+		Vector3 position,
+		ForceModeEnum mode = ForceModeEnum.Force
+	)
 	{
 		if (mode == ForceModeEnum.Force)
 		{
@@ -292,7 +295,10 @@ public partial class RigidBody : Physical
 		}
 	}
 
-	internal override void ApplyAddRelativeForce(Vector3 force, ForceModeEnum mode = ForceModeEnum.Force)
+	internal override void ApplyAddRelativeForce(
+		Vector3 force,
+		ForceModeEnum mode = ForceModeEnum.Force
+	)
 	{
 		Vector3 worldForce = GDRigidBody.GlobalTransform.Basis * force;
 		if (mode == ForceModeEnum.Force)
@@ -317,7 +323,10 @@ public partial class RigidBody : Physical
 		}
 	}
 
-	internal override void ApplyAddRelativeTorque(Vector3 torque, ForceModeEnum mode = ForceModeEnum.Force)
+	internal override void ApplyAddRelativeTorque(
+		Vector3 torque,
+		ForceModeEnum mode = ForceModeEnum.Force
+	)
 	{
 		Vector3 worldTorque = GDRigidBody.GlobalTransform.Basis * torque;
 

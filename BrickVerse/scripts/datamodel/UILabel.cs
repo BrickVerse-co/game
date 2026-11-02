@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Enums;
 using BrickVerse.Utils;
+using Godot;
 
 namespace BrickVerse.Datamodel;
 
@@ -158,10 +158,12 @@ public partial class UILabel : UIView
 		set
 		{
 			bool changed = _autoSize != value;
-			if (changed && _autoSize) NodeControl.Resized -= UpdateText;
+			if (changed && _autoSize)
+				NodeControl.Resized -= UpdateText;
 
 			_autoSize = value;
-			if (changed && _autoSize) NodeControl.Resized += UpdateText;
+			if (changed && _autoSize)
+				NodeControl.Resized += UpdateText;
 
 			UpdateText();
 			OnPropertyChanged();
@@ -230,10 +232,7 @@ public partial class UILabel : UIView
 		set
 		{
 			_fontPreset = value;
-			FontAsset = new BuiltInFontAsset()
-			{
-				FontPreset = _fontPreset
-			};
+			FontAsset = new BuiltInFontAsset() { FontPreset = _fontPreset };
 		}
 	}
 
@@ -265,7 +264,9 @@ public partial class UILabel : UIView
 		{
 			_textWrapped = value;
 
-			_label.AutowrapMode = _richLabel.AutowrapMode = _textWrapped ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
+			_label.AutowrapMode = _richLabel.AutowrapMode = _textWrapped
+				? TextServer.AutowrapMode.WordSmart
+				: TextServer.AutowrapMode.Off;
 
 			UpdateText();
 			OnPropertyChanged();
@@ -276,11 +277,20 @@ public partial class UILabel : UIView
 	{
 		if (_autoSize)
 		{
-			float autoSize = TextUtils.BoundsToTextSize(_label.GetThemeFont("font"), _text, NodeControl.Size, _textWrapped) / FontScaleConversion;
-			if (_maxAutoSize > 0 && autoSize > _maxAutoSize) SetTextSize(_maxAutoSize);
-			else SetTextSize(autoSize);
+			float autoSize =
+				TextUtils.BoundsToTextSize(
+					_label.GetThemeFont("font"),
+					_text,
+					NodeControl.Size,
+					_textWrapped
+				) / FontScaleConversion;
+			if (_maxAutoSize > 0 && autoSize > _maxAutoSize)
+				SetTextSize(_maxAutoSize);
+			else
+				SetTextSize(autoSize);
 		}
-		else SetTextSize(_fontSize);
+		else
+			SetTextSize(_fontSize);
 	}
 
 	private void SetTextSize(float size)

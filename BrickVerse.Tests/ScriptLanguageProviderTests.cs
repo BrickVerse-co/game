@@ -17,21 +17,26 @@ public sealed class ScriptLanguageProviderTests
 	public void Registry_RecognizesEveryLanguageExtension()
 	{
 		foreach (ScriptLanguageDefinition definition in ScriptLanguageRegistry.Definitions)
-			foreach (string extension in definition.Extensions)
-				Assert.Equal(definition.Language, ScriptLanguageRegistry.FromPath("script." + extension));
+		foreach (string extension in definition.Extensions)
+			Assert.Equal(
+				definition.Language,
+				ScriptLanguageRegistry.FromPath("script." + extension)
+			);
 	}
 
 	[Fact]
 	public void CSharp_CompilesCapabilityOnlyScript()
 	{
 		using CSharpProvider provider = new();
-		byte[] assembly = provider.CompileSource("""
+		byte[] assembly = provider.CompileSource(
+			"""
 using BrickVerse.Scripting.Managed;
 public sealed class Main : BrickVerseScript
 {
     public override void Update(double delta) { _ = Bv.Get(World, "Name"); }
 }
-""");
+"""
+		);
 		Assert.NotEmpty(assembly);
 	}
 
@@ -39,7 +44,8 @@ public sealed class Main : BrickVerseScript
 	public void CSharp_CompilesGeneratedTypedDataModelBindings()
 	{
 		using CSharpProvider provider = new();
-		byte[] assembly = provider.CompileSource("""
+		byte[] assembly = provider.CompileSource(
+			"""
 using BrickVerse.Scripting.Managed;
 public sealed class PlayerEventsServerScript : BrickVerseScript
 {
@@ -49,7 +55,8 @@ public sealed class PlayerEventsServerScript : BrickVerseScript
         players.PlayerAdded.Connect(player => Print(player.Name));
     }
 }
-""");
+"""
+		);
 		Assert.NotEmpty(assembly);
 	}
 
@@ -57,7 +64,8 @@ public sealed class PlayerEventsServerScript : BrickVerseScript
 	public void CSharp_CompilesGeneratedDatatypesAndEnums()
 	{
 		using CSharpProvider provider = new();
-		byte[] assembly = provider.CompileSource("""
+		byte[] assembly = provider.CompileSource(
+			"""
 using BrickVerse.Scripting.Managed;
 public sealed class DatatypeServerScript : BrickVerseScript
 {
@@ -69,7 +77,8 @@ public sealed class DatatypeServerScript : BrickVerseScript
         Print($"{position.X} {filter}");
     }
 }
-""");
+"""
+		);
 		Assert.NotEmpty(assembly);
 	}
 
@@ -77,20 +86,26 @@ public sealed class DatatypeServerScript : BrickVerseScript
 	public void CSharp_RejectsFilesystemAccess()
 	{
 		using CSharpProvider provider = new();
-		Assert.ThrowsAny<Exception>(() => provider.CompileSource("""
+		Assert.ThrowsAny<Exception>(() =>
+			provider.CompileSource(
+				"""
 using BrickVerse.Scripting.Managed;
 public sealed class Main : BrickVerseScript
 {
     public override void Start() { System.IO.File.ReadAllText("secret"); }
 }
-"""));
+"""
+			)
+		);
 	}
 
 	[Fact]
 	public void TypeScript_StripsTypesWithoutExecutingSource()
 	{
 		using TypeScriptProvider provider = new();
-		string javascript = Encoding.UTF8.GetString(provider.CompileSource("const value: number = 4;"));
+		string javascript = Encoding.UTF8.GetString(
+			provider.CompileSource("const value: number = 4;")
+		);
 		Assert.Contains("const value", javascript);
 		Assert.DoesNotContain(": number", javascript);
 	}

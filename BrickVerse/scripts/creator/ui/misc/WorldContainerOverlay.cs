@@ -2,18 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Linq;
+using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
-using BrickVerse.Creator.UI.Popups;
-using System.Linq;
+using Godot;
 
 namespace BrickVerse.Creator.UI;
 
 public partial class WorldContainerOverlay : Control
 {
 	private const string SettingsPath = "user://creator/viewport_ui.cfg";
-	private const int MenuToolbar = 10, MenuAxis = 11, MenuStats = 12, MenuFrame = 20, MenuProjection = 21, MenuSceneStatistics = 30;
+	private const int MenuToolbar = 10,
+		MenuAxis = 11,
+		MenuStats = 12,
+		MenuFrame = 20,
+		MenuProjection = 21,
+		MenuSceneStatistics = 30;
 	public World World = null!;
 	public WorldContainer Container = null!;
 	private Label _viewportStatus = null!;
@@ -58,16 +63,26 @@ public partial class WorldContainerOverlay : Control
 		_transformTipsPanel.OffsetTop = -96;
 		_transformTipsPanel.OffsetRight = -14;
 		_transformTipsPanel.OffsetBottom = -14;
-		_transformTipsPanel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
-		{
-			BgColor = new Color(0.045f, 0.05f, 0.06f, 0.88f),
-			BorderColor = new Color(0.2f, 0.24f, 0.3f, 0.9f),
-			BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-			CornerRadiusTopLeft = 5, CornerRadiusTopRight = 5,
-			CornerRadiusBottomLeft = 5, CornerRadiusBottomRight = 5,
-			ContentMarginLeft = 10, ContentMarginRight = 10,
-			ContentMarginTop = 7, ContentMarginBottom = 7,
-		});
+		_transformTipsPanel.AddThemeStyleboxOverride(
+			"panel",
+			new StyleBoxFlat
+			{
+				BgColor = new Color(0.045f, 0.05f, 0.06f, 0.88f),
+				BorderColor = new Color(0.2f, 0.24f, 0.3f, 0.9f),
+				BorderWidthLeft = 1,
+				BorderWidthTop = 1,
+				BorderWidthRight = 1,
+				BorderWidthBottom = 1,
+				CornerRadiusTopLeft = 5,
+				CornerRadiusTopRight = 5,
+				CornerRadiusBottomLeft = 5,
+				CornerRadiusBottomRight = 5,
+				ContentMarginLeft = 10,
+				ContentMarginRight = 10,
+				ContentMarginTop = 7,
+				ContentMarginBottom = 7,
+			}
+		);
 		_transformTipsPanel.AddChild(_transformTips);
 		AddChild(_transformTipsPanel);
 	}
@@ -117,23 +132,26 @@ public partial class WorldContainerOverlay : Control
 		toolbar.AddThemeConstantOverride("separation", 4);
 
 		_toolbarPanel = new PanelContainer { MouseFilter = MouseFilterEnum.Stop };
-		_toolbarPanel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
-		{
-			BgColor = new Color(0.055f, 0.06f, 0.07f, 0.94f),
-			BorderColor = new Color(0.24f, 0.27f, 0.31f, 1f),
-			BorderWidthLeft = 1,
-			BorderWidthTop = 1,
-			BorderWidthRight = 1,
-			BorderWidthBottom = 1,
-			CornerRadiusTopLeft = 6,
-			CornerRadiusTopRight = 6,
-			CornerRadiusBottomLeft = 6,
-			CornerRadiusBottomRight = 6,
-			ContentMarginLeft = 6,
-			ContentMarginRight = 6,
-			ContentMarginTop = 4,
-			ContentMarginBottom = 4,
-		});
+		_toolbarPanel.AddThemeStyleboxOverride(
+			"panel",
+			new StyleBoxFlat
+			{
+				BgColor = new Color(0.055f, 0.06f, 0.07f, 0.94f),
+				BorderColor = new Color(0.24f, 0.27f, 0.31f, 1f),
+				BorderWidthLeft = 1,
+				BorderWidthTop = 1,
+				BorderWidthRight = 1,
+				BorderWidthBottom = 1,
+				CornerRadiusTopLeft = 6,
+				CornerRadiusTopRight = 6,
+				CornerRadiusBottomLeft = 6,
+				CornerRadiusBottomRight = 6,
+				ContentMarginLeft = 6,
+				ContentMarginRight = 6,
+				ContentMarginTop = 4,
+				ContentMarginBottom = 4,
+			}
+		);
 		_toolbarPanel.AddChild(toolbar);
 		AddChild(_toolbarPanel);
 		_toolbarPanel.Position = new Vector2(102, 12);
@@ -146,7 +164,12 @@ public partial class WorldContainerOverlay : Control
 		_projectionButton.Pressed += ToggleProjection;
 		toolbar.AddChild(_projectionButton);
 
-		_viewModeButton = new MenuButton { Text = "Lit", TooltipText = "Viewport shading mode", Flat = true };
+		_viewModeButton = new MenuButton
+		{
+			Text = "Lit",
+			TooltipText = "Viewport shading mode",
+			Flat = true,
+		};
 		_viewModeButton.GetPopup().AddItem("Lit", 0);
 		_viewModeButton.GetPopup().AddItem("Unlit", 1);
 		_viewModeButton.GetPopup().AddItem("Wireframe", 2);
@@ -155,19 +178,43 @@ public partial class WorldContainerOverlay : Control
 		toolbar.AddChild(_viewModeButton);
 		Button stats = ToolButton("Stats", "Toggle viewport diagnostics");
 		stats.ToggleMode = true;
-		stats.Toggled += enabled => { _showStats = enabled; ApplyVisibility(); SaveSettings(); };
+		stats.Toggled += enabled =>
+		{
+			_showStats = enabled;
+			ApplyVisibility();
+			SaveSettings();
+		};
 		toolbar.AddChild(stats);
 
 		toolbar.AddChild(new VSeparator());
-		Label speedLabel = new() { Text = "Camera", VerticalAlignment = VerticalAlignment.Center, Modulate = new Color(0.75f, 0.78f, 0.82f) };
+		Label speedLabel = new()
+		{
+			Text = "Camera",
+			VerticalAlignment = VerticalAlignment.Center,
+			Modulate = new Color(0.75f, 0.78f, 0.82f),
+		};
 		toolbar.AddChild(speedLabel);
-		_cameraSpeed = new SpinBox { MinValue = 2, MaxValue = 1024, Value = World.CreatorContext.Freelook.MoveSpeed, Step = 2, CustomMinimumSize = new Vector2(76, 0), TooltipText = "Viewport camera movement speed" };
-		_cameraSpeed.ValueChanged += value => World.CreatorContext.Freelook.SetCreatorMoveSpeed((float)value);
+		_cameraSpeed = new SpinBox
+		{
+			MinValue = 2,
+			MaxValue = 1024,
+			Value = World.CreatorContext.Freelook.MoveSpeed,
+			Step = 2,
+			CustomMinimumSize = new Vector2(76, 0),
+			TooltipText = "Viewport camera movement speed",
+		};
+		_cameraSpeed.ValueChanged += value =>
+			World.CreatorContext.Freelook.SetCreatorMoveSpeed((float)value);
 		World.CreatorContext.Freelook.MoveSpeedChanged += OnCameraSpeedChanged;
 		toolbar.AddChild(_cameraSpeed);
 
 		toolbar.AddChild(new VSeparator());
-		_viewportStatus = new Label { VerticalAlignment = VerticalAlignment.Center, Modulate = new Color(0.68f, 0.72f, 0.77f), TooltipText = "Selection and snapping status" };
+		_viewportStatus = new Label
+		{
+			VerticalAlignment = VerticalAlignment.Center,
+			Modulate = new Color(0.68f, 0.72f, 0.77f),
+			TooltipText = "Selection and snapping status",
+		};
 		toolbar.AddChild(_viewportStatus);
 
 		_statsLabel = new Label
@@ -189,13 +236,26 @@ public partial class WorldContainerOverlay : Control
 	{
 		switch (id)
 		{
-			case MenuToolbar: _showToolbar = !_showToolbar; break;
-			case MenuAxis: _showAxis = !_showAxis; break;
-			case MenuStats: _showStats = !_showStats; break;
-			case MenuFrame: World.CreatorContext.Freelook.MoveToSelected(); return;
-			case MenuProjection: ToggleProjection(); return;
-			case MenuSceneStatistics: SceneStatisticsPopup.Open(); return;
-			default: return;
+			case MenuToolbar:
+				_showToolbar = !_showToolbar;
+				break;
+			case MenuAxis:
+				_showAxis = !_showAxis;
+				break;
+			case MenuStats:
+				_showStats = !_showStats;
+				break;
+			case MenuFrame:
+				World.CreatorContext.Freelook.MoveToSelected();
+				return;
+			case MenuProjection:
+				ToggleProjection();
+				return;
+			case MenuSceneStatistics:
+				SceneStatisticsPopup.Open();
+				return;
+			default:
+				return;
 		}
 		ApplyVisibility();
 		SaveSettings();
@@ -203,10 +263,14 @@ public partial class WorldContainerOverlay : Control
 
 	private void ApplyVisibility()
 	{
-		if (_toolbarPanel != null) _toolbarPanel.Visible = _showToolbar;
-		if (_viewportAxis != null) _viewportAxis.Visible = _showAxis;
-		if (_statsLabel != null) _statsLabel.Visible = _showStats;
-		if (_optionsButton == null) return;
+		if (_toolbarPanel != null)
+			_toolbarPanel.Visible = _showToolbar;
+		if (_viewportAxis != null)
+			_viewportAxis.Visible = _showAxis;
+		if (_statsLabel != null)
+			_statsLabel.Visible = _showStats;
+		if (_optionsButton == null)
+			return;
 		PopupMenu popup = _optionsButton.GetPopup();
 		popup.SetItemChecked(popup.GetItemIndex(MenuToolbar), _showToolbar);
 		popup.SetItemChecked(popup.GetItemIndex(MenuAxis), _showAxis);
@@ -216,7 +280,8 @@ public partial class WorldContainerOverlay : Control
 	private void LoadSettings()
 	{
 		ConfigFile config = new();
-		if (config.Load(SettingsPath) != Error.Ok) return;
+		if (config.Load(SettingsPath) != Error.Ok)
+			return;
 		_showToolbar = config.GetValue("viewport", "toolbar", false).AsBool();
 		_showAxis = config.GetValue("viewport", "orientation_cube", true).AsBool();
 		_showStats = config.GetValue("viewport", "diagnostics", false).AsBool();
@@ -231,13 +296,14 @@ public partial class WorldContainerOverlay : Control
 		config.Save(SettingsPath);
 	}
 
-	private static Button ToolButton(string text, string tooltip) => new()
-	{
-		Text = text,
-		TooltipText = tooltip,
-		Flat = true,
-		FocusMode = FocusModeEnum.None,
-	};
+	private static Button ToolButton(string text, string tooltip) =>
+		new()
+		{
+			Text = text,
+			TooltipText = tooltip,
+			Flat = true,
+			FocusMode = FocusModeEnum.None,
+		};
 
 	private void ToggleProjection()
 	{
@@ -255,44 +321,73 @@ public partial class WorldContainerOverlay : Control
 			3 => Viewport.DebugDrawEnum.Overdraw,
 			_ => Viewport.DebugDrawEnum.Disabled,
 		};
-		_viewModeButton.Text = id switch { 1 => "Unlit", 2 => "Wireframe", 3 => "Overdraw", _ => "Lit" };
+		_viewModeButton.Text = id switch
+		{
+			1 => "Unlit",
+			2 => "Wireframe",
+			3 => "Overdraw",
+			_ => "Lit",
+		};
 	}
 
 	private void OnCameraSpeedChanged(float speed) => _cameraSpeed.SetValueNoSignal(speed);
 
 	private void RefreshStatus()
 	{
-		if (World == null
+		if (
+			World == null
 			|| World.IsDeleted
 			|| World.GDNode == null
 			|| !IsInstanceValid(World.GDNode)
 			|| World.CreatorContext?.Selections == null
 			|| World.CreatorContext.Freelook == null
 			|| _viewportStatus == null
-			|| _statsLabel == null)
+			|| _statsLabel == null
+		)
 			return;
 		int selected = World.CreatorContext.Selections.SelectedInstances.Count;
-		UIField? selectedUI = World.CreatorContext.Selections.SelectedInstances.OfType<UIField>().FirstOrDefault();
+		UIField? selectedUI = World
+			.CreatorContext.Selections.SelectedInstances.OfType<UIField>()
+			.FirstOrDefault();
 		string selection = selected == 0 ? "No selection" : $"{selected} selected";
-		string moveSnap = CreatorService.Interface.MoveSnapEnabled ? $"Move {CreatorService.Interface.UserMoveSnapping:g}m" : "Move snap off";
-		string rotateSnap = CreatorService.Interface.RotateSnapEnabled ? $"Rotate {CreatorService.Interface.UserRotateSnapping:g}°" : "Rotate snap off";
+		string moveSnap = CreatorService.Interface.MoveSnapEnabled
+			? $"Move {CreatorService.Interface.UserMoveSnapping:g}m"
+			: "Move snap off";
+		string rotateSnap = CreatorService.Interface.RotateSnapEnabled
+			? $"Rotate {CreatorService.Interface.UserRotateSnapping:g}°"
+			: "Rotate snap off";
 		_viewportStatus.Text = $"{selection}   |   {moveSnap}   |   {rotateSnap}";
 		Vector3 cameraPosition = World.CreatorContext.Freelook.Position;
-		_statsLabel.Text = $"{Engine.GetFramesPerSecond()} FPS\n{World.GetDescendants().Length:n0} instances\nCamera  {cameraPosition.X:0.0}, {cameraPosition.Y:0.0}, {cameraPosition.Z:0.0}";
+		_statsLabel.Text =
+			$"{Engine.GetFramesPerSecond()} FPS\n{World.GetDescendants().Length:n0} instances\nCamera  {cameraPosition.X:0.0}, {cameraPosition.Y:0.0}, {cameraPosition.Z:0.0}";
 
 		ToolModeEnum tool = CreatorService.Interface.ToolMode;
-		_transformTipsPanel.Visible = CreatorService.Interface.ShowTransformTips && selected > 0
-			&& (selectedUI != null || tool is ToolModeEnum.Move or ToolModeEnum.Rotate or ToolModeEnum.Scale or ToolModeEnum.Pivot);
-		_transformTips.Text = selectedUI != null
-			? $"UI LAYOUT  •  {selectedUI.AbsoluteSize.X:0} × {selectedUI.AbsoluteSize.Y:0}px\nPosition  {selectedUI.PositionRelative.X * 100:0.#}%, {selectedUI.PositionRelative.Y * 100:0.#}%  •  Size  {selectedUI.SizeRelative.X * 100:0.#}%, {selectedUI.SizeRelative.Y * 100:0.#}%\nAlt: measure edges  •  Shift: disable snapping  •  Arrow keys: nudge"
-			: tool switch
-		{
-			ToolModeEnum.Move => "MOVE  •  Drag an axis handle\nTab + click places the pivot  •  Ruler lines show distance\n1 Select   2 Move   3 Rotate   4 Scale",
-			ToolModeEnum.Rotate => "ROTATE  •  Drag a colored ring\nAlt temporarily reduces snapping\n1 Select   2 Move   3 Rotate   4 Scale",
-			ToolModeEnum.Scale => "SCALE  •  Drag an axis handle\nShift scales every axis  •  Alt scales from center\n1 Select   2 Move   3 Rotate   4 Scale",
-			ToolModeEnum.Pivot => "EDIT PIVOT  •  Drag arrows to move  •  Drag rings to rotate\nReset Pivot restores local position and rotation to 0, 0, 0",
-			_ => ""
-		};
+		_transformTipsPanel.Visible =
+			CreatorService.Interface.ShowTransformTips
+			&& selected > 0
+			&& (
+				selectedUI != null
+				|| tool
+					is ToolModeEnum.Move
+						or ToolModeEnum.Rotate
+						or ToolModeEnum.Scale
+						or ToolModeEnum.Pivot
+			);
+		_transformTips.Text =
+			selectedUI != null
+				? $"UI LAYOUT  •  {selectedUI.AbsoluteSize.X:0} × {selectedUI.AbsoluteSize.Y:0}px\nPosition  {selectedUI.PositionRelative.X * 100:0.#}%, {selectedUI.PositionRelative.Y * 100:0.#}%  •  Size  {selectedUI.SizeRelative.X * 100:0.#}%, {selectedUI.SizeRelative.Y * 100:0.#}%\nAlt: measure edges  •  Shift: disable snapping  •  Arrow keys: nudge"
+				: tool switch
+				{
+					ToolModeEnum.Move =>
+						"MOVE  •  Drag an axis handle\nTab + click places the pivot  •  Ruler lines show distance\n1 Select   2 Move   3 Rotate   4 Scale",
+					ToolModeEnum.Rotate =>
+						"ROTATE  •  Drag a colored ring\nAlt temporarily reduces snapping\n1 Select   2 Move   3 Rotate   4 Scale",
+					ToolModeEnum.Scale =>
+						"SCALE  •  Drag an axis handle\nShift scales every axis  •  Alt scales from center\n1 Select   2 Move   3 Rotate   4 Scale",
+					ToolModeEnum.Pivot =>
+						"EDIT PIVOT  •  Drag arrows to move  •  Drag rings to rotate\nReset Pivot restores local position and rotation to 0, 0, 0",
+					_ => "",
+				};
 	}
 
 	public override void _ExitTree()

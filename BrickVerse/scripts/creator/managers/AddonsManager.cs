@@ -2,11 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
-using BrickVerse.Formats;
-using BrickVerse.Scripting;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,6 +10,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BrickVerse.Datamodel;
+using BrickVerse.Formats;
+using BrickVerse.Scripting;
+using BrickVerse.Shared;
+using Godot;
 using static BrickVerse.Creator.Managers.AddonsManager;
 using static BrickVerse.Datamodel.Creator.CreatorAddons;
 using Script = BrickVerse.Datamodel.Script;
@@ -109,7 +109,10 @@ public sealed partial class AddonsManager : Node
 
 		using (ZipArchive archive = ZipFile.OpenRead(absoluteSourcePath))
 		{
-			if (archive.GetEntry("addonmeta.json") == null || archive.GetEntry("model.bvmodel") == null)
+			if (
+				archive.GetEntry("addonmeta.json") == null
+				|| archive.GetEntry("model.bvmodel") == null
+			)
 				throw new InvalidDataException("The file is not a valid BrickVerse addon.");
 		}
 
@@ -130,7 +133,7 @@ public sealed partial class AddonsManager : Node
 		{
 			Data = data,
 			Path = shortPath,
-			Root = root
+			Root = root,
 		};
 
 		if (!_pathToAddons.TryGetValue(shortPath, out List<AddonSession>? value))
@@ -184,15 +187,15 @@ public sealed partial class AddonsManager : Node
 		switch (perm)
 		{
 			case AddonPermissionEnum.IORead:
-				{
-					s.PermissionFlags |= ScriptPermissionFlags.IORead;
-					break;
-				}
+			{
+				s.PermissionFlags |= ScriptPermissionFlags.IORead;
+				break;
+			}
 			case AddonPermissionEnum.IOWrite:
-				{
-					s.PermissionFlags |= ScriptPermissionFlags.IOWrite;
-					break;
-				}
+			{
+				s.PermissionFlags |= ScriptPermissionFlags.IOWrite;
+				break;
+			}
 		}
 	}
 
@@ -201,15 +204,15 @@ public sealed partial class AddonsManager : Node
 		switch (perm)
 		{
 			case AddonPermissionEnum.IORead:
-				{
-					s.PermissionFlags &= ~ScriptPermissionFlags.IORead;
-					break;
-				}
+			{
+				s.PermissionFlags &= ~ScriptPermissionFlags.IORead;
+				break;
+			}
 			case AddonPermissionEnum.IOWrite:
-				{
-					s.PermissionFlags &= ~ScriptPermissionFlags.IOWrite;
-					break;
-				}
+			{
+				s.PermissionFlags &= ~ScriptPermissionFlags.IOWrite;
+				break;
+			}
 		}
 	}
 
@@ -297,14 +300,23 @@ public sealed partial class AddonsManager : Node
 
 	private static void LoadPermissionsData()
 	{
-		if (!File.Exists(_permissionsAbsolutePath)) return;
+		if (!File.Exists(_permissionsAbsolutePath))
+			return;
 		string f = File.ReadAllText(_permissionsAbsolutePath);
-		_permissions = JsonSerializer.Deserialize(f, AddonJSONGenerationContext.Default.AddonPermissionPair) ?? [];
+		_permissions =
+			JsonSerializer.Deserialize(f, AddonJSONGenerationContext.Default.AddonPermissionPair)
+			?? [];
 	}
 
 	private static void SavePermissionsData()
 	{
-		File.WriteAllText(_permissionsAbsolutePath, JsonSerializer.Serialize(_permissions, AddonJSONGenerationContext.Default.AddonPermissionPair));
+		File.WriteAllText(
+			_permissionsAbsolutePath,
+			JsonSerializer.Serialize(
+				_permissions,
+				AddonJSONGenerationContext.Default.AddonPermissionPair
+			)
+		);
 	}
 
 	public struct AddonMetadata
@@ -330,7 +342,6 @@ public sealed partial class AddonsManager : Node
 		public List<Script> Scripts { get; set; } = [];
 		public World? Root { get; set; }
 	}
-
 }
 
 public class AddonPermissionPair : Dictionary<string, ScriptPermissionFlags>;

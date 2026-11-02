@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using BrickVerse.Client.Settings;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
 using BrickVerse.Shared;
-using BrickVerse.Client.Settings;
+using Godot;
 
 namespace BrickVerse.Client;
 
@@ -23,7 +23,9 @@ public partial class Nametag : Node3D
 
 	public override void _Ready()
 	{
-		_nametag = Globals.CreateInstanceFromScene<Node3D>("res://scenes/client/spatial/nametag.tscn");
+		_nametag = Globals.CreateInstanceFromScene<Node3D>(
+			"res://scenes/client/spatial/nametag.tscn"
+		);
 		AddChild(_nametag);
 		_titleLabel = _nametag.GetNode<Label>("SubViewport/Control/NameRow/Title");
 		_verifiedBadge = _nametag.GetNode<TextureRect>("SubViewport/Control/NameRow/Verified");
@@ -55,11 +57,13 @@ public partial class Nametag : Node3D
 			bool isLocalPlayer = Target == Target.Root.Players?.LocalPlayer;
 			if (isLocalPlayer)
 			{
-				bool userAllowsOwnNametag = ClientSettingsService.Instance == null
-					|| ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.General.ShowOwnNametag);
-				useNametag = useNametag
-					&& playerTarget.ShowNametagToLocalPlayer
-					&& userAllowsOwnNametag;
+				bool userAllowsOwnNametag =
+					ClientSettingsService.Instance == null
+					|| ClientSettingsService.Instance.Get<bool>(
+						ClientSettingKeys.General.ShowOwnNametag
+					);
+				useNametag =
+					useNametag && playerTarget.ShowNametagToLocalPlayer && userAllowsOwnNametag;
 			}
 			else
 			{
@@ -90,20 +94,25 @@ public partial class Nametag : Node3D
 		_healthBar.MaxValue = Target.MaxHealth;
 	}
 
-	private static string DeviceIconPath(NetworkService.ClientPlatformEnum platform) => platform switch
-	{
-		NetworkService.ClientPlatformEnum.Mobile => "res://assets/textures/client/ui/devices/phone.svg",
-		NetworkService.ClientPlatformEnum.Tablet => "res://assets/textures/client/ui/devices/tablet.svg",
-		NetworkService.ClientPlatformEnum.Console => "res://assets/textures/client/ui/devices/console.svg",
-		_ => "res://assets/textures/client/ui/devices/pc.svg"
-	};
+	private static string DeviceIconPath(NetworkService.ClientPlatformEnum platform) =>
+		platform switch
+		{
+			NetworkService.ClientPlatformEnum.Mobile =>
+				"res://assets/textures/client/ui/devices/phone.svg",
+			NetworkService.ClientPlatformEnum.Tablet =>
+				"res://assets/textures/client/ui/devices/tablet.svg",
+			NetworkService.ClientPlatformEnum.Console =>
+				"res://assets/textures/client/ui/devices/console.svg",
+			_ => "res://assets/textures/client/ui/devices/pc.svg",
+		};
 
-	private static string DeviceLabel(NetworkService.ClientPlatformEnum platform) => platform switch
-	{
-		NetworkService.ClientPlatformEnum.Mobile => "Phone",
-		NetworkService.ClientPlatformEnum.Tablet => "Tablet",
-		NetworkService.ClientPlatformEnum.Console => "Console",
-		NetworkService.ClientPlatformEnum.VR => "VR",
-		_ => "PC"
-	};
+	private static string DeviceLabel(NetworkService.ClientPlatformEnum platform) =>
+		platform switch
+		{
+			NetworkService.ClientPlatformEnum.Mobile => "Phone",
+			NetworkService.ClientPlatformEnum.Tablet => "Tablet",
+			NetworkService.ClientPlatformEnum.Console => "Console",
+			NetworkService.ClientPlatformEnum.VR => "VR",
+			_ => "PC",
+		};
 }

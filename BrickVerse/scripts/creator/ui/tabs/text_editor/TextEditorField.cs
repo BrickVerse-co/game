@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
 
 namespace BrickVerse.Creator.UI.TextEditor;
 
@@ -22,7 +22,8 @@ public sealed record EditorDiagnosticDecoration(
 	int StartColumn,
 	int EndColumn,
 	string Message,
-	EditorDiagnosticSeverity Severity);
+	EditorDiagnosticSeverity Severity
+);
 
 public sealed partial class TextEditorField : CodeEdit
 {
@@ -74,13 +75,21 @@ public sealed partial class TextEditorField : CodeEdit
 		{
 			if (mb.CtrlPressed && mb.ButtonIndex == MouseButton.WheelUp)
 			{
-				_currentFontSize = Mathf.Clamp(_currentFontSize + FontSizeStep, MinFontSize, MaxFontSize);
+				_currentFontSize = Mathf.Clamp(
+					_currentFontSize + FontSizeStep,
+					MinFontSize,
+					MaxFontSize
+				);
 				AddThemeFontSizeOverride("font_size", _currentFontSize);
 				AcceptEvent();
 			}
 			else if (mb.CtrlPressed && mb.ButtonIndex == MouseButton.WheelDown)
 			{
-				_currentFontSize = Mathf.Clamp(_currentFontSize - FontSizeStep, MinFontSize, MaxFontSize);
+				_currentFontSize = Mathf.Clamp(
+					_currentFontSize - FontSizeStep,
+					MinFontSize,
+					MaxFontSize
+				);
 				AddThemeFontSizeOverride("font_size", _currentFontSize);
 				AcceptEvent();
 			}
@@ -91,16 +100,25 @@ public sealed partial class TextEditorField : CodeEdit
 
 	private void OnEditorMenuPressed(long id)
 	{
-		if (id == FormatDocumentMenuId) Root.FormatDocument();
-		else if (id == FormatSelectionMenuId) Root.FormatSelection();
-		else if (id == DuplicateLineMenuId) Root.DuplicateCurrentLines();
-		else if (id == DeleteLineMenuId) Root.DeleteCurrentLines();
-		else if (id == MoveLineUpMenuId) Root.MoveCurrentLine(-1);
-		else if (id == MoveLineDownMenuId) Root.MoveCurrentLine(1);
-		else if (id == OpenExternalEditorMenuId) Root.OpenInExternalEditor();
+		if (id == FormatDocumentMenuId)
+			Root.FormatDocument();
+		else if (id == FormatSelectionMenuId)
+			Root.FormatSelection();
+		else if (id == DuplicateLineMenuId)
+			Root.DuplicateCurrentLines();
+		else if (id == DeleteLineMenuId)
+			Root.DeleteCurrentLines();
+		else if (id == MoveLineUpMenuId)
+			Root.MoveCurrentLine(-1);
+		else if (id == MoveLineDownMenuId)
+			Root.MoveCurrentLine(1);
+		else if (id == OpenExternalEditorMenuId)
+			Root.OpenInExternalEditor();
 	}
 
-	public void SetDiagnostics(IReadOnlyDictionary<int, List<EditorDiagnosticDecoration>> diagnostics)
+	public void SetDiagnostics(
+		IReadOnlyDictionary<int, List<EditorDiagnosticDecoration>> diagnostics
+	)
 	{
 		_diagnostics.Clear();
 		foreach ((int line, List<EditorDiagnosticDecoration> items) in diagnostics)
@@ -119,7 +137,8 @@ public sealed partial class TextEditorField : CodeEdit
 	{
 		base._Draw();
 		DrawInlineSuggestion();
-		if (_diagnostics.Count == 0) return;
+		if (_diagnostics.Count == 0)
+			return;
 
 		Font font = GetThemeFont("font");
 		int fontSize = Math.Max(10, GetThemeFontSize("font_size") - 2);
@@ -127,36 +146,67 @@ public sealed partial class TextEditorField : CodeEdit
 
 		foreach ((int line, List<EditorDiagnosticDecoration> items) in _diagnostics)
 		{
-			if (line < 0 || line >= GetLineCount() || items.Count == 0) continue;
+			if (line < 0 || line >= GetLineCount() || items.Count == 0)
+				continue;
 
 			string lineText = GetLine(line);
-			int firstColumn = Math.Min(Math.Max(0, items.Min(static item => item.StartColumn)), lineText.Length);
-			int lastColumn = Math.Min(Math.Max(firstColumn + 1, items.Max(static item => item.EndColumn)), lineText.Length);
+			int firstColumn = Math.Min(
+				Math.Max(0, items.Min(static item => item.StartColumn)),
+				lineText.Length
+			);
+			int lastColumn = Math.Min(
+				Math.Max(firstColumn + 1, items.Max(static item => item.EndColumn)),
+				lineText.Length
+			);
 			Rect2I startRect = GetRectAtLineColumn(line, firstColumn);
 			Rect2I endRect = GetRectAtLineColumn(line, Math.Max(firstColumn, lastColumn - 1));
-			if (startRect.Position.X < 0 || startRect.Position.Y < 0) continue;
+			if (startRect.Position.X < 0 || startRect.Position.Y < 0)
+				continue;
 
-			EditorDiagnosticDecoration primary = items.OrderBy(static item => item.Severity).First();
+			EditorDiagnosticDecoration primary = items
+				.OrderBy(static item => item.Severity)
+				.First();
 			Color color = GetDiagnosticColor(primary.Severity);
 			float underlineY = startRect.Position.Y + startRect.Size.Y - 2;
 			float underlineStart = startRect.Position.X;
-			float underlineEnd = Math.Max(underlineStart + 8, endRect.Position.X + Math.Max(6, endRect.Size.X));
-			DrawSquiggle(new Vector2(underlineStart, underlineY), underlineEnd - underlineStart, color);
+			float underlineEnd = Math.Max(
+				underlineStart + 8,
+				endRect.Position.X + Math.Max(6, endRect.Size.X)
+			);
+			DrawSquiggle(
+				new Vector2(underlineStart, underlineY),
+				underlineEnd - underlineStart,
+				color
+			);
 
 			Rect2I endOfLine = GetRectAtLineColumn(line, Math.Max(0, lineText.Length - 1));
-			float codeEndX = lineText.Length == 0 ? startRect.Position.X : endOfLine.Position.X + endOfLine.Size.X;
-			string message = items.Count == 1 ? primary.Message : $"{primary.Message}  (+{items.Count - 1})";
+			float codeEndX =
+				lineText.Length == 0
+					? startRect.Position.X
+					: endOfLine.Position.X + endOfLine.Size.X;
+			string message =
+				items.Count == 1 ? primary.Message : $"{primary.Message}  (+{items.Count - 1})";
 			message = CollapseWhitespace(message);
 			float available = Size.X - codeEndX - 38f;
-			if (available < 90f) continue;
+			if (available < 90f)
+				continue;
 
 			string fitted = FitMessage(font, fontSize, message, available);
-			if (string.IsNullOrEmpty(fitted)) continue;
+			if (string.IsNullOrEmpty(fitted))
+				continue;
 
 			float textWidth = font.GetStringSize(fitted, HorizontalAlignment.Left, -1, fontSize).X;
 			float lensX = Math.Min(codeEndX + 24f, Size.X - textWidth - rightPadding);
 			float lensY = startRect.Position.Y + startRect.Size.Y - 3f;
-			DrawString(font, new Vector2(lensX, lensY), fitted, HorizontalAlignment.Left, -1, fontSize, color);
+			DrawString(
+				font,
+				new Vector2(lensX, lensY),
+				fitted,
+				HorizontalAlignment.Left,
+				-1,
+				fontSize,
+				color
+			);
 		}
 	}
 
@@ -168,7 +218,8 @@ public sealed partial class TextEditorField : CodeEdit
 
 	public bool AcceptInlineSuggestion()
 	{
-		if (string.IsNullOrEmpty(_inlineSuggestion)) return false;
+		if (string.IsNullOrEmpty(_inlineSuggestion))
+			return false;
 		InsertTextAtCaret(_inlineSuggestion);
 		SetInlineSuggestion(string.Empty);
 		return true;
@@ -178,15 +229,28 @@ public sealed partial class TextEditorField : CodeEdit
 
 	private void DrawInlineSuggestion()
 	{
-		if (string.IsNullOrEmpty(_inlineSuggestion) || HasSelection() || GetCaretCount() != 1) return;
+		if (string.IsNullOrEmpty(_inlineSuggestion) || HasSelection() || GetCaretCount() != 1)
+			return;
 
 		Rect2I caretRect = GetRectAtLineColumn(GetCaretLine(), GetCaretColumn());
-		if (caretRect.Position.X < 0 || caretRect.Position.Y < 0) return;
+		if (caretRect.Position.X < 0 || caretRect.Position.Y < 0)
+			return;
 
 		Font font = GetThemeFont("font");
 		int fontSize = GetThemeFontSize("font_size");
-		Vector2 position = new(caretRect.Position.X, caretRect.Position.Y + font.GetAscent(fontSize));
-		DrawString(font, position, _inlineSuggestion, HorizontalAlignment.Left, -1, fontSize, Color.FromHtml("#6E7681"));
+		Vector2 position = new(
+			caretRect.Position.X,
+			caretRect.Position.Y + font.GetAscent(fontSize)
+		);
+		DrawString(
+			font,
+			position,
+			_inlineSuggestion,
+			HorizontalAlignment.Left,
+			-1,
+			fontSize,
+			Color.FromHtml("#6E7681")
+		);
 	}
 
 	private void DrawSquiggle(Vector2 start, float width, Color color)
@@ -203,13 +267,14 @@ public sealed partial class TextEditorField : CodeEdit
 		}
 	}
 
-	private static Color GetDiagnosticColor(EditorDiagnosticSeverity severity) => severity switch
-	{
-		EditorDiagnosticSeverity.Error => Color.FromHtml("#FF7B72"),
-		EditorDiagnosticSeverity.Warning => Color.FromHtml("#D29922"),
-		EditorDiagnosticSeverity.Information => Color.FromHtml("#58A6FF"),
-		_ => Color.FromHtml("#8B949E"),
-	};
+	private static Color GetDiagnosticColor(EditorDiagnosticSeverity severity) =>
+		severity switch
+		{
+			EditorDiagnosticSeverity.Error => Color.FromHtml("#FF7B72"),
+			EditorDiagnosticSeverity.Warning => Color.FromHtml("#D29922"),
+			EditorDiagnosticSeverity.Information => Color.FromHtml("#58A6FF"),
+			_ => Color.FromHtml("#8B949E"),
+		};
 
 	private static string CollapseWhitespace(string value)
 	{
@@ -228,7 +293,10 @@ public sealed partial class TextEditorField : CodeEdit
 		{
 			int mid = (low + high + 1) / 2;
 			string candidate = message[..mid] + ellipsis;
-			if (font.GetStringSize(candidate, HorizontalAlignment.Left, -1, fontSize).X <= availableWidth)
+			if (
+				font.GetStringSize(candidate, HorizontalAlignment.Left, -1, fontSize).X
+				<= availableWidth
+			)
 				low = mid;
 			else
 				high = mid - 1;
@@ -236,11 +304,11 @@ public sealed partial class TextEditorField : CodeEdit
 		return low < 4 ? string.Empty : message[..low] + ellipsis;
 	}
 
-
 	public override void _ConfirmCodeCompletion(bool replace)
 	{
 		int index = GetCodeCompletionSelectedIndex();
-		if (index == -1) return;
+		if (index == -1)
+			return;
 
 		var selectedOption = GetCodeCompletionOption(index);
 		string insertText = (string)selectedOption["insert_text"];
@@ -319,7 +387,9 @@ public sealed partial class TextEditorField : CodeEdit
 		int column = GetCaretColumn();
 		int start = column;
 
-		while (start > 0 && !IsSymbol(lineText[start - 1]) && !char.IsWhiteSpace(lineText[start - 1]))
+		while (
+			start > 0 && !IsSymbol(lineText[start - 1]) && !char.IsWhiteSpace(lineText[start - 1])
+		)
 		{
 			start--;
 		}

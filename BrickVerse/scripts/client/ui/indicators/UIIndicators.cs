@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Client.Settings;
-using BrickVerse.Datamodel;
 using System;
 using System.Collections.Generic;
+using BrickVerse.Client.Settings;
+using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -21,29 +21,42 @@ public partial class UIIndicators : Control
 		_root = CoreUIRoot.Singleton.Root;
 		UpdateVisible();
 
-		LinkIndicator(GetNode<Control>("HighPing"), () =>
-		{
-			if (_root.Players.LocalPlayer == null) return false;
-			return _root.Players.LocalPlayer.NetworkPing > HighPingThreshold;
-		});
+		LinkIndicator(
+			GetNode<Control>("HighPing"),
+			() =>
+			{
+				if (_root.Players.LocalPlayer == null)
+					return false;
+				return _root.Players.LocalPlayer.NetworkPing > HighPingThreshold;
+			}
+		);
 
-		LinkIndicator(GetNode<Control>("ServerUnderLoad"), () =>
-		{
-			return _root.ServerUnderLoad;
-		});
+		LinkIndicator(
+			GetNode<Control>("ServerUnderLoad"),
+			() =>
+			{
+				return _root.ServerUnderLoad;
+			}
+		);
 
-		LinkIndicator(GetNode<Control>("Silence"), () =>
-		{
-			if (_root.Network.NetInstance == null) return false;
-			return _root.Network.NetInstance.IsSilence;
-		});
+		LinkIndicator(
+			GetNode<Control>("Silence"),
+			() =>
+			{
+				if (_root.Network.NetInstance == null)
+					return false;
+				return _root.Network.NetInstance.IsSilence;
+			}
+		);
 
 		MainUpdateLoop();
 	}
 
 	private void UpdateVisible()
 	{
-		bool to = ClientSettingsService.Instance.Get<bool>(ClientSettingKeys.Overlay.ConnectionIndicators);
+		bool to = ClientSettingsService.Instance.Get<bool>(
+			ClientSettingKeys.Overlay.ConnectionIndicators
+		);
 		if (Visible != to)
 			Visible = to;
 	}

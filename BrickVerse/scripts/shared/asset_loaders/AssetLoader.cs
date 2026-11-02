@@ -2,18 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Providers.AssetLoaders;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using BrickVerse.Providers.AssetLoaders;
+using Godot;
 
 namespace BrickVerse.Shared.AssetLoaders;
 
 public partial class AssetLoader : Node
 {
 	private readonly record struct AssetCacheKey(ResourceType Type, string ID, Vector2I? Resize);
+
 	public const int DefaultMaxConcurrentRequests = 8;
 	public const int MaximumConcurrentRequests = 16;
 
@@ -32,7 +33,8 @@ public partial class AssetLoader : Node
 	internal int AssetCacheCount => _cache.Count;
 
 	private readonly ConcurrentDictionary<AssetCacheKey, CacheItem> _cache = [];
-	private readonly ConcurrentDictionary<AssetCacheKey, Lazy<Task<CacheItem>>> _pendingRequests = [];
+	private readonly ConcurrentDictionary<AssetCacheKey, Lazy<Task<CacheItem>>> _pendingRequests =
+	[];
 	private int _maxConcurrentRequests = DefaultMaxConcurrentRequests;
 	public int MaxConcurrentRequests
 	{
@@ -67,10 +69,13 @@ public partial class AssetLoader : Node
 
 	public void GetResource(CacheItem item, Action<Resource> callback)
 	{
-		GetRawCache(item, result =>
-		{
-			callback(result.Resource);
-		});
+		GetRawCache(
+			item,
+			result =>
+			{
+				callback(result.Resource);
+			}
+		);
 	}
 
 	private async Task<CacheItem> LoadItem(CacheItem item, AssetCacheKey key)
@@ -105,9 +110,18 @@ public partial class AssetLoader : Node
 		}
 		catch (Exception exception)
 		{
-			Callable.From(() => BV.PrintErr(
-				"Failed to load resource (Type: " + item.Type + ", ID: " + item.ID + "): " + exception.Message
-			)).CallDeferred();
+			Callable
+				.From(() =>
+					BV.PrintErr(
+						"Failed to load resource (Type: "
+							+ item.Type
+							+ ", ID: "
+							+ item.ID
+							+ "): "
+							+ exception.Message
+					)
+				)
+				.CallDeferred();
 			throw;
 		}
 	}
@@ -134,7 +148,11 @@ public partial class AssetLoader : Node
 		_ = WaitForResource(task.Value, item, callback);
 	}
 
-	private static async Task WaitForResource(Task<CacheItem> task, CacheItem item, Action<CacheItem> callback)
+	private static async Task WaitForResource(
+		Task<CacheItem> task,
+		CacheItem item,
+		Action<CacheItem> callback
+	)
 	{
 		try
 		{
@@ -168,9 +186,8 @@ public enum ResourceType
 
 	// Old BV Types
 	AssetThumbnail,
-	Font
+	Font,
 }
-
 
 public struct CacheItem
 {

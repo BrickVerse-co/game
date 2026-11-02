@@ -16,6 +16,7 @@ public sealed partial class DockRegion : Control
 	public bool InitiallySplit;
 
 	public bool IsSplit { get; private set; }
+
 	public DockHost ReopenHost(string preferredHostId)
 	{
 		if (!IsSplit)

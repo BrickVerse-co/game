@@ -8,6 +8,7 @@ public partial class MobileUpgradeBanner : Button
 	public override void _Ready()
 	{
 		MobileMotion.Bind(this);
-		Pressed += () => MobileUI.Singleton.SwitchTo(MobileViewEnum.Upgrade, MobileViewEnum.Upgrade);
+		Pressed += () =>
+			MobileUI.Singleton.SwitchTo(MobileViewEnum.Upgrade, MobileViewEnum.Upgrade);
 	}
 }

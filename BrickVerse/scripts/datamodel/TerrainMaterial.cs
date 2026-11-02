@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Resources;
 using BrickVerse.Shared;
 using Godot;
-using System;
 
 namespace BrickVerse.Datamodel;
 
@@ -42,8 +42,7 @@ public sealed partial class TerrainMaterial : Instance
 			int validated = Math.Clamp(value, 0, MaximumSlots - 1);
 			if (_slot == validated)
 				return;
-			if (Parent is Terrain terrain &&
-				!terrain.IsMaterialSlotAvailable(validated, this))
+			if (Parent is Terrain terrain && !terrain.IsMaterialSlotAvailable(validated, this))
 			{
 				throw new InvalidOperationException(
 					$"Terrain material slot {validated} is already in use."
@@ -55,20 +54,31 @@ public sealed partial class TerrainMaterial : Instance
 		}
 	}
 
-	[Editable, ScriptProperty, SyncVar, BrickVerse.Attributes.DefaultValueAttribute(TerrainMaterialKind.Solid)]
+	[
+		Editable,
+		ScriptProperty,
+		SyncVar,
+		BrickVerse.Attributes.DefaultValueAttribute(TerrainMaterialKind.Solid)
+	]
 	public TerrainMaterialKind Kind
 	{
 		get => _kind;
 		set
 		{
-			if (_kind == value) return;
+			if (_kind == value)
+				return;
 			_kind = value;
 			OnPropertyChanged();
 			NotifyTerrain();
 		}
 	}
 
-	[Editable, ScriptProperty, SyncVar, BrickVerse.Attributes.DefaultValueAttribute(TerrainSurfaceType.BuiltIn)]
+	[
+		Editable,
+		ScriptProperty,
+		SyncVar,
+		BrickVerse.Attributes.DefaultValueAttribute(TerrainSurfaceType.BuiltIn)
+	]
 	public TerrainSurfaceType SurfaceType
 	{
 		get => _surfaceType;
@@ -82,7 +92,12 @@ public sealed partial class TerrainMaterial : Instance
 		}
 	}
 
-	[Editable, ScriptProperty, SyncVar, BrickVerse.Attributes.DefaultValueAttribute(Part.PartMaterialEnum.SmoothPlastic)]
+	[
+		Editable,
+		ScriptProperty,
+		SyncVar,
+		BrickVerse.Attributes.DefaultValueAttribute(Part.PartMaterialEnum.SmoothPlastic)
+	]
 	public Part.PartMaterialEnum Surface
 	{
 		get => _surface;
@@ -177,8 +192,7 @@ public sealed partial class TerrainMaterial : Instance
 	public override void PostReparent()
 	{
 		base.PostReparent();
-		if (Parent is Terrain terrain &&
-			!terrain.IsMaterialSlotAvailable(_slot, this))
+		if (Parent is Terrain terrain && !terrain.IsMaterialSlotAvailable(_slot, this))
 		{
 			int availableSlot = terrain.FindAvailableMaterialSlot(this);
 			if (availableSlot >= 0)
@@ -209,12 +223,12 @@ public sealed partial class TerrainMaterial : Instance
 
 	internal Texture2D? GetTexture(ImageAsset? asset) => asset?.Resource as Texture2D;
 
-	internal Texture2D? GetSurfaceTexture(
-		string textureParameter,
-		string enabledParameter)
+	internal Texture2D? GetSurfaceTexture(string textureParameter, string enabledParameter)
 	{
-		if (_surfaceType != TerrainSurfaceType.BuiltIn ||
-			Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material)
+		if (
+			_surfaceType != TerrainSurfaceType.BuiltIn
+			|| Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material
+		)
 		{
 			return null;
 		}
@@ -231,8 +245,10 @@ public sealed partial class TerrainMaterial : Instance
 
 	internal float GetSurfaceTextureScale()
 	{
-		if (_surfaceType != TerrainSurfaceType.BuiltIn ||
-			Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material)
+		if (
+			_surfaceType != TerrainSurfaceType.BuiltIn
+			|| Globals.LoadMaterial(_surface, 1.0f) is not ShaderMaterial material
+		)
 		{
 			return _textureScale;
 		}
@@ -244,10 +260,7 @@ public sealed partial class TerrainMaterial : Instance
 		return tileSize > 0.001f ? 1.0f / tileSize : _textureScale;
 	}
 
-	private void SetTexture(
-		ref ImageAsset? target,
-		ImageAsset? value,
-		string propertyName)
+	private void SetTexture(ref ImageAsset? target, ImageAsset? value, string propertyName)
 	{
 		if (target == value)
 			return;

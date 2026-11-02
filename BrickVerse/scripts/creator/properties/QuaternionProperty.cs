@@ -2,14 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using System;
+using Godot;
 
 namespace BrickVerse.Creator.Properties;
 
 public sealed partial class QuaternionProperty : HBoxContainer, IProperty<Quaternion>
 {
-
 	private SpinBox _x = null!;
 	private SpinBox _y = null!;
 	private SpinBox _z = null!;
@@ -38,7 +37,8 @@ public sealed partial class QuaternionProperty : HBoxContainer, IProperty<Quater
 
 	public void SetValue(object? value)
 	{
-		if (value == null) return;
+		if (value == null)
+			return;
 		Value = (Quaternion)value;
 	}
 
@@ -77,7 +77,7 @@ public sealed partial class QuaternionProperty : HBoxContainer, IProperty<Quater
 				1 => new Quaternion(current.X, (float)value, current.Z, current.W),
 				2 => new Quaternion(current.X, current.Y, (float)value, current.W),
 				3 => new Quaternion(current.X, current.Y, current.Z, (float)value),
-				_ => current
+				_ => current,
 			};
 
 			ValueChanged?.Invoke(newValue);

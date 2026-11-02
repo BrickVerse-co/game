@@ -17,11 +17,14 @@ public sealed partial class XRMobileShell : Node3D
 
 	public bool Initialize()
 	{
-		if (!XRRuntime.WasRequested()) return false;
+		if (!XRRuntime.WasRequested())
+			return false;
 		_interface = XRServer.FindInterface("OpenXR") as OpenXRInterface;
 		if (_interface == null || !_interface.IsInitialized() && !_interface.Initialize())
 		{
-			BV.PrintErr("The VR app shell could not initialize OpenXR; leaving the normal app window available.");
+			BV.PrintErr(
+				"The VR app shell could not initialize OpenXR; leaving the normal app window available."
+			);
 			return false;
 		}
 
@@ -40,31 +43,44 @@ public sealed partial class XRMobileShell : Node3D
 
 	public override void _Process(double delta)
 	{
-		if (_left == null || _right == null) return;
+		if (_left == null || _right == null)
+			return;
 		EnsureFocusedControl();
 		Vector2 navigation = _left.GetVector2("primary");
-		if (navigation.Length() < 0.45f) _navigationLatch = Vector2.Zero;
+		if (navigation.Length() < 0.45f)
+			_navigationLatch = Vector2.Zero;
 		else if (_navigationLatch == Vector2.Zero)
 		{
 			_navigationLatch = navigation;
-			if (Mathf.Abs(navigation.Y) >= Mathf.Abs(navigation.X)) SendAction(navigation.Y < 0 ? "ui_up" : "ui_down");
-			else SendAction(navigation.X < 0 ? "ui_left" : "ui_right");
+			if (Mathf.Abs(navigation.Y) >= Mathf.Abs(navigation.X))
+				SendAction(navigation.Y < 0 ? "ui_up" : "ui_down");
+			else
+				SendAction(navigation.X < 0 ? "ui_left" : "ui_right");
 		}
 
-		bool accept = _right.IsButtonPressed("ax_button") || _right.IsButtonPressed("trigger_click");
-		if (accept && !_acceptLatch) SendAction("ui_accept");
+		bool accept =
+			_right.IsButtonPressed("ax_button") || _right.IsButtonPressed("trigger_click");
+		if (accept && !_acceptLatch)
+			SendAction("ui_accept");
 		_acceptLatch = accept;
 		bool cancel = _right.IsButtonPressed("by_button") || _left.IsButtonPressed("menu_button");
-		if (cancel && !_cancelLatch) SendAction("ui_cancel");
+		if (cancel && !_cancelLatch)
+			SendAction("ui_cancel");
 		_cancelLatch = cancel;
 	}
 
 	private void EnsureFocusedControl()
 	{
-		if (GetViewport().GuiGetFocusOwner() != null || GetParent() == null) return;
+		if (GetViewport().GuiGetFocusOwner() != null || GetParent() == null)
+			return;
 		foreach (Node node in GetParent().FindChildren("*", "Button", true, false))
 		{
-			if (node is Button button && button.IsVisibleInTree() && !button.Disabled && button.FocusMode != Control.FocusModeEnum.None)
+			if (
+				node is Button button
+				&& button.IsVisibleInTree()
+				&& !button.Disabled
+				&& button.FocusMode != Control.FocusModeEnum.None
+			)
 			{
 				button.GrabFocus();
 				return;
@@ -82,6 +98,7 @@ public sealed partial class XRMobileShell : Node3D
 
 	public override void _ExitTree()
 	{
-		if (GetViewport() != null) GetViewport().UseXR = false;
+		if (GetViewport() != null)
+			GetViewport().UseXR = false;
 	}
 }

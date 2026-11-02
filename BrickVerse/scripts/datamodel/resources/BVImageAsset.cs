@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System;
 using BrickVerse.Attributes;
 using BrickVerse.Shared.AssetLoaders;
-using System;
 
 namespace BrickVerse.Datamodel.Resources;
 
@@ -42,7 +42,10 @@ public partial class BVImageAsset : ImageAsset
 
 	public override void LoadResource()
 	{
-		if (string.IsNullOrEmpty(ImageID)) { return; }
+		if (string.IsNullOrEmpty(ImageID))
+		{
+			return;
+		}
 		ResourceType resourceType = ImageType switch
 		{
 			ImageTypeEnum.Asset => ResourceType.Texture,
@@ -52,7 +55,7 @@ public partial class BVImageAsset : ImageAsset
 			ImageTypeEnum.UserAvatarHeadshot => ResourceType.UserHeadshot,
 			ImageTypeEnum.GuildIcon => ResourceType.GuildIcon,
 			ImageTypeEnum.GuildBanner => ResourceType.GuildBanner,
-			_ => throw new NotImplementedException()
+			_ => throw new NotImplementedException(),
 		};
 
 		AssetLoader.Singleton.GetRawCache(
@@ -77,5 +80,5 @@ public enum ImageTypeEnum
 	UserAvatar,
 	UserAvatarHeadshot,
 	GuildIcon,
-	GuildBanner
+	GuildBanner,
 }

@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
-using BrickVerse.Datamodel;
 using System.Collections.Generic;
+using BrickVerse.Datamodel;
+using Godot;
 
 namespace BrickVerse.Client.UI;
 
@@ -19,9 +19,14 @@ public partial class UIInventory : Control
 	private readonly List<Tool?> _backpackSlot = [];
 	private UIToolAddItem _addSlotItemBtn = null!;
 
-	[Export] private Control _backpackFlowContainer = null!;
-	[Export] private Control _backpackNoneView = null!;
-	[Export] private AnimationPlayer _backpackAnim = null!;
+	[Export]
+	private Control _backpackFlowContainer = null!;
+
+	[Export]
+	private Control _backpackNoneView = null!;
+
+	[Export]
+	private AnimationPlayer _backpackAnim = null!;
 
 	public CoreUIRoot CoreUI = null!;
 	public bool IsBackpackOpened = false;
@@ -37,7 +42,9 @@ public partial class UIInventory : Control
 		_localplr.ChildAdded.Connect(OnChildEnterInventory);
 		_localplr.ChildRemoved.Connect(OnChildExitInventory);
 
-		PackedScene packed = GD.Load<PackedScene>("res://scenes/client/ui/inventory/slot_add_item.tscn");
+		PackedScene packed = GD.Load<PackedScene>(
+			"res://scenes/client/ui/inventory/slot_add_item.tscn"
+		);
 		_addSlotItemBtn = packed.Instantiate<UIToolAddItem>();
 		_addSlotItemBtn.Root = this;
 		_layout.AddChild(_addSlotItemBtn, false, InternalMode.Back);
@@ -51,7 +58,8 @@ public partial class UIInventory : Control
 
 	public void ToggleBackpack()
 	{
-		if (!CoreUI.Service.UseBackpack) return;
+		if (!CoreUI.Service.UseBackpack)
+			return;
 		if (IsBackpackOpened)
 		{
 			CloseBackpack();
@@ -64,7 +72,8 @@ public partial class UIInventory : Control
 
 	public void OpenBackpack()
 	{
-		if (!CoreUI.Service.UseBackpack) return;
+		if (!CoreUI.Service.UseBackpack)
+			return;
 		IsBackpackOpened = true;
 		_backpackAnim.Stop();
 		_backpackAnim.Play("appear");
@@ -72,7 +81,8 @@ public partial class UIInventory : Control
 
 	public void CloseBackpack()
 	{
-		if (!CoreUI.Service.UseBackpack) return;
+		if (!CoreUI.Service.UseBackpack)
+			return;
 		IsBackpackOpened = false;
 		_backpackAnim.Stop();
 		_backpackAnim.Play("disappear");
@@ -96,7 +106,10 @@ public partial class UIInventory : Control
 
 	private void AddTool(Tool tool)
 	{
-		if (_tools.ContainsKey(tool)) { return; }
+		if (_tools.ContainsKey(tool))
+		{
+			return;
+		}
 
 		AddNewToolInSlot(tool);
 	}
@@ -111,8 +124,10 @@ public partial class UIInventory : Control
 
 	public override async void _Input(InputEvent @event)
 	{
-		if (!Visible) return;
-		if (@event.IsEcho()) return;
+		if (!Visible)
+			return;
+		if (@event.IsEcho())
+			return;
 		if (_addSlotItemBtn.Visible && @event is InputEventMouseButton btn)
 		{
 			if (btn.IsReleased() && btn.ButtonIndex == MouseButton.Left)
@@ -123,7 +138,8 @@ public partial class UIInventory : Control
 			}
 		}
 		base._Input(@event);
-		if (!CoreUIRoot.Singleton.Root.Input.IsGameFocused) return;
+		if (!CoreUIRoot.Singleton.Root.Input.IsGameFocused)
+			return;
 		if (@event.IsActionPressed("equip_tool_cycle_left"))
 		{
 			int i = CurrentSlotIndex - 1;
@@ -141,8 +157,10 @@ public partial class UIInventory : Control
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (!Visible) return;
-		if (@event.IsEcho()) return;
+		if (!Visible)
+			return;
+		if (@event.IsEcho())
+			return;
 		if (@event.IsActionPressed("toggle_backpack"))
 		{
 			ToggleBackpack();
@@ -152,11 +170,16 @@ public partial class UIInventory : Control
 
 	public override void _UnhandledKeyInput(InputEvent @event)
 	{
-		if (!Visible) return;
-		if (@event.IsEcho()) return;
+		if (!Visible)
+			return;
+		if (@event.IsEcho())
+			return;
 		if (@event is InputEventKey key)
 		{
-			if (!key.Pressed) { return; }
+			if (!key.Pressed)
+			{
+				return;
+			}
 			string keyAsText = OS.GetKeycodeString(key.Keycode);
 			if (int.TryParse(keyAsText, out int value))
 			{
@@ -202,7 +225,9 @@ public partial class UIInventory : Control
 
 	private UIToolItem CreateUIToolItem(Tool tool)
 	{
-		PackedScene packed = GD.Load<PackedScene>("res://scenes/client/ui/inventory/tool_item.tscn");
+		PackedScene packed = GD.Load<PackedScene>(
+			"res://scenes/client/ui/inventory/tool_item.tscn"
+		);
 		UIToolItem item = packed.Instantiate<UIToolItem>();
 		item.LinkedTool = tool;
 		item.Root = this;
@@ -363,7 +388,8 @@ public partial class UIInventory : Control
 			await tool.TreeEntered.Wait();
 
 		// If the tool was reparented back to the player or their inventory, keep it
-		if (!tool.IsDeleted && (tool.Parent == _localplr || tool.Parent == _localplr.Inventory)) return;
+		if (!tool.IsDeleted && (tool.Parent == _localplr || tool.Parent == _localplr.Inventory))
+			return;
 
 		if (_tools.TryGetValue(tool, out UIToolItem? toolItem))
 		{
@@ -386,11 +412,15 @@ public partial class UIInventory : Control
 			CurrentSlotIndex = -1;
 			_localplr.UnequipTool();
 		}
-		if (index < 0 || index >= _toolSlot.Count) { return; }
+		if (index < 0 || index >= _toolSlot.Count)
+		{
+			return;
+		}
 		if (_toolSlot[index] != null)
 		{
 			Tool tool = _toolSlot[index]!;
-			if (oldTool == tool) return;
+			if (oldTool == tool)
+				return;
 			CurrentSlotIndex = index;
 			_localplr.EquipTool(tool);
 		}

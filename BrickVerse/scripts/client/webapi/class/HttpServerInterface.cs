@@ -2,9 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using BrickVerse.Client.WebAPI.Interfaces;
-using BrickVerse.Schemas.API;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -13,6 +10,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using BrickVerse.Client.WebAPI.Interfaces;
+using BrickVerse.Schemas.API;
+using BrickVerse.Shared;
 
 namespace BrickVerse.Client.WebAPI;
 
@@ -32,20 +32,27 @@ public sealed class HttpServerInterface : IServerInterface
 
 	public async Task<byte[]> DownloadWorld(long worldID)
 	{
-		using HttpRequestMessage request = CreateBinaryRequest(HttpMethod.Get, ApiPath($"/v3/world/server/tree?worldId={worldID}&stream=true"));
+		using HttpRequestMessage request = CreateBinaryRequest(
+			HttpMethod.Get,
+			ApiPath($"/v3/world/server/tree?worldId={worldID}&stream=true")
+		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
 		if (!response.IsSuccessStatusCode)
 		{
 			string body = await response.Content.ReadAsStringAsync();
-			throw new HttpRequestException($"BrickVerse world download failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
+			throw new HttpRequestException(
+				$"BrickVerse world download failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}"
+			);
 		}
 
 		byte[] data = await response.Content.ReadAsByteArrayAsync();
 		if (LooksLikeJson(data))
 		{
 			string body = Encoding.UTF8.GetString(data);
-			throw new InvalidOperationException($"BrickVerse world download returned JSON instead of stream: {body}");
+			throw new InvalidOperationException(
+				$"BrickVerse world download returned JSON instead of stream: {body}"
+			);
 		}
 
 		return data;
@@ -55,19 +62,36 @@ public sealed class HttpServerInterface : IServerInterface
 	{
 		playerIDs ??= [];
 		HeartbeatRequest body = new(playerIDs.Length, playerIDs);
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/heartbeat"), body, BrickVerseJsonContext.Default.HeartbeatRequest);
+		using HttpRequestMessage request = CreateJsonRequest(
+			HttpMethod.Post,
+			ApiPath("/v3/world/server/heartbeat"),
+			body,
+			BrickVerseJsonContext.Default.HeartbeatRequest
+		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse(response, "server heartbeat", BrickVerseJsonContext.Default.APIHeartbeatResponse);
+		return await ReadJsonResponse(
+			response,
+			"server heartbeat",
+			BrickVerseJsonContext.Default.APIHeartbeatResponse
+		);
 	}
 
 	public async Task<APIValidateResponse> ValidatePlayer(string token, string integrityAuthToken)
 	{
 		string escapedToken = Uri.EscapeDataString(token ?? string.Empty);
 		string escapedIntegrityToken = Uri.EscapeDataString(integrityAuthToken ?? string.Empty);
-		using HttpRequestMessage request = CreateRequest(HttpMethod.Get,
-			ApiPath($"/v3/world/server/user?joinToken={escapedToken}&integrityAuthToken={escapedIntegrityToken}"));
+		using HttpRequestMessage request = CreateRequest(
+			HttpMethod.Get,
+			ApiPath(
+				$"/v3/world/server/user?joinToken={escapedToken}&integrityAuthToken={escapedIntegrityToken}"
+			)
+		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		return await ReadJsonResponse(response, "player validate", BrickVerseJsonContext.Default.APIValidateResponse);
+		return await ReadJsonResponse(
+			response,
+			"player validate",
+			BrickVerseJsonContext.Default.APIValidateResponse
+		);
 	}
 
 	public async Task DisconnectPlayer(string token)
@@ -80,7 +104,10 @@ public sealed class HttpServerInterface : IServerInterface
 			BrickVerseJsonContext.Default.DisconnectPlayerRequest
 		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
-		if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.BadRequest)
+		if (
+			!response.IsSuccessStatusCode
+			&& response.StatusCode != System.Net.HttpStatusCode.BadRequest
+		)
 		{
 			string responseBody = await response.Content.ReadAsStringAsync();
 			throw new HttpRequestException(
@@ -96,14 +123,22 @@ public sealed class HttpServerInterface : IServerInterface
 			ServerEventType.ServerStarted => "Server started",
 			ServerEventType.ServerStopped => "Server stopped",
 			ServerEventType.ClientConnected => BuildPlayerEventMessage("Client connected", data),
-			ServerEventType.ClientDisconnected => BuildPlayerEventMessage("Client disconnected", data),
+			ServerEventType.ClientDisconnected => BuildPlayerEventMessage(
+				"Client disconnected",
+				data
+			),
 			_ => eventType.ToString(),
 		};
 
 		await Log(message, ServerLogSource.Server, ServerLogLevel.Info);
 	}
 
-	public async Task Log(string log, ServerLogSource source = ServerLogSource.Server, ServerLogLevel level = ServerLogLevel.Info, long? timestampUnixMs = null)
+	public async Task Log(
+		string log,
+		ServerLogSource source = ServerLogSource.Server,
+		ServerLogLevel level = ServerLogLevel.Info,
+		long? timestampUnixMs = null
+	)
 	{
 		long timestamp = timestampUnixMs ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 		LogIngestRequest body = new(
@@ -113,13 +148,20 @@ public sealed class HttpServerInterface : IServerInterface
 			MapLevel(level)
 		);
 
-		using HttpRequestMessage request = CreateJsonRequest(HttpMethod.Post, ApiPath("/v3/world/server/logs/ingest"), body, BrickVerseJsonContext.Default.LogIngestRequest);
+		using HttpRequestMessage request = CreateJsonRequest(
+			HttpMethod.Post,
+			ApiPath("/v3/world/server/logs/ingest"),
+			body,
+			BrickVerseJsonContext.Default.LogIngestRequest
+		);
 		using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
 		if (!response.IsSuccessStatusCode)
 		{
 			string responseBody = await response.Content.ReadAsStringAsync();
-			throw new HttpRequestException($"BrickVerse server event log failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}");
+			throw new HttpRequestException(
+				$"BrickVerse server event log failed: {(int)response.StatusCode} {response.ReasonPhrase} {responseBody}"
+			);
 		}
 	}
 
@@ -139,7 +181,12 @@ public sealed class HttpServerInterface : IServerInterface
 		return request;
 	}
 
-	private HttpRequestMessage CreateJsonRequest<T>(HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo)
+	private HttpRequestMessage CreateJsonRequest<T>(
+		HttpMethod method,
+		string url,
+		T value,
+		JsonTypeInfo<T> typeInfo
+	)
 	{
 		string json = JsonSerializer.Serialize(value, typeInfo);
 		HttpRequestMessage request = CreateRequest(method, url);
@@ -161,17 +208,26 @@ public sealed class HttpServerInterface : IServerInterface
 		request.Headers.TryAddWithoutValidation("Authorization", authorization);
 	}
 
-	private static async Task<T> ReadJsonResponse<T>(HttpResponseMessage response, string action, JsonTypeInfo<T> typeInfo)
+	private static async Task<T> ReadJsonResponse<T>(
+		HttpResponseMessage response,
+		string action,
+		JsonTypeInfo<T> typeInfo
+	)
 	{
 		string body = await response.Content.ReadAsStringAsync();
 
 		if (!response.IsSuccessStatusCode)
 		{
-			throw new HttpRequestException($"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}");
+			throw new HttpRequestException(
+				$"BrickVerse {action} failed: {(int)response.StatusCode} {response.ReasonPhrase} {body}"
+			);
 		}
 
 		T? result = JsonSerializer.Deserialize(body, typeInfo);
-		return result ?? throw new InvalidOperationException($"BrickVerse {action} returned an empty response.");
+		return result
+			?? throw new InvalidOperationException(
+				$"BrickVerse {action} returned an empty response."
+			);
 	}
 
 	private static string ApiPath(string path)
@@ -184,7 +240,12 @@ public sealed class HttpServerInterface : IServerInterface
 		for (int i = 0; i < bytes.Length; i++)
 		{
 			byte value = bytes[i];
-			if (value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n')
+			if (
+				value == (byte)' '
+				|| value == (byte)'\t'
+				|| value == (byte)'\r'
+				|| value == (byte)'\n'
+			)
 			{
 				continue;
 			}
@@ -208,7 +269,11 @@ public sealed class HttpServerInterface : IServerInterface
 
 	private static string BuildPlayerEventMessage(string prefix, Dictionary<string, string>? data)
 	{
-		if (data != null && data.TryGetValue("userID", out string? userID) && !string.IsNullOrWhiteSpace(userID))
+		if (
+			data != null
+			&& data.TryGetValue("userID", out string? userID)
+			&& !string.IsNullOrWhiteSpace(userID)
+		)
 		{
 			return $"{prefix}: userID={userID}";
 		}
@@ -221,7 +286,7 @@ public sealed class HttpServerInterface : IServerInterface
 		return source switch
 		{
 			ServerLogSource.Client => "CLIENT",
-			_ => "SERVER"
+			_ => "SERVER",
 		};
 	}
 
@@ -231,7 +296,7 @@ public sealed class HttpServerInterface : IServerInterface
 		{
 			ServerLogLevel.Warning => "WARNING",
 			ServerLogLevel.Error => "ERROR",
-			_ => "INFO"
+			_ => "INFO",
 		};
 	}
 }
@@ -241,9 +306,7 @@ internal sealed record HeartbeatRequest(
 	[property: JsonPropertyName("playerIds")] string[] PlayerIds
 );
 
-internal sealed record ValidatePlayerRequest(
-	[property: JsonPropertyName("Token")] string Token
-);
+internal sealed record ValidatePlayerRequest([property: JsonPropertyName("Token")] string Token);
 
 internal sealed record DisconnectPlayerRequest(
 	[property: JsonPropertyName("joinToken")] string JoinToken

@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Creator;
-using BrickVerse.Shared;
 using BrickVerse.Creator.UI;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Datamodel.Creator;
 
@@ -24,12 +24,16 @@ public sealed partial class CreatorContextService : Instance
 	{
 		get
 		{
-			if (!Globals.Singleton.GetWindow().HasFocus()) return false;
-			if (Root.Container == null || !Root.Container.IsVisibleInTree()) return false;
-			if (Tabs.Singleton?.CurrentWorldContainer != Root.Container) return false;
+			if (!Globals.Singleton.GetWindow().HasFocus())
+				return false;
+			if (Root.Container == null || !Root.Container.IsVisibleInTree())
+				return false;
+			if (Tabs.Singleton?.CurrentWorldContainer != Root.Container)
+				return false;
 			Control? rootFocusOwner = GDNode.GetWindow().GuiGetFocusOwner();
 			Control? focusOwner = GDNode.GetViewport().GuiGetFocusOwner();
-			if (rootFocusOwner == Root.Container || focusOwner is InputFallbackBase) return true;
+			if (rootFocusOwner == Root.Container || focusOwner is InputFallbackBase)
+				return true;
 
 			// Mouse presses reach WorldContainer before focus ownership settles for
 			// the frame. Treat the pointer being inside the active viewport as focus
@@ -45,7 +49,8 @@ public sealed partial class CreatorContextService : Instance
 
 	public override void Init()
 	{
-		if (Root.Container == null) return;
+		if (Root.Container == null)
+			return;
 		NameOverride = "CreatorContext";
 
 		Freelook = new()
@@ -53,7 +58,7 @@ public sealed partial class CreatorContextService : Instance
 			Name = "FreeLook",
 			Root = Root,
 			Parent = this,
-			Mode = Camera.CameraModeEnum.Free
+			Mode = Camera.CameraModeEnum.Free,
 		};
 		Freelook.GDNode3D.GlobalPosition = new(0, 6, -4);
 		Freelook.GDNode3D.RotationDegrees = new(-25, 0, 0);

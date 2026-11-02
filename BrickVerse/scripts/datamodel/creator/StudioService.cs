@@ -22,15 +22,20 @@ public sealed partial class StudioService : Instance
 		"*.lua, *.luau, *.json, *.txt ; Text files",
 	];
 
-	[ScriptProperty] public bool IsStudio => Root.SessionType == World.SessionTypeEnum.Creator;
+	[ScriptProperty]
+	public bool IsStudio => Root.SessionType == World.SessionTypeEnum.Creator;
 
 	[ScriptMethod(Permissions = ScriptPermissionFlags.IORead)]
 	public async Task<TemporaryFile?> PromptImportFile(string[]? filters = null)
 	{
 		if (!IsStudio || CreatorService.Interface == null)
-			throw new InvalidOperationException("PromptImportFile is only available in a Creator studio session.");
+			throw new InvalidOperationException(
+				"PromptImportFile is only available in a Creator studio session."
+			);
 
-		TaskCompletionSource<string?> selection = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<string?> selection = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
 		CreatorService.Interface.PromptFileSelect(
 			new FileSelectPromptPayload
 			{
@@ -43,7 +48,8 @@ public sealed partial class StudioService : Instance
 		);
 
 		string? selectedPath = await selection.Task;
-		if (string.IsNullOrWhiteSpace(selectedPath)) return null;
+		if (string.IsNullOrWhiteSpace(selectedPath))
+			return null;
 		(string temporaryPath, string temporaryId) = Root.IO.ImportTemporaryFile(selectedPath);
 		FileInfo info = new(selectedPath);
 		TemporaryFile result = Globals.LoadInstance<TemporaryFile>(Root);

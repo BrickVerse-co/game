@@ -9,14 +9,26 @@ namespace BrickVerse.Creator.UI;
 
 public partial class ConsoleFilters : PopupPanel
 {
-	[Export] private CheckBox _infoCheckBox = null!;
-	[Export] private CheckBox _warningCheckBox = null!;
-	[Export] private CheckBox _errorCheckBox = null!;
+	[Export]
+	private CheckBox _infoCheckBox = null!;
 
-	[Export] private CheckBox _noneCheckBox = null!;
-	[Export] private CheckBox _clientCheckBox = null!;
-	[Export] private CheckBox _serverCheckBox = null!;
-	[Export] private CheckBox _addonCheckBox = null!;
+	[Export]
+	private CheckBox _warningCheckBox = null!;
+
+	[Export]
+	private CheckBox _errorCheckBox = null!;
+
+	[Export]
+	private CheckBox _noneCheckBox = null!;
+
+	[Export]
+	private CheckBox _clientCheckBox = null!;
+
+	[Export]
+	private CheckBox _serverCheckBox = null!;
+
+	[Export]
+	private CheckBox _addonCheckBox = null!;
 
 	private DebugConsole? _debugConsole;
 
@@ -25,21 +37,28 @@ public partial class ConsoleFilters : PopupPanel
 		_debugConsole = DebugConsole.Singleton;
 
 		// Connect Type-Filter CheckBoxes
-		_infoCheckBox.Toggled += enabled => _debugConsole.ToggleTypeFilter(LogTypeEnum.Info, enabled);
-		_warningCheckBox.Toggled += enabled => _debugConsole.ToggleTypeFilter(LogTypeEnum.Warning, enabled);
-		_errorCheckBox.Toggled += enabled => _debugConsole.ToggleTypeFilter(LogTypeEnum.Error, enabled);
+		_infoCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleTypeFilter(LogTypeEnum.Info, enabled);
+		_warningCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleTypeFilter(LogTypeEnum.Warning, enabled);
+		_errorCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleTypeFilter(LogTypeEnum.Error, enabled);
 
 		// Connect Source-Filter CheckBoxes
-		_noneCheckBox.Toggled += enabled => _debugConsole.ToggleSourceFilter(LogFromEnum.None, enabled);
-		_clientCheckBox.Toggled += enabled => _debugConsole.ToggleSourceFilter(LogFromEnum.Client, enabled);
-		_serverCheckBox.Toggled += enabled => _debugConsole.ToggleSourceFilter(LogFromEnum.Server, enabled);
-		_addonCheckBox.Toggled += enabled => _debugConsole.ToggleSourceFilter(LogFromEnum.Addon, enabled);
-
+		_noneCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleSourceFilter(LogFromEnum.None, enabled);
+		_clientCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleSourceFilter(LogFromEnum.Client, enabled);
+		_serverCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleSourceFilter(LogFromEnum.Server, enabled);
+		_addonCheckBox.Toggled += enabled =>
+			_debugConsole.ToggleSourceFilter(LogFromEnum.Addon, enabled);
 	}
 
 	private void SyncCheckboxes()
 	{
-		if (_debugConsole == null) return;
+		if (_debugConsole == null)
+			return;
 
 		_infoCheckBox.ButtonPressed = _debugConsole.IsTypeFilterEnabled(LogTypeEnum.Info);
 		_warningCheckBox.ButtonPressed = _debugConsole.IsTypeFilterEnabled(LogTypeEnum.Warning);
@@ -62,5 +81,4 @@ public partial class ConsoleFilters : PopupPanel
 		);
 		Popup(new Rect2I(position, popupSize));
 	}
-
 }

@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Attributes;
 using BrickVerse.Datamodel.Interfaces;
 using BrickVerse.Scripting;
-using System;
-using System.Collections.Generic;
+using Godot;
 
 namespace BrickVerse.Datamodel.Data;
 
@@ -28,20 +28,12 @@ public readonly struct NumberSeries : IScriptObject, IData
 
 	public NumberSeries()
 	{
-		points =
-		[
-			new(0f, 0f),
-			new(1f, 1f)
-		];
+		points = [new(0f, 0f), new(1f, 1f)];
 	}
 
 	public NumberSeries(float min, float max)
 	{
-		points =
-		[
-			new(0f, min),
-			new(1f, max)
-		];
+		points = [new(0f, min), new(1f, max)];
 	}
 
 	[ScriptMethod]
@@ -109,10 +101,7 @@ public readonly struct NumberSeries : IScriptObject, IData
 	[ScriptMethod]
 	public readonly void SetOffset(int point, float offset)
 	{
-		NumberPoint p = new()
-		{
-			Offset = offset
-		};
+		NumberPoint p = new() { Offset = offset };
 		if (point <= 0)
 		{
 			p.Value = 0f;
@@ -197,6 +186,7 @@ public readonly struct NumberSeries : IScriptObject, IData
 	{
 		points.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 	}
+
 	public override readonly int GetHashCode()
 	{
 		return HashCode.Combine(points);

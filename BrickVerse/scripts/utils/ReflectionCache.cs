@@ -7,7 +7,10 @@ namespace BrickVerse.Utils;
 public static class ReflectionCache
 {
 	private static readonly Dictionary<MemberInfo, Dictionary<Type, bool>> _isDefinedCache = new();
-	private static readonly Dictionary<MemberInfo, Dictionary<Type, Attribute?>> _customAttributeCache = new();
+	private static readonly Dictionary<
+		MemberInfo,
+		Dictionary<Type, Attribute?>
+	> _customAttributeCache = new();
 
 	public static bool IsDefinedCached(this MemberInfo mi, Type attributeType)
 	{
@@ -26,7 +29,8 @@ public static class ReflectionCache
 		return result;
 	}
 
-	public static T? GetCustomAttributeCached<T>(this MemberInfo mi) where T : Attribute
+	public static T? GetCustomAttributeCached<T>(this MemberInfo mi)
+		where T : Attribute
 	{
 		var attributeType = typeof(T);
 

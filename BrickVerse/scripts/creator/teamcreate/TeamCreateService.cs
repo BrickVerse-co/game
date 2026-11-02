@@ -1,12 +1,6 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0.
 
-using Godot;
-using BrickVerse.Creator.Utils;
-using BrickVerse.Creator.UI;
-using BrickVerse.Datamodel;
-using BrickVerse.Datamodel.Creator;
-using BrickVerse.Shared;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -18,6 +12,12 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using BrickVerse.Creator.UI;
+using BrickVerse.Creator.Utils;
+using BrickVerse.Datamodel;
+using BrickVerse.Datamodel.Creator;
+using BrickVerse.Shared;
+using Godot;
 
 namespace BrickVerse.Creator.TeamCreate;
 
@@ -33,11 +33,30 @@ public sealed partial class TeamCreateService : Node
 	private const double FileScanInterval = 0.75;
 	private const int FileChunkBytes = 96 * 1024;
 	private const int MaxReplicatedFileBytes = 8 * 1024 * 1024;
-	private static readonly HashSet<string> ReplicatedFileExtensions = new(StringComparer.OrdinalIgnoreCase)
+	private static readonly HashSet<string> ReplicatedFileExtensions = new(
+		StringComparer.OrdinalIgnoreCase
+	)
 	{
-		".bvxw", ".bvworld", ".bvxm", ".bvmodel", ".model", ".luau", ".lua",
-		".js", ".mjs", ".ts", ".tsx", ".cs", ".cpp", ".cc", ".cxx",
-		".json", ".xml", ".md", ".txt", ".bvxl",
+		".bvxw",
+		".bvworld",
+		".bvxm",
+		".bvmodel",
+		".model",
+		".luau",
+		".lua",
+		".js",
+		".mjs",
+		".ts",
+		".tsx",
+		".cs",
+		".cpp",
+		".cc",
+		".cxx",
+		".json",
+		".xml",
+		".md",
+		".txt",
+		".bvxl",
 	};
 
 	public static TeamCreateService? Instance { get; private set; }
@@ -46,10 +65,16 @@ public sealed partial class TeamCreateService : Node
 	private readonly Dictionary<string, Observation> _observed = [];
 	private readonly Dictionary<string, JsonObject> _pendingChanges = [];
 	private readonly List<TeamCreateMember> _members = [];
-	private readonly Dictionary<string, ProjectFileState> _projectFiles = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, ProjectFileState> _projectFiles = new(
+		StringComparer.OrdinalIgnoreCase
+	);
 	private readonly Dictionary<string, IncomingFileTransfer> _incomingFiles = [];
-	private readonly Dictionary<string, string> _latestTransferByPath = new(StringComparer.OrdinalIgnoreCase);
-	private readonly HashSet<string> _pendingFileConfirmations = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, string> _latestTransferByPath = new(
+		StringComparer.OrdinalIgnoreCase
+	);
+	private readonly HashSet<string> _pendingFileConfirmations = new(
+		StringComparer.OrdinalIgnoreCase
+	);
 	private readonly Dictionary<string, Node3D> _cameraAvatars = [];
 	private long _universeId;
 	private string _memberId = "";
@@ -91,7 +116,8 @@ public sealed partial class TeamCreateService : Node
 
 	public string ResolveChatUsername(string userId)
 	{
-		if (userId == _localUserId && !string.IsNullOrWhiteSpace(CreatorAPI.Username)) return CreatorAPI.Username;
+		if (userId == _localUserId && !string.IsNullOrWhiteSpace(CreatorAPI.Username))
+			return CreatorAPI.Username;
 		TeamCreateMember? member = _members.FirstOrDefault(item => item.UserId == userId);
 		return !string.IsNullOrWhiteSpace(member?.Username) ? member.Username : "Unknown member";
 	}
@@ -101,9 +127,22 @@ public sealed partial class TeamCreateService : Node
 
 	public void SendTeamChat(string message)
 	{
-		message = (message ?? "").Trim(); if (!Connected || message.Length == 0) return; if (message.Length > 300) message = message[..300];
+		message = (message ?? "").Trim();
+		if (!Connected || message.Length == 0)
+			return;
+		if (message.Length > 300)
+			message = message[..300];
 		TeamChatMessage?.Invoke(_localUserId, message);
-		QueueChange("team_chat:" + Guid.NewGuid().ToString("N"), new JsonObject { ["kind"] = "team_chat", ["id"] = "", ["senderId"] = _localUserId, ["message"] = message });
+		QueueChange(
+			"team_chat:" + Guid.NewGuid().ToString("N"),
+			new JsonObject
+			{
+				["kind"] = "team_chat",
+				["id"] = "",
+				["senderId"] = _localUserId,
+				["message"] = message,
+			}
+		);
 	}
 
 	public TeamCreateService()
@@ -152,7 +191,8 @@ public sealed partial class TeamCreateService : Node
 		_reconnectElapsed = 0;
 		UpdateFollowCamera((float)delta);
 		UpdateCameraAvatarTransforms((float)delta);
-		if (_requestActive) return;
+		if (_requestActive)
+			return;
 
 		_pollElapsed += delta;
 		_flushElapsed += delta;
@@ -189,10 +229,14 @@ public sealed partial class TeamCreateService : Node
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (string.IsNullOrWhiteSpace(_followMemberId)) return;
-		if (@event is InputEventMouseMotion
-			or InputEventMouseButton { Pressed: true }
-			or InputEventKey { Pressed: true })
+		if (string.IsNullOrWhiteSpace(_followMemberId))
+			return;
+		if (
+			@event
+			is InputEventMouseMotion
+				or InputEventMouseButton { Pressed: true }
+				or InputEventKey { Pressed: true }
+		)
 			StopFollowing();
 	}
 
@@ -201,7 +245,8 @@ public sealed partial class TeamCreateService : Node
 		_ = Leave();
 		UnobserveAll();
 		ClearCameraAvatars();
-		if (ReferenceEquals(Instance, this)) Instance = null;
+		if (ReferenceEquals(Instance, this))
+			Instance = null;
 	}
 
 	public void ShowSessionWindow()
@@ -219,7 +264,8 @@ public sealed partial class TeamCreateService : Node
 	public Task EnsureConnected()
 	{
 		long universeId = World.Current?.UniverseID ?? 0;
-		if (universeId == 0 || Connected || _joining) return Task.CompletedTask;
+		if (universeId == 0 || Connected || _joining)
+			return Task.CompletedTask;
 		_manualDisconnect = false;
 		_reconnectElapsed = 0;
 		return SwitchUniverse(universeId);
@@ -228,7 +274,8 @@ public sealed partial class TeamCreateService : Node
 	public void FollowMember(string memberId)
 	{
 		TeamCreateMember? member = _members.FirstOrDefault(item => item.Id == memberId);
-		if (member == null || member.UserId == _localUserId) return;
+		if (member == null || member.UserId == _localUserId)
+			return;
 		_followMemberId = memberId;
 		UpdateFollowCamera(1f);
 		_window?.Refresh();
@@ -286,7 +333,8 @@ public sealed partial class TeamCreateService : Node
 
 	private void UpdateFollowCamera(float delta)
 	{
-		if (string.IsNullOrWhiteSpace(_followMemberId)) return;
+		if (string.IsNullOrWhiteSpace(_followMemberId))
+			return;
 		TeamCreateMember? member = _members.FirstOrDefault(item => item.Id == _followMemberId);
 		Camera3D? camera = World.Current?.CreatorContext?.Freelook?.Camera3D;
 		if (member?.Camera == null || member.UserId == _localUserId || camera == null)
@@ -301,7 +349,8 @@ public sealed partial class TeamCreateService : Node
 
 	private async Task SwitchUniverse(long universeId)
 	{
-		if (_joining) return;
+		if (_joining)
+			return;
 		_joining = true;
 		try
 		{
@@ -319,13 +368,15 @@ public sealed partial class TeamCreateService : Node
 			_initialObservationComplete = false;
 			_manualDisconnect = false;
 			ClearCameraAvatars();
-			if (universeId == 0) return;
+			if (universeId == 0)
+				return;
 			string token = await CreatorAPI.GetValidAccessTokenAsync();
 			_http.DefaultRequestHeaders["Authorization"] = "Bearer " + token;
 
 			_enabled = await FetchTeamCreateEnabled();
 			StateChanged?.Invoke();
-			if (!_enabled) return;
+			if (!_enabled)
+				return;
 
 			using HttpResponseMessage response = await SendJson(
 				HttpMethod.Post,
@@ -333,7 +384,9 @@ public sealed partial class TeamCreateService : Node
 				new JsonObject()
 			);
 			response.EnsureSuccessStatusCode();
-			using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+			using JsonDocument json = JsonDocument.Parse(
+				await response.Content.ReadAsStringAsync()
+			);
 			_memberId = json.RootElement.GetProperty("memberId").GetString() ?? "";
 			ReadSession(json.RootElement.GetProperty("session"));
 			ObserveWorld();
@@ -365,22 +418,26 @@ public sealed partial class TeamCreateService : Node
 		if (!response.IsSuccessStatusCode)
 		{
 			LastConnectionError =
-				$"Team Create status request returned {(int)response.StatusCode} " +
-				$"({response.ReasonPhrase}).";
+				$"Team Create status request returned {(int)response.StatusCode} "
+				+ $"({response.ReasonPhrase}).";
 			BV.PrintErr(LastConnectionError, " URL: ", url, " Body: ", body);
 			return false;
 		}
 
 		using JsonDocument json = JsonDocument.Parse(body);
 		JsonElement root = json.RootElement;
-		if (!root.TryGetProperty("success", out JsonElement success)
-			|| success.ValueKind != JsonValueKind.True)
+		if (
+			!root.TryGetProperty("success", out JsonElement success)
+			|| success.ValueKind != JsonValueKind.True
+		)
+			throw new InvalidDataException("Team Create status response did not report success.");
+		if (
+			!root.TryGetProperty("enabled", out JsonElement enabled)
+			|| enabled.ValueKind is not (JsonValueKind.True or JsonValueKind.False)
+		)
 			throw new InvalidDataException(
-				"Team Create status response did not report success.");
-		if (!root.TryGetProperty("enabled", out JsonElement enabled)
-			|| enabled.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
-			throw new InvalidDataException(
-				"Team Create status response is missing the boolean 'enabled' field.");
+				"Team Create status response is missing the boolean 'enabled' field."
+			);
 
 		bool isEnabled = enabled.GetBoolean();
 		/*BV.Print(
@@ -413,7 +470,8 @@ public sealed partial class TeamCreateService : Node
 
 	private async Task Leave()
 	{
-		if (_universeId == 0 || string.IsNullOrWhiteSpace(_memberId)) return;
+		if (_universeId == 0 || string.IsNullOrWhiteSpace(_memberId))
+			return;
 		string memberId = _memberId;
 		_memberId = "";
 		try
@@ -447,7 +505,8 @@ public sealed partial class TeamCreateService : Node
 				CallDeferred(nameof(DisableFromServer));
 				return;
 			}
-			if (!response.IsSuccessStatusCode) return;
+			if (!response.IsSuccessStatusCode)
+				return;
 			CallDeferred(nameof(ApplyPollResponse), requestedUniverse, body);
 		}
 		catch (Exception error)
@@ -463,7 +522,8 @@ public sealed partial class TeamCreateService : Node
 	private async Task Heartbeat()
 	{
 		string memberId = _memberId;
-		if (string.IsNullOrWhiteSpace(memberId)) return;
+		if (string.IsNullOrWhiteSpace(memberId))
+			return;
 		_requestActive = true;
 
 		Camera3D? camera = World.Current?.CreatorContext?.Freelook?.Camera3D;
@@ -509,7 +569,8 @@ public sealed partial class TeamCreateService : Node
 	private async Task FlushChanges()
 	{
 		string memberId = _memberId;
-		if (string.IsNullOrWhiteSpace(memberId)) return;
+		if (string.IsNullOrWhiteSpace(memberId))
+			return;
 		_requestActive = true;
 
 		List<KeyValuePair<string, JsonObject>> batch = [];
@@ -518,8 +579,13 @@ public sealed partial class TeamCreateService : Node
 		foreach (KeyValuePair<string, JsonObject> entry in _pendingChanges)
 		{
 			int changeBytes = Encoding.UTF8.GetByteCount(entry.Value.ToJsonString()) + 1;
-			if (batch.Count > 0
-				&& (batch.Count >= MaxChangesPerBatch || batchBytes + changeBytes > MaxChangeBatchBytes))
+			if (
+				batch.Count > 0
+				&& (
+					batch.Count >= MaxChangesPerBatch
+					|| batchBytes + changeBytes > MaxChangeBatchBytes
+				)
+			)
 				break;
 			batch.Add(entry);
 			changes.Add(entry.Value.DeepClone());
@@ -555,8 +621,10 @@ public sealed partial class TeamCreateService : Node
 			// while the request was in flight.
 			foreach ((string key, JsonObject sentChange) in batch)
 			{
-				if (_pendingChanges.TryGetValue(key, out JsonObject? current)
-					&& ReferenceEquals(current, sentChange))
+				if (
+					_pendingChanges.TryGetValue(key, out JsonObject? current)
+					&& ReferenceEquals(current, sentChange)
+				)
 					_pendingChanges.Remove(key);
 			}
 		}
@@ -570,10 +638,7 @@ public sealed partial class TeamCreateService : Node
 		}
 	}
 
-	private static bool IsMissingMembershipResponse(
-		HttpResponseMessage response,
-		string body
-	) =>
+	private static bool IsMissingMembershipResponse(HttpResponseMessage response, string body) =>
 		response.StatusCode == System.Net.HttpStatusCode.NotFound
 		&& body.Contains("member not found", StringComparison.OrdinalIgnoreCase);
 
@@ -583,7 +648,8 @@ public sealed partial class TeamCreateService : Node
 
 	private void HandleAuthenticationRejected()
 	{
-		const string message = "Team Create authentication expired. Sign in again, then reconnect Team Create.";
+		const string message =
+			"Team Create authentication expired. Sign in again, then reconnect Team Create.";
 		if (_manualDisconnect && LastConnectionError == message)
 			return;
 		_memberId = "";
@@ -599,8 +665,7 @@ public sealed partial class TeamCreateService : Node
 
 	private void HandleMembershipLost(string rejectedMemberId, string responseBody)
 	{
-		if (string.IsNullOrWhiteSpace(rejectedMemberId)
-			|| rejectedMemberId != _memberId)
+		if (string.IsNullOrWhiteSpace(rejectedMemberId) || rejectedMemberId != _memberId)
 			return;
 
 		bool repeatedLoss = DateTime.UtcNow - _lastMembershipLossUtc < TimeSpan.FromSeconds(30);
@@ -616,7 +681,8 @@ public sealed partial class TeamCreateService : Node
 			// indicates a server/session consistency problem. Stop the automatic loop;
 			// EnsureConnected() can retry when the user next opens Team Create.
 			_manualDisconnect = true;
-			LastConnectionError = "Team Create membership could not be restored. Reconnect manually.";
+			LastConnectionError =
+				"Team Create membership could not be restored. Reconnect manually.";
 			CreatorService.Interface.StatusBar?.SetStatus(LastConnectionError);
 			_window?.Refresh();
 			return;
@@ -628,10 +694,7 @@ public sealed partial class TeamCreateService : Node
 
 	private async Task RejoinCurrentSession(long universeId)
 	{
-		if (_joining
-			|| universeId == 0
-			|| universeId != _universeId
-			|| !_enabled)
+		if (_joining || universeId == 0 || universeId != _universeId || !_enabled)
 			return;
 
 		_joining = true;
@@ -648,15 +711,18 @@ public sealed partial class TeamCreateService : Node
 			string body = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 				throw new HttpRequestException(
-					$"Team Create rejoin returned {(int)response.StatusCode}: {body}");
+					$"Team Create rejoin returned {(int)response.StatusCode}: {body}"
+				);
 
-			if (universeId != _universeId) return;
+			if (universeId != _universeId)
+				return;
 
 			using JsonDocument json = JsonDocument.Parse(body);
 			_memberId = json.RootElement.GetProperty("memberId").GetString() ?? "";
 			if (string.IsNullOrWhiteSpace(_memberId))
 				throw new InvalidDataException(
-					"Team Create rejoin response did not include a member ID.");
+					"Team Create rejoin response did not include a member ID."
+				);
 
 			ReadSession(json.RootElement.GetProperty("session"));
 			_reconnectElapsed = 0;
@@ -679,18 +745,23 @@ public sealed partial class TeamCreateService : Node
 
 	private void ApplyPollResponse(long universeId, string body)
 	{
-		if (universeId != _universeId) return;
+		if (universeId != _universeId)
+			return;
 		using JsonDocument json = JsonDocument.Parse(body);
 		JsonElement root = json.RootElement;
-		if (root.TryGetProperty("session", out JsonElement session)) ReadSession(session);
-		if (!root.TryGetProperty("events", out JsonElement events)) return;
+		if (root.TryGetProperty("session", out JsonElement session))
+			ReadSession(session);
+		if (!root.TryGetProperty("events", out JsonElement events))
+			return;
 		foreach (JsonElement relayEvent in events.EnumerateArray())
 		{
 			long eventSequence = relayEvent.GetProperty("sequence").GetInt64();
 			string authorId = relayEvent.GetProperty("authorId").GetString() ?? "";
-			if (eventSequence <= _sequence) continue;
+			if (eventSequence <= _sequence)
+				continue;
 			_sequence = eventSequence;
-			if (authorId == _localUserId) continue;
+			if (authorId == _localUserId)
+				continue;
 			foreach (JsonElement change in relayEvent.GetProperty("changes").EnumerateArray())
 				ApplyChange(change);
 		}
@@ -719,7 +790,8 @@ public sealed partial class TeamCreateService : Node
 	private void ReadSession(JsonElement session)
 	{
 		_members.Clear();
-		if (!session.TryGetProperty("members", out JsonElement members)) return;
+		if (!session.TryGetProperty("members", out JsonElement members))
+			return;
 		foreach (JsonElement member in members.EnumerateArray())
 		{
 			TeamCreateMember item = new()
@@ -727,8 +799,12 @@ public sealed partial class TeamCreateService : Node
 				Id = member.GetProperty("id").GetString() ?? "",
 				UserId = member.GetProperty("userId").GetString() ?? "",
 				Username = member.GetProperty("username").GetString() ?? "Unknown",
-				IsVerified = member.TryGetProperty("isVerified", out JsonElement verified) && verified.GetBoolean(),
-				HeadshotUrl = member.TryGetProperty("headshotUrl", out JsonElement headshot) ? headshot.GetString() ?? "" : "",
+				IsVerified =
+					member.TryGetProperty("isVerified", out JsonElement verified)
+					&& verified.GetBoolean(),
+				HeadshotUrl = member.TryGetProperty("headshotUrl", out JsonElement headshot)
+					? headshot.GetString() ?? ""
+					: "",
 			};
 			if (member.TryGetProperty("camera", out JsonElement camera))
 			{
@@ -739,7 +815,8 @@ public sealed partial class TeamCreateService : Node
 				};
 			}
 			_members.Add(item);
-			if (item.Id == _memberId) _localUserId = item.UserId;
+			if (item.Id == _memberId)
+				_localUserId = item.UserId;
 		}
 		RefreshCameraAvatars();
 		_window?.Refresh();
@@ -755,9 +832,11 @@ public sealed partial class TeamCreateService : Node
 			return;
 		}
 
-		if (_cameraAvatarRoot == null
+		if (
+			_cameraAvatarRoot == null
 			|| !IsInstanceValid(_cameraAvatarRoot)
-			|| _cameraAvatarWorld != world)
+			|| _cameraAvatarWorld != world
+		)
 		{
 			ClearCameraAvatars();
 			_cameraAvatarWorld = world;
@@ -769,10 +848,13 @@ public sealed partial class TeamCreateService : Node
 		HashSet<string> active = [];
 		foreach (TeamCreateMember member in _members)
 		{
-			if (member.Id == _memberId || member.Camera == null) continue;
+			if (member.Id == _memberId || member.Camera == null)
+				continue;
 			active.Add(member.Id);
-			if (!_cameraAvatars.TryGetValue(member.Id, out Node3D? avatar)
-				|| !IsInstanceValid(avatar))
+			if (
+				!_cameraAvatars.TryGetValue(member.Id, out Node3D? avatar)
+				|| !IsInstanceValid(avatar)
+			)
 			{
 				avatar = CreateCameraAvatar(member);
 				_cameraAvatarRoot.AddChild(avatar);
@@ -785,13 +867,16 @@ public sealed partial class TeamCreateService : Node
 				avatar.GlobalRotation = member.Camera.Rotation;
 			}
 			Label3D? label = avatar.GetNodeOrNull<Label3D>("Username");
-			if (label != null) label.Text = DisplayUsername(member.Username, member.IsVerified);
+			if (label != null)
+				label.Text = DisplayUsername(member.Username, member.IsVerified);
 		}
 
 		foreach ((string id, Node3D avatar) in _cameraAvatars.ToArray())
 		{
-			if (active.Contains(id)) continue;
-			if (IsInstanceValid(avatar)) avatar.QueueFree();
+			if (active.Contains(id))
+				continue;
+			if (IsInstanceValid(avatar))
+				avatar.QueueFree();
 			_cameraAvatars.Remove(id);
 		}
 	}
@@ -801,9 +886,11 @@ public sealed partial class TeamCreateService : Node
 		float weight = Mathf.Clamp(delta * 9f, 0f, 1f);
 		foreach (TeamCreateMember member in _members)
 		{
-			if (member.Camera == null
+			if (
+				member.Camera == null
 				|| !_cameraAvatars.TryGetValue(member.Id, out Node3D? avatar)
-				|| !IsInstanceValid(avatar))
+				|| !IsInstanceValid(avatar)
+			)
 				continue;
 			avatar.GlobalPosition = avatar.GlobalPosition.Lerp(member.Camera.Position, weight);
 			avatar.GlobalRotation = avatar.GlobalRotation.Lerp(member.Camera.Rotation, weight);
@@ -838,11 +925,7 @@ public sealed partial class TeamCreateService : Node
 		{
 			Name = "FacingDirection",
 			Position = new Vector3(0, 0, -0.65f),
-			Mesh = new BoxMesh
-			{
-				Size = new Vector3(0.09f, 0.09f, 1.1f),
-				Material = material,
-			},
+			Mesh = new BoxMesh { Size = new Vector3(0.09f, 0.09f, 1.1f), Material = material },
 		};
 		avatar.AddChild(direction);
 
@@ -900,19 +983,31 @@ public sealed partial class TeamCreateService : Node
 	private void ScanProjectFiles()
 	{
 		CreatorSession? session = World.Current?.LinkedSession;
-		if (session == null || !Directory.Exists(session.ProjectFolderPath)) return;
+		if (session == null || !Directory.Exists(session.ProjectFolderPath))
+			return;
 		Dictionary<string, ProjectFileState> current = new(StringComparer.OrdinalIgnoreCase);
 		try
 		{
-			foreach (string absolute in Directory.EnumerateFiles(session.ProjectFolderPath, "*", SearchOption.AllDirectories))
+			foreach (
+				string absolute in Directory.EnumerateFiles(
+					session.ProjectFolderPath,
+					"*",
+					SearchOption.AllDirectories
+				)
+			)
 			{
-				string path = Path.GetRelativePath(session.ProjectFolderPath, absolute).Replace('\\', '/');
-				if (!IsSafeProjectFilePath(path)) continue;
+				string path = Path.GetRelativePath(session.ProjectFolderPath, absolute)
+					.Replace('\\', '/');
+				if (!IsSafeProjectFilePath(path))
+					continue;
 				FileInfo info = new(absolute);
-				if (info.Length > MaxReplicatedFileBytes) continue;
-				if (_projectFiles.TryGetValue(path, out ProjectFileState? previous)
+				if (info.Length > MaxReplicatedFileBytes)
+					continue;
+				if (
+					_projectFiles.TryGetValue(path, out ProjectFileState? previous)
 					&& previous.Length == info.Length
-					&& previous.LastWriteUtcTicks == info.LastWriteTimeUtc.Ticks)
+					&& previous.LastWriteUtcTicks == info.LastWriteTimeUtc.Ticks
+				)
 				{
 					current[path] = previous;
 					continue;
@@ -928,21 +1023,36 @@ public sealed partial class TeamCreateService : Node
 
 			if (_projectFileSnapshotReady)
 			{
-				foreach (string deleted in _projectFiles.Keys.Except(current.Keys, StringComparer.OrdinalIgnoreCase))
+				foreach (
+					string deleted in _projectFiles.Keys.Except(
+						current.Keys,
+						StringComparer.OrdinalIgnoreCase
+					)
+				)
 				{
 					string filePrefix = "file:" + deleted + ":";
-					foreach (string key in _pendingChanges.Keys.Where(key => key.StartsWith(filePrefix, StringComparison.OrdinalIgnoreCase)).ToArray())
+					foreach (
+						string key in _pendingChanges
+							.Keys.Where(key =>
+								key.StartsWith(filePrefix, StringComparison.OrdinalIgnoreCase)
+							)
+							.ToArray()
+					)
 						_pendingChanges.Remove(key);
-					QueueChange("file-delete:" + deleted, new JsonObject
-					{
-						["kind"] = "file_delete",
-						["id"] = "",
-						["path"] = deleted,
-					});
+					QueueChange(
+						"file-delete:" + deleted,
+						new JsonObject
+						{
+							["kind"] = "file_delete",
+							["id"] = "",
+							["path"] = deleted,
+						}
+					);
 				}
 			}
 			_projectFiles.Clear();
-			foreach ((string path, ProjectFileState state) in current) _projectFiles[path] = state;
+			foreach ((string path, ProjectFileState state) in current)
+				_projectFiles[path] = state;
 			_projectFileSnapshotReady = true;
 		}
 		catch (Exception error)
@@ -954,7 +1064,11 @@ public sealed partial class TeamCreateService : Node
 	private void QueueProjectFile(string path, byte[] data, string sha256)
 	{
 		string keyPrefix = "file:" + path + ":";
-		foreach (string key in _pendingChanges.Keys.Where(key => key.StartsWith(keyPrefix, StringComparison.OrdinalIgnoreCase)).ToArray())
+		foreach (
+			string key in _pendingChanges
+				.Keys.Where(key => key.StartsWith(keyPrefix, StringComparison.OrdinalIgnoreCase))
+				.ToArray()
+		)
 			_pendingChanges.Remove(key);
 		_pendingChanges.Remove("file-delete:" + path);
 		string transferId = Guid.NewGuid().ToString("N");
@@ -963,27 +1077,34 @@ public sealed partial class TeamCreateService : Node
 		{
 			int offset = index * FileChunkBytes;
 			int length = Math.Min(FileChunkBytes, data.Length - offset);
-			QueueChange(keyPrefix + index, new JsonObject
-			{
-				["kind"] = "file_chunk",
-				["id"] = "",
-				["path"] = path,
-				["transferId"] = transferId,
-				["index"] = index,
-				["count"] = chunkCount,
-				["length"] = data.Length,
-				["sha256"] = sha256,
-				["data"] = Convert.ToBase64String(data, offset, length),
-			});
+			QueueChange(
+				keyPrefix + index,
+				new JsonObject
+				{
+					["kind"] = "file_chunk",
+					["id"] = "",
+					["path"] = path,
+					["transferId"] = transferId,
+					["index"] = index,
+					["count"] = chunkCount,
+					["length"] = data.Length,
+					["sha256"] = sha256,
+					["data"] = Convert.ToBase64String(data, offset, length),
+				}
+			);
 		}
 	}
 
 	private void ApplyProjectFileChange(JsonElement change, string kind)
 	{
 		CreatorSession? session = World.Current?.LinkedSession;
-		if (session == null || !change.TryGetProperty("path", out JsonElement pathNode)) return;
+		if (session == null || !change.TryGetProperty("path", out JsonElement pathNode))
+			return;
 		string path = pathNode.GetString()?.Replace('\\', '/') ?? "";
-		if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string absolute))
+		if (
+			!IsSafeProjectFilePath(path)
+			|| !TryGetSafeProjectPath(session, path, out string absolute)
+		)
 		{
 			BV.PrintWarn("Rejected unsafe Team Create project path: ", path);
 			return;
@@ -991,18 +1112,31 @@ public sealed partial class TeamCreateService : Node
 
 		if (kind == "file_delete")
 		{
-			if (string.Equals(path, Globals.ProjectMetaFileName, StringComparison.OrdinalIgnoreCase)
-				|| string.Equals(path, Globals.ProjectInputMapName, StringComparison.OrdinalIgnoreCase))
+			if (
+				string.Equals(path, Globals.ProjectMetaFileName, StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(
+					path,
+					Globals.ProjectInputMapName,
+					StringComparison.OrdinalIgnoreCase
+				)
+			)
 			{
 				BV.PrintWarn("Ignored Team Create deletion of protected project file: ", path);
 				return;
 			}
-			if (string.Equals(World.Current?.WorldFilePath, path, StringComparison.OrdinalIgnoreCase))
+			if (
+				string.Equals(
+					World.Current?.WorldFilePath,
+					path,
+					StringComparison.OrdinalIgnoreCase
+				)
+			)
 			{
 				BV.PrintWarn("Ignored Team Create deletion of the currently open world: ", path);
 				return;
 			}
-			if (File.Exists(absolute)) _ = ConfirmProjectFileDelete(session, path, absolute);
+			if (File.Exists(absolute))
+				_ = ConfirmProjectFileDelete(session, path, absolute);
 			return;
 		}
 
@@ -1011,10 +1145,16 @@ public sealed partial class TeamCreateService : Node
 		int count = change.GetProperty("count").GetInt32();
 		int length = change.GetProperty("length").GetInt32();
 		string sha256 = change.GetProperty("sha256").GetString() ?? "";
-		if (transferId.Length != 32 || count < 1
+		if (
+			transferId.Length != 32
+			|| count < 1
 			|| count > (MaxReplicatedFileBytes + FileChunkBytes - 1) / FileChunkBytes
-			|| index < 0 || index >= count || length < 0 || length > MaxReplicatedFileBytes
-			|| sha256.Length != 64)
+			|| index < 0
+			|| index >= count
+			|| length < 0
+			|| length > MaxReplicatedFileBytes
+			|| sha256.Length != 64
+		)
 			return;
 
 		if (_latestTransferByPath.TryGetValue(path, out string? latest) && latest != transferId)
@@ -1031,28 +1171,51 @@ public sealed partial class TeamCreateService : Node
 			transfer = new(path, count, length, sha256);
 			_incomingFiles[transferId] = transfer;
 		}
-		if (transfer.Path != path || transfer.Count != count || transfer.Length != length || transfer.Sha256 != sha256) return;
+		if (
+			transfer.Path != path
+			|| transfer.Count != count
+			|| transfer.Length != length
+			|| transfer.Sha256 != sha256
+		)
+			return;
 		byte[] chunk;
-		try { chunk = Convert.FromBase64String(change.GetProperty("data").GetString() ?? ""); }
-		catch (FormatException) { return; }
-		if (chunk.Length > FileChunkBytes) return;
+		try
+		{
+			chunk = Convert.FromBase64String(change.GetProperty("data").GetString() ?? "");
+		}
+		catch (FormatException)
+		{
+			return;
+		}
+		if (chunk.Length > FileChunkBytes)
+			return;
 		transfer.Chunks[index] = chunk;
-		if (transfer.Chunks.Any(item => item == null)) return;
+		if (transfer.Chunks.Any(item => item == null))
+			return;
 
 		byte[] complete = new byte[length];
 		int offset = 0;
 		foreach (byte[]? item in transfer.Chunks)
 		{
-			if (item == null || offset + item.Length > complete.Length) return;
+			if (item == null || offset + item.Length > complete.Length)
+				return;
 			Buffer.BlockCopy(item, 0, complete, offset, item.Length);
 			offset += item.Length;
 		}
-		if (offset != length || !Convert.ToHexString(SHA256.HashData(complete)).Equals(sha256, StringComparison.OrdinalIgnoreCase)) return;
+		if (
+			offset != length
+			|| !Convert
+				.ToHexString(SHA256.HashData(complete))
+				.Equals(sha256, StringComparison.OrdinalIgnoreCase)
+		)
+			return;
 
 		_incomingFiles.Remove(transferId);
 		_latestTransferByPath.Remove(path);
-		if (File.Exists(absolute)) WriteProjectFile(session, path, absolute, transferId, complete, sha256);
-		else _ = ConfirmProjectFileCreate(session, path, absolute, transferId, complete, sha256);
+		if (File.Exists(absolute))
+			WriteProjectFile(session, path, absolute, transferId, complete, sha256);
+		else
+			_ = ConfirmProjectFileCreate(session, path, absolute, transferId, complete, sha256);
 	}
 
 	private async Task ConfirmProjectFileCreate(
@@ -1061,10 +1224,12 @@ public sealed partial class TeamCreateService : Node
 		string absolute,
 		string transferId,
 		byte[] contents,
-		string sha256)
+		string sha256
+	)
 	{
 		string confirmationKey = "create:" + path;
-		if (!_pendingFileConfirmations.Add(confirmationKey)) return;
+		if (!_pendingFileConfirmations.Add(confirmationKey))
+			return;
 		try
 		{
 			bool approved = await CreatorService.Interface.PromptConfirmation(
@@ -1073,19 +1238,31 @@ public sealed partial class TeamCreateService : Node
 				confirmText: "Create File",
 				cancelText: "Reject"
 			);
-			if (!approved || File.Exists(absolute)) return;
-			if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string revalidated)
-				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase))
+			if (!approved || File.Exists(absolute))
+				return;
+			if (
+				!IsSafeProjectFilePath(path)
+				|| !TryGetSafeProjectPath(session, path, out string revalidated)
+				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase)
+			)
 				return;
 			WriteProjectFile(session, path, absolute, transferId, contents, sha256);
 		}
-		finally { _pendingFileConfirmations.Remove(confirmationKey); }
+		finally
+		{
+			_pendingFileConfirmations.Remove(confirmationKey);
+		}
 	}
 
-	private async Task ConfirmProjectFileDelete(CreatorSession session, string path, string absolute)
+	private async Task ConfirmProjectFileDelete(
+		CreatorSession session,
+		string path,
+		string absolute
+	)
 	{
 		string confirmationKey = "delete:" + path;
-		if (!_pendingFileConfirmations.Add(confirmationKey)) return;
+		if (!_pendingFileConfirmations.Add(confirmationKey))
+			return;
 		try
 		{
 			bool approved = await CreatorService.Interface.PromptConfirmation(
@@ -1094,15 +1271,22 @@ public sealed partial class TeamCreateService : Node
 				confirmText: "Delete File",
 				cancelText: "Keep File"
 			);
-			if (!approved || !File.Exists(absolute)) return;
-			if (!IsSafeProjectFilePath(path) || !TryGetSafeProjectPath(session, path, out string revalidated)
-				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase))
+			if (!approved || !File.Exists(absolute))
+				return;
+			if (
+				!IsSafeProjectFilePath(path)
+				|| !TryGetSafeProjectPath(session, path, out string revalidated)
+				|| !string.Equals(absolute, revalidated, StringComparison.OrdinalIgnoreCase)
+			)
 				return;
 			File.Delete(absolute);
 			_projectFiles.Remove(path);
 			session.QueueRescanFolder();
 		}
-		finally { _pendingFileConfirmations.Remove(confirmationKey); }
+		finally
+		{
+			_pendingFileConfirmations.Remove(confirmationKey);
+		}
 	}
 
 	private void WriteProjectFile(
@@ -1111,10 +1295,12 @@ public sealed partial class TeamCreateService : Node
 		string absolute,
 		string transferId,
 		byte[] contents,
-		string sha256)
+		string sha256
+	)
 	{
 		string? directory = Path.GetDirectoryName(absolute);
-		if (directory == null) return;
+		if (directory == null)
+			return;
 		Directory.CreateDirectory(directory);
 		string temporary = Path.Combine(directory, ".teamcreate-" + transferId + ".tmp");
 		try
@@ -1125,18 +1311,28 @@ public sealed partial class TeamCreateService : Node
 			_projectFiles[path] = new(info.Length, info.LastWriteTimeUtc.Ticks, sha256);
 			session.QueueRescanFolder();
 		}
-		finally { if (File.Exists(temporary)) File.Delete(temporary); }
+		finally
+		{
+			if (File.Exists(temporary))
+				File.Delete(temporary);
+		}
 	}
 
 	private static bool IsSafeProjectFilePath(string path)
 	{
-		if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains(':')) return false;
+		if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains(':'))
+			return false;
 		string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-		if (parts.Length == 0 || parts.Any(part => part is "." or ".." || part.StartsWith('.'))) return false;
+		if (parts.Length == 0 || parts.Any(part => part is "." or ".." || part.StartsWith('.')))
+			return false;
 		return ReplicatedFileExtensions.Contains(Path.GetExtension(path));
 	}
 
-	private static bool TryGetSafeProjectPath(CreatorSession session, string path, out string absolute)
+	private static bool TryGetSafeProjectPath(
+		CreatorSession session,
+		string path,
+		out string absolute
+	)
 	{
 		absolute = "";
 		try
@@ -1146,19 +1342,25 @@ public sealed partial class TeamCreateService : Node
 			foreach (string part in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
 			{
 				current = Path.Combine(current, part);
-				if ((File.Exists(current) || Directory.Exists(current))
-					&& File.GetAttributes(current).HasFlag(FileAttributes.ReparsePoint))
+				if (
+					(File.Exists(current) || Directory.Exists(current))
+					&& File.GetAttributes(current).HasFlag(FileAttributes.ReparsePoint)
+				)
 					return false;
 			}
 			return true;
 		}
-		catch { return false; }
+		catch
+		{
+			return false;
+		}
 	}
 
 	private void ObserveWorld()
 	{
 		World? world = World.Current;
-		if (world == null) return;
+		if (world == null)
+			return;
 		bool queueDiscoveredObjects = _initialObservationComplete;
 		Observe(world);
 		foreach (NetworkedObject item in world.NetworkObjects.Values.ToArray())
@@ -1175,24 +1377,25 @@ public sealed partial class TeamCreateService : Node
 		// CreatorContext (including its FreeLook camera) is instantiated locally for
 		// each editor. Observing it would relay one collaborator's camera transform
 		// onto every other client because those local instances share object IDs.
-		if (!IsCollaborativeObject(item)) return false;
+		if (!IsCollaborativeObject(item))
+			return false;
 		string id = item.NetworkedObjectID;
-		if (string.IsNullOrWhiteSpace(id) || _observed.ContainsKey(id)) return false;
+		if (string.IsNullOrWhiteSpace(id) || _observed.ContainsKey(id))
+			return false;
 		Action<string> propertyHandler = property => OnPropertyChanged(item, property ?? "");
 		Action deletedHandler = () =>
 		{
-			if (_applyingRemote || !Connected) return;
-			QueueChange(
-				"delete:" + id,
-				new JsonObject { ["kind"] = "delete", ["id"] = id }
-			);
+			if (_applyingRemote || !Connected)
+				return;
+			QueueChange("delete:" + id, new JsonObject { ["kind"] = "delete", ["id"] = id });
 		};
 		Action<Instance>? childAddedHandler = null;
 		if (item is Instance instance)
 		{
 			childAddedHandler = child =>
 			{
-				if (child is Instance instanceChild) OnChildAdded(instance, instanceChild);
+				if (child is Instance instanceChild)
+					OnChildAdded(instance, instanceChild);
 			};
 			instance.ChildAdded.Connect(childAddedHandler);
 		}
@@ -1204,11 +1407,13 @@ public sealed partial class TeamCreateService : Node
 
 	private void OnChildAdded(Instance parent, Instance child)
 	{
-		if (_applyingRemote
+		if (
+			_applyingRemote
 			|| !Connected
 			|| child.Root != World.Current
 			|| !IsCollaborativeObject(parent)
-			|| !IsCollaborativeObject(child))
+			|| !IsCollaborativeObject(child)
+		)
 			return;
 		EnsureCollaborativeIds(child);
 		bool wasObserved = _observed.ContainsKey(child.NetworkedObjectID);
@@ -1247,25 +1452,37 @@ public sealed partial class TeamCreateService : Node
 
 	private void QueueCreate(Instance child)
 	{
-		if (!IsCollaborativeObject(child)
+		if (
+			!IsCollaborativeObject(child)
 			|| string.IsNullOrWhiteSpace(child.NetworkedObjectID)
 			|| child.Parent == null
-			|| string.IsNullOrWhiteSpace(child.Parent.NetworkedObjectID))
+			|| string.IsNullOrWhiteSpace(child.Parent.NetworkedObjectID)
+		)
 			return;
 
 		JsonObject properties = [];
 		foreach (System.Reflection.PropertyInfo property in child.GetEditableProperties())
 		{
-			if (!property.CanRead || !property.CanWrite || property.Name == nameof(NetworkedObject.Name))
+			if (
+				!property.CanRead
+				|| !property.CanWrite
+				|| property.Name == nameof(NetworkedObject.Name)
+			)
 				continue;
 			try
 			{
 				JsonNode? value = EncodeValue(property.GetValue(child));
-				if (value is not null) properties[property.Name] = value;
+				if (value is not null)
+					properties[property.Name] = value;
 			}
 			catch (Exception error)
 			{
-				BV.PrintWarn("Could not snapshot Team Create property ", property.Name, ": ", error.Message);
+				BV.PrintWarn(
+					"Could not snapshot Team Create property ",
+					property.Name,
+					": ",
+					error.Message
+				);
 			}
 		}
 
@@ -1278,16 +1495,19 @@ public sealed partial class TeamCreateService : Node
 			["name"] = child.Name,
 			["properties"] = properties,
 		};
-		if (child is Dynamic dynamic) change["transform"] = Transform(dynamic.GetLocalTransform());
+		if (child is Dynamic dynamic)
+			change["transform"] = Transform(dynamic.GetLocalTransform());
 		QueueChange("create:" + child.NetworkedObjectID, change);
 	}
 
 	private void OnPropertyChanged(NetworkedObject item, string property)
 	{
-		if (_applyingRemote
+		if (
+			_applyingRemote
 			|| !Connected
 			|| item.Root != World.Current
-			|| !IsCollaborativeObject(item))
+			|| !IsCollaborativeObject(item)
+		)
 			return;
 		if (item is Dynamic dynamic && IsTransformProperty(property))
 		{
@@ -1304,9 +1524,11 @@ public sealed partial class TeamCreateService : Node
 		}
 
 		System.Reflection.PropertyInfo? info = item.GetType().GetProperty(property);
-		if (info == null || !info.CanRead || !info.CanWrite) return;
+		if (info == null || !info.CanRead || !info.CanWrite)
+			return;
 		JsonNode? value = EncodeValue(info.GetValue(item));
-		if (value == null) return;
+		if (value == null)
+			return;
 		QueueChange(
 			"property:" + item.NetworkedObjectID + ":" + property,
 			new JsonObject
@@ -1322,19 +1544,28 @@ public sealed partial class TeamCreateService : Node
 	private void ApplyChange(JsonElement change)
 	{
 		World? world = World.Current;
-		if (world == null) return;
+		if (world == null)
+			return;
 		string kind = change.GetProperty("kind").GetString() ?? "";
 		string id = change.GetProperty("id").GetString() ?? "";
 		if (kind == "team_chat")
 		{
-			string sender = change.GetProperty("senderId").GetString() ?? ""; string message = change.GetProperty("message").GetString() ?? "";
-			if (sender != _localUserId && message.Length <= 300) TeamChatMessage?.Invoke(sender, message);
+			string sender = change.GetProperty("senderId").GetString() ?? "";
+			string message = change.GetProperty("message").GetString() ?? "";
+			if (sender != _localUserId && message.Length <= 300)
+				TeamChatMessage?.Invoke(sender, message);
 			return;
 		}
 		if (kind is "file_chunk" or "file_delete")
 		{
-			try { ApplyProjectFileChange(change, kind); }
-			catch (Exception error) { BV.PrintErr("Failed to apply Team Create project file change: ", error.Message); }
+			try
+			{
+				ApplyProjectFileChange(change, kind);
+			}
+			catch (Exception error)
+			{
+				BV.PrintErr("Failed to apply Team Create project file change: ", error.Message);
+			}
 			return;
 		}
 		_applyingRemote = true;
@@ -1343,34 +1574,48 @@ public sealed partial class TeamCreateService : Node
 			if (kind == "delete")
 			{
 				NetworkedObject? deleted = world.GetNetObjectFromID(id);
-				if (deleted != null && IsCollaborativeObject(deleted)) deleted.Delete();
+				if (deleted != null && IsCollaborativeObject(deleted))
+					deleted.Delete();
 				return;
 			}
 			if (kind == "create")
 			{
-				if (world.GetNetObjectFromID(id) != null) return;
+				if (world.GetNetObjectFromID(id) != null)
+					return;
 				string className = change.GetProperty("className").GetString() ?? "";
-				if (className == nameof(CreatorContextService)) return;
+				if (className == nameof(CreatorContextService))
+					return;
 				string parentId = change.GetProperty("parentId").GetString() ?? "";
-				if (world.GetNetObjectFromID(parentId) is not Instance parent
-					|| !IsCollaborativeObject(parent))
+				if (
+					world.GetNetObjectFromID(parentId) is not Instance parent
+					|| !IsCollaborativeObject(parent)
+				)
 					return;
 				Instance? created = Globals.LoadInstance<Instance>(
 					className,
 					world,
 					item => item.NetworkedObjectID = id
 				);
-				if (created == null) return;
+				if (created == null)
+					return;
 				created.Name = change.GetProperty("name").GetString() ?? className;
-				if (created is Dynamic dynamic && change.TryGetProperty("transform", out JsonElement transform))
+				if (
+					created is Dynamic dynamic
+					&& change.TryGetProperty("transform", out JsonElement transform)
+				)
 					dynamic.SetLocalTransform(ReadTransform(transform));
-				if (change.TryGetProperty("properties", out JsonElement properties)
-					&& properties.ValueKind == JsonValueKind.Object)
+				if (
+					change.TryGetProperty("properties", out JsonElement properties)
+					&& properties.ValueKind == JsonValueKind.Object
+				)
 				{
 					foreach (JsonProperty property in properties.EnumerateObject())
 					{
-						System.Reflection.PropertyInfo? info = created.GetType().GetProperty(property.Name);
-						if (info?.CanWrite != true) continue;
+						System.Reflection.PropertyInfo? info = created
+							.GetType()
+							.GetProperty(property.Name);
+						if (info?.CanWrite != true)
+							continue;
 						object? value = DecodeValue(property.Value, info.PropertyType);
 						if (value != null || !info.PropertyType.IsValueType)
 							info.SetValue(created, value);
@@ -1383,12 +1628,15 @@ public sealed partial class TeamCreateService : Node
 			}
 
 			NetworkedObject? target = world.GetNetObjectFromID(id);
-			if (target == null || !IsCollaborativeObject(target)) return;
+			if (target == null || !IsCollaborativeObject(target))
+				return;
 			if (kind == "reparent" && target is Instance targetInstance)
 			{
 				string parentId = change.GetProperty("parentId").GetString() ?? "";
-				if (world.GetNetObjectFromID(parentId) is Instance newParent
-					&& IsCollaborativeObject(newParent))
+				if (
+					world.GetNetObjectFromID(parentId) is Instance newParent
+					&& IsCollaborativeObject(newParent)
+				)
 					targetInstance.Parent = newParent;
 				return;
 			}
@@ -1401,9 +1649,11 @@ public sealed partial class TeamCreateService : Node
 			{
 				string property = change.GetProperty("property").GetString() ?? "";
 				System.Reflection.PropertyInfo? info = target.GetType().GetProperty(property);
-				if (info?.CanWrite != true) return;
+				if (info?.CanWrite != true)
+					return;
 				object? value = DecodeValue(change.GetProperty("value"), info.PropertyType);
-				if (value != null || !info.PropertyType.IsValueType) info.SetValue(target, value);
+				if (value != null || !info.PropertyType.IsValueType)
+					info.SetValue(target, value);
 			}
 		}
 		catch (Exception error)
@@ -1450,28 +1700,44 @@ public sealed partial class TeamCreateService : Node
 
 	private static bool IsCollaborativeObject(NetworkedObject item) =>
 		item is not CreatorContextService
-		&& (item is not Instance instance
-			|| !instance.IsDescendantOfClass<CreatorContextService>());
+		&& (
+			item is not Instance instance || !instance.IsDescendantOfClass<CreatorContextService>()
+		);
 
 	private static bool IsTransformProperty(string property) =>
-		property is "Position" or "Rotation" or "Size"
-			or "LocalPosition" or "LocalRotation" or "LocalSize"
-			or "Quaternion" or "LocalQuaternion";
+		property
+			is "Position"
+				or "Rotation"
+				or "Size"
+				or "LocalPosition"
+				or "LocalRotation"
+				or "LocalSize"
+				or "Quaternion"
+				or "LocalQuaternion";
 
 	private static JsonArray Vector(Vector3 value) => [value.X, value.Y, value.Z];
 
 	private static JsonArray Transform(Transform3D value) =>
-	[
-		value.Basis.X.X, value.Basis.X.Y, value.Basis.X.Z,
-		value.Basis.Y.X, value.Basis.Y.Y, value.Basis.Y.Z,
-		value.Basis.Z.X, value.Basis.Z.Y, value.Basis.Z.Z,
-		value.Origin.X, value.Origin.Y, value.Origin.Z,
-	];
+		[
+			value.Basis.X.X,
+			value.Basis.X.Y,
+			value.Basis.X.Z,
+			value.Basis.Y.X,
+			value.Basis.Y.Y,
+			value.Basis.Y.Z,
+			value.Basis.Z.X,
+			value.Basis.Z.Y,
+			value.Basis.Z.Z,
+			value.Origin.X,
+			value.Origin.Y,
+			value.Origin.Z,
+		];
 
 	private static Transform3D ReadTransform(JsonElement value)
 	{
 		float[] values = value.EnumerateArray().Select(item => item.GetSingle()).ToArray();
-		if (values.Length != 12) return Transform3D.Identity;
+		if (values.Length != 12)
+			return Transform3D.Identity;
 		return new(
 			new Basis(
 				new Vector3(values[0], values[1], values[2]),
@@ -1488,49 +1754,78 @@ public sealed partial class TeamCreateService : Node
 		return values.Length >= 3 ? new(values[0], values[1], values[2]) : Vector3.Zero;
 	}
 
-	private static JsonNode? EncodeValue(object? value) => value switch
-	{
-		null => JsonValue.Create((string?)null),
-		string text => JsonValue.Create(text),
-		StringName text => new JsonObject { ["$type"] = "stringName", ["value"] = text.ToString() },
-		NodePath path => new JsonObject { ["$type"] = "nodePath", ["value"] = path.ToString() },
-		bool flag => JsonValue.Create(flag),
-		sbyte number => JsonValue.Create(number),
-		byte number => JsonValue.Create(number),
-		short number => JsonValue.Create(number),
-		ushort number => JsonValue.Create(number),
-		int number => JsonValue.Create(number),
-		uint number => JsonValue.Create(number),
-		long number => JsonValue.Create(number),
-		ulong number => JsonValue.Create(number),
-		float number => JsonValue.Create(number),
-		double number => JsonValue.Create(number),
-		Enum enumValue => new JsonObject
+	private static JsonNode? EncodeValue(object? value) =>
+		value switch
 		{
-			["$type"] = "enum",
-			["value"] = enumValue.ToString(),
-		},
-		Vector2 vector => new JsonObject
-		{
-			["$type"] = "vector2",
-			["value"] = new JsonArray(vector.X, vector.Y),
-		},
-		Vector3 vector => new JsonObject { ["$type"] = "vector3", ["value"] = Vector(vector) },
-		Vector2I vector => new JsonObject { ["$type"] = "vector2i", ["value"] = new JsonArray(vector.X, vector.Y) },
-		Vector3I vector => new JsonObject { ["$type"] = "vector3i", ["value"] = new JsonArray(vector.X, vector.Y, vector.Z) },
-		Vector4 vector => new JsonObject { ["$type"] = "vector4", ["value"] = new JsonArray(vector.X, vector.Y, vector.Z, vector.W) },
-		Quaternion quaternion => new JsonObject { ["$type"] = "quaternion", ["value"] = new JsonArray(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W) },
-		Transform3D transform => new JsonObject { ["$type"] = "transform3d", ["value"] = Transform(transform) },
-		Color color => new JsonObject
-		{
-			["$type"] = "color",
-			["value"] = new JsonArray(color.R, color.G, color.B, color.A),
-		},
-		NetworkedObject reference when !string.IsNullOrWhiteSpace(reference.NetworkedObjectID) =>
-			new JsonObject { ["$type"] = "reference", ["id"] = reference.NetworkedObjectID },
-		Array array => EncodeArray(array),
-		_ => null,
-	};
+			null => JsonValue.Create((string?)null),
+			string text => JsonValue.Create(text),
+			StringName text => new JsonObject
+			{
+				["$type"] = "stringName",
+				["value"] = text.ToString(),
+			},
+			NodePath path => new JsonObject { ["$type"] = "nodePath", ["value"] = path.ToString() },
+			bool flag => JsonValue.Create(flag),
+			sbyte number => JsonValue.Create(number),
+			byte number => JsonValue.Create(number),
+			short number => JsonValue.Create(number),
+			ushort number => JsonValue.Create(number),
+			int number => JsonValue.Create(number),
+			uint number => JsonValue.Create(number),
+			long number => JsonValue.Create(number),
+			ulong number => JsonValue.Create(number),
+			float number => JsonValue.Create(number),
+			double number => JsonValue.Create(number),
+			Enum enumValue => new JsonObject
+			{
+				["$type"] = "enum",
+				["value"] = enumValue.ToString(),
+			},
+			Vector2 vector => new JsonObject
+			{
+				["$type"] = "vector2",
+				["value"] = new JsonArray(vector.X, vector.Y),
+			},
+			Vector3 vector => new JsonObject { ["$type"] = "vector3", ["value"] = Vector(vector) },
+			Vector2I vector => new JsonObject
+			{
+				["$type"] = "vector2i",
+				["value"] = new JsonArray(vector.X, vector.Y),
+			},
+			Vector3I vector => new JsonObject
+			{
+				["$type"] = "vector3i",
+				["value"] = new JsonArray(vector.X, vector.Y, vector.Z),
+			},
+			Vector4 vector => new JsonObject
+			{
+				["$type"] = "vector4",
+				["value"] = new JsonArray(vector.X, vector.Y, vector.Z, vector.W),
+			},
+			Quaternion quaternion => new JsonObject
+			{
+				["$type"] = "quaternion",
+				["value"] = new JsonArray(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W),
+			},
+			Transform3D transform => new JsonObject
+			{
+				["$type"] = "transform3d",
+				["value"] = Transform(transform),
+			},
+			Color color => new JsonObject
+			{
+				["$type"] = "color",
+				["value"] = new JsonArray(color.R, color.G, color.B, color.A),
+			},
+			NetworkedObject reference
+				when !string.IsNullOrWhiteSpace(reference.NetworkedObjectID) => new JsonObject
+			{
+				["$type"] = "reference",
+				["id"] = reference.NetworkedObjectID,
+			},
+			Array array => EncodeArray(array),
+			_ => null,
+		};
 
 	private static JsonObject EncodeArray(Array values)
 	{
@@ -1542,55 +1837,97 @@ public sealed partial class TeamCreateService : Node
 
 	private object? DecodeValue(JsonElement value, Type type)
 	{
-		if (value.ValueKind == JsonValueKind.Null) return null;
+		if (value.ValueKind == JsonValueKind.Null)
+			return null;
 		Type? nullableType = Nullable.GetUnderlyingType(type);
-		if (nullableType != null) return DecodeValue(value, nullableType);
-		if (type == typeof(string)) return value.GetString();
-		if (type == typeof(StringName)) return new StringName(value.GetProperty("value").GetString() ?? "");
-		if (type == typeof(NodePath)) return new NodePath(value.GetProperty("value").GetString() ?? "");
-		if (type == typeof(bool)) return value.GetBoolean();
-		if (type == typeof(sbyte)) return value.GetSByte();
-		if (type == typeof(byte)) return value.GetByte();
-		if (type == typeof(short)) return value.GetInt16();
-		if (type == typeof(ushort)) return value.GetUInt16();
-		if (type == typeof(int)) return value.GetInt32();
-		if (type == typeof(uint)) return value.GetUInt32();
-		if (type == typeof(long)) return value.GetInt64();
-		if (type == typeof(ulong)) return value.GetUInt64();
-		if (type == typeof(float)) return value.GetSingle();
-		if (type == typeof(double)) return value.GetDouble();
+		if (nullableType != null)
+			return DecodeValue(value, nullableType);
+		if (type == typeof(string))
+			return value.GetString();
+		if (type == typeof(StringName))
+			return new StringName(value.GetProperty("value").GetString() ?? "");
+		if (type == typeof(NodePath))
+			return new NodePath(value.GetProperty("value").GetString() ?? "");
+		if (type == typeof(bool))
+			return value.GetBoolean();
+		if (type == typeof(sbyte))
+			return value.GetSByte();
+		if (type == typeof(byte))
+			return value.GetByte();
+		if (type == typeof(short))
+			return value.GetInt16();
+		if (type == typeof(ushort))
+			return value.GetUInt16();
+		if (type == typeof(int))
+			return value.GetInt32();
+		if (type == typeof(uint))
+			return value.GetUInt32();
+		if (type == typeof(long))
+			return value.GetInt64();
+		if (type == typeof(ulong))
+			return value.GetUInt64();
+		if (type == typeof(float))
+			return value.GetSingle();
+		if (type == typeof(double))
+			return value.GetDouble();
 		if (type.IsEnum)
 			return Enum.Parse(type, value.GetProperty("value").GetString() ?? "", true);
 		if (type == typeof(Vector2))
 		{
-			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			float[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetSingle())
+				.ToArray();
 			return new Vector2(values[0], values[1]);
 		}
-		if (type == typeof(Vector3)) return ReadVector3(value.GetProperty("value"));
+		if (type == typeof(Vector3))
+			return ReadVector3(value.GetProperty("value"));
 		if (type == typeof(Vector2I))
 		{
-			int[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetInt32()).ToArray();
+			int[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetInt32())
+				.ToArray();
 			return new Vector2I(values[0], values[1]);
 		}
 		if (type == typeof(Vector3I))
 		{
-			int[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetInt32()).ToArray();
+			int[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetInt32())
+				.ToArray();
 			return new Vector3I(values[0], values[1], values[2]);
 		}
 		if (type == typeof(Vector4))
 		{
-			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			float[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetSingle())
+				.ToArray();
 			return new Vector4(values[0], values[1], values[2], values[3]);
 		}
 		if (type == typeof(Quaternion))
 		{
-			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			float[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetSingle())
+				.ToArray();
 			return new Quaternion(values[0], values[1], values[2], values[3]);
 		}
-		if (type == typeof(Transform3D)) return ReadTransform(value.GetProperty("value"));
+		if (type == typeof(Transform3D))
+			return ReadTransform(value.GetProperty("value"));
 		if (type == typeof(Color))
 		{
-			float[] values = value.GetProperty("value").EnumerateArray().Select(item => item.GetSingle()).ToArray();
+			float[] values = value
+				.GetProperty("value")
+				.EnumerateArray()
+				.Select(item => item.GetSingle())
+				.ToArray();
 			return new Color(values[0], values[1], values[2], values[3]);
 		}
 		if (typeof(NetworkedObject).IsAssignableFrom(type))

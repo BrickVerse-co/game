@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System.Threading.Tasks;
 using BrickVerse.Attributes;
 using BrickVerse.Client.UI;
 using BrickVerse.Scripting;
 using BrickVerse.Shared;
-using System.Threading.Tasks;
+using Godot;
 
 namespace BrickVerse.Datamodel.Services;
 
@@ -60,63 +60,107 @@ public sealed partial class CoreUIService : Instance
 	public bool UseUserCard
 	{
 		get => _useUserCard;
-		set { _useUserCard = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useUserCard = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, ScriptLegacyProperty("ChatEnabled")]
 	public bool UseChat
 	{
 		get => _useChat;
-		set { _useChat = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useChat = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, ScriptLegacyProperty("HealthBarEnabled")]
 	public bool UseHealthBar
 	{
 		get => _useHealthBar;
-		set { _useHealthBar = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useHealthBar = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, ScriptLegacyProperty("LeaderboardEnabled")]
 	public bool UseLeaderboard
 	{
 		get => _useLeaderboard;
-		set { _useLeaderboard = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useLeaderboard = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, ScriptLegacyProperty("HotbarEnabled")]
 	public bool UseHotbar
 	{
 		get => _useHotBar;
-		set { _useHotBar = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useHotBar = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public bool UseBackpack
 	{
 		get => _useBackpack;
-		set { _useBackpack = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useBackpack = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty, ScriptLegacyProperty("MenuButtonEnabled")]
 	public bool UseMenuButton
 	{
 		get => _useMenuButton;
-		set { _useMenuButton = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useMenuButton = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public bool UseEmoteWheel
 	{
 		get => _useEmoteWheel;
-		set { _useEmoteWheel = value; RefreshCoreUIsVisibility(); OnPropertyChanged(); }
+		set
+		{
+			_useEmoteWheel = value;
+			RefreshCoreUIsVisibility();
+			OnPropertyChanged();
+		}
 	}
 
 	[Editable, ScriptProperty]
 	public bool CanRespawn
 	{
 		get => _canRespawn;
-		set { _canRespawn = value; OnPropertyChanged(); }
+		set
+		{
+			_canRespawn = value;
+			OnPropertyChanged();
+		}
 	}
 
 	public override void Init()
@@ -148,7 +192,8 @@ public sealed partial class CoreUIService : Instance
 		// CoreUI is engine-owned; developer screen GUIs belong under PlayerGUI.
 		foreach (Instance child in GetChildren())
 		{
-			if (child is GUI) child.Parent = Root.PlayerGUI;
+			if (child is GUI)
+				child.Parent = Root.PlayerGUI;
 		}
 #endif
 		RefreshCoreUIsVisibility();
@@ -157,7 +202,10 @@ public sealed partial class CoreUIService : Instance
 
 	private void OnGameLoaded()
 	{
-		if (Root.Network.IsServer || Root.SessionType != World.SessionTypeEnum.Client) { return; }
+		if (Root.Network.IsServer || Root.SessionType != World.SessionTypeEnum.Client)
+		{
+			return;
+		}
 
 		CoreUIRoot coreUI = Globals.CreateInstanceFromScene<CoreUIRoot>(CoreUIPath);
 		coreUI.Root = Root;
@@ -193,6 +241,6 @@ public sealed partial class CoreUIService : Instance
 		Dot,
 		TacticalDot,
 		Plus,
-		X
+		X,
 	}
 }

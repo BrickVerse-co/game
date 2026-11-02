@@ -10,7 +10,9 @@ public static class TextUtils
 {
 	public static int BoundsToTextSize(Font font, string text, Vector2 bounds, bool isWrapped)
 	{
-		int lo = 1, hi = 512, result = 0;
+		int lo = 1,
+			hi = 512,
+			result = 0;
 
 		while (lo <= hi)
 		{
@@ -25,14 +27,16 @@ public static class TextUtils
 					fontSize: mid
 				);
 			}
-			else textBounds = font.GetStringSize(text, HorizontalAlignment.Center, -1, mid);
+			else
+				textBounds = font.GetStringSize(text, HorizontalAlignment.Center, -1, mid);
 
 			if (textBounds.X <= bounds.X && textBounds.Y <= bounds.Y)
 			{
 				result = mid;
 				lo = mid + 1;
 			}
-			else hi = mid - 1;
+			else
+				hi = mid - 1;
 		}
 
 		return result;

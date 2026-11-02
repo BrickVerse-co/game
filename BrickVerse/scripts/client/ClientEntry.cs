@@ -17,12 +17,12 @@ using BrickVerse.Client.Settings.Appliers;
 using BrickVerse.Client.WebAPI;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Services;
+using BrickVerse.Providers.CapturePublish;
 using BrickVerse.Schemas.API;
 using BrickVerse.Schemas.Debugger;
 using BrickVerse.Shared;
 using BrickVerse.Shared.AssetLoaders;
 using BrickVerse.Shared.Settings;
-using BrickVerse.Providers.CapturePublish;
 using Godot;
 #if CREATOR
 using BrickVerse.Creator.Utils;
@@ -369,7 +369,8 @@ public sealed partial class ClientEntry : Node3D
 
 	private void CreateCoreServices(bool isServer)
 	{
-		if (!isServer) CaptureService.CapturePublisher = new FeedCapturePublisher();
+		if (!isServer)
+			CaptureService.CapturePublisher = new FeedCapturePublisher();
 		ClientSettingsService settings = new() { Name = "ClientSettings", Entry = this };
 
 		AddChild(settings, true, InternalMode.Front);
@@ -607,9 +608,8 @@ public sealed partial class ClientEntry : Node3D
 			int serverPort = options.ServerPort ?? listenResponse.Port;
 			if (serverPort is < 1 or > 65535)
 				throw new InvalidOperationException($"Invalid ENet server port: {serverPort}");
-			int maxPlayers = listenResponse.MaxPlayers > 0
-				? listenResponse.MaxPlayers
-				: options.MaxPlayers;
+			int maxPlayers =
+				listenResponse.MaxPlayers > 0 ? listenResponse.MaxPlayers : options.MaxPlayers;
 			NetworkService.CreateServer(serverPort, maxPlayers);
 		}
 		catch (Exception ex)
@@ -715,7 +715,11 @@ public sealed partial class ClientEntry : Node3D
 
 	private async void PollServerStatus()
 	{
-		if (_serverStatusPollTimer == null || _clientConnectionInfo == null || _serverStatusPollInFlight)
+		if (
+			_serverStatusPollTimer == null
+			|| _clientConnectionInfo == null
+			|| _serverStatusPollInFlight
+		)
 		{
 			return;
 		}
@@ -742,7 +746,12 @@ public sealed partial class ClientEntry : Node3D
 				// Integrity authorization is deliberately short-lived. Refresh it only
 				// once the server is ready so a long wake-up cannot expire the token.
 				_clientConnectionInfo = await ClientAuthAPI.SendClientConnect();
-				BV.Print("Server is ready, connecting to ", _clientConnectionInfo.IP, ":", _clientConnectionInfo.Port);
+				BV.Print(
+					"Server is ready, connecting to ",
+					_clientConnectionInfo.IP,
+					":",
+					_clientConnectionInfo.Port
+				);
 				TargetServerReady?.Invoke();
 				NetworkService.CreateClient(_clientConnectionInfo.IP, _clientConnectionInfo.Port);
 				_serverStatusPollTimer.QueueFree();
@@ -889,19 +898,33 @@ public sealed partial class ClientEntry : Node3D
 	{
 		if (options.IsServer)
 			return;
-		_localTestAttached = string.Equals(options.LocalTestPresentation, "attached", StringComparison.OrdinalIgnoreCase);
-		if (string.Equals(options.LocalTestPresentation, "windowed", StringComparison.OrdinalIgnoreCase))
+		_localTestAttached = string.Equals(
+			options.LocalTestPresentation,
+			"attached",
+			StringComparison.OrdinalIgnoreCase
+		);
+		if (
+			string.Equals(
+				options.LocalTestPresentation,
+				"windowed",
+				StringComparison.OrdinalIgnoreCase
+			)
+		)
 		{
 			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
 			DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, false);
 			DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, false);
 			Vector2I screenSize = DisplayServer.ScreenGetSize();
-			Vector2I size = new(Math.Min(1280, screenSize.X - 80), Math.Min(720, screenSize.Y - 80));
+			Vector2I size = new(
+				Math.Min(1280, screenSize.X - 80),
+				Math.Min(720, screenSize.Y - 80)
+			);
 			DisplayServer.WindowSetSize(size);
 			DisplayServer.WindowSetPosition((screenSize - size) / 2);
 			return;
 		}
-		if (string.IsNullOrWhiteSpace(options.LocalTestViewportRect)) return;
+		if (string.IsNullOrWhiteSpace(options.LocalTestViewportRect))
+			return;
 
 		string[] values = options.LocalTestViewportRect.Split(',');
 		if (
@@ -929,7 +952,8 @@ public sealed partial class ClientEntry : Node3D
 
 	internal static void ApplyLocalTestViewport(MessageRuntimeViewportRect rect)
 	{
-		if (!_localTestAttached) return;
+		if (!_localTestAttached)
+			return;
 		if (!rect.Visible)
 		{
 			return;

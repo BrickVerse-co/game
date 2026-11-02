@@ -22,15 +22,24 @@ public partial class GuildMembersDialog : Window
 		_rankGroups = GetNode<VBoxContainer>("Layout/Scroll/RankGroups");
 		_loadMore = GetNode<Button>("Layout/LoadMore");
 		_status = GetNode<Label>("Layout/Status");
-		_memberCardScene = GD.Load<PackedScene>("res://scenes/mobile/components/home/user_headshot_card.tscn");
-		_loadMore.Pressed += () => { _page++; _ = LoadPage(); };
+		_memberCardScene = GD.Load<PackedScene>(
+			"res://scenes/mobile/components/home/user_headshot_card.tscn"
+		);
+		_loadMore.Pressed += () =>
+		{
+			_page++;
+			_ = LoadPage();
+		};
 		GetNode<Button>("Layout/Header/Close").Pressed += QueueFree;
 		CloseRequested += QueueFree;
 	}
 
 	public static GuildMembersDialog Open(Node owner, string guildId)
 	{
-		GuildMembersDialog dialog = GD.Load<PackedScene>("res://scenes/mobile/views/guild_members.tscn").Instantiate<GuildMembersDialog>();
+		GuildMembersDialog dialog = GD.Load<PackedScene>(
+				"res://scenes/mobile/views/guild_members.tscn"
+			)
+			.Instantiate<GuildMembersDialog>();
 		owner.GetTree().Root.AddChild(dialog);
 		dialog._guildId = guildId;
 		dialog.PopupCentered();
@@ -40,17 +49,26 @@ public partial class GuildMembersDialog : Window
 
 	private async System.Threading.Tasks.Task LoadPage()
 	{
-		if (_loading || string.IsNullOrWhiteSpace(_guildId)) return;
+		if (_loading || string.IsNullOrWhiteSpace(_guildId))
+			return;
 		_loading = true;
 		_loadMore.Disabled = true;
 		_status.Text = _page == 1 ? "Loading members…" : "Loading more members…";
 		try
 		{
-			using JsonDocument document = await BVAPI.GetJson($"/v3/social/guilds/{Uri.EscapeDataString(_guildId)}/members?limit=24&page={_page}");
-			if (document.RootElement.TryGetProperty("members", out JsonElement members) && members.ValueKind == JsonValueKind.Array)
-				foreach (JsonElement member in members.EnumerateArray()) AddMember(member);
-			bool hasNext = document.RootElement.TryGetProperty("pagination", out JsonElement pagination)
-				&& pagination.TryGetProperty("hasNextPage", out JsonElement next) && next.ValueKind == JsonValueKind.True;
+			using JsonDocument document = await BVAPI.GetJson(
+				$"/v3/social/guilds/{Uri.EscapeDataString(_guildId)}/members?limit=24&page={_page}"
+			);
+			if (
+				document.RootElement.TryGetProperty("members", out JsonElement members)
+				&& members.ValueKind == JsonValueKind.Array
+			)
+				foreach (JsonElement member in members.EnumerateArray())
+					AddMember(member);
+			bool hasNext =
+				document.RootElement.TryGetProperty("pagination", out JsonElement pagination)
+				&& pagination.TryGetProperty("hasNextPage", out JsonElement next)
+				&& next.ValueKind == JsonValueKind.True;
 			_loadMore.Visible = hasNext;
 			_status.Text = _rankGroups.GetChildCount() == 0 ? "No members found." : "";
 		}
@@ -60,15 +78,30 @@ public partial class GuildMembersDialog : Window
 			_status.Text = "Members could not be loaded. Try again.";
 			BV.PrintErr(exception);
 		}
-		finally { _loading = false; _loadMore.Disabled = false; }
+		finally
+		{
+			_loading = false;
+			_loadMore.Disabled = false;
+		}
 	}
 
 	private void AddMember(JsonElement member)
 	{
-		string userId = member.TryGetProperty("user", out JsonElement user) && user.TryGetProperty("id", out JsonElement id) ? id.ToString() : "";
-		if (string.IsNullOrWhiteSpace(userId)) return;
-		string username = user.TryGetProperty("username", out JsonElement usernameNode) ? usernameNode.GetString() ?? "Member" : "Member";
-		string rank = member.TryGetProperty("rank", out JsonElement rankNode) && rankNode.TryGetProperty("name", out JsonElement rankName) ? rankName.GetString() ?? "Member" : "Member";
+		string userId =
+			member.TryGetProperty("user", out JsonElement user)
+			&& user.TryGetProperty("id", out JsonElement id)
+				? id.ToString()
+				: "";
+		if (string.IsNullOrWhiteSpace(userId))
+			return;
+		string username = user.TryGetProperty("username", out JsonElement usernameNode)
+			? usernameNode.GetString() ?? "Member"
+			: "Member";
+		string rank =
+			member.TryGetProperty("rank", out JsonElement rankNode)
+			&& rankNode.TryGetProperty("name", out JsonElement rankName)
+				? rankName.GetString() ?? "Member"
+				: "Member";
 		UserHeadshotCard card = _memberCardScene.Instantiate<UserHeadshotCard>();
 		card.UserID = userId;
 		card.InitialUsername = username;
@@ -78,7 +111,8 @@ public partial class GuildMembersDialog : Window
 	private HFlowContainer GetOrCreateRank(string rankName)
 	{
 		foreach (Node child in _rankGroups.GetChildren())
-			if (child.GetMeta("rank_name", "").AsString() == rankName) return child.GetNode<HFlowContainer>("Members");
+			if (child.GetMeta("rank_name", "").AsString() == rankName)
+				return child.GetNode<HFlowContainer>("Members");
 		VBoxContainer section = new();
 		section.SetMeta("rank_name", rankName);
 		section.AddThemeConstantOverride("separation", 8);

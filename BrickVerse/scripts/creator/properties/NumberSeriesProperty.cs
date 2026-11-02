@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Godot;
+using System;
+using System.Collections.Generic;
 using BrickVerse.Creator.Properties.Components;
 using BrickVerse.Datamodel.Data;
 using BrickVerse.Shared;
-using System;
-using System.Collections.Generic;
+using Godot;
 using static BrickVerse.Datamodel.Data.ColorSeries;
 using static BrickVerse.Datamodel.Data.NumberSeries;
 
@@ -15,11 +15,18 @@ namespace BrickVerse.Creator.Properties;
 
 public sealed partial class NumberSeriesProperty : Control, IProperty<NumberSeries>
 {
-	private const string NumberSeriesPointPath = "res://scenes/creator/properties/components/number_series/point.tscn";
+	private const string NumberSeriesPointPath =
+		"res://scenes/creator/properties/components/number_series/point.tscn";
 	private NumberSeries _value = new();
-	[Export] private TextureRect _previewRect = null!;
-	[Export] private Button _addButton = null!;
-	[Export] private Control _points = null!;
+
+	[Export]
+	private TextureRect _previewRect = null!;
+
+	[Export]
+	private Button _addButton = null!;
+
+	[Export]
+	private Control _points = null!;
 
 	public NumberSeries Value
 	{
@@ -81,7 +88,9 @@ public sealed partial class NumberSeriesProperty : Control, IProperty<NumberSeri
 		foreach (var p in Value.Points ?? [])
 		{
 			int myI = i;
-			NumberSeriesPoint ps = Globals.CreateInstanceFromScene<NumberSeriesPoint>(NumberSeriesPointPath);
+			NumberSeriesPoint ps = Globals.CreateInstanceFromScene<NumberSeriesPoint>(
+				NumberSeriesPointPath
+			);
 			ps.Value = p.Value;
 			ps.OffsetValue = p.Offset;
 			ps.OffsetChanged += (val) =>

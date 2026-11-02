@@ -30,7 +30,6 @@ public partial class UIOverviewButton : Button
 			_tween.Stop();
 		}
 
-
 		_tween = GetTree().CreateTween();
 		PropertyTweener propTweener = _tween.TweenProperty(_rect, "size", _rectFull.Size, 0.3f);
 		propTweener.SetEase(Tween.EaseType.Out);
@@ -43,7 +42,6 @@ public partial class UIOverviewButton : Button
 		{
 			_tween.Stop();
 		}
-
 
 		_tween = GetTree().CreateTween();
 		PropertyTweener propTweener = _tween.TweenProperty(_rect, "size", _rectStart.Size, 0.3f);

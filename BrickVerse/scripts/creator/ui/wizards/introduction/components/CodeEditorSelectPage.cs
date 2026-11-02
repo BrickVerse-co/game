@@ -8,5 +8,6 @@ namespace BrickVerse.Creator.UI.Wizards;
 
 public partial class CodeEditorSelectPage : IntroPage
 {
-	[Export] private Button _firstButton = null!;
+	[Export]
+	private Button _firstButton = null!;
 }
