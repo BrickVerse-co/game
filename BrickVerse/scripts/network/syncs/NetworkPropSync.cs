@@ -623,6 +623,11 @@ public sealed partial class NetworkPropSync : Instance
 		}
 	}
 
+	internal void DiscardPendingProps(string netID)
+	{
+		_pendingProps.Remove(netID);
+	}
+
 	// Resolve objects that point to another object
 	public void LookForResolvePending(NetworkedObject netObj)
 	{
@@ -675,12 +680,16 @@ public sealed partial class NetworkPropSync : Instance
 		var rpcName = unreliable
 			? nameof(NetRecvBatchedPropsUnreliable)
 			: nameof(NetRecvBatchedPropsReliable);
-		var data = SerializeUtils.Serialize(payload);
-
 		foreach (int peerID in NetService.NetInstance.PeerIds)
 		{
-			if (peerID != excludePeer)
-				RpcId(peerID, rpcName, data);
+			if (peerID == excludePeer) continue;
+			BatchPropObjectData[] visible = payload.Where(item =>
+			{
+				NetworkedObject? obj = NetService.Root.GetNetObjectFromID(item.NetID);
+				return obj != null && NetService.ReplicateSync.IsReplicatedToPeer(peerID, obj);
+			}).ToArray();
+			if (visible.Length > 0)
+				RpcId(peerID, rpcName, SerializeUtils.Serialize(visible));
 		}
 	}
 
