@@ -6,6 +6,12 @@ on:
     branches:
       - main
       - beta
+    paths:
+      - "BrickVerse/**"
+      - "BrickVerse.SourceGen/**"
+      - "global.json"
+      - ".github/workflows/build-client.yml"
+      - ".github/scripts/export-windows.ps1"
 
 permissions:
   contents: read
@@ -27,7 +33,7 @@ env:
 
 jobs:
   build-world-server:
-    name: Build world server image before clients
+    name: Build world server image
     uses: ./.github/workflows/build-world-server.yml
     with:
       release_branch: ${{ github.ref_name }}
@@ -37,14 +43,14 @@ jobs:
 
   build-client:
     name: Build Client (${{ matrix.platform }})
-    needs: build-world-server
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
     environment: release
     permissions:
       contents: read
       id-token: write
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - platform: windows
@@ -52,7 +58,6 @@ jobs:
             export_preset: "Client Windows"
             export_file: "BrickVerse.exe"
             package_name: "BrickVerse-Windows.zip"
-            artifact_name: "brickverse-client-windows"
             executable_glob: "*.exe"
 
           - platform: linux
@@ -60,7 +65,6 @@ jobs:
             export_preset: "Client Linux"
             export_file: "BrickVerse.x86_64"
             package_name: "BrickVerse-Linux.zip"
-            artifact_name: "brickverse-client-linux"
             executable_glob: "*.x86_64"
 
           - platform: macos
@@ -68,7 +72,6 @@ jobs:
             export_preset: "Client macOS"
             export_file: "BrickVerse-macOS.zip"
             package_name: "BrickVerse-macOS.zip"
-            artifact_name: "brickverse-client-macos"
             executable_glob: "*.app"
 
     steps:
@@ -131,6 +134,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
           key: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/**/*.import', 'BrickVerse/assets/**/*') }}
+          restore-keys: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-
 
       - name: Stamp client build metadata
         shell: pwsh
@@ -154,6 +158,14 @@ jobs:
             ${{ runner.temp }}/godot-editor
             ~/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
           key: godot-linux-${{ env.GODOT_VERSION }}-${{ env.GODOT_TEMPLATE_VERSION }}
+
+      - name: Restore imported asset cache
+        if: matrix.platform != 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
+          key: godot-imports-${{ runner.os }}-v3-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/**/*.import', 'BrickVerse/assets/**/*') }}
+          restore-keys: godot-imports-${{ runner.os }}-v3-${{ env.GODOT_VERSION }}-
 
       - name: Install Godot .NET
         if: matrix.platform != 'windows'
@@ -203,6 +215,7 @@ jobs:
 
       - name: Build C#
         if: matrix.platform != 'windows'
+        timeout-minutes: 5
         shell: bash
         run: |
           set -euo pipefail
@@ -211,16 +224,9 @@ jobs:
             --configuration ExportRelease \
             --no-restore
 
-      - name: Import Godot assets
-        if: matrix.platform != 'windows'
-        shell: bash
-        working-directory: ${{ github.workspace }}/${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          godot --headless --editor --import
-
       - name: Export ${{ matrix.platform }}
         if: matrix.platform != 'windows'
+        timeout-minutes: 10
         shell: bash
         run: |
           set -euo pipefail
@@ -261,7 +267,7 @@ jobs:
 
       - name: Export Windows
         if: matrix.platform == 'windows'
-        timeout-minutes: 45
+        timeout-minutes: 10
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `
@@ -409,15 +415,6 @@ jobs:
             --header "Content-Type: application/json" --data-binary "@discord.json"
           if ($LASTEXITCODE -ne 0) { throw "Discord notification failed with exit code $LASTEXITCODE." }
 
-      - name: Upload workflow artifact
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: brickverse-client-windows
-          path: ${{ github.workspace }}\dist\BrickVerse-Windows.zip
-          if-no-files-found: error
-          retention-days: 14
-
       - name: Package
         if: matrix.platform != 'windows'
         shell: bash
@@ -564,12 +561,3 @@ jobs:
             "${{ secrets.DISCORD_WEBHOOK_RELEASES }}" \
             -H "Content-Type: application/json" \
             --data-binary @discord.json
-
-      - name: Upload workflow artifact
-        if: matrix.platform != 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ github.workspace }}/dist/${{ matrix.package_name }}
-          if-no-files-found: error
-          retention-days: 14

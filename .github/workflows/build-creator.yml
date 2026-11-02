@@ -6,6 +6,12 @@ on:
     branches:
       - main
       - beta
+    paths:
+      - "BrickVerse/**"
+      - "BrickVerse.SourceGen/**"
+      - "global.json"
+      - ".github/workflows/build-creator.yml"
+      - ".github/scripts/export-windows.ps1"
 
 permissions:
   contents: read
@@ -30,12 +36,13 @@ jobs:
   build-creator:
     name: Build Creator (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
     environment: release
     permissions:
       contents: read
       id-token: write
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - platform: windows
@@ -43,7 +50,6 @@ jobs:
             export_preset: "Creator Windows"
             export_file: "BrickVerseCreator.exe"
             package_name: "BrickVerseCreator-Windows.zip"
-            artifact_name: "brickverse-creator-windows"
             executable_glob: "*.exe"
 
           - platform: linux
@@ -51,7 +57,6 @@ jobs:
             export_preset: "Creator Linux"
             export_file: "BrickVerseCreator.x86_64"
             package_name: "BrickVerseCreator-Linux.zip"
-            artifact_name: "brickverse-creator-linux"
             executable_glob: "*.x86_64"
 
           - platform: macos
@@ -59,7 +64,6 @@ jobs:
             export_preset: "Creator macOS"
             export_file: "BrickVerseCreator-macOS.zip"
             package_name: "BrickVerseCreator-macOS.zip"
-            artifact_name: "brickverse-creator-macos"
             executable_glob: "*.app"
 
     steps:
@@ -116,6 +120,14 @@ jobs:
             ~/.local/share/godot/export_templates/${{ env.GODOT_TEMPLATE_VERSION }}
           key: godot-linux-${{ env.GODOT_VERSION }}-${{ env.GODOT_TEMPLATE_VERSION }}
 
+      - name: Restore imported asset cache
+        if: matrix.platform != 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
+          key: godot-imports-${{ runner.os }}-v3-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/**/*.import', 'BrickVerse/assets/**/*') }}
+          restore-keys: godot-imports-${{ runner.os }}-v3-${{ env.GODOT_VERSION }}-
+
       - name: Install Godot .NET
         if: matrix.platform != 'windows'
         shell: bash
@@ -164,6 +176,7 @@ jobs:
 
       - name: Build C#
         if: matrix.platform != 'windows'
+        timeout-minutes: 5
         shell: bash
         run: |
           set -euo pipefail
@@ -172,16 +185,9 @@ jobs:
             --configuration ExportRelease \
             --no-restore
 
-      - name: Import Godot assets
-        if: matrix.platform != 'windows'
-        shell: bash
-        working-directory: ${{ github.workspace }}/${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          godot --headless --editor --import
-
       - name: Export ${{ matrix.platform }}
         if: matrix.platform != 'windows'
+        timeout-minutes: 10
         shell: bash
         run: |
           set -euo pipefail
@@ -235,10 +241,11 @@ jobs:
         with:
           path: ${{ github.workspace }}/${{ env.PROJECT_DIR }}/.godot/imported
           key: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-${{ hashFiles('BrickVerse/project.godot', 'BrickVerse/export_presets.cfg', 'BrickVerse/**/*.import', 'BrickVerse/assets/**/*') }}
+          restore-keys: godot-imports-windows-v2-${{ env.GODOT_VERSION }}-
 
       - name: Export Windows
         if: matrix.platform == 'windows'
-        timeout-minutes: 45
+        timeout-minutes: 10
         shell: pwsh
         run: |
           .github/scripts/export-windows.ps1 `
@@ -384,15 +391,6 @@ jobs:
             --header "Content-Type: application/json" --data-binary "@discord.json"
           if ($LASTEXITCODE -ne 0) { throw "Discord notification failed with exit code $LASTEXITCODE." }
 
-      - name: Upload workflow artifact
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: brickverse-creator-windows
-          path: ${{ github.workspace }}\dist\BrickVerseCreator-Windows.zip
-          if-no-files-found: error
-          retention-days: 14
-
       - name: Package
         if: matrix.platform != 'windows'
         shell: bash
@@ -531,12 +529,3 @@ jobs:
             "${{ secrets.DISCORD_WEBHOOK_RELEASES }}" \
             -H "Content-Type: application/json" \
             --data-binary @discord.json
-
-      - name: Upload workflow artifact
-        if: matrix.platform != 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ github.workspace }}/dist/${{ matrix.package_name }}
-          if-no-files-found: error
-          retention-days: 14
