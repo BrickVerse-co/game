@@ -983,6 +983,38 @@ public partial class Instance : NetworkedObject
 		return [.. instances];
 	}
 
+	[ScriptMethod]
+	public Instance[] GetChildrenWhichIsA(string className)
+	{
+		return [.. GetChildren().Where(child => child.IsA(className))];
+	}
+
+	[ScriptMethod]
+	public Instance[] GetDescendantsOfClass(string className)
+	{
+		string convertedName = XmlFormat.ConvertClassName(className);
+		return [.. GetDescendants().Where(descendant => descendant.ClassName == convertedName)];
+	}
+
+	[ScriptMethod]
+	public Instance[] GetDescendantsWhichIsA(string className)
+	{
+		return [.. GetDescendants().Where(descendant => descendant.IsA(className))];
+	}
+
+	[ScriptMethod]
+	public Instance[] GetAncestors()
+	{
+		List<Instance> ancestors = [];
+		Instance? current = Parent;
+		while (current != null)
+		{
+			ancestors.Add(current);
+			current = current.Parent;
+		}
+		return [.. ancestors];
+	}
+
 	[ScriptLegacyMethod("GetChildrenOfClass")]
 	public Instance[] LegacyGetChildrenOfClass(string className)
 	{
@@ -1075,6 +1107,7 @@ public partial class Instance : NetworkedObject
 	[ScriptMethod]
 	public bool IsDescendantOfClass(string className)
 	{
+		string convertedName = XmlFormat.ConvertClassName(className);
 		Instance? parent = Parent;
 
 		while (parent != null)
@@ -1082,7 +1115,7 @@ public partial class Instance : NetworkedObject
 			Type? currentType = parent.GetType();
 			while (currentType != null && currentType != typeof(object))
 			{
-				if (currentType.Name == className)
+				if (currentType.Name == convertedName)
 					return true;
 				if (currentType == typeof(NetworkedObject))
 					break;
