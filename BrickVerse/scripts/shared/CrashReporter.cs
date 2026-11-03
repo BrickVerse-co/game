@@ -47,6 +47,8 @@ public sealed class CrashReport
 public static partial class CrashReporter
 {
 	private const string ReportsFolder = "user://crash-reports";
+	private const string EngineLogPath = "user://logs/brickverseapp.log";
+	private const int MaxDiagnosticLogChars = 90_000;
 	private static readonly System.Net.Http.HttpClient Http = new()
 	{
 		Timeout = TimeSpan.FromSeconds(12),
@@ -115,10 +117,87 @@ public static partial class CrashReporter
 			Renderer = renderer,
 			CommandLine = RedactCommandLine(OS.GetCmdlineArgs()),
 			ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
-			ExceptionMessage = exception.Message,
-			Exception = exception.ToString(),
-			RecentLogs = BV.GetRecentLogs(),
+			ExceptionMessage = RedactSensitiveText(exception.Message),
+			Exception = RedactSensitiveText(FormatException(exception)),
+			RecentLogs = CollectDiagnosticLogs(),
 		};
+	}
+
+	private static string FormatException(Exception exception)
+	{
+		string formatted = exception.ToString();
+		if (string.IsNullOrWhiteSpace(exception.StackTrace))
+			formatted += $"\nCapture stack:\n{System.Environment.StackTrace}";
+		if (exception is AggregateException aggregate)
+		{
+			formatted += "\nFlattened background exceptions:";
+			int index = 0;
+			foreach (Exception inner in aggregate.Flatten().InnerExceptions)
+				formatted += $"\n--- Exception {++index} ---\n{inner}";
+		}
+		return formatted;
+	}
+
+	private static string CollectDiagnosticLogs()
+	{
+		string memoryLogs = BV.GetRecentLogs();
+		string engineLogs = ReadLogTail(EngineLogPath, MaxDiagnosticLogChars / 2);
+		string combined =
+			"=== BrickVerse recent events ===\n"
+			+ (string.IsNullOrWhiteSpace(memoryLogs) ? "(none captured)" : memoryLogs)
+			+ "\n\n=== Godot/native log tail ===\n"
+			+ (string.IsNullOrWhiteSpace(engineLogs) ? "(log unavailable)" : engineLogs);
+		combined = RedactSensitiveText(combined);
+		return combined.Length <= MaxDiagnosticLogChars
+			? combined
+			: combined[^MaxDiagnosticLogChars..];
+	}
+
+	private static string RedactSensitiveText(string text)
+	{
+		if (string.IsNullOrEmpty(text))
+			return text;
+		text = Regex.Replace(
+			text,
+			@"(?i)(authorization\s*[:=]\s*bearer\s+)[^\s,;]+",
+			"$1<redacted>"
+		);
+		text = Regex.Replace(
+			text,
+			@"(?i)((?:auth_token|token|ctoken|creatorToken|password|secret)[\""']?\s*[:=]\s*[\""']?)[^\s,;\""']+",
+			"$1<redacted>"
+		);
+		return text;
+	}
+
+	private static string ReadLogTail(string path, int maxChars)
+	{
+		try
+		{
+			string absolutePath = ProjectSettings.GlobalizePath(path);
+			if (!File.Exists(absolutePath))
+				return "";
+			using FileStream stream = new(
+				absolutePath,
+				FileMode.Open,
+				System.IO.FileAccess.Read,
+				FileShare.ReadWrite | FileShare.Delete
+			);
+			long bytesToRead = Math.Min(stream.Length, maxChars * 4L);
+			stream.Seek(-bytesToRead, SeekOrigin.End);
+			byte[] buffer = new byte[(int)bytesToRead];
+			int read = stream.Read(buffer, 0, buffer.Length);
+			string text = Encoding.UTF8.GetString(buffer, 0, read);
+			// A tail seek can begin in the middle of a line or UTF-8 sequence.
+			int firstLine = text.IndexOf('\n');
+			if (stream.Length > bytesToRead && firstLine >= 0)
+				text = text[(firstLine + 1)..];
+			return text.Length <= maxChars ? text : text[^maxChars..];
+		}
+		catch (Exception error)
+		{
+			return $"(could not read engine log: {error.GetType().Name}: {error.Message})";
+		}
 	}
 
 	private static string RedactCommandLine(string[] args)
@@ -147,10 +226,10 @@ public static partial class CrashReporter
 		{
 			string folder = ProjectSettings.GlobalizePath(ReportsFolder);
 			Directory.CreateDirectory(folder);
-			File.WriteAllText(
-				ReportPath(report, pending),
-				JsonSerializer.Serialize(report, JsonOptions)
-			);
+			string target = ReportPath(report, pending);
+			string temporary = target + ".tmp";
+			File.WriteAllText(temporary, JsonSerializer.Serialize(report, JsonOptions));
+			File.Move(temporary, target, true);
 		}
 		catch (Exception error)
 		{
@@ -218,11 +297,19 @@ public static partial class CrashReporter
 				return;
 			foreach (string path in Directory.EnumerateFiles(folder, "*.pending.json").Take(10))
 			{
-				CrashReport? report = JsonSerializer.Deserialize<CrashReport>(
-					await File.ReadAllTextAsync(path)
-				);
-				if (report != null)
-					await SubmitAsync(report);
+				try
+				{
+					CrashReport? report = JsonSerializer.Deserialize<CrashReport>(
+						await File.ReadAllTextAsync(path)
+					);
+					if (report != null)
+						await SubmitAsync(report);
+				}
+				catch (Exception error)
+				{
+					BV.PrintErr($"Could not retry crash report {Path.GetFileName(path)}: {error.Message}");
+					try { File.Move(path, path + ".invalid", true); } catch { }
+				}
 			}
 		}
 		catch { }
@@ -278,65 +365,142 @@ public sealed partial class CrashReporterDialog : Window
 	};
 	private readonly Label _status = new();
 	private readonly Button _send = new() { Text = "Send Report" };
+	private readonly TextEdit _details = new()
+	{
+		Editable = false,
+		Visible = false,
+		CustomMinimumSize = new Vector2(0, 135),
+	};
 
 	public CrashReporterDialog(CrashReport report)
 	{
 		_report = report;
 		Title = "BrickVerse Crash Reporter";
 		InitialPosition = WindowInitialPosition.CenterMainWindowScreen;
-		MinSize = new Vector2I(600, 480);
-		Size = new Vector2I(680, 540);
+		MinSize = new Vector2I(620, 540);
+		Size = new Vector2I(720, 620);
 		Exclusive = true;
 		CloseRequested += QueueFree;
 	}
 
 	public override void _Ready()
 	{
+		ColorRect background = new() { Color = new Color("10141c") };
+		background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		AddChild(background);
+
 		VBoxContainer root = new();
 		root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		root.OffsetLeft = 18;
-		root.OffsetTop = 18;
-		root.OffsetRight = -18;
-		root.OffsetBottom = -18;
+		root.OffsetLeft = 28;
+		root.OffsetTop = 24;
+		root.OffsetRight = -28;
+		root.OffsetBottom = -24;
+		root.AddThemeConstantOverride("separation", 12);
 		AddChild(root);
+
+		HBoxContainer heading = new();
+		heading.AddThemeConstantOverride("separation", 14);
+		Label icon = new() { Text = "!", CustomMinimumSize = new Vector2(44, 44) };
+		icon.HorizontalAlignment = HorizontalAlignment.Center;
+		icon.VerticalAlignment = VerticalAlignment.Center;
+		icon.AddThemeFontSizeOverride("font_size", 28);
+		icon.AddThemeColorOverride("font_color", new Color("ff6b5f"));
+		heading.AddChild(icon);
+		VBoxContainer headingText = new();
+		headingText.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		Label title = new()
 		{
-			Text = $"BrickVerse {_report.Application} encountered an error",
+			Text = $"{_report.Application} encountered a problem",
 			AutowrapMode = TextServer.AutowrapMode.WordSmart,
 		};
-		title.AddThemeFontSizeOverride("font_size", 22);
-		root.AddChild(title);
-		root.AddChild(
-			new Label
-			{
-				Text =
-					"A diagnostic report was saved locally. Add what you were doing, then send it to help us fix the crash.",
-				AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			}
-		);
-		root.AddChild(
-			new Label
-			{
-				Text =
-					$"Report ID: {_report.ReportId}\n{_report.ExceptionType}: {_report.ExceptionMessage}",
-				AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			}
-		);
-		root.AddChild(new Label { Text = "What were you doing when this happened?" });
-		_description.PlaceholderText = "Steps leading up to the crash (optional)";
-		_description.CustomMinimumSize = new Vector2(0, 150);
+		title.AddThemeFontSizeOverride("font_size", 24);
+		headingText.AddChild(title);
+		Label subtitle = new()
+		{
+			Text = _report.Fatal
+				? "BrickVerse saved diagnostic information before closing."
+				: "BrickVerse recovered, but this feature may not work correctly.",
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+		};
+		subtitle.AddThemeColorOverride("font_color", new Color("aeb8ca"));
+		headingText.AddChild(subtitle);
+		heading.AddChild(headingText);
+		root.AddChild(heading);
+
+		PanelContainer summaryPanel = new();
+		StyleBoxFlat summaryStyle = new()
+		{
+			BgColor = new Color("171d28"),
+			BorderColor = new Color("30394a"),
+			CornerRadiusTopLeft = 8,
+			CornerRadiusTopRight = 8,
+			CornerRadiusBottomLeft = 8,
+			CornerRadiusBottomRight = 8,
+			ContentMarginLeft = 14,
+			ContentMarginRight = 14,
+			ContentMarginTop = 12,
+			ContentMarginBottom = 12,
+		};
+		summaryPanel.AddThemeStyleboxOverride("panel", summaryStyle);
+		VBoxContainer summary = new();
+		Label error = new()
+		{
+			Text = $"{_report.ExceptionType}: {_report.ExceptionMessage}",
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+		};
+		error.AddThemeColorOverride("font_color", new Color("f2f5fa"));
+		summary.AddChild(error);
+		HBoxContainer reportRow = new();
+		Label reportId = new() { Text = $"Report ID  {_report.ReportId}" };
+		reportId.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		reportId.AddThemeColorOverride("font_color", new Color("8ea0bb"));
+		reportRow.AddChild(reportId);
+		Button copy = new() { Text = "Copy ID", Flat = true };
+		copy.Pressed += () =>
+		{
+			DisplayServer.ClipboardSet(_report.ReportId);
+			copy.Text = "Copied";
+		};
+		reportRow.AddChild(copy);
+		summary.AddChild(reportRow);
+		summaryPanel.AddChild(summary);
+		root.AddChild(summaryPanel);
+
+		Label prompt = new() { Text = "What happened just before the problem?" };
+		prompt.AddThemeFontSizeOverride("font_size", 16);
+		root.AddChild(prompt);
+		_description.PlaceholderText = "For example: I clicked Play after changing the terrain…";
+		_description.CustomMinimumSize = new Vector2(0, 120);
 		_description.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 		root.AddChild(_description);
 		root.AddChild(_includeLogs);
+
+		_details.Text =
+			$"Context: {_report.Context}\nVersion: {_report.AppVersion} ({_report.BuildCommit})\n"
+			+ $"System: {_report.OperatingSystem}\nRenderer: {_report.Renderer}\n\n{_report.Exception}";
+		root.AddChild(_details);
+		Button toggleDetails = new() { Text = "Show technical details", Flat = true };
+		toggleDetails.Pressed += () =>
+		{
+			_details.Visible = !_details.Visible;
+			toggleDetails.Text = _details.Visible
+				? "Hide technical details"
+				: "Show technical details";
+		};
+		root.AddChild(toggleDetails);
+
+		_status.AddThemeColorOverride("font_color", new Color("9fb0ca"));
 		root.AddChild(_status);
 		HBoxContainer buttons = new() { Alignment = BoxContainer.AlignmentMode.End };
-		Button folder = new() { Text = "Open Reports Folder" };
-		Button close = new() { Text = "Close" };
+		buttons.AddThemeConstantOverride("separation", 8);
+		Button folder = new() { Text = "Reports Folder", Flat = true };
+		Button close = new() { Text = "Not Now" };
 		folder.Pressed += () => OS.ShellOpen(ProjectSettings.GlobalizePath("user://crash-reports"));
 		close.Pressed += QueueFree;
 		_send.Pressed += Send;
 		buttons.AddChild(folder);
 		buttons.AddChild(close);
+		_send.AddThemeColorOverride("font_color", Colors.White);
 		buttons.AddChild(_send);
 		root.AddChild(buttons);
 	}
