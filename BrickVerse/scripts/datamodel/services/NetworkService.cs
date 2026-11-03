@@ -48,6 +48,7 @@ public sealed partial class NetworkService : Instance
 	private const ulong IdleTimeoutMs = 10 * 60 * 1000;
 	private const double IdleCheckIntervalSec = 30;
 	private const ulong ActivityReportIntervalMs = 15 * 1000;
+	private const double ClientJoinProgressTimeoutSeconds = 40;
 
 	// TODO: Narrow this down
 	private const int MaxBroadcastPacketPerSec = 100;
@@ -85,6 +86,7 @@ public sealed partial class NetworkService : Instance
 	public event Action? ClientWorldReady;
 	public event Action? ClientReady;
 	public event Action? ClientConnectedToServer;
+	public event Action<string>? ClientJoinStatusChanged;
 	public event Action<string, DisconnectionCodeEnum>? ClientDisconnected;
 	public event Action<int>? PeerPreInit;
 
@@ -133,6 +135,7 @@ public sealed partial class NetworkService : Instance
 	private ulong _lastActivityReportTime;
 	private bool _localPlayerReady;
 	private bool _localPlayerRequestInFlight;
+	private int _clientJoinWatchdogGeneration;
 	public ClientEntry Entry = null!;
 
 	/// <summary>
@@ -891,6 +894,7 @@ public sealed partial class NetworkService : Instance
 	{
 		if (IsDisconnected)
 			return;
+		_clientJoinWatchdogGeneration++;
 		BV.Print("Shutting down network instance.");
 		IsDisconnected = true;
 		NetInstance?.Shutdown();
@@ -1244,7 +1248,70 @@ public sealed partial class NetworkService : Instance
 		ClientConnected = true;
 		ClientConnectedToServer?.Invoke();
 		placeReplicationStartTime = Time.GetTicksMsec();
+		int generation = ++_clientJoinWatchdogGeneration;
+		_ = MonitorClientJoinProgressAsync(generation);
 	}
+
+	private async Task MonitorClientJoinProgressAsync(int generation)
+	{
+		string lastSignature = "";
+		string lastPhase = "";
+		ulong lastProgressAt = Time.GetTicksMsec();
+
+		while (
+			generation == _clientJoinWatchdogGeneration
+			&& ClientConnected
+			&& !IsDisconnected
+			&& !_localPlayerReady
+		)
+		{
+			string phase = GetClientJoinPhase();
+			string signature = GetClientJoinProgressSignature();
+			if (signature != lastSignature)
+			{
+				lastSignature = signature;
+				lastProgressAt = Time.GetTicksMsec();
+			}
+			if (phase != lastPhase)
+			{
+				lastPhase = phase;
+				ClientJoinStatusChanged?.Invoke(JoinPhaseStatusText(phase));
+			}
+
+			ulong idleMs = Time.GetTicksMsec() - lastProgressAt;
+			if (idleMs >= ClientJoinProgressTimeoutSeconds * 1000)
+			{
+				string reportID = Guid.NewGuid().ToString("N")[..8];
+				BV.PrintErr(
+					$"[JoinFailure:{reportID}] Client join stalled during {phase}: idleMs={idleMs}, {signature}."
+				);
+				DisconnectSelf(
+					$"Joining stalled during {phase}. Please retry. If this keeps happening, share report ID {reportID} with support.",
+					DisconnectionCodeEnum.ConnectionTimeout
+				);
+				return;
+			}
+
+			await Globals.Singleton.WaitAsync(1f);
+		}
+	}
+
+	private string GetClientJoinProgressSignature() =>
+		$"peer={LocalPeerID},place={ReplicateSync.PlaceChunksReceived}/{ReplicateSync.PlaceChunksExpected},"
+			+ $"objects={ReplicateSync.InstanceLoadedCount}/{ReplicateSync.InstanceToBeLoadedCount},"
+			+ $"transform={TransformSync.SnapshotChunksReceived}/{TransformSync.SnapshotChunksExpected},"
+			+ $"placeDone={IsPlaceReplicationDone},transformDone={IsTransformReplicateDone},"
+			+ $"scriptsDone={IsClientScriptReplicateDone},playerReady={_localPlayerReady}";
+
+	private static string JoinPhaseStatusText(string phase) => phase switch
+	{
+		"authentication and world preparation" => "Connected. Authenticating with server...",
+		"world replication" => "Receiving world data...",
+		"transform synchronization" => "Synchronizing world positions...",
+		"script synchronization" => "Synchronizing game scripts...",
+		"player setup" => "Preparing your player...",
+		_ => "Connecting to game...",
+	};
 
 	private void ConnectionFailed(NetworkInstance.NetInstanceErrorEnum netInstanceError)
 	{
@@ -1298,6 +1365,10 @@ public sealed partial class NetworkService : Instance
 	{
 		if (!ClientConnected)
 			return "server connection";
+		if (!IsPlaceReplicationDone
+			&& ReplicateSync.PlaceChunksExpected == 0
+			&& ReplicateSync.PlaceChunksReceived == 0)
+			return "authentication and world preparation";
 		if (!IsPlaceReplicationDone)
 			return "world replication";
 		if (!IsTransformReplicateDone)
@@ -1520,6 +1591,7 @@ public sealed partial class NetworkService : Instance
 	[NetRpc(AuthorityMode.Server, TransferMode = TransferMode.Reliable)]
 	private void NetRecvReportReady()
 	{
+		_clientJoinWatchdogGeneration++;
 		ClientReady?.Invoke();
 
 		// Dispatch run client scripts

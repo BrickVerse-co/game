@@ -82,6 +82,7 @@ public partial class UILoadingScreen : Control
 		_entry.NetworkEssentialsReady -= NetworkEssentialsReady;
 
 		_entry.NetworkService.ClientConnectedToServer += OnClientConnectedToServer;
+		_entry.NetworkService.ClientJoinStatusChanged += OnClientJoinStatusChanged;
 		_entry.NetworkService.ClientWorldReady += OnWorldReady;
 		_entry.NetworkService.ClientReady += OnClientReady;
 		_entry.NetworkService.ReplicateSync.InstanceLoadedProgress += InstanceLoadedProgress;
@@ -129,6 +130,11 @@ public partial class UILoadingScreen : Control
 		_hasReplicationProgress = false;
 		SetStatusText("Connected. Waiting for world replication...");
 		SetProgress(0, 1);
+	}
+
+	private void OnClientJoinStatusChanged(string status)
+	{
+		SetStatusText(status);
 	}
 
 	private void InstanceLoadedProgress(int current, int max)
@@ -211,6 +217,7 @@ public partial class UILoadingScreen : Control
 	{
 		_entry.TargetServerReady -= OnServerReady;
 		_entry.NetworkService.ClientConnectedToServer -= OnClientConnectedToServer;
+		_entry.NetworkService.ClientJoinStatusChanged -= OnClientJoinStatusChanged;
 		_entry.NetworkService.ClientWorldReady -= OnWorldReady;
 		_entry.NetworkService.ClientReady -= OnClientReady;
 		_entry.NetworkService.ReplicateSync.InstanceLoadedProgress -= InstanceLoadedProgress;
