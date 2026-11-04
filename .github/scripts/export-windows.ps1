@@ -55,6 +55,14 @@ if ($LASTEXITCODE -ne 0) {
 	throw "dotnet restore failed with exit code $LASTEXITCODE."
 }
 
+# Headless Godot initializes the editor before it switches to the export
+# configuration. On a fresh runner it therefore needs the Debug assembly for
+# C# autoload discovery even though the shipped binary is ExportRelease.
+dotnet build $ProjectFile --configuration Debug --no-restore --nologo
+if ($LASTEXITCODE -ne 0) {
+	throw "dotnet Debug prebuild failed with exit code $LASTEXITCODE."
+}
+
 dotnet build $ProjectFile --configuration ExportRelease --no-restore --nologo
 if ($LASTEXITCODE -ne 0) {
 	throw "dotnet build failed with exit code $LASTEXITCODE."
