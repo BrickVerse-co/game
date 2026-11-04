@@ -41,7 +41,7 @@ jobs:
         with:
           repository: BrickVerse-co/game-api
           ref: main
-          token: ${{ secrets.GAME_API_PUBLISH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN  }}
           path: game-api
 
       - name: Set up .NET
