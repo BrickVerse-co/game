@@ -3,6 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Linq;
+using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
@@ -18,6 +19,10 @@ public partial class WorldContainerOverlay : Control
 		MenuStats = 12,
 		MenuFrame = 20,
 		MenuProjection = 21,
+		MenuHideSelection = 22,
+		MenuIsolateSelection = 23,
+		MenuShowAll = 24,
+		MenuDropToSurface = 25,
 		MenuSceneStatistics = 30;
 	public World World = null!;
 	public WorldContainer Container = null!;
@@ -98,6 +103,34 @@ public partial class WorldContainerOverlay : Control
 		base._Process(delta);
 	}
 
+	public override void _UnhandledKeyInput(InputEvent @event)
+	{
+		if (
+			World?.CreatorContext?.IsViewportFocused == true
+			&& @event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.End }
+		)
+		{
+			SelectionTransformTools.DropSelectionToSurface();
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+		if (
+			World?.CreatorContext?.IsViewportFocused == true
+			&& @event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.H } key
+		)
+		{
+			if (key.ShiftPressed)
+				SceneVisibilityManager.ShowAll();
+			else if (key.CtrlPressed || key.MetaPressed)
+				SceneVisibilityManager.IsolateSelection();
+			else
+				SceneVisibilityManager.HideSelection();
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+		base._UnhandledKeyInput(@event);
+	}
+
 	private void CreateViewportToolbar()
 	{
 		_optionsButton = new MenuButton
@@ -119,6 +152,12 @@ public partial class WorldContainerOverlay : Control
 		options.AddSeparator();
 		options.AddItem("Frame selection", MenuFrame);
 		options.AddItem("Toggle perspective / orthographic", MenuProjection);
+		options.AddSeparator();
+		options.AddItem("Hide selection", MenuHideSelection);
+		options.AddItem("Isolate selection", MenuIsolateSelection);
+		options.AddItem("Show all editor-hidden objects", MenuShowAll);
+		options.AddSeparator();
+		options.AddItem("Drop selection to surface", MenuDropToSurface);
 		options.AddSeparator();
 		options.AddItem("Scene statistics…", MenuSceneStatistics);
 		options.IdPressed += OnOptionsPressed;
@@ -159,6 +198,15 @@ public partial class WorldContainerOverlay : Control
 		Button frame = ToolButton("Frame", "Frame selected objects (F)");
 		frame.Pressed += () => World.CreatorContext.Freelook.MoveToSelected();
 		toolbar.AddChild(frame);
+		Button drop = ToolButton("Drop", "Drop selection to the surface below (End)");
+		drop.Pressed += () => SelectionTransformTools.DropSelectionToSurface();
+		toolbar.AddChild(drop);
+		Button isolate = ToolButton("Isolate", "Show only the selected objects (Ctrl+H)");
+		isolate.Pressed += SceneVisibilityManager.IsolateSelection;
+		toolbar.AddChild(isolate);
+		Button showAll = ToolButton("Show All", "Restore editor-hidden objects (Shift+H)");
+		showAll.Pressed += SceneVisibilityManager.ShowAll;
+		toolbar.AddChild(showAll);
 
 		_projectionButton = ToolButton("Perspective", "Toggle perspective/orthographic projection");
 		_projectionButton.Pressed += ToggleProjection;
@@ -250,6 +298,18 @@ public partial class WorldContainerOverlay : Control
 				return;
 			case MenuProjection:
 				ToggleProjection();
+				return;
+			case MenuHideSelection:
+				SceneVisibilityManager.HideSelection();
+				return;
+			case MenuIsolateSelection:
+				SceneVisibilityManager.IsolateSelection();
+				return;
+			case MenuShowAll:
+				SceneVisibilityManager.ShowAll();
+				return;
+			case MenuDropToSurface:
+				SelectionTransformTools.DropSelectionToSurface();
 				return;
 			case MenuSceneStatistics:
 				SceneStatisticsPopup.Open();
@@ -356,7 +416,9 @@ public partial class WorldContainerOverlay : Control
 		string rotateSnap = CreatorService.Interface.RotateSnapEnabled
 			? $"Rotate {CreatorService.Interface.UserRotateSnapping:g}°"
 			: "Rotate snap off";
-		_viewportStatus.Text = $"{selection}   |   {moveSnap}   |   {rotateSnap}";
+		int editorHidden = SceneVisibilityManager.GetHiddenCount(World);
+		string hiddenStatus = editorHidden > 0 ? $"   |   {editorHidden} editor hidden" : "";
+		_viewportStatus.Text = $"{selection}   |   {moveSnap}   |   {rotateSnap}{hiddenStatus}";
 		Vector3 cameraPosition = World.CreatorContext.Freelook.Position;
 		_statsLabel.Text =
 			$"{Engine.GetFramesPerSecond()} FPS\n{World.GetDescendants().Length:n0} instances\nCamera  {cameraPosition.X:0.0}, {cameraPosition.Y:0.0}, {cameraPosition.Z:0.0}";

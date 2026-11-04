@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.Utils;
@@ -36,6 +37,12 @@ public sealed partial class AssetManagerDock : MarginContainer
 	private OptionButton _scope = null!;
 
 	[Export]
+	private OptionButton _sort = null!;
+
+	[Export]
+	private CheckButton _favoritesOnly = null!;
+
+	[Export]
 	private GridContainer _grid = null!;
 
 	[Export]
@@ -53,6 +60,9 @@ public sealed partial class AssetManagerDock : MarginContainer
 	private string? _nextCursor;
 	private int _page = 1;
 	private int _generation;
+	private CreatorAssetItem[] _items = [];
+	private readonly HashSet<string> _favorites = new(StringComparer.OrdinalIgnoreCase);
+	private const string FavoritesPath = "user://creator_asset_favorites.cfg";
 
 	public override void _Ready()
 	{
@@ -72,12 +82,18 @@ public sealed partial class AssetManagerDock : MarginContainer
 		_scope.AddItem("Created");
 		_scope.AddItem("Owned");
 		_scope.AddItem("Universe owner");
+		_sort.AddItem("Recommended");
+		_sort.AddItem("Name A–Z");
+		_sort.AddItem("Name Z–A");
+		LoadFavorites();
 		_publishSelection.Pressed += PublishSelection;
 
 		_search.TextSubmitted += _ => ResetAndRefresh();
 		_search.FocusExited += ResetAndRefresh;
 		_type.ItemSelected += _ => ResetAndRefresh();
 		_scope.ItemSelected += _ => ResetAndRefresh();
+		_sort.ItemSelected += _ => RenderItems();
+		_favoritesOnly.Toggled += _ => RenderItems();
 		_previous.Pressed += Previous;
 		_next.Pressed += Next;
 		Refresh();
@@ -157,17 +173,11 @@ public sealed partial class AssetManagerDock : MarginContainer
 			);
 			if (generation != _generation || !GodotObject.IsInstanceValid(this))
 				return;
-			foreach (Node child in _grid.GetChildren())
-				child.QueueFree();
-			foreach (CreatorAssetItem item in page.Items)
-				AddCard(item);
+			_items = page.Items;
+			RenderItems();
 			_nextCursor = page.NextCursor;
 			_previous.Disabled = _page <= 1;
 			_next.Disabled = string.IsNullOrEmpty(_nextCursor);
-			_status.Text =
-				page.Items.Length == 0
-					? "No matching assets"
-					: $"Page {_page}  •  {page.Items.Length} assets";
 		}
 		catch (Exception ex)
 		{
@@ -181,6 +191,27 @@ public sealed partial class AssetManagerDock : MarginContainer
 		AssetManagerCard card = CardScene.Instantiate<AssetManagerCard>();
 		_grid.AddChild(card);
 		card.Setup(item, Insert, ShowAssetMenu);
+	}
+
+	private void RenderItems()
+	{
+		foreach (Node child in _grid.GetChildren())
+			child.QueueFree();
+		IEnumerable<CreatorAssetItem> visible = _items;
+		if (_favoritesOnly.ButtonPressed)
+			visible = visible.Where(IsFavorite);
+		visible = _sort.Selected switch
+		{
+			1 => visible.OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase),
+			2 => visible.OrderByDescending(item => item.Name, StringComparer.OrdinalIgnoreCase),
+			_ => visible,
+		};
+		CreatorAssetItem[] rendered = [.. visible];
+		foreach (CreatorAssetItem item in rendered)
+			AddCard(item);
+		_status.Text = rendered.Length == 0
+			? (_favoritesOnly.ButtonPressed ? "No favorites on this page" : "No matching assets")
+			: $"Page {_page}  •  {rendered.Length} asset{(rendered.Length == 1 ? "" : "s")}";
 	}
 
 	private void PublishSelection()
@@ -207,6 +238,8 @@ public sealed partial class AssetManagerDock : MarginContainer
 			menu.AddItem("Update from selected model", 2);
 		if (item.Type.Equals("PLUGIN", StringComparison.OrdinalIgnoreCase))
 			menu.AddItem("Update from selected server script", 3);
+		menu.AddSeparator();
+		menu.AddItem(IsFavorite(item) ? "Remove from favorites" : "Add to favorites", 10);
 		menu.IdPressed += id =>
 		{
 			if (id == 0)
@@ -242,10 +275,40 @@ public sealed partial class AssetManagerDock : MarginContainer
 				else
 					_ = PublishManager.PublishAddon(script, item.Id);
 			}
+			else if (id == 10)
+			{
+				ToggleFavorite(item);
+				RenderItems();
+			}
 		};
 		AddChild(menu);
 		menu.PopupOnParent(new Rect2I((Vector2I)GetGlobalMousePosition(), Vector2I.Zero));
 		menu.PopupHide += menu.QueueFree;
+	}
+
+	private static string FavoriteKey(CreatorAssetItem item) => $"{item.Type}:{item.Id}";
+
+	private bool IsFavorite(CreatorAssetItem item) => _favorites.Contains(FavoriteKey(item));
+
+	private void ToggleFavorite(CreatorAssetItem item)
+	{
+		string key = FavoriteKey(item);
+		if (!_favorites.Remove(key))
+			_favorites.Add(key);
+		ConfigFile config = new();
+		foreach (string favorite in _favorites)
+			config.SetValue("favorites", favorite, true);
+		config.Save(FavoritesPath);
+	}
+
+	private void LoadFavorites()
+	{
+		ConfigFile config = new();
+		if (config.Load(FavoritesPath) != Error.Ok)
+			return;
+		foreach (string key in config.GetSectionKeys("favorites"))
+			if (config.GetValue("favorites", key, false).AsBool())
+				_favorites.Add(key);
 	}
 
 	private async void Insert(CreatorAssetItem item)

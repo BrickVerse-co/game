@@ -9,6 +9,7 @@ using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.Splashes.Components;
 using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -19,10 +20,6 @@ namespace BrickVerse.Creator.UI.Splashes;
 
 public partial class StartupSplash : Control
 {
-	private const string LearnUrl = "https://developers.brickverse.gg";
-	private const string CommunityUrl = "https://brickverse.gg/forum";
-	private const string SupportUrl = "https://brickverse.gg/help";
-
 	[Export]
 	private Button _newButton = null!;
 
@@ -93,10 +90,10 @@ public partial class StartupSplash : Control
 
 		_homeButton.Pressed += OnHome;
 		_cloudButton.Pressed += OnCloud;
-		_learnButton.Pressed += () => OpenExternalUrl(LearnUrl);
-		_communityButton.Pressed += () => OpenExternalUrl(CommunityUrl);
-		_docsButton.Pressed += () => OpenExternalUrl(LearnUrl);
-		_supportButton.Pressed += () => OpenExternalUrl(SupportUrl);
+		_learnButton.Pressed += () => OpenExternalUrl(CreatorWebLinks.Docs);
+		_communityButton.Pressed += () => OpenExternalUrl(CreatorWebLinks.Community);
+		_docsButton.Pressed += () => OpenExternalUrl(CreatorWebLinks.Docs);
+		_supportButton.Pressed += () => OpenExternalUrl(CreatorWebLinks.Support);
 
 		_versionNumber.Text = $"v{Globals.AppVersion.TrimStart('v')}";
 		GetViewport().SizeChanged += UpdateResponsiveLayout;
@@ -266,6 +263,8 @@ public partial class StartupSplash : Control
 		_closeButton.Visible = World.Current != null;
 		_closeButton.Text = World.Current != null ? "Close" : "";
 		_closeButton.TooltipText = World.Current != null ? "Return to the open world (Esc)" : "";
+		if (Visible)
+			return;
 		Visible = true;
 		SetPage(false);
 		_newButton.GrabFocus();

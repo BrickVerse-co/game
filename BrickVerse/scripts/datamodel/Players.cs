@@ -139,6 +139,35 @@ public sealed partial class Players : Instance
 		return null;
 	}
 
+	/// <summary>Returns the ready player currently controlling a Pawn.</summary>
+	[ScriptMethod]
+	public Player? GetPlayerFromPawn(Pawn? pawn)
+	{
+		if (pawn == null || pawn.IsDeleted || pawn.Root != Root)
+			return null;
+
+		Player? controller = pawn.Controller;
+		return controller != null && controller.Parent == this && controller.IsReady
+			? controller
+			: null;
+	}
+
+	/// <summary>Returns the player that owns an instance nested inside a controlled Pawn.</summary>
+	[ScriptMethod]
+	public Player? GetPlayerFromInstance(Instance? instance)
+	{
+		Instance? current = instance;
+		while (current != null)
+		{
+			if (current is Player player)
+				return player.Parent == this && player.IsReady ? player : null;
+			if (current is Pawn pawn)
+				return GetPlayerFromPawn(pawn);
+			current = current.Parent;
+		}
+		return null;
+	}
+
 	internal void InvokePlayerAdded(Player player)
 	{
 		Rpc(nameof(OnPlayerAdded), player.Name);

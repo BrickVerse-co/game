@@ -83,6 +83,7 @@ public static class BV
 		{
 			Console.WriteLine("[WARN] " + result);
 		}
+		DispatchLog(new() { Content = result, LogType = LogDispatcher.LogTypeEnum.Info });
 	}
 
 	public static void PrintWarn(params object?[] str)
@@ -172,6 +173,7 @@ public static class BV
 		{
 			Console.WriteLine("[ERROR] " + result);
 		}
+		DispatchLog(new() { Content = result, LogType = LogDispatcher.LogTypeEnum.Error });
 	}
 
 	public static void DispatchLog(LogDispatcher.LogData data)

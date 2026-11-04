@@ -5,10 +5,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Docking;
 using BrickVerse.Creator.UI.Layout;
 using BrickVerse.Creator.UI.Popups;
 using BrickVerse.Creator.UI.Splashes;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Shared;
@@ -366,6 +368,16 @@ public sealed partial class Menu : PanelContainer
 				},
 				new MenuButtonItem()
 				{
+					Text = "Batch Rename...",
+					Icon = "edit",
+					KeyShortcut = new()
+					{
+						Events = [new InputEventKey() { Keycode = Key.F2, ShiftPressed = true }],
+					},
+					Pressed = BatchRenamePopup.Open,
+				},
+				new MenuButtonItem()
+				{
 					Text = "Toggle Locked",
 					Icon = "lock",
 					KeyShortcut = new()
@@ -402,6 +414,24 @@ public sealed partial class Menu : PanelContainer
 							World.Current.Environment
 						);
 					},
+				},
+				new MenuButtonItem()
+				{
+					Text = "Select Descendants",
+					Icon = "select-all",
+					Pressed = () => SelectionTools.SelectDescendants(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Select Siblings",
+					Icon = "select-all",
+					Pressed = () => SelectionTools.SelectSiblings(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Select Same Class",
+					Icon = "select-all",
+					Pressed = () => SelectionTools.SelectSameClass(),
 				},
 				new MenuSeperatorItem(),
 			]
@@ -540,6 +570,45 @@ public sealed partial class Menu : PanelContainer
 							Datamodel.Creator.CreatorHistory.GroupAsEnum.RigidBody
 						);
 					},
+				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
+					Text = "Drop to Surface",
+					Icon = "arrow-down",
+					Pressed = () => SelectionTransformTools.DropSelectionToSurface(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Snap Selection to Grid",
+					Icon = "grid",
+					Pressed = () => SelectionTransformTools.SnapSelectionToGrid(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Reset Local Transform",
+					Icon = "arrow-counter-clockwise",
+					Pressed = () => SelectionTransformTools.ResetLocalTransform(),
+				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem() { Text = "Align on X", Icon = "align-horizontal-centers", Pressed = () => SelectionTransformTools.AlignToActive(SelectionTransformTools.Axis.X) },
+				new MenuButtonItem() { Text = "Align on Y", Icon = "align-vertical-centers", Pressed = () => SelectionTransformTools.AlignToActive(SelectionTransformTools.Axis.Y) },
+				new MenuButtonItem() { Text = "Align on Z", Icon = "align-horizontal-centers", Pressed = () => SelectionTransformTools.AlignToActive(SelectionTransformTools.Axis.Z) },
+				new MenuButtonItem() { Text = "Distribute on X", Icon = "distribute-horizontal", Pressed = () => SelectionTransformTools.Distribute(SelectionTransformTools.Axis.X) },
+				new MenuButtonItem() { Text = "Distribute on Y", Icon = "distribute-vertical", Pressed = () => SelectionTransformTools.Distribute(SelectionTransformTools.Axis.Y) },
+				new MenuButtonItem() { Text = "Distribute on Z", Icon = "distribute-horizontal", Pressed = () => SelectionTransformTools.Distribute(SelectionTransformTools.Axis.Z) },
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
+					Text = "Copy Transform",
+					Icon = "copy",
+					Pressed = () => SelectionTransformTools.CopyTransform(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Paste Transform",
+					Icon = "clipboard",
+					Pressed = () => SelectionTransformTools.PasteTransform(),
 				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()
@@ -717,6 +786,35 @@ public sealed partial class Menu : PanelContainer
 			[
 				new MenuButtonItem()
 				{
+					Text = "Frame Selection",
+					Icon = "focus",
+					RequireGameOpen = true,
+					Pressed = () => World.Current?.CreatorContext.Freelook.MoveToSelected(),
+				},
+				new MenuButtonItem()
+				{
+					Text = "Hide Selection in Editor",
+					Icon = "eye-slash",
+					RequireGameOpen = true,
+					Pressed = SceneVisibilityManager.HideSelection,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Isolate Selection",
+					Icon = "focus",
+					RequireGameOpen = true,
+					Pressed = SceneVisibilityManager.IsolateSelection,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Show All Editor-Hidden Objects",
+					Icon = "eye",
+					RequireGameOpen = true,
+					Pressed = SceneVisibilityManager.ShowAll,
+				},
+				new MenuSeperatorItem(),
+				new MenuButtonItem()
+				{
 					Text = "Toggle Fullscreen",
 					Icon = "resize-handle",
 					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F11 }] },
@@ -794,12 +892,26 @@ public sealed partial class Menu : PanelContainer
 				},
 				new MenuButtonItem()
 				{
-					Text = "Open Documentation",
+					Text = "Documentation Home",
 					Icon = "book",
-					Pressed = () =>
+					Pressed = CreatorWebLinks.OpenDocs,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Documentation for Selection",
+					Icon = "book",
+					KeyShortcut = new() { Events = [new InputEventKey() { Keycode = Key.F1 }] },
+					Pressed = CreatorWebLinks.OpenSelectionDocs,
+				},
+				new MenuButtonItem()
+				{
+					Text = "Search Documentation...",
+					Icon = "search",
+					KeyShortcut = new()
 					{
-						OS.ShellOpen("https://developers.brickverse.gg/");
+						Events = [new InputEventKey() { Keycode = Key.F1, ShiftPressed = true }],
 					},
+					Pressed = CreatorWebLinks.OpenSearch,
 				},
 				new MenuSeperatorItem(),
 				new MenuButtonItem()

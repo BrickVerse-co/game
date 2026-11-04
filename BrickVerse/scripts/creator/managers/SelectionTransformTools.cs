@@ -4,12 +4,16 @@ using System.Linq;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Scripting;
+using BrickVerse.Utils;
 using Godot;
 
 namespace BrickVerse.Creator.Managers;
 
 public static class SelectionTransformTools
 {
+	private static Transform3D? _copiedTransform;
+
+	public static bool HasCopiedTransform => _copiedTransform.HasValue;
 	public enum Axis
 	{
 		X,
@@ -51,6 +55,88 @@ public static class SelectionTransformTools
 			ordered[index].Position = position;
 		}
 		Record($"Distribute selection on {axis}", before, Capture(targets));
+		return true;
+	}
+
+	public static bool ResetLocalTransform()
+	{
+		Dynamic[] targets = GetTopLevelSelection();
+		if (targets.Length == 0) return ReportRequirement("Select at least one 3D object to reset");
+		Dictionary<Dynamic, Transform3D> before = Capture(targets);
+		foreach (Dynamic target in targets)
+		{
+			target.LocalPosition = Vector3.Zero;
+			target.LocalRotation = Vector3.Zero;
+		}
+		Record("Reset local transforms", before, Capture(targets));
+		return true;
+	}
+
+	public static bool SnapSelectionToGrid()
+	{
+		Dynamic[] targets = GetTopLevelSelection();
+		if (targets.Length == 0) return ReportRequirement("Select at least one 3D object to snap");
+		float increment = CreatorService.Interface.UserMoveSnapping;
+		if (increment <= 0) return ReportRequirement("Move snapping must be greater than zero");
+		Dictionary<Dynamic, Transform3D> before = Capture(targets);
+		foreach (Dynamic target in targets)
+			target.Position = target.Position.Snap(increment);
+		Record("Snap selection to grid", before, Capture(targets));
+		return true;
+	}
+
+	public static bool DropSelectionToSurface()
+	{
+		World? world = World.Current;
+		Dynamic[] targets = GetTopLevelSelection();
+		if (world == null || targets.Length == 0)
+			return ReportRequirement("Select at least one 3D object to drop");
+		Dictionary<Dynamic, Transform3D> before = Capture(targets);
+		Instance[] ignore =
+		[
+			.. targets.SelectMany(target =>
+				new Instance[] { target }.Concat(target.GetDescendants())
+			),
+		];
+		int moved = 0;
+		foreach (Dynamic target in targets)
+		{
+			Aabb bounds = target.CalculateBounds();
+			Vector3 origin = bounds.GetCenter() + Vector3.Up * 0.05f;
+			Datamodel.Environment.RayResult? hit = world.Environment.Raycast(
+				origin,
+				Vector3.Down,
+				10000,
+				ignore
+			);
+			if (hit == null) continue;
+			float offset = hit.Value.Position.Y - bounds.Position.Y;
+			target.Position += Vector3.Up * offset;
+			moved++;
+		}
+		if (moved == 0) return ReportRequirement("No surface was found below the selection");
+		Record("Drop selection to surface", before, Capture(targets));
+		CreatorService.Interface.StatusBar?.SetStatus($"Dropped {moved} object{(moved == 1 ? "" : "s")} to surface");
+		return true;
+	}
+
+	public static bool CopyTransform()
+	{
+		Dynamic? target = GetTopLevelSelection().LastOrDefault();
+		if (target == null) return ReportRequirement("Select a 3D object to copy its transform");
+		_copiedTransform = target.GetGlobalTransform();
+		CreatorService.Interface.StatusBar?.SetStatus($"Copied transform from {target.Name}");
+		return true;
+	}
+
+	public static bool PasteTransform()
+	{
+		Dynamic[] targets = GetTopLevelSelection();
+		if (!_copiedTransform.HasValue) return ReportRequirement("Copy a transform first");
+		if (targets.Length == 0) return ReportRequirement("Select at least one 3D object to paste to");
+		Dictionary<Dynamic, Transform3D> before = Capture(targets);
+		foreach (Dynamic target in targets) target.SetGlobalTransform(_copiedTransform.Value);
+		Record("Paste transform", before, Capture(targets));
 		return true;
 	}
 

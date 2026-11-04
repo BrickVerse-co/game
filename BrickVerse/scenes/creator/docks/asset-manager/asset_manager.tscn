@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/creator/ui/docks/asset-manager/AssetManagerDock.cs" id="1"]
 
-[node name="AssetManager" type="MarginContainer" node_paths=PackedStringArray("_search", "_type", "_scope", "_grid", "_status", "_previous", "_next", "_publishSelection")]
+[node name="AssetManager" type="MarginContainer" node_paths=PackedStringArray("_search", "_type", "_scope", "_sort", "_favoritesOnly", "_grid", "_status", "_previous", "_next", "_publishSelection")]
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
@@ -11,6 +11,8 @@ script = ExtResource("1")
 _search = NodePath("Layout/Filters/Search")
 _type = NodePath("Layout/FilterOptions/Type")
 _scope = NodePath("Layout/FilterOptions/Scope")
+_sort = NodePath("Layout/FilterOptions/Sort")
+_favoritesOnly = NodePath("Layout/FilterOptions/FavoritesOnly")
 _grid = NodePath("Layout/Scroll/Grid")
 _status = NodePath("Layout/Footer/Status")
 _previous = NodePath("Layout/Footer/Previous")
@@ -57,6 +59,14 @@ size_flags_horizontal = 3
 [node name="Scope" type="OptionButton" parent="Layout/FilterOptions"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Sort" type="OptionButton" parent="Layout/FilterOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FavoritesOnly" type="CheckButton" parent="Layout/FilterOptions"]
+layout_mode = 2
+text = "★ Favorites"
 
 [node name="Scroll" type="ScrollContainer" parent="Layout"]
 layout_mode = 2

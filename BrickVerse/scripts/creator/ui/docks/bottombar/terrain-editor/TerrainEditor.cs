@@ -235,7 +235,7 @@ public partial class TerrainEditor : Control
 		_surfaceSnapCheck.Toggled += _ => UpdateStatus();
 		_continuousCheck.Toggled += _ => UpdateStatus();
 
-		_viewportClickRegion = GetNodeOrNull<Control>("../../../Tabs/Container");
+		_viewportClickRegion = CreatorService.CurrentGame?.Container;
 
 		PopulateMaterialOptions();
 		CreateBrushPreview();
@@ -352,6 +352,34 @@ public partial class TerrainEditor : Control
 				GetViewport().SetInputAsHandled();
 			}
 		}
+	}
+
+	public override void _UnhandledKeyInput(InputEvent inputEvent)
+	{
+		if (
+			!IsVisibleInTree()
+			|| !IsEditingEnabled()
+			|| CreatorService.CurrentGame?.Container?.HasFocus() != true
+			|| inputEvent is not InputEventKey { Pressed: true, Echo: false } key
+		)
+			return;
+		if (key.Keycode is not (Key.Bracketleft or Key.Bracketright))
+			return;
+		float direction = key.Keycode == Key.Bracketright ? 1f : -1f;
+		if (key.ShiftPressed)
+			_strengthSpinBox.Value = Mathf.Clamp(
+				(float)_strengthSpinBox.Value + direction * 0.05f,
+				(float)_strengthSpinBox.MinValue,
+				(float)_strengthSpinBox.MaxValue
+			);
+		else
+			_sizeSpinBox.Value = Mathf.Clamp(
+				(float)_sizeSpinBox.Value * (direction > 0 ? 1.2f : 1f / 1.2f),
+				(float)_sizeSpinBox.MinValue,
+				(float)_sizeSpinBox.MaxValue
+			);
+		UpdateStatus();
+		GetViewport().SetInputAsHandled();
 	}
 
 	private void SelectTool(TerrainTool tool)
@@ -1405,6 +1433,18 @@ public partial class TerrainEditor : Control
 
 	private bool IsMouseBlockedByUi()
 	{
+		// Dock layouts can reparent the terrain panel, so a relative path to the tabs
+		// container is not stable. Resolve the active world viewport directly and use
+		// its screen-space bounds. This also avoids GuiGetHoveredControl returning a
+		// viewport overlay while the application is focused.
+		Control? activeViewport = CreatorService.CurrentGame?.Container;
+		if (activeViewport != null && GodotObject.IsInstanceValid(activeViewport))
+		{
+			_viewportClickRegion = activeViewport;
+			if (activeViewport.GetGlobalRect().HasPoint(GetViewport().GetMousePosition()))
+				return false;
+		}
+
 		Control? hoveredControl = GetViewport().GuiGetHoveredControl();
 
 		if (hoveredControl == null)
@@ -1451,6 +1491,6 @@ public partial class TerrainEditor : Control
 				: $" · Material {_materialOption.GetItemText(_materialOption.Selected)}";
 
 		_statusLabel.Text =
-			$"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · Interval {BrushIntervalMs:0}ms";
+			$"{_tool} · {_shape} · Size {BrushSize:0.#}{materialText} · [ / ] size · Shift+[ / ] strength";
 	}
 }

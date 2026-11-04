@@ -122,6 +122,7 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 	private float _previewYaw = -0.55f;
 	private float _previewPitch = -0.25f;
 	private float _previewDistance = 4.0f;
+	public string? InitialFilePath { get; set; }
 
 	public override void _Ready()
 	{
@@ -160,7 +161,10 @@ public sealed partial class UploadMeshPopup : PopupWindowBase
 			SetGuilds([]);
 		}
 
-		OpenFilePicker();
+		if (!string.IsNullOrWhiteSpace(InitialFilePath) && File.Exists(InitialFilePath))
+			LoadSelectedFile(InitialFilePath);
+		else
+			OpenFilePicker();
 	}
 
 	public void Close()

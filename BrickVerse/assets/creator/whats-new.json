@@ -1,122 +1,111 @@
 {
-  "id": "creator-2026-08-16-world-building-runtime",
+  "id": "creator-2026-11-04-workflows-scripting-runtime",
   "title": "What's new in BrickVerse Creator",
-  "subtitle": "Build richer worlds with expanded geometry, terrain, UI, voice, scripting, debugging, and Creator workflows.",
-  "date": "August 16, 2026",
+  "subtitle": "Create faster with flexible workspaces, expanded scripting, richer world systems, and more reliable play testing.",
+  "date": "November 4, 2026",
   "sections": [
     {
-      "title": "A much larger DataModel",
-      "body": "More familiar building blocks are available directly in Creator and Luau.",
+      "title": "A workspace that works your way",
+      "body": "Creator's interface is more flexible, discoverable, and comfortable for long building sessions.",
       "items": [
-        "New Attachment, Beam, Trail, Highlight, SurfaceAppearance, SpawnLocation, VehicleSeat, SoundGroup, ClickDetector, and DragDetector instances",
-        "New Hinge, BallSocket, Spring, Rope, Slider, Motor, AlignPosition, AlignRotation, and Prismatic constraints",
-        "New ColorCorrection, Bloom, Fog, Ambient Occlusion, and Tonemap post-processing effects",
-        "Decals can attach to a selected part face, while UIGradient can target backgrounds, text, strokes, and borders",
-        "Instance attributes add SetAttribute, GetAttribute, removal, enumeration, and change signals"
+        "A new docking system lets panels move between regions, tab together, and restore their layout across sessions",
+        "The Command Palette puts common Creator actions, tools, and navigation a quick search away",
+        "Find in Files searches across project scripts, while viewport bookmarks make important locations easy to revisit",
+        "Scene statistics, contextual tutorials, notifications, loading skeletons, and improved settings controls provide clearer feedback",
+        "Ribbon tools, local pivots, gizmos, selection bounds, custom instance icons, and docked editors received broad usability and stability improvements"
       ]
     },
     {
-      "title": "Geometry, unions, and faster shape creation",
-      "body": "Creator now provides more ways to construct reusable geometry without leaving the viewport.",
+      "title": "Animation and procedural creation",
+      "body": "New editors make it easier to author motion, effects, and generated environments inside Creator.",
       "items": [
-        "Union, negate, unmerge, and geometry operations support Parts, Meshes, and EditableMeshes through Creator context menus",
-        "Unstable union tooling is protected by its beta feature enrollment and produces smoother, double-sided results",
-        "Negated geometry is visibly translucent in edit mode so boolean operations are easier to understand",
-        "New configurable Icosphere geometry supports multiple subdivision and face-count levels",
-        "The ribbon's new Shapes dropdown quickly inserts blocks, spheres, cylinders, cones, wedges, corner wedges, toruses, trusses, frames, and icospheres with undo and snapping"
+        "The overhauled Animation Editor supports dedicated tracks, keyframes, transform channels, and instance property bindings",
+        "PCGSpline adds editable procedural paths with in-viewport controls for building roads, trails, and other spline-driven content",
+        "The Particle Editor provides a focused workflow for authoring and previewing particle systems",
+        "Terrain tools add generation controls plus dedicated grass and water settings",
+        "Project snapshots and improved build feedback help protect work and make longer operations easier to follow"
       ]
     },
     {
-      "title": "New beta: Skinned Terrain Grass",
-      "body": "Paint performant, animated grass directly onto terrain with global and per-stroke art direction.",
+      "title": "Forge, MCP, and visual scripting",
+      "body": "Assisted and node-based creation workflows now reach more of the project.",
       "items": [
-        "Paint and erase GPU-instanced grass from the Terrain Editor",
-        "Control density, blade height, width, variation, draw distance, base color, and tip color",
-        "Override density, size, and tint at each painted location instead of relying only on global values",
-        "Optionally conform and deform blades to terrain surfaces with adjustable surface inset",
-        "Grass animation now follows Environment wind direction, strength, and speed"
+        "Forge was redesigned with MCP support, custom MCP servers, project-aware tools, and an integrated shell workflow",
+        "Local CEF installation and authentication improvements make Forge setup more dependable across supported platforms",
+        "Experimental Visual Scripting adds a graph editor and runtime provider for building behavior without writing source code",
+        "Visual Script nodes, connections, execution, serialization, and editor interactions received a follow-up reliability pass",
+        "Creator APIs and context services expose more project operations to integrated creation tools"
       ]
     },
     {
-      "title": "Voice, chat, and safer communication",
-      "body": "Experiences can offer richer communication while respecting account eligibility, blocking, and local controls.",
+      "title": "More ways to script",
+      "body": "Projects can experiment with additional languages while Luau becomes faster and more capable.",
       "items": [
-        "VoiceChatService provides spatial Opus voice for eligible 13+ users in voice-enabled experiences",
-        "Voice activity bubbles show microphone input above players and allow quick local mute or microphone toggling",
-        "Blocked users cannot be heard, and Luau can control microphone state, sensitivity, per-player mute, volume, indicators, and voice events",
-        "ChatChannel and SlashCommand instances add custom channels, team chat, local commands, permissions, prefixes, and autofill",
-        "Whispers, friendship and block integration, grouped quick-chat phrases, and a quick-chat wheel improve communication access"
+        "Early C#, C++, JavaScript, and TypeScript providers add language-aware files, compilation, bindings, and capability bridges",
+        "Parallel Luau introduces Actor-based isolated execution, synchronization helpers, and a scheduler for parallel-safe work",
+        "LocalNetworkEvent replaces BindableEvent for local event-driven communication between scripts",
+        "Generated IDE support, definitions, enums, overload resolution, array conversion, and property synchronization are more complete",
+        "API documentation is now generated and published automatically from the engine's current scripting surface"
       ]
     },
     {
-      "title": "Developer-defined game settings",
-      "body": "Creators can add experience-specific options to the player's redesigned pause menu.",
+      "title": "An expanded DataModel",
+      "body": "New reusable instances cover gameplay, rendering, navigation, capture, optimization, and world simulation.",
       "items": [
-        "Create ordered GameSetting instances with custom categories, titles, descriptions, stable keys, and defaults",
-        "Choose boolean, number slider, text, dropdown choice, keybind, or color controls",
-        "Per-universe values persist locally for each player and expose typed Luau getters, setters, reset, and change signals",
-        "The new left-side game menu keeps gameplay visible and opens responsive content panels only when needed",
-        "Controls jumps directly to the experience's Game settings category, while narrow and short windows use compact adaptive layouts"
+        "Pawn, Weapon, Vehicle, VehicleWheel, Buoyancy, DamageVolume, ForceVolume, TriggerVolume, and Countdown provide higher-level gameplay building blocks",
+        "LODGroup, VoxelVolume, NavigationObstacle, ReflectionCapture, SceneCapture, and CaptureSurface extend large-world and rendering workflows",
+        "CollectionService, DebrisService, ObjectPoolService, RunService, SchedulerService, SoundService, StudioService, and TemporaryFile expand engine services",
+        "Explosions gained configurable physics, damage, effects, and lifecycle behavior, while NPC movement, seating, climbing, and rotation became more robust",
+        "World, bounds, input, color, UI, camera, tween, physics, environment, tool, stat, and interaction APIs received new capabilities and fixes"
       ]
     },
     {
-      "title": "Creator workflow improvements",
-      "body": "Common editing and testing actions take fewer steps and behave more predictably.",
+      "title": "Node-based audio",
+      "body": "A new audio graph makes spatial sound routing and processing composable.",
       "items": [
-        "The Insert menu is searchable, scrollable, and automatically includes all creatable instance types",
-        "Shift or Ctrl selection can target a part inside a model instead of always selecting the entire model",
-        "Ctrl+L switches transform orientation, with global and local gizmo alignment available from Creator settings",
-        "A welding workflow makes it easier to connect selected parts and configure constraints",
-        "Play tests can attach to the active Creator viewport or launch as independent resizable windows, without unexpectedly minimizing"
+        "AudioPlayer, AudioEmitter, AudioListener, and device input and output nodes define sources and destinations",
+        "AudioWire connects graph nodes for explicit, reusable signal routing",
+        "AudioFader, AudioEqualizer, and AudioReverb add common processing controls",
+        "Sound exposes peak volume plus expanded spatial, attenuation, and customizable effect properties",
+        "Sound buses now use stable network object identities for more reliable replicated audio"
       ]
     },
     {
-      "title": "A richer Toolbox",
-      "body": "Inspect assets before committing them to a project and place them exactly where they belong.",
+      "title": "Faster, steadier multiplayer worlds",
+      "body": "Replication and networking work focused on scaling busy experiences without sacrificing consistency.",
       "items": [
-        "Single-clicking an asset opens a detailed modal instead of inserting immediately",
-        "Asset details include descriptions, comments and reviews, purchase, insert, and report actions",
-        "Supported models can be inspected in an interactive 3D viewport preview",
-        "Double-click preserves the fast insert workflow",
-        "Drag assets onto Explorer targets such as ScriptService to choose their parent"
+        "Authoritative spatial streaming sends clients the world state relevant to their current location",
+        "Transform snapshots use a more efficient algorithm with chunk throttling and better handling of sleeping or frozen objects",
+        "Large network messages are framed and delivered more reliably, with test coverage for packet compression and RPC contracts",
+        "Pending parent resolution, dynamic discovery, property and script synchronization, shutdown, and reconnect paths were hardened",
+        "Draw-call reductions and targeted performance fixes improve runtime behavior in complex scenes"
       ]
     },
     {
-      "title": "Expanded Luau and networking",
-      "body": "Roblox-style APIs reduce boilerplate while keeping existing networking workflows compatible.",
+      "title": "Creator testing and diagnostics",
+      "body": "New tools help creators reproduce problems and understand projects before publishing.",
       "items": [
-        "The task library adds wait, spawn, defer, delay, cancel, synchronization helpers, and legacy wait/spawn compatibility",
-        "Network events accept normal Luau values through InvokeServer and automatically serialize supported payloads",
-        "The original NetMessage builder remains supported for explicit typed messages",
-        "Editor completion and generated Luau definitions cover more globals, services, instances, properties, methods, signals, and enums",
-        "Luau profiling infrastructure supplies runtime script timing data to Creator debugging tools"
+        "Device input simulation and UI emulator improvements make multiple screen and control configurations easier to test",
+        "Prefab and linked-model views clarify reusable content and its source relationships",
+        "The engine crash reporter captures failures, while optional console access improves development diagnostics",
+        "Client join-state diagnostics and integrity checks provide clearer information when a play session cannot connect",
+        "Automated DataModel, authentication, scripting, networking, compression, integrity, and formatting checks strengthen release validation"
       ]
     },
     {
-      "title": "Developer Console and diagnostics",
-      "body": "The F8 console has evolved into a broader runtime investigation workspace.",
+      "title": "Mobile and cross-platform polish",
+      "body": "The client experience is more complete and predictable across phones, tablets, macOS, iOS, and Windows.",
       "items": [
-        "New executor tooling runs diagnostic Luau against an active play test",
-        "Script Profiler views expose execution timing and hotspots",
-        "Memory, world, network, player, instance, and runtime information are available from developer tools",
-        "Runtime debug windows stream logs and state back into Creator",
-        "Editor diagnostics and property controls handle more DataModel types, including editable string arrays"
-      ]
-    },
-    {
-      "title": "More world systems and media",
-      "body": "New runtime systems cover navigation, video, advertising, rendering, and vehicle interactions.",
-      "items": [
-        "PathfindingService, PathfindingPath, and NavigationLink add blocked-path reporting and explicit traversal links",
-        "UIVideoFrame supports optimized video playback through the asset pipeline",
-        "UIAd and AdService support display and video placements with eligibility and rate-limited impression handling",
-        "ShaderEffect provides a constrained instance-based visual effect workflow instead of unrestricted custom shader execution",
-        "Internal anti-cheat checks cover suspicious movement, network behavior, invalid state, and memory anomalies, with universe-level enablement"
+        "Mobile home, worlds, search, collection, guild, profile, avatar, parental-control, reporting, notification, and transaction views were expanded",
+        "Feed creation, comments, friends, place details, purchases, and marketplace browsing received richer mobile components",
+        "Camera gestures, touch scrolling, responsive layouts, authentication, in-app purchases, and launch routing were refined",
+        "macOS connection and permission handling, iOS arm64 packaging, and Windows export configuration were corrected",
+        "A new boot splash, updated typography, and refreshed icons give the client and Creator a more cohesive presentation"
       ]
     }
   ],
   "links": [
-    { "label": "Read the documentation", "url": "https://developers.brickverse.gg/" },
+    { "label": "Read the documentation", "url": "https://brickverse.gg/creator/docs" },
     { "label": "Share feedback", "url": "https://brickverse.gg/forum" }
   ]
 }

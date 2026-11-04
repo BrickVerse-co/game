@@ -9,6 +9,7 @@ using BrickVerse.Attributes;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.UI.Popups;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using BrickVerse.Datamodel.Interfaces;
@@ -57,7 +58,11 @@ public partial class ExplorerItemContextMenu : ContextMenu
 		AddIconItem("copy", "Copy", 21);
 		AddIconItem("clipboard", "Paste", 22);
 		AddIconItem("duplicate", "Duplicate", 23);
+		AddIconItem("edit", "Batch Rename...", 24);
 		AddIconItem("select-all", "Select Children", 25);
+		AddIconItem("select-all", "Select Descendants", 26);
+		AddIconItem("select-all", "Select Siblings", 27);
+		AddIconItem("select-all", "Select Same Class", 28);
 		AddSeparator();
 		AddIconItem("group", "Group", 31);
 		if (Target is IGroup or RigidBody)
@@ -185,6 +190,11 @@ public partial class ExplorerItemContextMenu : ContextMenu
 				context.History.DuplicateInstances(targets);
 				break;
 			}
+			case 24: // Batch rename
+			{
+				BatchRenamePopup.Open();
+				break;
+			}
 			case 25: // Select Children
 			{
 				context.Selections.DeselectAll();
@@ -194,6 +204,9 @@ public partial class ExplorerItemContextMenu : ContextMenu
 				}
 				break;
 			}
+			case 26: SelectionTools.SelectDescendants(); break;
+			case 27: SelectionTools.SelectSiblings(); break;
+			case 28: SelectionTools.SelectSameClass(); break;
 			case 31: // Group
 			{
 				context.History.GroupInstances(targets);
@@ -394,9 +407,7 @@ public partial class ExplorerItemContextMenu : ContextMenu
 			}
 			case 59: // Open Documentation
 			{
-				OS.ShellOpen(
-					"https://developers.brickverse.gg/game-api/types/" + Target!.ClassName.ToLower()
-				);
+				OS.ShellOpen(CreatorWebLinks.ClassDocs(Target!.ClassName));
 				break;
 			}
 			case 61: // Lock/Unlock

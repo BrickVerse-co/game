@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Procedural scatter: a terrain plane populated with distributed instances -->
+<path d="M5 31L24 21L43 31L24 42L5 31Z" fill="#187FC4"/>
+<path d="M5 31L24 21L43 31L24 42L5 31Z" stroke="#8ACFFF" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M12 29L24 35L36 29M18 25L30 32M18 37L30 30" stroke="#6AC2FF" stroke-width="1.6" stroke-linecap="round" opacity=".75"/>
+<path d="M13 26V16M9 20L13 14L17 20M10 23L13 19L16 23" stroke="#8ACFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26 26V11M21 18L26 9L31 18M22 23L26 16L30 23" fill="#35ACFF" stroke="#35ACFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36 30V21M32 25L36 19L40 25M33 28L36 23L39 28" stroke="#8ACFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="19" cy="30" r="2.5" fill="#B9E3FF"/>
+<circle cx="30" cy="34" r="2.5" fill="#B9E3FF"/>
+</svg>

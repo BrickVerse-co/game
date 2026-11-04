@@ -1,0 +1,96 @@
+name: Publish Engine API documentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "BrickVerse/scripts/datamodel/**"
+      - "BrickVerse/scripts/scripting/**"
+      - "BrickVerse/scripts/docsgen/**"
+      - "BrickVerse.SourceGen/**"
+      - "tools/docs/**"
+      - ".github/workflows/publish-game-api-docs.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-game-api-docs
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.7-stable
+  DOTNET_VERSION: 10.0.x
+
+jobs:
+  publish:
+    name: Generate and publish game-api docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Engine
+        uses: actions/checkout@v5
+        with:
+          lfs: true
+          submodules: recursive
+          path: game
+
+      - name: Checkout public game-api repository
+        uses: actions/checkout@v5
+        with:
+          repository: BrickVerse-co/game-api
+          ref: main
+          token: ${{ secrets.GAME_API_PUBLISH_TOKEN }}
+          path: game-api
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Engine
+        working-directory: game
+        run: dotnet restore BrickVerse/BrickVerse.csproj
+
+      - name: Install Godot .NET
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/godot.zip"
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_mono_linux_x86_64.zip"
+          curl --fail --location --retry 3 "$url" --output "$archive"
+          mkdir -p "${RUNNER_TEMP}/godot"
+          unzip -q "$archive" -d "${RUNNER_TEMP}/godot"
+          binary="$(find "${RUNNER_TEMP}/godot" -type f -name 'Godot_*_mono_linux.x86_64' -print -quit)"
+          test -n "$binary"
+          chmod +x "$binary"
+          echo "GODOT_BINARY=$binary" >> "$GITHUB_ENV"
+
+      - name: Generate live API reference
+        working-directory: game
+        run: |
+          dotnet build BrickVerse/BrickVerse.csproj --no-restore
+          "$GODOT_BINARY" --headless --path BrickVerse -- --genapi
+
+      - name: Merge generated API with public contributions
+        run: |
+          python game/tools/docs/publish_game_api_docs.py \
+            --api-reference game/BrickVerse/apiref.json \
+            --docs-root game-api/docs \
+            --icon-source game/BrickVerse/assets/textures/datamodel
+
+      - name: Publish changed documentation
+        working-directory: game-api
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs; then
+            echo "Engine API documentation is already current."
+            exit 0
+          fi
+          git config user.name "brickverse-docs-bot"
+          git config user.email "engineering@brickverse.gg"
+          git add docs
+          git commit -m "docs(api): sync Engine API from ${GITHUB_SHA::12}"
+          git push origin HEAD:main
