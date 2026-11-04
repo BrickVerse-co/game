@@ -46,6 +46,21 @@ public partial class InsertMenuPopup : PopupPanel
 		["GUI"] = "Screen-space user interface root",
 		["GUI3D"] = "User interface rendered in the world",
 		["Animator"] = "Play reusable animation tracks",
+		["HealthComponent"] = "Reusable health, damage, healing and death state",
+		["ResourceMeter"] = "Regenerating stamina, mana, fuel or shield resource",
+		["Cooldown"] = "Reusable timed ability or interaction cooldown",
+		["StateMachine"] = "Finite state machine built from child State objects",
+		["State"] = "Named state for AI, UI and gameplay flows",
+		["Quest"] = "Ordered quest built from child quest steps",
+		["QuestStep"] = "Quest stage containing one or more objectives",
+		["Objective"] = "Trackable progress target with completion and failure",
+		["Dialogue"] = "Branching runtime dialogue graph",
+		["DialogueLine"] = "Speaker text and dialogue choices",
+		["DialogueChoice"] = "Selectable branch to another dialogue line",
+		["LootTable"] = "Weighted multi-roll loot selection",
+		["LootEntry"] = "Weighted item and quantity configuration",
+		["RandomSelector"] = "Reusable weighted random child selector",
+		["WeightedOption"] = "Weighted string or object choice",
 	};
 	private PackedScene _categoryTitlePacked = GD.Load<PackedScene>(
 		"res://scenes/creator/popups/insert/components/category_title.tscn"
@@ -71,7 +86,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"Part",
 			"Truss",
 			"Mesh",
-			"EditableMesh",
+			"EditableMeshPart",
 			"Seat",
 			"VehicleSeat",
 			"Model",
@@ -83,6 +98,7 @@ public partial class InsertMenuPopup : PopupPanel
 			"SurfaceAppearance",
 			"Camera",
 			"PCGSpline",
+			"PCGScatter",
 		},
 		[new() { Title = "Terrain", RecommendOn = [typeof(Terrain)] }] = new()
 		{
@@ -165,6 +181,14 @@ public partial class InsertMenuPopup : PopupPanel
 		},
 		[new() { Title = "Gameplay" }] = new()
 		{
+			"HealthComponent",
+			"ResourceMeter",
+			"Cooldown",
+			"StateMachine",
+			"Quest",
+			"Dialogue",
+			"LootTable",
+			"RandomSelector",
 			"SpawnLocation",
 			"TriggerVolume",
 			"DamageVolume",
@@ -175,6 +199,36 @@ public partial class InsertMenuPopup : PopupPanel
 			"PathfindingPath",
 			"VehicleSeat",
 		},
+		[new() { Title = "State Machine", RecommendOn = [typeof(StateMachine)] }] = new()
+		{
+			"State",
+		},
+		[new() { Title = "Quest Authoring", RecommendOn = [typeof(Quest), typeof(QuestStep)] }] =
+			new()
+			{
+				"QuestStep",
+				"Objective",
+			},
+		[
+			new()
+			{
+				Title = "Dialogue Authoring",
+				RecommendOn = [typeof(Dialogue), typeof(DialogueLine)],
+			}
+		] = new()
+		{
+			"DialogueLine",
+			"DialogueChoice",
+		},
+		[new() { Title = "Loot Authoring", RecommendOn = [typeof(LootTable)] }] = new()
+		{
+			"LootEntry",
+		},
+		[new() { Title = "Weighted Selection", RecommendOn = [typeof(RandomSelector)] }] =
+			new()
+			{
+				"WeightedOption",
+			},
 		[new() { Title = "Lighting Effects", RecommendOn = [typeof(Lighting)] }] = new()
 		{
 			"BloomEffect",

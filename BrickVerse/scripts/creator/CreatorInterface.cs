@@ -927,11 +927,12 @@ public partial class CreatorInterface : Control, IScriptObject
 		PopupWindow(editor, toolWindow: true);
 	}
 
-	public void OpenUploadMeshMenu()
+	public void OpenUploadMeshMenu(string? initialFilePath = null)
 	{
 		UploadMeshPopup popup = Globals.CreateInstanceFromScene<UploadMeshPopup>(
 			"res://scenes/creator/popups/upload_mesh.tscn"
 		);
+		popup.InitialFilePath = initialFilePath;
 		PopupWindow(popup);
 
 		popup.UploadRequested += async request =>

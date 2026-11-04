@@ -74,6 +74,9 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 	private ArrayMesh? _committedMesh;
 	private Material? _material;
 
+	/// <summary>Raised after render geometry has been rebuilt.</summary>
+	public event Action? Committed;
+
 	[ScriptProperty]
 	public bool FixedSize { get; private set; }
 
@@ -1011,6 +1014,259 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		return [.. created];
 	}
 
+	/// <summary>
+	/// Insets a connected triangle region toward its centroid. Original face IDs become
+	/// the inset cap, shared topology is retained, and a ring is generated only on boundary edges.
+	/// </summary>
+	[ScriptMethod]
+	public int[] InsetFaces(int[] faceIds, float amount)
+	{
+		RequireTopologyEditable();
+		if (faceIds == null || faceIds.Length == 0)
+			throw new ArgumentException("At least one face is required.", nameof(faceIds));
+		if (!float.IsFinite(amount) || amount <= 0f || amount >= 1f)
+			throw new ArgumentOutOfRangeException(
+				nameof(amount),
+				"Inset amount must be finite and in the range (0, 1)."
+			);
+
+		int[] selection = [.. faceIds.Distinct()];
+		foreach (int id in selection)
+			RequireFace(id);
+
+		HashSet<int> selectedVertices =
+			[.. selection.SelectMany(faceId => _faces[faceId].Vertices)];
+		Vector3 centroid = selectedVertices
+			.Select(id => RequireVertex(id).Position)
+			.Aggregate(Vector3.Zero, (sum, position) => sum + position)
+			/ selectedVertices.Count;
+		Dictionary<int, int> insetVertices = [];
+		Dictionary<int, int> outerVertices = [];
+		foreach (int vertexId in selectedVertices)
+		{
+			VertexData original = RequireVertex(vertexId);
+			VertexData inset = new() { Position = original.Position.Lerp(centroid, amount) };
+			inset.BoneIds.AddRange(original.BoneIds);
+			inset.BoneWeights.AddRange(original.BoneWeights);
+			int insetId = _nextVertexId++;
+			_vertices[insetId] = inset;
+			insetVertices[vertexId] = insetId;
+			outerVertices[insetId] = vertexId;
+		}
+
+		Dictionary<(int, int), (int Count, int FaceId, int Corner)> edges = [];
+		Dictionary<(int FaceId, int Corner), (int Normal, int Uv, int Color)> outerCorners = [];
+		Dictionary<(int FaceId, int Corner), (int Normal, int Uv, int Color)> insetCorners = [];
+		Vector2 uvCentroid = selection
+			.SelectMany(faceId => _faces[faceId].UVs)
+			.Select(uvId => _uvs[uvId])
+			.Aggregate(Vector2.Zero, (sum, uv) => sum + uv)
+			/ (selection.Length * 3f);
+		Color colorCentroid = selection
+			.SelectMany(faceId => _faces[faceId].Colors)
+			.Select(colorId => RequireColor(colorId).Value)
+			.Aggregate(Colors.Transparent, (sum, color) => sum + color)
+			/ (selection.Length * 3f);
+		foreach (int faceId in selection)
+		{
+			FaceData face = _faces[faceId];
+			for (int corner = 0; corner < 3; corner++)
+			{
+				int next = (corner + 1) % 3;
+				int from = face.Vertices[corner];
+				int to = face.Vertices[next];
+				(int, int) key = from < to ? (from, to) : (to, from);
+				edges[key] = edges.TryGetValue(key, out var edge)
+					? (edge.Count + 1, edge.FaceId, edge.Corner)
+					: (1, faceId, corner);
+				outerCorners[(faceId, corner)] =
+					(face.Normals[corner], face.UVs[corner], face.Colors[corner]);
+				insetCorners[(faceId, corner)] =
+				(
+					AddNormalRaw(RequireNormal(face.Normals[corner]).Value, automatic: true),
+					AddUvRaw(_uvs[face.UVs[corner]].Lerp(uvCentroid, amount)),
+					AddColorRaw(
+						RequireColor(face.Colors[corner]).Value.Lerp(colorCentroid, amount)
+					)
+				);
+			}
+		}
+
+		foreach (int faceId in selection)
+		{
+			FaceData face = _faces[faceId];
+			for (int corner = 0; corner < 3; corner++)
+			{
+				face.Vertices[corner] = insetVertices[face.Vertices[corner]];
+				var attributes = insetCorners[(faceId, corner)];
+				face.Normals[corner] = attributes.Normal;
+				face.UVs[corner] = attributes.Uv;
+				face.Colors[corner] = attributes.Color;
+			}
+		}
+
+		foreach ((_, var edge) in edges.Where(pair => pair.Value.Count == 1))
+		{
+			FaceData face = _faces[edge.FaceId];
+			int corner = edge.Corner;
+			int next = (corner + 1) % 3;
+			int innerFrom = face.Vertices[corner];
+			int innerTo = face.Vertices[next];
+			int outerFrom = outerVertices[innerFrom];
+			int outerTo = outerVertices[innerTo];
+			var outerFromAttributes = outerCorners[(edge.FaceId, corner)];
+			var outerToAttributes = outerCorners[(edge.FaceId, next)];
+			var innerFromAttributes = insetCorners[(edge.FaceId, corner)];
+			var innerToAttributes = insetCorners[(edge.FaceId, next)];
+			AddFaceRaw(
+				[outerFrom, outerTo, innerTo],
+				[outerFromAttributes.Normal, outerToAttributes.Normal, innerToAttributes.Normal],
+				[outerFromAttributes.Uv, outerToAttributes.Uv, innerToAttributes.Uv],
+				[outerFromAttributes.Color, outerToAttributes.Color, innerToAttributes.Color]
+			);
+			AddFaceRaw(
+				[outerFrom, innerTo, innerFrom],
+				[outerFromAttributes.Normal, innerToAttributes.Normal, innerFromAttributes.Normal],
+				[outerFromAttributes.Uv, innerToAttributes.Uv, innerFromAttributes.Uv],
+				[outerFromAttributes.Color, innerToAttributes.Color, innerFromAttributes.Color]
+			);
+		}
+
+		RecalculateAutomaticNormals();
+		MarkDirty();
+		return selection;
+	}
+
+	/// <summary>Creates a chamfer around a selected face region and offsets its cap.</summary>
+	[ScriptMethod]
+	public int[] BevelFaces(int[] faceIds, float inset, float depth = 0f)
+	{
+		int[] selection = InsetFaces(faceIds, inset);
+		Dictionary<int, Vector3> normalSums = [];
+		foreach (int faceId in selection)
+		{
+			FaceData face = RequireFace(faceId);
+			Vector3 normal = CalculateFaceNormal(face);
+			foreach (int vertexId in face.Vertices)
+				normalSums[vertexId] = normalSums.GetValueOrDefault(vertexId) + normal;
+		}
+		foreach ((int vertexId, Vector3 normal) in normalSums)
+			RequireVertex(vertexId).Position += SafeNormal(normal) * depth;
+		RecalculateAutomaticNormals();
+		MarkDirty();
+		return selection;
+	}
+
+	/// <summary>Copies selected faces into an independent editable mesh.</summary>
+	[ScriptMethod]
+	public EditableMesh SeparateFaces(int[] faceIds, bool removeFromSource = false)
+	{
+		ThrowIfDestroyed();
+		if (removeFromSource)
+			RequireTopologyEditable();
+		if (faceIds == null || faceIds.Length == 0)
+			throw new ArgumentException("At least one face is required.", nameof(faceIds));
+
+		int[] selection = [.. faceIds.Distinct()];
+		foreach (int id in selection)
+			RequireFace(id);
+		EditableMesh separated = new() { AutoCommit = false, Material = Material };
+		Dictionary<int, int> vertices = [];
+		Dictionary<int, int> normals = [];
+		Dictionary<int, int> uvs = [];
+		Dictionary<int, int> colors = [];
+		Dictionary<int, int> bones = [];
+
+		foreach (int faceId in selection)
+		{
+			FaceData face = _faces[faceId];
+			int[] newVertices = new int[3];
+			int[] newNormals = new int[3];
+			int[] newUvs = new int[3];
+			int[] newColors = new int[3];
+			for (int corner = 0; corner < 3; corner++)
+			{
+				newVertices[corner] = CopyVertexTo(face.Vertices[corner], separated, vertices, bones);
+				newNormals[corner] = CopyNormalTo(face.Normals[corner], separated, normals);
+				newUvs[corner] = CopyUvTo(face.UVs[corner], separated, uvs);
+				newColors[corner] = CopyColorTo(face.Colors[corner], separated, colors);
+			}
+			separated.AddFaceRaw(newVertices, newNormals, newUvs, newColors);
+		}
+
+		separated.RecalculateAutomaticNormals();
+		separated.MarkDirty();
+		separated.Commit();
+		separated.AutoCommit = AutoCommit;
+		if (removeFromSource)
+		{
+			foreach (int faceId in selection)
+				_faces.Remove(faceId);
+			RemoveUnused();
+			RecalculateAutomaticNormals();
+			MarkDirty();
+		}
+		return separated;
+	}
+
+	/// <summary>
+	/// Appends an independent copy of another editable mesh and returns the new face IDs.
+	/// The optional transform is applied to positions and authored normals.
+	/// </summary>
+	[ScriptMethod]
+	public int[] AppendMesh(EditableMesh source, Transform3D transform = default)
+	{
+		RequireTopologyEditable();
+		if (source == null)
+			throw new ArgumentNullException(nameof(source));
+		source.ThrowIfDestroyed();
+		if (ReferenceEquals(source, this))
+			throw new ArgumentException("A mesh cannot be appended to itself.", nameof(source));
+		if (transform == default)
+			transform = Transform3D.Identity;
+
+		Dictionary<int, int> vertices = [];
+		Dictionary<int, int> normals = [];
+		Dictionary<int, int> uvs = [];
+		Dictionary<int, int> colors = [];
+		Dictionary<int, int> bones = [];
+		List<int> createdFaces = [];
+
+		foreach ((_, FaceData face) in source._faces.OrderBy(pair => pair.Key))
+		{
+			int[] newVertices = new int[3];
+			int[] newNormals = new int[3];
+			int[] newUvs = new int[3];
+			int[] newColors = new int[3];
+			for (int corner = 0; corner < 3; corner++)
+			{
+				newVertices[corner] = source.CopyVertexTo(
+					face.Vertices[corner],
+					this,
+					vertices,
+					bones
+				);
+				newNormals[corner] = source.CopyNormalTo(face.Normals[corner], this, normals);
+				newUvs[corner] = source.CopyUvTo(face.UVs[corner], this, uvs);
+				newColors[corner] = source.CopyColorTo(face.Colors[corner], this, colors);
+			}
+			createdFaces.Add(AddFaceRaw(newVertices, newNormals, newUvs, newColors));
+		}
+
+		foreach (int vertexId in vertices.Values)
+			_vertices[vertexId].Position = transform * _vertices[vertexId].Position;
+		Basis normalTransform = transform.Basis.Inverse().Transposed();
+		foreach (int normalId in normals.Values)
+		{
+			NormalData normal = _normals[normalId];
+			if (!normal.Automatic)
+				normal.Value = SafeNormal(normalTransform * normal.Value);
+		}
+		RecalculateAutomaticNormals();
+		MarkDirty();
+		return [.. createdFaces];
+	}
+
 	[ScriptEnum]
 	public enum MeshProjectionPlane
 	{
@@ -1241,6 +1497,7 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		_dirty = false;
 		Version++;
 		UpdateBoundInstances(mesh);
+		Committed?.Invoke();
 		return mesh;
 	}
 
@@ -1349,6 +1606,75 @@ public sealed partial class EditableMesh : RefCounted, IScriptObject
 		Array.Copy(uvs, face.UVs, 3);
 		Array.Copy(colors, face.Colors, 3);
 		_faces[id] = face;
+		return id;
+	}
+
+	private int CopyVertexTo(
+		int sourceId,
+		EditableMesh target,
+		Dictionary<int, int> cache,
+		Dictionary<int, int> boneCache
+	)
+	{
+		if (cache.TryGetValue(sourceId, out int existing))
+			return existing;
+		VertexData source = RequireVertex(sourceId);
+		VertexData copy = new() { Position = source.Position };
+		foreach (int boneId in source.BoneIds)
+			copy.BoneIds.Add(CopyBoneTo(boneId, target, boneCache));
+		copy.BoneWeights.AddRange(source.BoneWeights);
+		int id = target._nextVertexId++;
+		target._vertices[id] = copy;
+		cache[sourceId] = id;
+		return id;
+	}
+
+	private int CopyBoneTo(int sourceId, EditableMesh target, Dictionary<int, int> cache)
+	{
+		if (sourceId == 0)
+			return 0;
+		if (cache.TryGetValue(sourceId, out int existing))
+			return existing;
+		BoneData source = RequireBone(sourceId);
+		int parentId = CopyBoneTo(source.ParentId, target, cache);
+		int id = target._nextBoneId++;
+		target._bones[id] = new BoneData
+		{
+			Name = source.Name,
+			ParentId = parentId,
+			Transform = source.Transform,
+			Virtual = source.Virtual,
+		};
+		cache[sourceId] = id;
+		return id;
+	}
+
+	private int CopyNormalTo(int sourceId, EditableMesh target, Dictionary<int, int> cache)
+	{
+		if (cache.TryGetValue(sourceId, out int existing))
+			return existing;
+		NormalData source = RequireNormal(sourceId);
+		int id = target.AddNormalRaw(source.Value, source.Automatic);
+		cache[sourceId] = id;
+		return id;
+	}
+
+	private int CopyUvTo(int sourceId, EditableMesh target, Dictionary<int, int> cache)
+	{
+		if (cache.TryGetValue(sourceId, out int existing))
+			return existing;
+		RequireUv(sourceId);
+		int id = target.AddUvRaw(_uvs[sourceId]);
+		cache[sourceId] = id;
+		return id;
+	}
+
+	private int CopyColorTo(int sourceId, EditableMesh target, Dictionary<int, int> cache)
+	{
+		if (cache.TryGetValue(sourceId, out int existing))
+			return existing;
+		int id = target.AddColorRaw(RequireColor(sourceId).Value);
+		cache[sourceId] = id;
 		return id;
 	}
 

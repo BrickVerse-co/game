@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.Settings;
 using BrickVerse.Creator.TeamCreate;
 using BrickVerse.Creator.UI.Docking;
@@ -25,7 +26,7 @@ public sealed partial class Ribbon : Control
 		"Part",
 		"Truss",
 		"Mesh",
-		"EditableMesh",
+		"EditableMeshPart",
 		"Seat",
 		"VehicleSeat",
 	};
@@ -116,6 +117,44 @@ public sealed partial class Ribbon : Control
 		AddTaskAction("Collisions", "brick", () => CreatorDataToolsWindow.Open(4));
 		AddTaskAction("Analysis", "bug", () => CreatorDataToolsWindow.Open(5));
 		AddTaskAction("Scene Stats", "chart-bar", SceneStatisticsPopup.Open);
+		AddTaskMenu(
+			"3D Modeling",
+			"cube",
+			[
+				"Component Editor",
+				"Modifier Stack",
+				"UV Editor",
+				"PBR Material Editor",
+				"Texture Paint",
+				"Import Editable OBJ",
+				"Export Editable OBJ",
+				"Upload Selected Mesh",
+			],
+			id =>
+			{
+				if (id == 0) MeshComponentEditorWindow.Open();
+				else if (id == 1) ModifierStackWindow.Open();
+				else if (id == 2) UVEditorWindow.Open();
+				else if (id == 3) MaterialEditorWindow.Open();
+				else if (id == 4) TexturePaintWindow.Open();
+				else if (id == 5) EditableMeshTools.PromptImportObj();
+				else if (id == 6) EditableMeshTools.PromptExportObj();
+				else BlenderBridgeManager.UploadSelection();
+			}
+		);
+		AddTaskMenu(
+			"Blender",
+			"computer-tower",
+			["Start Live Link", "Push Creator → Blender", "Pull Blender → Creator", "Open Exchange Folder", "Stop Live Link"],
+			id =>
+			{
+				if (id == 0) BlenderBridgeManager.StartForSelection();
+				else if (id == 1) BlenderBridgeManager.PushSelection();
+				else if (id == 2) BlenderBridgeManager.PullNow();
+				else if (id == 3) BlenderBridgeManager.OpenExchangeFolder();
+				else BlenderBridgeManager.Stop();
+			}
+		);
 		AddTaskAction("Particles", "play-filled", ParticleEditorWindow.Open);
 		AddTaskAction("Input", "keyboard", CreatorService.Interface.OpenInputManager);
 		NormalizeRibbonIcons(_taskTabs);
@@ -355,6 +394,45 @@ public sealed partial class Ribbon : Control
 			"weld",
 			"Create a Weld between two selected physical instances",
 			button => button.Pressed += CreateWeld
+		);
+		AddModelAction(
+			model,
+			"Mesh Edit",
+			"shapes/shapes",
+			"Non-destructive and topology operations for EditableMeshPart selections",
+			button =>
+			{
+				PopupMenu menu = new();
+				button.AddChild(menu);
+				menu.AddItem("Subdivide", 0);
+				menu.AddItem("Merge by Distance", 1);
+				menu.AddSeparator();
+				menu.AddItem("Project UVs: XZ", 2);
+				menu.AddItem("Project UVs: XY", 3);
+				menu.AddItem("Project UVs: YZ", 4);
+				menu.AddSeparator();
+				menu.AddItem("Flip Faces", 5);
+				menu.IdPressed += id =>
+				{
+					if (id == 0)
+						EditableMeshTools.Subdivide();
+					else if (id == 1)
+						EditableMeshTools.MergeByDistance();
+					else if (id == 2)
+						EditableMeshTools.ProjectUVs(EditableMesh.MeshProjectionPlane.XZ);
+					else if (id == 3)
+						EditableMeshTools.ProjectUVs(EditableMesh.MeshProjectionPlane.XY);
+					else if (id == 4)
+						EditableMeshTools.ProjectUVs(EditableMesh.MeshProjectionPlane.YZ);
+					else
+						EditableMeshTools.FlipFaces();
+				};
+				button.Pressed += () =>
+				{
+					menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+					menu.Popup();
+				};
+			}
 		);
 		AddModelAction(
 			model,
@@ -777,6 +855,9 @@ public sealed partial class Ribbon : Control
 		Action<Button> configure
 	)
 	{
+		string iconPath = $"res://assets/textures/creator/ribbon/{icon}.svg";
+		if (!ResourceLoader.Exists(iconPath))
+			iconPath = "res://assets/textures/creator/ribbon/effects.svg";
 		Button button = new()
 		{
 			TooltipText = tooltip,
@@ -786,7 +867,7 @@ public sealed partial class Ribbon : Control
 		};
 		TextureRect iconView = new()
 		{
-			Texture = GD.Load<Texture2D>($"res://assets/textures/creator/ribbon/{icon}.svg"),
+			Texture = GD.Load<Texture2D>(iconPath),
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			MouseFilter = Control.MouseFilterEnum.Ignore,
@@ -1008,8 +1089,26 @@ public sealed partial class Ribbon : Control
 		};
 	}
 
-	private void AddTaskAction(string label, string icon, Action action)
+	private void AddTaskMenu(string label, string icon, string[] items, Action<long> selected)
 	{
+		Button button = AddTaskAction(label, icon, () => { });
+		PopupMenu menu = new();
+		button.AddChild(menu);
+		for (int index = 0; index < items.Length; index++)
+			menu.AddItem(items[index], index);
+		menu.IdPressed += id => selected(id);
+		button.Pressed += () =>
+		{
+			menu.Position = (Vector2I)(button.GlobalPosition + new Vector2(0, button.Size.Y));
+			menu.Popup();
+		};
+	}
+
+	private Button AddTaskAction(string label, string icon, Action action)
+	{
+		string iconPath = $"res://assets/textures/ui-icons/{icon}.svg";
+		if (!ResourceLoader.Exists(iconPath))
+			iconPath = "res://assets/textures/ui-icons/tools.svg";
 		Button button = new()
 		{
 			Name = label.Replace(" ", ""),
@@ -1020,7 +1119,7 @@ public sealed partial class Ribbon : Control
 		TextureRect iconView = new()
 		{
 			Name = "Icon",
-			Texture = GD.Load<Texture2D>($"res://assets/textures/ui-icons/{icon}.svg"),
+			Texture = GD.Load<Texture2D>(iconPath),
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			MouseFilter = Control.MouseFilterEnum.Ignore,
@@ -1044,6 +1143,7 @@ public sealed partial class Ribbon : Control
 		caption.OffsetBottom = -2;
 		button.Pressed += action;
 		_quickActions.AddChild(button);
+		return button;
 	}
 
 	private static void NormalizeRibbonIcons(Control root)

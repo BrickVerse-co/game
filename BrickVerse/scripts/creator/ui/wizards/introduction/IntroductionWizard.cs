@@ -291,6 +291,8 @@ public partial class IntroductionWizard : Control
 
 	public void Open()
 	{
+		if (Visible)
+			return;
 		_stepIndex = 0;
 		Visible = true;
 		ShowStep();

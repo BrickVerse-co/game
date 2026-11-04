@@ -5,6 +5,7 @@ using System.Linq;
 using BrickVerse.Creator.Managers;
 using BrickVerse.Creator.UI.Splashes;
 using BrickVerse.Creator.UI.Wizards;
+using BrickVerse.Creator.Utils;
 using BrickVerse.Datamodel;
 using BrickVerse.Datamodel.Creator;
 using Godot;
@@ -173,6 +174,17 @@ public sealed partial class CommandPalettePopup : PopupWindowBase
 				HasWorld
 			),
 			new(
+				"Batch Rename Selection",
+				"Edit",
+				"Rename selected Explorer objects with {name}, {class}, and numbered patterns in one undoable action.",
+				"Shift+F2",
+				BatchRenamePopup.Open,
+				() => HasWorld() && World.Current!.CreatorContext.Selections.SelectedInstances.Count > 0
+			),
+			new("Select Descendants", "Selection", "Replace the selection with every descendant of the selected objects.", "", () => SelectionTools.SelectDescendants(), HasWorld),
+			new("Select Siblings", "Selection", "Select all objects sharing a parent with the current selection.", "", () => SelectionTools.SelectSiblings(), HasWorld),
+			new("Select Same Class", "Selection", "Select all objects in the world whose class matches the current selection.", "", () => SelectionTools.SelectSameClass(), HasWorld),
+			new(
 				"Align Selection on X",
 				"Transform",
 				"Align selected object pivots to the last-selected object on the X axis.",
@@ -221,6 +233,46 @@ public sealed partial class CommandPalettePopup : PopupWindowBase
 				HasWorld
 			),
 			new(
+				"Drop Selection to Surface",
+				"Transform",
+				"Drop each selected top-level object onto the closest surface below it.",
+				"End",
+				() => SelectionTransformTools.DropSelectionToSurface(),
+				HasWorld
+			),
+			new(
+				"Snap Selection to Grid",
+				"Transform",
+				"Round selected world positions to the configured move snapping increment.",
+				"",
+				() => SelectionTransformTools.SnapSelectionToGrid(),
+				HasWorld
+			),
+			new(
+				"Reset Local Transform",
+				"Transform",
+				"Reset local position and rotation while preserving object size.",
+				"",
+				() => SelectionTransformTools.ResetLocalTransform(),
+				HasWorld
+			),
+			new(
+				"Copy Transform",
+				"Transform",
+				"Copy the last-selected object's world position, rotation, and scale.",
+				"",
+				() => SelectionTransformTools.CopyTransform(),
+				HasWorld
+			),
+			new(
+				"Paste Transform",
+				"Transform",
+				"Apply the copied world transform to every selected top-level object.",
+				"",
+				() => SelectionTransformTools.PasteTransform(),
+				() => HasWorld() && SelectionTransformTools.HasCopiedTransform
+			),
+			new(
 				"Play Test",
 				"Test",
 				"Run the current world from its spawn point.",
@@ -259,6 +311,38 @@ public sealed partial class CommandPalettePopup : PopupWindowBase
 				"",
 				() => CreatorService.Interface.OpenWorldPublish(World.Current, true),
 				HasWorld
+			),
+			new(
+				"Frame Selection",
+				"Viewport",
+				"Move the scene camera to frame all selected objects.",
+				"F",
+				() => World.Current?.CreatorContext.Freelook.MoveToSelected(),
+				HasWorld
+			),
+			new(
+				"Hide Selection in Editor",
+				"Viewport",
+				"Temporarily hide selected objects without changing saved visibility.",
+				"H",
+				SceneVisibilityManager.HideSelection,
+				HasWorld
+			),
+			new(
+				"Isolate Selection",
+				"Viewport",
+				"Temporarily hide everything except the selected hierarchy.",
+				"Ctrl+H",
+				SceneVisibilityManager.IsolateSelection,
+				HasWorld
+			),
+			new(
+				"Show All Editor-Hidden Objects",
+				"Viewport",
+				"Restore objects hidden with viewport visibility tools.",
+				"Shift+H",
+				SceneVisibilityManager.ShowAll,
+				() => HasWorld() && SceneVisibilityManager.HasHiddenObjects
 			),
 			new(
 				"Cloud Projects",
@@ -321,6 +405,27 @@ public sealed partial class CommandPalettePopup : PopupWindowBase
 				"",
 				SceneStatisticsPopup.Open,
 				HasWorld
+			),
+			new(
+				"Documentation for Selection",
+				"Help",
+				"Open the current API reference for the last-selected instance class.",
+				"F1",
+				CreatorWebLinks.OpenSelectionDocs
+			),
+			new(
+				"Search Documentation",
+				"Help",
+				"Search classes, properties, methods, events, and Creator guides.",
+				"Shift+F1",
+				CreatorWebLinks.OpenSearch
+			),
+			new(
+				"Documentation Home",
+				"Help",
+				"Open the BrickVerse Creator documentation portal.",
+				"",
+				CreatorWebLinks.OpenDocs
 			),
 			new(
 				"What’s New",
