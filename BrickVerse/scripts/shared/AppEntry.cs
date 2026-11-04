@@ -31,8 +31,10 @@ public partial class AppEntry : Node
 		Dictionary<string, string> cmdargs = ReadCmdArgs();
 		// The Android HTTP bridge must survive shell/game transitions and also
 		// exist for direct token launches that never construct MobileUI.
+#if MOBILE
 		if (OS.HasFeature("android"))
 			BrickVerse.Mobile.Utils.MobileAuthBrowser.GetOrCreate();
+#endif
 		bool isApiRefGen = cmdargs.ContainsKey("genapi");
 		bool isCreator = cmdargs.ContainsKey("creator");
 		bool isLtChild = cmdargs.ContainsKey("ltchild");
